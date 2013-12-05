@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Mouse SNPs</title>
+<link href="../html/cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
+<style type="text/css"> 
+<!-- 
+html {
+	height: 100%;
+}
+body  {
+	background: #666666;
+	margin: 0; /* it's good practice to zero the margin and padding of the body element to account for differing browser defaults */
+	padding: 0;
+	text-align: center; /* this centers the container in IE 5* browsers. The text is then set to the left aligned default in the #container selector */
+	color: #000000;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12pt;
+	line-height: 17pt;
+	height: 100%;
+	overflow: hidden;
+}
+.twoColFixLt #container {
+	border: 1px solid #000000;
+	text-align: left; /* this overrides the text-align: center on the body element. */
+	margin-top: 0;
+	margin-right: auto;
+	margin-bottom: 0;
+	margin-left: auto;
+	height: 100%;
+	min-height: 100%;
+	width: 100%;  /* this will create a container 100% of the browser width */
+}
+.twoColFixLt #sidebar1 {
+	width: 255px; /* the actual width of this div, in standards-compliant browsers, or standards mode in Internet Explorer will include the padding and border in addition to the width */
+	background: #EBEBEB;
+	position: absolute;
+	left: 5px;
+	top: 5px;
+	bottom: 5px;
+	height: auto !important;
+}
+.twoColFixLt #container #sidebar1 iframe {
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	background-color: #FFFFFF;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+.tabledInput {
+	width: 90%;
+	margin-right: 5px;
+	margin-left: 5px;
+}
+.tabledButton {
+	background-color: #FFFFFF;
+	font-size: 12px;
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+}
+.twoColFixLt #mainContent {
+	height: auto !important;
+	position: absolute;
+	left: 265px;
+	top: 5px;
+	bottom: 5px;
+	right: 5px;
+	background-color: #EBEBEB;
+} 
+.fltrt { /* this class can be used to float an element right in your page. The floated element must precede the element it should be next to on the page. */
+	float: right;
+	margin-left: 8px;
+}
+.fltlft { /* this class can be used to float an element left in your page */
+	float: left;
+	margin-right: 8px;
+}
+.clearfloat { /* this class should be placed on a div or break element and should be the final element before the close of a container that should fully contain a float */
+	clear:both;
+    height:0;
+    font-size: 1px;
+    line-height: 0px;
+}
+.style3 {
+	font-size: 14pt;
+	line-height: 30px;
+	padding-top: 10px;
+	padding-right: 10px;
+	padding-bottom: 10px;
+	padding-left: 10px;
+}
+.twoColFixLt #container #mainContent iframe {
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	background-color: #FFFFFF;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+--> 
+</style>
+<!--[if IE 5]>
+<style type="text/css"> 
+/* place css box model fixes for IE 5* in this conditional comment */
+.twoColFixLt #sidebar1 { width: 230px; }
+</style>
+<![endif]--><!--[if IE]>
+<style type="text/css"> 
+/* place css fixes for all versions of IE in this conditional comment */
+.twoColFixLt #sidebar1 { padding-top: 30px; }
+.twoColFixLt #mainContent { zoom: 1; }
+/* the above proprietary zoom property gives IE the hasLayout it needs to avoid several bugs */
+</style>
+<![endif]-->
+
+</head>
+<body class="twoColFixLt">
+
+<div id="container">
+  <div id="sidebar1">
+  	<iframe src="search.php" name="search" scrolling="auto"></iframe>
+  <!-- end #sidebar1 --></div>
+  <div id="mainContent">
+    <iframe src="dbSNP.php" name="dbSNP" scrolling="auto"></iframe>
+    <!-- end #mainContent --></div>
+	<!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats --><br class="clearfloat" />
+<!-- end #container --></div>
+</body>
+</html>

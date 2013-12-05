@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Download certificate and import as root CA</title>
+<style type="text/css">
+<!--
+.Header1 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 24px;
+	font-weight: bold;
+	background-color: #CCCCCC;
+	border-top-style: solid;
+	border-bottom-style: solid;
+	border-top-color: #000000;
+	border-bottom-color: #000000;
+	border-top-width: 2px;
+	border-right-width: 2px;
+	border-bottom-width: 2px;
+	border-left-width: 2px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 5px;
+}
+.NormalText {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	padding-left: 20px;
+	line-height: 18px;
+}
+.Header2 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	background-color: #EEEEEE;
+	border-top-style: solid;
+	border-bottom-style: solid;
+	border-top-color: #000000;
+	border-bottom-color: #000000;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-left: 5px;
+	margin-left: 5px;
+}
+.Header3 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	font-weight: normal;
+	border-bottom-style: solid;
+	border-bottom-color: #000000;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-left: 5px;
+	margin-left: 10px;
+}
+-->
+</style>
+</head>
+
+<body>
+<p class="Header1">Certificates for sysbio.igb.uiuc.edu</p>
+<p class="NormalText">All SSL connection to sysbio.igb.uiuc.edu will require a certificate to proceed and because we use a self-signed certificate, most browsers will show a warning about the certificate being not trusted like below.</p>
+<p class="NormalText"><img src="nottrusted.gif" alt="Certificate not trusted warning" width="791" height="519" /></p>
+<p class="NormalText">To eliminate such warning, you can take the following two steps to import the self-signed certificate of sysbio.igb.uiuc.edu as a &quot;Trusted root CA certificate&quot;.</p>
+<p class="Header2">Download the Certificate File</p>
+<p class="NormalText">The certificate file can be downloaded <strong><a href="server.crt">here</a></strong>. Save it to your computer to proceed.</p>
+<p class="Header2">Import the Certificate File as Root CA</p>
+<p class="Header3">Windows</p>
+<p class="NormalText">Open the certificate file first, then follow <a href="http://blogs.technet.com/b/sbs/archive/2007/04/10/installing-a-self-signed-certificate-as-a-trusted-root-ca-in-windows-vista.aspx">these steps</a>  from Step 5.</p>
+<p class="Header3">Mac</p>
+<p class="NormalText"><a href="http://www.askdavetaylor.com/how_to_install_trusted_root_certificate_mac.html">Follow these steps.</a></p>
+<p class="Header3">Linux</p>
+<p class="NormalText">Directly copying the certificate file to /etc/ssl/certs/ or /etc/ssl/ may work, but it may depend on the settings of your machine.</p>
+</body>
+</html>

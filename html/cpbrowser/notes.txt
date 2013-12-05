@@ -1,0 +1,78 @@
+Release Notes
+
+* 5/10/2013
+
+	Minor UI update to enhance site experience under low screen resolution. However, a higher resolution (1152 x 720 and up) is still highly recommended for better experience.
+
+* 4/15/2013
+
+	Data download has been redesigned so that downloading genome-wide wig files will be much easier. Please check the manual for the updated Tracks & Data panel. Also Data Download & More panel has been renamed to Table Browser to better reflect its new role in data downloading and other functionalities.
+	Fixed a bug preventing Navigation panel to update normally when gene name contains ".".
+
+* 1/30/2013
+
+	Data download and beta custom tracks feature has been implemented under Data Download & More section to the right of Visualization panel.
+
+* 8/22/2012
+
+	CEpBrowser has got a new domain: http://www.cepbrowser.org/, users are encouraged to use or bookmark the new domain if not already did so. All functions will be still the same under the new domain (some browser cookies may be resetted due to the domain change, which will be a minor issue).
+
+* 6/13/2012
+
+	Added a new data series (hESC to hNEC differentiation by Joanne Wysocka Lab) to enhance comparison of stem cell results among different species. (Reference: Rada-Iglesias, A., Bajpai, R., Swigut, T., Brugmann, S.A., Flynn, R.A., and Wysocka, J. (2011). A unique chromatin signature uncovers early developmental enhancers in humans. Nature 470, 279-283.)
+
+* 6/9/2012
+
+	Updated gene name system to include more aliases. Now the gene-name auto-completion will also respond to gene aliases, and partial gene name search will return results based on gene aliases. The alias matching the search will be shown in parentheses beside the gene name in both usage.
+
+* 5/29/2012
+
+	Major re-work of the user interface. Implemented track selection panel to allow showing / hiding of specific data tracks across all species.
+		Implemented track information & settings panel of the browser. This panel can be called out by clicking the grey button on the left of every track.
+		Visualization panel of individual species is now collapsible.
+		Manual is updated to reflect the latest revisions.
+		Other minor revision on the user interface.
+
+* 4/3/2012
+
+	Major re-work of the user interface.
+		Used Ajax to auto-complete gene name as typed, removed the gene list to simplify the input area.
+		Removed controls of the genome browser (may be implemented in other ways to enable finer control of the browser).
+		Added "Navigation" panel to enable simultaneous and individual navigation / zooming of browsers.
+
+* 11/25/2011
+
+	Updated orthologous gene list to include genes with only two-way orthologs throughout the three species.
+
+* 09/26/2011
+
+	Tracks in "Dense" display mode will have their signal shown in gradient from transparent to opaque black so that they don't block the underlying orthologous shades.
+	Minor change to improve performance.
+
+* 02/21/2011
+
+	Minor change in user interface for better compatibility with IE and Firefox.
+	Lab Specific Tracks now contains the information about the dataset. (See ./manual.html#trackinfo for more information.)
+
+* 02/15/2011
+
+	Changed name into Comparative EpiGenomic Browser.
+
+* 02/08/2011
+
+	Minor change in user interface.
+	Manual page updated to include the available database and reflect the changes in the interface.
+	Default track positions have been changed according their content.
+
+* 02/07/2011
+
+	Index page updated, short instructions will be provided on start.
+	Manual page added.
+
+* 02/02/2011
+
+	Beta version online.
+	New UI implemented.
+	Addition of domestic pig (sus scrofa) as the third species.
+	Fixed an error which may cause multi-species alignment shade to be outdated if multiple user are using the browser.
+
