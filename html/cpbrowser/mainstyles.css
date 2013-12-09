@@ -206,19 +206,30 @@ a:visited {
 	-o-transform-origin: bottom left;
  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
 }
+.rotatedCCW {
+	position: absolute;
+	left: 26px;
+	-moz-transform: rotate(-90deg);
+	-moz-transform-origin: bottom left;
+	-webkit-transform: rotate(-90deg);
+	-webkit-transform-origin: bottom left;
+	-o-transform: rotate(-90deg);
+	-o-transform-origin: bottom left;
+ filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}
 .trackSelectClass {
 	z-index: 10;
 	position: absolute;
 	top: 0px;
-	right: 22px;
+	left: 290px;
 	padding: 0;
 	border: #333333 solid 2px;
-	width: 360px;
 	overflow: hidden;
 	height: auto;
 	background: #CCCCCC;
 	display: none;
 }
+
 .trackSettingsClass {
 	z-index: 20;
 	position: absolute;
@@ -274,7 +285,6 @@ a:visited {
 	color: #FFFFFF;
 	font-family: Verdana, Arial, Helvetica, sans-serif;
 	font-size: 12px;
-	cursor: pointer;
 	text-transform: capitalize;
 }
 .subHeader {
@@ -290,6 +300,11 @@ a:visited {
 }
 .subHeader:hover {
 	background-color: #333333;
+}
+
+.speciesPanel {
+	border: 2px solid #666;
+	width: auto;
 }
 
 .speciesTrackHeader {
@@ -332,15 +347,15 @@ a:visited {
 	border: none;
 	width: 100%;
 }
-.loadingCover {
+.loadingTrackCover {
 	z-index: 11;
 	position: absolute;
 	left: 4px;
 	right: 4px;
 	bottom: 4px;
-	top: 78px;
+	top: 38px;
 }
-.loadingCoverBG {
+.loadingTrackCoverBG {
 	z-index: 12;
 	background: #CCCCCC;
 	opacity: 0.6;
@@ -351,7 +366,7 @@ a:visited {
 	top: 0px;
 	bottom: 0px;
 }
-.loadingCoverImage {
+.loadingTrackCoverImage {
 	z-index: 13;
 	opacity: 1.0;
 	filter: alpha(opacity=100);
@@ -387,6 +402,12 @@ a:visited {
 	display: none;
 	font-family: Verdana, Arial, Helvetica, sans-serif;
 	font-size: 12px;
+}
+.trackHeaderEncode {
+	font-weight: bold;
+	padding: 2px 0px;
+	border-top: 1px solid #999;
+	border-bottom: 1px solid #999;
 }
 .trackCell {
 	border: 1px solid transparent;
@@ -444,7 +465,7 @@ a:visited {
 	position: relative;
 	/*top: 100px;*/
 	/*width: 260px;  since this element is floated, a width must be given */
-	min-height: 120px;
+	/*min-height: 120px;*/
 	margin: 0px;
 	padding: 5px;
 	background: #EEEEEE;
@@ -576,13 +597,13 @@ a:visited {
 	float: left;
 	margin-right: 8px;
 }
-.GListShow {
+.BoxShow {
 	z-index: 10;
 	border: 1px solid;
 	background: #FFFFCC;
 	overflow: auto;
 	position: absolute;
-	left: 48px;
+	left: 77px;
 	top: 29px;
 	min-width: 160px;
 	max-width: 220px;
@@ -591,7 +612,7 @@ a:visited {
 	display: block;
 	padding: 3px;
 }
-.GListHide {
+.BoxHide {
 	display: none;
 }
 .WaitingShow {
@@ -753,7 +774,7 @@ a:visited {
 	right: 0px;
 	top: 0px;
 	bottom: 0px;
-	background-image: url(cpbrowser/images/loading11.gif);
+	background-image: url(images/loading11.gif);
 	background-repeat: no-repeat;
 	background-position: 50% 50%;
 }

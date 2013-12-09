@@ -1,9 +1,11 @@
 <?php
 	session_start();
 	$in_debug = false;
-	if((isset($_SESSION["Debug"]) && $_SESSION["Debug"] == "XCDebug") || $_REQUEST["Debug"] == "XCDebug") {
-		$in_debug = true;
-		$_SESSION["Debug"] = "XCDebug";
+	$encodeOn = true;
+	if((isset($_SESSION["Debug"]) && $_SESSION["Debug"] == "XCDebug") 
+		|| (isset($_REQUEST["Debug"]) && $_REQUEST["Debug"] == "XCDebug")) {
+			$in_debug = true;
+			$_SESSION["Debug"] = "XCDebug";
 	}
 	if(isset($_COOKIE['NoTipTrackSettings'])) {
 		// update the cookie so that it doesn't expire

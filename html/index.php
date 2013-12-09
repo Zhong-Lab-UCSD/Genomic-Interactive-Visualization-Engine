@@ -54,6 +54,58 @@ var mouseInGList = false;
 var inFocus = false;
 var maxGeneListHeight;
 
+var spcNum = 0;
+var spcNumVisible = spcNum;	// number of species that have their panel expanded
+var spcNumEnabled = 0;
+var spcDbName = new Array();
+var spcCmnName = new Object();
+var spcName = new Object();
+var spcEncode = new Object();
+
+var spcReady = new Object();
+
+var cmnTracks = new Array();			// this is the array placing the common tracks
+var cmnTracksStatus = new Object();			// this is the array placing the common tracks
+var cmnTracksTableNames = new Object();	
+// this is the "associative array" linking compSeries name to 
+// an "associative array" of db/table names sent to download
+
+var uniTracks = new Array();			// this is an array of arrays placing the unique tracks
+var uniTracksStatus = new Array();			// this is an array of arrays placing the unique tracks
+var uniTracksTableNames = new Array();
+var uniTracksDone = new Array();
+
+var cmnTracksEncode = new Array();			// this is the array placing the common tracks
+var cmnTracksEncodeStatus = new Object();			// this is the array placing the common tracks
+var cmnTracksEncodeTrackTitle = new Object();			
+// notice that ENCODE track titles are different from compSeries values
+var cmnTracksEncodeTableNames = new Object();	
+var cmnTracksEncodeTrackInfo = new Object();	
+// this is the "associative array" linking compSeries name to 
+// an "associative array" of db/table names sent to download
+
+var uniTracksEncode = new Array();			// this is an array of arrays placing the unique tracks
+var uniTracksEncodeStatus = new Array();			// this is an array of arrays placing the unique tracks
+var uniTracksEncodeTableNames = new Array();
+var uniTracksEncodeTrackTitle = new Array();
+var uniTracksEncodeTrackInfo = new Array();	
+
+var cmnTracksSampleType = new Object();		// link sample name to array of tracks
+var uniTracksSampleType = new Array();
+var cmnTracksStatusBackup = new Object();	// this is to backup the selection states of tracks for sample selection
+var uniTracksStatusBackup = new Array();
+
+var tracksInitialized = false;
+
+var listPanels = new Array('trackSettings', 'tableBrowser');
+
+var isInDownload = false;
+
+var isInBrowser = false;
+var tracksInitialized = false;
+
+var isEncodeOn = <?php echo ($encodeOn? 'true': 'false'); ?>;			// Switch this to on to make ENCODE data as default, 
+
 function attachTextListener(input, func) {
 	if (window.addEventListener) {
 		input.addEventListener('input', func, false);
@@ -91,8 +143,8 @@ function change_text(txtValue) {
 	$("#geneName").val(querySent);
 	$("#direct").val("true");
 	timerOn = 0;
-	$('#GListResponse').removeClass("GListShow");
-	$('#GListResponse').addClass("GListHide");
+	$('#GListResponse').removeClass("BoxShow");
+	$('#GListResponse').addClass("BoxHide");
 }
 
 //function reset_selection() {
@@ -105,12 +157,12 @@ function toggleGList(toggle) {
 	if(toggle == 1) {
 		// turn on GList
 		gListIsOn = 1;
-		$('#GListResponse').removeClass("GListHide");
-		$('#GListResponse').addClass("GListShow");
+		$('#GListResponse').removeClass("BoxHide");
+		$('#GListResponse').addClass("BoxShow");
 	} else {
 		gListIsOn = 0;
-		$('#GListResponse').removeClass("GListShow");
-		$('#GListResponse').addClass("GListHide");
+		$('#GListResponse').removeClass("BoxShow");
+		$('#GListResponse').addClass("BoxHide");
 	}
 }
 
@@ -272,6 +324,25 @@ function validate_form() {
 	return false;
 }
 
+function checkEncodeSpecies() {
+	var spcAvailableCount = 0;
+	for(var i = 0; i < spcNum; i++) {
+		if(isEncodeOn && !spcEncode[spcDbName[i]]) {
+			$('#' + spcDbName[i] + '_checkbox').hide();
+			$('#' + spcDbName[i]).attr('checked', false);
+		} else {
+			$('#' + spcDbName[i] + '_checkbox').show();
+			$('#' + spcDbName[i]).attr('checked', true);
+			spcAvailableCount++;
+		}
+	}
+	if(spcAvailableCount > 2) {
+		$('#speciesTable').show();
+	} else {
+		$('#speciesTable').hide();
+	}
+}
+
 function changeGeneName(id, namearray, strand, strandArray) {
 	$("#" + id).html($("#" + namearray + document.getElementById(id + 'selection').selectedIndex).val());
 	$("#" + strand).val($("#" + strandArray + document.getElementById(id + 'selection').selectedIndex).val());
@@ -283,7 +354,7 @@ function updateNavigation(formid) {
 	// find everything from the form
 	speciesDbName = new Array();
 	speciesCmnName = new Array();
-	var items = $("#" + currentGeneName.replace(".", "\\.")).serializeArray();
+	var items = $("#" + currentGeneName.replace(/\./g, "\\.")).serializeArray();		// the name of current gene is the name of a form as well
 	var itemLeft = new Array();
 	$.each(items, function(i, field) {
 			if(field.name == "speciesdb[]") {
@@ -316,7 +387,7 @@ function updateNavigation(formid) {
 	var naviStr = "";
 	
 	for(i = 0; i < numSpc; i++) {
-		var currentGName = $('#' + currentGeneName.replace(".", "\\.") + speciesDbName[i] + "NameDisp").html();
+		var currentGName = $('#' + currentGeneName.replace(/\./g, "\\.") + speciesDbName[i] + "NameDisp").html();
 		if(currentGName.length > 11) {
 			currentGName = currentGName.substr(0, 6) + "..." + currentGName.substr(currentGName.length - 4);
 		}
@@ -334,8 +405,9 @@ function updateNavigation(formid) {
 	for(i = 0; i < numSpc; i++) {
 		setUnReady(speciesDbName[i]);
 	}
-	$('#masterHolder').removeClass("GListHide");
+	$('#masterHolder').removeClass("BoxHide");
 	
+	isInBrowser = true;
 	return true;
 }
 
@@ -375,24 +447,454 @@ function hideZoomHover(key) {
 }
 
 function setUnReady(db) {
-	$('#' + db + 'Loading').removeClass('GListHide');
-	$('#masterLoading').removeClass('GListHide');
-	numSpcReady--;
+	$('#' + db + 'Loading').removeClass('BoxHide');
+	$('#masterLoading').removeClass('BoxHide');
+	spcReady[db] = false;
 }
 
 function setReady(db, coor) {
 	$('#' + db + 'Coor').html(coor);
-	$('#' + db + 'Loading').addClass('GListHide');
-	numSpcReady++;
-	if(numSpcReady >= numSpc) {
-		numSpcReady = numSpc;
-		$('#masterLoading').addClass('GListHide');
+	$('#' + db + 'Loading').addClass('BoxHide');
+	spcReady[db] = true;
+	var allSpcReady = true;
+	for(i = 0; i < numSpc; i++) {
+		if(!spcReady[speciesDbName[i]]) {
+			allSpcReady = false;
+		}
+	}
+	if(allSpcReady) {
+		$('#masterLoading').addClass('BoxHide');
+	}
+}
+
+function setCommonTrackSample(trackID, sample) {
+	sample = sample.replace(/(<([^>]+)>)/ig,"");
+	if(typeof(cmnTracksSampleType[sample]) == 'undefined') {
+		// not define in this sample yet
+		cmnTracksSampleType[sample] = new Array();
+	}
+	cmnTracksSampleType[sample].push(trackID);
+}
+
+function setUniqueTrackSample(index, trackID, sample) {
+	sample = sample.replace(/(<([^>]+)>)/ig,"");
+	if(typeof(uniTracksSampleType[index][sample]) == 'undefined') {
+		// not define in this sample yet
+		uniTracksSampleType[index][sample] = new Array();
+	}
+	uniTracksSampleType[index][sample].push(trackID);
+}
+
+function setTrackReady(index) {
+	//spcReady[i] = true;
+	var db = spcDbName[index];
+	var conDoc = (document.getElementById(db + "_controls").contentWindow 
+		|| document.getElementById(db + "_controls").contentDocument);
+	if(conDoc.document) {
+		conDoc = conDoc.document;
+	}
+	if(!tracksInitialized) {		
+		// tracks have not been initialized so fill the unique ones
+		// after filling this one, check whether all tracks initialized 
+		// if so, initialize the settings panel
+		
+		var uniTracksNew = false;
+		if(!uniTracks[index]) {
+			// this species has not been defined yet
+			
+			uniTracksNew = true;
+			uniTracks[index] = new Array();
+			uniTracksStatus[index] = new Array();
+			uniTracksTableNames[index] = new Array();
+			
+			uniTracksEncode[index] = new Array();
+			uniTracksEncodeTrackTitle[index] = new Object();
+			uniTracksEncodeStatus[index] = new Array();
+			uniTracksEncodeTableNames[index] = new Array();
+			uniTracksEncodeTrackInfo[index] = new Object();
+			
+			uniTracksSampleType[index] = new Object();
+			
+		}
+		
+		var hiddenCommons = conDoc.getElementById("TrackControls").getElementsByTagName("input");
+		// get all the hidden inputs in the browser "common" part
+		
+		for(var i = 0; i < hiddenCommons.length; i++) {
+			
+			if(typeof cmnTracksTableNames[hiddenCommons[i].id] == 'undefined') {
+				cmnTracks.push(hiddenCommons[i].id);
+				//cmnTracksStatus.push(hiddenCommons[i].value == "dense");
+				cmnTracksTableNames[hiddenCommons[i].id] = new Object();
+				for(var j = 0; j < spcNum; j++) {
+					cmnTracksTableNames[hiddenCommons[i].id][spcDbName[j]] = "";
+				}
+			}
+			cmnTracksStatus[hiddenCommons[i].id] = (hiddenCommons[i].value == "dense");
+			cmnTracksTableNames[hiddenCommons[i].id][db] = hiddenCommons[i].name;
+			// this happens even there is already entry in cmnTracksTableNames
+			// Notice that this hiddenCommons[i].name is not Short Label
+		}
+		
+		hiddenCommons = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("input");
+		var hiddenCommonsEncodeData = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("span")
+		// get all the hidden inputs in the browser "common" part
+		
+		for(var i = 0; i < hiddenCommons.length; i++) {
+			
+			if(typeof cmnTracksEncodeTableNames[hiddenCommons[i].id] == 'undefined') {
+				cmnTracksEncode.push(hiddenCommons[i].id);
+				//cmnTracksStatus.push(hiddenCommons[i].value == "dense");
+				cmnTracksEncodeTableNames[hiddenCommons[i].id] = new Object();
+				for(var j = 0; j < spcNum; j++) {
+					cmnTracksEncodeTableNames[hiddenCommons[i].id][spcDbName[j]] = "";
+				}
+				cmnTracksEncodeTrackTitle[hiddenCommons[i].id] = 
+					hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML;
+				setCommonTrackSample(hiddenCommons[i].id,
+					hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
+				cmnTracksEncodeTrackInfo[hiddenCommons[i].id] = 
+					hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML.replace(/\t/g, "</td>\n<td>");
+					// this is the annotation information of encode tracks (sample type in common tracks)
+				cmnTracksEncodeTrackInfo[hiddenCommons[i].id] = "<td>" 
+					+ cmnTracksEncodeTrackInfo[hiddenCommons[i].id] + "</td>";
+			}
+			cmnTracksEncodeStatus[hiddenCommons[i].id] = (hiddenCommons[i].value == "dense");
+			cmnTracksEncodeTableNames[hiddenCommons[i].id][db] = hiddenCommons[i].name;
+			
+			// this happens even there is already entry in cmnTracksTableNames
+			// Notice that this hiddenCommons[i].name is not Short Label
+		}
+		
+		var hiddenUniques;
+		if(conDoc.getElementById("TrackUnique") !== null && conDoc.getElementById("TrackUnique") !== undefined) {
+			hiddenUniques = conDoc.getElementById("TrackUnique").getElementsByTagName("input");
+			// get all the hidden inputs in the browser "common" part
+			
+			for(var i = 0; i < hiddenUniques.length; i++) {
+				if(uniTracksNew) {
+					uniTracks[index].push(hiddenUniques[i].id);
+					uniTracksStatus[index].push(hiddenUniques[i].value == "dense");
+					uniTracksTableNames[index].push(db + "__" + hiddenUniques[i].name);
+				} else {
+					uniTracksStatus[index][i] = (hiddenUniques[i].value == "dense");
+				}
+			}
+		}
+		
+		if(conDoc.getElementById("TrackUniqueEncode") !== null && conDoc.getElementById("TrackUniqueEncode") !== undefined) {
+			hiddenUniques = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("input");
+			var hiddenUniquesEncodeData = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("span")
+			// get all the hidden inputs in the browser "common" part
+			
+			for(var i = 0; i < hiddenUniques.length; i++) {
+				if(uniTracksNew) {
+					uniTracksEncode[index].push(hiddenUniques[i].id);
+					uniTracksEncodeStatus[index].push(hiddenUniques[i].value == "dense");
+					uniTracksEncodeTableNames[index].push(db + "__" + hiddenUniques[i].name);
+					uniTracksEncodeTrackTitle[index][hiddenUniques[i].id] = 
+						hiddenUniquesEncodeData[hiddenUniques[i].id + "_title"].innerHTML;
+					setUniqueTrackSample(index, hiddenUniques[i].id,
+						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML.split('\t')[0]);
+					uniTracksEncodeTrackInfo[index][hiddenUniques[i].id] = 
+						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML.replace(/\t/g, "</td>\n<td>");
+						// this is the annotation information of encode tracks (sample type in common tracks)
+					uniTracksEncodeTrackInfo[index][hiddenUniques[i].id] = "<td>" 
+						+ uniTracksEncodeTrackInfo[index][hiddenUniques[i].id] + "</td>";
+				} else {
+					uniTracksEncodeStatus[index][i] = (hiddenUniques[i].value == "dense");
+				}
+			}
+		}
+		
+		uniTracksDone[index] = true;
+		
+		// check whether all tracks initialized
+		var allDone = true;
+		for(var i = 0; i < uniTracks.length; i++) {
+			//if((!isEncodeOn || spcEncode[spcDbName[i]]) && !uniTracksDone[i]) {
+			if(!uniTracksDone[i]) {
+				allDone = false;
+			}
+		}
+		
+		if(allDone) {
+			// all tracks initialized
+			// do panel initialization
+			// first common panels
+			$('#cmnTrackHolder').html('');
+			$('#uniqueHolder').html('');
+			var items = [];
+			items.push('<table width="100%"><tr>');
+			for(var i = 0; i < cmnTracks.length; i++) {
+				items.push('<td class="trackCell"><label>\n<input id="' + cmnTracks[i] 
+					+ '" type="checkbox" value="dense" '
+					+ (cmnTracksStatus[cmnTracks[i]]? 'checked ': '') + '/>' 
+					+ cmnTracks[i].replace(/Series/g, '') + '</label>\n'
+					+ '<div style="float:right; margin: 2px;" id="'
+					+ cmnTracks[i].replace(/Series/g, '').replace(/\s/g, '') 
+					+ '_cmndlbtn"><a href="#" onclick="return callDownloadMenu(\''
+					+ cmnTracks[i] + '\', true, \''
+					+ cmnTracks[i].replace(/Series/g, '').replace(/\s/g, '') 
+					+ '_cmndlbtn\');">\n'
+					+ '<img src="cpbrowser/images/download.png" alt="Download data for '
+					+ cmnTracks[i].replace(/Series/g, '')
+					+ '" width="15" height="15" /></a></div>\n'
+					+ '</td>\n');
+				if((i % 2) && i < cmnTracks.length) {
+					items.push('</tr>\n<tr>');
+				}
+			}
+			items.push('</tr></table>\n');
+			$('#cmnTrackHolder').append(items.join(''));
+			
+			for(var i = 0; i < uniTracks.length; i++) {
+				var uniqTemp = $('#uniqueTemplate').html();
+				uniqTemp = uniqTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
+				$('#uniqueHolder').append(uniqTemp);
+				
+				var uniqueHolderId = '#' + spcDbName[i] + 'Holder';
+				
+				if(uniTracks[i].length > 0) {
+					items = [];
+					items.push('<table width="100%"><tr>')
+					for(var j = 0; j < uniTracks[i].length; j++) {
+						items.push('<td class="trackCell"><label>\n<input id="'
+							+ uniTracks[i][j] + '" type="checkbox" value="dense" '
+							+ (uniTracksStatus[i][j]? 'checked ': '') + '/>'
+							+ uniTracks[i][j] + '</label>\n'
+							+ '<div style="float:right; margin: 2px;" id="'
+							+ uniTracks[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ 'dlbtn"><a href="#" onclick="return callDownloadMenu(\''
+							+ uniTracksTableNames[i][j] + '\', false, \''
+							+ uniTracks[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ 'dlbtn\');">\n'
+							+ '<img src="cpbrowser/images/download.png" alt="Download data for '
+							+ uniTracks[i][j] + ' ' + spcCmnName[spcDbName[i]]
+							+ '" width="15" height="15" /></a></div>\n'
+							+ '</td>\n');
+						if((j % 2) && j < uniTracks[i].length) {
+							items.push('</tr>\n<tr>')
+						}
+					}
+					items.push('</tr></table>\n');
+					$(uniqueHolderId).append(items.join(''));
+				} else {
+					$(uniqueHolderId).append('<span class="settingsNormal"><em>(No unique tracks)</em></span>');
+				}
+			}
+			
+			$('#cmnTrackEncodeHolder').html('');
+			$('#uniqueEncodeHolder').html('');
+			
+			// this is for common track ENCODE part
+			items = [];
+			items.push('<table width="100%" style="border-collapse: collapse; border-spacing: 0;"><tr class="trackHeaderEncode">');
+			items.push('<th style="width: 35%;">Track Name</th><th>Sample Type</th>'
+				+ '<th style="width: 7%;">Data</th></tr>\n<tr class="trackCell">');
+			for(var i = 0; i < cmnTracksEncode.length; i++) {
+				items.push('<td><label>\n<input id="' + cmnTracksEncode[i] 
+					+ '" type="checkbox" value="dense" '
+					+ (cmnTracksEncodeStatus[cmnTracksEncode[i]]? 'checked ': '') + '/>' 
+					+ cmnTracksEncodeTrackTitle[cmnTracksEncode[i]] + '</label>\n'
+					+ '</td>\n');
+				items.push(cmnTracksEncodeTrackInfo[cmnTracksEncode[i]] + '\n');
+				items.push('<td><div style="margin: 2px;" id="'
+					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/\s/g, '') 
+					+ '_cmnedlbtn"><a href="#" onclick="return callDownloadMenu(\''
+					+ cmnTracksEncode[i] + '\', true, \''
+					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/\s/g, '') 
+					+ '_cmnedlbtn\');">\n'
+					+ '<img src="cpbrowser/images/download.png" alt="Download data for '
+					+ cmnTracksEncode[i].replace(/Series/g, '')
+					+ '" width="15" height="15" /></a></div></td>\n');
+				if(i < cmnTracksEncode.length) {
+					items.push('</tr>\n<tr class="trackCell">');
+				}
+			}
+			items.push('</tr></table>\n');
+			$('#cmnTrackEncodeHolder').append(items.join(''));
+			
+			for(var i = 0; i < uniTracksEncode.length; i++) {
+				if(isEncodeOn && !spcEncode[spcDbName[i]]) {
+					continue;
+				}
+				var uniqTemp = $('#uniqueEncodeTemplate').html();
+				uniqTemp = uniqTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
+				$('#uniqueEncodeHolder').append(uniqTemp);
+				
+				var uniqueHolderId = '#' + spcDbName[i] + 'EncodeHolder';
+				
+				if(uniTracksEncode[i].length > 0) {
+					items = [];
+					items.push('<table width="100%" style="border-collapse: collapse; border-spacing: 0;">'
+						+ '<tr class="trackHeaderEncode">')
+					items.push('<th style="width: 30%;">Track Name</th>'
+						+ '<th style="width: 30%;">Sample Type</th>'
+						+ '<th>Lab</th>'
+						+ '<th style="width: 7%;">Data</th></tr>\n<tr class="trackCell">');
+					for(var j = 0; j < uniTracksEncode[i].length; j++) {
+						items.push('<td><label>\n<input id="'
+							+ uniTracksEncode[i][j] + '" type="checkbox" value="dense" '
+							+ (uniTracksEncodeStatus[i][j]? 'checked ': '') + '/>'
+							+ uniTracksEncodeTrackTitle[i][uniTracksEncode[i][j]] + '</label>\n'
+							+ '</td>\n');
+						items.push(uniTracksEncodeTrackInfo[i][uniTracksEncode[i][j]] + '\n');
+						items.push('<td><div style="margin: 2px;" id="'
+							+ uniTracksEncode[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ 'edlbtn"><a href="#" onclick="return callDownloadMenu(\''
+							+ uniTracksEncodeTableNames[i][j] + '\', false, \''
+							+ uniTracksEncode[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ 'edlbtn\');">\n'
+							+ '<img src="cpbrowser/images/download.png" alt="Download data for '
+							+ uniTracksEncode[i][j] + ' ' + spcCmnName[spcDbName[i]]
+							+ '" width="15" height="15" /></a></div></td>\n');
+						if(j < uniTracksEncode[i].length) {
+							items.push('</tr>\n<tr class="trackCell">')
+						}
+					}
+					items.push('</tr></table>\n');
+					$(uniqueHolderId).append(items.join(''));
+				} else {
+					$(uniqueHolderId).append('<span class="settingsNormal"><em>(No unique tracks)</em></span>');
+				}
+			}
+			
+			$('#cmnSampleEncodeHolder').html('');
+			
+			items = [];
+			for(var sample in cmnTracksSampleType) {
+				if(cmnTracksSampleType.hasOwnProperty(sample)) {
+					items.push('<input type="checkbox" id="' + sample 
+						+ '_checkbox" onclick="callCommonSampleChange(\'' + sample + '\')" '
+						+ 'checked' + ' />' 
+						+ sample + '<br />');
+				}
+			}
+			$('#cmnSampleEncodeHolder').append(items.join(''));
+			
+			for(var i = 0; i < uniTracksSampleType.length; i++) {
+				if(isEncodeOn && !spcEncode[spcDbName[i]]) {
+					continue;
+				}
+				var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
+				uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
+				$('#uniSampleEncodeHolder').append(uniqSampleTemp);
+				
+				var uniqueSampleHolderId = '#' + spcDbName[i] + 'SampleEncodeHolder';
+				var uniqueSampleNumbers = 0;
+				items = [];
+				for(var sample in uniTracksSampleType[i]) {
+					if(uniTracksSampleType[i].hasOwnProperty(sample)) {
+						items.push('<input type="checkbox" id="' + spcDbName[i] + sample 
+							+ '_checkbox" onclick="callUniqueSampleChange(' + i + ', \'' + sample + '\')" />' 
+							+ sample + '<br />');
+						uniqueSampleNumbers++;
+					}
+				}
+				$(uniqueSampleHolderId).append(items.join(''));
+				if(uniqueSampleNumbers <= 0) {
+					$(uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
+				}
+			}			
+			
+			markTrackInitialized(true);
+		}
+	}
+	if(isInBrowser) {
+		callViewChange(db, "refresh");
+	}
+}
+
+function callCommonSampleChange(sample) {
+	// TODO: may implement tri-state later
+	// now it's only bi-state
+	
+	// find all affecting checkboxes
+	for(var i = 0; i < cmnTracksSampleType[sample].length; i++) {
+		document.getElementById(cmnTracksSampleType[sample][i]).checked 
+			= document.getElementById(sample + '_checkbox').checked;
+	}
+}
+
+function callUniqueSampleChange(index, sample) {
+	// TODO: may implement tri-state later
+	// now it's only bi-state
+	
+	// find all affecting checkboxes
+	for(var i = 0; i < uniTracksSampleType[index][sample].length; i++) {
+		document.getElementById(uniTracksSampleType[index][sample][i]).checked 
+			= document.getElementById(spcDbName[index] + sample + '_checkbox').checked;
+	}
+}
+
+function updateSampleCheckbox() {
+	for(var sample in cmnTracksSampleType) {
+		if(cmnTracksSampleType.hasOwnProperty(sample)) {
+			var sampleState = document.getElementById(cmnTracksSampleType[sample][0]).checked;
+			var mixed = false;
+			for(var i = 1; i < cmnTracksSampleType[sample].length; i++) {
+				if(document.getElementById(cmnTracksSampleType[sample][i]).checked != sampleState) {
+					// it's mixed
+					mixed = true;
+					break;
+				}
+			}
+			if(mixed) {
+				$('#' + sample + '_checkbox').attr('checked', true);
+				$('#' + sample + '_checkbox').prop('indeterminate', true);
+			} else {
+				$('#' + sample + '_checkbox').prop('indeterminate', false);
+				$('#' + sample + '_checkbox').attr('checked', sampleState);
+			}
+		}
+	}
+	for(var s = 0; s < uniTracksSampleType.length; s++) {
+		if(isEncodeOn && !spcEncode[spcDbName[s]]) {
+			continue;
+		}
+		for(var sample in uniTracksSampleType[s]) {
+			if(uniTracksSampleType[s].hasOwnProperty(sample)) {
+				var sampleState = document.getElementById(uniTracksSampleType[s][sample][0]).checked;
+				var mixed = false;
+				for(var i = 1; i < uniTracksSampleType[s][sample].length; i++) {
+					if(document.getElementById(uniTracksSampleType[s][sample][i]).checked != sampleState) {
+						// it's mixed
+						mixed = true;
+						break;
+					}
+				}
+				if(mixed) {
+					$('#' + spcDbName[s] + sample + '_checkbox').attr('checked', true);
+					$('#' + spcDbName[s] + sample + '_checkbox').prop('indeterminate', true);
+				} else {
+					$('#' + spcDbName[s] + sample + '_checkbox').prop('indeterminate', false);
+					$('#' + spcDbName[s] + sample + '_checkbox').attr('checked', sampleState);
+				}
+			}
+		}
 	}
 }
 
 function callViewChange(db, change) {
 	setUnReady(db);
 	document.getElementById('cpbrowser').contentWindow.callViewChange(db, change);
+}
+
+function changeSettings(db, settings, val) {
+	var conDoc = (document.getElementById(db).contentWindow || document.getElementById(db).contentDocument);
+	if(conDoc.document) {
+		conDoc = conDoc.document;
+	}
+	conDoc.getElementById(settings).value = val;
+}
+
+function callSubmit(db) {	// Notice that actually only the control frames get submitted, the others only get refreshed.
+	var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
+	if(conDoc.document) {
+		conDoc = conDoc.document;
+	}
+	conDoc.getElementById("TrackForm").submit();
 }
 
 function callMasterViewChange(change, isZoom) {
@@ -414,11 +916,292 @@ function callMasterViewChange(change, isZoom) {
 	}
 }
 
+var isInDownload = false;
+
+function callDownloadMenu(cmnName, isCommon, btnID) {
+	var btnPos = $('#' + btnID).offset();
+	var btnWidth = $('#' + btnID).width();
+	var btnHeight = $('#' + btnID).height();
+	$('#downloadBox').css({left: btnPos.left - $('#downloadBox').width() + btnWidth,
+		top: btnPos.top + btnHeight});
+	$('#downloadContent').html('<em>Loading...</em>');
+	$('#downloadBox').show();
+	if(isCommon) {
+		// This comes from common, send the whole associative array to download page
+		$.getJSON('cpbrowser/getdownload.php', cmnTracksTableNames[cmnName], function(data) {
+			// The return will have basically one key (spcDbName+'__'+tableName), 
+			// and one value (shortLabel + '||' + type + '||' + longLabel) to display
+			// no super track will be returned (will be filtered by jsondownload.php)
+			// also returns will be ordered by species for grouping
+			var currentDb = "";
+			var items = [];
+			$.each(data, function(key, val) {
+				var db = key.split("__")[0];
+				if(currentDb != db) {
+					// db has changed
+					items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
+					currentDb = db;
+				}
+				// split the value into shortlabel, type, and long label
+				values = val.split("||");
+				// put the short label into display and key in the link
+				items.push("<div style='padding: 0px 8px;'><a class='downloadFile' href='download.php?file="
+					+ key + "' title='"
+					+ values[2] + "'>" 
+					+ values[0] + "</a> <div class='downloadType'>"
+					+ values[1] + "</div></div>");
+			});
+			$('#downloadContent').html(items.join(''));
+		});
+	} else {
+		var uniIDNames = cmnName.split("__");
+		var jsondata = new Object();
+		jsondata[uniIDNames[0]] = uniIDNames[1];
+		$.getJSON('cpbrowser/getdownload.php', jsondata, function(data) {
+			// The return will have basically one key (spcDbName+'__'+tableName), 
+			// and one value (shortLabel + '||' + type + '||' + longLabel) to display
+			// no super track will be returned (will be filtered by jsondownload.php)
+			// also returns will be ordered by species for grouping
+			var items = [];
+			$.each(data, function(key, val) {
+				// split the value into shortlabel, type, and long label
+				values = val.split("||");
+				// put the short label into display and key in the link
+				items.push("<div style='padding: 0px 4px;'><a class='downloadFile' href='download.php?file="
+					+ key + "' title='"
+					+ values[2] + "'>" 
+					+ values[0] + "</a> <div class='downloadType'>"
+					+ values[1] + "</div></div>");
+			});
+			$('#downloadContent').html(items.join(''));
+		});
+	}
+	return false;
+}
+
+function inDownload(flag) {
+	isInDownload = flag;
+}
+
+function hideDownload() {
+	$('#downloadBox').hide();
+}
+
+function toggleWindowHeaderText(header) {
+	if($('#' + header).html() == '≪') {
+		$('#' + header).html('≫');
+	} else {
+		$('#' + header).html('≪');
+	}
+}
+
+function hideWindowHeaderText(header) {
+	$('#' + header).html('≫');
+}
+
+function showWindowHeaderText(header) {
+	$('#' + header).html('≪');
+}
+
+function hideWindow(panel) {
+	$('#' + panel).fadeOut('fast', hideWindowHeaderText(panel + 'Indicator'));
+	hideDownload();
+}
+
+function showWindow(panel) {
+	$('#' + panel).fadeIn('fast', showWindowHeaderText(panel + 'Indicator'));
+}
+
+function toggleWindow(panel) {
+	/*for(var i = 0; i < listPanels.length; i++) {
+		if(listPanels[i] == panel) {
+			continue;
+		}
+		hidePanel(listPanels[i]);
+	}*/
+	hideDownload();
+	$('#' + panel).fadeToggle('fast', toggleWindowHeaderText(panel + 'Indicator'));
+}
+
+function trackSettingsOnLoad() {
+	if(document.getElementById('trackSettingFrame').contentWindow.location.href != "about:blank" && !$('#trackSettings').is(":visible")) {
+		togglePanel('trackSettings');
+	}
+}
+
+function markTrackInitialized(flag) {
+	tracksInitialized = flag;
+	if(tracksInitialized) {
+		$('#trackSelectLoading').addClass('trackSelectHide');
+	} else {
+		$('#trackSelectLoading').removeClass('trackSelectHide');
+	}
+}
+
+
+function updateTracks() {
+	var cmnControls = document.getElementById('cmnTrackHolder').getElementsByTagName('input');
+	
+	for(var index = 0; index < spcDbName.length; index++) {
+		var db = spcDbName[index];
+		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
+		if(conDoc.document) {
+			conDoc = conDoc.document;
+		}
+		
+		for(var i = 0; i < cmnControls.length; i++) {
+			var target = conDoc.getElementById(cmnControls[i].id);
+			if(target) {
+				target.value = (cmnControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(cmnControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		var uniControls = document.getElementById(db + 'Holder').getElementsByTagName('input');
+		for(var i = 0; i < uniControls.length; i++) {
+			var target = conDoc.getElementById(uniControls[i].id);
+			if(target) {
+				target.value = (uniControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(uniControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		conDoc.getElementById('TrackForm').submit();
+		setUnReady(db);
+		uniTracksDone[index] = false;
+	}
+	
+	// do the same thing for Encode controls
+	cmnControls = document.getElementById('cmnTrackEncodeHolder').getElementsByTagName('input');
+	
+	for(var index = 0; index < spcDbName.length; index++) {
+		var db = spcDbName[index];
+		if(!spcEncode[db]) continue;
+		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
+		if(conDoc.document) {
+			conDoc = conDoc.document;
+		}
+		
+		for(var i = 0; i < cmnControls.length; i++) {
+			var target = conDoc.getElementById(cmnControls[i].id);
+			if(target) {
+				target.value = (cmnControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(cmnControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		var uniControls = document.getElementById(db + 'EncodeHolder').getElementsByTagName('input');
+		for(var i = 0; i < uniControls.length; i++) {
+			var target = conDoc.getElementById(uniControls[i].id);
+			if(target) {
+				target.value = (uniControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(uniControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		conDoc.getElementById('TrackForm').submit();
+		setUnReady(db);
+		uniTracksDone[index] = false;
+	}
+	markTrackInitialized(false);
+	toggleWindow('trackSelect');
+}
+
+function resetTracks() {
+	for(var index = 0; index < spcDbName.length; index++) {
+		var db = spcDbName[index];
+		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
+		if(conDoc.document) {
+				conDoc = conDoc.document;
+		}
+		var conForm = conDoc.getElementById('TrackForm');
+		var resetVar = conDoc.createElement("input");
+		resetVar.type = "hidden";
+		resetVar.name = "hgt.reset";
+		resetVar.value = "TRUE";
+		conForm.appendChild(resetVar);
+		var resetOrder = conDoc.createElement("input");
+		resetOrder.type = "hidden";
+		resetOrder.name = "hgt.defaultImgOrder";
+		resetOrder.value = "TRUE";
+		conForm.appendChild(resetOrder);
+		conForm.submit();
+		setUnReady(db);
+		uniTracksDone[index] = false;
+	}
+	markTrackInitialized(false);
+	toggleWindow('trackSelect');
+
+}
+
+function toggleSubHeaderText(header) {
+	if($('#' + header).html() == '[-]') {
+		$('#' + header).html('[+]');
+	} else {
+		$('#' + header).html('[-]');
+	}
+}
+
+function toggleSubPanel(panel, hideothers) {
+	if(hideothers && $('#' + panel).css('display') == 'none') {
+		if($('#commonHolder').css('display') != 'none') {
+			$('#commonHolder').slideToggle('fast', toggleSubHeaderText('commonIndicator'));
+		}
+		if($('#uniqueHolder').css('display') != 'none') {
+			$('#uniqueHolder').slideToggle('fast', toggleSubHeaderText('uniqueIndicator'));
+		}
+	}
+	$('#' + panel + 'Holder').slideToggle('fast', toggleSubHeaderText(panel + 'Indicator'));
+}
+
+function toggleEncode() {
+	isEncodeOn = !isEncodeOn;
+	if(isEncodeOn) {
+		$('#NonEncodeData').addClass('BoxHide');
+		$('#EncodeData').removeClass('BoxHide');
+		$('#trackSelect').width(600);
+		$('#EncodeDataButton').html('View Other Data');
+		$('#encodeSampleSettings').show();
+	} else {
+		$('#EncodeData').addClass('BoxHide');
+		$('#NonEncodeData').removeClass('BoxHide');
+		$('#trackSelect').width(380);
+		$('#EncodeDataButton').html('View ENCODE Data');
+		$('#encodeSampleSettings').hide();
+	}
+	checkEncodeSpecies();	
+}
+
+function toggleSample() {
+	if($('#sampleTypeBox').css('display') == 'none') {
+		$('#sampleTypeBox').show();
+		updateSampleCheckbox();
+	} else {
+		$('#sampleTypeBox').hide();
+	}
+}
+
+function hideSample() {
+	$('#sampleTypeBox').hide();
+}
+
+function resize_tbody() {
+	$('#trackSelect').css('max-height', ($(window).height() - 4) + 'px'); 
+	$('#EncodeData').css('max-height', ($(window).height() - 114) + 'px'); 
+}
+
 $(document).ready( function () {
 	document.getElementById('sidebar1').style.left = left_value + "px";
 	document.getElementById('leftborder').style.left = left_value + left_width + "px";
 	document.getElementById('mainContent').style.left = left_value + left_width + 5 + "px";
 	attachTextListener(document.getElementById('geneName'), textChanged);
+	resize_tbody();
+	isEncodeOn = !isEncodeOn;
+	toggleEncode();
 });
 </script>
 <script type="text/javascript">
@@ -438,24 +1221,23 @@ $(document).ready( function () {
 	require("../includes/opendbcpb.php");
 ?>
 </head>
-<body class="twoColLiqLt">
+<body class="twoColLiqLt" onresize="resize_tbody();">
 <div id="container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/Logo.gif" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
     <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene Query</span></div>
     <div id="selectionHolder">
       <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form();">
-        <div class="GListHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
+        <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
         Gene name:
-        <input name="geneName" id="geneName" type="text" size="18" maxlength="15" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
+        <input name="geneName" id="geneName" type="text" size="15" maxlength="15" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
         <img align="baseline" src="cpbrowser/images/loading1.gif" id="waiting" class="WaitingHide" />
         <input style="position:absolute; right: 5px;" name="search" type="submit" value="GO" id="search" />
         <input type="hidden" id="direct" name="direct" value="false" />
-        <div class="speciesPanel">
-          <div class="subHeaderNoHover" style="position: absolute; width: 14px; top: 0px; bottom: 0px;">
-            <div class="rotated">Species</div>
-          </div>
-          <?php
+        <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="margin: 3px 0px; min-height: 60px;">
+          <tr>
+            <td width="18px" bgcolor="#666666"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
+            <td><?php
 	// TODO: need to do something about the species here
 	// first connect to database and find the number of species
 	$species = $mysqli->query("SELECT * FROM species");
@@ -465,21 +1247,41 @@ $(document).ready( function () {
 		$spcinfo[] = $spcitor;
 	}
 	$num_spc = sizeof($spcinfo);
+	?>
+              <script type="text/javascript">
+		spcNum = <?php echo $num_spc; ?>;
+	</script>
+              <?
 	for($i = 0; $i < $num_spc; $i++) {
 		
 ?>
-          <label>
-            <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
-            <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
-            [<?php echo $spcinfo[$i]["dbname"]; ?>]</label>
-          <br />
-          <?php
+              <label>
+              <script type="text/javascript">
+				spcDbName.push("<?php echo $spcinfo[$i]["dbname"]; ?>");
+				spcCmnName["<?php echo $spcinfo[$i]["dbname"]; ?>"] = "<?php echo $spcinfo[$i]["commonname"]; ?>";
+				spcName["<?php echo $spcinfo[$i]["dbname"]; ?>"] = "<?php echo $spcinfo[$i]["name"]; ?>";
+				uniTracks.push(false);
+				uniTracksDone.push(false);
+				spcReady["<?php echo $spcinfo[$i]["dbname"]; ?>"] = false;
+				spcEncode["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>;
+			  </script>
+                <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkbox" >
+                <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
+                <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
+                [<?php echo $spcinfo[$i]["dbname"]; ?>]</label></div>
+              <?php
 	}
 	$species->free();
 	require("../includes/closedb.php");
-		?>
-        </div>
+		?></td>
+          </tr>
+        </table>
+        <script type="text/javascript">
+		checkEncodeSpecies();
+		</script>
       </form>
+      <div class="header tableHeader buttons" style="float: right; margin: 0px;" onclick="toggleWindow('trackSelect');">Track Seletion &amp; Data Download <span id="trackSelectIndicator">≫</span></div>
+      <div style="clear: both"></div>
       <!-- end #selection --> 
     </div>
     <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene Selection</span></div>
@@ -490,7 +1292,7 @@ $(document).ready( function () {
     </div>
     <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
     <div class="smallformstyle" id="navigationHolder">
-      <div style="border: 1px #000000 solid;" id="masterHolder" class="GListHide">
+      <div style="border: 1px #000000 solid;" id="masterHolder" class="BoxHide">
         <div id="masterLoading" class="loadingCover" style="height: 36px;">
           <div class="loadingCoverBG"></div>
           <div class="loadingCoverImage"></div>
@@ -525,7 +1327,7 @@ $(document).ready( function () {
     </div>
     <!-- end #sidebar1 --> 
   </div>
-  <div id="spcNaviTemplate" class="GListHide">
+  <div id="spcNaviTemplate" class="BoxHide">
     <div id="spcDbNameLoading" class="loadingCover" style="height: 50px;">
       <div class="loadingCoverBG"></div>
       <div class="loadingCoverImage"></div>
@@ -559,38 +1361,72 @@ $(document).ready( function () {
       </tr>
     </table>
   </div>
-  <div style="position: absolute; top: 0px; bottom: 0px; right: 0px; width: 22px; padding: 0px; 
-	font-family:Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold;
-    background: #999999; color: #FFFFFF;">
-    <div class="header" style="height: 170px; float: right;" onclick="togglePanel('trackSelect');"> <span id="trackSelectIndicator">≪</span>
-      <div class="rotated" style="width: 150px;">Tracks &amp; Data</div>
+  <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
+    <div class="loadingTrackCover" id="trackSelectLoading">
+      <div class="loadingTrackCoverBG"></div>
+      <div class="loadingTrackCoverImage"></div>
     </div>
-    <div style="clear: both; height: 5px;"></div>
-    <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
-      <div class="rotated">Track Info &amp; Settings</div>
+    <div class="headerNoHover">Tracks &amp; Data
+      <div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
+        onclick="toggleEncode();">View ENCODE Data</div>
+      <div style="clear: both;"></div>
     </div>
-    <div class="header" style="height: 160px; float: right;" onclick="togglePanel('tableBrowser');"> <span id="tableBrowserIndicator">≪</span>
-      <div class="rotated" style="width: 140px;">Table Browser</div>
+    <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
+      <div id="encodeSampleSettings" style="display: inline;">You can also
+        <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
+    onclick="toggleSample();">Choose sample type</div>
+      </div>
+    </div>
+    <div id="NonEncodeData">
+      <div class="subBox">
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span> Common tracks</div>
+        <div class="trackHolder" id="cmnTrackHolder"></div>
+      </div>
+      <div class="subBox">
+        <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span> Unique tracks</div>
+        <div id="uniqueHolder"></div>
+      </div>
+    </div>
+    <div id="EncodeData" style="overflow-y: auto;" class="BoxHide">
+      <div class="subBox ENCODETracks">
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);"> <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span> Common tracks from ENCODE</div>
+        <div class="trackHolder" id="cmnTrackEncodeHolder"></div>
+      </div>
+      <div class="subBox ENCODETracks">
+        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span> Unique tracks from ENCODE</div>
+        <div id="uniqueEncodeHolder"></div>
+      </div>
+    </div>
+    <div class="header buttons" style="float: right;" onclick="updateTracks();">Update</div>
+    <div class="header buttons" style="float: right;" onclick="resetTracks();">Reset view</div>
+    <div class="header buttons" style="float: right;" onclick="toggleWindow('trackSelect');">Close</div>
+    <div style="clear: both"></div>
+    <div style="display: none;">
+      <?
+	for($i = 0; $i < $num_spc; $i++) {
+		
+?>
+      <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
+         name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . ($_SESSION['ID']*10 + $i) 
+	  . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on"; 
+	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+      <?php
+	}
+	$species->free();
+	require("../includes/closedb.php");
+		?>
     </div>
   </div>
-  <div id="trackSelect" class="trackSelectClass">
-    <div class="loadingCover" id="trackSelectLoading">
-      <div class="loadingCoverBG"></div>
-      <div class="loadingCoverImage"></div>
+  <div id="sampleTypeBox" class="downloadBox" style="left: 637px; top: 58px; width: 300px;">
+    <div class="subHeaderNoHover">Sample List
+      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="toggleSample();">Close</div>
+      <div style="clear: both;"></div>
     </div>
-    <div class="headerNoHover">Tracks &amp; Data</div>
-    <div class="settingsNormal"> Tracks can be turn on/off via the checkboxes below: </div>
-    <div class="subBox">
-      <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span> Common tracks</div>
-      <div class="trackHolder" id="cmnTrackHolder"></div>
-    </div>
-    <div class="subBox">
-      <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span> Unique tracks</div>
-      <div id="uniqueHolder"></div>
-    </div>
-    <div class="header buttons" style="float: right;" onclick="updateTracks();">Update &amp; close ≫</div>
-    <div class="header buttons" style="float: right;" onclick="resetTracks();">Reset view ≫</div>
-    <div style="clear: both"></div>
+    <div class="speciesTrackHeader">Common sample types:</div>
+    <div id="cmnSampleEncodeHolder" style="padding: 4px;"></div>
+    <div class="speciesTrackHeader">Species-only sample types</div>
+    <div id="uniSampleEncodeHolder" style="padding: 4px; max-height: 300px; overflow-y: auto; overflow-x: hide;"></div>
   </div>
   <div id="downloadBox" class="downloadBox" onmouseover="inDownload(true);" onmouseout="inDownload(false);">
     <div class="subHeaderNoHover">Download Data
@@ -603,15 +1439,15 @@ $(document).ready( function () {
 		if(!isset($_COOKIE['NoTipTrackSettings']) || $_COOKIE['NoTipTrackSettings'] != 'true') {
 ?>
   <script type="text/javascript">
-function doNotShow() {
-	$.post('postcookie.php', { varName: 'NoTipTrackSettings', value: 'true' } );
+function Track() {
+	$.post('cpbrowser/postcookie.php', { varName: 'NoTipTrackSettings', value: 'true' } );
 	$('#trackSelectHint').fadeOut('fast');
 }
 setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
 </script>
   <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
 font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the right to show. --&gt;
-    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="doNotShow();">Do not show in the future</div>
+    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="Track();">Do not show in the future</div>
     <div style="clear: both"></div>
   </div>
   <?php
@@ -621,6 +1457,15 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div class="speciesTrackHeader">spcCmnName</div>
     <div class="trackHolder" id="spcDbNameHolder"></div>
   </div>
+  <div style="display: none;" id="uniqueEncodeTemplate">
+    <div class="speciesTrackHeader">spcCmnName</div>
+    <div class="trackHolder" id="spcDbNameEncodeHolder"></div>
+  </div>
+  <div style="display: none;" id="uniqueSampleEncodeTemplate">
+    <div class="speciesTrackHeader">spcCmnName</div>
+    <div class="trackHolder" id="spcDbNameSampleEncodeHolder"></div>
+  </div>
+  <!--
   <div id="trackSettings" class="trackSettingsClass" style="display: none;">
     <div id="trackSettingsHeader" class="headerNoHover2">Track information &amp; settings</div>
     <div style="position: absolute; top: 45px; left: 0px;">
@@ -629,6 +1474,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <div style="clear: both"></div>
     </div>
   </div>
+  --->
   <div id="leftborder">
     <div id="leftbutton" onclick="switchLeft();"></div>
   </div>
@@ -645,8 +1491,8 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
 		if(!isset($_COOKIE['NoTipChangeDomain']) || $_COOKIE['NoTipChangeDomain'] != 'true') {
 ?>
   <script type="text/javascript">
-function doNotShow() {
-	$.post('postcookie.php', { varName: 'NoTipChangeDomain', value: 'true' } );
+function Domain() {
+	$.post('cpbrowser/postcookie.php', { varName: 'NoTipChangeDomain', value: 'true' } );
 	$('#domainChangeHint').fadeOut('fast');
 }
 setTimeout("$('#domainChangeHint').fadeOut('slow')", 10000);
@@ -660,7 +1506,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC; position: absolute; lef
           It appears that you are still using CEpBrowser from the old domain, please check if you could visit from the new domain above and bookmark/use the new domain at your convenience. </td>
       </tr>
     </table>
-    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="doNotShow();">Do not show in the future</div>
+    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="Domain();">Do not show in the future</div>
     <div style="clear: both"></div>
   </div>
   <?php

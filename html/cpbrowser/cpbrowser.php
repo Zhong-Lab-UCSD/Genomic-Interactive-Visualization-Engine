@@ -35,7 +35,7 @@ require '../../includes/session.php';
 
 //var spcReady = new Array();
 var spcNum = <?php echo $num_spc; ?>;
-var spcNumVisible = spcNum;
+var spcNumVisible = spcNum;	// number of species that have their panel expanded
 var spcDbName = new Array();
 var spcCmnName = new Object();
 var spcName = new Object();
@@ -53,7 +53,7 @@ var uniTracksTableNames = new Array();
 
 var tracksInitialized = false;
 
-var listPanels = new Array('trackSelect', 'trackSettings', 'tableBrowser');
+var listPanels = new Array('trackSettings', 'tableBrowser');
 
 var isInDownload = false;
 
@@ -116,6 +116,7 @@ function setReady(index) {
 	if(conDoc.document) {
 		conDoc = conDoc.document;
 	}
+	/*
 	if(!tracksInitialized) {		
 		// tracks have not been initialized so fill the unique ones
 		// after filling this one, check whether all tracks initialized 
@@ -215,7 +216,7 @@ function setReady(index) {
 							+ uniTracks[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
 							+ 'dlbtn\');">\n'
 							+ '<img src="images/download.png" alt="Download data for '
-							+ uniTracks[i][j] + ' ' + spcCmnName[i]
+							+ uniTracks[i][j] + ' ' + spcCmnName[spcDbName[i]]
 							+ '" width="15" height="15" /></a></div>\n'
 							+ '</td>\n');
 						if((j % 2) && j < uniTracks[i].length) {
@@ -230,6 +231,7 @@ function setReady(index) {
 			markTrackInitialized(true);
 		}
 	}
+	*/
 	parent.setReady(db, conDoc.getElementById("positionHidden").value);
 }
 
@@ -417,26 +419,6 @@ function toggleSpcVisible(db) {
 	resize_tbody();
 }
 
-function toggleSubHeaderText(header) {
-	if($('#' + header).html() == '[-]') {
-		$('#' + header).html('[+]');
-	} else {
-		$('#' + header).html('[-]');
-	}
-}
-
-function toggleSubPanel(panel, hideothers) {
-	if(hideothers && $('#' + panel).css('display') == 'none') {
-		if($('#commonHolder').css('display') != 'none') {
-			$('#commonHolder').slideToggle('fast', toggleSubHeaderText('commonIndicator'));
-		}
-		if($('#uniqueHolder').css('display') != 'none') {
-			$('#uniqueHolder').slideToggle('fast', toggleSubHeaderText('uniqueIndicator'));
-		}
-	}
-	$('#' + panel + 'Holder').slideToggle('fast', toggleSubHeaderText(panel + 'Indicator'));
-}
-
 $(document).ready( function () {
 	resize_tbody();
 });
@@ -449,21 +431,23 @@ body {
 -->
 </style>
 <body onresize="resize_tbody();">
-<!-- Move this to index.php 
 <div style="position: absolute; top: 0px; bottom: 0px; right: 0px; width: 22px; padding: 0px; 
 	font-family:Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold;
     background: #999999; color: #FFFFFF;">
+<!-- Move this to index.php 
   <div class="header" style="height: 170px; float: right;" onclick="togglePanel('trackSelect');"> <span id="trackSelectIndicator">≪</span>
     <div class="rotated" style="width: 150px;">Tracks &amp; Data</div>
   </div>
   <div style="clear: both; height: 5px;"></div>
+-->
   <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
     <div class="rotated">Track Info &amp; Settings</div>
   </div>
-  <div class="header" style="height: 160px; float: right;" onclick="togglePanel('tableBrowser');"> <span id="tableBrowserIndicator">≪</span>
+  <div class="header" style="height: 160px; float: right; width: 12px;" onclick="togglePanel('tableBrowser');"> <span id="tableBrowserIndicator">≪</span>
     <div class="rotated" style="width: 140px;">Table Browser</div>
   </div>
 </div>
+<!-- Move this to index.php 
 <div id="trackSelect" class="trackSelectClass">
   <div class="loadingCover" id="trackSelectLoading">
     <div class="loadingCoverBG"></div>
@@ -512,6 +496,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
   <div class="speciesTrackHeader">spcCmnName</div>
   <div class="trackHolder" id="spcDbNameHolder"></div>
 </div>
+-->
 <div id="trackSettings" class="trackSettingsClass" style="display: none;">
   <div id="trackSettingsHeader" class="headerNoHover2">Track information &amp; settings</div>
   <div style="position: absolute; top: 45px; left: 0px;">
@@ -520,7 +505,6 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div style="clear: both"></div>
   </div>
 </div>
--->
 <div id="tableBrowser" class="trackSettingsClass" style="display: none; z-index: 30;">
   <div id="tableBrowserHeader" class="headerNoHover2">Data Download &amp; More</div>
   <div style="position: absolute; top: 45px; left: 0px;">
@@ -552,7 +536,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <td><iframe onload="setReady(<?php echo $i; ?>);" id="<?php echo $_REQUEST["speciesdb"][$i]; ?>" 
          name="<?php echo $_REQUEST["speciesdb"][$i]; ?>" class="cpbrowserFrame"
          src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgsid=" . ($_SESSION['ID']*10 + 100000000 + $i) . (isset($_SESSION['resetView']) && $_SESSION['resetView']? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgControlOnly=off&hgsid=" . ($_SESSION['ID']*10 + $i) . '&showEncode=' . ($encodeOn? 'on': 'off') . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
 	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe></td>
     </tr>
     <?php
