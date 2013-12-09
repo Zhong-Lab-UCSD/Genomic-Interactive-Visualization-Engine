@@ -9,11 +9,11 @@
 	}
 	if(isset($_COOKIE['NoTipTrackSettings'])) {
 		// update the cookie so that it doesn't expire
-		setcookie('NoTipTrackSettings', $_COOKIE['NoTipTrackSettings'], time() + 60*60*24*365*2);
+		setcookie('NoTipTrackSettings', $_COOKIE['NoTipTrackSettings'], time() + 60*60*24*365*2, "/");
 	}
 	if(isset($_COOKIE['NoTipDomainChange'])) {
 		// update the cookie so that it doesn't expire
-		setcookie('NoTipDomainChange', $_COOKIE['NoTipDomainChange'], time() + 60*60*24*365*2);
+		setcookie('NoTipDomainChange', $_COOKIE['NoTipDomainChange'], time() + 60*60*24*365*2, "/");
 	}
 	define ("max_session_id", 200000000);
 	
