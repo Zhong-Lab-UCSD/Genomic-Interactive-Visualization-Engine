@@ -1269,7 +1269,6 @@ $(document).ready( function () {
 	for($i = 0; $i < $num_spc; $i++) {
 		
 ?>
-              <label>
               <script type="text/javascript">
 				spcDbName.push("<?php echo $spcinfo[$i]["dbname"]; ?>");
 				spcCmnName["<?php echo $spcinfo[$i]["dbname"]; ?>"] = "<?php echo $spcinfo[$i]["commonname"]; ?>";
@@ -1280,6 +1279,7 @@ $(document).ready( function () {
 				spcEncode["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>;
 			  </script>
                 <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkbox" >
+              <label>
                 <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
                 <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
                 [<?php echo $spcinfo[$i]["dbname"]; ?>]</label></div>
@@ -1488,7 +1488,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <div style="clear: both"></div>
     </div>
   </div>
-  --->
+  -->
   <div id="leftborder">
     <div id="leftbutton" onclick="switchLeft();"></div>
   </div>
