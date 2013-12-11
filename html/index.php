@@ -547,6 +547,9 @@ function setTrackReady(index) {
 				//cmnTracksStatus.push(hiddenCommons[i].value == "dense");
 				cmnTracksEncodeTableNames[hiddenCommons[i].id] = new Object();
 				for(var j = 0; j < spcNum; j++) {
+					if(isEncodeOn && !spcEncode[spcDbName[j]]) {
+						continue;
+					}
 					cmnTracksEncodeTableNames[hiddenCommons[i].id][spcDbName[j]] = "";
 				}
 				cmnTracksEncodeTrackTitle[hiddenCommons[i].id] = 
@@ -561,6 +564,7 @@ function setTrackReady(index) {
 			}
 			cmnTracksEncodeStatus[hiddenCommons[i].id] = (hiddenCommons[i].value == "dense");
 			cmnTracksEncodeTableNames[hiddenCommons[i].id][db] = hiddenCommons[i].name;
+			//console.log(hiddenCommons[i].id + "|" + db + "|" + hiddenCommons[i].name);
 			
 			// this happens even there is already entry in cmnTracksTableNames
 			// Notice that this hiddenCommons[i].name is not Short Label
@@ -700,13 +704,13 @@ function setTrackReady(index) {
 					+ '</td>\n');
 				items.push(cmnTracksEncodeTrackInfo[cmnTracksEncode[i]] + '\n');
 				items.push('<td><div style="margin: 2px;" id="'
-					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/\s/g, '') 
+					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/[\s\(\)]/g, '') 
 					+ '_cmnedlbtn"><a href="#" onclick="return callDownloadMenu(\''
 					+ cmnTracksEncode[i] + '\', true, \''
-					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/\s/g, '') 
-					+ '_cmnedlbtn\');">\n'
+					+ cmnTracksEncode[i].replace(/Series/g, '').replace(/[\s\(\)]/g, '') 
+					+ '_cmnedlbtn\', true);">\n'
 					+ '<img src="cpbrowser/images/download.png" alt="Download data for '
-					+ cmnTracksEncode[i].replace(/Series/g, '')
+					+ cmnTracksEncodeTrackTitle[cmnTracksEncode[i]]
 					+ '" width="15" height="15" /></a></div></td>\n');
 				if(i < cmnTracksEncode.length) {
 					items.push('</tr>\n<tr class="trackCell">');
@@ -741,10 +745,10 @@ function setTrackReady(index) {
 							+ '</td>\n');
 						items.push(uniTracksEncodeTrackInfo[i][uniTracksEncode[i][j]] + '\n');
 						items.push('<td><div style="margin: 2px;" id="'
-							+ uniTracksEncode[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ uniTracksEncode[i][j].replace(/[\s\(\)]/g, '') + '_' + spcDbName[i]
 							+ 'edlbtn"><a href="#" onclick="return callDownloadMenu(\''
 							+ uniTracksEncodeTableNames[i][j] + '\', false, \''
-							+ uniTracksEncode[i][j].replace(/\s/g, '') + '_' + spcDbName[i]
+							+ uniTracksEncode[i][j].replace(/[\s\(\)]/g, '') + '_' + spcDbName[i]
 							+ 'edlbtn\');">\n'
 							+ '<img src="cpbrowser/images/download.png" alt="Download data for '
 							+ uniTracksEncode[i][j] + ' ' + spcCmnName[spcDbName[i]]
@@ -922,6 +926,7 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 	var btnPos = $('#' + btnID).offset();
 	var btnWidth = $('#' + btnID).width();
 	var btnHeight = $('#' + btnID).height();
+	var sendData = "";
 	if(!isEncode) {
 		isEncode = false;
 	}
@@ -931,34 +936,34 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 	$('#downloadBox').show();
 	if(isCommon) {
 		// This comes from common, send the whole associative array to download page
-		var sendData;
 		if(!isEncode) {
 			sendData = cmnTracksTableNames[cmnName];
 		} else {
 			sendData = cmnTracksEncodeTableNames[cmnName];
 		}
-		$.getJSON('cpbrowser/getdownload.php', sendData, function(data) {
-			// The return will have basically one key (spcDbName+'__'+tableName), 
-			// and one value (shortLabel + '||' + type + '||' + longLabel) to display
-			// no super track will be returned (will be filtered by jsondownload.php)
-			// also returns will be ordered by species for grouping
-			var currentDb = "";
-			var items = [];
-			$.each(data, function(key, val) {
-				var db = key.split("__")[0];
-				if(currentDb != db) {
-					// db has changed
-					items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
-					currentDb = db;
-				}
-				// split the value into shortlabel, type, and long label
-				values = val.split("||");
-				// put the short label into display and key in the link
-				items.push("<div style='padding: 0px 8px;'><a class='downloadFile' href='download.php?file="
-					+ key + "' title='"
-					+ values[2] + "'>" 
-					+ values[0] + "</a> <div class='downloadType'>"
-					+ values[1] + "</div></div>");
+		$.getJSON('cpbrowser/getdownload.php', sendData,
+			function(data) {
+				// The return will have basically one key (spcDbName+'__'+tableName), 
+				// and one value (shortLabel + '||' + type + '||' + longLabel) to display
+				// no super track will be returned (will be filtered by jsondownload.php)
+				// also returns will be ordered by species for grouping
+				var currentDb = "";
+				var items = [];
+				$.each(data, function(key, val) {
+					var db = key.split("__")[0];
+					if(currentDb != db) {
+						// db has changed
+						items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
+						currentDb = db;
+					}
+					// split the value into shortlabel, type, and long label
+					values = val.split("||");
+					// put the short label into display and key in the link
+					items.push("<div style='padding: 0px 8px;'><a class='downloadFile' href='cpbrowser/download.php?file="
+						+ key + "' title='"
+						+ values[2] + "'>" 
+						+ values[0] + "</a> <div class='downloadType'>"
+						+ values[1] + "</div></div>");
 			});
 			$('#downloadContent').html(items.join(''));
 		});
@@ -976,7 +981,7 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 				// split the value into shortlabel, type, and long label
 				values = val.split("||");
 				// put the short label into display and key in the link
-				items.push("<div style='padding: 0px 4px;'><a class='downloadFile' href='download.php?file="
+				items.push("<div style='padding: 0px 4px;'><a class='downloadFile' href='cpbrowser/download.php?file="
 					+ key + "' title='"
 					+ values[2] + "'>" 
 					+ values[0] + "</a> <div class='downloadType'>"
