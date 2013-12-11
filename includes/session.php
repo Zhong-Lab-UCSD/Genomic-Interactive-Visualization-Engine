@@ -1,7 +1,11 @@
 <?php
 	session_start();
 	$in_debug = false;
-	$encodeOn = true;
+	if(strpos(getenv('SERVER_NAME'), 'encode') !== false) {
+		$encodeOn = true;
+	} else {
+		$encodeOn = false;
+	}
 	if((isset($_SESSION["Debug"]) && $_SESSION["Debug"] == "XCDebug") 
 		|| (isset($_REQUEST["Debug"]) && $_REQUEST["Debug"] == "XCDebug")) {
 			$in_debug = true;

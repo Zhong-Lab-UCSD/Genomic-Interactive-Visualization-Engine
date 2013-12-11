@@ -1178,13 +1178,13 @@ function toggleEncode() {
 		$('#NonEncodeData').addClass('BoxHide');
 		$('#EncodeData').removeClass('BoxHide');
 		$('#trackSelect').width(600);
-		$('#EncodeDataButton').html('View Other Data');
+		//$('#EncodeDataButton').html('View Other Data');
 		$('#encodeSampleSettings').show();
 	} else {
 		$('#EncodeData').addClass('BoxHide');
 		$('#NonEncodeData').removeClass('BoxHide');
 		$('#trackSelect').width(380);
-		$('#EncodeDataButton').html('View ENCODE Data');
+		//$('#EncodeDataButton').html('View ENCODE Data');
 		$('#encodeSampleSettings').hide();
 	}
 	checkEncodeSpecies();	
@@ -1381,9 +1381,9 @@ $(document).ready( function () {
       <div class="loadingTrackCoverImage"></div>
     </div>
     <div class="headerNoHover">Tracks &amp; Data
-      <div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
+      <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
         onclick="toggleEncode();">View ENCODE Data</div>
-      <div style="clear: both;"></div>
+      <div style="clear: both;"></div>-->
     </div>
     <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
       <div id="encodeSampleSettings" style="display: inline;">You can also
