@@ -108,6 +108,8 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 	if(datatype == "rnaseq") {
 		result["shortlabel"] = KeyValuePair.find("rnaextract")->second
 			+ " (" + KeyValuePair.find("cell")->second + ")";
+		result["ID"] = "RNASeq_" + KeyValuePair.find("rnaextract")->second
+			+ "_" + KeyValuePair.find("cell")->second;
 		result["feature"] = KeyValuePair.find("rnaextract")->second;
 		result["longlabel"] = "RNA Sequencing data of " + KeyValuePair.find("rnaextract")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
@@ -126,6 +128,8 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 		result["shortlabel"] = (toLower(antibody) == "input"? "ChIP-Seq ": "") 
 			+ antibody 
 			+ " (" + KeyValuePair.find("cell")->second + ")";
+		result["ID"] = "ChIPSeq_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") 
+			+ "_" + KeyValuePair.find("cell")->second;
 		result["feature"] = KeyValuePair.find("antibody")->second;
 		result["longlabel"] = "ChIP Sequencing data with " + KeyValuePair.find("antibody")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
@@ -144,6 +148,8 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 	} else {
 		result["shortlabel"] = KeyValuePair.find("datatype")->second 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " (" + KeyValuePair.find("cell")->second + ")");
+		result["ID"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": "_" + KeyValuePair.find("cell")->second);
 		result["longlabel"] = KeyValuePair.find("datatype")->second + " data" 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " for " + KeyValuePair.find("cell")->second + " (cell type)");
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
@@ -167,6 +173,7 @@ string getSettings(const map<string, string> &KeyValuePair, const map<string, st
 		<< "group encode\n" << "dataType " << KeyValuePair.find("datatype")->second << "\n"
 		<< (KeyValuePair.find("cell") == KeyValuePair.end()? "": "cellType " + KeyValuePair.find("cell")->second + "\n")
 		<< (dbEntry.find("feature") == dbEntry.end()? "": "trackFeature " + dbEntry.find("feature")->second + "\n")
+		<< "trackID " << dbEntry.find("ID")->second << "\n"
 		<< "labName " << KeyValuePair.find("lab")->second << "\n" << groupInfo 
 		<< (groupInfo.empty()? "": "\n") << "longLabel " << dbEntry.find("longlabel")->second << "\nmaxHeightPixels 128:36:16\npriority " << priority
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
@@ -194,6 +201,8 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 	if(datatype == "rnaseq") {
 		result["shortlabel"] = KeyValuePair.find("rnaextract")->second
 			+ " (" + KeyValuePair.find("cell")->second + ")";
+		result["ID"] = "RNASeq_" + KeyValuePair.find("rnaextract")->second
+			+ "_" + KeyValuePair.find("cell")->second;
 		result["feature"] = KeyValuePair.find("rnaextract")->second;
 		result["longlabel"] = "RNA Sequencing data of " + KeyValuePair.find("rnaextract")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
@@ -210,6 +219,8 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 		result["shortlabel"] = (toLower(antibody) == "input"? "ChIP-Seq ": "") 
 			+ antibody 
 			+ " (" + KeyValuePair.find("cell")->second + ")";
+		result["ID"] = "ChIPSeq_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") 
+			+ "_" + KeyValuePair.find("cell")->second;
 		result["feature"] = KeyValuePair.find("antibody")->second;
 		result["longlabel"] = "ChIP Sequencing data with " + KeyValuePair.find("antibody")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
@@ -224,6 +235,8 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 	} else {
 		result["shortlabel"] = KeyValuePair.find("datatype")->second 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " (" + KeyValuePair.find("cell")->second + ")");
+		result["ID"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": "_" + KeyValuePair.find("cell")->second);
 		result["longlabel"] = KeyValuePair.find("datatype")->second + " data" 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " for " + KeyValuePair.find("cell")->second + " (cell type)");
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
@@ -246,6 +259,7 @@ string getSettings(const map<string, map<string, string> > &trackMap, const map<
 		<< "group encode\n" << "dataType " << KeyValuePair.find("datatype")->second << "\n"
 		<< (KeyValuePair.find("cell") == KeyValuePair.end()? "": "cellType " + KeyValuePair.find("cell")->second + "\n")
 		<< (dbEntry.find("feature") == dbEntry.end()? "": "trackFeature " + dbEntry.find("feature")->second + "\n")
+		<< "trackID " << dbEntry.find("ID")->second << "\n"
 		<< "labName " << KeyValuePair.find("lab")->second << "\n" << groupInfo 
 		<< (groupInfo.empty()? "": "\n") << "longLabel " << dbEntry.find("longlabel")->second << "\nmaxHeightPixels 128:36:16\npriority " << priority
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
