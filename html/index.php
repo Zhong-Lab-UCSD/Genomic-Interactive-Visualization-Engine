@@ -918,17 +918,26 @@ function callMasterViewChange(change, isZoom) {
 
 var isInDownload = false;
 
-function callDownloadMenu(cmnName, isCommon, btnID) {
+function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 	var btnPos = $('#' + btnID).offset();
 	var btnWidth = $('#' + btnID).width();
 	var btnHeight = $('#' + btnID).height();
+	if(!isEncode) {
+		isEncode = false;
+	}
 	$('#downloadBox').css({left: btnPos.left - $('#downloadBox').width() + btnWidth,
 		top: btnPos.top + btnHeight});
 	$('#downloadContent').html('<em>Loading...</em>');
 	$('#downloadBox').show();
 	if(isCommon) {
 		// This comes from common, send the whole associative array to download page
-		$.getJSON('cpbrowser/getdownload.php', cmnTracksTableNames[cmnName], function(data) {
+		var sendData;
+		if(!isEncode) {
+			sendData = cmnTracksTableNames[cmnName];
+		} else {
+			sendData = cmnTracksEncodeTableNames[cmnName];
+		}
+		$.getJSON('cpbrowser/getdownload.php', sendData, function(data) {
 			// The return will have basically one key (spcDbName+'__'+tableName), 
 			// and one value (shortLabel + '||' + type + '||' + longLabel) to display
 			// no super track will be returned (will be filtered by jsondownload.php)
@@ -1218,7 +1227,7 @@ $(document).ready( function () {
 
 </script>
 <?php
-	require("../includes/opendbcpb.php");
+	require("../includes/db/opendbcpb.php");
 ?>
 </head>
 <body class="twoColLiqLt" onresize="resize_tbody();">
@@ -1272,7 +1281,7 @@ $(document).ready( function () {
               <?php
 	}
 	$species->free();
-	require("../includes/closedb.php");
+	require("../includes/db/closedb.php");
 		?></td>
           </tr>
         </table>
@@ -1414,7 +1423,7 @@ $(document).ready( function () {
       <?php
 	}
 	$species->free();
-	require("../includes/closedb.php");
+	require("../includes/db/closedb.php");
 		?>
     </div>
   </div>

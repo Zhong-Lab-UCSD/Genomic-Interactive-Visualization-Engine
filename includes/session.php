@@ -17,7 +17,7 @@
 	}
 	define ("max_session_id", 200000000);
 	
-	require("opendbcpb.php");
+	require("db/opendbcpb.php");
 	
 	// get session ID from database
 	if(!isset($_SESSION['ID'])) {
@@ -77,6 +77,6 @@
 //	mysql_query("INSERT INTO sessions (sessionID, lastactive, ip) VALUES (" . $_SESSION['ID'] . ", NOW(), '" . $_SERVER['REMOTE_ADDR'] . "') ON DUPLICATE KEY UPDATE lastactive = NOW(), ip = '" . $_SERVER['REMOTE_ADDR'] . "'");
 //	
 //	unset($db);
-	require("closedb.php");
+	require("db/closedb.php");
 
 ?>

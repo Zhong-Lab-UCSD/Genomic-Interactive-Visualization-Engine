@@ -5,7 +5,7 @@
 		// new page, doesn't do anything
 	} else {
 		// open database for table list (species)
-		require("../../includes/opendbcpb.php");
+		require("../../includes/db/opendbcpb.php");
 		
 		// first connect to database and find the number of species
 		$species = $mysqli->query("SELECT * FROM species");
@@ -182,7 +182,7 @@
 		for($i = 0; $i < $num_spc; $i++) {
 			$genes[$i]->free();
 		}
-		require("../../includes/closedb.php");
+		require("../../includes/db/closedb.php");
 		if($count == 1) {
 			?>
   <script language="javascript">

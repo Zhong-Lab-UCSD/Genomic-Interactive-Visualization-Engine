@@ -59,7 +59,7 @@ function setEnable(numbers) {
     <?php
 	if(isset($_POST['db'])) {
 		//echo $_POST['editflag']."<br />";
-		require("../../../includes/opendbgb.php");
+		require("../../../includes/db/opendbgb.php");
 		if(isset($_POST['editflag'])) {
 			// edit the content
 			for($j=1; $j <= $_POST['num_of_tracks']; $j++) {
@@ -167,7 +167,7 @@ function setEnable(numbers) {
   </div>
 </form>
 <?php
-		require("../../../includes/closedb.php");
+		require("../../../includes/db/closedb.php");
 	}
 ?>
 </body>

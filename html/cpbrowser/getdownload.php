@@ -1,5 +1,5 @@
 <?php
-	require("../../includes/opendbcpb.php");
+	require("../../includes/db/opendbcpb.php");
 	$result = array();
 	foreach($_REQUEST as $key=>$val) {
 		$generesult = $mysqli->query("SELECT * FROM `TrackInfo` WHERE `db` = '" 
@@ -11,13 +11,14 @@
 			//die(json_encode($result));
 		} else {
 			while($row = $generesult->fetch_assoc()) {
+				$typeString = $row["type"];
 				$result[$row["db"] . "__" . $row["tableName"]]
-					= $row["shortLabel"] . "||" . substr($row["type"], 0, 3)
+					= $row["shortLabel"] . "||" . strtok($typeString, " ")
 					. "||" . $row["longLabel"];
 			}
 		}
 	}
 	echo json_encode($result);
 	$generesult->free();
-	require("../../includes/closedb.php");
+	require("../../includes/db/closedb.php");
 ?>

@@ -1,5 +1,5 @@
 <?php
-	require("../../includes/opendbcpb.php");
+	require("../../includes/db/opendbcpb.php");
 	$filenamearray = explode("__", $mysqli->real_escape_string($_REQUEST['file']));
 	$filename = $filenamearray[1];
 	$dbname = $filenamearray[0];
@@ -14,12 +14,18 @@
 	} else {
 		$resulttoken = $generesult->fetch_assoc();
 		//error_log($resulttoken['file']);
-		header("X-Sendfile: " . $resulttoken['file']);
-		header("Content-type: application/gzip-compressed");
-		header('Content-Disposition: attachment; filename="' . $dbname 
-			. "_" . str_replace(" ", "_", $resulttoken['shortLabel']) . "." 
-			. strtolower(substr($resulttoken["type"], 0, 3)) . '.gz"');
+		if(!$resulttoken['url']) {
+			// it's local file
+			header("X-Sendfile: " . $resulttoken['file']);
+			header("Content-type: application/gzip-compressed");
+			header('Content-Disposition: attachment; filename="' . $dbname 
+				. "_" . str_replace(" ", "_", $resulttoken['shortLabel']) . "." 
+				. strtolower(substr($resulttoken["type"], 0, 3)) . '.gz"');
+		} else {
+			// it's url, use redirect
+			header("Location: " . $resulttoken['file'], true, 303);
+		}
 	}
 	$generesult->free();
-	require("../../includes/closedb.php");
+	require("../../includes/db/closedb.php");
 ?>

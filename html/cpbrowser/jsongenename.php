@@ -3,7 +3,7 @@
 	require('../../includes/session.php');	
 	// notice that this needs to be commented out after debug to improve performance
 	
-	require("../../includes/opendbcpb.php");
+	require("../../includes/db/opendbcpb.php");
 	// open the genome browser database
 	
 	$generesult = $mysqli->query("SELECT * FROM (SELECT * FROM `alias` WHERE `alias` LIKE '" 
@@ -29,6 +29,6 @@
 	echo json_encode($result);
 	$generesult->free();
 	
-	require("../../includes/closedb.php");
+	require("../../includes/db/closedb.php");
 
 ?>
