@@ -93,6 +93,11 @@ string getCompSeriesInfo(const map<string, map<string, string> > &trackMap, cons
 			+ "\ngroupSampleType " + keyValuePairToUse["cell"] + "\n";
 	} else {
 		result = "groupDataType " + keyValuePairToUse["datatype"];
+		if(keyValuePairToUse.find("rnaextract") != keyValuePairToUse.end()) {
+			result += "\ngroupFeature " + keyValuePairToUse["rnaextract"];
+		} else if(keyValuePairToUse.find("antibody") != keyValuePairToUse.end()) {
+			result += "\ngroupFeature " + getBefore(getBefore(keyValuePairToUse.find("antibody")->second, "_"), "(");
+		}
 		if(keyValuePairToUse.find("cell") != keyValuePairToUse.end()) {
 			result += "\ngroupSampleType " + keyValuePairToUse["cell"];
 		}
@@ -147,14 +152,32 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 		}
 	} else {
 		result["shortlabel"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: " " + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "("))
+			: " " + KeyValuePair.find("rnaextract")->second)
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " (" + KeyValuePair.find("cell")->second + ")");
 		result["ID"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: "_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "("))
+			: "_" + KeyValuePair.find("rnaextract")->second)
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": "_" + KeyValuePair.find("cell")->second);
-		result["longlabel"] = KeyValuePair.find("datatype")->second + " data" 
+		result["longlabel"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: " (" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") + ")")
+			: " (" + KeyValuePair.find("rnaextract")->second + ")")
+			+ " data" 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " for " + KeyValuePair.find("cell")->second + " (cell type)");
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
 			+ KeyValuePair.find("dataversion")->second + "</p>\n"
 			+ groupInfo + (groupInfo.empty()? "": "\n");
+		if(KeyValuePair.find("rnaextract") != KeyValuePair.end()) {
+			result["html"] += "<p>RNA extraction method: " + KeyValuePair.find("rnaextract")->second + "</p>\n";
+		} else if(KeyValuePair.find("antibody") != KeyValuePair.end()) {
+			result["html"] += "<p>Antibody: " + KeyValuePair.find("antibody")->second + "</p>\n";
+		}
 		if(KeyValuePair.find("cell") != KeyValuePair.end()) {
 			result["html"] += "<p>Cell line: " + KeyValuePair.find("cell")->second + "</p>\n";
 		}
@@ -234,14 +257,32 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 		}
 	} else {
 		result["shortlabel"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: " " + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "("))
+			: " " + KeyValuePair.find("rnaextract")->second)
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " (" + KeyValuePair.find("cell")->second + ")");
 		result["ID"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: "_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "("))
+			: "_" + KeyValuePair.find("rnaextract")->second)
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": "_" + KeyValuePair.find("cell")->second);
-		result["longlabel"] = KeyValuePair.find("datatype")->second + " data" 
+		result["longlabel"] = KeyValuePair.find("datatype")->second 
+			+ (KeyValuePair.find("rnaextract") == KeyValuePair.end()? 
+			(KeyValuePair.find("antibody") == KeyValuePair.end()? ""
+			: " (" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") + ")")
+			: " (" + KeyValuePair.find("rnaextract")->second + ")")
+			+ " data" 
 			+ (KeyValuePair.find("cell") == KeyValuePair.end()? "": " for " + KeyValuePair.find("cell")->second + " (cell type)");
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
 			+ KeyValuePair.find("dataversion")->second + "</p>\n"
 			+ groupInfo + (groupInfo.empty()? "": "\n");
+		if(KeyValuePair.find("rnaextract") != KeyValuePair.end()) {
+			result["html"] += "<p>RNA extraction method: " + KeyValuePair.find("rnaextract")->second + "</p>\n";
+		} else if(KeyValuePair.find("antibody") != KeyValuePair.end()) {
+			result["html"] += "<p>Antibody: " + KeyValuePair.find("antibody")->second + "</p>\n";
+		}
 		if(KeyValuePair.find("cell") != KeyValuePair.end()) {
 			result["html"] += "<p>Cell line: " + KeyValuePair.find("cell")->second + "</p>\n";
 		}
