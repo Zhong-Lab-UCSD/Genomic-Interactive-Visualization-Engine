@@ -1054,8 +1054,42 @@ function markTrackInitialized(flag) {
 
 
 function updateTracks() {
-	var cmnControls = document.getElementById('cmnTrackHolder').getElementsByTagName('input');
+	// First do Encode controls
+	var cmnControls = document.getElementById('cmnTrackEncodeHolder').getElementsByTagName('input');
 	
+	for(var index = 0; index < spcDbName.length; index++) {
+		var db = spcDbName[index];
+		if(!spcEncode[db]) continue;
+		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
+		if(conDoc.document) {
+			conDoc = conDoc.document;
+		}
+		
+		for(var i = 0; i < cmnControls.length; i++) {
+			var target = conDoc.getElementById(cmnControls[i].id);
+			if(target) {
+				target.value = (cmnControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(cmnControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		var uniControls = document.getElementById(db + 'EncodeHolder').getElementsByTagName('input');
+		for(var i = 0; i < uniControls.length; i++) {
+			var target = conDoc.getElementById(uniControls[i].id);
+			if(target) {
+				target.value = (uniControls[i].checked? 'dense': 'hide');
+			} else {
+				console.log(uniControls[i].id + " is not found in " + db + "!");
+			}
+		}
+		
+		//conDoc.getElementById('TrackForm').submit();
+		//setUnReady(db);
+		//uniTracksDone[index] = false;
+	}
+	
+	cmnControls = document.getElementById('cmnTrackHolder').getElementsByTagName('input');
 	for(var index = 0; index < spcDbName.length; index++) {
 		var db = spcDbName[index];
 		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
@@ -1087,40 +1121,6 @@ function updateTracks() {
 		uniTracksDone[index] = false;
 	}
 	
-	// do the same thing for Encode controls
-	cmnControls = document.getElementById('cmnTrackEncodeHolder').getElementsByTagName('input');
-	
-	for(var index = 0; index < spcDbName.length; index++) {
-		var db = spcDbName[index];
-		if(!spcEncode[db]) continue;
-		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
-		if(conDoc.document) {
-			conDoc = conDoc.document;
-		}
-		
-		for(var i = 0; i < cmnControls.length; i++) {
-			var target = conDoc.getElementById(cmnControls[i].id);
-			if(target) {
-				target.value = (cmnControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(cmnControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		var uniControls = document.getElementById(db + 'EncodeHolder').getElementsByTagName('input');
-		for(var i = 0; i < uniControls.length; i++) {
-			var target = conDoc.getElementById(uniControls[i].id);
-			if(target) {
-				target.value = (uniControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(uniControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		conDoc.getElementById('TrackForm').submit();
-		setUnReady(db);
-		uniTracksDone[index] = false;
-	}
 	markTrackInitialized(false);
 	toggleWindow('trackSelect');
 }
