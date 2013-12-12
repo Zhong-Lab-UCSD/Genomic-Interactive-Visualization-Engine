@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>An Example of CEpBrowser with ENCODE Data</title>
+<script type="text/javascript" src="js/jquery-1.7.js"></script>
+<style type="text/css">
+<!--
+.Title {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 36px;
+	font-weight: bold;
+	width: auto;
+	padding: 15px 0px;
+	position: relative;
+	clear: both;
+	border-bottom-width: 3px;
+	border-bottom-style: double;
+	margin-bottom: 10px;
+	margin-top: 40px;
+	line-height: 40px;
+}
+.Header1 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 24px;
+	font-weight: bold;
+	width: auto;
+	padding: 10px 0px;
+	position: relative;
+	clear: both;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	margin-top: 35px;
+	margin-bottom: 5px;
+	line-height: 26px;
+}
+.Header2 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	position: relative;
+	clear: both;
+	width: auto;
+	margin-top: 30px;
+	margin-bottom: 0px;
+	line-height: 22px;
+}
+.legend {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	margin-left: 10px;
+	margin-bottom: 30px;
+	margin-top: -10px;
+}
+.miniature {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	margin-bottom: 20px;
+	padding: 5px 60px;
+	background-repeat: no-repeat;
+	background-position: 5px 10px;
+	border: 3px dotted #666666;
+	background-color: #EEEEEE;
+}
+.galaxybox {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	margin-bottom: 20px;
+	padding: 5px 60px;
+	background-image: url(http://ecg2012.bioch.virginia.edu/static/images/galaxyIcon_noText.png);
+	background-repeat: no-repeat;
+	background-position: 15px 15px;
+	border: 3px dotted #666666;
+	background-color: #FFFF99;
+	color: #000;
+}
+.code {
+	font-family: Consolas, "Courier New", Courier, monospace;
+	font-size: 14px;
+	background-color: #FFFFFF;
+	padding: 5px 5px;
+}
+.codevariant {
+	border: 1px dotted #660000;
+	color: #660000;
+	cursor: help;
+}
+.floatingindex {
+	position: fixed;
+	left: 100%;
+	margin-left: -500px;
+	width: 500px;
+	height: auto;
+	border: 2px solid #000000;
+	top: 0px;
+	background-color: #FFFFFF;
+	z-index: 10;
+	opacity: 0.5;
+	filter: alpha(opacity=50);
+}
+.floatingindex:hover {
+	opacity: 1;
+	filter: alpha(opacity=100);
+}
+a:link {
+	color: #006699;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+a:active {
+	text-decoration: underline;
+}
+a:visited {
+	color: #003399;
+}
+body {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	line-height: 19px;
+	padding: 20px;
+	background-color: #FFFFDE;
+}
+.floatingindex #indexbutton {
+	font-weight: bold;
+	color: #FFFFFF;
+	background-color: #333333;
+	text-align: center;
+	padding: 2px;
+	cursor: pointer;
+}
+.floatingindex #indexdiv {
+	padding: 5px;
+}
+-->
+</style>
+<script language="javascript">
+
+var toHide = true;
+
+function toggleHeaderText(header) {
+	if($('#' + header).html() == '[-]') {
+		$('#' + header).html('[+]');
+	} else {
+		$('#' + header).html('[-]');
+	}
+	toHide = true;
+}
+
+function togglePanel() {
+	if(!toHide || ($('#indexdiv').css('display') != 'none')) {
+		$('#indexdiv').slideToggle('slow', toggleHeaderText('indextext'));
+	}
+}
+
+function markPanel(hide) {
+	toHide = hide;
+}
+</script>
+</head>
+<body onclick="togglePanel();">
+<div class="floatingindex">
+  <div id="indexbutton" onclick="markPanel(false);"> <span id="indextext">[+]</span> Index </div>
+  <div id="indexdiv" style="display:none;">
+    <ul>
+      <li><a href="#top">Top</a></li>
+      <li><a href="#intro">Introduction of CEpBrowser</a></li>
+      <li><a href="#tracks">Set Tracks to Show</a></li>
+      <li><a href="#searchgene">Search Gene of Interest</a> </li>
+      <li><a href="#explore">Explore around the Gene</a></li>
+    </ul>
+  </div>
+</div>
+<a name="top" id="top"></a>
+<p class="Title">An Example of CEpBrowser with ENCODE Data</p>
+<p class="Header1">Index</p>
+<ul>
+  <li><a href="#intro">Introduction of CEpBrowser</a></li>
+  <li><a href="#tracks">Set Tracks to Show</a></li>
+  <li><a href="#searchgene">Search Gene of Interest</a> </li>
+  <li><a href="#explore">Explore around the Gene</a></li>
+</ul>
+<p class="Header1"><a name="intro" id="intro"></a>Introduction of CEpBrowser</p>
+<p>The interface of CEpBrowser can be seen in the figure below. Basically, it's divided into several panels. <strong>Gene Query</strong> panel is used to search for the genes of interest; <strong>Gene Selection</strong> panel is used to choose among multiple genes, or among multiple homologous genes; <strong>Navigation</strong> panel is used to navigate (simultaneously through all species, or within individual species); <strong>Visualization</strong> panel is the main panel to display all results.</p>
+<p><img src="images/UI.png" width="730" height="397" alt="UI of CEpBrowser" /></p>
+<p class="legend">Figure 1. GUI of CEpBrowser</p>
+<p>There is <a href="../manual.html">a detailed manual for CEpBrowser</a> and we will focus on the example below.</p>
+<p class="Header1"><a name="tracks" id="tracks"></a>Set Tracks to Show</p>
+<p>In this case study, we will focus on ES cells between human and mouse for comparison. By clicking <strong>Track Selection &amp; Data Download</strong>, we can open <strong>Tracks &amp; Data</strong> panel.</p>
+<p>CEpBrowser has already linked human H1-hESC with mouse ES-E14 in Common tracks, by simply choosing ESC in <strong>Choose sample type</strong>, we can select these two cell lines.</p>
+<p><img src="images/ESC_sample_type.png" width="651" height="653" alt="Select ESC as sample type" /></p>
+<p class="legend"> Figure 2 Select ESC as sample type.</p>
+<p>There are other cell lines that have not been yet linked but may be linked in the future. In this case, we will need RNA-Seq for human H1-hESC and RNA-Seq for mouse ES-Bruce  in Unique tracks for demonstration purpose. All tracks are alphabetically ordered by sample type.</p>
+<p><img src="images/RNA-Seq-human.png" width="604" height="128" alt="Adding RNA-seq in human" /><br />
+  <br />
+<img src="images/RNA-Seq-mouse.png" width="603" height="128" alt="Adding RNA-seq in mouse" /></p>
+
+<p class="legend"> Figure 3 Adding additional tracks, these tracks will be linked in future release.</p>
+<p>After selected the tracks, click <strong>Update</strong> to continue.</p>
+<p class="Header1"><a name="searchgene" id="searchgene"></a>Search Gene of Interest</p>
+<p>In <strong>Gene Query</strong> panel we are able to select the gene we would like to study. CEpBrowser will provide hint for partial gene name and aliases, after filling in the gene name &quot;NANOG&quot;, click <strong>GO</strong> to continue.</p>
+<p><img src="images/NANOGsearch.png" width="277" height="110" alt="Search for NANOG in Gene Query panel" /></p>
+<p class="legend">Figure 4 Search for NANOG in <strong>Gene Query</strong> panel.</p>
+<p><strong>Gene Selection</strong> panel will show the gene that satisfy the search criteria. NANOG has two homologous sequences in human (named NANOGP1 and NANOG), which is shown as a drop-down menu in human. By selecting the item in this drop-down menu, we can specify which homolog we would like to visualize.</p>
+<p><img src="images/NANOGortholog.png" width="270" height="110" alt="Drop-down menu to choose NANOG homolog" /></p>
+<p class="legend">Figure 5  NANOG has two homologs in human.</p>
+<p><strong></strong>After selected the second region (chr12:7930390-7958655), click <strong>Visualize</strong> to continue.</p>
+<p class="Header1"><a name="explore" id="explore"></a>Explore around the Gene</p>
+<p>When visualized in CEpBrowser, we can toggle the display of all tracks by clicking the track directly (or click the grey button as is shown in manual). <strong>Navigation</strong> panel can be used to zoom in/out, and moving around the gene.</p>
+<p>The Visualization panel has marked orthologous sequences with corresponding color, so that the regions of the same color are orthologous sequences between the species.</p>
+<p>From the result we can see that the yellow region before the annotated NANOG promoter appears to have H3K4me3 marker and RNA-seq signal in both species, which may suggest further investigation.</p>
+<p><img src="images/H3K4me3-seq-results.png" width="874" height="646" alt="H3K4me3 results" /></p>
+<p class="legend">Figure 6 H3K4me3 signal of the yellow region between the two species.</p>
+<p><img src="images/RNA-seq-results.png" width="874" height="648" alt="RNA-seq results" /></p>
+<p class="legend">Figure 7 RNA-seq signal of the same region</p>
+</body>
+</html>

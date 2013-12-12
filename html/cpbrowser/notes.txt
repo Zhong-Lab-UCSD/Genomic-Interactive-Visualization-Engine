@@ -1,5 +1,12 @@
 Release Notes
 
+* 12/10/2013
+
+	Added ENCODE data support, ENCODE data now can be accessed via http://encode.cepbrowser.org/
+	Major UI update.
+		The button to invoke Tracks & Data panel has been moved to top level (in Gene Query panel) so that it is accessble even without displaying any genes.
+		Rearranged species selection region.
+
 * 5/10/2013
 
 	Minor UI update to enhance site experience under low screen resolution. However, a higher resolution (1152 x 720 and up) is still highly recommended for better experience.

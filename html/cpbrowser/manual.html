@@ -20,10 +20,15 @@
 #Navigation {
 	width: 270px;
 }
+#SampleSelection {
+	width: 300px;
+}
 #TrackSetting {
 	width: 366px;
 }
-
+#encodeLogo {
+	border: none;
+}
 body {
 	background-color: #FFFFFF;
 	margin-right: 15px;
@@ -32,7 +37,9 @@ body {
 	margin-left: 5px;
 	overflow: auto;
 }
-.style1 {color: #FFFFFF}
+.style1 {
+	color: #FFFFFF
+}
 .style2 {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 14px;
@@ -61,22 +68,25 @@ body {
 </head>
 
 <body>
-<a name="top" id="top"></a> <p class="Title">CEpBrowser Manual
-</p>
+<a name="top" id="top"></a>
+<p class="Title">CEpBrowser Manual </p>
 <p class="Header1"><a href="#top"></a>Index</p>
 <ul>
   <li class="style2"><a href="#intro">Introduction</a></li>
   <li class="style2"><a href="#datagen">Data Generation</a></li>
-  <li class="style2"><a href="#datasets">Available Datasets</a></li>
-  <li class="style2"><a href="#usage">Using CEpBrowser
-    </a>
+  <li class="style2"><a href="#datasets">Available Datasets</a>
+    <ul>
+      <li><a href="#ENCODE">ENCODE Datasets</a></li>
+    </ul>
+  </li>
+  <li class="style2"><a href="#usage">Using CEpBrowser </a>
     <ul>
       <li><a href="#lookup">Look up genes in <span class="panel">gene query</span> panel</a></li>
-      <li><a href="#viewquery">View query results in <span class="panel">gene selection</span> panel</a></li>
+      <li><a href="#trackinformation"></a><a href="#viewquery">View query results in <span class="panel">gene selection</span> panel</a></li>
       <li><a href="#visualize">Visualize the orthologous gene group in the <span class="panel">visualization</span> panel</a></li>
       <li><a href="#navigation">Navigate CEpBrowser via <span class="panel">navigation</span> panel</a></li>
-      <li><a href="#trackselection">Use <span class="panel">track selection</span> panel to control the display of tracks and download data</a></li>
-      <li><a href="#trackinformation">Show track information and adjust settings in  <span class="panel">track information &amp; settings</span> panel</a></li>
+      <li><a href="#trackselection">Use <span class="panel">track selection</span> panel to control the display of tracks and download data (three-species data and ENCODE data)</a></li>
+      <li><a href="#trackinformation">Show track information and adjust settings in <span class="panel">track information &amp; settings</span> panel</a></li>
       <li><a href="#datadownload">Use <span class="panel">Table Browser</span> panel to  download data within specific regions and access other services</a></li>
     </ul>
   </li>
@@ -94,9 +104,9 @@ body {
 <p class="Header1"><a href="#top"><img src="images/index.png" alt="to index" width="61" height="15" /></a> <a name="datasets" id="datasets"></a>Available Datasets</p>
 <p class="normaltext">So far there are three species supported on CEpBrowser:</p>
 <ul class="normalnotes">
-  <li>Homo sapiens (human), reference sequence  <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse" target="_blank">GRCh37/hg19</a>.<sup><a name="cite4_ref" id="cite4_ref"></a><a href="#cite4">[4]</a></sup></li>
-  <li>Mus musculus (mouse), reference sequence  <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse&amp;db=mm9" target="_blank">NCBI37/mm9</a>.<sup><a name="cite5_ref" id="cite5_ref"></a><a href="#cite5">[5]</a></sup></li>
-  <li>Sus scrofa (domestic pig), reference sequence   <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Pig&amp;db=susScr2" target="_blank">SGSC Sscrofa9.2/susScr2</a>. <sup>[<a href="http://genome.ucsc.edu/goldenPath/credits.html#pig_credits">credit</a>]</sup></li>
+  <li>Homo sapiens (human), reference sequence <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse" target="_blank">GRCh37/hg19</a>.<sup><a name="cite4_ref" id="cite4_ref"></a><a href="#cite4">[4]</a></sup></li>
+  <li>Mus musculus (mouse), reference sequence <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse&amp;db=mm9" target="_blank">NCBI37/mm9</a>.<sup><a name="cite5_ref" id="cite5_ref"></a><a href="#cite5">[5]</a></sup></li>
+  <li>Sus scrofa (domestic pig), reference sequence <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Pig&amp;db=susScr2" target="_blank">SGSC Sscrofa9.2/susScr2</a>. <sup>[<a href="http://genome.ucsc.edu/goldenPath/credits.html#pig_credits">credit</a>]</sup></li>
 </ul>
 <p class="normaltext">For every species, there are a number of tracks showing various epigenomic modifications or transcription factor binding status of the genome. Here is a list of all the epigenomic / TF binding tracks available (in default track order):</p>
 <table width="90%" border="2" align="center" cellspacing="0" bgcolor="#FFFFCC" class="normaltext">
@@ -196,7 +206,7 @@ body {
     <td width="5%" align="center" valign="middle"><a name="cite14_ref" id="cite14_ref"></a><sup><a href="#cite14">[14]</a></sup></td>
   </tr>
   <tr>
-    <td align="center" valign="middle"><p>H3K4me1_JW</p>    </td>
+    <td align="center" valign="middle"><p>H3K4me1_JW</p></td>
     <td align="center" valign="middle"><p>H3K4me1 binding in human ESC and NEC from Joanna Wysocka Lab.</p></td>
     <td width="5%" rowspan="8" align="center" valign="middle"><sup><a href="#cite13">[13]</a></sup></td>
   </tr>
@@ -299,18 +309,26 @@ body {
     <td align="center" valign="middle" bgcolor="#CCFFCC"><sup><a href="#cite14">[14]</a></sup></td>
   </tr>
 </table>
+<p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="ENCODE" id="ENCODE"></a>ENCODE Datasets</p>
+<div class="embededImage" id="encodeLogo"><img src="images/ENCODE_scaleup_logo.png" width="170" height="102" alt="ENCODE Logo" /></div>
+<p class="normaltext">CEpBrowser has incorporated <a href="http://www.genome.gov/10005107" target="_blank">Encyclopedia of DNA Elements</a> (ENCODE) and mouseENCODE data to help in visualization and facilitating better insights from the vast amount data within the project.</p>
+<p class="normaltext">To learn more about ENCODE and mouseENCODE, please check the following websites:</p>
+<ul>
+  <li class="style2"><a href="http://genome.ucsc.edu/encode/">ENCODE Project</a> and <a href="http://chromosome.sdsc.edu/mouse/download.html">mouseENCODE Project</a></li>
+  <li class="style2">ENCODE Data Matrix (<a href="http://genome.ucsc.edu/encode/dataMatrix/encodeDataMatrixHuman.html">human</a> and <a href="http://genome.ucsc.edu/encode/dataMatrix/encodeDataMatrixMouse.html">mouse</a>)</li>
+</ul>
 <p class="Header1"><a href="#top"><img src="images/index.png" alt="to index" width="61" height="15" /></a><a name="usage" id="intro3"></a>Using CEpBrowser</p>
 <p class="normaltext">CEpBrowser consists of four panels: <span class="panel">gene query</span> panel, <span class="panel">gene selection</span> panel, <span class="panel">navigation</span> panel, <span class="panel">visualization</span> panel and two folded panels: <span class="panel">track selection</span> panel (See figure below) and <span class="panel">track information &amp; settings</span> panel. The left panels can be folded so that all the panels can be accessible under smaller screen resolution. The entire left panel group can also be hidden to further provide space for the <span class="panel">visualization</span> panel.</p>
-<p class="inlineImage"><img src="images/UI.png" alt="Comparative Genome Browser Interface" width="808" height="449" /><br />
-<strong>Comparative Genomic Browser interface</strong>. The <span class="panel">gene query</span> panel, <span class="panel">gene selection</span> panel, <span class="panel">navigation</span> panel, <span class="panel">visualization</span> panel and  <span class="panel">track selection</span> panel are shown.</p>
+<p class="inlineImage"><img src="images/UI.png" alt="Comparative Genome Browser Interface" width="800" height="483" /><br />
+  <strong>Comparative Genomic Browser interface</strong>. The <span class="panel">gene query</span> panel, <span class="panel">gene selection</span> panel, <span class="panel">navigation</span> panel, <span class="panel">visualization</span> panel and <span class="panel">track selection</span> panel are shown.</p>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="lookup" id="intro4"></a>Look up genes in <span class="panel">gene query</span> panel</p>
 <div class="embededImage" id="GeneLookUp"> <img src="images/geneselection.png" alt="Gene Lookup Panel" width="270" height="158" /><br />
-<span class="panel"><strong>gene query</strong></span><strong> panel.</strong> Since partial name has been typed, a candidate box is shown.</div>
+  <span class="panel"><strong>gene query</strong></span><strong> panel.</strong> Since partial name has been typed, a candidate box is shown.</div>
 <p class="normaltext">To use CEpBrowser, the first step is to look the gene in interest up in the <span class="panel">gene query</span> panel (see figure to the right). </p>
 <p class="normaltext">CEpBrowser employs AJAX to show a gene name candidate list (see the yellow box in the figure) when partial (at least 2 characters long) gene name is given.</p>
-<p class="normaltext">The <strong>Species Selection</strong> boxes are used to select the species to visualize in the browser. Species name, the common name and database version are shown beside the boxes. At least two species need to be checked to continue and because the orthologous segment groups are anchored by human genome, human must be one of the checked. </p>
-<p class="normaltext">After everything is set, click
-  <strong>GO</strong>  to continue.</p>
+<p class="normaltext">The <strong>Species Selection</strong> boxes are used to select the species to visualize in the browser. Species name, the common name and database version are shown beside the boxes. At least two species need to be checked to continue and because the orthologous segment groups are anchored by human genome, human must be one of the checked. <em>Notice that because ENCODE data have only human and mouse coverage, <span class="panel">Species Selection</span> will not be available if ENCODE Datasets are selected.</em></p>
+<p class="normaltext">The <strong>Track Selection &amp; Data Download</strong> button can be used to expand / collapse <span class="panel"><a href="#trackselection">Tracks &amp; Data</a></span><a href="#"> panel</a>.</p>
+<p class="normaltext">After everything is set, click <strong>GO</strong> to continue.</p>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="viewquery" id="viewquery"></a>View query results in <span class="panel">gene selection</span> panel</p>
 <div class="embededImage" id="geneInformation"><img src="images/geneinformation.png" alt="Gene Information Panel" width="270" height="320" /><span class="panel"><strong>gene selection</strong></span><strong> panel.</strong> Two genes exist in human for POU5F1. Therefore, it's possible to choose the chromosome location in human to visualize by drop menu. The gene in pig does not have a name, so its Ensembl ID is shown.</div>
 <p class="normaltext">After a query is submitted, the selected orthologous gene group will be shown in <span class="panel">gene selection</span> panel and will be instantly visualized in <span class="panel">visualization</span> panel as well. If partial gene name is provided as the query, all orthologous gene groups whose gene name in human partially match  the query (for example, &quot;POU5F1&quot; will match query &quot;pou&quot;, &quot;ou5f&quot;, <em>etc.</em> The match is case-insensitive.) will be shown. User will need to select which orthologous gene group to visualize.</p>
@@ -319,7 +337,7 @@ body {
 <p class="normaltext">After the gene context is decided, click the corresponding <strong>Visualize</strong> button to visualize the orthologous gene group.</p>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="visualize" id="visualize"></a>Visualize the orthologous gene group in the <span class="panel">visualization</span> panel</p>
 <div class="embededImage" id="colorPalette"><img src="images/colorpalette.jpg" alt="Color palette" width="200" height="12" /><br />
-<strong>The Color Palette.</strong> Note that Lighter and Darker colors are different.</div>
+  <strong>The Color Palette.</strong> Note that Lighter and Darker colors are different.</div>
 <p class="normaltext">In visualization of genes, a split vision of genomes of all the selected species is shown to compare the genomes in a side-by-side view. One orthologous segment group  within a gene context will be shaded in the same color. There are a total of 16 colors in CEpBrowser (see right) and if the number of orthologous segment groups is less than 16, every group will be assigned a unique color.</p>
 <p class="normaltext">Because there may be multiple gene contexts within one orthologous gene group, it is likely that some color-shaded segment does not appear in one or more species. Select a different chromosome location in the <span class="panel">gene selection</span> panel may help to reveal the missing segments.</p>
 <p class="normaltext">The genome browser is powered by UCSC Genome Browser so virtually all operations of UCSC Genome Browser can be conducted in any of the genomes in the <span class="panel">visualization</span> panel, such as zooming in/out, moving up/downstream and order the tracks by drag-and-drop. <strong>All tracks will be shown in a &quot;dense&quot; format, where darker means higher signal.</strong></p>
@@ -327,9 +345,9 @@ body {
   <tr>
     <td valign="middle" class="cautionText"><img src="images/caution.png" alt="Caution" width="40" height="36" /></td>
     <td valign="middle" class="cautionText"><ul>
-      <li>Because of the limited height, take caution when using drag-and-drop to re-arrange the tracks.</li>
-      <li>The <strong>Visualize</strong> button in the <span class="panel">gene selection</span> panel can always be used to reset the current view to the selected gene context.</li>
-    </ul></td>
+        <li>Because of the limited height, take caution when using drag-and-drop to re-arrange the tracks.</li>
+        <li>The <strong>Visualize</strong> button in the <span class="panel">gene selection</span> panel can always be used to reset the current view to the selected gene context.</li>
+      </ul></td>
   </tr>
 </table>
 <p class="normaltext">In the cases when there are more than 16  orthologous segment regions within one gene context or when the orthologous segment region does not appear in some of the species, a track with all the name and the direction   of the Orthologous Segment Groups (&quot;Multi-species Alignment Track&quot;) is provided to the bottom of every species to help identifying the exact orthologous relationship across species (see figure below). </p>
@@ -339,39 +357,43 @@ body {
 <p class="normaltext">The view for every individual species can be collapsed by clicking the species name if desired.</p>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="navigation" id="navigation"></a>Navigate CEpBrowser via <span class="panel">navigation</span> panel</p>
 <div class="embededImage" id="Navigation"><img src="images/navigation.png" alt="Navigation Panel" width="270" height="164" /><br />
-    <span class="panel"><strong>navigation</strong></span><strong> panel.</strong> Shown here are the MASTER CONTROL, which provide a synchronized navigation function, and all individual controls.</div>
+  <span class="panel"><strong>navigation</strong></span><strong> panel.</strong> Shown here are the MASTER CONTROL, which provide a synchronized navigation function, and all individual controls.</div>
 <p class="normaltext">The <span class="panel">navigation</span> panel is provided to navigate through the selected orthologous gene group. The buttons in <strong>MASTER CONTROL</strong> is linked with all the buttons in individual species, to enable synchronized navigation, There are two types of controls in the navigation panel: sliding controls enable user to slide to the upstream / downstream region of the current view; zooming controls allow user to zoom in / out a certain part of the genome. The direction of sliding controls in MASTER CONTROL is regarding to the gene, therefore, if certain gene is on the Crick strand in one species (as is indicated near the gene name), going upstream in <strong>MASTER CONTROL</strong><em> will cause the view in that species moving right</em>.</p>
 <table cellpadding="7" cellspacing="0" class="cautionTable">
   <tr>
     <td valign="middle" class="cautionText"><img src="images/caution.png" alt="Caution" width="40" height="36" /></td>
     <td valign="middle" class="cautionText"><ul>
-      <li>As with UCSC Genome Browser, zooming out too much will have a negative impact on response time. Please proceed with caution.</li>
+        <li>As with UCSC Genome Browser, zooming out too much will have a negative impact on response time. Please proceed with caution.</li>
       </ul></td>
   </tr>
 </table>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="trackselection" id="intro8"></a>Use <span class="panel">tracks &amp; data</span> panel to control the display of tracks and download data</p>
-<div class="embededImage" id="TrackSetting"><img src="images/trackselection.png" alt="Tracks &amp; Data Panel" width="364" height="654" /><br />
-    <strong><span class="panel">tracks &amp; data</span> panel.</strong> Figure here is the panel with all tracks shown. To download the full data file for a specific file, click the <span class="panel">download file button</span> <img src="images/download.png" width="15" height="15" alt="Download file button" />, the download link and data file type is shown in the <span class="panel">download data</span> popup.</div>
-<p class="normaltext"><span class="panel">tracks &amp; data</span> panel is used to control which of the tracks will be shown in the browser. All tracks available to all species will be shown here and by checking the corresponding boxes, tracks can be made hidden to provide better focus. Common tracks are tracks that exist in all species and unique tracks are the tracks that only exist in the selected species (many are replicated experiments to provide better comparison).</p>
+<p class="inlineImage"><img src="images/trackselection.png" alt="Tracks &amp; Data Panel" width="288" height="500" /> <img src="images/trackselectionencode.png" width="447" height="500" alt="Tracks &amp; Data ENCODE version" /><br />
+  <span class="panel">tracks &amp; data</span> panel. Figure here is the panel with all tracks shown. To download the full data file for a specific file, click the <span class="panel">download file button</span> <img src="images/download.png" width="15" height="15" alt="Download file button" />, the download link and data file type is shown in the <span class="panel">download data</span> popup. Left: three-species data version; Right: ENCODE data version</p>
+<div style="clear: both;"></div>
+<div class="embededImage" id="SampleSelection"><img src="images/choosesampletype.png" width="293" height="300" alt="Choose sample type panel" /><br />
+  <span class="panel"><strong>Choose sample type </strong></span><strong> panel.</strong> Every sample here will control all correpsonding tracks in <span class="panel"><strong>Tracks &amp; Data</strong></span><strong> panel</strong>.</div>
+<p class="normaltext"><span class="panel">tracks &amp; data</span> panel is used to control which of the tracks will be shown in the browser. All tracks available to all species will be shown here and by checking the corresponding boxes, tracks can be made hidden to provide better focus. <strong>Common Tracks</strong> are tracks that exist in all species and <strong>Unique Tracks</strong> are the tracks that only exist in the selected species (many are replicated experiments to provide better comparison).</p>
+<p class="normaltext">For ENCODE data sets, the sample type and lab for the data will be shown in a tabular format and <strong>Choose sample type</strong> button is used to enable users to select / deselect all tracks for the same sample (see figure to the right). </p>
 <p class="normaltext">To download the full data used to display the tracks, please click the <span class="panel">download file button</span> to the right of every track, a <span class="panel">download data panel</span> will be popped up to provide the following information to every track component (there may be several of them in every track, especially the common ones): the link to the data file, the description of data (hover on the link to see) and the data type.</p>
 <p class="normaltext"><strong>Reset View</strong> can be used to reset the views to their default, which will show all available tracks in their default order.</p>
 <p class="normaltext">This panel is hidden by default and will be hidden after either resetting the view or applying changes in the settings.</p>
-<p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="trackinformation" id="trackinformation"></a>Show track information and adjust settings in  <span class="panel">track information &amp; settings</span> panel </p>
+<p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="trackinformation" id="trackinformation"></a>Show track information and adjust settings in <span class="panel">track information &amp; settings</span> panel </p>
 <p class="normaltext">By clicking the blue button to the left of a track, <span class="panel">track information &amp; settings</span> panel will be shown with the UCSC Genome Browser settings page, including a detailed control over the tracks as well as the information of it. (See figure below.)</p>
 <p class="inlineImage"><img src="images/trackinfo.png" alt="Orthologous Segment Group" width="622" height="391" /><br />
-<strong>Track Information &amp; Settings panel.</strong> This panel provides detailed settings for all the tracks as well as the information of the selected track.</p>
+  <strong>Track Information &amp; Settings panel.</strong> This panel provides detailed settings for all the tracks as well as the information of the selected track.</p>
 <p class="normaltext">This panel will be automatically hidden if the changes in settings are submitted. <strong>Close</strong> button can be used to close the panel without applying any changes in the settings.</p>
 <p class="Header2"><a href="#top"><img src="images/index_sub.png" alt="to index" width="47" height="10" /></a><a name="datadownload" id="datadownload"></a>Use <span class="panel">Table Browser</span> panel to  download data within specific regions and access other services</p>
 <p class="normaltext">By clicking <span class="panel">Table Browser</span> button to the right of <span class="panel">Visualization</span> panel, you will be able to access this new panel implemented by Table Browser of UCSC Genome Browser. (See figure below.)</p>
 <p class="inlineImage"><img src="images/tablebrowser.png" alt="Orthologous Segment Group" width="638" height="437" /><br />
-<strong><span class="panel">Table Browser</span> panel.</strong> This panel, implemented by UCSC Table browser, provides controlled data downloading function together with other related functionarities.</p>
+  <strong><span class="panel">Table Browser</span> panel.</strong> This panel, implemented by UCSC Table browser, provides controlled data downloading function together with other related functionarities.</p>
 <p class="normaltext">This panel will provide you the function of downloading the data of regions of interest from all tracks shown in CEpBrowser. Data specific to CEpBrowser are available in &quot;Epigenomic Data from Zhong Lab and others&quot; group (as is seen in the figure). <span class="panel">Close</span> button can be used to close the panel.</p>
 <p class="Header1"><a href="#top"><img src="images/index.png" alt="to index" width="61" height="15" /></a><a name="contact" id="intro9"></a>Contact Us</p>
 <p class="normaltext">If you have any questions or comments regarding to Comparative Epigenome Browser, you may contact us by sending an email to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>). </p>
 <p class="Header1"><a href="#top"><img src="images/index.png" alt="to index" width="61" height="15" /></a><a name="reference" id="intro7"></a>References</p>
 <ol class="normaltext">
   <li><a name="cite1" id="cite1"></a> <a href="#cite1_ref">↑</a>Kent WJ, <em>et al.</em> (2002) <a href="http://www.genome.org/cgi/content/abstract/12/6/996" target="_blank">The human genome browser at UCSC</a>. <em>Genome Research </em>12(6): 996-1006.</li>
-  <li> <a name="cite2" id="cite2"></a> <a href="#cite2_ref">↑</a>Flicek P, <em>et al.</em> (2011)   <a href="http://nar.oxfordjournals.org/content/39/suppl_1/D800.full" target="_blank">Ensembl 2011</a>. <em>Nucleic Acids Research</em> 39(suppl 1):D800-D806.</li>
+  <li> <a name="cite2" id="cite2"></a> <a href="#cite2_ref">↑</a>Flicek P, <em>et al.</em> (2011) <a href="http://nar.oxfordjournals.org/content/39/suppl_1/D800.full" target="_blank">Ensembl 2011</a>. <em>Nucleic Acids Research</em> 39(suppl 1):D800-D806.</li>
   <li><a name="cite3" id="cite3"></a> <a href="#cite3_ref">↑</a>Hinrichs AS, <em>et al.</em> (2005) <a href="http://nar.oxfordjournals.org/content/34/suppl_1/D590.full">The UCSC Genome Browser Database: update 2006.</a> <em>Nucleic Acids  Research,</em> 34(suppl 1):D590-D598.</li>
   <li><a name="cite4" id="cite4"></a> <a href="#cite4_ref">↑</a>International Human Genome Sequencing Consortium (2001). <a href="http://www.nature.com/nature/journal/v409/n6822/abs/409860a0.html" target="_blank">Initial sequencing and analysis of the human genome</a>. <em>Nature,</em> 409: 860-921.</li>
   <li> <a name="cite5" id="cite5"></a> <a href="#cite5_ref">↑</a>Mouse Genome Sequencing Consortium (2002). <a href="http://www.nature.com/nature/mousegenome/" target="_blank">Initial sequencing and comparative analysis of the mouse genome</a>. <em>Nature</em>, 420, 520-562. </li>

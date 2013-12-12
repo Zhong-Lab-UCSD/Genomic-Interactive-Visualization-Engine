@@ -18,15 +18,21 @@ body {
 <p class="normaltext">In visualization of genes, a split vision of all the selected species is shown and regions that are orthologous within a gene contextual region will be shaded in color. A &quot;gene context&quot; is defined by a region including gene body and the flanking regions with a length of 10kbp or 100% of gene body (whichever is larger). There are a total of 16 colors in the shades and the regions with the same color (lighter and darker colors are different) are within the same orthologous group. The visualization can be  navigated in synchronization for all the species via the <span class="panel">navigation</span> panel.</p>
 <p class="normaltext">In the cases when there are more than 16 distinct orthologous regions within one gene context, a track named &quot;Multi-species Alignment Track&quot; will display the name of every orthologous region group to identify the orthologs across species. The track will also show the direction of orthologous regions.</p>
 <p class="normaltext"><a href="manual.html" target="_self">Click here to read a detailed manual.</a></p>
+<p class="normaltext"><strong>CEpBrowser now has incorporated ENCODE data to help facilitate in-depth research</strong>. Please visit <a href="http://encode.cepbrowser.org/">http://encode.cepbrowser.org/</a> to enable ENCODE data. <a href="Tutorial/index.html" target="_blank">Click here for a  demonstration of CEpBrowser with ENCODE data.</a></p>
 <p class="normaltext">If you have any questions or comments regarding to Comparative Epigenome Browser, you may contact us by sending an email to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>). </p>
 <p class="Header1">Release Notes</p>
+<p class="normaltext"><strong>12/10/2013</strong></p>
+<ul class="normalnotes">
+  <li>Added ENCODE data support. ENCODE data now can be accessed via <a href="http://encode.cepbrowser.org/">http://encode.cepbrowser.org/</a></li>
+  <li>Major UI update.
+    <ul>
+      <li>The button to invoke <strong><span class="panel">Tracks &amp; Data</span> panel</strong> has been moved to top level (in <span class="panel"><strong>Gene Query</strong></span><strong> panel</strong>) so that it is accessble even without displaying any genes.</li>
+      <li>Rearranged species selection region.</li>
+    </ul>
+  </li>
+</ul>
 <p class="normaltext"><strong>5/10/2013</strong></p>
 <ul class="normalnotes">
   <li>Minor UI update to enhance site experience  under low screen resolution. However, a higher resolution (1152 x 720 and up) is still highly recommended for better experience.</li>
-</ul>
-<p class="normaltext"><strong>4/15/2013</strong></p>
-<ul class="normalnotes">
-  <li>Data download has been redesigned so that downloading genome-wide wig files will be much easier. Please check the manual for the updated <a href="manual.html#trackselection" target="_self"><span class="panel">Tracks &amp; Data</span> panel</a>. Also <span class="panel">Data Download &amp; More</span> panel has been renamed to <span class="panel">Table Browser</span> to better reflect its new role in data downloading and other functionalities.</li>
-  <li>Fixed a bug preventing <span class="panel">Navigation</span> panel to update normally when gene name contains &quot;.&quot;.</li>
 </ul>
 <p class="normaltext"><a href="notes.txt" target="_blank">(Older release notes)</a></p>

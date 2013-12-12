@@ -122,13 +122,13 @@ function switchLeft() {
 		document.getElementById('sidebar1').style.left = left_value + "px";
 		document.getElementById('leftborder').style.left = left_value + left_width + "px";
 		document.getElementById('mainContent').style.left = left_value + left_width + 5 + "px";
-		document.getElementById('leftbutton').style.backgroundImage = "url(images/right_arrow.gif)";
+		document.getElementById('leftbutton').style.backgroundImage = "url(cpbrowser/images/right_arrow.gif)";
 	} else {
 		left_value = 0;
 		document.getElementById('sidebar1').style.left = left_value + "px";
 		document.getElementById('leftborder').style.left = left_value + left_width + "px";
 		document.getElementById('mainContent').style.left = left_value + left_width + 5 + "px";
-		document.getElementById('leftbutton').style.backgroundImage = "url(images/left_arrow.gif)";
+		document.getElementById('leftbutton').style.backgroundImage = "url(cpbrowser/images/left_arrow.gif)";
 	}
 }
 
@@ -1034,6 +1034,7 @@ function toggleWindow(panel) {
 		hidePanel(listPanels[i]);
 	}*/
 	hideDownload();
+	hideSample();
 	$('#' + panel).fadeToggle('fast', toggleWindowHeaderText(panel + 'Indicator'));
 }
 
@@ -1294,7 +1295,7 @@ $(document).ready( function () {
 		checkEncodeSpecies();
 		</script>
       </form>
-      <div class="header tableHeader buttons" style="float: right; margin: 0px;" onclick="toggleWindow('trackSelect');">Track Seletion &amp; Data Download <span id="trackSelectIndicator">≫</span></div>
+      <div class="header tableHeader buttons" style="float: right; margin: 0px;" onclick="toggleWindow('trackSelect');">Track Selection &amp; Data Download <span id="trackSelectIndicator">≫</span></div>
       <div style="clear: both"></div>
       <!-- end #selection --> 
     </div>
@@ -1434,7 +1435,7 @@ $(document).ready( function () {
   </div>
   <div id="sampleTypeBox" class="downloadBox" style="left: 637px; top: 58px; width: 300px;">
     <div class="subHeaderNoHover">Sample List
-      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="toggleSample();">Close</div>
+      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideSample();">Close</div>
       <div style="clear: both;"></div>
     </div>
     <div class="speciesTrackHeader">Common sample types:</div>
@@ -1460,7 +1461,7 @@ function Track() {
 setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
 </script>
   <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
-font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the right to show. --&gt;
+font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show. 
     <div class="header buttons" style="float: right; margin-top: 5px;" onclick="Track();">Do not show in the future</div>
     <div style="clear: both"></div>
   </div>

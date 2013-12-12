@@ -154,7 +154,7 @@
 	margin-right: 10px;
 }
 a:link {
-	color: #006699;
+	color: #0099FF;
 	text-decoration: none;
 }
 a:hover {
@@ -164,7 +164,7 @@ a:active {
 	text-decoration: underline;
 }
 a:visited {
-	color: #003366;
+	color: #3333CC;
 }
 
 .headerIndicator {
@@ -556,7 +556,7 @@ a:visited {
 	height: 100px;
 	width: 10px;
 	border: 0;
-	background-image: url(cpbrowser/images/left_arrow.gif);
+	background-image: url(images/left_arrow.gif);
 	background-repeat: no-repeat;
 	background-position: 50% 50%;
 	background-color: #111111;
