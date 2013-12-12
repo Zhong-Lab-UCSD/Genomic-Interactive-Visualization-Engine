@@ -135,7 +135,7 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 			+ " (" + KeyValuePair.find("cell")->second + ")";
 		result["ID"] = "ChIPSeq_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") 
 			+ "_" + KeyValuePair.find("cell")->second;
-		result["feature"] = KeyValuePair.find("antibody")->second;
+		result["feature"] = getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(");
 		result["longlabel"] = "ChIP Sequencing data with " + KeyValuePair.find("antibody")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
@@ -175,8 +175,10 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 			+ groupInfo + (groupInfo.empty()? "": "\n");
 		if(KeyValuePair.find("rnaextract") != KeyValuePair.end()) {
 			result["html"] += "<p>RNA extraction method: " + KeyValuePair.find("rnaextract")->second + "</p>\n";
+			result["feature"] = KeyValuePair.find("rnaextract")->second;
 		} else if(KeyValuePair.find("antibody") != KeyValuePair.end()) {
 			result["html"] += "<p>Antibody: " + KeyValuePair.find("antibody")->second + "</p>\n";
+			result["feature"] = getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(");
 		}
 		if(KeyValuePair.find("cell") != KeyValuePair.end()) {
 			result["html"] += "<p>Cell line: " + KeyValuePair.find("cell")->second + "</p>\n";
@@ -244,7 +246,7 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 			+ " (" + KeyValuePair.find("cell")->second + ")";
 		result["ID"] = "ChIPSeq_" + getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(") 
 			+ "_" + KeyValuePair.find("cell")->second;
-		result["feature"] = KeyValuePair.find("antibody")->second;
+		result["feature"] = getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(");
 		result["longlabel"] = "ChIP Sequencing data with " + KeyValuePair.find("antibody")->second + " for "
 			+ KeyValuePair.find("cell")->second + " (cell type)";
 		result["html"] = "<h2>Description</h2>\n<p>Data source: "
@@ -280,8 +282,10 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 			+ groupInfo + (groupInfo.empty()? "": "\n");
 		if(KeyValuePair.find("rnaextract") != KeyValuePair.end()) {
 			result["html"] += "<p>RNA extraction method: " + KeyValuePair.find("rnaextract")->second + "</p>\n";
+			result["feature"] = KeyValuePair.find("rnaextract")->second;
 		} else if(KeyValuePair.find("antibody") != KeyValuePair.end()) {
 			result["html"] += "<p>Antibody: " + KeyValuePair.find("antibody")->second + "</p>\n";
+			result["feature"] = getBefore(getBefore(KeyValuePair.find("antibody")->second, "_"), "(");
 		}
 		if(KeyValuePair.find("cell") != KeyValuePair.end()) {
 			result["html"] += "<p>Cell line: " + KeyValuePair.find("cell")->second + "</p>\n";
