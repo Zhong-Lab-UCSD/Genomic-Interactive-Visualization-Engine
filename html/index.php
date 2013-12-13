@@ -1266,7 +1266,7 @@ $(document).ready( function () {
               <script type="text/javascript">
 		spcNum = <?php echo $num_spc; ?>;
 	</script>
-              <?
+              <?php
 	for($i = 0; $i < $num_spc; $i++) {
 		
 ?>
@@ -1417,7 +1417,7 @@ $(document).ready( function () {
     <div class="header buttons" style="float: right;" onclick="toggleWindow('trackSelect');">Close</div>
     <div style="clear: both"></div>
     <div style="display: none;">
-      <?
+      <?php
 	for($i = 0; $i < $num_spc; $i++) {
 		
 ?>
