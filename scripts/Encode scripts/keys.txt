@@ -1,0 +1,4 @@
+cell	dataType	antibody	rnaExtract	[dccAccession]	[replicate]
+ESC	cell	H1-hESC	ES-E14
+Erythroid	cell	K562	MEL
+B-lymphocytic	cell	GM12878	CH12
