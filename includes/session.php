@@ -1,7 +1,9 @@
 <?php
 	session_start();
 	$in_debug = false;
-	if(strpos(getenv('SERVER_NAME'), 'encode') !== false) {
+	if((strpos(getenv('SERVER_NAME'), 'encode') !== false)
+		|| ((strpos(getenv('SERVER_NAME'), '132.239.135.28') !== false)
+		&& (isset($_REQUEST["Encode"]) && $_REQUEST["Encode"] == "XCEncode"))) {
 		$encodeOn = true;
 	} else {
 		$encodeOn = false;
