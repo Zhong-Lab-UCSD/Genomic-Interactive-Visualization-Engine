@@ -1,10 +1,26 @@
 <?php
 	session_start();
 	$in_debug = false;
-	if((strpos(getenv('SERVER_NAME'), 'encode') !== false)
-		|| ((strpos(getenv('SERVER_NAME'), '132.239.135.28') !== false)
-		&& (isset($_REQUEST["Encode"]) && $_REQUEST["Encode"] == "XCEncode"))) {
+	if(strpos(getenv('SERVER_NAME'), 'encode') !== false) {
 		$encodeOn = true;
+		$_SESSION["Encode"] = "XCEncode";
+	} else if(strpos(getenv('SERVER_NAME'), '132.239.135.28') !== false) {
+		// testing server
+		if(isset($_REQUEST["Encode"])) {
+			// Encode command is attached
+				$encodeOn = ($_REQUEST["Encode"] == "XCEncode");
+				$_SESSION["Encode"] = $_REQUEST["Encode"];
+		} else {
+			// Encode command is not attached
+			if(isset($_SESSION["Encode"])) {
+				$encodeOn = ($_SESSION["Encode"] == "XCEncode");
+				if(!$encodeOn) {
+					unset($_SESSION["Encode"]);
+				}
+			} else {
+				$encodeOn = false;
+			}
+		}
 	} else {
 		$encodeOn = false;
 	}
