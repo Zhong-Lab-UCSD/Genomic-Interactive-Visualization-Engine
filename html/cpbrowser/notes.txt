@@ -1,5 +1,9 @@
 Release Notes
 
+* 12/16/2013
+
+	Minor UI update to increase the dense view color resolution and to enable track transparency for ENCODE tracks. 
+
 * 12/10/2013
 
 	Added ENCODE data support, ENCODE data now can be accessed via http://encode.cepbrowser.org/

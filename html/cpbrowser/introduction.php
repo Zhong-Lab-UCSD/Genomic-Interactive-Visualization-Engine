@@ -21,6 +21,10 @@ body {
 <p class="normaltext"><strong>CEpBrowser now has incorporated ENCODE data to help facilitate in-depth research</strong>. Please visit <a href="http://encode.cepbrowser.org/">http://encode.cepbrowser.org/</a> to enable ENCODE data. <a href="Tutorial/index.html" target="_blank">Click here for a  demonstration of CEpBrowser with ENCODE data.</a></p>
 <p class="normaltext">If you have any questions or comments regarding to Comparative Epigenome Browser, you may contact us by sending an email to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>). </p>
 <p class="Header1">Release Notes</p>
+<p class="normaltext"><strong>12/16/2013</strong></p>
+<ul class="normalnotes">
+  <li>Minor UI update to increase the dense view color resolution and to enable track transparency for ENCODE tracks.  </li>
+</ul>
 <p class="normaltext"><strong>12/10/2013</strong></p>
 <ul class="normalnotes">
   <li>Added ENCODE data support. ENCODE data now can be accessed via <a href="http://encode.cepbrowser.org/">http://encode.cepbrowser.org/</a></li>
