@@ -1,5 +1,6 @@
 <?php
 	session_start();
+	require_once('common_func.php');	
 	$in_debug = false;
 	if(strpos(getenv('SERVER_NAME'), 'encode') !== false) {
 		$encodeOn = true;
