@@ -221,3 +221,4 @@ icons/
 
 #Other
 includes/db/
+includes/constants.php

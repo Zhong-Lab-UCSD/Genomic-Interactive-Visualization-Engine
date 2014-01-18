@@ -45,7 +45,7 @@ var gListIsOn = 0;
 var currentGeneName = "";
 var speciesDbName = {};
 var speciesCmnName = {};
-var numSpc = 0;
+var numSpc = 0;				// this is the number of species IN DISPLAY
 var speciesCoor = {};
 var speciesStrand = {};
 var speciesGeneName = {};
@@ -54,7 +54,7 @@ var mouseInGList = false;
 var inFocus = false;
 var maxGeneListHeight;
 
-var spcNum = 0;
+var spcNum = 0;				// this is the total number of species
 var spcNumVisible = spcNum;	// number of species that have their panel expanded
 var spcNumEnabled = 0;
 var spcDbName = new Array();
@@ -197,8 +197,10 @@ function textChanged() {
 		timerOn = 0;
 	}
 	//$("#waiting").html($("#geneName").val());
+	var chromRegex = /^chr\w+(:|\s)/i;
 	if($.trim($("#geneName").val()).length > 1
-		&& $.trim($("#geneName").val()) != querySent) {
+		&& $.trim($("#geneName").val()) != querySent
+		&& !chromRegex.test($("#geneName").val())) {
 			// length is enough for ajax and also not already updated
 			// start the timer to prepare for ajax
 			$("#direct").val("false");
@@ -208,8 +210,9 @@ function textChanged() {
 			} else {
 				sendAjax();
 			}
-	} else if($.trim($("#geneName").val()).length <= 1) {
-		toggleGList(0);
+	} else if($.trim($("#geneName").val()).length <= 1 
+		|| chromRegex.test($("#geneName").val())) {
+			toggleGList(0);
 	}
 }
 
@@ -1240,7 +1243,7 @@ $(document).ready( function () {
 <div id="container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/Logo.gif" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
-    <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene Query</span></div>
+    <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene / Region Query</span></div>
     <div id="selectionHolder">
       <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form();">
         <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
@@ -1256,6 +1259,7 @@ $(document).ready( function () {
 	// TODO: need to do something about the species here
 	// first connect to database and find the number of species
 	$species = $mysqli->query("SELECT * FROM species");
+	$spcinfo = array();
 	while($spcitor = $species->fetch_assoc()) {
 		// get all the species ready
 		//	if(isset($_REQUEST[$spcitor["dbname"]])) { should use this later
@@ -1279,11 +1283,12 @@ $(document).ready( function () {
 				spcReady["<?php echo $spcinfo[$i]["dbname"]; ?>"] = false;
 				spcEncode["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>;
 			  </script>
-                <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkbox" >
-              <label>
-                <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
-                <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
-                [<?php echo $spcinfo[$i]["dbname"]; ?>]</label></div>
+              <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkbox" >
+                <label>
+                  <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
+                  <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
+                  [<?php echo $spcinfo[$i]["dbname"]; ?>]</label>
+              </div>
               <?php
 	}
 	$species->free();
@@ -1299,7 +1304,7 @@ $(document).ready( function () {
       <div style="clear: both"></div>
       <!-- end #selection --> 
     </div>
-    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene Selection</span></div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene / Region Selection</span></div>
     <div id="genelistHolder">
       <div id="genelistContentHolder"> </div>
       <!-- end #genelist -->
@@ -1381,10 +1386,10 @@ $(document).ready( function () {
       <div class="loadingTrackCoverBG"></div>
       <div class="loadingTrackCoverImage"></div>
     </div>
-    <div class="headerNoHover">Tracks &amp; Data
+    <div class="headerNoHover">Tracks &amp; Data 
       <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
         onclick="toggleEncode();">View ENCODE Data</div>
-      <div style="clear: both;"></div>-->
+      <div style="clear: both;"></div>--> 
     </div>
     <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
       <div id="encodeSampleSettings" style="display: inline;">You can also
@@ -1428,8 +1433,6 @@ $(document).ready( function () {
 	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
       <?php
 	}
-	$species->free();
-	require("../includes/db/closedb.php");
 		?>
     </div>
   </div>
@@ -1461,7 +1464,7 @@ function Track() {
 setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
 </script>
   <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
-font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show. 
+font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.
     <div class="header buttons" style="float: right; margin-top: 5px;" onclick="Track();">Do not show in the future</div>
     <div style="clear: both"></div>
   </div>
