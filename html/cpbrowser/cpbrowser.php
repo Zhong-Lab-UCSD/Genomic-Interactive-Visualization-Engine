@@ -1,10 +1,11 @@
 <?php
 require '../../includes/session.php';
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <title>CEpBrowser (Comparative epigenome browser)</title>
 <link href="mainstyles.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
@@ -61,17 +62,17 @@ var isInDownload = false;
 function resize_tbody() {
 	
 	if (document.getElementById("internal_table")) {
-		$('#internal_table').height($(document).height());
+		$('#internal_table').height($(window).height());
 		for(var i = 0; i < spcNum; i++) {
-			$('#' + spcDbName[i]).height(($(document).height() - 20 * spcNum) / spcNumVisible);
+			$('#' + spcDbName[i]).height(($(window).height() - 20 * spcNum) / spcNumVisible);
 		}
 	}
-	$('#trackSettings').height($(document).height() - 50); 
-	$('#trackSettings').width($(document).width() - 50); 
+	$('#trackSettings').height($(window).height() - 50); 
+	$('#trackSettings').width($(window).width() - 50); 
 	$('#trackSettingFrame').height($('#trackSettings').height() - 100); 
 	$('#trackSettingFrame').width($('#trackSettings').width() - 10); 
-	$('#tableBrowser').height($(document).height() - 50); 
-	$('#tableBrowser').width($(document).width() - 50); 
+	$('#tableBrowser').height($(window).height() - 50); 
+	$('#tableBrowser').width($(window).width() - 50); 
 	$('#tableBrowserFrame').height($('#tableBrowser').height() - 100); 
 	$('#tableBrowserFrame').width($('#tableBrowser').width() - 10); 
 }

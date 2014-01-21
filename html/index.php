@@ -1,10 +1,11 @@
 <?php
 require '../includes/session.php';
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="keywords" content="Comparative study,Epigenomics,Epigenetics,Visualization,Epigenome browser" />
 <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs." />
 <title>CEpBrowser (Comparative epigenome browser)</title>
@@ -27,14 +28,6 @@ body {
 }
 -->
 </style>
-<!--[if IE]>
-<style type="text/css"> 
-/* place css fixes for all versions of IE in this conditional comment */
-.twoColLiqLt #sidebar1 { padding-top: 30px; }
-.twoColLiqLt #mainContent { zoom: 1; padding-top: 15px; }
-/* the above proprietary zoom property gives IE the hasLayout it needs to avoid several bugs */
-</style>
-<![endif]-->
 <script language="javascript">
 var left_width = 290;
 var left_value = 0;
@@ -197,7 +190,7 @@ function textChanged() {
 		timerOn = 0;
 	}
 	//$("#waiting").html($("#geneName").val());
-	var chromRegex = /^chr\w+(:|\s)/i;
+	var chromRegex = /^chr\w+\s*(:|\s)/i;
 	if($.trim($("#geneName").val()).length > 1
 		&& $.trim($("#geneName").val()) != querySent
 		&& !chromRegex.test($("#geneName").val())) {
@@ -251,14 +244,12 @@ function sendAjax() {
 		&& $.trim($("#geneName").val()) != querySent) {
 		// send Ajax
 		querySent = $.trim($("#geneName").val());
-		$('#waiting').removeClass('WaitingHide');
-		$('#waiting').addClass('WaitingShow');
+		$('#geneName').addClass('searchFieldBusy');
 		//toggleGList(0);
 		$('#GListResponse').html('<em>Loading...</em>');
 		toggleGList(1);
 		$.getJSON('cpbrowser/jsongenename.php', {name: querySent}, function(data) {
-			$('#waiting').removeClass('WaitingShow');
-			$('#waiting').addClass('WaitingHide');
+			$('#geneName').removeClass('searchFieldBusy');
 			var items = [];
 			var hasItems = true;
 			items.push('<table width="95%" cellspacing="0" cellpadding="0" border="0">');
@@ -301,6 +292,19 @@ function validate_form() {
 		window.alert("You need to either choose a gene or type in part of its name before proceeding.");
 		return false;
 	}
+	var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9]+\s*(-|\s)\s*[0-9]+/i;
+	if(chromRegex.test($("#geneName").val())) {
+		if($("#speciesOrGeneName").val() == "gene") {
+			// should choose a species
+			window.alert("Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field.");
+			return false;
+		}
+	} else if($("#speciesOrGeneName").val() != "gene") {
+		// should input coordinate
+		window.alert("Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species.");
+		return false;
+	}
+	
 	var checked = 0;
 	for(var i = 0; i < document.getElementById("searchform").elements.length; i++) {
 		if(document.getElementById("searchform").elements[i].type == "checkbox" 
@@ -1246,16 +1250,7 @@ $(document).ready( function () {
     <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene / Region Query</span></div>
     <div id="selectionHolder">
       <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form();">
-        <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
-        Gene name:
-        <input name="geneName" id="geneName" type="text" size="15" maxlength="15" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
-        <img align="baseline" src="cpbrowser/images/loading1.gif" id="waiting" class="WaitingHide" />
-        <input style="position:absolute; right: 5px;" name="search" type="submit" value="GO" id="search" />
-        <input type="hidden" id="direct" name="direct" value="false" />
-        <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="margin: 3px 0px; min-height: 60px;">
-          <tr>
-            <td width="18px" bgcolor="#666666"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
-            <td><?php
+        <?php
 	// TODO: need to do something about the species here
 	// first connect to database and find the number of species
 	$species = $mysqli->query("SELECT * FROM species");
@@ -1267,7 +1262,27 @@ $(document).ready( function () {
 	}
 	$num_spc = sizeof($spcinfo);
 	?>
-              <script type="text/javascript">
+        <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
+        <div class="selectBox">
+          <select id="speciesOrGeneName" name="species" disabled>
+            <option value="gene">Gene name</option>
+            <?php
+	for($i = 0; $i < $num_spc; $i++) {
+		?>
+            <option value="<?php echo $spcinfo[$i]["dbname"]; ?>"><?php echo $spcinfo[$i]["dbname"]; ?> region</option>
+            <?php
+	}
+        ?>
+          </select>
+        </div>
+        <input id="search" name="search" type="submit" value="GO" />
+        <input name="geneName" id="geneName" type="text" size="15" maxlength="40" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
+        <div style="clear: both;"></div>
+        <input type="hidden" id="direct" name="direct" value="false" />
+        <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="border: 1px solid #666666; margin: 3px 0px; min-height: 60px;">
+          <tr>
+            <td width="18px" bgcolor="#666666" style="border: 1px solid #666666;"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
+            <td style="border: 1px solid #666666;"><script type="text/javascript">
 		spcNum = <?php echo $num_spc; ?>;
 	</script>
               <?php

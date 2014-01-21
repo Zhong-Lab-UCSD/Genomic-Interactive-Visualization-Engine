@@ -67,9 +67,8 @@
 			//print_r($currentSpeciesGeneArray);
 			$currentRegion[$spcinfo[$i]["dbname"]] = $currentSpeciesGeneArray;
 		}
-		$currentRegion["name"] = $currentRegionName;
 		$currentRegion["alias"] = $currentRegionAlias;
-		$result []= $currentRegion;
+		$result[$currentRegionName]= $currentRegion;
 	}
 		
 	for($i = 0; $i < $num_spc; $i++) {

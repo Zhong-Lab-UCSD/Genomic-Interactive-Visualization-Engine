@@ -4,22 +4,29 @@
 		// new page, doesn't do anything
 	} else {
 		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9]+\s*(-|\s)\s*[0-9]+/i";
-		$isCoordinate = false;
+		$isError = false;
 		if(preg_match($chrPattern, $_REQUEST["geneName"])) {
-			$isCoordinate = true;
-			// ***** Please use require to include the region code *****
-			// ***** Then remove this line
-			echo "<p class=\"formstyle\"> Coordinates currently unsupported. </p>";
-		} else {
+			if($_REQUEST["species"] == "gene") {
+				$isError = true;
+				echo "<p class=\"formstyle\"> Please specify the species of the coordinates. </p>";
+			} else {
+				// ***** Please use require to include the region code *****
+				// ***** Then remove this line
+				$isError = true;
+				echo "<p class=\"formstyle\"> Coordinates currently under development and will be published within the next update. </p>";
+			}
+		} else if($_REQUEST["species"]=="gene") {
 			require('querygenelist.php');
+		} else {
+			$isError = true;
+			echo "<p class=\"formstyle\"> Please specify coordinates in \"chrX:XXXXX-XXXXX\" format or \"chrX XXXXX XXXXX\" format or select \"Gene name\" to query a gene across all species. </p>";
 		}
 		// open database for table list (species)
 ?>
 
 <table width="100%" border="1" cellspacing="0" bordercolor="#666666">
   <?php
-		foreach($result as $currentRegion) {
-			$currentRegionName = $currentRegion["name"];
+		foreach($result as $currentRegionName => $currentRegion) {
 			$currentRegionAlias = $currentRegion["alias"];
 			
   ?>
@@ -135,7 +142,7 @@
 			}
 		} 
 		
-		if(sizeof($result) <= 0 && !$isCoordinate) {
+		if(sizeof($result) <= 0 && !$isError) {
 		  ?>
   <tr>
     <td class="formstyle"> No results match the query &quot;<?php echo $_REQUEST["geneName"]; ?>&quot;. </td>
@@ -143,10 +150,11 @@
   <?php
 		}
 		if(sizeof($result) == 1) {
+			reset($result);
 			?>
   <script language="javascript">
-	updateNavigation("<?php echo $result[0]["name"]; ?>");
-	document.getElementById("<?php echo $result[0]["name"]; ?>").submit();
+	updateNavigation("<?php echo key($result); ?>");
+	document.getElementById("<?php echo key($result); ?>").submit();
 </script>
   <?php
 		}
