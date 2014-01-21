@@ -3,7 +3,7 @@
 	if(empty($_REQUEST)) {
 		// new page, doesn't do anything
 	} else {
-		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9]+\s*(-|\s)\s*[0-9]+/i";
+		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i";
 		$isError = false;
 		if(preg_match($chrPattern, $_REQUEST["geneName"])) {
 			if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
@@ -13,7 +13,7 @@
 				// ***** Please use require to include the region code *****
 				// ***** Then remove this line
 				$isError = true;
-				echo "<p class=\"formstyle\"> Coordinates currently under development and will be published within the next update. </p>";
+				echo "<p class=\"formstyle\"> Support for coordinates is currently under development and will be published within the next update. </p>";
 			}
 		} else if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 			require('querygenelist.php');

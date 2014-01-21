@@ -854,8 +854,8 @@ a:visited {
 }
 .selectBox {
 	overflow: hidden;
-	/*background: #FFFFFF url(images/downarrow.png) no-repeat 98% 50%;*/
-	background: #FFFFFF;
+	background: #FFFFFF url(images/downarrow.png) no-repeat 98% 50%;
+	/*background: #FFFFFF;*/
 	border: 1px solid #999;
 	padding: 0;
 	margin: 2px 1px 2px 0;
