@@ -6,7 +6,7 @@
 		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9]+\s*(-|\s)\s*[0-9]+/i";
 		$isError = false;
 		if(preg_match($chrPattern, $_REQUEST["geneName"])) {
-			if($_REQUEST["species"] == "gene") {
+			if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 				$isError = true;
 				echo "<p class=\"formstyle\"> Please specify the species of the coordinates. </p>";
 			} else {
@@ -15,7 +15,7 @@
 				$isError = true;
 				echo "<p class=\"formstyle\"> Coordinates currently under development and will be published within the next update. </p>";
 			}
-		} else if($_REQUEST["species"]=="gene") {
+		} else if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 			require('querygenelist.php');
 		} else {
 			$isError = true;
