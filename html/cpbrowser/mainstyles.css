@@ -612,10 +612,12 @@ a:visited {
 	border: 1px solid transparent;
 	padding: 0px;
 }
+
 .trackCell input[type="checkbox"] {
 	margin: 0 5px 0 2px;
 	vertical-align: middle;
 }
+
 .trackCell:hover {
 	border: 1px solid #999;
 	background: #EEE;
@@ -623,6 +625,7 @@ a:visited {
 
 .downloadFile {			
 }
+
 .downloadType {
 	display: inline;
 	background: #FFF;
@@ -633,6 +636,7 @@ a:visited {
 	margin-left: 5px;
 	padding: 0px 1px 1px 1px;
 }
+
 .header {
 	/* width: 260px; since this element is floated, a width must be given */
 	margin-top: 5px;
@@ -641,12 +645,15 @@ a:visited {
 	cursor: pointer;
 	color: #FFFFFF;
 }
+
 .header:hover {
 	background-color: #333333;
 }
+
 .header:selected {
  background-color: #333333;
 }
+
 .buttons {
 	padding: 5px;
 	font-weight: bold;
@@ -656,16 +663,20 @@ a:visited {
 	width: auto;
 	border: #FFFFFF solid 1px;
 }
+
 .geneChoice {
 	cursor: pointer;
 	background-color: #FFFFCC;
 }
+
 .geneChoice:hover {
 	background-color: #FFCC66;
 }
+
 .geneChoice:selected {
 	background-color: #FFCC66;
 }
+
 .BoxShow {
 	z-index: 10;
 	border: 1px solid;
@@ -851,6 +862,6 @@ a:visited {
 	width: 90px !important;
 	float: left;
 }
-.searchFieldBusy {
+#searchform input.searchFieldBusy {
 	background: #FFFFFF url(images/loading1.gif) no-repeat 100% 50%;
 }
