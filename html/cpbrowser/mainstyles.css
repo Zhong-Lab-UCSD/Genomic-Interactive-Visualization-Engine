@@ -852,7 +852,5 @@ a:visited {
 	float: left;
 }
 .searchFieldBusy {
-	background-image: url(images/loading1.gif);
-	background-repeat: no-repeat;
-	background-position: 100% 50%;
+	background: #FFFFFF url(images/loading1.gif) no-repeat 100% 50%;
 }
