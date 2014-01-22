@@ -1,6 +1,5 @@
 <?php
 	require("../../includes/db/opendbcpb.php");
-	$directsubmit = false;
 	
 	if($_REQUEST["direct"] == "true") {
 		// TODO: gene selected, directly reload the genes

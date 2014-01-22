@@ -4,6 +4,7 @@
 		// new page, doesn't do anything
 	} else {
 		require("../../includes/db/opendbcpb.php");
+		$directsubmit = false;
 		$spcinfo = array();
 		$spcflag = array();
 		$spcmultiflag = array();
