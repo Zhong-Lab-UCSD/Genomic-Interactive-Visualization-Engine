@@ -130,6 +130,10 @@ class BufferedFile {
 		}			
 	}
 	
+	function tell() {
+		return $this->curr_offset;
+	}
+	
 	function readString($length, $offset = NULL) {
 		if(!is_null($offset)) {
 			$this->seek($offset);

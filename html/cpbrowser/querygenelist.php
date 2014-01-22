@@ -1,23 +1,5 @@
 <?php
 	require("../../includes/db/opendbcpb.php");
-	$spcinfo = array();
-	$spcflag = array();
-	$spcmultiflag = array();
-	// first connect to database and find the number of species
-	$species = $mysqli->query("SELECT * FROM species");
-	while($spcitor = $species->fetch_assoc()) {
-		// get all the species ready
-		if($spcitor["dbname"] == "hg19" || isset($_REQUEST[$spcitor["dbname"]])) { //should use this later
-		//if($spcitor["dbname"] == "hg19" || $spcitor["dbname"] == "mm9") {
-			$spcinfo[] = $spcitor;
-			$spcflag[] = true;
-			$spcmultiflag[] = false;
-		}
-	}
-	
-	$species->free();
-	$num_spc = sizeof($spcinfo);
-//		echo $num_spc;
 	$directsubmit = false;
 	
 	if($_REQUEST["direct"] == "true") {
