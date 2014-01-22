@@ -191,7 +191,8 @@ function textChanged() {
 	}
 	//$("#waiting").html($("#geneName").val());
 	var chromRegex = /^chr\w+\s*(:|\s)/i;
-	if($.trim($("#geneName").val()).length > 1
+	if($("#speciesOrGeneName").val() == "gene"
+		&& $.trim($("#geneName").val()).length > 1
 		&& $.trim($("#geneName").val()) != querySent
 		&& !chromRegex.test($("#geneName").val())) {
 			// length is enough for ajax and also not already updated
@@ -292,7 +293,7 @@ function validate_form() {
 		window.alert("You need to either choose a gene or type in part of its name before proceeding.");
 		return false;
 	}
-	var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9]+\s*(-|\s)\s*[0-9]+/i;
+	var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
 	if(chromRegex.test($("#geneName").val())) {
 		if($("#speciesOrGeneName").val() == "gene") {
 			// should choose a species
@@ -1264,7 +1265,7 @@ $(document).ready( function () {
 	?>
         <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
         <div class="selectBox">
-          <select id="speciesOrGeneName" name="species" disabled>
+          <select id="speciesOrGeneName" name="species">
             <option value="gene">Gene name</option>
             <?php
 	for($i = 0; $i < $num_spc; $i++) {
