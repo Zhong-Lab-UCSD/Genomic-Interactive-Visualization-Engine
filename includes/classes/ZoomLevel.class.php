@@ -1,5 +1,5 @@
 <?php
-require_once("../common_func.php");
+require_once(realpath(dirname(__FILE__) . "/../common_func.php"));
 
 class ZoomLevel {
 	private $ReductionLevel;

@@ -1,9 +1,9 @@
 <?php
-	require('../../includes/session.php');
+	require_once(realpath(dirname(__FILE__) . "/../../includes/session.php"));
 	if(empty($_REQUEST)) {
 		// new page, doesn't do anything
 	} else {
-		require("../../includes/db/opendbcpb.php");
+		require(realpath(dirname(__FILE__) . "/../../includes/db/opendbcpb.php"));
 		$spcinfo = array();
 		$spcflag = array();
 		$spcmultiflag = array();
@@ -89,7 +89,7 @@
 			for($i = 0; $i < $num_spc; $i++) {
 				if($spcflag[$i]) {
 					$currentRegionSpecies = $currentRegion[$spcinfo[$i]["dbname"]][0];
-					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: "";
+					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: NULL;
 					$regionStart = isset($currentRegionSpecies["genestart"])? $currentRegionSpecies["genestart"]: $currentRegionSpecies["start"];
 					$regionEnd = isset($currentRegionSpecies["geneend"])? $currentRegionSpecies["geneend"]: $currentRegionSpecies["end"];
 					$extendedStart = isset($currentRegionSpecies["extendedstart"])? $currentRegionSpecies["extendedstart"]: $currentRegionSpecies["start"];
@@ -99,8 +99,10 @@
 			?>
           <tr class="smallformstyle">
             <td width="20%" valign="top"><?php echo $spcinfo[$i]["commonname"]; ?></td>
-            <td width="80%" valign="top"><span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>"><?php echo $nameInSpc; ?></span><br />
-              <?php 
+            <td width="80%" valign="top">
+              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>"><?php echo $nameInSpc; ?></span>
+			  <?php 
+			  		echo (!is_null($nameInSpc))? "<br />": "";
 					if(!$spcmultiflag[$i]) {
 					?>
               <input name="<?php echo $spcinfo[$i]["dbname"]; ?>" type="hidden" id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"]; ?>" value="<?php echo $chrom . ":" . $extendedStart . "-" . $extendedEnd; ?>" />
@@ -139,7 +141,7 @@
               <?php
 						for($j = 0; $j < sizeof($currentRegion[$spcinfo[$i]["dbname"]]); $j++) {
 							$currentRegionSpecies = $currentRegion[$spcinfo[$i]["dbname"]][$j];
-							$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: "";
+							$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: NULL;
 							$strand = $currentRegionSpecies["strand"];
 			  ?>
               <input type="hidden" id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "names". $j; ?>" value="<?php echo $nameInSpc; ?>" />

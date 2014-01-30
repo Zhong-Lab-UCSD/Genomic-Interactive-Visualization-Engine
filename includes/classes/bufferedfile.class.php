@@ -1,23 +1,59 @@
 <?php
-require_once("../common_func.php");
+require_once(realpath(dirname(__FILE__) . "/../common_func.php"));
 
 class BufferedFile {
 	private $buffer;		// this is the buffer for the file, ordered by blocks
 	private $file;			// this is the handle or curl_resource for the file
 	private $fname;
-	private $is_remote;
+	private $type;
 	private $curr_offset;		// current offset of the file
 	private $file_length;		// length of the file
-	const BLOCKSIZE = 16384;	// block size for buffers
+	private $is_swapped;		// same endian or different endian
+
+	private static $isBigEndian;
 	
-	function __constructor($filename, $isRemote) {
+	public static function checkBigEndian() {
+		$arr = unpack("n", pack("S", 0x0123));
+		self::$isBigEndian = ($arr[1] == 0x0123);
+	}
+	
+	const BLOCKSIZE = 16384;	// block size for buffers
+	const LOCAL = 0;
+	const REMOTE = 1;
+	const MEMORY = 2;
+	
+	function setSwapped($swapped) {
+		$this->is_swapped = $swapped;
+	}
+	
+	function getSwapped() {
+		return $this->is_swapped;
+	}
+	
+	function flipSwapped() {
+		// change "swapped-ness"
+		$this->is_swapped = !$this->is_swapped;
+		return $this->is_swapped;
+	}
+	
+	function getFileName() {
+		return $this->fname;
+	}
+	
+	function getFileLength() {
+		return $this->file_length;
+	}
+	
+	function __construct($filename, $ftype, $isSwapped = false) {
 		$this->curr_offset = 0;
 		$this->fname = $filename;
-		$this->is_remote = $isRemote;
+		$this->type = $ftype;
 		$this->buffer = array();
-		if($this->is_remote) {
+		$this->is_swapped = $isSwapped;
+		if($this->type == self::REMOTE) {
 			$this->file = curl_init();
 			curl_setopt($this->file, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+			error_log($this->fname);
 			curl_setopt($this->file, CURLOPT_URL, $this->fname);
 			curl_setopt($this->file, CURLOPT_FOLLOWLOCATION, 1);
 			// get the file length first
@@ -30,18 +66,23 @@ class BufferedFile {
 			// file length get
 			curl_setopt($this->file, CURLOPT_HEADER, 0);
 			curl_setopt($this->file, CURLOPT_NOBODY, 0);
-		} else {
+		} else if($this->type == self::LOCAL) {
 			$this->file = fopen($this->fname, "rb");
 			fseek($this->file, 0, SEEK_END);
 			$this->file_length = ftell($this->file);
 			fseek($this->file, $this->curr_offset);
+		} else {
+			// is memory, data is in $filename
+			$this->buffer[0] = $filename;
+			$this->fname = "Memory";
+			$this->file_length = strlen($this->buffer[0]);
 		}
 	}
 	
-	function __destructor() {
-		if($this->is_remote) {
+	function __destruct() {
+		if($this->type == self::REMOTE) {
 			curl_close($this->file);
-		} else {
+		} else if($this->type == self::LOCAL) {
 			fclose($this->file);
 		}
 	}
@@ -51,14 +92,14 @@ class BufferedFile {
 			$end = $this->file_length;
 		}
 		if($end <= $begin || $begin < 0) return NULL;
-		if($this->is_remote) {
+		$result = "";
+		if($this->type == self::REMOTE) {
 			// this is a remote file
-			// first check if the block of data is already in buffer
 			// need to convert offset and length to indices
 			$range = $begin . '-' . ($end - 1);
 			curl_setopt($this->file, CURLOPT_RANGE, $range);
 			$result = curl_exec($this->file);
-		} else {
+		} else if($this->type == self::LOCAL) {
 			fseek($this->fname, $begin);
 			$result = fread($this->fname, $end - $begin);
 		}
@@ -68,8 +109,11 @@ class BufferedFile {
 	private function checkBuffer($begin, $end) {
 		// check whether the location from $begin to $end are already there
 		// in buffer, if not, get the data from file and replenish buffer
-		$begin_index = (int) ($begin / BufferedFile::BLOCKSIZE);
-		$end_index = (int) ($end / BufferedFile::BLOCKSIZE) + 1;
+		if($this->type == self::MEMORY) {
+			return;
+		}
+		$begin_index = (int) ($begin / self::BLOCKSIZE);
+		$end_index = (int) ($end / self::BLOCKSIZE) + 1;
 		$array_empty = array();
 		$last_empty_begin = -1;
 		$last_empty_length = 0;
@@ -95,12 +139,12 @@ class BufferedFile {
 		}
 		// now retrieve all empty regions in $array_empty
 		foreach($array_empty as $start => $length) {
-			$tempBuffer = $this->readFromFile($start * BufferedFile::BLOCKSIZE,
-				($start + $length) * BufferedFile::BLOCKSIZE);
-			$this->buffer[$start] = substr($tempBuffer, 0, BufferedFile::BLOCKSIZE);
+			$tempBuffer = $this->readFromFile($start * self::BLOCKSIZE,
+				($start + $length) * self::BLOCKSIZE);
+			$this->buffer[$start] = substr($tempBuffer, 0, self::BLOCKSIZE);
 			for($i = 1; $i < $length; $i++) {
-				$tempBuffer = substr($tempBuffer, BufferedFile::BLOCKSIZE);
-				$this->buffer[$start + $i] = substr($tempBuffer, 0, BufferedFile::BLOCKSIZE);
+				$tempBuffer = substr($tempBuffer, self::BLOCKSIZE);
+				$this->buffer[$start + $i] = substr($tempBuffer, 0, self::BLOCKSIZE);
 			}
 		}
 	}
@@ -111,14 +155,19 @@ class BufferedFile {
 		if($this->curr_offset + $length > $this->file_length) {
 			$length = $this->file_length - $this->curr_offset;
 		}
-		if($length <= 0) return "";
-		$this->checkBuffer($this->curr_offset, $this->curr_offset + $length);
-		$bufferIndex = (int) ($this->curr_offset / BufferedFile::BLOCKSIZE);
-		$result = substr($this->buffer[$bufferIndex], 
-			$this->curr_offset - $bufferIndex * BufferedFile::BLOCKSIZE, $length);
-		while(strlen($result) < $length) {
-			$bufferIndex++;
-			$result .= substr($this->buffer[$bufferIndex], 0, $length - strlen($result));
+		$result = "";
+		if($length <= 0) return $result;
+		if($this->type == self::MEMORY) {
+			$result = substr($this->buffer[0], $this->curr_offset, $length);
+		} else {
+			$this->checkBuffer($this->curr_offset, $this->curr_offset + $length);
+			$bufferIndex = (int) ($this->curr_offset / self::BLOCKSIZE);
+			$result = substr($this->buffer[$bufferIndex], 
+				$this->curr_offset - $bufferIndex * self::BLOCKSIZE, $length);
+			while(strlen($result) < $length) {
+				$bufferIndex++;
+				$result .= substr($this->buffer[$bufferIndex], 0, $length - strlen($result));
+			}
 		}
 		$this->curr_offset += $length;
 		return $result;
@@ -146,38 +195,51 @@ class BufferedFile {
 		return $arr[1];
 	}
 	
-	function readBits16($isSwapped) {
-		// if not swapped, should be Big Endian
-		$format = "n";
-		if($isSwapped) {
-			// Little Endian
-			$format = "v";
+	function readBits16() {
+		// if not swapped
+		$str = $this->readString(2);
+		if($this->is_swapped) {
+			// Different Endian
+			$str = strrev($str);
 		}
-		$arr = unpack($format, $this->readString(2));
+		$arr = unpack("S", $str);
 		return $arr[1];
 	}
 	
-	function readBits32($isSwapped) {
-		// if not swapped, should be Big Endian
-		$format = "N";
-		if($isSwapped) {
-			// Little Endian
-			$format = "V";
+	function readBits32() {
+		// if not swapped
+		$str = $this->readString(4);
+		if($this->is_swapped) {
+			// Different Endian
+			$str = strrev($str);
 		}
-		$arr = unpack($format, $this->readString(4));
+		$arr = unpack("L", $str);
 		return $arr[1];
 	}
 	
-	function readBits64($isSwapped) {
-		// if not swapped, should be Big Endian
+	function readBits64() {
+		// Big Endian
 		$format = "Nb/Na";
-		if($isSwapped) {
-			// Little Endian
+		if($this->is_swapped == self::$isBigEndian) {
+			// Different Endian
 			$format = "Va/Vb";
 		}
 		$arr = unpack($format, $this->readString(8));
         return $arr['a'] + ($arr['b'] << 32);
 	}
 	
+	function readFloat() {
+		// read a 4B float
+		$str = $this->readString(4);
+		if($this->is_swapped) {
+			// Different Endian
+			$str = strrev($str);
+		}
+		$arr = unpack("f", $str);
+		return $arr[1];
+	}
 }
+
+BufferedFile::checkBigEndian();
+
 ?>

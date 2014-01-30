@@ -1,5 +1,5 @@
 <?php
-	require("../../includes/db/opendbcpb.php");
+	require(realpath(dirname(__FILE__) . "/../../includes/db/opendbcpb.php"));
 	$filenamearray = explode("__", $mysqli->real_escape_string($_REQUEST['file']));
 	$filename = $filenamearray[1];
 	$dbname = $filenamearray[0];
@@ -10,7 +10,7 @@
 	if($generesult->num_rows <= 0) {
 		// The filename is either tampered or something else
 		header("HTTP/1.0 404 Not Found");
-		include("error-docs/error-404.html");
+		include(realpath(dirname(__FILE__) . "/error-docs/error-404.html"));
 	} else {
 		$resulttoken = $generesult->fetch_assoc();
 		//error_log($resulttoken['file']);
@@ -27,5 +27,5 @@
 		}
 	}
 	$generesult->free();
-	require("../../includes/db/closedb.php");
+	require(realpath(dirname(__FILE__) . "/../../includes/db/closedb.php"));
 ?>

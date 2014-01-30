@@ -1,5 +1,5 @@
 <?php
-require '../includes/session.php';
+require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
