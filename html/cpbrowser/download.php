@@ -1,5 +1,6 @@
 <?php
-	require(realpath(dirname(__FILE__) . "/../../includes/db/opendbcpb.php"));
+	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+	$mysqli = connectCPB();
 	$filenamearray = explode("__", $mysqli->real_escape_string($_REQUEST['file']));
 	$filename = $filenamearray[1];
 	$dbname = $filenamearray[0];
@@ -27,5 +28,5 @@
 		}
 	}
 	$generesult->free();
-	require(realpath(dirname(__FILE__) . "/../../includes/db/closedb.php"));
+	$mysqli->close();
 ?>

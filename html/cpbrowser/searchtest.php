@@ -10,25 +10,37 @@
 <script language="javascript">
 function validate_form() {
 	// Now is the real Ajax part.
-	var postdata = {};
-//	speciesDbName = new Array();
-	$.each($('#searchform').serializeArray(), function(i, field) {
-//		if($('#' + field.name).is("checkbox")) {
-//			speciesDbName.push(field.name);
-//		}
-		postdata[field.name] = field.value;
+	if($("#allDataSingleRegion").val() != "on") {
+		var postdata = {};
+	//	speciesDbName = new Array();
+		$.each($('#searchform').serializeArray(), function(i, field) {
+	//		if($('#' + field.name).is("checkbox")) {
+	//			speciesDbName.push(field.name);
+	//		}
+			postdata[field.name] = field.value;
+			});
+		$.post("regionsearch.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
+			$("#contentHolder").html(data);
 		});
-	$.post("regionsearch.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
-		$("#contentHolder").html(data);
-	});
-	return false;
+		return false;
+	} else {
+		return true;
+	}
+}
+
+function downloadAll() {
+	// Now is the real Ajax part.
+//	speciesDbName = new Array();
+	$("#allDataSingleRegion").val("on");
+	$("#searchform").submit();
+	$("#allDataSingleRegion").val("off");
 }
 
 </script>
 </head>
 
 <body>
-<form id="searchform" name="searchform" method="post" action="" onsubmit="return validate_form();">
+<form target="_blank" id="searchform" name="searchform" method="post" action="regionsearch.php" onsubmit="return validate_form();">
   <p>
     <label for="wigfile">wigFile</label>
     <br />
@@ -41,8 +53,10 @@ http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHistone/wg
   </label>
   <textarea name="region" id="region" cols="100" rows="5">chr1:12345678-12456789</textarea>
   </p>
-  <p><input type="submit" name="submit" id="submit" value="Submit" />
-  </p>
+  <p>
+    <input name="allDataSingleRegion" type="hidden" id="allDataSingleRegion" value="off" />
+    <input type="submit" />
+    <input type="button" value="Download" onclick="downloadAll();" /></p>
 </form>
 <div id="contentHolder"></div>
 </body>

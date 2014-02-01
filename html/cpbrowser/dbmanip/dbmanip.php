@@ -57,9 +57,10 @@ function setEnable(numbers) {
   </div>
   <div style="float: left; overflow: auto;">
     <?php
+	require_once(realpath(dirname(__FILE__) . '/../../../includes/common_func.php'));
 	if(isset($_POST['db'])) {
 		//echo $_POST['editflag']."<br />";
-		require("../../../includes/db/opendbgb.php");
+		$mysqli = connectGB($_POST['db']);
 		if(isset($_POST['editflag'])) {
 			// edit the content
 			for($j=1; $j <= $_POST['num_of_tracks']; $j++) {
@@ -167,7 +168,7 @@ function setEnable(numbers) {
   </div>
 </form>
 <?php
-		require("../../../includes/db/closedb.php");
+		$mysqli->close();
 	}
 ?>
 </body>

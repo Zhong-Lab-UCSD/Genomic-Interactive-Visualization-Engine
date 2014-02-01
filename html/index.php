@@ -1241,7 +1241,7 @@ $(document).ready( function () {
 
 </script>
 <?php
-	require("../includes/db/opendbcpb.php");
+	$mysqli = connectCPB();
 ?>
 </head>
 <body class="twoColLiqLt" onresize="resize_tbody();">
@@ -1308,7 +1308,7 @@ $(document).ready( function () {
               <?php
 	}
 	$species->free();
-	require("../includes/db/closedb.php");
+	$mysqli->close();
 		?></td>
           </tr>
         </table>

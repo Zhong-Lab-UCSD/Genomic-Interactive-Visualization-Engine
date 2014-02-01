@@ -4,6 +4,23 @@ require_once(realpath(dirname(__FILE__) . "/constants.php"));
 ini_set("memory_limit", "2048M");
 ini_set('max_execution_time', 300);
 
+function connectCPB($db = 'compbrowser') {
+	$mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS, $db);
+	if($mysqli->connect_errno) {
+		die("Connect failed:" . $mysqli->connect_error);
+	}
+	return $mysqli;
+}
+
+function connectGB($db) {
+	$mysqli = new mysqli(GB_HOST, GB_USER, GB_PASS, $db);
+	if($mysqli->connect_errno) {
+		die("Connect failed:" . $mysqli->connect_error);
+	}
+	return $mysqli;
+}
+
+
 function byteSwap32($data) {
 	$arr = unpack("V", pack("N", $data));
 	return $arr[1];

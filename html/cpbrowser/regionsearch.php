@@ -1,20 +1,48 @@
 <?php
 require_once (realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
-$region_arr = explode("\n", trim($_REQUEST["region"]));
-$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
-$wigFileHandle_arr = array();
-foreach($wigFile_arr as $wigfile) {
-	$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
-}
-foreach($region_arr as $region) {
-	echo $region . "<br />\n";
-	error_log($region);
-	$regions = array(new ChromRegion(trim($region)));
-	error_log($regions[0]);
-	foreach($wigFileHandle_arr as $wigFileHandle) {
-		$result = $wigFileHandle->getSummaryStats($regions, 1);
-		echo $result[0][0] . "<br />";
+if($_REQUEST["allDataSingleRegion"] == "on") {
+	$region_arr = explode("\n", trim($_REQUEST["region"]));
+	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
+	$wigFileHandle_arr = array();
+	foreach($wigFile_arr as $wigfile) {
+		$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
 	}
-	echo "<br />\n";
+	header("Content-Disposition: attachment; filename=\"result.txt\"");
+	header("Content-Type: application/octet-stream");
+	header("Connection: close");
+	echo "#IS_COVERED\tVALUE\r\n";
+	foreach($region_arr as $region) {
+		echo "#" . $region . "\r\n";
+		error_log($region);
+		$region = new ChromRegion(trim($region));
+		error_log($regions[0]);
+		foreach($wigFileHandle_arr as $wigFileHandle) {
+			echo "#" . $wigFileHandle->getFileName() . "\r\n";
+			$result = $wigFileHandle->getAllSummaryStats($region, 1);
+			foreach($result as $summary) {
+				echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
+			}
+			echo "\r\n";
+		}
+		echo "\r\n";
+	}
+} else {
+	$region_arr = explode("\n", trim($_REQUEST["region"]));
+	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
+	$wigFileHandle_arr = array();
+	foreach($wigFile_arr as $wigfile) {
+		$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
+	}
+	foreach($region_arr as $region) {
+		echo $region . "<br />\n";
+		error_log($region);
+		$region = new ChromRegion(trim($region));
+		error_log($regions[0]);
+		foreach($wigFileHandle_arr as $wigFileHandle) {
+			$result = $wigFileHandle->getSummaryStatsSingleRegion($region, 1);
+			echo $result[0] . "<br />";
+		}
+		echo "<br />\n";
+	}
 }
 ?>

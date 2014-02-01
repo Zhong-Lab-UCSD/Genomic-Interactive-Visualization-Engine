@@ -3,7 +3,7 @@
 	if(empty($_REQUEST)) {
 		// new page, doesn't do anything
 	} else {
-		require(realpath(dirname(__FILE__) . "/../../includes/db/opendbcpb.php"));
+		$mysqli = connectCPB();
 		$spcinfo = array();
 		$spcflag = array();
 		$spcmultiflag = array();
@@ -21,7 +21,7 @@
 		$species->free();
 		$num_spc = sizeof($spcinfo);
 	//		echo $num_spc;
-		require("../../includes/db/closedb.php");
+		$mysqli->close();
 		
 		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i";
 		$isError = false;

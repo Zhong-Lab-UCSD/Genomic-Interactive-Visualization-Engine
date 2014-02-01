@@ -1,9 +1,9 @@
 <?php
 	// First get an array of posts, showing the database and trackDb name
-	require('../../includes/session.php');	
+	require_once(realpath(dirname(__FILE__) . "/../../includes/session.php"));	
 	// notice that this needs to be commented out after debug to improve performance
 	
-	require("../../includes/db/opendbcpb.php");
+	$mysqli = connectCPB();
 	// open the genome browser database
 	
 	$generesult = $mysqli->query("SELECT * FROM (SELECT * FROM `alias` WHERE `alias` LIKE '" 
@@ -29,6 +29,6 @@
 	echo json_encode($result);
 	$generesult->free();
 	
-	require("../../includes/db/closedb.php");
+	$mysqli->close();
 
 ?>

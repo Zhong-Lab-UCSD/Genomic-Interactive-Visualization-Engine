@@ -23,6 +23,10 @@ class BigWigFile  {
 	private $chromNameID; 			// associative array for chrom name and ID
 	private $unzoomedCir;			// unzoomed cirTree
 	
+	function getFileName() {
+		return $this->fileHandle->getFileName();
+	}
+	
 	private function readBasicParameters() {
 		// read basic parameters
 		// check isSwapped
@@ -131,6 +135,7 @@ class BigWigFile  {
 				}
 				$interval = next($intervalList);
 			}
+			$interval = prev($intervalList);
 		}
 		return $summary;
 	}
@@ -258,6 +263,24 @@ class BigWigFile  {
 		return $result;
 	}
 	
+	function getSummaryStatsSingleRegion($region, $summarySize) {
+		if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
+			throw new Exception("Chromosome " . $region->chr . " is invalid.");
+		}
+		$chromIx = $this->chromNameID[$region->chr][ChromBPT::ID];
+		
+		$zoomLevel = ($region->end - $region->start) / $summarySize / 2;
+		$zoomLevel = $zoomLevel < 0? 0: $zoomLevel;
+		
+		// get the zoom level
+		$zoom = $this->bestZoom($zoomLevel);
+		if(is_null($zoom)) {
+			return $this->getSummaryArrayFromFull($chromIx, $region->start, $region->end, $summarySize);
+		} else {
+			return $this->getSummaryArrayFromZoom($zoom, $chromIx, $region->start, $region->end, $summarySize);
+		}
+	}
+	
 	function getSummaryStats($regions, $summarySize) {
 		// $regions is an array of ChromRegion, the return value will also be an array of summary stats 
 		// (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
@@ -265,23 +288,14 @@ class BigWigFile  {
 		// also the zoom part will be handled here (not now)
 		$summaryList = array();
 		foreach($regions as $region) {
-			if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
-				throw new Exception("Chromosome " . $region->chr . " is invalid.");
-			}
-			$chromIx = $this->chromNameID[$region->chr][ChromBPT::ID];
-			
-			$zoomLevel = ($region->end - $region->start) / $summarySize / 2;
-			$zoomLevel = $zoomLevel < 0? 0: $zoomLevel;
-			
-			// get the zoom level
-			$zoom = $this->bestZoom($zoomLevel);
-			if(is_null($zoom)) {
-				$summaryList[] = $this->getSummaryArrayFromFull($chromIx, $region->start, $region->end, $summarySize);
-			} else {
-				$summaryList[] = $this->getSummaryArrayFromZoom($zoom, $chromIx, $region->start, $region->end, $summarySize);
-			}
+			$summaryList[] = $this->getSummaryStatsSingleRegion($region, $summarySize);
 		}
 		return $summaryList;
+	}
+	
+	function getAllSummaryStats($region) {
+		// get all data from a single region
+		return $this->getSummaryStatsSingleRegion($region, $region->end - $region->start);
 	}
 	
 	function __construct($fpathname, $isRemote) {

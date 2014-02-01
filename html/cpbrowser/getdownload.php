@@ -1,5 +1,6 @@
 <?php
-	require("../../includes/db/opendbcpb.php");
+	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+	$mysqli = connectCPB();
 	$result = array();
 	foreach($_REQUEST as $key=>$val) {
 		error_log($key . "||" . $val);
@@ -21,5 +22,5 @@
 	}
 	echo json_encode($result);
 	$generesult->free();
-	require("../../includes/db/closedb.php");
+	$mysqli->close();
 ?>
