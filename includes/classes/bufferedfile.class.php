@@ -53,7 +53,7 @@ class BufferedFile {
 		if($this->type == self::REMOTE) {
 			$this->file = curl_init();
 			curl_setopt($this->file, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
-			error_log($this->fname);
+			//error_log($this->fname);
 			curl_setopt($this->file, CURLOPT_URL, $this->fname);
 			curl_setopt($this->file, CURLOPT_FOLLOWLOCATION, 1);
 			// get the file length first
@@ -61,6 +61,9 @@ class BufferedFile {
 			curl_setopt($this->file, CURLOPT_HEADER, 1);
 			curl_setopt($this->file, CURLOPT_RETURNTRANSFER, 1);
 			curl_exec($this->file);
+			if(curl_errno($this->file)) {
+				throw new Exception($this->fname . " is not accessible! Curl error: " . curl_error($this->file));
+			}
 			$this->file_length = curl_getinfo($this->file, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
 			
 			// file length get
@@ -68,6 +71,10 @@ class BufferedFile {
 			curl_setopt($this->file, CURLOPT_NOBODY, 0);
 		} else if($this->type == self::LOCAL) {
 			$this->file = fopen($this->fname, "rb");
+			if(!$this->file) {
+				$last_error = error_get_last();
+				throw new Exception($this->fname . " is not accessible! Fopen error: " . $last_error['message']);
+			}
 			fseek($this->file, 0, SEEK_END);
 			$this->file_length = ftell($this->file);
 			fseek($this->file, $this->curr_offset);

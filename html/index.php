@@ -401,7 +401,7 @@ function updateNavigation(formid) {
 		}
 		speciesGeneName.push(currentGName);
 		var naviStrEach = $('#spcNaviTemplate').html();
-		naviStrEach = naviStrEach.replace(/spcGeneName/g, speciesGeneName[i] + " (" + (speciesDbStrand[i] == "1"? "+": "-") + ")").replace(/spcDbName/g, speciesDbName[i]).replace(/spcCNm/g, speciesCmnName[i]).replace(/spcCoor/g, speciesDbCoor[i]);
+		naviStrEach = naviStrEach.replace(/spcGeneName/g, speciesGeneName[i] + " (" + (speciesDbStrand[i] == "1"? "+": "-") + ")").replace(/spcDbName/g, speciesDbName[i]).replace(/spcCmnName/g, speciesCmnName[i]).replace(/spcCoor/g, speciesDbCoor[i]);
 		naviStr += naviStrEach;
 	}
 	
@@ -665,7 +665,7 @@ function setTrackReady(index) {
 				uniqTemp = uniqTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
 				$('#uniqueHolder').append(uniqTemp);
 				
-				var uniqueHolderId = '#' + spcDbName[i] + 'Holder';
+				var uniqueHolderId = '#' + spcDbName[i] + 'TableHolder';
 				
 				if(uniTracks[i].length > 0) {
 					items = [];
@@ -735,7 +735,7 @@ function setTrackReady(index) {
 				uniqTemp = uniqTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
 				$('#uniqueEncodeHolder').append(uniqTemp);
 				
-				var uniqueHolderId = '#' + spcDbName[i] + 'EncodeHolder';
+				var uniqueHolderId = '#' + spcDbName[i] + 'EncodeTableHolder';
 				
 				if(uniTracksEncode[i].length > 0) {
 					items = [];
@@ -862,7 +862,7 @@ function updateSampleCheckbox() {
 		}
 	}
 	for(var s = 0; s < uniTracksSampleType.length; s++) {
-		if(isEncodeOn && !spcEncode[spcDbName[s]]) {
+		if(!spcEncode[spcDbName[s]]) {
 			continue;
 		}
 		for(var sample in uniTracksSampleType[s]) {
@@ -949,29 +949,28 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 		} else {
 			sendData = cmnTracksEncodeTableNames[cmnName];
 		}
-		$.getJSON('cpbrowser/getdownload.php', sendData,
-			function(data) {
-				// The return will have basically one key (spcDbName+'__'+tableName), 
-				// and one value (shortLabel + '||' + type + '||' + longLabel) to display
-				// no super track will be returned (will be filtered by jsondownload.php)
-				// also returns will be ordered by species for grouping
-				var currentDb = "";
-				var items = [];
-				$.each(data, function(key, val) {
-					var db = key.split("__")[0];
-					if(currentDb != db) {
-						// db has changed
-						items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
-						currentDb = db;
-					}
-					// split the value into shortlabel, type, and long label
-					values = val.split("||");
-					// put the short label into display and key in the link
-					items.push("<div style='padding: 0px 8px;'><a class='downloadFile' href='cpbrowser/download.php?file="
-						+ key + "' title='"
-						+ values[2] + "'>" 
-						+ values[0] + "</a> <div class='downloadType'>"
-						+ values[1] + "</div></div>");
+		$.getJSON('cpbrowser/getdownload.php', sendData, function(data) {
+			// The return will have basically one key (spcDbName+'__'+tableName), 
+			// and one value (shortLabel + '||' + type + '||' + longLabel) to display
+			// no super track will be returned (will be filtered by jsondownload.php)
+			// also returns will be ordered by species for grouping
+			var currentDb = "";
+			var items = [];
+			$.each(data, function(key, val) {
+				var db = key.split("__")[0];
+				if(currentDb != db) {
+					// db has changed
+					items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
+					currentDb = db;
+				}
+				// split the value into shortlabel, type, and long label
+				values = val.split("||");
+				// put the short label into display and key in the link
+				items.push("<div style='padding: 0px 8px;'><a class='downloadFile' href='cpbrowser/download.php?file="
+					+ key + "' title='"
+					+ values[2] + "'>" 
+					+ values[0] + "</a> <div class='downloadType'>"
+					+ values[1] + "</div></div>");
 			});
 			$('#downloadContent').html(items.join(''));
 		});
@@ -1085,7 +1084,8 @@ function updateTracks() {
 		
 		var uniControls = document.getElementById(db + 'EncodeHolder').getElementsByTagName('input');
 		for(var i = 0; i < uniControls.length; i++) {
-			var target = conDoc.getElementById(uniControls[i].id);
+			var uniControlIDs = uniControls[i].id.split('__');
+			var target = conDoc.getElementById(uniControlIDs[1]);
 			if(target) {
 				target.value = (uniControls[i].checked? 'dense': 'hide');
 			} else {
@@ -1230,7 +1230,7 @@ $(document).ready( function () {
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-3695776-4']);
+  _gaq.push(['_setAccount', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>']);
   _gaq.push(['_trackPageview']);
 
   (function() {
@@ -1370,7 +1370,7 @@ $(document).ready( function () {
     </div>
     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed; height: 50px;">
       <tr>
-        <td rowspan="3" scope="col" class="speciesLead"><span>spcCNm</span></td>
+        <td rowspan="3" scope="col" class="speciesLead"><span>spcCmnName</span></td>
         <td align="center" valign="middle" scope="col" style="padding: 2px;"><span id="spcDbNameCoor">spcCoor</span></td>
       </tr>
       <tr>
@@ -1489,11 +1489,11 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
 ?>
   <div style="display: none;" id="uniqueTemplate">
     <div class="speciesTrackHeader">spcCmnName</div>
-    <div class="trackHolder" id="spcDbNameHolder"></div>
+    <div class="trackHolder" id="spcDbNameTableHolder"></div>
   </div>
   <div style="display: none;" id="uniqueEncodeTemplate">
     <div class="speciesTrackHeader">spcCmnName</div>
-    <div class="trackHolder" id="spcDbNameEncodeHolder"></div>
+    <div class="trackHolder" id="spcDbNameEncodeTableHolder"></div>
   </div>
   <div style="display: none;" id="uniqueSampleEncodeTemplate">
     <div class="speciesTrackHeader">spcCmnName</div>

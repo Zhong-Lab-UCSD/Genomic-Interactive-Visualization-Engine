@@ -7,6 +7,10 @@ class ChromRegion {
 	public $start;
 	public $end;
 	
+	function getLength() {
+		return $this->end - $this->start;
+	}
+	
 	function __construct($region) {
 		$tokens = preg_split("/\s*(:|-|\s)\s*/i", $region);
 		$this->chr = trim($tokens[0]);

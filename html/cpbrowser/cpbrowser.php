@@ -11,7 +11,7 @@ require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-3695776-4']);
+  _gaq.push(['_setAccount', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>']);
   _gaq.push(['_trackPageview']);
 
   (function() {

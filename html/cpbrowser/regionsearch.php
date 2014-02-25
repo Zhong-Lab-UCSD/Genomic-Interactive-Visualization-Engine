@@ -5,7 +5,11 @@ if($_REQUEST["allDataSingleRegion"] == "on") {
 	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
 	$wigFileHandle_arr = array();
 	foreach($wigFile_arr as $wigfile) {
-		$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
+		try {
+			$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
+		} catch (Exception $e) {
+			error_log($e->getMessage());
+		}
 	}
 	header("Content-Disposition: attachment; filename=\"result.txt\"");
 	header("Content-Type: application/octet-stream");
@@ -13,31 +17,35 @@ if($_REQUEST["allDataSingleRegion"] == "on") {
 	echo "#IS_COVERED\tVALUE\r\n";
 	foreach($region_arr as $region) {
 		echo "#" . $region . "\r\n";
-		error_log($region);
+		//error_log($region);
 		$region = new ChromRegion(trim($region));
-		error_log($regions[0]);
+		//error_log($regions[0]);
 		foreach($wigFileHandle_arr as $wigFileHandle) {
 			echo "#" . $wigFileHandle->getFileName() . "\r\n";
 			$result = $wigFileHandle->getAllSummaryStats($region, 1);
 			foreach($result as $summary) {
 				echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
 			}
-			echo "\r\n";
+			//echo "\r\n";
 		}
-		echo "\r\n";
+		//echo "\r\n";
 	}
 } else {
 	$region_arr = explode("\n", trim($_REQUEST["region"]));
 	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
 	$wigFileHandle_arr = array();
 	foreach($wigFile_arr as $wigfile) {
-		$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
+		try {
+			$wigFileHandle_arr[] = new BigWigFile(trim($wigfile), true);
+		} catch (Exception $e) {
+			error_log($e->getMessage());
+		}
 	}
 	foreach($region_arr as $region) {
 		echo $region . "<br />\n";
-		error_log($region);
+		//error_log($region);
 		$region = new ChromRegion(trim($region));
-		error_log($regions[0]);
+		//error_log($regions[0]);
 		foreach($wigFileHandle_arr as $wigFileHandle) {
 			$result = $wigFileHandle->getSummaryStatsSingleRegion($region, 1);
 			echo $result[0] . "<br />";

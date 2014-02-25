@@ -6,6 +6,10 @@ class ChromIDRegion {
 	public $start;
 	public $end;
 	
+	function getLength() {
+		return $this->end - $this->start;
+	}
+	
 	function __construct($chromID, $start, $end) {
 		$this->chromID = $chromID;
 		$this->start = $start;
