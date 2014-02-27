@@ -1,5 +1,5 @@
 <?php
-require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 ?>
 <!doctype html>
 <html>
