@@ -25,12 +25,7 @@ require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 
 function resize_tbody() {
 	
-	if (document.getElementById("internal_table")) {
-		$('#internal_table').height($(window).height());
-		for(var i = 0; i < spcNum; i++) {
-			$('#' + spcDbName[i]).height(($(window).height() - 20 * spcNum) / spcNumVisible);
-		}
-	}
+	$('mm10').height($(window).height() - 3);
 	$('#trackSettings').height($(window).height() - 20); 
 	$('#trackSettings').width($(window).width() - 44); 
 	$('#trackSettingFrame').height($('#trackSettings').height() - 90); 
