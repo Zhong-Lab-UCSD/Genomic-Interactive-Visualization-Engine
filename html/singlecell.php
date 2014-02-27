@@ -20,7 +20,7 @@ require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
   })();
 
 </script>
-<script type="text/javascript" src="js/jquery-1.7.js"></script>
+<script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
 <script language="javascript">
 
 function resize_tbody() {
