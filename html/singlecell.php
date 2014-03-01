@@ -25,10 +25,10 @@ require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 
 function resize_tbody() {
 	
-	$('mm10').height($(window).height() - 3);
+	$('#mm10').height($(window).height() - 3);
 	$('#trackSettings').height($(window).height() - 20); 
 	$('#trackSettings').width($(window).width() - 44); 
-	$('#trackSettingFrame').height($('#trackSettings').height() - 90); 
+	$('#trackSettingFrame').height($('#trackSettings').height() - 100); 
 	$('#trackSettingFrame').width($('#trackSettings').width() - 6); 
 }
 
@@ -40,6 +40,26 @@ function trackSettingsOnLoad() {
 
 function trackSettingSubmit(db) {
 	hidePanel('trackSettings');
+}
+
+function toggleHeaderText(header) {
+	if($('#' + header).html() == '≪') {
+		$('#' + header).html('≫');
+	} else {
+		$('#' + header).html('≪');
+	}
+}
+
+function hideHeaderText(header) {
+	$('#' + header).html('≪');
+}
+
+function showHeaderText(header) {
+	$('#' + header).html('≫');
+}
+
+function hidePanel(panel) {
+	$('#' + panel).fadeOut('fast', hideHeaderText(panel + 'Indicator'));
 }
 
 function togglePanel(panel) {
@@ -55,7 +75,7 @@ $(document).ready( function () {
 <body>
 <iframe id="mm10" name="mm10" class="cpbrowserFrame"
          src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=mouse&db=mm10&pix=850&Submit=submit&hgControlOnly=off&hgSingleCell=on&hgsid=" . ($_SESSION['ID']*10) . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": "");?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Single Cell Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=mouse&db=mm10&position=chr17%3A35%2C504%2C846-35%2C511%2C964&pix=850&Submit=submit&hgControlOnly=off&hgSingleCell=on&hgsid=" . ($_SESSION['ID']*10) . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": "");?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Single Cell Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
 <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
   <div class="rotated">Track Info &amp; Settings</div>
 </div>

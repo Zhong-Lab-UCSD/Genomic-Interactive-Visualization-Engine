@@ -1,4 +1,10 @@
 <?php
+if(strpos(getenv('SERVER_NAME'), 'singlecell') !== false) {
+	// is single cell, redirect to singlecell.php
+	header("HTTP/1.1 301 Moved Permanently"); 
+	header("Location: ./singlecell.php"); 
+	exit();
+}
 require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 ?>
 <!DOCTYPE html>
