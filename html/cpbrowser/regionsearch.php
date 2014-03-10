@@ -18,11 +18,11 @@ if($_REQUEST["allDataSingleRegion"] == "on") {
 	foreach($region_arr as $region) {
 		echo "#" . $region . "\r\n";
 		//error_log($region);
-		$region = new ChromRegion(trim($region));
+		$regionObject = new ChromRegion(trim($region));
 		//error_log($regions[0]);
 		foreach($wigFileHandle_arr as $wigFileHandle) {
 			echo "#" . $wigFileHandle->getFileName() . "\r\n";
-			$result = $wigFileHandle->getAllSummaryStats($region, 1);
+			$result = $wigFileHandle->getAllSummaryStats($regionObject);
 			foreach($result as $summary) {
 				echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
 			}

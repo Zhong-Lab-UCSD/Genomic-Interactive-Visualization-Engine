@@ -79,6 +79,13 @@ $(document).ready( function () {
 <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
   <div class="rotated">Track Info &amp; Settings</div>
 </div>
+<div id="singleCellTitle">
+<p>Single-cell RNA-Seq Genome Browser </p>
+<p>(powered by UCSC Genome Browser)</p>
+<p>Welcome to the single-cell genome browser hosted by Zhong Lab at UCSD. Here we present our latest single-cell RNA-seq data along with mouse genome assembly GRCm38 (mm10) to provide better data comprehension and facilitate further comparative studies. Between the two hypotheses for the mechanism first cell fate decision, the asymmetric hypothesis and the equivalence hypothesis, the analysis of our single-cell RNA-seq data showed evidence for early cell asymmetry.</p>
+<p>&nbsp;</p>
+<p>The Browser can be used to </p>
+</div>
 <div id="trackSettings" class="trackSettingsClass" style="display: none;">
   <div id="trackSettingsHeader" class="headerNoHover2">Track information &amp; settings</div>
   <div style="position: absolute; top: 45px; left: 0px;">
