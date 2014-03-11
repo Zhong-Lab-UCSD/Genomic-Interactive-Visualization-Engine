@@ -135,7 +135,14 @@ class BigWigFile  {
 				}
 				$interval = next($intervalList);
 			}
-			$interval = prev($intervalList);
+			if($interval === false) {
+				$interval = end($intervalList);
+			} else {
+				$interval = prev($intervalList);
+				if($interval === false) {
+					$interval = reset($intervalList);
+				}
+			}
 		}
 		return $summary;
 	}
@@ -175,7 +182,7 @@ class BigWigFile  {
 			while($interval !== false && $interval[BWGSection::END] <= $baseStart) {
 				$interval = next($intervalList);
 			}
-			$summary = $this->intervalSlice($baseStart, $baseEnd, $intervalList);
+			$summary = $this->intervalSlice($baseStart, $end1, $intervalList);
 			$interval = current($intervalList);
 			$baseStart = $baseEnd;
 			$result[] = $summary;
