@@ -76,7 +76,7 @@ function togglePanelUpdown() {
 	}
 	$('#singleCellDescHolder').slideToggle('slow');
 	if(!slideIsShow) {
-		if($('#DoNotShow').is('checked')) {
+		if($('#DoNotShow').is(':checked')) {
 			$.post('cpbrowser/postcookie.php', { varName: 'NoSingleCellIntro', value: 'true' } );
 		} else {
 			$.post('cpbrowser/postcookie.php', { varName: 'NoSingleCellIntro', value: 'false' } );
@@ -114,7 +114,7 @@ $(document).ready( function () {
     <p class="normaltext">The interface and usage of Single-cell Genome Browser is similar to UCSC Genome Browser.</p>
     <p class="normaltext">For questions about the datasets and problems, please send them to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).</p>
     <p class="normaltext">
-      <input name="DoNotShow" type="checkbox" id="DoNotShow">
+      <input name="DoNotShow" type="checkbox" id="DoNotShow" value="true">
       <label for="DoNotShow">Do not show this automatically in the future.</label>
     </p>
   </div>
