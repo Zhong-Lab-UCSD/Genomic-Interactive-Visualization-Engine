@@ -865,3 +865,31 @@ a:visited {
 #searchform input.searchFieldBusy {
 	background: #FFFFFF url(images/loading1.gif) no-repeat 100% 50%;
 }
+.floatingindex {
+	/*left: 100%;
+	margin-left: -500px;
+	width: 500px;*/
+	height: auto;
+	border: 1px solid #000000;
+	background-color: #333333;
+	z-index: 10;
+	opacity: 0.5;
+	filter: alpha(opacity=50);
+	padding: 2px;
+	color: #FFF;
+	text-align: center;
+	cursor: pointer;
+}
+.floatingindex:hover {
+	opacity: 1;
+	filter: alpha(opacity=100);
+}
+.trianglearrow {
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 0.8em;
+}
+#singleCellTitle #singleCellButton #indextext {
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 1.2em;
+	font-weight: bold;
+}
