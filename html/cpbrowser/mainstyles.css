@@ -891,5 +891,31 @@ a:visited {
 #singleCellTitle #singleCellButton #indextext {
 	font-family: Verdana, Geneva, sans-serif;
 	font-size: 1.2em;
-	font-weight: bold;
+}
+.ref {
+	position: relative;
+}
+.refnum {
+	color: #0099FF;
+	cursor: pointer;
+}
+.refnum:hover {
+	text-decoration: underline;
+}
+.refbody {
+	position: absolute;
+	left: 4em;
+	top: 0em;
+	padding: 5px;
+	word-wrap: break-word;
+	z-index: 50;
+	overflow: auto;
+	min-width: 25em;
+	display: block;
+	background-color: #FFF;
+	border: 1px solid #000;
+}
+.refbodyrightjustify {
+	left: -21em;
+	top: 1.2em;
 }

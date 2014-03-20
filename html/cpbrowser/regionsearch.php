@@ -1,6 +1,7 @@
 <?php
 require_once (realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
 if($_REQUEST["allDataSingleRegion"] == "on") {
+	set_time_limit(0);
 	$region_arr = explode("\n", trim($_REQUEST["region"]));
 	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
 	$wigFileHandle_arr = array();
@@ -27,6 +28,8 @@ if($_REQUEST["allDataSingleRegion"] == "on") {
 				echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
 			}
 			//echo "\r\n";
+			ob_flush();
+			flush();
 		}
 		//echo "\r\n";
 	}

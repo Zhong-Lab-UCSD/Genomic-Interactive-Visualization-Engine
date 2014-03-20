@@ -61,8 +61,9 @@ class BufferedFile {
 			curl_setopt($this->file, CURLOPT_HEADER, 1);
 			curl_setopt($this->file, CURLOPT_RETURNTRANSFER, 1);
 			curl_exec($this->file);
-			if(curl_errno($this->file)) {
-				throw new Exception($this->fname . " is not accessible! Curl error: " . curl_error($this->file));
+			if(curl_getinfo($this->file, CURLINFO_HTTP_CODE) >= 400) {
+				throw new Exception($this->fname . " is not accessible! HTTP code: " 
+					. curl_getinfo($this->file, CURLINFO_HTTP_CODE));
 			}
 			$this->file_length = curl_getinfo($this->file, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
 			
