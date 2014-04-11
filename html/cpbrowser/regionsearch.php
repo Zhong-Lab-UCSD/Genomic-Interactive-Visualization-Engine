@@ -1,7 +1,12 @@
 <?php
 require_once (realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+
+define('REGION_LENGTH_SPLIT_THRESHOLD', 2000000);
+
+
 if($_REQUEST["allDataSingleRegion"] == "on") {
 	set_time_limit(0);
+	ini_set("memory_limit", "-1");
 	$region_arr = explode("\n", trim($_REQUEST["region"]));
 	$wigFile_arr = explode("\n", trim($_REQUEST["wigfile"]));
 	$wigFileHandle_arr = array();
@@ -18,18 +23,42 @@ if($_REQUEST["allDataSingleRegion"] == "on") {
 	echo "#IS_COVERED\tVALUE\r\n";
 	foreach($region_arr as $region) {
 		echo "#" . $region . "\r\n";
-		//error_log($region);
 		$regionObject = new ChromRegion(trim($region));
+		$regionarray = array();
+		if($regionObject->getLength() > REGION_LENGTH_SPLIT_THRESHOLD) {
+			$regionarray = $regionObject->breakRegions(ceil($regionObject->getLength() / REGION_LENGTH_SPLIT_THRESHOLD));
+		} else {
+			$regionarray []= $regionObject;
+		}
+		//error_log($region);
 		//error_log($regions[0]);
 		foreach($wigFileHandle_arr as $wigFileHandle) {
+			$count = 0;
 			echo "#" . $wigFileHandle->getFileName() . "\r\n";
-			$result = $wigFileHandle->getAllSummaryStats($regionObject);
-			foreach($result as $summary) {
-				echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
+			foreach($regionarray as $regionfragment) {
+				$result = $wigFileHandle->getAllSummaryStats($regionfragment);
+				foreach($result as $summary) {
+					echo $summary->validCount . "\t" . $summary->sumData . "\r\n";
+					$count++;
+					if(!($count % 100000)) {
+						ob_flush();
+						flush();
+					}
+				}
+				error_log($regionfragment);
+				//echo "\r\n";
+				ob_flush();
+				flush();
+				if(connection_aborted()) {
+					break;
+				}
 			}
-			//echo "\r\n";
-			ob_flush();
-			flush();
+			if(connection_aborted()) {
+				break;
+			}
+		}
+		if(connection_aborted()) {
+			break;
 		}
 		//echo "\r\n";
 	}

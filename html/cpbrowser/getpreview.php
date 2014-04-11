@@ -36,8 +36,10 @@
 						$length = $summary->validCount;
 					}
 					$data = array();
-					$data['Mean'] = floatval($summary->sumData) / $length;
-					$data['SD'] = sqrt(floatval($summary->sumSquares) / $length - $trackTotalMean * $trackTotalMean);
+					$data['length'] = $length;
+					$data['validCount'] = floatval($summary->validCount);
+					$data['sum'] = floatval($summary->sumData);
+					$data['sumSquare'] = floatval($summary->sumSquares);
 					$result[$row["tableName"]] = $data;
 				} else {
 					$result[$row["tableName"]] = false;

@@ -11,15 +11,47 @@ class ChromRegion {
 		return $this->end - $this->start;
 	}
 	
-	function __construct($region) {
+    function __construct() 
+    { 
+        $a = func_get_args(); 
+        $i = func_num_args(); 
+        if (method_exists($this,$f='__construct'.$i)) { 
+            call_user_func_array(array($this,$f),$a); 
+        } 
+    } 
+    
+    function __construct1($region) 
+    { 
 		$tokens = preg_split("/\s*(:|-|\s)\s*/i", $region);
 		$this->chr = trim($tokens[0]);
 		$this->start = intval(trim($tokens[1], " \t\n\r\0\x0B,"));
 		$this->end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
-	}
+    } 
+    
+    function __construct3($chr, $start, $end) 
+    { 
+		$this->chr = $chr;
+		$this->start = $start;
+		$this->end = $end;
+    } 
 	
 	function __toString() {
 		return($this->chr . ":" . $this->start . "-" . $this->end);
+	}
+	
+	function breakRegions($number) {
+		// break this region into $number consecutive regions
+		$result = array();
+		$newend = $this->start;
+		for($i = 0; $i < $number; $i++) {
+			$newstart = $newend;
+			$newend = $this->start + round($this->getLength() / $number * ($i + 1));
+			if($newend > $this->end) {
+				$newend = $this->end;
+			}
+			$result []= new ChromRegion($this->chr, $newstart, $newend);
+		}
+		return $result;
 	}
 }
 

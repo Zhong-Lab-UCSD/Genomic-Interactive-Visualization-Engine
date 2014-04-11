@@ -234,7 +234,7 @@ class BigWigFile  {
 			$memFileHandle = new BufferedFile($blockBuf, BufferedFile::MEMORY, $this->fileHandle->getSwapped());
 			$itemCount = strlen($blockBuf) / SummaryElement::DATASIZE;
 			for($i = 0; $i < $itemCount; $i++) {
-				$summaryElement = new SummaryElement(NULL, &$memFileHandle);
+				$summaryElement = new SummaryElement(NULL, $memFileHandle);
 				if($summaryElement->chromRegion->chromID == $chromIx) {
 					$s = max($summaryElement->chromRegion->start, $start);
 					$e = min($summaryElement->chromRegion->end, $end);

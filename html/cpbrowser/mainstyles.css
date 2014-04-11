@@ -358,6 +358,7 @@ a:visited {
 
 .headerIndicator {
 	font-family: "Consolas", "Courier New", Courier, monospace;
+	font-style: normal;
 }
 .Title {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
@@ -918,4 +919,18 @@ a:visited {
 .refbodyrightjustify {
 	left: -21em;
 	top: 1.2em;
+}
+.insigTbody {
+	color: #666;
+	font-style: italic;
+}
+.insigHeader {
+	cursor: pointer;
+	font-weight: bold;
+	background-color: #999;
+	color: #FFF;
+	padding: 2px 5px;
+}
+.insigHeader:hover {
+	background-color: #666;
 }

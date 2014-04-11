@@ -1,5 +1,6 @@
 <?php
 	require_once(realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	$encodeOn = true;
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -9,12 +10,15 @@
 <script type="text/javascript" src="js/jquery-1.7.js"></script>
 <script language="javascript">
 
+var MILLISECONDS_WAITTIMEOUT = 20;
+var INSIGNIFICANT_THRESHOLD = 2.0;
+
 function surrogateCtor() {}
  
 function extend(base, sub) {
-  surrogateCtor.prototype = base.prototype;
-  sub.prototype = new surrogateCtor();
-  sub.prototype.constructor = sub;
+	surrogateCtor.prototype = base.prototype;
+	sub.prototype = new surrogateCtor();
+	sub.prototype.constructor = sub;
 }
 
 
@@ -25,6 +29,90 @@ cmnTracks.map = new Object();	// this is used to store all cmnTrack IDs to preve
 
 var cmnTracksEncode = new Array();	// this will be holding common Encode tracks (CmnTrack Object)
 cmnTracksEncode.map = new Object();	// this is used to store all cmn Encode Track IDs to prevent duplication
+
+var orderedCmnTracksEncode = new Array();	// this is the sorted common track array
+orderedCmnTracksEncode.sigLength = 0;		// number of tracks that have significant results
+
+var glo_methodind = "mean";		// global settings for method to get value in a table
+var glo_methodall = "max";		// global settings for method to get value across tables in a supertrack
+var glo_methodspc = "max";		// global settings for method to get value across species
+
+function locationOf(element, array, start, end, length, methodind, methodall, methodspc, orderBySpcID) {
+	// this is to return the index that element will be put AFTER
+	// so if the element needs to be put to the top, it will return start-1
+	start = start || 0;
+	end = end || array.length;
+	try {
+		if(end == start || element.compareTo(array[start]) < 0) {
+			return start - 1;
+		}
+	} catch(err) {
+		console.log(element.id);
+		console.log(array[start].id);
+		throw(err);
+	}
+	try {
+		var pivot = parseInt(start + (end - start) / 2, 10);
+		if (end - start <= 1 
+			|| element.compareTo(array[pivot], length, methodind, methodall, methodspc, orderBySpcID) == 0)
+			return pivot;
+		if (element.compareTo(array[pivot], length, methodind, methodall, methodspc, orderBySpcID) > 0) {
+			return locationOf(element, array, pivot, end, length, methodind, methodall, methodspc, orderBySpcID);
+		} else {
+			return locationOf(element, array, start, pivot, length, methodind, methodall, methodspc, orderBySpcID);
+		}
+	} catch(err) {
+		console.log(element.id + ' pivot: ' + pivot);
+		console.log(array[pivot].id);
+		throw(err);
+	}
+}
+
+function insert(track, array, tbodyID, tbodyInsigID, length, methodind, methodall, methodspc, orderBySpcID) {
+	if(insert.isRunning) {
+		// prevent concurrency problems
+		setTimeout(function() {
+			insert(track, array, tbodyID, tbodyInsigID, length, methodind, methodall, methodspc, orderBySpcID);
+		}, MILLISECONDS_WAITTIMEOUT);
+		return;
+	}
+	insert.isRunning = true;
+	try {
+		var loc = locationOf(track, array);
+	} catch(err) {
+		console.log(err);
+		insert.isRunning = false;
+		return;
+	}
+	array.splice(loc + 1, 0, track);
+	// TODO: after doing this, update DOM to replace the track in tbodyID
+	if(track.isSignificant()) {
+		array.sigLength++;
+	}
+	try {
+		if(track.isSignificant() && loc < 0) {
+			// should be put at top of significant tbody
+			$(document.getElementById(track.getCleanID() + '_tr')).prependTo($(document.getElementById(tbodyID)));
+		} else if(!track.isSignificant() && loc < array.sigLength) {
+			// should be put at top of insignificant tbody
+			$(document.getElementById(track.getCleanID() + '_tr')).prependTo($(document.getElementById(tbodyInsigID)));
+			// show insig header
+			$(document.getElementById(tbodyInsigID + 'Header')).show();
+		} else {
+			// should be put after the loc-th row, whatever tbody
+			$(document.getElementById(track.getCleanID() + '_tr')).insertAfter($(document.getElementById(array[loc].getCleanID() + '_tr')));
+		}
+	} catch(err) {
+		console.log(track.id);
+		console.log(err);
+		insert.isRunning = false;
+		return;
+	}
+	insert.isRunning = false;
+}
+
+insert.isRunning = false;
+
 
 function Track(ID, Status) {
 	this.id = ID;
@@ -46,15 +134,27 @@ Track.prototype.getInfoTable = function() {
 
 Track.prototype.getID = function() {
 	return this.id;
-}
+};
 
 Track.prototype.getReadableID = function() {
 	return this.getID().replace(/_+/g, ' ');
-}
+};
 
 Track.prototype.getCleanID = function() {
 	// remove blanks and brackets in IDs to conform to HTML 4.1
 	return this.getID().replace(/[\s\(\)]/g, '');
+};
+
+Track.prototype.compareTo = function(target, length, methodind, methodall, methodspc, orderBySpcID) {
+	// return negative value is this track's compareValue is larger than target
+	// in such case the index of this will be smaller.
+	return target.getCompareValue(length, methodind, methodall, methodspc, orderBySpcID)
+		- this.getCompareValue(length, methodind, methodall, methodspc, orderBySpcID);
+};
+
+Track.prototype.isSignificant = function(length, methodind, methodall, methodspc, orderBySpcID) {
+	return this.getCompareValue(length, methodind, methodall, methodspc, orderBySpcID)
+		> INSIGNIFICANT_THRESHOLD;
 };
 
 
@@ -69,21 +169,129 @@ Track.prototype.getCleanID = function() {
 //	this.map[track.id] = track;
 //};
 
+function SpeciesTableEntry(name, vc, s, ss) {
+	this.tableName = name;
+	this.validCount = vc;
+	this.sum = s;
+	this.sumSquare = ss;
+	//console.log(this);
+}
+
+SpeciesTableEntry.prototype.getCompareValue = function(length, method) {
+	length = length || this.validCount;
+	if(length <= 0) {
+		return 0.0;
+	}
+	if(method == "mean") {
+		return this.sum / length;
+	} else if(method == "cv") {
+		return Math.sqrt(this.sumSquare / length - (this.sum / length)^2) / (this.sum / length);
+	}
+};
+
+SpeciesTableEntry.prototype.getTableName = function() {
+	return this.tableName;
+};
+
+
+function SpeciesTable() {
+	this.tableName = '';
+	this.entries = [];
+}
+
+SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) {
+	methodall = methodall || glo_methodall;		
+	// max entry in the table, "sum" to sum up all entries, "mean" to take the mean
+	
+	methodind = methodind || glo_methodind;
+	// see method in SpeciesTableEntry.prototype.getCompareValue(method, length)
+	
+	var result = 0.0;
+	if(this.entries.length <= 0) {
+		return result;
+	}
+	for(var i = 0; i < this.entries.length; i++) {
+		var newresult = this.entries[i].getCompareValue(length, methodind);
+		if(methodall == "max") {
+			if(result < newresult) {
+				result = newresult;
+			}
+		} else if(methodall == "sum" || methodall == "mean") {
+			result += newresult;
+		} 
+	}
+	if(methodall == "mean") {
+		result /= this.entries.length;
+	}
+	return result;
+};
+
+SpeciesTable.prototype.addValues = function(name, vc, s, ss) {
+	this.entries.push(new SpeciesTableEntry(name, vc, s, ss));
+};
+
+SpeciesTable.prototype.getTableName = function() {
+	return this.tableName;
+};
+
+SpeciesTable.prototype.setTableName = function(name) {
+	this.tableName = name;
+};
+
+SpeciesTable.prototype.getLength = function() {
+	return this.entries.length;
+};
+
+SpeciesTable.prototype.clear = function() {
+	this.entries.length = 0;
+};
+	
 
 
 function CmnTrack(ID, Status, SpcArray) {
 	Track.call(this, ID, Status);
-	this.tableNames = new Object();
+	this.spcTables = new Object();
 	if(SpcArray instanceof Array) {
 		for(var i = 0; i < SpcArray.length; i++) {
-			this.tableNames[SpcArray[i].db] = "";
+			this.spcTables[SpcArray[i].db] = new SpeciesTable();
 		}
 	}
+	this.spcArrayUpdated = false;
 }
 extend(Track, CmnTrack);
 
 CmnTrack.prototype.setSpeciesTblName = function(DB, TableName) {
-	this.tableNames[DB] = TableName;
+	this.spcTables[DB].setTableName(TableName);
+};
+
+CmnTrack.prototype.getSpeciesTblName = function(DB) {
+	return this.spcTables[DB].getTableName();
+};
+
+CmnTrack.prototype.addSpeciesValues = function(DB, tableName, validCount, sum, sumSquare) {
+	this.spcTables[DB].addValues(tableName, validCount, sum, sumSquare);
+	this.spcArrayUpdated = true;
+	for(var spcTable in this.spcTables) {
+		if(this.spcTables.hasOwnProperty(spcTable)) {
+			if(this.spcTables[spcTable].getLength() <= 0) {
+				this.spcArrayUpdated = false;
+				break;
+			}
+		}
+	}
+};
+
+CmnTrack.prototype.clearAllSpeciesValues = function() {
+	for(var spcTable in this.spcTables) {
+		if(this.spcTables.hasOwnProperty(spcTable)) {
+			this.spcTables[spcTable].clear();
+		}
+	}
+	this.spcArrayUpdated = false;
+};
+
+CmnTrack.prototype.isSpcArrayUpdated = function() {
+	return this.spcArrayUpdated;
 };
 
 CmnTrack.prototype.getID = function() {
@@ -120,11 +328,59 @@ CmnTrack.prototype.writeTable = function() {
 
 
 function CmnTrackEncode(ID, Status, SpcArray, Title, Info) {
-	CmnTrack.call(this, ID, Status, SpcArray);
+	spcEncodeArray = SpcArray;
+	
+	// remove non-encode species
+	if(spcEncodeArray instanceof Array) {
+		for(var i = 0; i < spcEncodeArray.length; i++) {
+			if(!spcEncodeArray[i].isEncode) {
+				spcEncodeArray.splice(i, 1);
+				i--;
+			}
+		}
+	}
+	
+	CmnTrack.call(this, ID, Status, spcEncodeArray);
 	this.title = Title;
 	this.info = Info;
 }
 extend(CmnTrack, CmnTrackEncode);
+
+CmnTrackEncode.prototype.getCompareValue = function(length, methodind, methodall, methodspc, orderBySpcID) {
+	methodall = methodall || glo_methodall;		
+	// max entry in the table, "sum" to sum up all entries, "mean" to take the mean
+	
+	methodind = methodind || glo_methodind;
+	// see method in SpeciesTableEntry.prototype.getCompareValue(method, length)
+
+	methodspc = methodspc || glo_methodspc;
+	// see method in SpeciesTableEntry.prototype.getCompareValue(method, length)
+
+	if(methodspc == "individual" && orderBySpcID) {
+		// there is a specific ID to order
+		return this.spcTables[orderBySpcID].getCompareValue(length, methodind, methodall);
+	} else if(methodspc == "max") {
+		var compareValue = 0.0;
+		for(var spcTable in this.spcTables) {
+			if(this.spcTables.hasOwnProperty(spcTable)) {
+				if(compareValue < this.spcTables[spcTable].getCompareValue(length, methodind, methodall)) {
+					compareValue = this.spcTables[spcTable].getCompareValue(length, methodind, methodall);
+				}
+			}
+		}
+		return compareValue;
+	} else if(methodspc == "mean") {
+		var compareValue = 0.0;
+		var spcLength = 0;
+		for(var spcTable in this.spcTables) {
+			if(this.spcTables.hasOwnProperty(spcTable)) {
+				compareValue += this.spcTables[spcTable].getCompareValue(methodall, methodind, length);
+				spcLength++;
+			}
+		}
+		return compareValue / spcLength;
+	}
+};
 
 CmnTrackEncode.prototype.setSampleType = function() {
 	// extract sampleType from this.info
@@ -163,18 +419,42 @@ CmnTrackEncode.prototype.writeTable = function() {
 
 
 function UniTrack(DB, ID, TableName, Status) {
-	Track.call(this, DB + "::" + ID, Status);
-	this.tableName = DB + "::" + TableName;
+	Track.call(this, DB + "--" + ID, Status);
+	this.tableName = DB + "--" + TableName;
+	this.trackData = new SpeciesTable();
+	this.spcArrayUpdated = false;
 }
 extend(Track, UniTrack);
 
+UniTrack.prototype.setSpeciesTblName = function(TableName) {
+	this.trackData.setTableName(TableName);
+};
+
+UniTrack.prototype.getSpeciesTblName = function() {
+	return this.trackData.getTableName();
+};
+
+UniTrack.prototype.addSpeciesValues = function(tableName, validCount, sum, sumSquare) {
+	this.trackData.addValues(tableName, validCount, sum, sumSquare);
+	this.spcArrayUpdated = true;
+};
+
+UniTrack.prototype.clearAllSpeciesValues = function() {
+	this.trackData.clear();
+	this.spcArrayUpdated = false;
+};
+
+UniTrack.prototype.isSpcArrayUpdated = function() {
+	return this.spcArrayUpdated;
+};
+
 UniTrack.prototype.getReadableID = function() {
 	// strip the db part out
-	return this.getID().replace(/^\w+::/, '').replace(/_+/g, ' ');
+	return this.getID().replace(/^\w+--/, '').replace(/_+/g, ' ');
 };
 
 UniTrack.prototype.getNoDbTableName = function() {
-	return this.tableName.replace(/^\w+::/, '');
+	return this.tableName.replace(/^\w+--/, '');
 }
 
 UniTrack.prototype.writeTable = function(speciesCmnName) {
@@ -211,6 +491,16 @@ function UniTrackEncode(DB, ID, TableName, Status, Title, Info) {
 	this.info = Info;
 }
 extend(UniTrack, UniTrackEncode);
+
+UniTrackEncode.prototype.getCompareValue = function(length, methodind, methodall) {
+	methodall = methodall || glo_methodall;		
+	// max entry in the table, "sum" to sum up all entries, "mean" to take the mean
+	
+	methodind = methodind || glo_methodind;
+	// see method in SpeciesTableEntry.prototype.getCompareValue(method, length)
+
+	return this.trackData.getCompareValue(length, methodind, methodall);
+};
 
 UniTrackEncode.prototype.setSampleType = function() {
 	// extract sampleType from this.info
@@ -269,12 +559,19 @@ function Species(DB, Name, CommonName, IsEncode) {
 	this.regionToShow = null;
 	// this is to define the region used to show
 	// (ChrRegion Object, including name, strand and coordinates)
+	
+	this.unsortedTbodyID = null;
+	this.sortedTbodyID = null;
+	this.insigTbodyID = null;
+	this.insigHeaderTbodyID = null;
+	
+	this.orderedUniTracksEncode = new Array();
 }
 
 Species.prototype.replaceText = function(text) {
 	// used to replace texts in templates
 	return text.replace(/spcDbName/g, this.db).replace(/spcCmnName/g, this.commonName).replace(/spcSciName/g, this.name);
-}
+};
 
 Species.prototype.writeUniqueTable = function(isencode) {
 	if(!isencode) {
@@ -304,22 +601,28 @@ Species.prototype.writeUniqueTable = function(isencode) {
 		uniqTemp = this.replaceText(uniqTemp);
 		$('#uniqueEncodeHolder').append(uniqTemp);
 		
-		var uniqueHolderId = '#' + this.db + 'EncodeTbodyHolder';
+		this.unsortedTbodyID = this.db + 'EncodeTbodyHolder';
+		this.sortedTbodyID = this.db + 'EncodeSortedTbodyHolder';
+		this.insigTbodyID = this.db + 'EncodeInsigTbodyHolder';
+
+		this.orderedUniTracksEncode.length = 0;	// this is the sorted common track array
+		this.orderedUniTracksEncode.sigLength = 0;	// number of tracks that have significant results
 		
 		if(this.uniTracksEncode.length > 0) {
 			items = [];
 			for(var j = 0; j < this.uniTracksEncode.length; j++) {
-				items.push('<tr class="trackCell">');
+				items.push('<tr class="trackCell" id="' 
+					+ this.uniTracksEncode[j].getCleanID() + '_tr">');
 				items.push(this.uniTracksEncode[j].writeTable(this.commonName));
 				items.push('</tr>\n')
 			}
-			$(uniqueHolderId).append(items.join(''));
+			$(document.getElementById(this.unsortedTbodyID)).append(items.join(''));
 		} else {
-			$(uniqueHolderId).append('<tr><td colspan="5"><span class="settingsNormal">'
+			$(document.getElementById(this.unsortedTbodyID)).append('<tr><td colspan="5"><span class="settingsNormal">'
 				+ '<em>(No unique tracks)</em></span></td></tr>');
 		}
 	}
-}
+};
 
 Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle, init, inbrowser) {
 	var conDoc = (document.getElementById(this.db + "_controls").contentWindow 
@@ -450,7 +753,8 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	// this is for common track ENCODE part
 	items = [];
 	for(var i = 0; i < cmnTracksEncodeBundle.length; i++) {
-		items.push('<tr class="trackCell">');
+		items.push('<tr class="trackCell" id="' 
+			+ cmnTracksEncodeBundle[i].getCleanID() + '_tr">');
 		items.push(cmnTracksEncodeBundle[i].writeTable());
 		items.push('</tr>\n');
 	}
@@ -635,16 +939,34 @@ function callUniqueSampleChange(index, sample) {
 }
 
 function createJSONReturnFunction(isCommon, iTrack, iSpecies) {
+	// TODO: add sorting mechanisms
 	if(isCommon) {
 		return function(data) {
 			var items = [];
 			items.push($(document.getElementById(cmnTracksEncode[iTrack].getCleanID() + 'Preview')).html());
-			items.push('[' + spcArray[iSpecies].db + ']'); 
+			items.push('[' + spcArray[iSpecies].db + ']');
 			$.each(data, function(key, val) {
-				items.push(key + ": " + val);
-				items.push("<br />");
+				if(val) {
+					var length = val.length;
+					var validCount = val.validCount;
+					var sum = val.sum;
+					var sumSquare = val.sumSquare;
+					
+					cmnTracksEncode[iTrack].addSpeciesValues(spcArray[iSpecies].db, key, validCount, sum, sumSquare);
+				}
 			});
+			// calculate and display the species-wide values
+			items.push('Max mean: ');
+			items.push(cmnTracksEncode[iTrack].getCompareValue(null, "mean"));
+			items.push(' / Max CV: ');
+			items.push(cmnTracksEncode[iTrack].getCompareValue(null, "cv"));
 			$(document.getElementById(cmnTracksEncode[iTrack].getCleanID() + 'Preview')).html(items.join(' '));
+			
+			if(cmnTracksEncode[iTrack].isSpcArrayUpdated()) {
+				// all species value updated, move the track to its corresponding location
+				insert(cmnTracksEncode[iTrack], orderedCmnTracksEncode, 'cmnTrackEncodeSortedTbodyHolder',
+					'cmnTrackEncodeInsigTbodyHolder', null, "mean");
+			}
 		};
 	} else {
 		return function(data) {
@@ -652,21 +974,61 @@ function createJSONReturnFunction(isCommon, iTrack, iSpecies) {
 			items.push($(document.getElementById(spcArray[iSpecies].uniTracksEncode[iTrack].getCleanID() + 'Preview')).html());
 			//items.push(spcDbName[iSpecies]); 
 			$.each(data, function(key, val) {
-				items.push(key + ": " + val);
-				items.push("<br />");
+				var length = val.length;
+				var validCount = val.validCount;
+				var sum = val.sum;
+				var sumSquare = val.sumSquare;
+				
+				spcArray[iSpecies].uniTracksEncode[iTrack].addSpeciesValues(key, validCount, sum, sumSquare);
 			});
-			$(document.getElementById(spcArray[iSpecies].uniTracksEncode[iTrack].getCleanID() + 'Preview')).html(items.join(' '));
+			items.push('Max mean: ');
+			items.push(spcArray[iSpecies].uniTracksEncode[iTrack].getCompareValue(null, "mean"));
+			items.push(' / Max CV: ');
+			items.push(spcArray[iSpecies].uniTracksEncode[iTrack].getCompareValue(null, "cv"));
+			if(spcArray[iSpecies].uniTracksEncode[iTrack].isSpcArrayUpdated()) {
+				// all species value updated, move the track to its corresponding location
+				insert(spcArray[iSpecies].uniTracksEncode[iTrack], 
+					spcArray[iSpecies].orderedUniTracksEncode, spcArray[iSpecies].sortedTbodyID,
+					spcArray[iSpecies].insigTbodyID, null, "mean");
+			}
+			$(document.getElementById(spcArray[iSpecies].uniTracksEncode[iTrack].getCleanID()
+				+ 'Preview')).html(items.join(' '));
 		}
 	}
 }
 
 function searchTracks() {
+	orderedCmnTracksEncode.length = 0;		// clear ordered tracks
+	orderedCmnTracksEncode.sigLength = 0;	// number of tracks that have significant results
+	$('#cmnTrackEncodeTbodyHolder').html($('#cmnTrackEncodeTbodyHolder').html() 
+		+ $('#cmnTrackEncodeSortedTbodyHolder').html() 
+		+ $('#cmnTrackEncodeInsigTbodyHolder').html());
+	$('#cmnTrackEncodeSortedTbodyHolder').html('');
+	$('#cmnTrackEncodeInsigTbodyHolder').html('');
+	$('#cmnTrackEncodeSortedTbodyHolder').show();
+	$('#cmnTrackEncodeInsigTbodyHolderHeader').hide();
+	toggleTbody('cmnTrackEncodeInsigTbodyHolder', false);
+	
 	for(var i = 0; i < spcArray.length; i++) {
+		if(isEncodeOn && !spcArray[i].isEncode) {
+			continue;
+		}
 		spcArray[i].regionToShow = new ChrRegion($('#regionToShow').val());
+		spcArray[i].orderedUniTracksEncode.length = 0;		// clear ordered tracks
+		spcArray[i].orderedUniTracksEncode.sigLength = 0;	// number of tracks that have significant results
+		$(document.getElementById(spcArray[i].unsortedTbodyID)).html($(document.getElementById(spcArray[i].unsortedTbodyID)).html()
+			+ $(document.getElementById(spcArray[i].sortedTbodyID)).html() 
+			+ $(document.getElementById(spcArray[i].insigTbodyID)).html());
+		$(document.getElementById(spcArray[i].sortedTbodyID)).html('');
+		$(document.getElementById(spcArray[i].insigTbodyID)).html('');
+		$(document.getElementById(spcArray[i].sortedTbodyID)).show();
+		$(document.getElementById(spcArray[i].insigTbodyID + 'Header')).hide();
+		toggleTbody(spcArray[i].insigTbodyID, false);
 	}
 	for(var j = 0; j < cmnTracksEncode.length; j++) {
 		// send across all species
 		$('#' + cmnTracksEncode[j].getCleanID() + 'Preview').html('');
+		cmnTracksEncode[j].clearAllSpeciesValues();
 		for(var i = 0; i < spcArray.length; i++) {
 			if(isEncodeOn && !spcArray[i].isEncode) {
 				continue;
@@ -674,8 +1036,10 @@ function searchTracks() {
 			var sendData = new Object();
 			sendData['region'] = spcArray[i].regionToShow.toString();
 			//console.log(spcArray[i].regionToShow.toString());
-			sendData['tableName'] = cmnTracksEncode[j].tableNames[spcArray[i].db];
+			sendData['tableName'] = cmnTracksEncode[j].getSpeciesTblName(spcArray[i].db);
 			sendData['db'] = spcArray[i].db;
+			//console.log(sendData);
+			
 			$.getJSON('getpreview.php', sendData, createJSONReturnFunction(true, j, i));
 		}
 	}
@@ -684,6 +1048,7 @@ function searchTracks() {
 			continue;
 		}
 		for(var j = 0; j < spcArray[i].uniTracksEncode.length; j++) {
+			spcArray[i].uniTracksEncode[j].clearAllSpeciesValues();
 			var sendData = new Object();
 			sendData['region'] = spcArray[i].regionToShow.toString();
 			//console.log(spcArray[i].regionToShow.toString());
@@ -692,7 +1057,22 @@ function searchTracks() {
 			$.getJSON('getpreview.php', sendData, createJSONReturnFunction(false, j, i));
 		}
 	}
-	
+}
+
+function toggleHeaderText(header) {
+	if($('#' + header).html() == '[-]') {
+		$('#' + header).html('[+]');
+	} else {
+		$('#' + header).html('[-]');
+	}
+}
+
+function toggleTbody(panel, toggleTo) {
+	// don't toggle if it's already matching toggleTo
+	if(arguments.length > 1 && (toggleTo === ($('#' + panel).css('display') != 'none'))) {
+		return;
+	}
+	$('#' + panel + 'Holder').slideToggle('fast', toggleHeaderText(panel + 'Indicator'));
 }
 
 </script>
@@ -757,12 +1137,12 @@ onclick="searchTracks();">Search through Tracks</div>
         </thead>
         <tbody id="cmnTrackEncodeSortedTbodyHolder" style="display: none;">
         </tbody>
-        <tbody id="cmnTrackEncodeInsigHeaderTbodyHolder" style="display: none;">
-          <tr class="insigHeader" onclick="toggleSubPanel('cmnTrackEncodeInsigTbody', false);">
-            <td colspan="4">Tracks with insignificant signals within the region are folded, click here to expand.</td>
+        <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolderHeader" style="display: none;">
+          <tr>
+            <td class="insigHeader" onclick="toggleTbody('cmnTrackEncodeInsigTbody', false);" colspan="4"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals</td>
           </tr>
         </tbody>
-        <tbody id="cmnTrackEncodeInsigTbodyHolder" style="display: none;">
+        <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolder" style="display: none;">
         </tbody>
         <tbody id="cmnTrackEncodeTbodyHolder">
         </tbody>
@@ -825,12 +1205,12 @@ http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHistone/wg
       </thead>
       <tbody id="spcDbNameEncodeSortedTbodyHolder" style="display: none;">
       </tbody>
-      <tbody id="spcDbNameEncodeInsigHeaderTbodyHolder" style="display: none;">
-        <tr class="insigHeader" onclick="toggleSubPanel('spcDbNameEncodeInsigTbody', false);">
-          <td colspan="5">Tracks with insignificant signals within the region are folded, click here to expand.</td>
+      <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolderHeader" style="display: none;">
+        <tr>
+          <td class="insigHeader" onclick="toggleTbody('spcDbNameEncodeInsigTbody', false);" colspan="5"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals for spcCmnName</td>
         </tr>
       </tbody>
-      <tbody id="spcDbNameEncodeInsigTbodyHolder" style="display: none;">
+      <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolder" style="display: none;">
       </tbody>
       <tbody id="spcDbNameEncodeTbodyHolder">
       </tbody>
