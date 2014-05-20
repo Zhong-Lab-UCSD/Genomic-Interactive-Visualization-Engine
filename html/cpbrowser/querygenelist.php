@@ -1,5 +1,7 @@
 <?php
-	require("../../includes/db/opendbcpb.php");
+	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+	$mysqli = connectCPB();
+	$directsubmit = false;
 	
 	if($_REQUEST["direct"] == "true") {
 		// TODO: gene selected, directly reload the genes
@@ -55,5 +57,5 @@
 	for($i = 0; $i < $num_spc; $i++) {
 		$genes[$i]->free();
 	}
-	require("../../includes/db/closedb.php");
+	$mysqli->close();
 ?>

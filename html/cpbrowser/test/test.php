@@ -5,7 +5,7 @@
 <title>Untitled Document</title>
 </head>
 <?php 
-require_once("../../includes/common_func.php");
+require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
 function fseekable($stream) {
   $meta = stream_get_meta_data($stream);
   return $meta['seekable'];

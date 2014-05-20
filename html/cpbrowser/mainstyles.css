@@ -358,6 +358,7 @@ a:visited {
 
 .headerIndicator {
 	font-family: "Consolas", "Courier New", Courier, monospace;
+	font-style: normal;
 }
 .Title {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
@@ -854,8 +855,8 @@ a:visited {
 }
 .selectBox {
 	overflow: hidden;
-	/*background: #FFFFFF url(images/downarrow.png) no-repeat 98% 50%;*/
-	background: #FFFFFF;
+	background: #FFFFFF url(images/downarrow.png) no-repeat 98% 50%;
+	/*background: #FFFFFF;*/
 	border: 1px solid #999;
 	padding: 0;
 	margin: 2px 1px 2px 0;
@@ -864,4 +865,72 @@ a:visited {
 }
 #searchform input.searchFieldBusy {
 	background: #FFFFFF url(images/loading1.gif) no-repeat 100% 50%;
+}
+.floatingindex {
+	/*left: 100%;
+	margin-left: -500px;
+	width: 500px;*/
+	height: auto;
+	border: 1px solid #000000;
+	background-color: #333333;
+	z-index: 10;
+	opacity: 0.5;
+	filter: alpha(opacity=50);
+	padding: 2px;
+	color: #FFF;
+	text-align: center;
+	cursor: pointer;
+}
+.floatingindex:hover {
+	opacity: 1;
+	filter: alpha(opacity=100);
+}
+.trianglearrow {
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 0.8em;
+}
+#singleCellTitle #singleCellButton #indextext {
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 1.2em;
+}
+.ref {
+	position: relative;
+}
+.refnum {
+	color: #0099FF;
+	cursor: pointer;
+}
+.refnum:hover {
+	text-decoration: underline;
+}
+.refbody {
+	position: absolute;
+	left: 4em;
+	top: 0em;
+	padding: 5px;
+	word-wrap: break-word;
+	z-index: 50;
+	overflow: auto;
+	min-width: 25em;
+	display: block;
+	background-color: #FFF;
+	border: 1px solid #000;
+}
+.refbodyrightjustify {
+	left: -21em;
+	top: 1.2em;
+}
+.insigTbody {
+	color: #666;
+	font-style: italic;
+}
+.insigHeader {
+	cursor: pointer;
+	font-weight: bold;
+	background-color: #999;
+	color: #FFF;
+	padding: 2px 5px;
+}
+.insigHeader:hover {
+	background-color: #666;
 }

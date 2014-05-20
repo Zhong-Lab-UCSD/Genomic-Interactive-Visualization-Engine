@@ -1,6 +1,6 @@
 <?php
 	session_start();
-	require_once('common_func.php');	
+	require_once(realpath(dirname(__FILE__) . '/common_func.php'));	
 	$in_debug = false;
 	if(strpos(getenv('SERVER_NAME'), 'encode') !== false) {
 		$encodeOn = true;
@@ -40,7 +40,7 @@
 	}
 	define ("max_session_id", 200000000);
 	
-	require("db/opendbcpb.php");
+	$mysqli = connectCPB();
 	
 	// get session ID from database
 	if(!isset($_SESSION['ID'])) {
@@ -100,6 +100,6 @@
 //	mysql_query("INSERT INTO sessions (sessionID, lastactive, ip) VALUES (" . $_SESSION['ID'] . ", NOW(), '" . $_SERVER['REMOTE_ADDR'] . "') ON DUPLICATE KEY UPDATE lastactive = NOW(), ip = '" . $_SERVER['REMOTE_ADDR'] . "'");
 //	
 //	unset($db);
-	require("db/closedb.php");
+	$mysqli->close();
 
 ?>
