@@ -628,7 +628,7 @@ function updateNavigation(formid) {
 	// find everything from the form
 	//speciesDbName = new Array();
 	//speciesCmnName = new Array();
-	var items = $("#" + currGene.getCleanName()).serializeArray();		// the name of current gene is the name of a form as well
+	var itemLeft = $("#" + currGene.getCleanName()).serializeArray();		// the name of current gene is the name of a form as well
 	var naviStr = "";
 
 	for(var spcIndex = 0; spcIndex < spcArray.length; spcIndex++) {
