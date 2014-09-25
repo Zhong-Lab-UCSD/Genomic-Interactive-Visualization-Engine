@@ -1075,6 +1075,8 @@ function toggleTbody(panel, toggleTo) {
 	$('#' + panel + 'Holder').slideToggle('fast', toggleHeaderText(panel + 'Indicator'));
 }
 
+
+
 </script>
 <link href="mainstyles.css" rel="stylesheet" type="text/css" />
 </head>

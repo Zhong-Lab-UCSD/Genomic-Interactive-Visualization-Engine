@@ -860,7 +860,7 @@ a:visited {
 	border: 1px solid #999;
 	padding: 0;
 	margin: 2px 1px 2px 0;
-	width: 90px !important;
+	width: 75px !important;
 	float: left;
 }
 #searchform input.searchFieldBusy {
@@ -916,6 +916,37 @@ a:visited {
 	background-color: #FFF;
 	border: 1px solid #000;
 }
+.geneNameExpander {
+	min-width: 20px;
+	text-align: center;
+	vertical-align: middle;
+	border: 1px solid #999;
+	display: block;
+	padding-top: 1px;
+	padding-right: 3px;
+	padding-bottom: 4px;
+	padding-left: 3px;
+	color: #FFF;
+	background: #999;
+	float: right;
+}
+.geneNameExpander:hover {
+	background: #666;
+}
+.geneNameInsert {
+	position: absolute;
+	left: 4em;
+	top: 0em;
+	padding: 5px;
+	word-wrap: break-word;
+	z-index: 50;
+	overflow: auto;
+	min-width: 25em;
+	display: block;
+	background-color: #FFC;
+	border: 1px solid #000;
+}
+
 .refbodyrightjustify {
 	left: -21em;
 	top: 1.2em;
@@ -933,4 +964,10 @@ a:visited {
 }
 .insigHeader:hover {
 	background-color: #666;
+}
+
+.downloadButton {
+	float: right;
+	margin: 1px 2px -1px 2px;
+	cursor: pointer;
 }

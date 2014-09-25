@@ -25,6 +25,7 @@
 		
 		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i";
 		$isError = false;
+		$directsubmit = false;
 		if(preg_match($chrPattern, $_REQUEST["geneName"])) {
 			if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 				$isError = true;
@@ -46,7 +47,7 @@
 <table width="100%" border="1" cellspacing="0" bordercolor="#666666">
   <?php
 		foreach($result as $currentRegionName => $currentRegion) {
-			$currentRegionAlias = $currentRegion["alias"];
+			$currentRegionAlias = (isset($currentRegion["alias"])? $currentRegion["alias"]: "");
 			
   ?>
   <tr>
@@ -88,7 +89,9 @@
 			for($i = 0; $i < $num_spc; $i++) {
 				if($spcflag[$i]) {
 					$currentRegionSpecies = $currentRegion[$spcinfo[$i]["dbname"]][0];
-					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: NULL;
+					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: 
+						(isset($currentRegionSpecies["genenamelist"])? implode(", ", $currentRegionSpecies["genenamelist"]): NULL);
+					$genesInRegion = isset($currentRegionSpecies["genenamelist"])? $currentRegionSpecies["genenamelist"]: NULL;
 					$regionStart = isset($currentRegionSpecies["genestart"])? $currentRegionSpecies["genestart"]: $currentRegionSpecies["start"];
 					$regionEnd = isset($currentRegionSpecies["geneend"])? $currentRegionSpecies["geneend"]: $currentRegionSpecies["end"];
 					$extendedStart = isset($currentRegionSpecies["extendedstart"])? $currentRegionSpecies["extendedstart"]: $currentRegionSpecies["start"];
@@ -99,9 +102,42 @@
           <tr class="smallformstyle">
             <td width="20%" valign="top"><?php echo $spcinfo[$i]["commonname"]; ?></td>
             <td width="80%" valign="top">
-              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>"><?php echo $nameInSpc; ?></span>
+              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>">
 			  <?php 
-			  		echo (!is_null($nameInSpc))? "<br />": "";
+			  		$geneListNeeded = false;
+					if(!is_null($genesInRegion) && strlen($nameInSpc) > 19) {
+						for($iGene = 0; $iGene < count($genesInRegion); $iGene++) {
+							$nameInSpc .= $genesInRegion[$iGene] . ", ";
+							if(strlen($nameInSpc) > 10) {
+								$nameInSpc .= "...";
+								// Write a hidden layer for gene names
+								$geneListNeeded = true;
+								break;
+							}
+						}
+					}
+			  		if(!is_null($nameInSpc)) {
+						echo $nameInSpc;
+					}
+					?>
+              </span>
+                    <?php
+					if(!is_null($nameInSpc)) {
+						echo "<br />";
+					}
+					if($geneListNeeded) {
+								?>
+              <span class="geneNameExpander">More</span>
+              <span class="geneNameInsert">
+                                <?php
+								for($jGene = 0; $jGene < count($genesInRegion); $jGene++) {
+									echo $genesInRegion[$iGene] . "<br />";
+								}
+                                ?>
+              </span>
+              <div style="clear: both;"></div>
+                                <?php 
+					}
 					if(!$spcmultiflag[$i]) {
 					?>
               <input name="<?php echo $spcinfo[$i]["dbname"]; ?>" type="hidden" id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"]; ?>" value="<?php echo $chrom . ":" . $extendedStart . "-" . $extendedEnd; ?>" />
@@ -181,6 +217,23 @@
 		}
 ?>
 </table>
+<script type="text/javascript">
+	jQuery(function() {
+		jQuery(".geneNameInsert").hide();
+		jQuery(".geneNameExpander").click(function(event) {
+			jQuery(this.nextElementSibling).toggle();
+			jQuery(this.nextElementSibling).position().left 
+				= jQuery(this).position().left + jQuery(this).width() 
+				- jQuery(this.nextElementSibling).width();
+			jQuery(this.nextElementSibling).position().top = jQuery(this).position().top;
+			event.stopPropagation();
+		});
+		jQuery(".geneNameInsert").click(function(event) {
+			jQuery(this).hide();
+			event.stopPropagation();
+		});
+	});
+</script>
 <?php
 	}
 ?>
