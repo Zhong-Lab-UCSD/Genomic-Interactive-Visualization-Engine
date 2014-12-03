@@ -17,6 +17,7 @@
 		//error_log($resulttoken['file']);
 		if(!$resulttoken['url']) {
 			// it's local file
+			error_log($resulttoken['file']);
 			header("X-Sendfile: " . $resulttoken['file']);
 			header("Content-type: application/gzip-compressed");
 			header('Content-Disposition: attachment; filename="' . $dbname 

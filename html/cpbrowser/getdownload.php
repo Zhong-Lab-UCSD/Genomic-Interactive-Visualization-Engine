@@ -3,7 +3,6 @@
 	$mysqli = connectCPB();
 	$result = array();
 	foreach($_REQUEST as $key=>$val) {
-		//error_log($key . "||" . $val);
 		$generesult = $mysqli->query("SELECT * FROM `TrackInfo` WHERE `db` = '" 
 			. $mysqli->real_escape_string($key) . "' AND (`tableName` = '"
 			. $mysqli->real_escape_string($val) . "' OR `superTrack` = '"

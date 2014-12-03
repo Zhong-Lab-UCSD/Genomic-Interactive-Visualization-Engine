@@ -1,27 +1,22 @@
 <?php
 	require_once(realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	require('queryregionlist.php');
+	require('querygenelist.php');
 	if(empty($_REQUEST)) {
 		// new page, doesn't do anything
 	} else {
-		$mysqli = connectCPB();
-		$spcinfo = array();
-		$spcflag = array();
-		$spcmultiflag = array();
-		// first connect to database and find the number of species
-		$species = $mysqli->query("SELECT * FROM species");
-		while($spcitor = $species->fetch_assoc()) {
-			// get all the species ready
-			if($spcitor["dbname"] == "hg19" || isset($_REQUEST[$spcitor["dbname"]])) { //should use this later
-			//if($spcitor["dbname"] == "hg19" || $spcitor["dbname"] == "mm9") {
-				$spcinfo[] = $spcitor;
-				$spcflag[] = true;
-				$spcmultiflag[] = false;
+		$spcDbName = getSpeciesDbNames();
+		for($i = 0; $i < count($spcDbName); $i++) {
+			if($spcDbName[$i] != "hg19" && !isset($_REQUEST[$spcDbName[$i]])) { 
+				array_splice($spcDbName, $i, 1);
 			}
-		}	
-		$species->free();
-		$num_spc = sizeof($spcinfo);
-	//		echo $num_spc;
-		$mysqli->close();
+		}
+		$spcinfo = getSpeciesInfoFromArray($spcDbName);
+		$spcflag = array_pad(array(), count($spcDbName), true);
+		$spcmultiflag = array_pad(array(), count($spcDbName), false);
+
+		$num_spc = count($spcinfo);
+		// echo $num_spc;
 		
 		$chrPattern = "/^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i";
 		$isError = false;
@@ -31,12 +26,10 @@
 				$isError = true;
 				echo "<p class=\"formstyle\"> Please specify the species of the coordinates. </p>";
 			} else {
-				// ***** Please use require to include the region code *****
-				// ***** Then remove this line
-				require('querygenelist2.php');
+				$result = mergeRegion($_REQUEST["species"], $_REQUEST["geneName"], $spcDbName);
 			}
 		} else if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
-			require('querygenelist.php');
+			$result = findGeneList($_REQUEST["geneName"], ($_REQUEST["direct"] == "true"), $spcDbName);
 		} else {
 			$isError = true;
 			echo "<p class=\"formstyle\"> Please specify coordinates in \"chrX:XXXXX-XXXXX\" format or \"chrX XXXXX XXXXX\" format or select \"Gene name\" to query a gene across all species. </p>";
@@ -89,8 +82,8 @@
 			for($i = 0; $i < $num_spc; $i++) {
 				if($spcflag[$i]) {
 					$currentRegionSpecies = $currentRegion[$spcinfo[$i]["dbname"]][0];
-					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: 
-						(isset($currentRegionSpecies["genenamelist"])? implode(", ", $currentRegionSpecies["genenamelist"]): NULL);
+					$nameInSpc = isset($currentRegionSpecies["nameinspc"])? $currentRegionSpecies["nameinspc"]: NULL;
+					$geneListToShow = isset($currentRegionSpecies["genenamelist"])? implode(", ", $currentRegionSpecies["genenamelist"]): NULL;
 					$genesInRegion = isset($currentRegionSpecies["genenamelist"])? $currentRegionSpecies["genenamelist"]: NULL;
 					$regionStart = isset($currentRegionSpecies["genestart"])? $currentRegionSpecies["genestart"]: $currentRegionSpecies["start"];
 					$regionEnd = isset($currentRegionSpecies["geneend"])? $currentRegionSpecies["geneend"]: $currentRegionSpecies["end"];
@@ -101,42 +94,45 @@
 			?>
           <tr class="smallformstyle">
             <td width="20%" valign="top"><?php echo $spcinfo[$i]["commonname"]; ?></td>
-            <td width="80%" valign="top">
-              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>">
-			  <?php 
-			  		$geneListNeeded = false;
-					if(!is_null($genesInRegion) && strlen($nameInSpc) > 19) {
-						for($iGene = 0; $iGene < count($genesInRegion); $iGene++) {
-							$nameInSpc .= $genesInRegion[$iGene] . ", ";
-							if(strlen($nameInSpc) > 10) {
-								$nameInSpc .= "...";
-								// Write a hidden layer for gene names
-								$geneListNeeded = true;
-								break;
+            <td width="80%" valign="top"><?php 
+					$geneListNeeded = false;
+			  		if(!is_null($nameInSpc)) {
+						?>
+              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "NameDisp"; ?>"> <?php echo $nameInSpc; ?> </span>
+              <?php
+					} elseif(!is_null($geneListToShow)) {
+						if(strlen($geneListToShow) > 19) {
+							$geneListToShow = '';
+							for($iGene = 0; $iGene < count($genesInRegion); $iGene++) {
+								$geneListToShow .= $genesInRegion[$iGene] . ", ";
+								if(strlen($geneListToShow) > 10) {
+									$geneListToShow .= "...";
+									// Write a hidden layer for gene names
+									$geneListNeeded = true;
+									break;
+								}
 							}
 						}
-					}
-			  		if(!is_null($nameInSpc)) {
-						echo $nameInSpc;
+						?>
+              <span id="<?php echo $currentRegionName . $spcinfo[$i]["dbname"] . "GeneListDisp"; ?>"> <?php echo $geneListToShow; ?> </span>
+              <?php
 					}
 					?>
-              </span>
-                    <?php
-					if(!is_null($nameInSpc)) {
+              <?php
+					if(!is_null($nameInSpc) || !is_null($geneListToShow)) {
 						echo "<br />";
 					}
 					if($geneListNeeded) {
 								?>
-              <span class="geneNameExpander">More</span>
-              <span class="geneNameInsert">
-                                <?php
+              <span class="geneNameExpander">More</span> <span class="geneNameInsert">
+              <?php
 								for($jGene = 0; $jGene < count($genesInRegion); $jGene++) {
 									echo $genesInRegion[$iGene] . "<br />";
 								}
                                 ?>
               </span>
               <div style="clear: both;"></div>
-                                <?php 
+              <?php 
 					}
 					if(!$spcmultiflag[$i]) {
 					?>

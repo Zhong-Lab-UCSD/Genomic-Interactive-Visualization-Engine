@@ -121,7 +121,7 @@ Track.prototype.getReadableID = function() {
 
 Track.prototype.getCleanID = function() {
 	// remove blanks and brackets in IDs to conform to HTML 4.1
-	return this.getID().replace(/[\s\(\)]/g, '');
+	return this.getID().replace(/[\s\(\)\+\/]/g, '');
 };
 
 Track.prototype.compareTo = function(target, length, methodind, methodall, methodspc, orderBySpcID) {
@@ -138,15 +138,6 @@ Track.prototype.isSignificant = function(length, methodind, methodall, methodspc
 
 
 
-//function TrackBundle() {
-//	this.array = new Array();
-//	this.map = new Object();
-//}
-//
-//TrackBundle.prototype.addTrack = function(track) {
-//	this.array.push(track);
-//	this.map[track.id] = track;
-//};
 
 // class SpeciesTable is a table for all SpeciesTableEntry, 
 // 		and contains individual track value in different species in a common track
@@ -251,6 +242,16 @@ CmnTrack.prototype.getSpeciesTblName = function(DB) {
 	return this.spcTables[DB].getTableName();
 };
 
+CmnTrack.prototype.getWholeSpcTblName = function() {
+	var result = new Object();
+	for(var spcTable in this.spcTables) {
+		if(this.spcTables.hasOwnProperty(spcTable)) {
+			result[spcTable] = this.spcTables[spcTable].getTableName();
+		}
+	}
+	return result;
+};
+
 CmnTrack.prototype.addSpeciesValues = function(DB, tableName, validCount, sum, sumSquare) {
 	this.spcTables[DB].addValues(tableName, validCount, sum, sumSquare);
 	this.spcArrayUpdated = true;
@@ -279,6 +280,7 @@ CmnTrack.prototype.isSpcArrayUpdated = function() {
 
 CmnTrack.prototype.getID = function() {
 	// strip the "series" in common track IDs
+	// Notice this is for CEpBrowser only, for UCSC, need to get original ID
 	return this.id.replace(/Series/g, '');
 };
 
@@ -291,7 +293,7 @@ CmnTrack.prototype.writeTable = function() {
 	
 	// download button
 	// img and alt
-	result += '<img class="downloadButton" src="images/download.png" alt="Download data for '
+	result += '<img class="downloadButton" src="cpbrowser/images/download.png" alt="Download data for '
 		+ this.getReadableID()	+ '" width="15" height="15" id="' 
 		+ this.getCleanID() + '_cmndlbtn" onclick="return callDownloadMenu(\''
 		+ this.id + '\', true, \'' + this.getCleanID() 
@@ -302,11 +304,28 @@ CmnTrack.prototype.writeTable = function() {
 	return result;
 };
 
+CmnTrack.prototype.updateStatus = function(spcarray) {
+	// this is to update UniTrack.status from the checkboxes;
+	// then update the hidden inputs in UCSC parts
+	// when engine changed, this should be more straightforward
+	// maybe directly sending tableNames out
+	
+	this.status = document.getElementById(this.getCleanID()).checked;
+	for(var i = 0; i < spcarray.length; i++) {
+		var conDoc = (document.getElementById(spcarray[i].db + '_controls').contentWindow || document.getElementById(spcarray[i].db + '_controls').contentDocument);
+		var target = conDoc.getElementById(this.id);
+		if(target) {
+			target.value = (this.status? 'dense': 'hide');
+		}
+	}
+};
+
+
 
 
 
 function CmnTrackEncode(ID, Status, SpcArray, Title, Info) {
-	spcEncodeArray = SpcArray;
+	var spcEncodeArray = SpcArray.slice(0);
 	
 	// remove non-encode species
 	if(spcEncodeArray instanceof Array) {
@@ -321,8 +340,15 @@ function CmnTrackEncode(ID, Status, SpcArray, Title, Info) {
 	CmnTrack.call(this, ID, Status, spcEncodeArray);
 	this.title = Title;
 	this.info = Info;
+	this.sample = Info.replace(/(<([^>]+)>)/ig,"").split('\t')[0];	// this regex is to strip all html tags, then
 }
 extend(CmnTrack, CmnTrackEncode);
+
+CmnTrackEncode.prototype.getSampleType = function() {
+	// extract sampleType from this.info
+	// maybe needs to be called in constructor
+	return this.sample;
+};
 
 CmnTrackEncode.prototype.getCompareValue = function(length, methodind, methodall, methodspc, orderBySpcID) {
 	methodall = methodall || glo_methodall;		
@@ -361,11 +387,6 @@ CmnTrackEncode.prototype.getCompareValue = function(length, methodind, methodall
 	return 0.0;
 };
 
-CmnTrackEncode.prototype.setSampleType = function() {
-	// extract sampleType from this.info
-	// maybe needs to be called in constructor
-};
-
 CmnTrackEncode.prototype.writeTable = function() {
 	// label, checkbox and title
 	var result = '<td><label>\n<input id="' + this.getCleanID()
@@ -379,10 +400,10 @@ CmnTrackEncode.prototype.writeTable = function() {
 	result += '<td><div id="' + this.getCleanID() + 'Preview"></div></td>\n';
 	// download button
 	// img
-	result += '<img class="downloadButton" src="images/download.png" alt="Download data for '
+	result += '<td><img class="downloadButton" src="cpbrowser/images/download.png" alt="Download data for '
 		+ this.title + '" width="15" height="15" id="' 
 		+ this.getCleanID() + '_cmnedlbtn" onclick="return callDownloadMenu(\''
-		+ this.getCleanID() + '\', true, \'' + this.getCleanID() 
+		+ this.id + '\', true, \'' + this.getCleanID() 
 		+ '_cmnedlbtn\', true);" />';
 	// close tags
 	result += '</td>\n';
@@ -391,10 +412,180 @@ CmnTrackEncode.prototype.writeTable = function() {
 };
 
 
+function TrackBundle() {
+	this.array = new Array();
+	this.map = new Object();
+}
+
+TrackBundle.prototype.addTrack = function(track) {
+	this.array.push(track);
+	this.map[track.id] = track;
+};
+
+TrackBundle.prototype.get = function(index) {
+	// index can be number or string
+	if (typeof index == 'number') {
+		return this.array[index];
+	}
+	return this.map[index];
+};
+
+TrackBundle.prototype.length = function() {
+	return this.array.length;
+}
+
+function TrackBundleWithSample(sampleprefix, samplepostfix, idprefix, idpostfix) {
+	TrackBundle.call(this);
+	this.samplePrefix = (typeof(sampleprefix) == 'string')? sampleprefix: '';
+	this.samplePostfix = (typeof(samplepostfix) == 'string')? samplepostfix: '';
+	this.IDPrefix = (typeof(idprefix) == 'string')? idprefix: '';
+	this.IDPostfix = (typeof(idpostfix) == 'string')? idpostfix: '';
+	this.sampleMap = new Object();
+}
+extend(TrackBundle, TrackBundleWithSample);
+
+TrackBundleWithSample.prototype.addTrack = function(track, sample) {
+	TrackBundle.prototype.addTrack.call(this, track);
+	// directly push a Track object into this[sample]
+	if (typeof(this.sampleMap[sample]) == "undefined") {
+		this.sampleMap[sample] = new Object();
+		this.sampleMap[sample].array = new Array();
+		this.sampleMap[sample].map = new Object();
+		this.sampleMap[sample].state = null;
+	}
+	this.sampleMap[sample].array.push(track);
+};
+
+TrackBundleWithSample.prototype.updateState = function(sample) {
+	// synchronize state of checkBoxes and Tracks
+	// also check sample state
+	if (typeof(this.sampleMap[sample]) == 'undefined') {
+		console.log(sample + " is not found in SampleToIDListMap.");
+		return;
+	}
+	var sampleID = sample.replace(/[\s\(\)\+\/]/g, '');
+	this.sampleMap[sample].state = null;
+	// put all states into this[sample].map
+	for(var i = 0; i < this.sampleMap[sample].array.length; i++) {
+		if (this.sampleMap[sample].state == null) {
+			this.sampleMap[sample].state = document.getElementById(this.IDPrefix
+			+ this.sampleMap[sample].array[i].getCleanID() + this.IDPostfix).checked;
+		} else if (this.sampleMap[sample].state != 'mixed'
+			   && this.sampleMap[sample].state != document.getElementById(this.IDPrefix
+				+ this.sampleMap[sample].array[i].getCleanID() + this.IDPostfix).checked) {
+			this.sampleMap[sample].state = 'mixed';
+		}
+		this.sampleMap[sample].array[i].status = document.getElementById(this.IDPrefix
+			+ this.sampleMap[sample].array[i].getCleanID() + this.IDPostfix).checked;
+	}
+	// finally update the sample checkbox
+	//console.log(sample + "|" + this.sampleMap[sample].state);
+	if (this.sampleMap[sample].state == 'mixed') {
+		$('#' + this.samplePrefix + sampleID + this.samplePostfix).attr('checked', true);
+		$('#' + this.samplePrefix + sampleID + this.samplePostfix).prop('indeterminate', true);
+	} else {
+		//console.log($('#' + this.samplePrefix + sample + this.samplePostfix));
+		$('#' + this.samplePrefix + sampleID + this.samplePostfix).attr('checked', this.sampleMap[sample].state);
+		$('#' + this.samplePrefix + sampleID + this.samplePostfix).prop('indeterminate', false);
+	}
+};
+
+TrackBundleWithSample.prototype.updateAllStates = function () {
+	for (var sample in this.sampleMap) {
+		if (this.sampleMap.hasOwnProperty(sample)) {
+			this.updateState(sample);
+		}
+	}
+};
+
+TrackBundleWithSample.prototype.writeSampleTable = function(container) {
+	// container is the ID of the container object to APPEND to the rear
+	var count = 0;
+	for (var sample in this.sampleMap) {
+		if (this.sampleMap.hasOwnProperty(sample)) {
+			var sampleID = sample.replace(/[\s\(\)\+\/]/g, '');
+			var _this = this;
+			$('#' + container).append($('<input type="checkbox" id="' + this.samplePrefix + sampleID 
+				+ this.samplePostfix + '" name="' + sample + '" checked />').change(function() {
+				_this.callChange(this.name);
+				}));
+			$('#' + container).append(sample + '<br />');
+			count++;
+		}
+	}
+	return count;
+};
+
+TrackBundleWithSample.prototype.saveState = function(sample) {
+	// save states from checkboxes into the sample list
+	// this will be called when changed from a tri-state
+	if (typeof(this.sampleMap[sample]) == 'undefined') {
+		console.log(sample + " is not found in SampleToIDListMap.");
+		return;
+	}
+	if(typeof(this.sampleMap[sample].map) == 'undefined') {
+		this.sampleMap[sample].map = new Object();
+	}
+	this.updateState(sample);
+	this.sampleMap[sample].hasMixedState = (this.sampleMap[sample].state == 'mixed');
+	// put all states into this[sample].map
+	for(var i = 0; i < this.sampleMap[sample].array.length; i++) {
+		this.sampleMap[sample].map[this.sampleMap[sample].array[i].getCleanID()] = document.getElementById(this.IDPrefix
+			+ this.sampleMap[sample].array[i].getCleanID() + this.IDPostfix).checked;
+	}
+};
+
+TrackBundleWithSample.prototype.loadState = function(sample) {
+	// load states into checkboxes
+	// this will be called when put into a tri-state
+	if (this.sampleMap[sample].hasMixedState) {
+		for(var i = 0; i < this.sampleMap[sample].array.length; i++) {
+			document.getElementById(this.IDPrefix + this.sampleMap[sample].array[i].getCleanID()
+				+ this.IDPostfix).checked = this.sampleMap[sample].map[this.sampleMap[sample].array[i].getCleanID()];
+		}
+	} else {
+		return false;
+	}
+	return true;
+};
+
+TrackBundleWithSample.prototype.callChange = function(sample) {
+	// state can be 'true', 'tri-state' or 'false' (in this order)
+	// return value will be the new state
+	//
+	var needToUpdate = true;
+	if (this.sampleMap[sample].state != false) {
+		// need to switch to tri-state (if any)
+		if (this.sampleMap[sample].state == true && this.loadState(sample)) {
+			// there is a tri-state to load
+			// after calling the loadState method, all track checkboxes will be updated already
+			this.sampleMap[sample].state = 'mixed';
+			needToUpdate = false;
+		} else {
+			// change into false
+			// but save state first
+			this.saveState(sample);
+			this.sampleMap[sample].state = false;
+			
+		}
+	} else {
+		this.sampleMap[sample].state = true;
+	}
+	// then update according to new this[sample].state
+	if (needToUpdate) {
+		for(var i = 0; i < this.sampleMap[sample].array.length; i++) {
+			document.getElementById(this.IDPrefix + this.sampleMap[sample].array[i].getCleanID() + this.IDPostfix).checked 
+				= this.sampleMap[sample].state;
+		}
+	}
+	this.updateState(sample);
+};
+
 
 
 function UniTrack(DB, ID, TableName, Status) {
-	Track.call(this, DB + "--" + ID, Status);
+	Track.call(this, ID, Status);
+	this.db = DB;
 	this.tableName = DB + "--" + TableName;
 	this.trackData = new SpeciesTable();
 	this.spcArrayUpdated = false;
@@ -423,14 +614,18 @@ UniTrack.prototype.isSpcArrayUpdated = function() {
 	return this.spcArrayUpdated;
 };
 
+UniTrack.prototype.getCleanID = function () {
+	return this.db + "--" + Track.prototype.getCleanID.call(this);
+}
+
 UniTrack.prototype.getReadableID = function() {
 	// strip the db part out
-	return this.getID().replace(/^\w+--/, '').replace(/_+/g, ' ');
+	return this.getID().replace(/_+/g, ' ');
 };
 
 UniTrack.prototype.getNoDbTableName = function() {
 	return this.tableName.replace(/^\w+--/, '');
-}
+};
 
 UniTrack.prototype.writeTable = function(speciesCmnName) {
 	// checkbox
@@ -440,7 +635,7 @@ UniTrack.prototype.writeTable = function(speciesCmnName) {
 		+ this.getReadableID() + '</label>\n';
 	
 	// img
-	result += '<img class="downloadButton" src="images/download.png"'
+	result += '<img class="downloadButton" src="cpbrowser/images/download.png"'
 		+ ' alt="Download data for '
 		+ this.getReadableID() + ' ' + speciesCmnName
 		+ '" id="' + this.getCleanID() + 'dlbtn" width="15"'
@@ -454,6 +649,17 @@ UniTrack.prototype.writeTable = function(speciesCmnName) {
 	return result;
 };
 
+UniTrack.prototype.updateStatus = function() {
+	// this is to update UniTrack.status from the checkboxes;
+	// then update the hidden inputs in UCSC parts
+	// when engine changed, this should be more straightforward
+	// maybe directly sending tableNames out
+	
+	this.status = document.getElementById(this.getCleanID()).checked;
+	var conDoc = (document.getElementById(this.db + '_controls').contentWindow || document.getElementById(this.db + '_controls').contentDocument);
+	conDoc.getElementById(this.getID()).value = (this.status? 'dense': 'hide');
+};
+
 
 
 
@@ -461,6 +667,7 @@ function UniTrackEncode(DB, ID, TableName, Status, Title, Info) {
 	UniTrack.call(this, DB, ID, TableName, Status);
 	this.title = Title;
 	this.info = Info;
+	this.sample = Info.replace(/(<([^>]+)>)/ig,"").split('\t')[0];	// regex is used to strip all html elements
 }
 extend(UniTrack, UniTrackEncode);
 
@@ -474,9 +681,10 @@ UniTrackEncode.prototype.getCompareValue = function(length, methodind, methodall
 	return this.trackData.getCompareValue(length, methodind, methodall);
 };
 
-UniTrackEncode.prototype.setSampleType = function() {
+UniTrackEncode.prototype.getSampleType = function() {
 	// extract sampleType from this.info
 	// maybe needs to be called in constructor
+	return this.sample;
 };
 
 UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
@@ -494,8 +702,8 @@ UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
 	// img
 	result += '<img class="downloadButton" id="' + this.getCleanID() + '_edlbtn" '
 		+ 'onclick="return callDownloadMenu(\''
-		+ this.getCleanID() + '\', true, \'' + this.getCleanID() 
-		+ '_edlbtn\', true);" src="images/download.png" alt="Download data for '
+		+ this.tableName + '\', true, \'' + this.getCleanID() 
+		+ '_edlbtn\', true);" src="cpbrowser/images/download.png" alt="Download data for '
 		+ this.title + ' ' + speciesCmnName + '" width="15" height="15" />';
 	// close tags
 	result += '</td>\n';
@@ -521,10 +729,9 @@ function Species(DB, Name, CommonName, IsEncode) {
 	this.isEncode = IsEncode;
 	
 	this.uniTracksUpdated = false;		// regardless of whether user has selected
-	this.uniTracks = new Array();
+	this.uniTracks = new TrackBundle();
 	// this is for uniTracks, every entry is a uniTrack Object
-	this.uniTracksEncode = new Array();
-	// this is for Encode uniTracks, with uniTrackEncode as a child of uniTrack
+	this.uniTracksEncode = new TrackBundleWithSample(this.db, '', '', '');
 	
 	this.regionToShow = null;
 	// this is to define the region used to show
@@ -551,12 +758,12 @@ Species.prototype.writeUniqueTable = function(isencode) {
 		
 		var uniqueHolderId = '#' + this.db + 'TableHolder';
 		
-		if(this.uniTracks.length > 0) {
+		if(this.uniTracks.length() > 0) {
 			items = [];
 			items.push('<table width="100%"><tr>')
-			for(var j = 0; j < this.uniTracks.length; j++) {
-				items.push(this.uniTracks[j].writeTable(this.commonName));
-				if((j % 2) && j < this.uniTracks.length) {
+			for(var j = 0; j < this.uniTracks.length(); j++) {
+				items.push(this.uniTracks.get(j).writeTable(this.commonName));
+				if((j % 2) && j < this.uniTracks.length()) {
 					items.push('</tr>\n<tr>')
 				}
 			}
@@ -578,12 +785,12 @@ Species.prototype.writeUniqueTable = function(isencode) {
 		this.orderedUniTracksEncode.length = 0;	// this is the sorted common track array
 		this.orderedUniTracksEncode.sigLength = 0;	// number of tracks that have significant results
 		
-		if(this.uniTracksEncode.length > 0) {
+		if(this.uniTracksEncode.length() > 0) {
 			items = [];
-			for(var j = 0; j < this.uniTracksEncode.length; j++) {
+			for(var j = 0; j < this.uniTracksEncode.length(); j++) {
 				items.push('<tr class="trackCell" id="' 
-					+ this.uniTracksEncode[j].getCleanID() + '_tr">');
-				items.push(this.uniTracksEncode[j].writeTable(this.commonName));
+					+ this.uniTracksEncode.get(j).getCleanID() + '_tr">');
+				items.push(this.uniTracksEncode.get(j).writeTable(this.commonName));
 				items.push('</tr>\n')
 			}
 			$(document.getElementById(this.unsortedTbodyID)).append(items.join(''));
@@ -594,7 +801,7 @@ Species.prototype.writeUniqueTable = function(isencode) {
 	}
 };
 
-Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle, init, inbrowser) {
+Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle, init, inbrowser) {
 	var conDoc = (document.getElementById(this.db + "_controls").contentWindow 
 		|| document.getElementById(this.db + "_controls").contentDocument);
 	if(conDoc.document) {
@@ -605,20 +812,19 @@ Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEn
 		// after filling this one, check whether all tracks initialized 
 		// if so, initialize the settings panel
 		
-		var uniTracksNew = (this.uniTracks.length <= 0);
+		var uniTracksNew = (this.uniTracks.length() <= 0);
 
 		var hiddenCommons = conDoc.getElementById("TrackControls").getElementsByTagName("input");
 		// get all the hidden inputs in the browser "common" part
 		
 		for(var i = 0; i < hiddenCommons.length; i++) {
 			var currentTrack;
-			if(typeof cmnTracksBundle.map[hiddenCommons[i].id] == 'undefined') {
+			if(typeof cmnTracksBundle.get(hiddenCommons[i].id) == 'undefined') {
 				currentTrack = new CmnTrack(hiddenCommons[i].id, 
 					hiddenCommons[i].value, speciesArray);
-				cmnTracksBundle.push(currentTrack);
-				cmnTracksBundle.map[hiddenCommons[i].id] = currentTrack;
+				cmnTracksBundle.addTrack(currentTrack);
 			} else {
-				currentTrack = cmnTracksBundle.map[hiddenCommons[i].id];
+				currentTrack = cmnTracksBundle.get(hiddenCommons[i].id);
 			}
 			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
@@ -631,15 +837,14 @@ Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEn
 		// get all the hidden inputs in the browser "common" part
 		
 		for(var i = 0; i < hiddenCommons.length; i++) {
-			if(typeof cmnTracksEncodeBundle.map[hiddenCommons[i].id] == 'undefined') {
+			if(typeof cmnTracksEncodeBundle.get(hiddenCommons[i].id) == 'undefined') {
 				currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
 					hiddenCommons[i].value, speciesArray, 
 					hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
 					hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
-				cmnTracksEncodeBundle.push(currentTrack);
-				cmnTracksEncodeBundle.map[hiddenCommons[i].id] = currentTrack;
+				cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
 			} else {
-				currentTrack = cmnTracksEncodeBundle.map[hiddenCommons[i].id];
+				currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
 			}
 			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
@@ -651,11 +856,12 @@ Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEn
 			// get all the hidden inputs in the browser "common" part
 			
 			for(var i = 0; i < hiddenUniques.length; i++) {
-				if(uniTracksNew) {
-					this.uniTracks.push(new UniTrack(this.db, hiddenUniques[i].id, 
-						hiddenUniques[i].name, hiddenUniques[i].value));
+				if(typeof this.uniTracks.get(hiddenUniques[i].id) == 'undefined') {
+					currentTrack = new UniTrack(this.db, hiddenUniques[i].id, 
+						hiddenUniques[i].name, hiddenUniques[i].value)
+					this.uniTracks.addTrack(currentTrack);
 				} else {
-					this.uniTracks[i].setStatusFromUcsc(hiddenUniques[i].value);
+					this.uniTracks.get(i).setStatusFromUcsc(hiddenUniques[i].value);
 				}
 			}
 		}
@@ -666,13 +872,14 @@ Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEn
 			// get all the hidden inputs in the browser "common" part
 			
 			for(var i = 0; i < hiddenUniques.length; i++) {
-				if(uniTracksNew) {
-					this.uniTracksEncode.push(new UniTrackEncode(this.db, hiddenUniques[i].id,
+				if(typeof this.uniTracksEncode.get(hiddenUniques[i].id) == 'undefined') {
+					currentTrack = new UniTrackEncode(this.db, hiddenUniques[i].id,
 						hiddenUniques[i].name, hiddenUniques[i].value,
 						hiddenUniquesEncodeData[hiddenUniques[i].id + "_title"].innerHTML,
-						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML));
+						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML);
+					this.uniTracksEncode.addTrack(currentTrack, currentTrack.getSampleType());
 				} else {
-					this.uniTracksEncode[i].setStatusFromUcsc(hiddenUniques[i].value);
+					this.uniTracksEncode.get(hiddenUniques[i].id).setStatusFromUcsc(hiddenUniques[i].value);
 				}
 			}
 		}
@@ -690,7 +897,7 @@ Species.prototype.setReady = function(speciesArray, cmnTracksBundle, cmnTracksEn
 function ChrRegion(chrString) {
 	var cleanedChrString = chrString.replace(/,/g, '')
 		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
-	var elements = cleanedChrString.split(/[:-\s]+/);
+	var elements = cleanedChrString.split(/[:\s-]+/);
 	this.chr = elements[0];
 	this.start = parseInt(elements[1]);
 	this.end = parseInt(elements[2]);
@@ -698,14 +905,14 @@ function ChrRegion(chrString) {
 }
 
 ChrRegion.prototype.regionFromString = function(regionString) {
-	var cleanedChrString = chrString.replace(/,/g, '')
+	var cleanedChrString = regionString.replace(/,/g, '')
 		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
-	var elements = cleanedChrString.split(/[:-\s]+/);
+	var elements = cleanedChrString.split(/[:\s-]+/);
 	this.chr = elements[0];
 	this.start = parseInt(elements[1]);
 	this.end = parseInt(elements[2]);
-	this.strand = ((elements.length < 3)? this.strand: ((elements[3] == 'NEGSTR')? false: true));
-}
+	this.strand = ((elements.length < 4)? this.strand: ((elements[3] == 'NEGSTR')? false: true));
+};
 
 ChrRegion.prototype.regionToString = function(includeStrand) {
 	// default is including strand
@@ -725,7 +932,7 @@ ChrRegion.prototype.toString = function() {
 ChrRegion.prototype.setStrand = function(newStr) {
 	switch(typeof(newStr)) {
 		case "string":
-			this.strand = !(newStr.indexOf('-') > 0 || newStr.indexOf('0') > 0);
+			this.strand = !(newStr.indexOf('-') >= 0 || newStr.indexOf('0') >= 0);
 			break;
 		case "number":
 			this.strand = (newStr > 0);
@@ -741,7 +948,7 @@ ChrRegion.prototype.setStrand = function(newStr) {
 
 ChrRegion.prototype.getStrand = function(flankbefore, flankafter) {
 	return ((typeof(flankbefore) == "string")? flankbefore: '')
-		+ this.strand? '+': '-'
+		+ (this.strand? '+': '&minus;')
 		+ ((typeof(flankafter) == "string")? flankafter: '');
 };
 

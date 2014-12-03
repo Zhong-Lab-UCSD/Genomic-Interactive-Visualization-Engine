@@ -43,4 +43,50 @@ function rangeIntersection($start1, $end1, $start2, $end2) {
 	return $e - $s;
 }
 
+function getSpeciesDbNames() {
+	// return a full list of species db names
+	$mysqli = connectCPB();
+	$result = array();
+	$species = $mysqli->query("SELECT dbname FROM species");
+	while($spcitor = $species->fetch_assoc()) {
+		$result[] = $spcitor["dbname"];
+	}
+	$species->free();
+	$mysqli->close();
+	return $result;
+}
+
+function getSpeciesInfoFromArray($spcDbNameList = NULL) {
+	// return everything about species from db indicated by spcDbNameList
+	$mysqli = connectCPB();
+	$spcinfo = array();
+	$sqlstmt = "SELECT * FROM species";
+	if(!empty($spcDbNameList)) {
+		$sqlstmt .= " WHERE dbname = 'hg19'";
+		for($i = 0; $i < count($spcDbNameList); $i++) {
+			$sqlstmt .= " OR dbname = '" . $mysqli->real_escape_string($spcDbNameList[$i]) . "'";
+		}
+	}		
+	$species = $mysqli->query($sqlstmt);
+	while($spcitor = $species->fetch_assoc()) {
+		$spcinfo[] = $spcitor;
+	}	
+	$species->free();
+	$mysqli->close();
+	return $spcinfo;
+}
+
+function getSpeciesDatabaseFromGapInfo($gap, $spcDbName) {
+	// return the database name according the gap value from each species
+	$mysqli = connectCPB();
+	$spcinfo = array();
+	$spcinfo = $mysqli->query("SELECT * FROM $spcDbName WHERE gap<=$gap ORDER BY gap DESC LIMIT 1");
+	while($specdb = $spcinfo->fetch_assoc()){
+		$bb = $specdb['databaseName'];
+	}
+	$spcinfo->free();
+	$mysqli->close();
+	return $bb;
+}
+
 ?>

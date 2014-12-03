@@ -35,16 +35,14 @@ body {
 -->
 </style>
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
-<script language="javascript">
+<script type="text/javascript">
 
 var spcArray = new Array();		// this will be the array of species (Species Object)
-spcArray.map = new Object();
+spcArrayMap = new Object();
 
-var cmnTracks = new Array();	// this will be holding common tracks (CmnTrack Object)
-cmnTracks.map = new Object();	// this is used to store all cmnTrack IDs to prevent duplication
+var cmnTracks = new TrackBundle();	// this will be holding common tracks (CmnTrack Object)
 
-var cmnTracksEncode = new Array();	// this will be holding common Encode tracks (CmnTrack Object)
-cmnTracksEncode.map = new Object();	// this is used to store all cmn Encode Track IDs to prevent duplication
+var cmnTracksEncode = new TrackBundleWithSample('', '_checkbox', '', '');	// this will be holding common Encode tracks (CmnTrack Object)
 
 var orderedCmnTracksEncode = new Array();	// this is the sorted common track array
 orderedCmnTracksEncode.sigLength = 0;		// number of tracks that have significant results
@@ -80,10 +78,10 @@ var left_value = 0;
 var querySent = "";
 
 
-var cmnTracksSampleType = new Object();		// link sample name to array of tracks
-var uniTracksSampleType = new Array();
-var cmnTracksStatusBackup = new Object();	// this is to backup the selection states of tracks for sample selection
-var uniTracksStatusBackup = new Array();
+//var cmnTracksSampleType = new Object();		// link sample name to array of tracks
+//var uniTracksSampleType = new Array();
+//var cmnTracksStatusBackup = new Object();	// this is to backup the selection states of tracks for sample selection
+//var uniTracksStatusBackup = new Array();
 
 var tracksInitialized = false;
 
@@ -112,9 +110,9 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	$('#uniqueHolder').html('');
 	var items = [];
 	items.push('<table width="100%"><tr>');
-	for(var i = 0; i < cmnTracksBundle.length; i++) {
-		items.push(cmnTracksBundle[i].writeTable());
-		if((i % 2) && i < cmnTracksBundle.length) {
+	for(var i = 0; i < cmnTracksBundle.length(); i++) {
+		items.push(cmnTracksBundle.get(i).writeTable());
+		if((i % 2) && i < cmnTracksBundle.length()) {
 			items.push('</tr>\n<tr>');
 		}
 	}
@@ -130,10 +128,10 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	
 	// this is for common track ENCODE part
 	items = [];
-	for(var i = 0; i < cmnTracksEncodeBundle.length; i++) {
+	for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
 		items.push('<tr class="trackCell" id="' 
-			+ cmnTracksEncodeBundle[i].getCleanID() + '_tr">');
-		items.push(cmnTracksEncodeBundle[i].writeTable());
+			+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
+		items.push(cmnTracksEncodeBundle.get(i).writeTable());
 		items.push('</tr>\n');
 	}
 	$('#cmnTrackEncodeTbodyHolder').append(items.join(''));
@@ -144,46 +142,26 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	
 	$('#cmnSampleEncodeHolder').html('');
 	
-	items = [];
-	for(var sample in cmnTracksSampleType) {
-		if(cmnTracksSampleType.hasOwnProperty(sample)) {
-			items.push('<input type="checkbox" id="' + sample 
-				+ '_checkbox" onclick="callCommonSampleChange(\'' + sample + '\')" '
-				+ 'checked' + ' />' 
-				+ sample + '<br />');
-		}
-	}
-	$('#cmnSampleEncodeHolder').append(items.join(''));
+	cmnTracksEncodeBundle.writeSampleTable('cmnSampleEncodeHolder');
 	
-	for(var i = 0; i < uniTracksSampleType.length; i++) {
-		if(isEncodeOn && !spcEncode[spcDbName[i]]) {
-			continue;
-		}
-		var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
-		uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, spcDbName[i]).replace(/spcCmnName/g, spcCmnName[spcDbName[i]]);
-		$('#uniSampleEncodeHolder').append(uniqSampleTemp);
-		
-		var uniqueSampleHolderId = '#' + spcDbName[i] + 'SampleEncodeHolder';
-		var uniqueSampleNumbers = 0;
-		items = [];
-		for(var sample in uniTracksSampleType[i]) {
-			if(uniTracksSampleType[i].hasOwnProperty(sample)) {
-				items.push('<input type="checkbox" id="' + spcDbName[i] + sample 
-					+ '_checkbox" onclick="callUniqueSampleChange(' + i + ', \'' + sample + '\')" />' 
-					+ sample + '<br />');
-				uniqueSampleNumbers++;
+	for(var i = 0; i < speciesArray.length; i++) {
+		if (speciesArray[i].isEncode) {
+			var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
+			uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, speciesArray[i].db).replace(/spcCmnName/g, speciesArray[i].commonName);
+			$('#uniSampleEncodeHolder').append(uniqSampleTemp);
+			var uniqueSampleHolderId = speciesArray[i].db + 'SampleEncodeHolder';
+			if(speciesArray[i].uniTracksEncode.writeSampleTable(uniqueSampleHolderId) <= 0) {
+				$('#' + uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
 			}
 		}
-		$(uniqueSampleHolderId).append(items.join(''));
-		if(uniqueSampleNumbers <= 0) {
-			$(uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
-		}
-	}			
+	}
 	
+	markTrackInitialized(true);
+
 }
 
 function setTrackReady(index) {
-	spcArray[index].setReady(spcArray, cmnTracks, cmnTracksEncode, !tracksInitialized, isInBrowser);
+	spcArray[index].setTrackReady(spcArray, cmnTracks, cmnTracksEncode, !tracksInitialized, isInBrowser);
 }
 
 function validate_form_searchregion() {
@@ -203,28 +181,6 @@ function validate_form_searchregion() {
 		return false;
 	} else {
 		return true;
-	}
-}
-
-function callCommonSampleChange(sample) {
-	// TODO: may implement tri-state later
-	// now it's only bi-state
-	
-	// find all affecting checkboxes
-	for(var i = 0; i < cmnTracksSampleType[sample].length; i++) {
-		document.getElementById(cmnTracksSampleType[sample][i]).checked 
-			= document.getElementById(sample + '_checkbox').checked;
-	}
-}
-
-function callUniqueSampleChange(index, sample) {
-	// TODO: may implement tri-state later
-	// now it's only bi-state
-	
-	// find all affecting checkboxes
-	for(var i = 0; i < uniTracksSampleType[index][sample].length; i++) {
-		document.getElementById(uniTracksSampleType[index][sample][i]).checked 
-			= document.getElementById(spcDbName[index] + sample + '_checkbox').checked;
 	}
 }
 
@@ -300,7 +256,7 @@ function searchTracks() {
 	toggleTbody('cmnTrackEncodeInsigTbodyHolder', false);
 	
 	for(var i = 0; i < spcArray.length; i++) {
-		if(isEncodeOn && !spcArray[i].isEncode) {
+		if(!isEncodeOn || !spcArray[i].isEncode) {
 			continue;
 		}
 		spcArray[i].regionToShow = new ChrRegion($('#regionToShow').val());
@@ -320,7 +276,7 @@ function searchTracks() {
 		$('#' + cmnTracksEncode[j].getCleanID() + 'Preview').html('');
 		cmnTracksEncode[j].clearAllSpeciesValues();
 		for(var i = 0; i < spcArray.length; i++) {
-			if(isEncodeOn && !spcArray[i].isEncode) {
+			if(!isEncodeOn || !spcArray[i].isEncode) {
 				continue;
 			}
 			var sendData = new Object();
@@ -334,7 +290,7 @@ function searchTracks() {
 		}
 	}
 	for(var i = 0; i < spcArray.length; i++) {
-		if(isEncodeOn && !spcArray[i].isEncode) {
+		if(!isEncodeOn || !spcArray[i].isEncode) {
 			continue;
 		}
 		for(var j = 0; j < spcArray[i].uniTracksEncode.length; j++) {
@@ -592,29 +548,38 @@ function validate_form_genequery() {
 //		}
 		postdata[field.name] = field.value;
 		});
+	$('#search').prop('disabled', true);
+	$("#genelistContentHolder").html('');
+	$('#genelistLoading').removeClass('BoxHide');
 	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
+		$('#genelistLoading').addClass('BoxHide');
 		$("#genelistContentHolder").html(data);
+		$('#search').prop('disabled', false);
 	});
 	return false;
 }
 
 function checkEncodeSpecies() {
 	var spcAvailableCount = 0;
-	for(var i = 0; i < spcNum; i++) {
-		if(isEncodeOn && !spcEncode[spcDbName[i]]) {
-			$('#' + spcDbName[i] + '_checkbox').hide();
-			$('#' + spcDbName[i]).attr('checked', false);
+	for(var i = 0; i < spcArray.length; i++) {
+		if(isEncodeOn && !spcArray[i].isEncode) {
+			$('#' + spcArray[i].db + '_checkboxWrapper').hide();
+			$('#' + spcArray[i].db).attr('checked', false);
+			spcArray[i].isActive = false;
 		} else {
-			$('#' + spcDbName[i] + '_checkbox').show();
-			$('#' + spcDbName[i]).attr('checked', true);
+			$('#' + spcArray[i].db + '_checkboxWrapper').show();
+			$('#' + spcArray[i].db).attr('checked', true);
+			spcArray[i].isActive = true;
 			spcAvailableCount++;
 		}
+		updateSpcActive(spcArray[i].db);
 	}
 	if(spcAvailableCount > 2) {
 		$('#speciesTable').show();
 	} else {
 		$('#speciesTable').hide();
 	}
+	updateType();
 }
 
 function changeGeneName(id, namearray, strand, strandArray) {
@@ -634,7 +599,7 @@ function updateNavigation(formid) {
 	for(var spcIndex = 0; spcIndex < spcArray.length; spcIndex++) {
 		if(spcArray[spcIndex].isActive) {
 			var coorString, strand;
-			for(var i = 0; i < itemLeft.length, i++) {
+			for(var i = 0; i < itemLeft.length; i++) {
 				if(itemLeft[i].name == spcArray[spcIndex].db) {
 					coorString = itemLeft[i].value;
 					itemLeft.splice(i, 1);
@@ -645,20 +610,25 @@ function updateNavigation(formid) {
 					i--;
 				}
 			}
-			var currGeneSpcName = $('#' + currGene.getCleanName() + spcArray[spcIndex].db + "NameDisp").html()
+			var currGeneSpcName;
+			if($('#' + currGene.getCleanName() + spcArray[spcIndex].db + "NameDisp").size()) {
+				currGeneSpcName = $('#' + currGene.getCleanName() + spcArray[spcIndex].db + "NameDisp").html().trim();
+			} else {
+				currGeneSpcName = currGene.name;
+			}
 			currGene.pushSpcGene(currGeneSpcName, coorString);
 			currGene.spcGenes[spcIndex].setStrand(strand);
+			var naviStrEach = $('#spcNaviTemplate').html();
+			naviStrEach = naviStrEach.replace(/spcGeneName/g, 
+				currGene.spcGenes[spcIndex].getShortName() 
+				+ " " + currGene.spcGenes[spcIndex].getStrand("(", ")")).replace(/spcDbName/g, 
+				spcArray[spcIndex].db).replace(/spcCmnName/g, 
+				spcArray[spcIndex].commonName).replace(/spcCoor/g, 
+				currGene.spcGenes[spcIndex].regionToString(false));
+			naviStr += naviStrEach;
 		} else {
-			currGene.pushSpcGene();
+			currGene.pushSpcGene();				// place holder to prevent screwing up orders
 		}
-		var naviStrEach = $('#spcNaviTemplate').html();
-		naviStrEach = naviStrEach.replace(/spcGeneName/g, 
-			currGene.spcGenes[spcIndex].getShortName() 
-			+ " " + currGene.spcGenes[spcIndex].getStrand("(", ")")).replace(/spcDbName/g, 
-			spcArray[spcIndex].db).replace(/spcCmnName/g, 
-			spcArray[spcIndex].commonName).replace(/spcCoor/g, 
-			currGene.spcGenes[spcIndex].regionToString(false));
-		naviStr += naviStrEach;
 	}
 		
 	$('#navigationContent').html(naviStr);
@@ -678,36 +648,44 @@ function updateNavigation(formid) {
 
 function showHover(key) {
 	var i;
-	for(i = 0; i < numSpc; i++) {
-		var suffix = key.replace(/L/, (speciesDbStrand[i] == "1"? "left": "right")).replace(/R/, (speciesDbStrand[i] == "1"? "right": "left"));
-		//console.log('#' + speciesDbName + suffix);
-		$('#' + speciesDbName[i] + suffix).addClass('hoverToolButtonImage');
-		//$('#' + speciesDbName[i] + suffix).removeClass('toolButtonImage');
+	for(i = 0; i < spcArray.length; i++) {
+		if(spcArray[i].isActive) {
+			var suffix = key.replace(/L/, (currGene.spcGenes[i].strand? "left": "right")).replace(/R/, (currGene.spcGenes[i].strand? "right": "left"));
+			//console.log('#' + speciesDbName + suffix);
+			$('#' + spcArray[i].db + suffix).addClass('hoverToolButtonImage');
+			//$('#' + speciesDbName[i] + suffix).removeClass('toolButtonImage');
+		}
 	}
 }
 
 function hideHover(key) {
 	var i;
-	for(i = 0; i < numSpc; i++) {
-		var suffix = key.replace(/L/, (speciesDbStrand[i] == "1"? "left": "right")).replace(/R/, (speciesDbStrand[i] == "1"? "right": "left"));
-		//$('#' + speciesDbName[i] + suffix).addClass('toolButtonImage');
-		$('#' + speciesDbName[i] + suffix).removeClass('hoverToolButtonImage');
+	for(i = 0; i < spcArray.length; i++) {
+		if(spcArray[i].isActive) {
+			var suffix = key.replace(/L/, (currGene.spcGenes[i].strand? "left": "right")).replace(/R/, (currGene.spcGenes[i].strand? "right": "left"));
+			//$('#' + speciesDbName[i] + suffix).addClass('toolButtonImage');
+			$('#' + spcArray[i].db + suffix).removeClass('hoverToolButtonImage');
+		}
 	}
 }
 
 function showZoomHover(key) {
 	var i;
-	for(i = 0; i < numSpc; i++) {
-		$('#' + speciesDbName[i] + key).addClass('hoverToolButton');
-		//$('#' + speciesDbName[i] + key).removeClass('toolButton');
+	for(i = 0; i < spcArray.length; i++) {
+		if(spcArray[i].isActive) {
+			$('#' + spcArray[i].db + key).addClass('hoverToolButton');
+			//$('#' + speciesDbName[i] + key).removeClass('toolButton');
+		}
 	}
 }
 
 function hideZoomHover(key) {
 	var i;
-	for(i = 0; i < numSpc; i++) {
-		//$('#' + speciesDbName[i] + key).addClass('toolButton');
-		$('#' + speciesDbName[i] + key).removeClass('hoverToolButton');
+	for(i = 0; i < spcArray.length; i++) {
+		if(spcArray[i].isActive) {
+			//$('#' + speciesDbName[i] + key).addClass('toolButton');
+			$('#' + spcArray[i].db + key).removeClass('hoverToolButton');
+		}
 	}
 }
 
@@ -718,9 +696,9 @@ function setUnReady(db) {
 
 function setReady(db, coor) {
 	$('#' + db + 'Coor').html(coor);
-	currGene.spcGenes[spcArray.map[db]].regionFromString(coor);
+	currGene.spcGenes[spcArrayMap[db]].regionFromString(coor);
 	$('#' + db + 'Loading').addClass('BoxHide');
-	spcArray[spcArray.map[db]].isReady = true;
+	spcArray[spcArrayMap[db]].isReady = true;
 	var allSpcReady = true;
 	for(i = 0; i < spcArray.length; i++) {
 		if(spcArray[i].isActive && !spcArray[i].isReady) {
@@ -732,92 +710,13 @@ function setReady(db, coor) {
 	}
 }
 
-function setCommonTrackSample(trackID, sample) {
-	sample = sample.replace(/(<([^>]+)>)/ig,"");
-	if(typeof(cmnTracksSampleType[sample]) == 'undefined') {
-		// not define in this sample yet
-		cmnTracksSampleType[sample] = new Array();
-	}
-	cmnTracksSampleType[sample].push(trackID);
-}
-
-function setUniqueTrackSample(index, trackID, sample) {
-	sample = sample.replace(/(<([^>]+)>)/ig,"");
-	if(typeof(uniTracksSampleType[index][sample]) == 'undefined') {
-		// not define in this sample yet
-		uniTracksSampleType[index][sample] = new Array();
-	}
-	uniTracksSampleType[index][sample].push(trackID);
-}
-
-
-function callCommonSampleChange(sample) {
-	// TODO: may implement tri-state later
-	// now it's only bi-state
-	
-	// find all affecting checkboxes
-	for(var i = 0; i < cmnTracksSampleType[sample].length; i++) {
-		document.getElementById(cmnTracksSampleType[sample][i]).checked 
-			= document.getElementById(sample + '_checkbox').checked;
-	}
-}
-
-function callUniqueSampleChange(index, sample) {
-	// TODO: may implement tri-state later
-	// now it's only bi-state
-	
-	// find all affecting checkboxes
-	for(var i = 0; i < uniTracksSampleType[index][sample].length; i++) {
-		document.getElementById(uniTracksSampleType[index][sample][i]).checked 
-			= document.getElementById(spcDbName[index] + sample + '_checkbox').checked;
-	}
-}
-
 function updateSampleCheckbox() {
-	for(var sample in cmnTracksSampleType) {
-		if(cmnTracksSampleType.hasOwnProperty(sample)) {
-			var sampleState = document.getElementById(cmnTracksSampleType[sample][0]).checked;
-			var mixed = false;
-			for(var i = 1; i < cmnTracksSampleType[sample].length; i++) {
-				if(document.getElementById(cmnTracksSampleType[sample][i]).checked != sampleState) {
-					// it's mixed
-					mixed = true;
-					break;
-				}
-			}
-			if(mixed) {
-				$('#' + sample + '_checkbox').attr('checked', true);
-				$('#' + sample + '_checkbox').prop('indeterminate', true);
-			} else {
-				$('#' + sample + '_checkbox').prop('indeterminate', false);
-				$('#' + sample + '_checkbox').attr('checked', sampleState);
-			}
-		}
-	}
-	for(var s = 0; s < uniTracksSampleType.length; s++) {
-		if(!spcEncode[spcDbName[s]]) {
+	cmnTracksEncode.updateAllStates();
+	for(var s = 0; s < spcArray.length; s++) {
+		if(!spcArray[s].isEncode) {
 			continue;
 		}
-		for(var sample in uniTracksSampleType[s]) {
-			if(uniTracksSampleType[s].hasOwnProperty(sample)) {
-				var sampleState = document.getElementById(uniTracksSampleType[s][sample][0]).checked;
-				var mixed = false;
-				for(var i = 1; i < uniTracksSampleType[s][sample].length; i++) {
-					if(document.getElementById(uniTracksSampleType[s][sample][i]).checked != sampleState) {
-						// it's mixed
-						mixed = true;
-						break;
-					}
-				}
-				if(mixed) {
-					$('#' + spcDbName[s] + sample + '_checkbox').attr('checked', true);
-					$('#' + spcDbName[s] + sample + '_checkbox').prop('indeterminate', true);
-				} else {
-					$('#' + spcDbName[s] + sample + '_checkbox').prop('indeterminate', false);
-					$('#' + spcDbName[s] + sample + '_checkbox').attr('checked', sampleState);
-				}
-			}
-		}
+		spcArray[s].uniTracksEncode.updateAllStates();
 	}
 }
 
@@ -846,16 +745,20 @@ function callMasterViewChange(change, isZoom) {
 	if(isZoom) {
 		// is simple zoom, no need to convert strand
 		var i;
-		for(i = 0; i < numSpc; i++) {
-			callViewChange(speciesDbName[i], change);
+		for(i = 0; i < spcArray.length; i++) {
+			if(spcArray[i].isActive) {
+				callViewChange(spcArray[i].db, change);
+			}
 		}
 	} else {
 		var i;
-		for(i = 0; i < numSpc; i++) {
-			if(speciesDbStrand[i] == "1") {
-				callViewChange(speciesDbName[i], change);
-			} else {
-				callViewChange(speciesDbName[i], ((change.search("left") >= 0)? change.replace(/left/, "right"): change.replace(/right/, "left")));
+		for(i = 0; i < spcArray.length; i++) {
+			if(spcArray[i].isActive) {
+				if(currGene.spcGenes[i].strand) {
+					callViewChange(spcArray[i].db, change);
+				} else {
+					callViewChange(spcArray[i].db, ((change.search("left") >= 0)? change.replace(/left/, "right"): change.replace(/right/, "left")));
+				}
 			}
 		}
 	}
@@ -878,9 +781,9 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 	if(isCommon) {
 		// This comes from common, send the whole associative array to download page
 		if(!isEncode) {
-			sendData = cmnTracksTableNames[cmnName];
+			sendData = cmnTracks.get(cmnName).getWholeSpcTblName();
 		} else {
-			sendData = cmnTracksEncodeTableNames[cmnName];
+			sendData = cmnTracksEncode.get(cmnName).getWholeSpcTblName();
 		}
 		$.getJSON('cpbrowser/getdownload.php', sendData, function(data) {
 			// The return will have basically one key (spcDbName+'__'+tableName), 
@@ -893,7 +796,7 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 				var db = key.split("__")[0];
 				if(currentDb != db) {
 					// db has changed
-					items.push("<div class='speciesTrackHeader'>" + spcCmnName[db] + "</div>");
+					items.push("<div class='speciesTrackHeader'>" + spcArray[spcArrayMap[db]].commonName + "</div>");
 					currentDb = db;
 				}
 				// split the value into shortlabel, type, and long label
@@ -908,7 +811,7 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 			$('#downloadContent').html(items.join(''));
 		});
 	} else {
-		var uniIDNames = cmnName.split("__");
+		var uniIDNames = cmnName.split("--");
 		var jsondata = new Object();
 		jsondata[uniIDNames[0]] = uniIDNames[1];
 		$.getJSON('cpbrowser/getdownload.php', jsondata, function(data) {
@@ -994,79 +897,6 @@ function markTrackInitialized(flag) {
 }
 
 
-function updateTracks() {
-	// First do Encode controls
-	var cmnControls = document.getElementById('cmnTrackEncodeHolder').getElementsByTagName('input');
-	
-	for(var index = 0; index < spcDbName.length; index++) {
-		var db = spcDbName[index];
-		if(!spcEncode[db]) continue;
-		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
-		if(conDoc.document) {
-			conDoc = conDoc.document;
-		}
-		
-		for(var i = 0; i < cmnControls.length; i++) {
-			var target = conDoc.getElementById(cmnControls[i].id);
-			if(target) {
-				target.value = (cmnControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(cmnControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		var uniControls = document.getElementById(db + 'EncodeHolder').getElementsByTagName('input');
-		for(var i = 0; i < uniControls.length; i++) {
-			var uniControlIDs = uniControls[i].id.split('__');
-			var target = conDoc.getElementById(uniControlIDs[1]);
-			if(target) {
-				target.value = (uniControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(uniControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		//conDoc.getElementById('TrackForm').submit();
-		//setUnReady(db);
-		//uniTracksDone[index] = false;
-	}
-	
-	cmnControls = document.getElementById('cmnTrackHolder').getElementsByTagName('input');
-	for(var index = 0; index < spcDbName.length; index++) {
-		var db = spcDbName[index];
-		var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
-		if(conDoc.document) {
-			conDoc = conDoc.document;
-		}
-		
-		for(var i = 0; i < cmnControls.length; i++) {
-			var target = conDoc.getElementById(cmnControls[i].id);
-			if(target) {
-				target.value = (cmnControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(cmnControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		var uniControls = document.getElementById(db + 'Holder').getElementsByTagName('input');
-		for(var i = 0; i < uniControls.length; i++) {
-			var target = conDoc.getElementById(uniControls[i].id);
-			if(target) {
-				target.value = (uniControls[i].checked? 'dense': 'hide');
-			} else {
-				console.log(uniControls[i].id + " is not found in " + db + "!");
-			}
-		}
-		
-		conDoc.getElementById('TrackForm').submit();
-		setUnReady(db);
-		uniTracksDone[index] = false;
-	}
-	
-	markTrackInitialized(false);
-	toggleWindow('trackSelect');
-}
-
 function resetTracks() {
 	for(var index = 0; index < spcArray.length; index++) {
 		if(spcArray[index].isActive) {
@@ -1151,7 +981,85 @@ function resize_tbody() {
 	$('#EncodeData').css('max-height', ($(window).height() - 114) + 'px'); 
 }
 
+function updateSpcActive(ID) {
+	spcArray[spcArrayMap[ID]].isActive = document.getElementById(ID).checked;
+}
+
+function updateType() {
+	var spcOrGeneName = $("#speciesOrGeneName");
+	var typeSelected = spcOrGeneName.val();
+	if(typeSelected != "gene" && !spcArray[spcArrayMap[typeSelected]].isActive) {
+		typeSelected = "gene";
+	}
+	spcOrGeneName.empty();
+	spcOrGeneName.append(new Option("Gene name", "gene"));
+	for(var i = 0; i < spcArray.length; i++) {
+		if(spcArray[i].isActive) {
+			spcOrGeneName.append(new Option(spcArray[i].db + " region", spcArray[i].db));
+		}
+	}
+	spcOrGeneName.val(typeSelected);
+}
+
+function updateSpcCheckbox() {
+	updateSpcActive(this.id);
+	updateType();
+}
+
+function validateUploadFileOrURL() {
+//	window.alert(document.getElementById("genelist").selectedIndex);
+	if($("#geneName").val() == "") {
+		window.alert("You need to either choose a gene or type in part of its name before proceeding.");
+		return false;
+	}
+	var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
+	if(chromRegex.test($("#geneName").val())) {
+		if($("#speciesOrGeneName").val() == "gene") {
+			// should choose a species
+			window.alert("Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field.");
+			return false;
+		}
+	} else if($("#speciesOrGeneName").val() != "gene") {
+		// should input coordinate
+		window.alert("Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species.");
+		return false;
+	}
+	
+	var checked = 0;
+	for(var i = 0; i < document.getElementById("searchform").elements.length; i++) {
+		if(document.getElementById("searchform").elements[i].type == "checkbox" 
+			&& document.getElementById("searchform").elements[i].checked) {
+			checked++;
+		}
+	}
+	if(checked < 2) {
+		window.alert("You need to choose at least TWO (2) species.");
+		return false;
+	}
+	// Now is the real Ajax part.
+	var postdata = {};
+//	speciesDbName = new Array();
+	$.each($('#searchform').serializeArray(), function(i, field) {
+//		if($('#' + field.name).is("checkbox")) {
+//			speciesDbName.push(field.name);
+//		}
+		postdata[field.name] = field.value;
+		});
+	$('#search').prop('disabled', true);
+	$("#genelistContentHolder").html('');
+	$('#genelistLoading').removeClass('BoxHide');
+	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
+		$('#genelistLoading').addClass('BoxHide');
+		$("#genelistContentHolder").html(data);
+		$('#search').prop('disabled', false);
+	});
+	return false;
+}
+
 $(document).ready( function () {
+	for(var i = 0; i < spcArray.length; i++) {
+		$('#' + spcArray[i].db).on("change", updateSpcCheckbox);
+	}
 	document.getElementById('sidebar1').style.left = left_value + "px";
 	document.getElementById('leftborder').style.left = left_value + left_width + "px";
 	document.getElementById('mainContent').style.left = left_value + left_width + 5 + "px";
@@ -1172,7 +1080,6 @@ $(document).ready( function () {
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
-
 </script>
 <?php
 	$mysqli = connectCPB();
@@ -1180,12 +1087,12 @@ $(document).ready( function () {
 </head>
 <body class="twoColLiqLt" onresize="resize_tbody();">
 <div id="container">
-<div id="sidebar1">
-  <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/Logo.gif" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
-  <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene / Region Query</span></div>
-  <div id="selectionHolder">
-    <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form_genequery();">
-      <?php
+  <div id="sidebar1">
+    <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/Logo.gif" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
+    <div class="header" id="selectHeader" onclick="togglePanel('selection', false);"> <span class="tableHeader"><span class="headerIndicator" id="selectionIndicator">[-]</span> Gene / Region Query</span></div>
+    <div id="selectionHolder">
+      <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form_genequery();">
+        <?php
 	// TODO: need to do something about the species here
 	// first connect to database and find the number of species
 	$species = $mysqli->query("SELECT * FROM species");
@@ -1197,248 +1104,225 @@ $(document).ready( function () {
 	}
 	$num_spc = sizeof($spcinfo);
 	?>
-      <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
-      <div class="selectBox">
-        <select id="speciesOrGeneName" name="species">
-          <option value="gene">Gene name</option>
-          <?php
+        <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
+        <div class="selectBox">
+          <select id="speciesOrGeneName" name="species">
+            <option value="gene">Gene name</option>
+            <?php
 	for($i = 0; $i < $num_spc; $i++) {
 		?>
-          <script type="text/javascript">
+            <script type="text/javascript">
 				spcArray.push(new Species("<?php echo $spcinfo[$i]["dbname"]; ?>", 
 					"<?php echo $spcinfo[$i]["name"]; ?>", "<?php echo $spcinfo[$i]["commonname"]; ?>",
 					<?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>));
-				spcArray.map["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
+				spcArrayMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
 			  </script>
-          <option value="<?php echo $spcinfo[$i]["dbname"]; ?>"><?php echo $spcinfo[$i]["dbname"]; ?> region</option>
-          <?php
+            <option value="<?php echo $spcinfo[$i]["dbname"]; ?>"><?php echo $spcinfo[$i]["dbname"]; ?> region</option>
+            <?php
 	}
         ?>
-        </select>
-      </div>
-      <input id="search" name="search" type="submit" value="GO" />
-      <input name="geneName" id="geneName" type="text" size="15" maxlength="40" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
-      <div style="clear: both;"></div>
-      <input type="hidden" id="direct" name="direct" value="false" />
-      <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="border: 1px solid #666666; margin: 3px 0px; min-height: 60px;">
-        <tr>
-          <td width="18px" bgcolor="#666666" style="border: 1px solid #666666;"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
-          <td style="border: 1px solid #666666;"><script type="text/javascript">
-		spcNum = <?php echo $num_spc; ?>;
-	</script>
-            <?php
+          </select>
+        </div>
+        <input id="search" name="search" type="submit" value="GO" />
+        <input name="geneName" id="geneName" type="text" size="15" maxlength="40" onfocus="textChanged();" onblur="textBlured();" autocomplete="off" />
+        <div style="clear: both;"></div>
+        <input type="hidden" id="direct" name="direct" value="false" />
+        <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="border: 1px solid #666666; margin: 3px 0px; min-height: 60px;">
+          <tr>
+            <td width="18px" bgcolor="#666666" style="border: 1px solid #666666;"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
+            <td style="border: 1px solid #666666;"><?php
 	for($i = 0; $i < $num_spc; $i++) {
 		
 ?>
-            <script type="text/javascript">
-				spcDbName.push("<?php echo $spcinfo[$i]["dbname"]; ?>");
-				spcCmnName["<?php echo $spcinfo[$i]["dbname"]; ?>"] = "<?php echo $spcinfo[$i]["commonname"]; ?>";
-				spcName["<?php echo $spcinfo[$i]["dbname"]; ?>"] = "<?php echo $spcinfo[$i]["name"]; ?>";
-				uniTracks.push(false);
-				uniTracksDone.push(false);
-				spcReady["<?php echo $spcinfo[$i]["dbname"]; ?>"] = false;
-				spcEncode["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>;
-			  </script>
-            <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkbox" >
-              <label>
-                <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
-                <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
-                [<?php echo $spcinfo[$i]["dbname"]; ?>]</label>
-            </div>
-            <?php
+              <div id="<?php echo $spcinfo[$i]["dbname"]; ?>_checkboxwrapper" >
+                <label>
+                  <input type="checkbox" name="<?php echo $spcinfo[$i]["dbname"]; ?>" id="<?php echo $spcinfo[$i]["dbname"]; ?>" value="<?php echo $spcinfo[$i]["dbname"]; ?>" checked <?php if($i == 0) echo "disabled"; ?> />
+                  <em><?php echo $spcinfo[$i]["name"]; ?></em> (<?php echo $spcinfo[$i]["commonname"]; ?>)
+                  [<?php echo $spcinfo[$i]["dbname"]; ?>]</label>
+              </div>
+              <?php
 	}
 	$species->free();
 	$mysqli->close();
 		?></td>
-        </tr>
-      </table>
-      <script type="text/javascript">
+          </tr>
+        </table>
+        <script type="text/javascript">
 		checkEncodeSpecies();
 		</script>
-    </form>
-    <div class="header tableHeader buttons" style="float: right; margin: 0px;" onclick="toggleWindow('trackSelect');">Track Selection &amp; Data Download <span id="trackSelectIndicator">≫</span></div>
-    <div style="clear: both"></div>
-    <!-- end #selection --> 
-  </div>
-  <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene / Region Selection</span></div>
-  <div id="genelistHolder">
-    <div id="genelistContentHolder"> </div>
-    <!-- end #genelist -->
-    <div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>
-  </div>
-  <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
-  <div class="smallformstyle" id="navigationHolder">
-    <div style="border: 1px #000000 solid;" id="masterHolder" class="BoxHide">
-      <div id="masterLoading" class="loadingCover" style="height: 36px;">
+      </form>
+      <div class="header tableHeader buttons" style="float: right; margin: 0px;" onclick="toggleWindow('trackSelect');">Track Selection &amp; Data Download <span id="trackSelectIndicator">≫</span></div>
+      <div style="clear: both"></div>
+      <!-- end #selection --> 
+    </div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene / Region Selection</span></div>
+    <div id="genelistHolder">
+      <div id="genelistLoading" class="loadingCover BoxHide" style="min-height: 36px; left: 0px; width: auto;">
         <div class="loadingCoverBG"></div>
         <div class="loadingCoverImage"></div>
       </div>
-      <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
-        <tr>
-          <td rowspan="2" scope="col" class="speciesHeader"><span>MASTER CONTROL</span></td>
-          <td align="center" valign="middle" scope="col" style="padding-top: 2px;"><div onmouseover="showHover('L3');" onmouseout="hideHover('L3');" class="toolButtonImage" style="float: left;" title="Move 95% to upstream" onclick="callMasterViewChange('left3', false);"><img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /></div>
-            <div onmouseover="showHover('L2');" onmouseout="hideHover('L2');" class="toolButtonImage" style="float: left;" title="Move 47.5% to upstream" onclick="callMasterViewChange('left2', false);"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
-            <div onmouseover="showHover('L1');" onmouseout="hideHover('L1');" class="toolButtonImage" style="float: left;" title="Move 10% to upstream" onclick="callMasterViewChange('left1', false);"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
-            <div onmouseover="showHover('R3');" onmouseout="hideHover('R3');" class="toolButtonImage" style="float: right;" title="Move 95% to downstream" onclick="callMasterViewChange('right3', false);"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
-            <div onmouseover="showHover('R2');" onmouseout="hideHover('R2');" class="toolButtonImage" style="float: right;" title="Move 47.5% to downstream" onclick="callMasterViewChange('right2', false);"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
-            <div onmouseover="showHover('R1');" onmouseout="hideHover('R1');" class="toolButtonImage" style="float: right;" title="Move 10% to downstream" onclick="callMasterViewChange('right1', false);"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
-            <span id="overallGeneName">Gene name</span> 
-            <!--<div style="clear: both"></div>--></td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle" style="padding-bottom: 2px;"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
-            <div onmouseover="showZoomHover('I1');" onmouseout="hideZoomHover('I1');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in1', true);">1.5x</div>
-            <div onmouseover="showZoomHover('I2');" onmouseout="hideZoomHover('I2');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in2', true);">3x</div>
-            <div onmouseover="showZoomHover('I3');" onmouseout="hideZoomHover('I3');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in3', true);">10x</div>
-            <div onmouseover="showZoomHover('I4');" onmouseout="hideZoomHover('I4');" class="toolButton" style="float: left;" onclick="callMasterViewChange('inBase', true);">Base</div>
-            <div onmouseover="showZoomHover('O1');" onmouseout="hideZoomHover('O1');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out3', true);">10x</div>
-            <div onmouseover="showZoomHover('O2');" onmouseout="hideZoomHover('O2');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out2', true);">3x</div>
-            <div onmouseover="showZoomHover('O3');" onmouseout="hideZoomHover('O3');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out1', true);">1.5x</div>
-            <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
-            <!--<div style="clear: both;"></div>--></td>
-        </tr>
-      </table>
+      <div id="genelistContentHolder"> </div>
+      <!-- end #genelist -->
+      <div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>
     </div>
-    <div id="navigationContent"> </div>
-  </div>
-  <!-- end #sidebar1 --> 
-</div>
-<div id="spcNaviTemplate" class="BoxHide">
-  <div id="spcDbNameLoading" class="loadingCover" style="height: 50px;">
-    <div class="loadingCoverBG"></div>
-    <div class="loadingCoverImage"></div>
-  </div>
-  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed; height: 50px;">
-    <tr>
-      <td rowspan="3" scope="col" class="speciesLead"><span>spcCmnName</span></td>
-      <td align="center" valign="middle" scope="col" style="padding: 2px;"><span id="spcDbNameCoor">spcCoor</span></td>
-    </tr>
-    <tr>
-      <td align="center" valign="middle"><div id="spcDbNameleft3" class="toolButtonImage" style="float: left;" title="Move 95% to the left" onclick="callViewChange('spcDbName', 'left3');"> <img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /> </div>
-        <div id="spcDbNameleft2" class="toolButtonImage" style="float: left;" title="Move 47.5% to the left" onclick="callViewChange('spcDbName', 'left2');"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
-        <div id="spcDbNameleft1" class="toolButtonImage" style="float: left;" title="Move 10% to the left" onclick="callViewChange('spcDbName', 'left1');"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
-        <div id="spcDbNameright3" class="toolButtonImage" style="float: right;" title="Move 95% to the right" onclick="callViewChange('spcDbName', 'right3');"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
-        <div id="spcDbNameright2" class="toolButtonImage" style="float: right;" title="Move 47.5% to the right" onclick="callViewChange('spcDbName', 'right2');"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
-        <div id="spcDbNameright1" class="toolButtonImage" style="float: right;" title="Move 10% to the right" onclick="callViewChange('spcDbName', 'right1');"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
-        spcGeneName 
-        <!--<div style="clear: both"></div>--></td>
-    </tr>
-    <tr>
-      <td align="center" valign="middle" scope="col"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
-        <div id="spcDbNameI1" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in1');">1.5x</div>
-        <div id="spcDbNameI2" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in2');">3x</div>
-        <div id="spcDbNameI3" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in3');">10x</div>
-        <div id="spcDbNameI4" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'inBase');">Base</div>
-        <div id="spcDbNameO1" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out3');">10x</div>
-        <div id="spcDbNameO2" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out2');">3x</div>
-        <div id="spcDbNameO3" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out1');">1.5x</div>
-        <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
-        <!--<div style="clear: both;"></div>--></td>
-    </tr>
-  </table>
-</div>
-<div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
-  <div class="loadingTrackCover" id="trackSelectLoading">
-    <div class="loadingTrackCoverBG"></div>
-    <div class="loadingTrackCoverImage"></div>
-  </div>
-  <div class="headerNoHover">Tracks &amp; Data 
-    <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
-        onclick="toggleEncode();">View ENCODE Data</div>
-      <div style="clear: both;"></div>--> 
-  </div>
-  <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
-    <div id="encodeSampleSettings" style="display: inline;">You can also
-      <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
-    onclick="toggleSample();">Choose sample type</div>
-    </div>
-  </div>
-  <div id="NonEncodeData">
-    <div class="subBox">
-      <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span> Common tracks</div>
-      <div class="trackHolder" id="cmnTrackHolder"></div>
-    </div>
-    <div class="subBox">
-      <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span> Unique tracks</div>
-      <div id="uniqueHolder"></div>
-    </div>
-  </div>
-  <div id="EncodeData" style="overflow-y: auto;" class="BoxHide">
-    <div class="subBox ENCODETracks">
-      <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);">
-      <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span> Common tracks from ENCODE</div>
-      <div class="trackHolder" id="cmnTrackEncodeHolder">
-        <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
-          <thead>
-            <tr class="trackHeaderEncode">
-              <th style="width: 25%;">Track Name</th>
-              <th>Sample Type</th>
-              <th style="width: 50%;">Preview</th>
-              <th style="width: 5%;">Data</th>
-            </tr>
-          </thead>
-          <tbody id="cmnTrackEncodeSortedTbodyHolder" style="display: none;">
-          </tbody>
-          <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolderHeader" style="display: none;">
-            <tr>
-              <td class="insigHeader" onclick="toggleTbody('cmnTrackEncodeInsigTbody', false);" colspan="4"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals</td>
-            </tr>
-          </tbody>
-          <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolder" style="display: none;">
-          </tbody>
-          <tbody id="cmnTrackEncodeTbodyHolder">
-          </tbody>
+    <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
+    <div class="smallformstyle" id="navigationHolder">
+      <div style="border: 1px #000000 solid;" id="masterHolder" class="BoxHide">
+        <div id="masterLoading" class="loadingCover" style="height: 36px; width: 218px;">
+          <div class="loadingCoverBG"></div>
+          <div class="loadingCoverImage"></div>
+        </div>
+        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
+          <tr>
+            <td rowspan="2" scope="col" class="speciesHeader"><span>MASTER CONTROL</span></td>
+            <td align="center" valign="middle" scope="col" style="padding-top: 2px;"><div onmouseover="showHover('L3');" onmouseout="hideHover('L3');" class="toolButtonImage" style="float: left;" title="Move 95% to upstream" onclick="callMasterViewChange('left3', false);"><img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('L2');" onmouseout="hideHover('L2');" class="toolButtonImage" style="float: left;" title="Move 47.5% to upstream" onclick="callMasterViewChange('left2', false);"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('L1');" onmouseout="hideHover('L1');" class="toolButtonImage" style="float: left;" title="Move 10% to upstream" onclick="callMasterViewChange('left1', false);"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R3');" onmouseout="hideHover('R3');" class="toolButtonImage" style="float: right;" title="Move 95% to downstream" onclick="callMasterViewChange('right3', false);"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R2');" onmouseout="hideHover('R2');" class="toolButtonImage" style="float: right;" title="Move 47.5% to downstream" onclick="callMasterViewChange('right2', false);"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R1');" onmouseout="hideHover('R1');" class="toolButtonImage" style="float: right;" title="Move 10% to downstream" onclick="callMasterViewChange('right1', false);"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
+              <span id="overallGeneName">Gene name</span> 
+              <!--<div style="clear: both"></div>--></td>
+          </tr>
+          <tr>
+            <td align="center" valign="middle" style="padding-bottom: 2px;"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
+              <div onmouseover="showZoomHover('I1');" onmouseout="hideZoomHover('I1');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in1', true);">1.5x</div>
+              <div onmouseover="showZoomHover('I2');" onmouseout="hideZoomHover('I2');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in2', true);">3x</div>
+              <div onmouseover="showZoomHover('I3');" onmouseout="hideZoomHover('I3');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in3', true);">10x</div>
+              <div onmouseover="showZoomHover('I4');" onmouseout="hideZoomHover('I4');" class="toolButton" style="float: left;" onclick="callMasterViewChange('inBase', true);">Base</div>
+              <div onmouseover="showZoomHover('O1');" onmouseout="hideZoomHover('O1');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out3', true);">10x</div>
+              <div onmouseover="showZoomHover('O2');" onmouseout="hideZoomHover('O2');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out2', true);">3x</div>
+              <div onmouseover="showZoomHover('O3');" onmouseout="hideZoomHover('O3');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out1', true);">1.5x</div>
+              <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
+              <!--<div style="clear: both;"></div>--></td>
+          </tr>
         </table>
       </div>
+      <div id="navigationContent"> </div>
     </div>
-    <div class="subBox ENCODETracks">
-      <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span> Unique tracks from ENCODE</div>
-      <div class="speciesTrackHeader">spcCmnName</div>
-      <div class="trackHolder" id="spcDbNameEncodeTableHolder">
-        <div id="uniqueEncodeHolder">
+    <!-- end #sidebar1 --> 
+  </div>
+  <div id="spcNaviTemplate" class="BoxHide">
+    <div id="spcDbNameLoading" class="loadingCover" style="height: 50px; width: 218px;">
+      <div class="loadingCoverBG"></div>
+      <div class="loadingCoverImage"></div>
+    </div>
+    <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed; height: 50px;">
+      <tr>
+        <td rowspan="3" scope="col" class="speciesLead"><span>spcCmnName</span></td>
+        <td align="center" valign="middle" scope="col" style="padding: 2px;"><span id="spcDbNameCoor">spcCoor</span></td>
+      </tr>
+      <tr>
+        <td align="center" valign="middle"><div id="spcDbNameleft3" class="toolButtonImage" style="float: left;" title="Move 95% to the left" onclick="callViewChange('spcDbName', 'left3');"> <img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /> </div>
+          <div id="spcDbNameleft2" class="toolButtonImage" style="float: left;" title="Move 47.5% to the left" onclick="callViewChange('spcDbName', 'left2');"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
+          <div id="spcDbNameleft1" class="toolButtonImage" style="float: left;" title="Move 10% to the left" onclick="callViewChange('spcDbName', 'left1');"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright3" class="toolButtonImage" style="float: right;" title="Move 95% to the right" onclick="callViewChange('spcDbName', 'right3');"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright2" class="toolButtonImage" style="float: right;" title="Move 47.5% to the right" onclick="callViewChange('spcDbName', 'right2');"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright1" class="toolButtonImage" style="float: right;" title="Move 10% to the right" onclick="callViewChange('spcDbName', 'right1');"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
+          spcGeneName 
+          <!--<div style="clear: both"></div>--></td>
+      </tr>
+      <tr>
+        <td align="center" valign="middle" scope="col"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
+          <div id="spcDbNameI1" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in1');">1.5x</div>
+          <div id="spcDbNameI2" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in2');">3x</div>
+          <div id="spcDbNameI3" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in3');">10x</div>
+          <div id="spcDbNameI4" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'inBase');">Base</div>
+          <div id="spcDbNameO1" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out3');">10x</div>
+          <div id="spcDbNameO2" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out2');">3x</div>
+          <div id="spcDbNameO3" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out1');">1.5x</div>
+          <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
+          <!--<div style="clear: both;"></div>--></td>
+      </tr>
+    </table>
+  </div>
+  <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
+    <div class="loadingTrackCover" id="trackSelectLoading">
+      <div class="loadingTrackCoverBG"></div>
+      <div class="loadingTrackCoverImage"></div>
+    </div>
+    <div class="headerNoHover">Tracks &amp; Data 
+      <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
+        onclick="toggleEncode();">View ENCODE Data</div>
+      <div style="clear: both;"></div>--> 
+    </div>
+    <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
+      <div id="encodeSampleSettings" style="display: inline;">You can also
+        <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
+    onclick="toggleSample();">Choose sample type</div>
+      </div>
+    </div>
+    <!-- This is the upload new file part -->
+    <!--
+    <div class="settingsNormal">
+      <form name="uploadFile" id="uploadFile" onSubmit="return validateUploadFileOrURL();">
+        Or upload custom peak file for analysis.
+        <input type="file" id="uploadFileInput" name="uploadFileInput" />
+        <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
+      </form>
+    </div>
+    
+    <!-- end upload new file part -->
+    <div id="NonEncodeData">
+      <div class="subBox">
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span> Common tracks</div>
+        <div class="trackHolder" id="cmnTrackHolder"></div>
+      </div>
+      <div class="subBox">
+        <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span> Unique tracks</div>
+        <div id="uniqueHolder"></div>
+      </div>
+    </div>
+    <div id="EncodeData" style="overflow-y: auto;" class="BoxHide">
+      <div class="subBox ENCODETracks">
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);"> <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span> Common tracks from ENCODE</div>
+        <div class="trackHolder" id="cmnTrackEncodeHolder">
           <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
             <thead>
               <tr class="trackHeaderEncode">
-                <th style="width: 20%;">Track Name</th>
-                <th style="width: 20%;">Sample Type</th>
-                <th>Lab</th>
-                <th style="width: 40%;">Preview</th>
-                <th style="width: 7%;">Data</th>
+                <th style="width: 25%;">Track Name</th>
+                <th>Sample Type</th>
+                <th style="width: 30%;">Preview</th>
+                <th style="width: 5%;">Data</th>
               </tr>
             </thead>
-            <tbody id="spcDbNameEncodeSortedTbodyHolder" style="display: none;">
+            <tbody id="cmnTrackEncodeSortedTbodyHolder" style="display: none;">
             </tbody>
-            <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolderHeader" style="display: none;">
+            <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolderHeader" style="display: none;">
               <tr>
-                <td class="insigHeader" onclick="toggleTbody('spcDbNameEncodeInsigTbody', false);" colspan="5"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals for spcCmnName</td>
+                <td class="insigHeader" onclick="toggleTbody('cmnTrackEncodeInsigTbody', false);" colspan="4"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals</td>
               </tr>
             </tbody>
-            <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolder" style="display: none;">
+            <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolder" style="display: none;">
             </tbody>
-            <tbody id="spcDbNameEncodeTbodyHolder">
+            <tbody id="cmnTrackEncodeTbodyHolder">
             </tbody>
           </table>
         </div>
+      </div>
+      <div class="subBox ENCODETracks">
+        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span> Unique tracks from ENCODE</div>
+        <div id="uniqueEncodeHolder"></div>
+      </div>
+      <div style="display: none;">
+        <?php
+	for($i = 0; $i < $num_spc; $i++) {
+		
+?>
+        <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
+         name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . ($_SESSION['ID']*10 + $i) 
+	  . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on"; 
+	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+        <?php
+	}
+		?>
       </div>
     </div>
     <div class="header buttons" style="float: right;" onclick="updateTracks();">Update</div>
     <div class="header buttons" style="float: right;" onclick="resetTracks();">Reset view</div>
     <div class="header buttons" style="float: right;" onclick="toggleWindow('trackSelect');">Close</div>
     <div style="clear: both"></div>
-    <div style="display: none;">
-      <?php
-	for($i = 0; $i < $num_spc; $i++) {
-		
-?>
-      <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
-         name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . ($_SESSION['ID']*10 + $i) 
-	  . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on"; 
-	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
-      <?php
-	}
-		?>
-    </div>
   </div>
   <div id="sampleTypeBox" class="downloadBox" style="left: 637px; top: 58px; width: 300px;">
     <div class="subHeaderNoHover">Sample List
@@ -1481,7 +1365,30 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
   </div>
   <div style="display: none;" id="uniqueEncodeTemplate">
     <div class="speciesTrackHeader">spcCmnName</div>
-    <div class="trackHolder" id="spcDbNameEncodeTableHolder"></div>
+    <div class="trackHolder" id="spcDbNameEncodeTableHolder">
+      <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
+        <thead>
+          <tr class="trackHeaderEncode">
+            <th style="width: 20%;">Track Name</th>
+            <th style="width: 20%;">Sample Type</th>
+            <th>Lab</th>
+            <th style="width: 25%;">Preview</th>
+            <th style="width: 7%;">Data</th>
+          </tr>
+        </thead>
+        <tbody id="spcDbNameEncodeSortedTbodyHolder" style="display: none;">
+        </tbody>
+        <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolderHeader" style="display: none;">
+          <tr>
+            <td class="insigHeader" onclick="toggleTbody('spcDbNameEncodeInsigTbody', false);" colspan="5"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals for spcCmnName</td>
+          </tr>
+        </tbody>
+        <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolder" style="display: none;">
+        </tbody>
+        <tbody id="spcDbNameEncodeTbodyHolder">
+        </tbody>
+      </table>
+    </div>
   </div>
   <div style="display: none;" id="uniqueSampleEncodeTemplate">
     <div class="speciesTrackHeader">spcCmnName</div>

@@ -826,7 +826,6 @@ a:visited {
 .loadingCover {
 	z-index: 10;
 	position: absolute;
-	width: 218px;
 	right: 0px;
 }
 .loadingCoverBG {
