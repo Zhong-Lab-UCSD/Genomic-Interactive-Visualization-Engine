@@ -1261,7 +1261,7 @@ $(document).ready( function () {
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>
     </div>
-    
+    -->
     <!-- end upload new file part -->
     <div id="NonEncodeData">
       <div class="subBox">
