@@ -13,10 +13,9 @@
 		if($isDirect) {
 			// TODO: gene selected, directly reload the genes
 			for($i = 0; $i < count($spcInfo); $i++) {
-				$genes[] = $mysqli->query("SELECT * FROM " . $spcinfo[$i]["dbname"] 
+				$genes[] = $mysqli->query("SELECT * FROM " . $spcInfo[$i]["dbname"] 
 					. " WHERE genename = '" . $geneName . "' ORDER BY similarity DESC");
 			}
-			$directsubmit = true;
 		} else {
 			// find the gene
 			for($i = 0; $i < count($spcInfo); $i++) {

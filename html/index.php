@@ -298,7 +298,7 @@ function searchTracks() {
 			var sendData = new Object();
 			sendData['region'] = spcArray[i].regionToShow.toString();
 			//console.log(spcArray[i].regionToShow.toString());
-			sendData['tableName'] = spcArray[i].uniTracksEncode[j].getNoDbTableName();
+			sendData['tableName'] = spcArray[i].uniTracksEncode[j].getSpeciesTblName();
 			sendData['db'] = spcArray[i].db;
 			$.getJSON('getpreview.php', sendData, createJSONReturnFunction(false, j, i));
 		}
@@ -540,6 +540,9 @@ function validate_form_genequery() {
 		return false;
 	}
 	// Now is the real Ajax part.
+	$('#search').prop('disabled', true);
+	$("#genelistContentHolder").html('');
+	$('#genelistLoading').removeClass('BoxHide');
 	var postdata = {};
 //	speciesDbName = new Array();
 	$.each($('#searchform').serializeArray(), function(i, field) {
@@ -548,9 +551,6 @@ function validate_form_genequery() {
 //		}
 		postdata[field.name] = field.value;
 		});
-	$('#search').prop('disabled', true);
-	$("#genelistContentHolder").html('');
-	$('#genelistLoading').removeClass('BoxHide');
 	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
 		$('#genelistLoading').addClass('BoxHide');
 		$("#genelistContentHolder").html(data);
@@ -1006,54 +1006,87 @@ function updateSpcCheckbox() {
 	updateType();
 }
 
-function validateUploadFileOrURL() {
-//	window.alert(document.getElementById("genelist").selectedIndex);
-	if($("#geneName").val() == "") {
-		window.alert("You need to either choose a gene or type in part of its name before proceeding.");
+function validateUploadFileOrURL(event) {
+	event.stopPropagation();
+	event.preventDefault();
+	
+	if($('#uploadFileInput')[0].files.length <= 0) {
+		alert('You need to select a file!');
 		return false;
-	}
-	var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
-	if(chromRegex.test($("#geneName").val())) {
-		if($("#speciesOrGeneName").val() == "gene") {
-			// should choose a species
-			window.alert("Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field.");
-			return false;
-		}
-	} else if($("#speciesOrGeneName").val() != "gene") {
-		// should input coordinate
-		window.alert("Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species.");
+	} else if($('#speciesToUpload').val() == "unselected") {
+		alert('You need to select the database of your file!');
 		return false;
 	}
 	
-	var checked = 0;
-	for(var i = 0; i < document.getElementById("searchform").elements.length; i++) {
-		if(document.getElementById("searchform").elements[i].type == "checkbox" 
-			&& document.getElementById("searchform").elements[i].checked) {
-			checked++;
-		}
-	}
-	if(checked < 2) {
-		window.alert("You need to choose at least TWO (2) species.");
-		return false;
-	}
-	// Now is the real Ajax part.
-	var postdata = {};
-//	speciesDbName = new Array();
-	$.each($('#searchform').serializeArray(), function(i, field) {
-//		if($('#' + field.name).is("checkbox")) {
-//			speciesDbName.push(field.name);
-//		}
-		postdata[field.name] = field.value;
-		});
 	$('#search').prop('disabled', true);
+	$('#fileSubmit').prop('disabled', true);
 	$("#genelistContentHolder").html('');
 	$('#genelistLoading').removeClass('BoxHide');
-	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
-		$('#genelistLoading').addClass('BoxHide');
-		$("#genelistContentHolder").html(data);
-		$('#search').prop('disabled', false);
+	
+	var db = $('#speciesToUpload').val();
+	var trackTblNames = new Array();
+	
+	// append all the tracks
+	$.each(cmnTracksEncode.array, function(key, value) {
+		// first, use getdownload.php to get all the tableNames
+		if($('#' + value.getCleanID()).prop('checked')) {
+			trackTblNames.push(value.getSpeciesTblName(db));
+		}
 	});
-	return false;
+	
+	$.each(spcArray[spcArrayMap[db]].uniTracksEncode.array, function(key, value) {
+		if($('#' + value.getCleanID()).prop('checked')) {
+			trackTblNames.push(value.getSpeciesTblName(db));
+		}
+	});
+	
+	tableQueryData = new Object();
+	tableQueryData[db] = JSON.stringify(trackTblNames);
+
+	var tableNameData = new FormData();
+	tableNameData.append('file', $('#uploadFileInput')[0].files[0]);
+	tableNameData.append('Submit', 'Submit');
+	tableNameData.append('species', db);
+	
+	$.post('cpbrowser/gettablenames.php', tableQueryData, function(returndata) {
+		
+		testdata = new Array();
+		$.each(returndata, function(key, val) {
+			tableNameData.append('geneTracks[]', val);
+		});
+		
+		$.ajax({
+			url: 'cpbrowser/geneTrackComparison.php',
+			type: 'POST',
+			data: tableNameData,
+			cache: false,
+			processData: false,
+			contentType: false,
+			success: function(jsonReturnData, status, jqXHR) {
+				// file successfully uploaded
+				// process return stuff
+				// data will be a json-encoded string of the php array
+				// currently this string will be submitted again to genelist.php to get the final output
+				// needs to move the output code from php to JavaScript
+				var postdata = {};
+				postdata['writeTableOnly'] = 'true';
+				postdata['result'] = jsonReturnData;
+				postdata['geneName'] = $('#uploadFileInput')[0].files[0].name;
+				$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (parsedData) {
+					$('#genelistLoading').addClass('BoxHide');
+					$("#genelistContentHolder").html(parsedData);
+					$('#search').prop('disabled', false);
+					$('#fileSubmit').prop('disabled', false);
+				});
+				
+				// sort track by order and score?
+			},
+			error: function(jqXHR, status, e) {
+			}
+		});
+	
+	}, 'json');
+	
 }
 
 $(document).ready( function () {
@@ -1067,6 +1100,8 @@ $(document).ready( function () {
 	resize_tbody();
 	isEncodeOn = !isEncodeOn;
 	toggleEncode();
+	
+	//$('#uploadFile').on('submit', validateUploadFileOrURL);
 });
 </script>
 <script type="text/javascript">
@@ -1253,15 +1288,28 @@ $(document).ready( function () {
       </div>
     </div>
     <!-- This is the upload new file part -->
-    <!--
-    <div class="settingsNormal">
-      <form name="uploadFile" id="uploadFile" onSubmit="return validateUploadFileOrURL();">
-        Or upload custom peak file for analysis.
+    <!-- <div class="settingsNormal">
+      <form name="uploadFile" id="uploadFile">
+        Or upload custom peak file (for specified database) below for analysis.<br>
+        <div class="selectBox">
+          <select required id="speciesToUpload" name="speciesToUpload">
+            <option selected value="unselected">Database</option>
+            <?php
+	for($i = 0; $i < $num_spc; $i++) {
+		if($spcinfo[$i]["encode"]) {
+		?>
+            <option value="<?php echo $spcinfo[$i]["dbname"]; ?>"><?php echo $spcinfo[$i]["dbname"]; ?></option>
+            <?php
+		}
+	}
+        ?>
+          </select>
+        </div>
         <input type="file" id="uploadFileInput" name="uploadFileInput" />
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>
-    </div>
-    -->
+      <div style="clear: both;"></div>
+    </div> -->
     <!-- end upload new file part -->
     <div id="NonEncodeData">
       <div class="subBox">
@@ -1280,9 +1328,9 @@ $(document).ready( function () {
           <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
             <thead>
               <tr class="trackHeaderEncode">
-                <th style="width: 25%;">Track Name</th>
+                <th style="width: 35%;">Track Name</th>
                 <th>Sample Type</th>
-                <th style="width: 30%;">Preview</th>
+                <th style="width: 20%;">Preview</th>
                 <th style="width: 5%;">Data</th>
               </tr>
             </thead>
@@ -1369,10 +1417,10 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
         <thead>
           <tr class="trackHeaderEncode">
-            <th style="width: 20%;">Track Name</th>
+            <th style="width: 30%;">Track Name</th>
             <th style="width: 20%;">Sample Type</th>
             <th>Lab</th>
-            <th style="width: 25%;">Preview</th>
+            <th style="width: 15%;">Preview</th>
             <th style="width: 7%;">Data</th>
           </tr>
         </thead>

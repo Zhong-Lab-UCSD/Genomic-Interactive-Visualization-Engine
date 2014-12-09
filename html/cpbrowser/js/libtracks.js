@@ -588,6 +588,7 @@ function UniTrack(DB, ID, TableName, Status) {
 	this.db = DB;
 	this.tableName = DB + "--" + TableName;
 	this.trackData = new SpeciesTable();
+	this.trackData.setTableName(TableName);
 	this.spcArrayUpdated = false;
 }
 extend(Track, UniTrack);
@@ -621,10 +622,6 @@ UniTrack.prototype.getCleanID = function () {
 UniTrack.prototype.getReadableID = function() {
 	// strip the db part out
 	return this.getID().replace(/_+/g, ' ');
-};
-
-UniTrack.prototype.getNoDbTableName = function() {
-	return this.tableName.replace(/^\w+--/, '');
 };
 
 UniTrack.prototype.writeTable = function(speciesCmnName) {
@@ -700,7 +697,7 @@ UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
 	result += '<td><div id="' + this.getCleanID() + 'Preview"></div></td>\n';
 	// download button
 	// img
-	result += '<img class="downloadButton" id="' + this.getCleanID() + '_edlbtn" '
+	result += '<td><img class="downloadButton" id="' + this.getCleanID() + '_edlbtn" '
 		+ 'onclick="return callDownloadMenu(\''
 		+ this.tableName + '\', true, \'' + this.getCleanID() 
 		+ '_edlbtn\', true);" src="cpbrowser/images/download.png" alt="Download data for '
