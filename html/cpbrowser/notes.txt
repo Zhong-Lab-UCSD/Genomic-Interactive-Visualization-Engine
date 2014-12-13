@@ -1,5 +1,11 @@
 Release Notes
 
+* 12/13/2014
+
+	Genomic regions can now be used as query. CEpBrowser will find significant orthologous segments within the specified region in the response. Please check the manual for how this works.
+
+	Minor UI and manual update. 
+
 * 1/20/2014
 
 	Minor UI update to improve UI consistency across different browsers and preparation for the next major update.
