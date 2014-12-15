@@ -421,8 +421,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <td><iframe onload="setReady(<?php echo $i; ?>);" id="<?php echo $_REQUEST["speciesdb"][$i]; ?>" 
          name="<?php echo $_REQUEST["speciesdb"][$i]; ?>" class="cpbrowserFrame"
          src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgControlOnly=off&hgsid=" . ($_SESSION['ID']*10 + $i) . '&showEncode=' . ($encodeOn? 'on': 'off') . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
-	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe></td>
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgControlOnly=off&hgsid=" . requestSpeciesHgsID($_REQUEST["speciesdb"][$i]) . '&showEncode=' . ($encodeOn? 'on': 'off') . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": "");  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe></td>
     </tr>
     <?php
   		}

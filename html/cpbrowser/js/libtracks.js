@@ -312,8 +312,7 @@ CmnTrack.prototype.updateStatus = function(spcarray) {
 	
 	this.status = document.getElementById(this.getCleanID()).checked;
 	for(var i = 0; i < spcarray.length; i++) {
-		var conDoc = (document.getElementById(spcarray[i].db + '_controls').contentWindow || document.getElementById(spcarray[i].db + '_controls').contentDocument);
-		var target = conDoc.getElementById(this.id);
+		var target = spcArray[i].browserConDoc.getElementById(this.id);
 		if(target) {
 			target.value = (this.status? 'dense': 'hide');
 		}
@@ -646,14 +645,14 @@ UniTrack.prototype.writeTable = function(speciesCmnName) {
 	return result;
 };
 
-UniTrack.prototype.updateStatus = function() {
+UniTrack.prototype.updateStatus = function(conDoc) {
 	// this is to update UniTrack.status from the checkboxes;
 	// then update the hidden inputs in UCSC parts
 	// when engine changed, this should be more straightforward
 	// maybe directly sending tableNames out
+	// species needs to provide conDoc
 	
 	this.status = document.getElementById(this.getCleanID()).checked;
-	var conDoc = (document.getElementById(this.db + '_controls').contentWindow || document.getElementById(this.db + '_controls').contentDocument);
 	conDoc.getElementById(this.getID()).value = (this.status? 'dense': 'hide');
 };
 
@@ -699,7 +698,7 @@ UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
 	// img
 	result += '<td><img class="downloadButton" id="' + this.getCleanID() + '_edlbtn" '
 		+ 'onclick="return callDownloadMenu(\''
-		+ this.tableName + '\', true, \'' + this.getCleanID() 
+		+ this.tableName + '\', false, \'' + this.getCleanID() 
 		+ '_edlbtn\', true);" src="cpbrowser/images/download.png" alt="Download data for '
 		+ this.title + ' ' + speciesCmnName + '" width="15" height="15" />';
 	// close tags
@@ -738,6 +737,10 @@ function Species(DB, Name, CommonName, IsEncode) {
 	this.sortedTbodyID = null;
 	this.insigTbodyID = null;
 	this.insigHeaderTbodyID = null;
+	
+	this.browserConDoc = null;
+	
+	this.hgsID = null;		// this is to match the hgsid from UCSC
 	
 	this.orderedUniTracksEncode = new Array();
 }
@@ -798,12 +801,19 @@ Species.prototype.writeUniqueTable = function(isencode) {
 	}
 };
 
+Species.prototype.updateSessionID = function() {
+	$.post('/cpbrowser/postsessionhgsid.php', { db: this.db, hgsID: this.hgsID } );
+}
+
 Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle, init, inbrowser) {
 	var conDoc = (document.getElementById(this.db + "_controls").contentWindow 
 		|| document.getElementById(this.db + "_controls").contentDocument);
 	if(conDoc.document) {
 		conDoc = conDoc.document;
 	}
+	this.browserConDoc = conDoc;
+	this.hgsID = parseInt(conDoc.getElementById('TrackForm').elements['hgsid'].value);
+	this.updateSessionID();
 	if(init) {		
 		// tracks need to be initialized or need to be changed so fill the unique ones
 		// after filling this one, check whether all tracks initialized 
@@ -829,22 +839,25 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 			// Notice that this hiddenCommons[i].name is not Short Label
 		}
 		
-		hiddenCommons = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("input");
-		var hiddenCommonsEncodeData = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("span")
-		// get all the hidden inputs in the browser "common" part
+		if(this.isEncode) {
 		
-		for(var i = 0; i < hiddenCommons.length; i++) {
-			if(typeof cmnTracksEncodeBundle.get(hiddenCommons[i].id) == 'undefined') {
-				currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
-					hiddenCommons[i].value, speciesArray, 
-					hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
-					hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
-				cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
-			} else {
-				currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
+			hiddenCommons = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("input");
+			var hiddenCommonsEncodeData = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("span")
+			// get all the hidden inputs in the browser "common" part
+			
+			for(var i = 0; i < hiddenCommons.length; i++) {
+				if(typeof cmnTracksEncodeBundle.get(hiddenCommons[i].id) == 'undefined') {
+					currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
+						hiddenCommons[i].value, speciesArray, 
+						hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
+						hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
+					cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
+				} else {
+					currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
+				}
+				currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
+				currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
 			}
-			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
-			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
 		}
 		
 		var hiddenUniques;
@@ -883,12 +896,26 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 		
 		this.uniTracksUpdated = true;
 	}
-	if(inbrowser) {
+	if(this.isActive && inbrowser) {
 		callViewChange(this.db, "refresh");
 	}
 	allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle);
 	//markTrackInitialized(true);
 	
+};
+
+Species.prototype.updateAllUnique = function() {
+	for(var i = 0; i < this.uniTracks.length(); i++) {
+		this.uniTracks.get(i).updateStatus(this.browserConDoc);
+	}
+	for(var i = 0; i < this.uniTracksEncode.length(); i++) {
+		this.uniTracksEncode.get(i).updateStatus(this.browserConDoc);
+	}
+};
+
+Species.prototype.submitTrackChange = function() {
+	this.browserConDoc.getElementById('TrackForm').submit();
+	this.uniTracksUpdated = false;
 };
 
 function ChrRegion(chrString) {

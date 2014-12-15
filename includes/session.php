@@ -11,6 +11,7 @@
 			// Encode command is attached
 				$encodeOn = ($_REQUEST["Encode"] == "XCEncode");
 				$_SESSION["Encode"] = $_REQUEST["Encode"];
+				unset($_REQUEST["Encode"]);
 		} else {
 			// Encode command is not attached
 			if(isset($_SESSION["Encode"])) {
@@ -67,6 +68,7 @@
 		$existing_ids->free();
 		$_SESSION['resetView'] = true;
 	}
+	
 	// update sessionID time
 	$mysqli->query("INSERT INTO sessions (sessionID, lastactive, ip) VALUES (" 
 		. $_SESSION['ID'] . ", NOW(), '" . $_SERVER['REMOTE_ADDR'] 

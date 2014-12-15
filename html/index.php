@@ -896,15 +896,32 @@ function markTrackInitialized(flag) {
 	}
 }
 
+function updateTracks() {
+	// Enum all CmnTracks and UniTracks element
+	
+	for(var index = 0; index < cmnTracks.length(); index++) {
+		cmnTracks.get(index).updateStatus(spcArray);
+	}
+		
+	for(var index = 0; index < cmnTracksEncode.length(); index++) {
+		cmnTracksEncode.get(index).updateStatus(spcArray);
+	}
+	
+	for(var index = 0; index < spcArray.length; index++) {
+		spcArray[index].updateAllUnique();
+		spcArray[index].submitTrackChange();
+		setUnReady(spcArray[index].db);
+	}
+	
+	markTrackInitialized(false);
+	toggleWindow('trackSelect');
+}
 
 function resetTracks() {
 	for(var index = 0; index < spcArray.length; index++) {
 		if(spcArray[index].isActive) {
 			var db = spcArray[index].db;
-			var conDoc = (document.getElementById(db + "_controls").contentWindow || document.getElementById(db + "_controls").contentDocument);
-			if(conDoc.document) {
-					conDoc = conDoc.document;
-			}
+			var conDoc = spcArray[index].browserConDoc;
 			var conForm = conDoc.getElementById('TrackForm');
 			var resetVar = conDoc.createElement("input");
 			resetVar.type = "hidden";
@@ -918,7 +935,7 @@ function resetTracks() {
 			conForm.appendChild(resetOrder);
 			conForm.submit();
 			setUnReady(db);
-			uniTracksDone[index] = false;
+			spcArray[index].uniTracksUpdated = false;
 		}
 	}
 	markTrackInitialized(false);
@@ -978,7 +995,7 @@ function hideSample() {
 
 function resize_tbody() {
 	$('#trackSelect').css('max-height', ($(window).height() - 4) + 'px'); 
-	$('#EncodeData').css('max-height', ($(window).height() - 114) + 'px'); 
+	$('#EncodeData').css('max-height', ($(window).height() - 144) + 'px'); 
 }
 
 function updateSpcActive(ID) {
@@ -1288,7 +1305,8 @@ $(document).ready( function () {
       </div>
     </div>
     <!-- This is the upload new file part -->
-    <!-- <div class="settingsNormal">
+    <!--
+    <div class="settingsNormal">
       <form name="uploadFile" id="uploadFile">
         Or upload custom peak file (for specified database) below for analysis.<br>
         <div class="selectBox">
@@ -1309,7 +1327,8 @@ $(document).ready( function () {
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>
       <div style="clear: both;"></div>
-    </div> -->
+    </div>
+    -->
     <!-- end upload new file part -->
     <div id="NonEncodeData">
       <div class="subBox">
@@ -1359,8 +1378,7 @@ $(document).ready( function () {
 ?>
         <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
          name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . ($_SESSION['ID']*10 + $i) 
-	  . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on"; 
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . requestSpeciesHgsID($spcinfo[$i]["dbname"]) . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on"; 
 	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
         <?php
 	}
