@@ -908,8 +908,10 @@ Species.prototype.updateAllUnique = function() {
 	for(var i = 0; i < this.uniTracks.length(); i++) {
 		this.uniTracks.get(i).updateStatus(this.browserConDoc);
 	}
-	for(var i = 0; i < this.uniTracksEncode.length(); i++) {
-		this.uniTracksEncode.get(i).updateStatus(this.browserConDoc);
+	if (this.isEncode) {
+		for(var i = 0; i < this.uniTracksEncode.length(); i++) {
+			this.uniTracksEncode.get(i).updateStatus(this.browserConDoc);
+		}
 	}
 };
 
