@@ -99,13 +99,13 @@
 					}
 					if($geneListNeeded) {
 								$outputText .= '
-              <span class="geneNameExpander">More</span> <span class="geneNameInsert">
+              <span class="geneNameExpander">More</span> <div class="geneNameInsert">
               ';
 								for($jGene = 0; $jGene < count($genesInRegion); $jGene++) {
 									$outputText .=  $genesInRegion[$iGene] . "<br />";
 								}
                                 $outputText .= '
-              </span>
+              </div>
               <div style="clear: both;"></div>
               '; 
 					}

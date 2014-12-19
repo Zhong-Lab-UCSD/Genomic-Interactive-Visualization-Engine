@@ -34,11 +34,14 @@ body {
 }
 -->
 </style>
+<script type="text/javascript" src="cpbrowser/js/generegion.js"></script>
+<script type="text/javascript" src="cpbrowser/js/regionlistui.js"></script>
+<script type="text/javascript" src="cpbrowser/js/navui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
 <script type="text/javascript">
 
 var spcArray = new Array();		// this will be the array of species (Species Object)
-spcArrayMap = new Object();
+spcArray.map = new Object();
 
 var cmnTracks = new TrackBundle();	// this will be holding common tracks (CmnTrack Object)
 
@@ -551,11 +554,7 @@ function validate_form_genequery() {
 //		}
 		postdata[field.name] = field.value;
 		});
-	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
-		$('#genelistLoading').addClass('BoxHide');
-		$("#genelistContentHolder").html(data);
-		$('#search').prop('disabled', false);
-	});
+	$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, regionUiHandler);
 	return false;
 }
 
@@ -582,133 +581,6 @@ function checkEncodeSpecies() {
 	updateType();
 }
 
-function changeGeneName(id, namearray, strand, strandArray) {
-	$("#" + id).html($("#" + namearray + document.getElementById(id + 'selection').selectedIndex).val());
-	$("#" + strand).val($("#" + strandArray + document.getElementById(id + 'selection').selectedIndex).val());
-}
-
-function updateNavigation(formid) {
-	// update the navigation part for the comparative browser
-	currGene = new Gene(formid);
-	// find everything from the form
-	//speciesDbName = new Array();
-	//speciesCmnName = new Array();
-	var itemLeft = $("#" + currGene.getCleanName()).serializeArray();		// the name of current gene is the name of a form as well
-	var naviStr = "";
-
-	for(var spcIndex = 0; spcIndex < spcArray.length; spcIndex++) {
-		if(spcArray[spcIndex].isActive) {
-			var coorString, strand;
-			for(var i = 0; i < itemLeft.length; i++) {
-				if(itemLeft[i].name == spcArray[spcIndex].db) {
-					coorString = itemLeft[i].value;
-					itemLeft.splice(i, 1);
-					i--;
-				} else if(itemLeft[i].name == spcArray[spcIndex].db + "strand") {
-					strand = itemLeft[i].value;
-					itemLeft.splice(i, 1);
-					i--;
-				}
-			}
-			var currGeneSpcName;
-			if($('#' + currGene.getCleanName() + spcArray[spcIndex].db + "NameDisp").size()) {
-				currGeneSpcName = $('#' + currGene.getCleanName() + spcArray[spcIndex].db + "NameDisp").html().trim();
-			} else {
-				currGeneSpcName = currGene.name;
-			}
-			currGene.pushSpcGene(currGeneSpcName, coorString);
-			currGene.spcGenes[spcIndex].setStrand(strand);
-			var naviStrEach = $('#spcNaviTemplate').html();
-			naviStrEach = naviStrEach.replace(/spcGeneName/g, 
-				currGene.spcGenes[spcIndex].getShortName() 
-				+ " " + currGene.spcGenes[spcIndex].getStrand("(", ")")).replace(/spcDbName/g, 
-				spcArray[spcIndex].db).replace(/spcCmnName/g, 
-				spcArray[spcIndex].commonName).replace(/spcCoor/g, 
-				currGene.spcGenes[spcIndex].regionToString(false));
-			naviStr += naviStrEach;
-		} else {
-			currGene.pushSpcGene();				// place holder to prevent screwing up orders
-		}
-	}
-		
-	$('#navigationContent').html(naviStr);
-	$('#overallGeneName').html(currGene.name);
-	
-	for(var spcIndex = 0; spcIndex < spcArray.length; spcIndex++) {
-		if(spcArray[spcIndex].isActive) {
-			spcArray[spcIndex].isReady = false;
-			setUnReady(spcArray[spcIndex].db);
-		}
-	}
-	$('#masterHolder').removeClass("BoxHide");
-	
-	isInBrowser = true;
-	return true;
-}
-
-function showHover(key) {
-	var i;
-	for(i = 0; i < spcArray.length; i++) {
-		if(spcArray[i].isActive) {
-			var suffix = key.replace(/L/, (currGene.spcGenes[i].strand? "left": "right")).replace(/R/, (currGene.spcGenes[i].strand? "right": "left"));
-			//console.log('#' + speciesDbName + suffix);
-			$('#' + spcArray[i].db + suffix).addClass('hoverToolButtonImage');
-			//$('#' + speciesDbName[i] + suffix).removeClass('toolButtonImage');
-		}
-	}
-}
-
-function hideHover(key) {
-	var i;
-	for(i = 0; i < spcArray.length; i++) {
-		if(spcArray[i].isActive) {
-			var suffix = key.replace(/L/, (currGene.spcGenes[i].strand? "left": "right")).replace(/R/, (currGene.spcGenes[i].strand? "right": "left"));
-			//$('#' + speciesDbName[i] + suffix).addClass('toolButtonImage');
-			$('#' + spcArray[i].db + suffix).removeClass('hoverToolButtonImage');
-		}
-	}
-}
-
-function showZoomHover(key) {
-	var i;
-	for(i = 0; i < spcArray.length; i++) {
-		if(spcArray[i].isActive) {
-			$('#' + spcArray[i].db + key).addClass('hoverToolButton');
-			//$('#' + speciesDbName[i] + key).removeClass('toolButton');
-		}
-	}
-}
-
-function hideZoomHover(key) {
-	var i;
-	for(i = 0; i < spcArray.length; i++) {
-		if(spcArray[i].isActive) {
-			//$('#' + speciesDbName[i] + key).addClass('toolButton');
-			$('#' + spcArray[i].db + key).removeClass('hoverToolButton');
-		}
-	}
-}
-
-function setUnReady(db) {
-	$('#' + db + 'Loading').removeClass('BoxHide');
-	$('#masterLoading').removeClass('BoxHide');
-}
-
-function setReady(db, coor) {
-	$('#' + db + 'Coor').html(coor);
-	currGene.spcGenes[spcArrayMap[db]].regionFromString(coor);
-	$('#' + db + 'Loading').addClass('BoxHide');
-	spcArray[spcArrayMap[db]].isReady = true;
-	var allSpcReady = true;
-	for(i = 0; i < spcArray.length; i++) {
-		if(spcArray[i].isActive && !spcArray[i].isReady) {
-			allSpcReady = false;
-		}
-	}
-	if(allSpcReady) {
-		$('#masterLoading').addClass('BoxHide');
-	}
-}
 
 function updateSampleCheckbox() {
 	cmnTracksEncode.updateAllStates();
@@ -718,11 +590,6 @@ function updateSampleCheckbox() {
 		}
 		spcArray[s].uniTracksEncode.updateAllStates();
 	}
-}
-
-function callViewChange(db, change) {
-	setUnReady(db);
-	document.getElementById('cpbrowser').contentWindow.callViewChange(db, change);
 }
 
 function changeSettings(db, settings, val) {
@@ -739,29 +606,6 @@ function callSubmit(db) {	// Notice that actually only the control frames get su
 		conDoc = conDoc.document;
 	}
 	conDoc.getElementById("TrackForm").submit();
-}
-
-function callMasterViewChange(change, isZoom) {
-	if(isZoom) {
-		// is simple zoom, no need to convert strand
-		var i;
-		for(i = 0; i < spcArray.length; i++) {
-			if(spcArray[i].isActive) {
-				callViewChange(spcArray[i].db, change);
-			}
-		}
-	} else {
-		var i;
-		for(i = 0; i < spcArray.length; i++) {
-			if(spcArray[i].isActive) {
-				if(currGene.spcGenes[i].strand) {
-					callViewChange(spcArray[i].db, change);
-				} else {
-					callViewChange(spcArray[i].db, ((change.search("left") >= 0)? change.replace(/left/, "right"): change.replace(/right/, "left")));
-				}
-			}
-		}
-	}
 }
 
 var isInDownload = false;
@@ -796,7 +640,7 @@ function callDownloadMenu(cmnName, isCommon, btnID, isEncode) {
 				var db = key.split("__")[0];
 				if(currentDb != db) {
 					// db has changed
-					items.push("<div class='speciesTrackHeader'>" + spcArray[spcArrayMap[db]].commonName + "</div>");
+					items.push("<div class='speciesTrackHeader'>" + spcArray[spcArray.map[db]].commonName + "</div>");
 					currentDb = db;
 				}
 				// split the value into shortlabel, type, and long label
@@ -999,13 +843,13 @@ function resize_tbody() {
 }
 
 function updateSpcActive(ID) {
-	spcArray[spcArrayMap[ID]].isActive = document.getElementById(ID).checked;
+	spcArray[spcArray.map[ID]].isActive = document.getElementById(ID).checked;
 }
 
 function updateType() {
 	var spcOrGeneName = $("#speciesOrGeneName");
 	var typeSelected = spcOrGeneName.val();
-	if(typeSelected != "gene" && !spcArray[spcArrayMap[typeSelected]].isActive) {
+	if(typeSelected != "gene" && !spcArray[spcArray.map[typeSelected]].isActive) {
 		typeSelected = "gene";
 	}
 	spcOrGeneName.empty();
@@ -1051,7 +895,7 @@ function validateUploadFileOrURL(event) {
 		}
 	});
 	
-	$.each(spcArray[spcArrayMap[db]].uniTracksEncode.array, function(key, value) {
+	$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
 		if($('#' + value.getCleanID()).prop('checked')) {
 			trackTblNames.push(value.getSpeciesTblName(db));
 		}
@@ -1118,6 +962,22 @@ $(document).ready( function () {
 	isEncodeOn = !isEncodeOn;
 	toggleEncode();
 	
+	jQuery(function() {
+		jQuery(".geneNameInsert").hide();
+		jQuery(".geneNameExpander").click(function(event) {
+			jQuery(this.nextElementSibling).toggle();
+			jQuery(this.nextElementSibling).position().left 
+				= jQuery(this).position().left + jQuery(this).width() 
+				- jQuery(this.nextElementSibling).width();
+			jQuery(this.nextElementSibling).position().top = jQuery(this).position().top;
+			event.stopPropagation();
+		});
+		jQuery(".geneNameInsert").click(function(event) {
+			jQuery(this).hide();
+			event.stopPropagation();
+		});
+	});
+	
 	//$('#uploadFile').on('submit', validateUploadFileOrURL);
 });
 </script>
@@ -1167,7 +1027,7 @@ $(document).ready( function () {
 				spcArray.push(new Species("<?php echo $spcinfo[$i]["dbname"]; ?>", 
 					"<?php echo $spcinfo[$i]["name"]; ?>", "<?php echo $spcinfo[$i]["commonname"]; ?>",
 					<?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>));
-				spcArrayMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
+				spcArray.map["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
 			  </script>
             <option value="<?php echo $spcinfo[$i]["dbname"]; ?>"><?php echo $spcinfo[$i]["dbname"]; ?> region</option>
             <?php

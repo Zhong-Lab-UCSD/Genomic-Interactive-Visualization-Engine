@@ -1,15 +1,8 @@
-// JavaScript Document
+// JavaScript Document for tracks
+// Notice that generegion.js is required for this to work correctly
 
 var MILLISECONDS_WAITTIMEOUT = 20;
 var INSIGNIFICANT_THRESHOLD = 2.0;
-
-function surrogateCtor() {}
- 
-function extend(base, sub) {
-	surrogateCtor.prototype = base.prototype;
-	sub.prototype = new surrogateCtor();
-	sub.prototype.constructor = sub;
-}
 
 
 var glo_methodind = "mean";		// global settings for method to get value in a table
@@ -920,93 +913,3 @@ Species.prototype.submitTrackChange = function() {
 	this.uniTracksUpdated = false;
 };
 
-function ChrRegion(chrString) {
-	var cleanedChrString = chrString.replace(/,/g, '')
-		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
-	var elements = cleanedChrString.split(/[:\s-]+/);
-	this.chr = elements[0];
-	this.start = parseInt(elements[1]);
-	this.end = parseInt(elements[2]);
-	this.strand = ((elements.length < 3)? null: ((elements[3] == 'NEGSTR')? false: true));
-}
-
-ChrRegion.prototype.regionFromString = function(regionString) {
-	var cleanedChrString = regionString.replace(/,/g, '')
-		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
-	var elements = cleanedChrString.split(/[:\s-]+/);
-	this.chr = elements[0];
-	this.start = parseInt(elements[1]);
-	this.end = parseInt(elements[2]);
-	this.strand = ((elements.length < 4)? this.strand: ((elements[3] == 'NEGSTR')? false: true));
-};
-
-ChrRegion.prototype.regionToString = function(includeStrand) {
-	// default is including strand
-	if (includeStrand == null) {
-		includeStrand = true;
-	}
-	return this.chr + ':' + this.start + '-' + this.end
-		+ ((!includeStrand || this.strand === null)? '': (' ('
-		+ (this.strand? '+': '-') + ')'));
-};
-
-ChrRegion.prototype.toString = function() {
-	// default is including strand
-	return this.regionToString(true);
-};
-
-ChrRegion.prototype.setStrand = function(newStr) {
-	switch(typeof(newStr)) {
-		case "string":
-			this.strand = !(newStr.indexOf('-') >= 0 || newStr.indexOf('0') >= 0);
-			break;
-		case "number":
-			this.strand = (newStr > 0);
-			break;
-		case "boolean":
-			this.strand = newStr;
-			break;
-		default:
-			this.strand = newStr? true: false;
-	}
-	return this.strand;
-};
-
-ChrRegion.prototype.getStrand = function(flankbefore, flankafter) {
-	return ((typeof(flankbefore) == "string")? flankbefore: '')
-		+ (this.strand? '+': '&minus;')
-		+ ((typeof(flankafter) == "string")? flankafter: '');
-};
-
-function SpcGene(spcGeneName, coorAsString) {
-	ChrRegion.call(this, coorAsString);
-	this.name = spcGeneName;
-}
-extend(ChrRegion, SpcGene);
-
-SpcGene.prototype.getShortName = function() {
-	if(this.name.length > 11) {
-		return this.name.substr(0, 6) + "..." + this.name.substr(this.name.length - 4);
-	} else {
-		return this.name;
-	}
-};
-
-function Gene(commonname) {
-	this.name = commonname;
-	this.spcGenes = new Array();
-	// note that some species may be inactive, then null will be supplied 
-}
-
-Gene.prototype.pushSpcGene = function(spcGeneName, coorAsString) {
-	if(spcGeneName == null) {
-		this.spcGenes.push(null);
-	} else {
-		this.spcGenes.push(new SpcGene(spcGeneName, coorAsString));
-	}
-};
-
-Gene.prototype.getCleanName = function() {
-	// clean the gene name of weird characters such as '.'
-	return this.name.replace(/\./g, "\\.");
-};

@@ -970,3 +970,27 @@ a:visited {
 	margin: 1px 2px -1px 2px;
 	cursor: pointer;
 }
+
+.geneListTable {
+	width: 100%;
+	border: 1px #666666 solid;
+	border-spacing: 0px;
+	border-collapse: collapse;
+}
+
+.geneListEntryTable {
+	width: 100%;
+	border: 0px;
+}
+.geneListEntryTable td {
+	vertical-align: top;
+}
+.geneListEntryTable input[type='submit'] {
+	float: right;
+}
+.geneListEntryTable .geneListEntryFirstCol {
+	width: 20%;
+}
+.geneListEntryTable .geneListEntrySecondCol {
+	width: 80%;
+}
