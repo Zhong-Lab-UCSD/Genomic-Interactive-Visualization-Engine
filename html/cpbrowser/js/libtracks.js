@@ -104,6 +104,10 @@ Track.prototype.getInfoTable = function() {
 	return "<td>" + this.info.replace(/\t/g, "</td>\n<td>") + "</td>";
 };
 
+Track.prototype.getInfoString = function() {
+	return this.info.replace(/\t/g, ' - ');
+};
+
 Track.prototype.getID = function() {
 	return this.id;
 };
@@ -403,10 +407,19 @@ CmnTrackEncode.prototype.writeTable = function() {
 	return result;
 };
 
+CmnTrackEncode.prototype.writeLongString = function() {
+	return this.title + ' - ' + this.getInfoString();
+};
 
-function TrackBundle() {
+
+function TrackBundle(idprefix, idpostfix) {
 	this.array = new Array();
 	this.map = new Object();
+	this.IDPrefix = (typeof(idprefix) == 'string')? idprefix: '';
+	this.IDPostfix = (typeof(idpostfix) == 'string')? idpostfix: '';
+	
+	this.reverseLookUpMap = new Object();
+	// this is used to map individual table name back to track object
 }
 
 TrackBundle.prototype.addTrack = function(track) {
@@ -416,23 +429,70 @@ TrackBundle.prototype.addTrack = function(track) {
 
 TrackBundle.prototype.get = function(index) {
 	// index can be number or string
+	var result;
 	if (typeof index == 'number') {
-		return this.array[index];
+		result = this.array[index];
+	} else {
+		result = this.map[index];
 	}
-	return this.map[index];
+	if(typeof(result) != 'object') {
+		throw index;
+	}
+	return result;
 };
 
 TrackBundle.prototype.length = function() {
 	return this.array.length;
+};
+
+TrackBundle.prototype.setCheckBox = function(track, flag) {
+	// set the checkbox of the track, and track.status as well
+	track.status = flag;
+	document.getElementById(this.IDPrefix
+		+ track.getCleanID() + this.IDPostfix).checked = flag;
+	return true;
+};
+
+TrackBundle.prototype.setCheckBoxFromID = function(trackID, flag) {
+	return this.setCheckBox(this.get(trackID), flag);
+};
+
+TrackBundle.prototype.setCheckBoxFromTableName = function(tableName, flag) {
+	if(this.reverseLookUpMap.hasOwnProperty(tableName)) {
+		return this.setCheckBox(this.reverseLookUpMap[tableName], flag);
+	}
+	return null;
+};
+
+TrackBundle.prototype.setAll = function(flag) {
+	flag = flag || false;
+	for(var i = 0; i < this.length(); i++) {
+		this.setCheckBox(this.get(i), flag);
+	}
+	return false;
+};
+
+TrackBundle.prototype.setListOnly = function(tableNameList) {
+	// tableNameList is the array of table names;
+	// tableNames other than the ones in the bundle can be included with no effect
+	this.setAll(false);
+	for(var i = 0; i < tableNameList.length; i++) {
+		this.setCheckBoxFromTableName(tableNameList[i], true);
+	}
+	return true;
 }
 
+TrackBundle.prototype.addTableNameToID = function(tableName, trackID) {
+	this.reverseLookUpMap[tableName] = this.get(trackID);
+};
+
+
 function TrackBundleWithSample(sampleprefix, samplepostfix, idprefix, idpostfix) {
-	TrackBundle.call(this);
+	TrackBundle.call(this, idprefix, idpostfix);
 	this.samplePrefix = (typeof(sampleprefix) == 'string')? sampleprefix: '';
 	this.samplePostfix = (typeof(samplepostfix) == 'string')? samplepostfix: '';
-	this.IDPrefix = (typeof(idprefix) == 'string')? idprefix: '';
-	this.IDPostfix = (typeof(idpostfix) == 'string')? idpostfix: '';
 	this.sampleMap = new Object();
+	
 }
 extend(TrackBundle, TrackBundleWithSample);
 
@@ -451,6 +511,8 @@ TrackBundleWithSample.prototype.addTrack = function(track, sample) {
 TrackBundleWithSample.prototype.updateState = function(sample) {
 	// synchronize state of checkBoxes and Tracks
 	// also check sample state
+	// this will use the state of all track checkboxes
+	//		to update track.status and sample checkboxes
 	if (typeof(this.sampleMap[sample]) == 'undefined') {
 		console.log(sample + " is not found in SampleToIDListMap.");
 		return;
@@ -700,6 +762,10 @@ UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
 	return result;
 };
 
+UniTrackEncode.prototype.writeLongString = function() {
+	return this.title + ' - ' + this.getInfoString();
+};
+
 
 
 
@@ -819,13 +885,14 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 		
 		for(var i = 0; i < hiddenCommons.length; i++) {
 			var currentTrack;
-			if(typeof cmnTracksBundle.get(hiddenCommons[i].id) == 'undefined') {
+			try {
+				currentTrack = cmnTracksBundle.get(hiddenCommons[i].id);
+			} catch(e) {
 				currentTrack = new CmnTrack(hiddenCommons[i].id, 
 					hiddenCommons[i].value, speciesArray);
 				cmnTracksBundle.addTrack(currentTrack);
-			} else {
-				currentTrack = cmnTracksBundle.get(hiddenCommons[i].id);
 			}
+
 			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
 			// this happens even there is already entry in cmnTracksTableNames
@@ -839,14 +906,14 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 			// get all the hidden inputs in the browser "common" part
 			
 			for(var i = 0; i < hiddenCommons.length; i++) {
-				if(typeof cmnTracksEncodeBundle.get(hiddenCommons[i].id) == 'undefined') {
+				try {
+					currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
+				} catch(e) {
 					currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
 						hiddenCommons[i].value, speciesArray, 
 						hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
 						hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
 					cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
-				} else {
-					currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
 				}
 				currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 				currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
@@ -859,12 +926,12 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 			// get all the hidden inputs in the browser "common" part
 			
 			for(var i = 0; i < hiddenUniques.length; i++) {
-				if(typeof this.uniTracks.get(hiddenUniques[i].id) == 'undefined') {
+				try {
+					this.uniTracks.get(i).setStatusFromUcsc(hiddenUniques[i].value);
+				} catch(e) {
 					currentTrack = new UniTrack(this.db, hiddenUniques[i].id, 
 						hiddenUniques[i].name, hiddenUniques[i].value)
 					this.uniTracks.addTrack(currentTrack);
-				} else {
-					this.uniTracks.get(i).setStatusFromUcsc(hiddenUniques[i].value);
 				}
 			}
 		}
@@ -875,14 +942,14 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 			// get all the hidden inputs in the browser "common" part
 			
 			for(var i = 0; i < hiddenUniques.length; i++) {
-				if(typeof this.uniTracksEncode.get(hiddenUniques[i].id) == 'undefined') {
+				try {
+					this.uniTracksEncode.get(hiddenUniques[i].id).setStatusFromUcsc(hiddenUniques[i].value);
+				} catch(e) {
 					currentTrack = new UniTrackEncode(this.db, hiddenUniques[i].id,
 						hiddenUniques[i].name, hiddenUniques[i].value,
 						hiddenUniquesEncodeData[hiddenUniques[i].id + "_title"].innerHTML,
 						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML);
 					this.uniTracksEncode.addTrack(currentTrack, currentTrack.getSampleType());
-				} else {
-					this.uniTracksEncode.get(hiddenUniques[i].id).setStatusFromUcsc(hiddenUniques[i].value);
 				}
 			}
 		}
@@ -912,4 +979,140 @@ Species.prototype.submitTrackChange = function() {
 	this.browserConDoc.getElementById('TrackForm').submit();
 	this.uniTracksUpdated = false;
 };
+
+
+
+// ********************************************************
+// The following part is more integrated to UI,
+// So maybe it can be put into another separate file.
+
+
+
+
+var trackUpdatedCallback = {
+	callback: function() {
+		if (typeof(this.func) == 'function'){
+			var result = this.func(this.data);
+			this.func = null;
+			this.data = null;
+			return result;
+		}
+		return false;
+	}
+};
+// this is to add some callback event when the tracks are done
+// basically it will call trackUpdatedCallback.callback();
+// change trackUpdatedCallback.func and trackUpdatedCallback.data as appropriate.
+
+// Check all species when done
+function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle) {
+	for(var i = 0; i < speciesArray.length; i++) {
+		//if((!isEncodeOn || spcEncode[spcDbName[i]]) && !uniTracksDone[i]) {
+		if(!speciesArray[i].uniTracksUpdated) {
+			return;
+		}
+	}
+
+	// all tracks initialized
+	// do panel initialization
+	// first common panels
+	$('#cmnTrackHolder').html('');
+	$('#uniqueHolder').html('');
+	var items = [];
+	items.push('<table width="100%"><tr>');
+	for(var i = 0; i < cmnTracksBundle.length(); i++) {
+		items.push(cmnTracksBundle.get(i).writeTable());
+		if((i % 2) && i < cmnTracksBundle.length()) {
+			items.push('</tr>\n<tr>');
+		}
+	}
+	items.push('</tr></table>\n');
+	$('#cmnTrackHolder').append(items.join(''));
+	
+	for(var i = 0; i < speciesArray.length; i++) {
+		speciesArray[i].writeUniqueTable(false);
+	}
+	
+	$('#cmnTrackEncodeTbodyHolder').html('');
+	$('#uniqueEncodeHolder').html('');
+	
+	// this is for common track ENCODE part
+	items = [];
+	for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
+		items.push('<tr class="trackCell" id="' 
+			+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
+		items.push(cmnTracksEncodeBundle.get(i).writeTable());
+		items.push('</tr>\n');
+	}
+	$('#cmnTrackEncodeTbodyHolder').append(items.join(''));
+	
+	for(var i = 0; i < speciesArray.length; i++) {
+		speciesArray[i].writeUniqueTable(true);
+	}
+	
+	$('#cmnSampleEncodeHolder').html('');
+	
+	cmnTracksEncodeBundle.writeSampleTable('cmnSampleEncodeHolder');
+	
+	$('#uniSampleEncodeHolder').html('');
+	for(var i = 0; i < speciesArray.length; i++) {
+		if (speciesArray[i].isEncode) {
+			var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
+			uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, speciesArray[i].db).replace(/spcCmnName/g, speciesArray[i].commonName);
+			$('#uniSampleEncodeHolder').append(uniqSampleTemp);
+			var uniqueSampleHolderId = speciesArray[i].db + 'SampleEncodeHolder';
+			if(speciesArray[i].uniTracksEncode.writeSampleTable(uniqueSampleHolderId) <= 0) {
+				$('#' + uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
+			}
+		}
+	}
+	
+	markTrackInitialized(true);
+	trackUpdatedCallback.callback();
+}
+
+function updateTracks() {
+	// Enum all CmnTracks and UniTracks element
+	
+	for(var index = 0; index < cmnTracks.length(); index++) {
+		cmnTracks.get(index).updateStatus(spcArray);
+	}
+		
+	for(var index = 0; index < cmnTracksEncode.length(); index++) {
+		cmnTracksEncode.get(index).updateStatus(spcArray);
+	}
+	
+	for(var index = 0; index < spcArray.length; index++) {
+		spcArray[index].updateAllUnique();
+		spcArray[index].submitTrackChange();
+		setUnReady(spcArray[index].db);
+	}
+	
+	markTrackInitialized(false);
+}
+
+function resetTracks() {
+	for(var index = 0; index < spcArray.length; index++) {
+		if(spcArray[index].isActive) {
+			var db = spcArray[index].db;
+			var conDoc = spcArray[index].browserConDoc;
+			var conForm = conDoc.getElementById('TrackForm');
+			var resetVar = conDoc.createElement("input");
+			resetVar.type = "hidden";
+			resetVar.name = "hgt.reset";
+			resetVar.value = "TRUE";
+			conForm.appendChild(resetVar);
+			var resetOrder = conDoc.createElement("input");
+			resetOrder.type = "hidden";
+			resetOrder.name = "hgt.defaultImgOrder";
+			resetOrder.value = "TRUE";
+			conForm.appendChild(resetOrder);
+			conForm.submit();
+			setUnReady(db);
+			spcArray[index].uniTracksUpdated = false;
+		}
+	}
+	markTrackInitialized(false);
+	toggleWindow('trackSelect');
+}
 

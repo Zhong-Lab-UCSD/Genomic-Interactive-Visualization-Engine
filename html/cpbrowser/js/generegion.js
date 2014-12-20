@@ -13,14 +13,22 @@ function extend(base, sub) {
 }
 
 
-function ChrRegion(chrString, regionname) {
-	var cleanedChrString = chrString.replace(/,/g, '')
-		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
-	var elements = cleanedChrString.split(/[:\s-]+/);
-	this.chr = elements[0];
-	this.start = parseInt(elements[1]);
-	this.end = parseInt(elements[2]);
-	this.strand = ((elements.length < 3)? null: ((elements[3] == 'NEGSTR')? false: true));
+function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regionstrand) {
+	var cleanedChrString, elements; 
+	if(chrString) {
+		cleanedChrString = chrString.replace(/,/g, '')
+			.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
+		elements = cleanedChrString.split(/[:\s-]+/);
+		this.chr = elements[0];
+		this.start = parseInt(elements[1]);
+		this.end = parseInt(elements[2]);
+		this.strand = ((elements.length < 3)? null: ((elements[3] == 'NEGSTR')? false: true));
+	} else {
+		this.chr = chrom;
+		this.start = parseInt(regionstart);
+		this.end = parseInt(regionend);
+		this.strand = this.setStrand(regionstrand);
+	}
 	this.name = regionname || '';
 }
 
@@ -60,8 +68,11 @@ ChrRegion.prototype.setStrand = function(newStr) {
 		case "boolean":
 			this.strand = newStr;
 			break;
+		case "undefined":
+			this.strand = null;
+			break;
 		default:
-			this.strand = newStr? true: false;
+			this.strand = ((newStr == null)? null: (newStr? true: false));
 	}
 	return this.strand;
 };
@@ -78,6 +89,28 @@ ChrRegion.prototype.getShortName = function() {
 	} else {
 		return this.name;
 	}
+};
+
+ChrRegion.prototype.overlaps = function(region) {
+	return this.chr == region.chr && this.start < region.end && this.end > region.start;
+};
+
+ChrRegion.prototype.assimilate = function(region) {
+	if(!this.overlaps(region)) {
+		return null;
+	}
+	this.start = parseInt(Math.min(this.start, region.start));
+	this.end = parseInt(Math.max(this.end, region.end));
+	return this;
+};
+
+ChrRegion.prototype.intersect = function(region) {
+	if(!this.overlaps(region)) {
+		return null;
+	}
+	this.start = parseInt(Math.max(this.start, region.start));
+	this.end = parseInt(Math.min(this.end, region.end));
+	return this;
 };
 
 function SpcRegionArray(spcregion) {

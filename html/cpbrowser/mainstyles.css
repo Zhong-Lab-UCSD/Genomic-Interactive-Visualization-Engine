@@ -980,7 +980,7 @@ a:visited {
 
 .geneListEntryTable {
 	width: 100%;
-	border: 0px;
+	border: 1px #666666 solid;
 }
 .geneListEntryTable td {
 	vertical-align: top;

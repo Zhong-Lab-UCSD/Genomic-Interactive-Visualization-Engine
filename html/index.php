@@ -37,6 +37,7 @@ body {
 <script type="text/javascript" src="cpbrowser/js/generegion.js"></script>
 <script type="text/javascript" src="cpbrowser/js/regionlistui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/navui.js"></script>
+<script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
 <script type="text/javascript">
 
@@ -96,72 +97,6 @@ var isInBrowser = false;
 var tracksInitialized = false;
 
 var isEncodeOn = <?php echo ($encodeOn? 'true': 'false'); ?>;			// Switch this to on to make ENCODE data as default, 
-
-// Check all species when done
-function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle) {
-	for(var i = 0; i < speciesArray.length; i++) {
-		//if((!isEncodeOn || spcEncode[spcDbName[i]]) && !uniTracksDone[i]) {
-		if(!speciesArray[i].uniTracksUpdated) {
-			return;
-		}
-	}
-
-	// all tracks initialized
-	// do panel initialization
-	// first common panels
-	$('#cmnTrackHolder').html('');
-	$('#uniqueHolder').html('');
-	var items = [];
-	items.push('<table width="100%"><tr>');
-	for(var i = 0; i < cmnTracksBundle.length(); i++) {
-		items.push(cmnTracksBundle.get(i).writeTable());
-		if((i % 2) && i < cmnTracksBundle.length()) {
-			items.push('</tr>\n<tr>');
-		}
-	}
-	items.push('</tr></table>\n');
-	$('#cmnTrackHolder').append(items.join(''));
-	
-	for(var i = 0; i < speciesArray.length; i++) {
-		speciesArray[i].writeUniqueTable(false);
-	}
-	
-	$('#cmnTrackEncodeTbodyHolder').html('');
-	$('#uniqueEncodeHolder').html('');
-	
-	// this is for common track ENCODE part
-	items = [];
-	for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
-		items.push('<tr class="trackCell" id="' 
-			+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
-		items.push(cmnTracksEncodeBundle.get(i).writeTable());
-		items.push('</tr>\n');
-	}
-	$('#cmnTrackEncodeTbodyHolder').append(items.join(''));
-	
-	for(var i = 0; i < speciesArray.length; i++) {
-		speciesArray[i].writeUniqueTable(true);
-	}
-	
-	$('#cmnSampleEncodeHolder').html('');
-	
-	cmnTracksEncodeBundle.writeSampleTable('cmnSampleEncodeHolder');
-	
-	for(var i = 0; i < speciesArray.length; i++) {
-		if (speciesArray[i].isEncode) {
-			var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
-			uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, speciesArray[i].db).replace(/spcCmnName/g, speciesArray[i].commonName);
-			$('#uniSampleEncodeHolder').append(uniqSampleTemp);
-			var uniqueSampleHolderId = speciesArray[i].db + 'SampleEncodeHolder';
-			if(speciesArray[i].uniTracksEncode.writeSampleTable(uniqueSampleHolderId) <= 0) {
-				$('#' + uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
-			}
-		}
-	}
-	
-	markTrackInitialized(true);
-
-}
 
 function setTrackReady(index) {
 	spcArray[index].setTrackReady(spcArray, cmnTracks, cmnTracksEncode, !tracksInitialized, isInBrowser);
@@ -740,51 +675,7 @@ function markTrackInitialized(flag) {
 	}
 }
 
-function updateTracks() {
-	// Enum all CmnTracks and UniTracks element
-	
-	for(var index = 0; index < cmnTracks.length(); index++) {
-		cmnTracks.get(index).updateStatus(spcArray);
-	}
-		
-	for(var index = 0; index < cmnTracksEncode.length(); index++) {
-		cmnTracksEncode.get(index).updateStatus(spcArray);
-	}
-	
-	for(var index = 0; index < spcArray.length; index++) {
-		spcArray[index].updateAllUnique();
-		spcArray[index].submitTrackChange();
-		setUnReady(spcArray[index].db);
-	}
-	
-	markTrackInitialized(false);
-	toggleWindow('trackSelect');
-}
 
-function resetTracks() {
-	for(var index = 0; index < spcArray.length; index++) {
-		if(spcArray[index].isActive) {
-			var db = spcArray[index].db;
-			var conDoc = spcArray[index].browserConDoc;
-			var conForm = conDoc.getElementById('TrackForm');
-			var resetVar = conDoc.createElement("input");
-			resetVar.type = "hidden";
-			resetVar.name = "hgt.reset";
-			resetVar.value = "TRUE";
-			conForm.appendChild(resetVar);
-			var resetOrder = conDoc.createElement("input");
-			resetOrder.type = "hidden";
-			resetOrder.name = "hgt.defaultImgOrder";
-			resetOrder.value = "TRUE";
-			conForm.appendChild(resetOrder);
-			conForm.submit();
-			setUnReady(db);
-			spcArray[index].uniTracksUpdated = false;
-		}
-	}
-	markTrackInitialized(false);
-	toggleWindow('trackSelect');
-}
 
 function toggleSubHeaderText(header) {
 	if($('#' + header).html() == '[-]') {
@@ -814,11 +705,13 @@ function toggleEncode() {
 		$('#trackSelect').width(600);
 		//$('#EncodeDataButton').html('View Other Data');
 		$('#encodeSampleSettings').show();
+		$('#uploadAndCompare').show();
 	} else {
 		$('#EncodeData').addClass('BoxHide');
 		$('#NonEncodeData').removeClass('BoxHide');
 		$('#trackSelect').width(380);
 		//$('#EncodeDataButton').html('View ENCODE Data');
+		$('#uploadAndCompare').hide();
 		$('#encodeSampleSettings').hide();
 	}
 	checkEncodeSpecies();	
@@ -867,89 +760,6 @@ function updateSpcCheckbox() {
 	updateType();
 }
 
-function validateUploadFileOrURL(event) {
-	event.stopPropagation();
-	event.preventDefault();
-	
-	if($('#uploadFileInput')[0].files.length <= 0) {
-		alert('You need to select a file!');
-		return false;
-	} else if($('#speciesToUpload').val() == "unselected") {
-		alert('You need to select the database of your file!');
-		return false;
-	}
-	
-	$('#search').prop('disabled', true);
-	$('#fileSubmit').prop('disabled', true);
-	$("#genelistContentHolder").html('');
-	$('#genelistLoading').removeClass('BoxHide');
-	
-	var db = $('#speciesToUpload').val();
-	var trackTblNames = new Array();
-	
-	// append all the tracks
-	$.each(cmnTracksEncode.array, function(key, value) {
-		// first, use getdownload.php to get all the tableNames
-		if($('#' + value.getCleanID()).prop('checked')) {
-			trackTblNames.push(value.getSpeciesTblName(db));
-		}
-	});
-	
-	$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
-		if($('#' + value.getCleanID()).prop('checked')) {
-			trackTblNames.push(value.getSpeciesTblName(db));
-		}
-	});
-	
-	tableQueryData = new Object();
-	tableQueryData[db] = JSON.stringify(trackTblNames);
-
-	var tableNameData = new FormData();
-	tableNameData.append('file', $('#uploadFileInput')[0].files[0]);
-	tableNameData.append('Submit', 'Submit');
-	tableNameData.append('species', db);
-	
-	$.post('cpbrowser/gettablenames.php', tableQueryData, function(returndata) {
-		
-		testdata = new Array();
-		$.each(returndata, function(key, val) {
-			tableNameData.append('geneTracks[]', val);
-		});
-		
-		$.ajax({
-			url: 'cpbrowser/geneTrackComparison.php',
-			type: 'POST',
-			data: tableNameData,
-			cache: false,
-			processData: false,
-			contentType: false,
-			success: function(jsonReturnData, status, jqXHR) {
-				// file successfully uploaded
-				// process return stuff
-				// data will be a json-encoded string of the php array
-				// currently this string will be submitted again to genelist.php to get the final output
-				// needs to move the output code from php to JavaScript
-				var postdata = {};
-				postdata['writeTableOnly'] = 'true';
-				postdata['result'] = jsonReturnData;
-				postdata['geneName'] = $('#uploadFileInput')[0].files[0].name;
-				$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (parsedData) {
-					$('#genelistLoading').addClass('BoxHide');
-					$("#genelistContentHolder").html(parsedData);
-					$('#search').prop('disabled', false);
-					$('#fileSubmit').prop('disabled', false);
-				});
-				
-				// sort track by order and score?
-			},
-			error: function(jqXHR, status, e) {
-			}
-		});
-	
-	}, 'json');
-	
-}
-
 $(document).ready( function () {
 	for(var i = 0; i < spcArray.length; i++) {
 		$('#' + spcArray[i].db).on("change", updateSpcCheckbox);
@@ -978,7 +788,7 @@ $(document).ready( function () {
 		});
 	});
 	
-	//$('#uploadFile').on('submit', validateUploadFileOrURL);
+	$('#uploadFile').on('submit', validateUploadFileOrURL);
 });
 </script>
 <script type="text/javascript">
@@ -1165,8 +975,7 @@ $(document).ready( function () {
       </div>
     </div>
     <!-- This is the upload new file part -->
-    <!--
-    <div class="settingsNormal">
+    <div class="settingsNormal" id="uploadAndCompare" style="display: none;">
       <form name="uploadFile" id="uploadFile">
         Or upload custom peak file (for specified database) below for analysis.<br>
         <div class="selectBox">
@@ -1188,7 +997,6 @@ $(document).ready( function () {
       </form>
       <div style="clear: both;"></div>
     </div>
-    -->
     <!-- end upload new file part -->
     <div id="NonEncodeData">
       <div class="subBox">
@@ -1245,7 +1053,7 @@ $(document).ready( function () {
 		?>
       </div>
     </div>
-    <div class="header buttons" style="float: right;" onclick="updateTracks();">Update</div>
+    <div class="header buttons" style="float: right;" onclick="updateTracks(); toggleWindow('trackSelect');">Update</div>
     <div class="header buttons" style="float: right;" onclick="resetTracks();">Reset view</div>
     <div class="header buttons" style="float: right;" onclick="toggleWindow('trackSelect');">Close</div>
     <div style="clear: both"></div>

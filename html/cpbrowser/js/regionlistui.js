@@ -21,14 +21,14 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
 }
 extend(ChrRegion, ChrRegionToShow);
 
-Region.prototype.writeDOM = function(spcArray, updateNavFunc, changeGeneNameFunc) {
+Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // this will return the <tr> node for the region
     var outsideTD = $('<td></td>');
     outsideTD.addClass('formstyle');
+	outsideTD.css('padding', '0px');
     var outForm = $('<form></form>');
     outForm.prop('id', this.getCleanName()).prop('name', this.getCleanName());
     outForm.prop('method', 'post').prop('action', 'cpbrowser/cpbrowser.php').prop('target', 'cpbrowser');
-    outForm.submit({name: this.name, spcarray: spcArray}, function(event) {updateNavFunc(event.data.name, event.data.spcarray);});
     
     var outTable = $('<table></table>');
     outTable.addClass('geneListEntryTable');
@@ -143,11 +143,48 @@ Region.prototype.writeDOM = function(spcArray, updateNavFunc, changeGeneNameFunc
                 }
 				cell.append(select);
             } // end if multiflag
+            
+            if (currRegion.data.hasOwnProperty('track')) {
+                // provide selection for filtering out all the tracks
+                cell.append('<br>');
+                if (typeof(currRegion.data['track']) == 'string') {
+                    currRegion.data['track'] = [currRegion.data['track']];
+                }
+				
+                var label = $('<label></label>');
+                label.append($('<strong></strong>').append('Tracks matching: '));
+                label.append($('<input>').prop('type', 'button')
+                             .prop('id', this.getCleanName() + spcArray[i].db + 'Filter')
+                             .prop('checked', true).prop('value', 'Apply Filter')
+							 .click({spcIndex: i, list: currRegion.data['track']}, function(event) {
+								cmnTracksEncode.setListOnly(event.data.list);
+								spcArray[event.data.spcIndex].uniTracksEncode.setListOnly(event.data.list);
+								updateTracks();								
+							 }));
+                cell.append(label);
+                cell.append('<br>');
+                
+                var trackListDiv = $('<div></div>');
+                for(var iTracks = 0; iTracks < currRegion.data['track'].length; iTracks++) {
+                    var trackTableName = currRegion.data['track'][iTracks];
+					if(iTracks > 0) {
+						cell.append('<br>');
+					}
+					if(cmnTracksEncode.reverseLookUpMap.hasOwnProperty(trackTableName)) {
+						cell.append(cmnTracksEncode.reverseLookUpMap[trackTableName].writeLongString());
+					} else {
+						// it's unique
+						cell.append(spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName].writeLongString());
+					}
+                }
+            }
             row.append(cell);
             outTable.append(row);
         } 
     } // end for i in spcArray
     
+    outForm.submit({name: this.getCleanName(), spcarray: spcArray}, 
+		function(event) {return updateNavFunc(event.data.name, event.data.spcarray);});
     outForm.append(outTable);
     outForm.append($('<input>').prop('id', this.getCleanName() + 'NumSpc').prop('type', 'hidden')
                    .prop('name', 'num_spc').prop('value', numOfSpcToShow.toString()));
@@ -204,31 +241,33 @@ function populateRegionList(rawObj, spcArray) {
     return regionList;
 }
 
-function writeGeneListTable(geneListElem, spcArray, updateNavFunc, changeGeneNameFunc) {
+function writeGeneListTable(geneListElem, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // geneListElem is the an array of Region class
     // 
 	var table = $('<table></table>');
 	table.addClass('geneListTable');
 	$.each(geneListElem, function(i, entry) {
-		table.append(entry.writeDOM(spcArray, updateNavFunc, changeGeneNameFunc));
+		table.append(entry.writeDOM(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
 	});
 	return table;
 }
 
-function writeGeneListFromJSON(geneListJSON, spcArray, updateNavFunc, changeGeneNameFunc) {
+function writeGeneListFromJSON(geneListJSON, spcarray, cmnTracksEnc, updateNavFunc, changeGeneNameFunc) {
 	updateNavFunc = updateNavFunc || updateNavigation;
 	changeGeneNameFunc = changeGeneNameFunc || changeGeneName;
+	cmnTracksEnc = cmnTracksEnc || cmnTracksEncode;
+	spcarray = spcarray || spcArray;
 	var geneListRaw = $.parseJSON(geneListJSON);
 	if(geneListRaw.hasOwnProperty('error')) {
 		return $('<p></p>').addClass('formstyle').append(geneListRaw['error']);
 	}
-	geneList = populateRegionList(geneListRaw, spcArray);
-	return writeGeneListTable(geneList, spcArray, updateNavFunc, changeGeneNameFunc);
+	geneList = populateRegionList(geneListRaw, spcarray);
+	return writeGeneListTable(geneList, spcarray, cmnTracksEnc, updateNavFunc, changeGeneNameFunc);
 }
 
 function regionUiHandler(data) {
 	$("#genelistContentHolder").html('');
-	$("#genelistContentHolder").append(writeGeneListFromJSON(data, spcArray, updateNavigation, changeGeneName));
+	$("#genelistContentHolder").append(writeGeneListFromJSON(data));
 	$('#genelistLoading').addClass('BoxHide');
 	if(geneList.length == 1) {
 		updateNavigation(geneList[0].name);

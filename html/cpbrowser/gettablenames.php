@@ -12,8 +12,7 @@
 				. $mysqli->real_escape_string($entry) . "') ORDER BY `shortLabel`");
 			if($generesult->num_rows > 0) {
 				while($row = $generesult->fetch_assoc()) {
-					$result[$key . "__" . $row["tableName"]]
-						= $row["tableName"];
+					$result[$entry] = $row["tableName"];
 				}
 			}
 		}
