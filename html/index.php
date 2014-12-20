@@ -976,6 +976,7 @@ $(document).ready( function () {
     </div>
     <!-- This is the upload new file part -->
     <div class="settingsNormal" id="uploadAndCompare" style="display: none;">
+    <!--
       <form name="uploadFile" id="uploadFile">
         Or upload custom peak file (for specified database) below for analysis.<br>
         <div class="selectBox">
@@ -996,6 +997,7 @@ $(document).ready( function () {
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>
       <div style="clear: both;"></div>
+      -->
     </div>
     <!-- end upload new file part -->
     <div id="NonEncodeData">
