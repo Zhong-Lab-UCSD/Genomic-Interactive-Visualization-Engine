@@ -449,6 +449,8 @@ function sendAjax() {
 
 function validate_form_genequery() {
 //	window.alert(document.getElementById("genelist").selectedIndex);
+	event.stopPropagation();
+	event.preventDefault();
 	if($("#geneName").val() == "") {
 		window.alert("You need to either choose a gene or type in part of its name before proceeding.");
 		return false;
@@ -468,9 +470,12 @@ function validate_form_genequery() {
 	
 	var checked = 0;
 	for(var i = 0; i < document.getElementById("searchform").elements.length; i++) {
-		if(document.getElementById("searchform").elements[i].type == "checkbox" 
-			&& document.getElementById("searchform").elements[i].checked) {
-			checked++;
+		if(document.getElementById("searchform").elements[i].type == "checkbox") {
+			var spcCheckBox = document.getElementById("searchform").elements[i];
+			updateSpcActive(spcCheckBox.id);
+			if(spcCheckBox.checked) {
+				checked++;
+			}
 		}
 	}
 	if(checked < 2) {
@@ -975,7 +980,7 @@ $(document).ready( function () {
       </div>
     </div>
     <!-- This is the upload new file part -->
-    <div class="settingsNormal" id="uploadAndCompare" style="display: none;">
+    <div class="settingsNormal" id="uploadAndCompare">
       <form name="uploadFile" id="uploadFile">
         Or upload custom peak file (for specified database) below for analysis.<br>
         <div class="selectBox">
@@ -995,6 +1000,9 @@ $(document).ready( function () {
         <input type="file" id="uploadFileInput" name="uploadFileInput" />
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>
+      <div style="display: none;">
+      <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
+      </div>
       <div style="clear: both;"></div>
     </div>
     <!-- end upload new file part -->
