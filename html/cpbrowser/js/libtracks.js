@@ -1093,7 +1093,7 @@ function updateTracks() {
 
 function resetTracks() {
 	for(var index = 0; index < spcArray.length; index++) {
-		if(spcArray[index].isActive) {
+		if(!isEncodeOn || spcArray[index].isEncode) {
 			var db = spcArray[index].db;
 			var conDoc = spcArray[index].browserConDoc;
 			var conForm = conDoc.getElementById('TrackForm');

@@ -21,6 +21,16 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
 }
 extend(ChrRegion, ChrRegionToShow);
 
+ChrRegionToShow.prototype.extendedRegionToString = function(includeStrand) {
+	// default is including strand
+	if (includeStrand == null) {
+		includeStrand = true;
+	}
+	return this.chr + ':' + this.extendedstart + '-' + this.extendedend
+		+ ((!includeStrand || this.strand === null)? '': (' ('
+		+ (this.strand? '+': '-') + ')'));
+};
+
 Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // this will return the <tr> node for the region
     var outsideTD = $('<td></td>');
@@ -116,7 +126,7 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
             
             if (!multiFlag) {
                 cell.append($('<input>').prop('name', spcArray[i].db).prop('id', this.getCleanName() + spcArray[i].db)
-                            .prop('type', 'hidden').prop('value', currRegion.regionToString(false)));
+                            .prop('type', 'hidden').prop('value', currRegion.extendedRegionToString(false)));
 //                cell.append($('<input>').prop('name', spcArray[i].db + 'strand')
 //                            .prop('id', this.getCleanName() + spcArray[i].db + 'strand')
 //                            .prop('type', 'hidden').prop('value', (currRegion.strand == false? '0': '1')));
@@ -156,13 +166,14 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
                 label.append($('<input>').prop('type', 'button')
                              .prop('id', this.getCleanName() + spcArray[i].db + 'Filter')
                              .prop('checked', true).prop('value', 'Apply Filter')
+							 .css('float', 'right')
 							 .click({spcIndex: i, list: currRegion.data['track']}, function(event) {
 								cmnTracksEncode.setListOnly(event.data.list);
 								spcArray[event.data.spcIndex].uniTracksEncode.setListOnly(event.data.list);
 								updateTracks();								
 							 }));
                 cell.append(label);
-                cell.append('<br>');
+				cell.append($('<div></div>').css('clear', 'both'));
                 
                 var trackListDiv = $('<div></div>');
                 for(var iTracks = 0; iTracks < currRegion.data['track'].length; iTracks++) {
