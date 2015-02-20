@@ -7,13 +7,18 @@ ChrRegionToShow.prototype.assimilate = function(region) {
 	}
 	this.start = parseInt(Math.min(this.start, region.start));
 	this.end = parseInt(Math.max(this.end, region.end));
-	this.extendedstart = parseInt(Math.min(this.extendedstart, region.extendedstart));
-	this.extendedend = parseInt(Math.max(this.extendedend, region.extendedend));
+	var regionExtendedStart = region.extendedstart || region.start;
+	var regionExtendedEnd = region.extendedend || region.end;
+	this.extendedstart = parseInt(Math.min(this.extendedstart, regionExtendedStart));
+	this.extendedend = parseInt(Math.max(this.extendedend, regionExtendedEnd));
 	if (region.data.hasOwnProperty('track')) {
 		if (!this.data.hasOwnProperty('track')) {
 			this.data['track'] = new Array();
+			this.data['track'].map = new Object();
 		} else if (typeof(this.data['track']) == 'string') {
 			this.data['track'] = [this.data['track']];
+			this.data['track'].map = new Object();
+			this.data['track'].map[this.data['track'][0]] = true;
 		}
 //		if($.isArray(region.data['track'])) {
 //			$.each(region.data['track'], function(key, val) {
@@ -22,13 +27,17 @@ ChrRegionToShow.prototype.assimilate = function(region) {
 //		} else {
 //			this.data['track'].push(region.data['track']);
 //		}
-		this.data['track'].push(region.data['track']);
+		if(this.data['track'].map[region.data['track']] !== true) {
+			this.data['track'].push(region.data['track']);
+			this.data['track'].map[region.data['track']] = true;
+		}
 	}
 	return this;
 }
 
 function mergeGeneList(glist, spcArray) {
 	// merge all geneList
+	// need to have at least half overlap
 	var newRegionList = new Array();
 	newRegionList.map = new Object();
 	for(var iSpc = 0; iSpc < spcArray.length; iSpc++) {
@@ -40,10 +49,12 @@ function mergeGeneList(glist, spcArray) {
 					for(var iRegion = 0; iRegion < currGeneSpcList.length; iRegion++) {
 						var noOverlap = true;
 						for(var jRegion = 0; jRegion < newGeneSpcList.length; jRegion++) {
-							if(newGeneSpcList[jRegion].overlaps(currGeneSpcList[iRegion])) {
-								newGeneSpcList[jRegion].assimilate(currGeneSpcList[iRegion]);
-								noOverlap = false;
-								break;
+							if(newGeneSpcList[jRegion].overlaps(currGeneSpcList[iRegion]) 
+								>= Math.max(newGeneSpcList[jRegion].getLength(), 
+								currGeneSpcList[iRegion].getLength()) / 2) {
+									newGeneSpcList[jRegion].assimilate(currGeneSpcList[iRegion]);
+									noOverlap = false;
+									break;
 							}
 						}
 						if (noOverlap) {
@@ -124,6 +135,7 @@ function validateUploadFileOrURL(event) {
 					var trackTblNames = new Array();
 					var trackTblNameToID = new Object();
 					
+					var useAllTracks = $('#useAllTracks').prop('checked');
 					// first shutdown all non-selected db
 					for(var i = 0; i < spcArray.length; i++) {
 						spcArray[i].isActive = (spcArray[i].db == db);
@@ -132,14 +144,14 @@ function validateUploadFileOrURL(event) {
 					// append all the tracks
 					$.each(cmnTracksEncode.array, function(key, value) {
 						// first, use getdownload.php to get all the tableNames
-						if($('#' + value.getCleanID()).prop('checked')) {
+						if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
 							trackTblNames.push(value.getSpeciesTblName(db));
 							trackTblNameToID[value.getSpeciesTblName(db)] = {bundle: cmnTracksEncode, value: value.id};
 						}
 					});
 					
 					$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
-						if($('#' + value.getCleanID()).prop('checked')) {
+						if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
 							trackTblNames.push(value.getSpeciesTblName(db));
 							trackTblNameToID[value.getSpeciesTblName(db)] = {bundle: spcArray[spcArray.map[db]].uniTracksEncode, value: value.id};
 						}
@@ -156,9 +168,11 @@ function validateUploadFileOrURL(event) {
 					$.post('cpbrowser/gettablenames.php', tableQueryData, function(returndata) {
 						
 						$.each(returndata, function(key, val) {
-							tableNameData.append('geneTracks[]', val);
-							trackTblNameToID[key].bundle.addTableNameToID(val, trackTblNameToID[key].value);
-							// this is to complete the reverse-lookup table
+							$.each(val, function(newkey, table) {
+								tableNameData.append('geneTracks[]', table);
+								trackTblNameToID[key].bundle.addTableNameToID(table, trackTblNameToID[key].value);
+								// this is to complete the reverse-lookup table
+							});
 						});
 						
 						$.ajax({
@@ -193,7 +207,7 @@ function validateUploadFileOrURL(event) {
 		
 	};
 	
-	updateTracks();
+	updateTracks(false);
 	toggleWindow('trackSelect');
 	return false;
 	
