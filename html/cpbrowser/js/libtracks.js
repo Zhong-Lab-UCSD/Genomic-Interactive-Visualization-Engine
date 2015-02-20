@@ -309,7 +309,7 @@ CmnTrack.prototype.updateStatus = function(spcarray) {
 	
 	this.status = document.getElementById(this.getCleanID()).checked;
 	for(var i = 0; i < spcarray.length; i++) {
-		var target = spcArray[i].browserConDoc.getElementById(this.id);
+		var target = spcarray[i].browserConDoc.getElementById(this.id);
 		if(target) {
 			target.value = (this.status? 'dense': 'hide');
 		}
@@ -1071,8 +1071,9 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	trackUpdatedCallback.callback();
 }
 
-function updateTracks() {
+function updateTracks(setIsInBrowser) {
 	// Enum all CmnTracks and UniTracks element
+	isInBrowser = (typeof setIsInBrowser === 'boolean')? setIsInBrowser: isInBrowser;
 	
 	for(var index = 0; index < cmnTracks.length(); index++) {
 		cmnTracks.get(index).updateStatus(spcArray);
@@ -1085,7 +1086,10 @@ function updateTracks() {
 	for(var index = 0; index < spcArray.length; index++) {
 		spcArray[index].updateAllUnique();
 		spcArray[index].submitTrackChange();
-		setUnReady(spcArray[index].db);
+		if(isInBrowser && spcArray[index].isActive) {
+			spcArray[index].isReady = false;
+			setUnReady(spcArray[index].db);
+		}
 	}
 	
 	markTrackInitialized(false);
@@ -1093,8 +1097,7 @@ function updateTracks() {
 
 function resetTracks() {
 	for(var index = 0; index < spcArray.length; index++) {
-		if(spcArray[index].isActive) {
-			var db = spcArray[index].db;
+		if(!isEncodeOn || spcArray[index].isEncode) {
 			var conDoc = spcArray[index].browserConDoc;
 			var conForm = conDoc.getElementById('TrackForm');
 			var resetVar = conDoc.createElement("input");
@@ -1108,7 +1111,10 @@ function resetTracks() {
 			resetOrder.value = "TRUE";
 			conForm.appendChild(resetOrder);
 			conForm.submit();
-			setUnReady(db);
+			if(isInBrowser && spcArray[index].isActive) {
+				spcArray[index].isReady = false;
+				setUnReady(spcArray[index].db);
+			}
 			spcArray[index].uniTracksUpdated = false;
 		}
 	}

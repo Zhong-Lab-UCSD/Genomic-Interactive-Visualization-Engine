@@ -52,7 +52,6 @@ function updateNavigation(formid, spcarray) {
 	}
 	$('#masterHolder').removeClass("BoxHide");
 	
-	isInBrowser = true;
 	return true;
 }
 
@@ -73,6 +72,7 @@ function setReady(db, coor) {
 		}
 	}
 	if(allSpcReady) {
+		isInBrowser = true;
 		$('#masterLoading').addClass('BoxHide');
 	}
 }

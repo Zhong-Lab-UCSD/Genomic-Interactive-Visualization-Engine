@@ -21,6 +21,29 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
 }
 extend(ChrRegion, ChrRegionToShow);
 
+ChrRegionToShow.prototype.extendedRegionToString = function(includeStrand) {
+	// default is including strand
+	if (includeStrand == null) {
+		includeStrand = true;
+	}
+	return this.chr + ':' + this.extendedstart + '-' + this.extendedend
+		+ ((!includeStrand || this.strand === null)? '': (' ('
+		+ (this.strand? '+': '-') + ')'));
+};
+
+function setPeakListOnly(spcIndex, list) {
+	var conDocDiv = $(spcArray[spcIndex].browserConDoc.getElementById('TrackControlsEncodePeaks'));
+	conDocDiv.find('input').each(function(index, element) {
+        $(element).prop('value', 'hide');
+    });
+	for(var i = 0; i < list.length; i++) {
+		var inputelem = conDocDiv.find('#' + list[i] + '_peak');
+		if(inputelem) {
+			inputelem.prop('value', 'dense');
+		}
+	}
+}
+
 Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // this will return the <tr> node for the region
     var outsideTD = $('<td></td>');
@@ -116,7 +139,7 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
             
             if (!multiFlag) {
                 cell.append($('<input>').prop('name', spcArray[i].db).prop('id', this.getCleanName() + spcArray[i].db)
-                            .prop('type', 'hidden').prop('value', currRegion.regionToString(false)));
+                            .prop('type', 'hidden').prop('value', currRegion.extendedRegionToString(false)));
 //                cell.append($('<input>').prop('name', spcArray[i].db + 'strand')
 //                            .prop('id', this.getCleanName() + spcArray[i].db + 'strand')
 //                            .prop('type', 'hidden').prop('value', (currRegion.strand == false? '0': '1')));
@@ -162,19 +185,30 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 								updateTracks();								
 							 }));
                 cell.append(label);
-                cell.append('<br>');
+				cell.append($('<div></div>').css('clear', 'both'));
                 
                 var trackListDiv = $('<div></div>');
+				var currListedTrack = new Object();
                 for(var iTracks = 0; iTracks < currRegion.data['track'].length; iTracks++) {
                     var trackTableName = currRegion.data['track'][iTracks];
-					if(iTracks > 0) {
-						cell.append('<br>');
-					}
+					var revLookupTrack;
 					if(cmnTracksEncode.reverseLookUpMap.hasOwnProperty(trackTableName)) {
-						cell.append(cmnTracksEncode.reverseLookUpMap[trackTableName].writeLongString());
+						revLookupTrack = cmnTracksEncode.reverseLookUpMap[trackTableName]
 					} else {
 						// it's unique
-						cell.append(spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName].writeLongString());
+						revLookupTrack = spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName]
+					}
+					if(revLookupTrack) {
+						if(!currListedTrack.hasOwnProperty(revLookupTrack.id)) {
+							if(iTracks > 0) {
+								cell.append('<br>');
+							}
+							cell.append(revLookupTrack.writeLongString());
+							currListedTrack[revLookupTrack.id] = true;
+						}
+					} else {
+						console.log('Error: ' + trackTableName + ' cannot be reverse looked up.');
+						alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
 					}
                 }
             }
