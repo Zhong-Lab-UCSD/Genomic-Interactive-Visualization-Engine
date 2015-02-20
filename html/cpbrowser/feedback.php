@@ -100,7 +100,7 @@ function validate_comment() {
 		echo "<div><strong>Your institute: </strong>" . $_REQUEST['institute'] . "</div>";
 		echo "<div><strong>Your email: </strong>" . $_REQUEST['email'] . "</div>";
 		echo "<div><strong>Your comment: </strong></div><div>" . $_REQUEST['comment'] . "</div>";
-		
+		echo "<input type='button' name='close' id='close' value='Close window' onClick='window.close();'>";
 	}
 ?>
 </div>
