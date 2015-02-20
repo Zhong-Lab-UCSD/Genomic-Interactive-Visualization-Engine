@@ -11,8 +11,9 @@
 				. $mysqli->real_escape_string($entry) . "' OR `superTrack` = '"
 				. $mysqli->real_escape_string($entry) . "') ORDER BY `shortLabel`");
 			if($generesult->num_rows > 0) {
+				$result[$entry] = array();
 				while($row = $generesult->fetch_assoc()) {
-					$result[$entry] = $row["tableName"];
+					$result[$entry] []= $row["tableName"];
 				}
 			}
 		}

@@ -997,6 +997,10 @@ $(document).ready( function () {
         ?>
           </select>
         </div>
+        <label>
+        <input type="checkbox" id="useAllTracks" name="useAllTracks" />
+        Use all tracks.
+        </label>
         <input type="file" id="uploadFileInput" name="uploadFileInput" />
         <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
       </form>

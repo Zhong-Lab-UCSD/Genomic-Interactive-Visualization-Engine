@@ -32,6 +32,10 @@ function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regions
 	this.name = regionname || '';
 }
 
+ChrRegion.prototype.getLength = function() {
+	return this.end - this.start;
+};
+
 ChrRegion.prototype.regionFromString = function(regionString) {
 	var cleanedChrString = regionString.replace(/,/g, '')
 		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
@@ -92,7 +96,14 @@ ChrRegion.prototype.getShortName = function() {
 };
 
 ChrRegion.prototype.overlaps = function(region) {
-	return this.chr == region.chr && this.start < region.end && this.end > region.start;
+	// this will return the length of overlaps, if not overlapping, return 0
+	if(this.chr != region.chr) {
+		return 0;
+	}
+	if(this.start > region.end || this.end < region.start) {
+		return 0;
+	}
+	return Math.min(this.end, region.end) - Math.max(this.start, region.start);
 };
 
 ChrRegion.prototype.assimilate = function(region) {
