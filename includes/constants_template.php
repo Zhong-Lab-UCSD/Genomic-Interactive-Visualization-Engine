@@ -18,4 +18,7 @@
     spl_autoload_extensions('.class.php');
     spl_autoload_register();
 	
+	define('MAX_UPLOAD_FILE_SIZE', 10000000);
+	define('CUSTOMTRACK_UCSC', '/cgi-bin/hgCustom');
+
 ?>

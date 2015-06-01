@@ -1,5 +1,12 @@
 <?php
-	require_once(realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	
+	$res = initialize_session();
+	$encodeOn = $res['encodeOn'];
+	$in_debug = $res['in_debug'];
+	$genemoOn = $res['genemoOn'];
+	unset($res);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">

@@ -7,6 +7,8 @@ var GENELIST_LENGTH = 19;
 var geneList = new Array();
 geneList.map = new Object();
 
+var activeRegion = null;		// this should be assigned currRegion once "Visualize" is chosen
+
 function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data) {
     // data is everything else for ChrRegionToShow
     ChrRegion.call(this, chrString, regionname);
@@ -51,7 +53,7 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 	outsideTD.css('padding', '0px');
     var outForm = $('<form></form>');
     outForm.prop('id', this.getCleanName()).prop('name', this.getCleanName());
-    outForm.prop('method', 'post').prop('action', 'cpbrowser/cpbrowser.php').prop('target', 'cpbrowser');
+    outForm.prop('method', 'post').prop('target', 'cpbrowser').prop('action', cpbrowserURL);
     
     var outTable = $('<table></table>');
     outTable.addClass('geneListEntryTable');
@@ -66,8 +68,12 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
         cell.append('(<strong>' + this['alias'] + '</strong>)');
     }
     
-    cell.append($('<input>').prop('name', 'showinbrowser').prop('type', 'submit').prop('id', 'showinbrowser')
-                .prop('value', 'Visualize')).append($('<div></div>').css('clear', 'both'));
+    cell.append($('<input>').prop('name', 'showinbrowser').prop('type', 'button').prop('id', 'showinbrowser')
+                .prop('value', 'Visualize').css('float', 'right')
+				.click({region: this, spcarray: spcArray}, function(event) {
+					return updateNavFunc(event.data.region, event.data.spcarray, 
+						   				 cmnTracksEncode, setPeakListOnly);})
+										 .append($('<div></div>').css('clear', 'both')));
     row.append(cell);
     outTable.append(row);
     
@@ -176,16 +182,11 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 				
                 var label = $('<label></label>');
                 label.append($('<strong></strong>').append('Tracks matching: '));
-                label.append($('<input>').prop('type', 'button')
-                             .prop('id', this.getCleanName() + spcArray[i].db + 'Filter')
-                             .prop('checked', true).prop('value', 'Apply Filter')
-							 .css('float', 'right')
-							 .click({spcIndex: i, list: currRegion.data['track']}, function(event) {
-								cmnTracksEncode.setListOnly(event.data.list);
-								spcArray[event.data.spcIndex].uniTracksEncode.setListOnly(event.data.list);
-								setPeakListOnly(event.data.spcIndex, event.data.list);
-								updateTracks();								
-							 }));
+                label.append($('<span></span>').css('float', 'right')
+							 .append($('<input>').prop('type', 'checkbox')
+									 .prop('id', this.getCleanName() + spcArray[i].db + 'Filter')
+									 .prop('checked', true))
+							 .append('Apply filter').prop('title', 'Filter with listed tracks'));
                 cell.append(label);
 				cell.append($('<div></div>').css('clear', 'both'));
                 
@@ -211,7 +212,7 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 						}
 					} else {
 						console.log('Error: ' + trackTableName + ' cannot be reverse looked up.');
-						alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
+						UI.alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
 					}
                 }
             }
@@ -220,8 +221,6 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
         } 
     } // end for i in spcArray
     
-    outForm.submit({name: this.getCleanName(), spcarray: spcArray}, 
-		function(event) {return updateNavFunc(event.data.name, event.data.spcarray);});
     outForm.append(outTable);
     outForm.append($('<input>').prop('id', this.getCleanName() + 'NumSpc').prop('type', 'hidden')
                    .prop('name', 'num_spc').prop('value', numOfSpcToShow.toString()));
@@ -307,8 +306,7 @@ function regionUiHandler(data) {
 	$("#genelistContentHolder").append(writeGeneListFromJSON(data));
 	$('#genelistLoading').addClass('BoxHide');
 	if(geneList.length == 1) {
-		updateNavigation(geneList[0].name);
-		document.getElementById(geneList[0].getCleanName()).submit();
+		updateNavigation(geneList[0]);
 	}
 	$('#search').prop('disabled', false);
 }

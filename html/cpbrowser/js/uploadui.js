@@ -1,5 +1,6 @@
 // JavaScript Document
 // Require regionlistui.js
+// Require sessionControl.js
 
 ChrRegionToShow.prototype.assimilate = function(region) {
 	if(!this.overlaps(region)) {
@@ -74,6 +75,20 @@ function mergeGeneList(glist, spcArray) {
 	return newRegionList;
 }
 
+function toggleUpload(enableFlag, resetGeneList) {
+	var querycard = document.querySelector('#mainQueryCard');
+	if(resetGeneList) {
+		$("#genelistContentHolder").html('');
+	}
+	if(enableFlag) {
+		$('#genelistLoading').addClass('BoxHide');
+		querycard.isDisabled = false;
+	} else {
+		$('#search').prop('disabled', true);
+		querycard.isDisabled = true;
+	}
+}
+
 function validateUploadFileOrURL(event) {
 	
 	// notice that the reverse look up map needs to be updated here
@@ -82,156 +97,241 @@ function validateUploadFileOrURL(event) {
 	event.stopPropagation();
 	event.preventDefault();
 	
-	if($('#uploadFileInput')[0].files.length <= 0) {
-		alert('You need to select a file!');
-		return false;
-	} else if($('#speciesToUpload').val() == "unselected") {
-		alert('You need to select the database of your file!');
-		return false;
+	var querycard = document.querySelector('#mainQueryCard');
+	
+	var hasEmail = (querycard.UserEmail.length > 0);
+	var email = querycard.UserEmail;
+	var fileToCalc = querycard.InputFile;
+	var urlFileInput = querycard.InputUrl;
+	var urlFileToShow = querycard.DisplayUrl;
+	
+	if($('#useAllTracks').prop('checked') && !hasEmail) {
+		if(!UI.confirm('It may take a long time (hours) to analyze with all tracks, \ntherefore, an email address is atrongly recommended.\n\nPlease click \'OK\' if you want to proceed without an email.\nClick \'Cancel\' to return.')) {
+			return false;
+		}
 	}
 	
-	$('#search').prop('disabled', true);
-	$('#fileSubmit').prop('disabled', true);
 	$("#genelistContentHolder").html('');
 	$('#genelistLoading').removeClass('BoxHide');
+
+	var inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
+		: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1)));
 	
+	var dispFileName = (urlFileToShow? (urlFileToShow.substring(urlFileToShow.lastIndexOf('/') + 1)): inputFileName);
+	
+	var db = querycard.currentRef;
+	
+	$('#peakFileHolder').text('[' + db + '] Bed/peak file: ' + inputFileName);
+	$('#peakFileHolder').show();
+	
+	if(inputFileName != dispFileName) {
+		$('#displayFileHolder').text('Display file: ' + dispFileName);
+		$('#displayFileHolder').show();
+	} else {
+		$('#displayFileHolder').show();
+	}
+	
+	toggleUpload(false, true);
+	
+	// 1) update reverse lookup table
+	// TODO: May need to move it to earlier once the major revemp is done
+	var useAllTracks = $('#useAllTracks').prop('checked');
+	var hgsid = spcArray[spcArray.map[db]].hgsID;
+	
+	var tableNameQuery = new FormData();
+	tableNameQuery.append('Submit', 'Submit');
+	tableNameQuery.append('species', db);
+	tableNameQuery.append('email', email);
+		
+	$.each(cmnTracksEncode.array, function(key, value) {
+		if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
+			$.each(value.getSpeciesSubTables(db), function(index, tableName) {
+				tableNameQuery.append('geneTracks[]', tableName);
+			});
+		}
+	});
+	
+	$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
+		if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
+			$.each(value.getSpeciesSubTables(), function(index, tableName) {
+				tableNameQuery.append('geneTracks[]', tableName);
+			});
+		}
+	});
+	
+	for(var i = 0; i < spcArray.length; i++) {
+		spcArray[i].isActive = (spcArray[i].db == db);
+	}
+	spcArray.updateAllSpcActiveNum();
+
 	trackUpdatedCallback.data = event;
-	trackUpdatedCallback.func = function(data) {
+	// 1) get ID and save some stuff and also upload to UCSC as well
+	trackUpdatedCallback.func = function(eventData) {
 		
-		// first upload file to hgCustom
-		
-		var db = $('#speciesToUpload').val();
-		var customTrackData = new FormData();
-		customTrackData.append('hgt.customFile', $('#uploadFileInput')[0].files[0]);
-		customTrackData.append('Submit', 'Submit');
-		customTrackData.append('db', db);
-		customTrackData.append('hgsid', spcArray[spcArray.map[db]].hgsID);
-		
-		$.ajax({
-			url: '/cgi-bin/hgCustom',
-			type: 'POST',
-			data: customTrackData,
-			cache: false,
-			processData: false,
-			contentType: false,
-			success: function(hgCustomData, status, jqXHR) {
+		saveSession(db, hgsid, email, urlFileInput, fileToCalc, urlFileToShow, function(IDPrepData, status, jsXHR) {
 			
-				// does not need to do anything else, it's already been uploaded to UCSC
-				// still need to check if hgCustom is correct
-				if(hgCustomData.indexOf("<FONT COLOR='RED'>Error</I>") >= 0) {
-					// Something is wrong with hgCustomData
-					var errMsg = "Custom track file ERROR: \n";
-					var trunk = hgCustomData.substr(hgCustomData.indexOf("<FONT COLOR='RED'>Error</I>"));
-					trunk = trunk.substring(trunk.indexOf('</FONT>&nbsp;') + 13, trunk.indexOf('</B>'));
-					
-					errMsg += trunk;
-					alert(errMsg);											
-					$("#genelistContentHolder").html('');
-					$('#genelistLoading').addClass('BoxHide');
-					$('#search').prop('disabled', false);
-					$('#fileSubmit').prop('disabled', false);
-				} else {
+			try {
 				
-					var trackTblNames = new Array();
-					var trackTblNameToID = new Object();
-					
-					var useAllTracks = $('#useAllTracks').prop('checked');
-					// first shutdown all non-selected db
-					for(var i = 0; i < spcArray.length; i++) {
-						spcArray[i].isActive = (spcArray[i].db == db);
-					}
-					
-					// append all the tracks
-					$.each(cmnTracksEncode.array, function(key, value) {
-						// first, use getdownload.php to get all the tableNames
-						if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
-							trackTblNames.push(value.getSpeciesTblName(db));
-							trackTblNameToID[value.getSpeciesTblName(db)] = {bundle: cmnTracksEncode, value: value.id};
-						}
-					});
-					
-					$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
-						if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
-							trackTblNames.push(value.getSpeciesTblName(db));
-							trackTblNameToID[value.getSpeciesTblName(db)] = {bundle: spcArray[spcArray.map[db]].uniTracksEncode, value: value.id};
-						}
-					});
-					
-					tableQueryData = new Object();
-					tableQueryData[db] = JSON.stringify(trackTblNames);
-				
-					var tableNameData = new FormData();
-					tableNameData.append('file', $('#uploadFileInput')[0].files[0]);
-					tableNameData.append('Submit', 'Submit');
-					tableNameData.append('species', db);
-					
-					$.post('cpbrowser/gettablenames.php', tableQueryData, function(returndata) {
-						
-						$.each(returndata, function(key, val) {
-							$.each(val, function(newkey, table) {
-								tableNameData.append('geneTracks[]', table);
-								trackTblNameToID[key].bundle.addTableNameToID(table, trackTblNameToID[key].value);
-								// this is to complete the reverse-lookup table
-							});
-						});
-						
-						$.ajax({
-							url: 'cpbrowser/geneTrackComparison.php',
-							type: 'POST',
-							data: tableNameData,
-							cache: false,
-							processData: false,
-							contentType: false,
-							success: function(jsonReturnData, status, jqXHR) {
-								// file successfully uploaded
-								// process return stuff
-								// data will be a json-encoded string of the php array
-								// currently this string will be submitted again to genelist.php to get the final output
-								// needs to move the output code from php to JavaScript
-								uploadUiHandler(jsonReturnData);
-								
-								// sort track by order and score?
-							},
-							error: function(jqXHR, status, e) {
-							}
-						});
-					
-					}, 'json');
+				var data = $.parseJSON(IDPrepData);
+			
+				if(data['error']) {
+					throw data['error'];
 				}
-				
-				// sort track by order and score?
-			},
-			error: function(jqXHR, status, e) {
+				tableNameQuery.append('id', data['id']);
+				var customTrackUrl = data['urlToShow'];
+				var computeDataAndCallback = new Object();
+				computeDataAndCallback.data = tableNameQuery;
+				computeDataAndCallback.callback = uploadUiHandler;
+				setCustomTrack(customTrackUrl, db, hgsid, computeDataAndCallback, sendRegionsToCompute);
+			} catch(e) {
+				UI.alert(e);
+				toggleUpload(true, true);
 			}
-		});
-		
-	};
+					
+		}); // end calling saveSession()
 	
-	updateTracks(false);
-	toggleWindow('trackSelect');
+	}; // end callback function for updateTracks
+
+	updateTracks(false, true);
+	hideWindow('trackSelect');
+	togglePanel('trackManip', false);
+	
 	return false;
 	
 }
 
-function uploadUiHandler(data) {
-	updateNavFunc = updateNavigation;
-	changeGeneNameFunc = changeGeneName;
-	$("#genelistContentHolder").html('');
+function setCustomTrack(url, db, hgsid, otherdata, callback) {
+	var customTrackQuery = new FormData();
+	customTrackQuery.append('hgct_customText', url);
+	customTrackQuery.append('Submit', 'Submit');
+	customTrackQuery.append('db', db);
+	customTrackQuery.append('hgsid', hgsid);
 	
-	var geneListRaw = $.parseJSON(data);
-	if(geneListRaw.hasOwnProperty('error')) {
-		return $('<p></p>').addClass('formstyle').append(geneListRaw['error']);
-	}
-	geneList = populateRegionList(geneListRaw, spcArray);
-	
-	geneList = mergeGeneList(geneList, spcArray);
-	
-	$("#genelistContentHolder").append(writeGeneListTable(geneList, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
-	$('#genelistLoading').addClass('BoxHide');
-	$('#fileSubmit').prop('disabled', false);
-	$('#search').prop('disabled', false);
-	
-	return 0;
+	$.ajax({
+		url: '/cgi-bin/hgCustom',
+		type: 'POST',
+		data: customTrackQuery,
+		cache: false,
+		processData: false,
+		contentType: false,
+		success: function(hgCustomData, status, jqXHR) {
+		
+			// does not need to do anything else, it's already been uploaded to UCSC
+			// still need to check if hgCustom is correct
+			if(hgCustomData.indexOf("<FONT COLOR='RED'>Error</I>") >= 0) {
+				// Something is wrong with hgCustomData
+				var errMsg = "Custom track file ERROR: \n";
+				var trunk = hgCustomData.substr(hgCustomData.indexOf("<FONT COLOR='RED'>Error</I>"));
+				trunk = trunk.substring(trunk.indexOf('</FONT>&nbsp;') + 13, trunk.indexOf('</B>'));
+				
+				errMsg += trunk;
+				UI.alert(errMsg);
+				toggleUpload(true, true);
+			} else {
+				
+				callback(otherdata, hgCustomData);
+			
+			} // end if (hgCustom error handling)
+			
+			// sort track by order and score?
+		},
+		error: function(jqXHR, status, e) {
+		}
+	}); // end ajax for hgCustom
 }
 
+function sendRegionsToCompute(dataAndCallback, otherdata) {
+	
+	var tableNameQuery = dataAndCallback.data;
+	
+	$.ajax({
+		url: 'cpbrowser/geneTrackComparison.php',
+		type: 'POST',
+		data: tableNameQuery,
+		cache: false,
+		processData: false,
+		contentType: false,
+		success: function(jsonReturnData, status, jqXHR) {
+			// file successfully uploaded
+			// process return stuff
+			// data will be a json-encoded string of the php array
+			// currently this string will be submitted again to genelist.php to get the final output
+			// needs to move the output code from php to JavaScript
+			dataAndCallback.callback(jsonReturnData);
+			
+			// sort track by order and score?
+		},
+		error: function(jqXHR, status, e) {
+		}
+	}); // end ajax for geneTrackComparison.php
+}
 
+function getComputedRegions(dataAndCallback, otherdata) {
+	
+	$.post("cpbrowser/geneTrackToUser.php", dataAndCallback.data, dataAndCallback.callback);
+}
+
+function uploadUiHandler(data) {
+	var updateNavFunc = updateNavigation;
+	var changeGeneNameFunc = changeGeneName;
+	$("#genelistContentHolder").html('');
+	var hasError = false;
+	
+	var geneListRaw;
+	try {
+		try {
+			geneListRaw = $.parseJSON(data);
+		} catch(jsonExcept) {
+			// something is wrong with JSON (which means something wrong when the PHP code tries to process input)
+			throw data;
+		}
+		if(geneListRaw.hasOwnProperty('error')) {
+			return $('<p></p>').addClass('formstyle').append(geneListRaw['error']);
+		}
+		geneList = populateRegionList(geneListRaw, spcArray);
+		
+		geneList = mergeGeneList(geneList, spcArray);
+		
+		$("#genelistContentHolder").append(writeGeneListTable(geneList, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
+	} catch(e) {
+		UI.alert(e);
+		hasError = true;
+	} finally {
+		toggleUpload(true, hasError);
+		return 0;
+	}
+}
+
+function loadResults(sessionObj) {
+	loadSession(sessionObj);
+	loadQuery = new Object();
+	loadQuery.id = sessionObj.id;
+	loadQuery.species = sessionObj.db;
+	
+	$('#peakFileHolder').text('[' + sessionObj.db + '] Display file: ' + sessionObj.originalFile);
+	$('#peakFileHolder').show();
+	
+	var db = loadQuery.species;
+	var hgsid = spcArray[spcArray.map[db]].hgsID;
+	
+	for(var i = 0; i < spcArray.length; i++) {
+		spcArray[i].isActive = (spcArray[i].db == sessionObj.db);
+	}
+	spcArray.updateAllSpcActiveNum();
+	trackUpdatedCallback.data = event;
+	// 1) get ID and save some stuff and also upload to UCSC as well
+	trackUpdatedCallback.func = function(eventData) {
+		
+		var dataAndCallback = new Object();
+		dataAndCallback.data = loadQuery;
+		dataAndCallback.callback = uploadUiHandler;
+		
+		setCustomTrack(sessionObj.urlToShow, db, hgsid, dataAndCallback, getComputedRegions)
+		
+	};
+	
+	toggleUpload(false, true);
+		
+	updateTracks(false, true);
+	
+}

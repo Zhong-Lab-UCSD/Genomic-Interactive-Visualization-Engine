@@ -7,6 +7,8 @@ class ChromRegion {
 	public $start;
 	public $end;
 	
+	const BEGINNING = 1;		// may be 0, needs to refer to bigWig format
+	
 	function getLength() {
 		return $this->end - $this->start;
 	}

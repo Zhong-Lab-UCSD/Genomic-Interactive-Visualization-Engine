@@ -1,13 +1,21 @@
 <?php
-	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	$res = initialize_session();
+	$encodeOn = $res['encodeOn'];
+	$in_debug = $res['in_debug'];
+	$genemoOn = $res['genemoOn'];
+	unset($res);
+
 	$mysqli = connectCPB();
-	$filenamearray = explode("__", $mysqli->real_escape_string($_REQUEST['file']));
+	$filenamearray = explode("__", trim($_REQUEST['file']));
 	$filename = $filenamearray[1];
 	$dbname = $filenamearray[0];
 	// Need to check if the file is in database
-	$generesult = $mysqli->query("SELECT * FROM `TrackInfo` WHERE `db` = '"
-		. $dbname . "' AND `tableName` = '" 
-		. $filename . "'");
+	$stmt = $mysqli->prepare("SELECT * FROM `TrackInfo` WHERE `db` = ? AND `tableName` = ?");
+	$stmt->bind_params('ss', $dbname, $filename);
+	$stmt->execute();
+	$generesult = $stmt->get_result();
 	if($generesult->num_rows <= 0) {
 		// The filename is either tampered or something else
 		header("HTTP/1.0 404 Not Found");

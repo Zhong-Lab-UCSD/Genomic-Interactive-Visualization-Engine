@@ -1,5 +1,11 @@
 <?php
-require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	$res = initialize_session();
+	$encodeOn = $res['encodeOn'];
+	$in_debug = $res['in_debug'];
+	$genemoOn = $res['genemoOn'];
+	unset($res);
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -91,14 +97,6 @@ function changeSettings(db, settings, val) {
 		conDoc = conDoc.document;
 	}
 	conDoc.getElementById(settings).value = val;
-}
-
-function callSubmit(db) {
-	var conDoc = (document.getElementById(db).contentWindow || document.getElementById(db).contentDocument);
-	if(conDoc.document) {
-		conDoc = conDoc.document;
-	}
-	conDoc.getElementById("TrackForm").submit();
 }
 
 function markTrackInitialized(flag) {
@@ -228,37 +226,6 @@ function togglePanel(panel) {
 	}
 	hideDownload();
 	$('#' + panel).fadeToggle('fast', toggleHeaderText(panel + 'Indicator'));
-}
-
-function updateTracks() {
-	var cmnControls = document.getElementById('cmnTrackHolder').getElementsByTagName('input');
-	
-	for(var index = 0; index < spcDbName.length; index++) {
-		var db = spcDbName[index];
-	        var conDoc = (document.getElementById(db).contentWindow || document.getElementById(db).contentDocument);
-        	if(conDoc.document) {
-                conDoc = conDoc.document;
-        	}
-		
-		for(var i = 0; i < cmnControls.length; i++) {
-			var target = conDoc.getElementById(cmnControls[i].id);
-			if(target) {
-				target.value = (cmnControls[i].checked? 'dense': 'hide');
-			}
-		}
-		
-		var uniControls = document.getElementById(db + 'Holder').getElementsByTagName('input');
-		for(var i = 0; i < uniControls.length; i++) {
-			var target = conDoc.getElementById(uniControls[i].id);
-			if(target) {
-				target.value = (uniControls[i].checked? 'dense': 'hide');
-			}
-		}
-		
-		conDoc.getElementById('TrackForm').submit();
-		parent.setUnReady(db);
-	}
-	togglePanel('trackSelect');
 }
 
 function resetTracks() {
@@ -421,11 +388,10 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
       <td><iframe onload="setReady(<?php echo $i; ?>);" id="<?php echo $_REQUEST["speciesdb"][$i]; ?>" 
          name="<?php echo $_REQUEST["speciesdb"][$i]; ?>" class="cpbrowserFrame"
          src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgControlOnly=off&hgsid=" . requestSpeciesHgsID($_REQUEST["speciesdb"][$i]) . '&showEncode=' . ($encodeOn? 'on': 'off') . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": "") . ($num_spc <= 1? '&multishade=hide': '&multishade=dense');  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe></td>
+	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $_REQUEST["speciescmnname"][$i] . "&db=" . $_REQUEST["speciesdb"][$i] . "&position=" . urlencode($_REQUEST[$_REQUEST["speciesdb"][$i]]) . "&pix=850&guidelines=off&Submit=submit&hgControlOnly=off&hgsid=" . requestSpeciesHgsID($_REQUEST["speciesdb"][$i]) . '&showEncode=' . ($encodeOn? 'on': 'off');  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe></td>
     </tr>
     <?php
   		}
-		$_SESSION['resetView'] = false;
 	?>
   </table>
 </div>

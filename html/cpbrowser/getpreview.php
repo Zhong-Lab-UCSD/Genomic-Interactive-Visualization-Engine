@@ -2,16 +2,16 @@
 	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
 	$mysqli = connectCPB();
 	$result = array();
-	$db = $_REQUEST['db'];
+	$db = trim($_REQUEST['db']);
 	$region = new ChromRegion(trim($_REQUEST['region']));
 	$length = floatval($region->getLength());
-	$tableName = $_REQUEST['tableName'];
+	$tableName = trim($_REQUEST['tableName']);
+	$stmt = $mysqli->prepare("SELECT tableName FROM `TrackInfo` WHERE `db` = ? AND (`tableName` = ? OR `superTrack` = ?) ORDER BY `shortLabel`");
 	foreach($_REQUEST as $key=>$val) {
 		//error_log($key . "||" . $val);
-		$generesult = $mysqli->query("SELECT tableName FROM `TrackInfo` WHERE `db` = '" 
-			. $mysqli->real_escape_string($db) . "' AND (`tableName` = '"
-			. $mysqli->real_escape_string($tableName) . "' OR `superTrack` = '"
-			. $mysqli->real_escape_string($tableName) . "') ORDER BY `shortLabel`");
+		$stmt->bind_param('sss', $db, $tableName, $tableName);
+		$stmt->execute();
+		$generesult = $stmt->get_result();
 		if($generesult->num_rows <= 0) {
 			$result["(none)"] = "none";
 			//die(json_encode($result));
@@ -48,8 +48,9 @@
 			}
 			$mysqligb->close();
 		}
+		$generesult->free();
 	}
+	$stmt->close();
 	echo json_encode($result);
-	$generesult->free();
 	$mysqli->close();
 ?>

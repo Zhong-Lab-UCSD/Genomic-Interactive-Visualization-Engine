@@ -147,8 +147,14 @@ function SpeciesTableEntry(name, vc, s, ss) {
 	//console.log(this);
 }
 
+SpeciesTableEntry.prototype.setValue = function(vc, s, ss) {
+	this.validCount = vc;
+	this.sum = s;
+	this.sumSquare = ss;
+};
+
 SpeciesTableEntry.prototype.getCompareValue = function(length, method) {
-	length = length || this.validCount;
+	length = length || this.validCount || 0;
 	if(length <= 0) {
 		return 0.0;
 	}
@@ -167,7 +173,7 @@ SpeciesTableEntry.prototype.getTableName = function() {
 
 function SpeciesTable() {
 	this.tableName = '';
-	this.entries = [];
+	this.entries = new Object();
 }
 
 SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) {
@@ -178,7 +184,7 @@ SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) 
 	// see method in SpeciesTableEntry.prototype.getCompareValue(method, length)
 	
 	var result = 0.0;
-	if(this.entries.length <= 0) {
+	if(Object.keys(this.entries).length <= 0) {
 		return result;
 	}
 	for(var i = 0; i < this.entries.length; i++) {
@@ -198,7 +204,13 @@ SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) 
 };
 
 SpeciesTable.prototype.addValues = function(name, vc, s, ss) {
-	this.entries.push(new SpeciesTableEntry(name, vc, s, ss));
+	if(this.entries.hasOwnProperty(name)) {
+		this.entries[name].setValue(vc, s, ss);
+	} else {
+		// technically this should not happen
+		this.entries[name] = new SpeciesTableEntry(name, vc, s, ss);
+		console.log(name + " does not exist in " + this.tableName + ".");
+	}
 };
 
 SpeciesTable.prototype.getTableName = function() {
@@ -210,14 +222,47 @@ SpeciesTable.prototype.setTableName = function(name) {
 };
 
 SpeciesTable.prototype.getLength = function() {
-	return this.entries.length;
+	return Object.keys(this.entries).length;
 };
 
-SpeciesTable.prototype.clear = function() {
-	this.entries.length = 0;
+// notice that this will not clear all the table names
+SpeciesTable.prototype.clearValues = function() {
+	for(var entry in this.entries) {
+		if(this.entries.hasOwnProperty(entry)) {
+			entry.setValue();
+		}
+	}
 };
 	
+// this will clear all table names
+SpeciesTable.prototype.clear = function() {
+	this.entries = new Object();
+};
 
+SpeciesTable.prototype.addTable = function(name) {
+	if(this.entries.hasOwnProperty(name)) {
+		console.log(name + " already exists in " + this.tableName + ".");
+	} else {
+		// technically this should not happen
+		this.entries[name] = new SpeciesTableEntry(name);
+	}
+};
+	
+SpeciesTable.prototype.addTables = function(nameArray) {
+	if(nameArray instanceof Array) {
+		for(var i = 0; i < nameArray.length; i++) {
+			this.addTable(nameArray[i]);
+		}
+	}
+};
+
+SpeciesTable.prototype.getSubTableNames = function() {
+	var result = [];
+	$.each(this.entries, function(key, val) {
+		result.push(key);
+	});
+	return result;
+};
 
 function CmnTrack(ID, Status, SpcArray) {
 	Track.call(this, ID, Status);
@@ -260,6 +305,14 @@ CmnTrack.prototype.addSpeciesValues = function(DB, tableName, validCount, sum, s
 			}
 		}
 	}
+};
+
+CmnTrack.prototype.addSpeciesSubTables = function(DB, tableNames) {
+	this.spcTables[DB].addTables(tableNames);
+};
+
+CmnTrack.prototype.getSpeciesSubTables = function(DB) {
+	return this.spcTables[DB].getSubTableNames();
 };
 
 CmnTrack.prototype.clearAllSpeciesValues = function() {
@@ -420,6 +473,7 @@ function TrackBundle(idprefix, idpostfix) {
 	
 	this.reverseLookUpMap = new Object();
 	// this is used to map individual table name back to track object
+	this.subTableInitialized = false;
 }
 
 TrackBundle.prototype.addTrack = function(track) {
@@ -447,21 +501,26 @@ TrackBundle.prototype.length = function() {
 
 TrackBundle.prototype.setCheckBox = function(track, flag) {
 	// set the checkbox of the track, and track.status as well
-	track.status = flag;
-	document.getElementById(this.IDPrefix
-		+ track.getCleanID() + this.IDPostfix).checked = flag;
-	return true;
+	try{
+		track.status = flag;
+		document.getElementById(this.IDPrefix
+			+ track.getCleanID() + this.IDPostfix).checked = flag;
+		return true;
+	} catch(e) {
+		return false;
+	}
 };
 
 TrackBundle.prototype.setCheckBoxFromID = function(trackID, flag) {
-	return this.setCheckBox(this.get(trackID), flag);
+	try{
+		return this.setCheckBox(this.get(trackID), flag);
+	} catch(e) {
+		return false;
+	}
 };
 
 TrackBundle.prototype.setCheckBoxFromTableName = function(tableName, flag) {
-	if(this.reverseLookUpMap.hasOwnProperty(tableName)) {
-		return this.setCheckBox(this.reverseLookUpMap[tableName], flag);
-	}
-	return null;
+	return this.setCheckBox(this.reverseLookUpMap[tableName], flag);
 };
 
 TrackBundle.prototype.setAll = function(flag) {
@@ -482,8 +541,48 @@ TrackBundle.prototype.setListOnly = function(tableNameList) {
 	return true;
 }
 
+TrackBundle.prototype.setIDListOnly = function(IDList) {
+	// tableNameList is the array of table names;
+	// tableNames other than the ones in the bundle can be included with no effect
+	this.setAll(false);
+	for(var i = 0; i < IDList.length; i++) {
+		this.setCheckBoxFromID(IDList[i], true);
+	}
+	return true;
+}
+
+TrackBundle.prototype.getIDList = function(returnall) {
+	returnall = returnall || false;
+	var result = Array();
+	$.each(this.array, function(key, value) {
+		// first, use getdownload.php to get all the tableNames
+		if($('#' + value.getCleanID()).prop('checked') || returnall) {
+			result.push(value.id);
+		}
+	});
+	return result;
+}
+
 TrackBundle.prototype.addTableNameToID = function(tableName, trackID) {
 	this.reverseLookUpMap[tableName] = this.get(trackID);
+};
+
+TrackBundle.prototype.addSubTableNames = function(ID, tableNames, db) {
+	try{
+		bundle = this;
+		if(db) {
+			// then db information is needed
+			this.get(ID).addSpeciesSubTables(db, tableNames);
+		} else {
+			this.get(ID).addSpeciesSubTables(tableNames);
+		}
+		$.each(tableNames, function(i, value) {
+			bundle.addTableNameToID(value, ID);
+		});
+	} catch(e) {
+		console.log(ID + " does not exist!");
+		console.log(this);
+	}
 };
 
 
@@ -660,6 +759,14 @@ UniTrack.prototype.addSpeciesValues = function(tableName, validCount, sum, sumSq
 	this.spcArrayUpdated = true;
 };
 
+UniTrack.prototype.addSpeciesSubTables = function(tableNames) {
+	this.trackData.addTables(tableNames);
+};
+
+UniTrack.prototype.getSpeciesSubTables = function() {
+	return this.trackData.getSubTableNames();
+};
+
 UniTrack.prototype.clearAllSpeciesValues = function() {
 	this.trackData.clear();
 	this.spcArrayUpdated = false;
@@ -784,6 +891,7 @@ function Species(DB, Name, CommonName, IsEncode) {
 	this.isEncode = IsEncode;
 	
 	this.uniTracksUpdated = false;		// regardless of whether user has selected
+	this.uniTracksInitialized = false;		// regardless of whether user has selected
 	this.uniTracks = new TrackBundle();
 	// this is for uniTracks, every entry is a uniTrack Object
 	this.uniTracksEncode = new TrackBundleWithSample(this.db, '', '', '');
@@ -864,6 +972,52 @@ Species.prototype.updateSessionID = function() {
 	$.post('/cpbrowser/postsessionhgsid.php', { db: this.db, hgsID: this.hgsID } );
 }
 
+Species.prototype.setSubTableNames = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle) {
+	if(this.isEncode) {
+		var trackTblNames = [];
+		var reverseLookupTableNameToID = new Object();
+		var currSpecies = this;
+		$.each(cmnTracksEncode.array, function(key, value) {
+			// first, use getdownload.php to get all the tableNames
+			trackTblNames.push(value.getSpeciesTblName(currSpecies.db));
+			reverseLookupTableNameToID[value.getSpeciesTblName(currSpecies.db)] = value.id;
+		});
+		
+		tableQuery = new Object();
+		tableQuery[this.db] = JSON.stringify(trackTblNames);
+		
+		$.post('cpbrowser/gettablenames.php', tableQuery, function(tableNameData) {
+			$.each(tableNameData, function(key, val) {
+				cmnTracksEncode.addSubTableNames(reverseLookupTableNameToID[key], val, currSpecies.db);
+			});
+			
+			trackTblNames = [];
+			$.each(currSpecies.uniTracksEncode.array, function(key, value) {
+				// first, use getdownload.php to get all the tableNames
+				trackTblNames.push(value.getSpeciesTblName(currSpecies.db));
+				reverseLookupTableNameToID[value.getSpeciesTblName(currSpecies.db)] = value.id;
+			});
+			
+			tableQuery = new Object();
+			tableQuery[currSpecies.db] = JSON.stringify(trackTblNames);
+			
+			$.post('cpbrowser/gettablenames.php', tableQuery, function(tableNameData) {
+				$.each(tableNameData, function(key, val) {
+					currSpecies.uniTracksEncode.addSubTableNames(reverseLookupTableNameToID[key], val);
+				});
+				currSpecies.uniTracksUpdated = true;
+				allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle);
+				
+			}, 'json'); // end ajax(post) to update all table names for uniTracks
+			
+		}, 'json'); // end ajax(post) to update all table names
+	} else {
+		this.uniTracksUpdated = true;
+		allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle);
+	}
+	
+};
+
 Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle, init, inbrowser) {
 	var conDoc = (document.getElementById(this.db + "_controls").contentWindow 
 		|| document.getElementById(this.db + "_controls").contentDocument);
@@ -873,89 +1027,97 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 	this.browserConDoc = conDoc;
 	this.hgsID = parseInt(conDoc.getElementById('TrackForm').elements['hgsid'].value);
 	this.updateSessionID();
-	if(init) {		
-		// tracks need to be initialized or need to be changed so fill the unique ones
-		// after filling this one, check whether all tracks initialized 
-		// if so, initialize the settings panel
-		
-		var uniTracksNew = (this.uniTracks.length() <= 0);
 
-		var hiddenCommons = conDoc.getElementById("TrackControls").getElementsByTagName("input");
+	// tracks need to be initialized or need to be changed so fill the unique ones
+	// after filling this one, check whether all tracks initialized 
+	// if so, initialize the settings panel
+	
+	var hiddenCommons = conDoc.getElementById("TrackControls").getElementsByTagName("input");
+	// get all the hidden inputs in the browser "common" part
+	
+	for(var i = 0; i < hiddenCommons.length; i++) {
+		var currentTrack;
+		try {
+			currentTrack = cmnTracksBundle.get(hiddenCommons[i].id);
+		} catch(e) {
+			currentTrack = new CmnTrack(hiddenCommons[i].id, 
+				hiddenCommons[i].value, speciesArray);
+			cmnTracksBundle.addTrack(currentTrack);
+		}
+		
+		if(!currentTrack.getSpeciesTblName(this.db)) {
+			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
+		}
+		currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
+		// this happens even there is already entry in cmnTracksTableNames
+		// Notice that this hiddenCommons[i].name is not Short Label
+	}
+	
+	if(this.isEncode) {
+	
+		hiddenCommons = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("input");
+		var hiddenCommonsEncodeData = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("span")
 		// get all the hidden inputs in the browser "common" part
 		
 		for(var i = 0; i < hiddenCommons.length; i++) {
-			var currentTrack;
 			try {
-				currentTrack = cmnTracksBundle.get(hiddenCommons[i].id);
+				currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
 			} catch(e) {
-				currentTrack = new CmnTrack(hiddenCommons[i].id, 
-					hiddenCommons[i].value, speciesArray);
-				cmnTracksBundle.addTrack(currentTrack);
+				currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
+					hiddenCommons[i].value, speciesArray, 
+					hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
+					hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
+				cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
 			}
-
-			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
-			currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
-			// this happens even there is already entry in cmnTracksTableNames
-			// Notice that this hiddenCommons[i].name is not Short Label
-		}
-		
-		if(this.isEncode) {
-		
-			hiddenCommons = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("input");
-			var hiddenCommonsEncodeData = conDoc.getElementById("TrackControlsEncode").getElementsByTagName("span")
-			// get all the hidden inputs in the browser "common" part
-			
-			for(var i = 0; i < hiddenCommons.length; i++) {
-				try {
-					currentTrack = cmnTracksEncodeBundle.get(hiddenCommons[i].id);
-				} catch(e) {
-					currentTrack = new CmnTrackEncode(hiddenCommons[i].id, 
-						hiddenCommons[i].value, speciesArray, 
-						hiddenCommonsEncodeData[hiddenCommons[i].id + "_title"].innerHTML, 
-						hiddenCommonsEncodeData[hiddenCommons[i].id + "_data"].innerHTML);
-					cmnTracksEncodeBundle.addTrack(currentTrack, currentTrack.getSampleType());
-				}
-				currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
+			if(!currentTrack.getSpeciesTblName(this.db)) {
 				currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
 			}
+			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 		}
-		
-		var hiddenUniques;
-		if(conDoc.getElementById("TrackUnique") !== null && conDoc.getElementById("TrackUnique") !== undefined) {
-			hiddenUniques = conDoc.getElementById("TrackUnique").getElementsByTagName("input");
-			// get all the hidden inputs in the browser "common" part
-			
-			for(var i = 0; i < hiddenUniques.length; i++) {
-				try {
-					this.uniTracks.get(i).setStatusFromUcsc(hiddenUniques[i].value);
-				} catch(e) {
-					currentTrack = new UniTrack(this.db, hiddenUniques[i].id, 
-						hiddenUniques[i].name, hiddenUniques[i].value)
-					this.uniTracks.addTrack(currentTrack);
-				}
-			}
-		}
-		
-		if(conDoc.getElementById("TrackUniqueEncode") !== null && conDoc.getElementById("TrackUniqueEncode") !== undefined) {
-			hiddenUniques = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("input");
-			var hiddenUniquesEncodeData = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("span")
-			// get all the hidden inputs in the browser "common" part
-			
-			for(var i = 0; i < hiddenUniques.length; i++) {
-				try {
-					this.uniTracksEncode.get(hiddenUniques[i].id).setStatusFromUcsc(hiddenUniques[i].value);
-				} catch(e) {
-					currentTrack = new UniTrackEncode(this.db, hiddenUniques[i].id,
-						hiddenUniques[i].name, hiddenUniques[i].value,
-						hiddenUniquesEncodeData[hiddenUniques[i].id + "_title"].innerHTML,
-						hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML);
-					this.uniTracksEncode.addTrack(currentTrack, currentTrack.getSampleType());
-				}
-			}
-		}
-		
-		this.uniTracksUpdated = true;
 	}
+	
+	var hiddenUniques;
+	if(conDoc.getElementById("TrackUnique") !== null && conDoc.getElementById("TrackUnique") !== undefined) {
+		hiddenUniques = conDoc.getElementById("TrackUnique").getElementsByTagName("input");
+		// get all the hidden inputs in the browser "common" part
+		
+		for(var i = 0; i < hiddenUniques.length; i++) {
+			try {
+				this.uniTracks.get(i).setStatusFromUcsc(hiddenUniques[i].value);
+			} catch(e) {
+				currentTrack = new UniTrack(this.db, hiddenUniques[i].id, 
+					hiddenUniques[i].name, hiddenUniques[i].value)
+				this.uniTracks.addTrack(currentTrack);
+			}
+		}
+	}
+	
+	if(conDoc.getElementById("TrackUniqueEncode") !== null && conDoc.getElementById("TrackUniqueEncode") !== undefined) {
+		hiddenUniques = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("input");
+		var hiddenUniquesEncodeData = conDoc.getElementById("TrackUniqueEncode").getElementsByTagName("span")
+		// get all the hidden inputs in the browser "common" part
+		
+		for(var i = 0; i < hiddenUniques.length; i++) {
+			try {
+				this.uniTracksEncode.get(hiddenUniques[i].id).setStatusFromUcsc(hiddenUniques[i].value);
+			} catch(e) {
+				currentTrack = new UniTrackEncode(this.db, hiddenUniques[i].id,
+					hiddenUniques[i].name, hiddenUniques[i].value,
+					hiddenUniquesEncodeData[hiddenUniques[i].id + "_title"].innerHTML,
+					hiddenUniquesEncodeData[hiddenUniques[i].id + "_data"].innerHTML);
+				this.uniTracksEncode.addTrack(currentTrack, currentTrack.getSampleType());
+			}
+		}
+	}
+	
+	if(!this.uniTracksInitialized) {
+		this.setSubTableNames(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle);
+		this.uniTracksInitialized = true;
+	} else {
+		this.uniTracksUpdated = true;
+		allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundle);
+	}
+		
 	if(this.isActive && inbrowser) {
 		callViewChange(this.db, "refresh");
 	}
@@ -975,8 +1137,19 @@ Species.prototype.updateAllUnique = function() {
 	}
 };
 
-Species.prototype.submitTrackChange = function() {
-	this.browserConDoc.getElementById('TrackForm').submit();
+Species.prototype.submitTrackChange = function(shadesOff) {
+	// Hack: turn shades on/off
+	// This won't be useful once shades are moved out into JS part
+	shadesOff = shadesOff || false;
+	
+	var conForm = this.browserConDoc.getElementById('TrackForm');
+	var shadesOffVar = this.browserConDoc.createElement("input");
+	shadesOffVar.type = "hidden";
+	shadesOffVar.name = "multishade";
+	shadesOffVar.value = shadesOff? "hide": "dense";
+	conForm.appendChild(shadesOffVar);
+	
+	conForm.submit();
 	this.uniTracksUpdated = false;
 };
 
@@ -992,9 +1165,12 @@ Species.prototype.submitTrackChange = function() {
 var trackUpdatedCallback = {
 	callback: function() {
 		if (typeof(this.func) == 'function'){
-			var result = this.func(this.data);
+			var funcToRun = this.func;
+			var dataToFunc = this.data;
 			this.func = null;
 			this.data = null;
+			
+			var result = funcToRun(dataToFunc);
 			return result;
 		}
 		return false;
@@ -1071,7 +1247,10 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	trackUpdatedCallback.callback();
 }
 
-function updateTracks(setIsInBrowser) {
+function updateTracks(setIsInBrowser, hideShades) {
+	
+	hideShades = hideShades || (spcArray.activeNumber <= 1);
+	
 	// Enum all CmnTracks and UniTracks element
 	isInBrowser = (typeof setIsInBrowser === 'boolean')? setIsInBrowser: isInBrowser;
 	
@@ -1085,7 +1264,7 @@ function updateTracks(setIsInBrowser) {
 	
 	for(var index = 0; index < spcArray.length; index++) {
 		spcArray[index].updateAllUnique();
-		spcArray[index].submitTrackChange();
+		spcArray[index].submitTrackChange(hideShades);
 		if(isInBrowser && spcArray[index].isActive) {
 			spcArray[index].isReady = false;
 			setUnReady(spcArray[index].db);
@@ -1119,6 +1298,6 @@ function resetTracks() {
 		}
 	}
 	markTrackInitialized(false);
-	toggleWindow('trackSelect');
+	hideWindow('trackSelect');
 }
 
