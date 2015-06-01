@@ -206,5 +206,5 @@ Region.prototype.pushSpcRegion = function(db, spcregion) {
 
 Region.prototype.getCleanName = function() {
 	// clean the gene name of weird characters such as '.'
-	return this.name.replace(/\./g, "\\.");
+	return this.name.replace(/\./g, "\\.").replace(/ /g, "_");
 };

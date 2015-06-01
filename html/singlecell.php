@@ -1,11 +1,18 @@
 <?php
-require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	$res = initialize_session();
+	$encodeOn = $res['encodeOn'];
+	$in_debug = $res['in_debug'];
+	$genemoOn = $res['genemoOn'];
+	unset($res);
 ?>
 <!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>Single Cell Data Browser (powered by UCSC Genome Browser)</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
 <link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css">
 <script type="text/javascript">
 

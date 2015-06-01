@@ -52,7 +52,9 @@ class BufferedFile {
 		$this->is_swapped = $isSwapped;
 		if($this->type == self::REMOTE) {
 			$this->file = curl_init();
-			curl_setopt($this->file, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+			if(isset($_SERVER['HTTP_USER_AGENT'])) {
+				curl_setopt($this->file, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+			}
 			//error_log($this->fname);
 			curl_setopt($this->file, CURLOPT_URL, $this->fname);
 			curl_setopt($this->file, CURLOPT_FOLLOWLOCATION, 1);

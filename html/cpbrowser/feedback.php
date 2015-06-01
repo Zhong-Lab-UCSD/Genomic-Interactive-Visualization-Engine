@@ -1,7 +1,13 @@
-<!DOCTYPE html>
 <?php
-require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	$res = initialize_session();
+	$encodeOn = $res['encodeOn'];
+	$in_debug = $res['in_debug'];
+	$genemoOn = $res['genemoOn'];
+	unset($res);
 ?>
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <link href='//fonts.googleapis.com/css?family=Noto+Sans|Roboto' rel='stylesheet' type='text/css'>

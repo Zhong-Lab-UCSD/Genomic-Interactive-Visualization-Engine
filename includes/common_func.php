@@ -73,12 +73,20 @@ function getSpeciesInfoFromArray($spcDbNameList = NULL) {
 	$spcinfo = array();
 	$sqlstmt = "SELECT * FROM species";
 	if(!empty($spcDbNameList)) {
-		$sqlstmt .= " WHERE dbname = 'hg19'";
+		$sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
+		$stmt = $mysqli->prepare($sqlstmt);
+		$sqltype = str_repeat('s', count($spcDbNameList));
+		$a_params = array();
+		$a_params []= & $sqltype;
 		for($i = 0; $i < count($spcDbNameList); $i++) {
-			$sqlstmt .= " OR dbname = '" . $mysqli->real_escape_string($spcDbNameList[$i]) . "'";
+			$a_params []= & $spcDbNameList[$i];
 		}
-	}		
-	$species = $mysqli->query($sqlstmt);
+		call_user_func_array(array($stmt, 'bind_param'), $a_params);
+		$stmt->execute();
+		$species = $stmt->get_result();
+	} else {
+		$species = $mysqli->query($sqlstmt);
+	}
 	while($spcitor = $species->fetch_assoc()) {
 		$spcinfo[] = $spcitor;
 	}	

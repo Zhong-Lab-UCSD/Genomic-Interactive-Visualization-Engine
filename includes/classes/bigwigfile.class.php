@@ -20,7 +20,7 @@ class BigWigFile  {
 	private $totalSummaryOffset;
 	private $uncompressBufSize;
 	
-	private $chromNameID; 			// associative array for chrom name and ID
+	private $chromNameID; 			// associative array for chrom name and ID (and length)
 	private $unzoomedCir;			// unzoomed cirTree
 	
 	function getFileName() {
@@ -190,6 +190,43 @@ class BigWigFile  {
 		return $result;
 	}
 	
+	function &getHistFromFull($chromIx, $start, $end, &$result) {
+		// this will merge the current region into an existing histogram
+		// $result should be a HistElement object
+		$intervalList = $this->intervalQuery($chromIx, $start, $end);
+		$baseStart = $start;
+		$baseCount = $end - $start;
+		$windowCount = intval(($baseCount - 1) / $result->resolution) + 1;
+		if(count($intervalList) <= 0) {
+			$result->addData(0, $windowCount);
+			return $result;
+		}
+		reset($intervalList);
+		$interval = current($intervalList);
+		for($i = 0; $i < $windowCount; $i++) {
+			$baseEnd = $start + ($i + 1) * $result->resolution;
+			if($baseEnd > $end) {
+				$baseEnd = $end;
+			}
+			$end1 = $baseEnd;
+			if($end1 == $baseStart) {
+				$end1++;
+			}
+			while($interval !== false && $interval[BWGSection::END] <= $baseStart) {
+				$interval = next($intervalList);
+			}
+			$summary = $this->intervalSlice($baseStart, $end1, $intervalList);
+			$interval = current($intervalList);
+			$baseStart = $baseEnd;
+//			if($summary->validCount > 0) {
+//				echo "getHistFromFull ";
+//				echo($summary->sumData);
+//			}
+			$result->addData($result->getBin($summary->sumData), 1);
+		}
+		return $result;
+	}
+	
 	function bestZoom($reduction) {
 		if($reduction <= 1) {
 			return NULL;
@@ -270,6 +307,88 @@ class BigWigFile  {
 		return $result;
 	}
 	
+	private function &histSlice($baseStart, $baseEnd, &$summaryList, &$histResult) {
+		$oldSummary = current($summaryList);
+		if($oldSummary !== false) {
+			while($oldSummary !== false && $oldSummary->chromRegion->start < $baseEnd) {
+				$overlap = rangeIntersection($baseStart, $baseEnd, $oldSummary->chromRegion->start, $oldSummary->chromRegion->end);
+				if($overlap > 0) {
+					$histResult->addData($histResult->getBin($oldSummary->sumData), $overlap);
+				}
+				$oldSummary = next($summaryList);
+			}
+		}
+		return $histResult;
+	}
+	
+	function &getHistFromZoom($zoom, $chromIx, $start, $end, &$result) {
+		$zoomedCir = new CirTree($this->fileHandle, $zoom->getIndexOffset());
+		$blocklist = $zoomedCir->findOverlappingBlocks($chromIx, $start, $end);
+		
+		$mergedBlocks = $this->mergeBlocks($blocklist);
+		reset($mergedBlocks);
+		$mergedBuf = "";
+		$mergedOffset = 0;
+		$mergedSize = 0;
+		$sumList = array();
+		
+		foreach($blocklist as $offset => $size) {
+			if($offset >= $mergedOffset + $mergedSize) {
+				// need to read
+				list($mergedOffset, $mergedSize) = each($mergedBlocks);
+				$mergedBuf = $this->fileHandle->readString($mergedSize, $mergedOffset);
+			}
+			$blockBuf = substr($mergedBuf, $offset - $mergedOffset, $size);
+			if($this->uncompressBufSize > 0) {
+				// need uncompression
+				$blockBuf = gzuncompress($blockBuf);
+			}
+			// now buffer is here
+			// begin doing stuff
+			$memFileHandle = new BufferedFile($blockBuf, BufferedFile::MEMORY, $this->fileHandle->getSwapped());
+			$itemCount = strlen($blockBuf) / SummaryElement::DATASIZE;
+			for($i = 0; $i < $itemCount; $i++) {
+				$summaryElement = new SummaryElement(NULL, $memFileHandle);
+				if($summaryElement->chromRegion->chromID == $chromIx) {
+					$s = max($summaryElement->chromRegion->start, $start);
+					$e = min($summaryElement->chromRegion->end, $end);
+					if($s < $e) {
+						$sumList[] = $summaryElement;
+					}
+				}
+			}
+		}
+		
+		// then slice $sumList to match $summarySize
+		$baseStart = $start;
+		$baseCount = $end - $start;
+		$windowCount = floor(($baseCount - 1) / $result->resolution) + 1;
+		if(!empty($sumList)) {
+			reset($sumList);
+			$oldSummary = current($sumList);
+			for($i = 0; $i < $windowCount; $i++) {
+				$baseEnd = $start + ($i + 1) * $result->resolution;
+				if($baseEnd > $end) {
+					$baseEnd = $end;
+				}
+				$end1 = $baseEnd;
+				if($end1 == $baseStart) {
+					$end1++;
+				}
+				while($oldSummary !== false && $oldSummary->chromRegion->end <= $baseStart) {
+					$oldSummary = next($sumList);
+				}
+				$this->histSlice($baseStart, $baseEnd, $sumList, $result);
+				$oldSummary = current($sumList);
+				$baseStart = $baseEnd;
+			}
+		} else {
+			$result->addData(0, $windowCount);
+		}
+		
+		return $result;
+	}
+	
 	function getSummaryStatsSingleRegion($region, $summarySize) {
 		if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
 			throw new Exception("Chromosome " . $region->chr . " is invalid.");
@@ -288,6 +407,23 @@ class BigWigFile  {
 		}
 	}
 	
+	function &getHistSingleRegion($region, &$histResult) {
+		if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
+			throw new Exception("Chromosome " . $region->chr . " is invalid.");
+		}
+		$chromIx = $this->chromNameID[$region->chr][ChromBPT::ID];
+		
+		$zoomLevel = ceil($histResult->resolution / 2);
+		
+		// get the zoom level
+		$zoom = $this->bestZoom($zoomLevel);
+		if(is_null($zoom)) {
+			return $this->getHistFromFull($chromIx, $region->start, $region->end, $histResult);
+		} else {
+			return $this->getHistFromZoom($zoom, $chromIx, $region->start, $region->end, $histResult);
+		}
+	}
+	
 	function getSummaryStats($regions, $summarySize) {
 		// $regions is an array of ChromRegion, the return value will also be an array of summary stats 
 		// (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
@@ -300,9 +436,43 @@ class BigWigFile  {
 		return $summaryList;
 	}
 	
+	function getHistogram($regions, $histResolution = 1, $binSize = 1, $logChrException = false, $throwChrException = false) {
+		// $regions is an array of ChromRegion, the return value will also be an array of summary stats 
+		// (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
+		// notice that need to translate every region into chromIx
+		// also the zoom part will be handled here (not now)
+		$histElement = new HistElement($histResolution, $binSize);
+		foreach($regions as $region) {
+			try {
+				$this->getHistSingleRegion($region, $histElement);
+				error_log($histElement);
+			} catch (Exception $e) {
+				if($logChrException) {
+					error_log($e->getMessage());
+				}
+				if($throwChrException) {
+					throw $e;
+				}
+			}
+		}
+		return $histElement;
+	}
+	
+	function getAllRegions() {
+		$regions = array();
+		foreach($this->chromNameID as $name => $idsize) {
+			$regions []= new ChromRegion($name, ChromRegion::BEGINNING, $idsize[ChromBPT::SIZE]); 
+		}
+		return $regions;
+	}
+	
 	function getAllSummaryStats($region) {
 		// get all data from a single region
 		return $this->getSummaryStatsSingleRegion($region, $region->end - $region->start);
+	}
+	
+	function getAllHistogram($histResolution = 1, $binSize = 1) {
+		return $this->getHistogram($this->getAllRegions(), $histResolution, $binSize);
 	}
 	
 	function __construct($fpathname, $isRemote) {
