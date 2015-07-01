@@ -50,3 +50,7 @@ UIObject.prototype.switchLeft = function() {
 	}
 }
 
+function fireCoreSignal(signame, sigdata) {
+	// fire core-signals
+	document.body.dispatchEvent(new CustomEvent('core-signal', {bubbles: true, cancelable: true, detail: {name: signame, data: sigdata}}));
+}

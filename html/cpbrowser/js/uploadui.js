@@ -76,16 +76,14 @@ function mergeGeneList(glist, spcArray) {
 }
 
 function toggleUpload(enableFlag, resetGeneList) {
-	var querycard = document.querySelector('#mainQueryCard');
 	if(resetGeneList) {
 		$("#genelistContentHolder").html('');
 	}
 	if(enableFlag) {
 		$('#genelistLoading').addClass('BoxHide');
-		querycard.isDisabled = false;
+		fireCoreSignal('disable', {group: 'query-search', flag: false});
 	} else {
-		$('#search').prop('disabled', true);
-		querycard.isDisabled = true;
+		fireCoreSignal('disable', {group: 'query-search', flag: true});
 	}
 }
 
@@ -97,7 +95,7 @@ function validateUploadFileOrURL(event) {
 	event.stopPropagation();
 	event.preventDefault();
 	
-	var querycard = document.querySelector('#mainQueryCard');
+	var querycard = event.detail.card;
 	
 	var hasEmail = (querycard.UserEmail.length > 0);
 	var email = querycard.UserEmail;
@@ -120,16 +118,6 @@ function validateUploadFileOrURL(event) {
 	var dispFileName = (urlFileToShow? (urlFileToShow.substring(urlFileToShow.lastIndexOf('/') + 1)): inputFileName);
 	
 	var db = querycard.currentRef;
-	
-	$('#peakFileHolder').text('[' + db + '] Bed/peak file: ' + inputFileName);
-	$('#peakFileHolder').show();
-	
-	if(inputFileName != dispFileName) {
-		$('#displayFileHolder').text('Display file: ' + dispFileName);
-		$('#displayFileHolder').show();
-	} else {
-		$('#displayFileHolder').show();
-	}
 	
 	toggleUpload(false, true);
 	
@@ -194,7 +182,8 @@ function validateUploadFileOrURL(event) {
 
 	updateTracks(false, true);
 	hideWindow('trackSelect');
-	togglePanel('trackManip', false);
+
+	fireCoreSignal('collapse', {group: 'query-search', flag: false});
 	
 	return false;
 	
@@ -291,6 +280,7 @@ function uploadUiHandler(data) {
 		geneList = populateRegionList(geneListRaw, spcArray);
 		
 		geneList = mergeGeneList(geneList, spcArray);
+		fireCoreSignal('collapse', {group: 'query-search', flag: false});
 		
 		$("#genelistContentHolder").append(writeGeneListTable(geneList, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
 	} catch(e) {

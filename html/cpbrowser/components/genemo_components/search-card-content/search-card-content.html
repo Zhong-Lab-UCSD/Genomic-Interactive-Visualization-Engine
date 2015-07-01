@@ -1,0 +1,332 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-tooltip/core-tooltip.html">
+<link rel="import" href="../../bower_components/core-icon/core-icon.html">
+<link rel="import" href="../../bower_components/core-menu/core-menu.html">
+<link rel="import" href="../../bower_components/core-signals/core-signals.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
+<polymer-element name="search-card-content" attributes="isEncodeOn selectedTab InputUrl InputFile selectedRefs currentRef DisplayUrl UserEmail trackSelActive isDisabled">
+  <template>
+    <link rel="stylesheet" href="./search-card-content.css">
+    <section>
+      <core-signals on-core-signal-toggle="{{signalToggle}}" 
+      	on-core-signal-disable="{{signalDisabled}}"
+        on-core-signal-encodecheck="{{signalEncodeCheck}}"
+        on-core-signal-updatecontent="{{signalUpdateContent}}">
+        </core-signals>
+      <div class="vertMargined">
+        <div class="vertCenterContainer clearFix">
+          <div> <strong>Peak file to search: </strong>
+            <core-tooltip large>
+              <core-icon class="smallInline transparent" icon="help" alt="help"></core-icon>
+              <div tip> Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>) </div>
+            </core-tooltip>
+          </div>
+          <paper-button id="fillSample" class="rightFloat vertMargined" noink raised>Use sample file</paper-button>
+        </div>
+        <div class="vertCenterContainer clearFix">
+          <div>Reference: </div>
+          <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined">
+            <paper-dropdown class="dropdown">
+              <core-menu class="menu" id="speciesToUpload" valueattr="value" selected={{currentRef}}>
+                <template repeat="{{ s in species | encodeFilter }}">
+                  <paper-item value="{{s.db}}">{{s.commonName}} ({{s.db}})</paper-item>
+                </template>
+              </core-menu>
+            </paper-dropdown>
+          </paper-dropdown-menu>
+        </div>
+        <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value={{InputUrl}}></paper-input>
+        <paper-button class="fullWidth" raised noink id="fileSelectButton">{{uploadButtonText}}</paper-button>
+        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" />
+      </div>
+      <core-tooltip large class="fullWidth">
+        <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value={{UserEmail}}></paper-input>
+        <div tip> Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed. </div>
+      </core-tooltip>
+      <core-tooltip large class="fullWidth" position="top">
+        <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value={{DisplayUrl}}></paper-input>
+        <div tip> You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong> </div>
+      </core-tooltip>
+      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active?="{{trackSelActive}}">Data selection</paper-button>
+      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled?="{{isDisabled}}">
+        <core-icon class="smallInline" icon="search" alt="search"></core-icon>
+        Search </paper-button>
+      <!-- end upload new file part --> 
+    </section>
+  </template>
+  <script>
+    Polymer({
+        
+        MAX_FILENAME_LEN: 25,
+        
+        isEncodeOn: true,
+        
+        InputUrl: "",
+        currentRef: null,
+        DisplayUrl: "",
+        UserEmail: "",
+		
+        trackSelActive: false,
+		toggleGroup: 'trackSelect',
+		
+		isDisabled: false,
+		disableGroup: 'query-search',
+        
+		collapseElement: null,
+		icon: 'search',
+		
+		sampleFile: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
+		sampleRef: "mm9",
+        
+        checkEncodeSpecies: function (flag) {
+			if(typeof(flag) == 'boolean') {
+				this.isEncodeOn = flag;
+			}
+            var spcAvailableCount = 0;
+            if(this.species) {
+                this.updateAllSpcActive();
+            }
+        },
+        
+        updateAllSpcActive: function () {
+            // numbersOnly means no update of checkboxes to species.isActive
+            // otherwise species.isActive will be updated first to reflect choice
+            this.species.updateAllSpcActiveNum();
+        },
+        
+        encodeFilter: function(value) {
+            if(value) {
+                result = [];
+                for(var i = 0; i < value.length; i++) {
+                    if(value[i].isEncode || !this.isEncodeOn) {
+                        result.push(value[i]);
+                    }
+                }
+                return result;
+            }
+        },
+        
+        created: function() {
+            this.InputFile = new Blob();
+        },
+		
+		submitForm: function(e) {
+			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
+				this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
+				return false;
+			} else if(this.currentRef == null) {
+				this.fire("alert", {msg: 'You need to select the reference genome for your file!'});
+				return false;
+			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0 
+				|| (this.UserEmail.indexOf('@') >= this.UserEmail.lastIndexOf('.') - 1))) {
+					this.fire("alert", {msg: 'Please provide a valid email address!'});
+					return false;
+			}
+			
+			this.InputFile = this.$.uploadFileInput.files[0];
+			
+			var inputFileName = (this.InputUrl.length > 0? (this.InputUrl.substring(this.InputUrl.lastIndexOf('/') + 1))
+				: (this.InputFile.name.substring(this.InputFile.name.lastIndexOf('/') + 1)));
+			var DisplayFileName = this.DisplayUrl.length > 0? 
+				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
+				
+			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			
+			this.fire("submit-form", {card: this});
+		},
+		
+		getIcon: function() {
+			var resIcon = document.createElement('core-icon');
+			resIcon.setAttribute('icon', this.icon);
+			resIcon.setAttribute('alt', 'search');
+			return resIcon;
+		},
+		
+		createResElement: function(anno, text, beforeNode, afterNode) {
+			var res = document.createElement('div');
+			res.classList.add('clearFix');
+			res.classList.add('fullWidth');
+			res.classList.add('collapseDb');
+			
+			if(beforeNode) {
+				res.appendChild(beforeNode);
+			}
+			
+			var resAnno = document.createElement('span');
+			resAnno.classList.add('anno');
+			resAnno.classList.add('leftFloat');
+			resAnno.textContent = anno;
+			var resContent = document.createElement('span');
+			resContent.textContent = text;
+			
+			res.appendChild(resAnno);
+			res.appendChild(resContent);
+			
+			if(afterNode) {
+				res.appendChild(afterNode);
+			}
+			
+			return res;
+			
+		},
+		
+		updateCurrentInfo: function(db, input, display) {
+			
+			if(db) {
+				
+				// prepare for shrinking and return the shrunk element
+				this.collapseElement = document.createElement('div');
+				// add shrunk icon, species, input file and display file
+				// icon and species in one line
+				var resHeader = document.createElement('div');
+				var resIcon = this.getIcon();
+				resIcon.classList.add('smallInline');
+				
+				var resHeaderText = document.createElement('span');
+				resHeaderText.textContent = "Search ENCODE data";
+				
+				resHeader.classList.add('headerText');
+				resHeader.classList.add('clearFix');
+				resHeader.appendChild(resIcon);
+				resHeader.appendChild(resHeaderText);
+				this.collapseElement.appendChild(resHeader);
+				
+				var resContent = document.createElement('div');
+				resContent.classList.add('collapseContent');
+				resContent.appendChild(this.createResElement('Ref: ', db));
+				resContent.appendChild(this.createResElement('Input: ', input));
+				if(display) {
+					resContent.appendChild(this.createResElement('Display: ', display));
+				}
+				
+				this.collapseElement.appendChild(resContent);
+				
+			} else {
+				this.collapseElement = null;
+			}
+		},
+		
+		inputFileChangedFunc: function() {
+			var shortFileName = this.$.uploadFileInput.files[0].name;
+			if(shortFileName == "") {
+				this.$.fileSelectButton.classList.remove("noTextTransformButton");
+				this.uploadButtonText = "Upload local file";
+			} else {
+				shortFileName = shortFileName.replace(/^C:\\fakepath\\/, "");
+				if(shortFileName.length > this.MAX_FILENAME_LEN) {
+					shortFileName = "..." + shortFileName.substring(shortFileName.length - this.MAX_FILENAME_LEN);
+				}
+				this.$.fileSelectButton.classList.add("noTextTransformButton");
+				this.uploadButtonText = shortFileName;
+				this.InputUrl = '';
+			}
+		},
+		
+		InputUrlChanged: function(oldValue, newValue) {
+			if(newValue.length > 0) {
+				this.$.fileSelectButton.classList.remove("noTextTransformButton");
+				this.uploadButtonText = "Upload local file";
+			}
+		},
+		
+		fillSampleFunc: function() {
+			this.InputUrl = this.sampleFile;
+			this.currentRef = this.sampleRef;
+		},
+		
+		getCollapse: function() {
+			return this.collapseElement;
+		},
+		
+		getTabHeader: function() {
+			var res = document.createElement('div');
+
+			var coreIcon = this.getIcon();
+			coreIcon.classList.add('smallInline');
+			
+			var textSpan = document.createElement('span');
+			textSpan.textContent = 'Search';
+			res.appendChild(coreIcon);
+			res.appendChild(textSpan);
+			
+			return res;
+		},
+		
+		getExpandedHeader: function() {
+			var res = document.createElement('div');
+			var coreIcon = this.getIcon();
+			coreIcon.classList.add('smallInline');
+			
+			var textSpan = document.createElement('span');
+			textSpan.textContent = 'Search ENCODE data';
+			res.classList.add('headerText');
+			res.appendChild(coreIcon);
+			res.appendChild(textSpan);
+
+			return res;
+		},
+		
+		signalToggle: function(e, detail, sender) {
+			if(detail.group == this.toggleGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.trackSelActive = detail.flag;
+				} else {
+					this.trackSelActive = !this.trackSelActive;
+				}
+			}
+		},
+		
+		signalDisabled: function(e, detail, sender) {
+			if(detail.group == this.disableGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.isDisabled = detail.flag;
+				} else {
+					this.isDisabled = !this.isDisabled;
+				}
+			}
+		},
+                    
+		signalEncodeCheck: function(e, detail, sender) {
+			this.checkEncodeSpecies(detail.flag);
+		},
+		
+		signalUpdateContent: function(e, detail, sender) {
+			this.currentRef = detail.sessionObj.db;
+			var inputFileName = detail.sessionObj.originalFile;
+			var DisplayFileName = detail.sessionObj.hasDisplay? 
+				(detail.sessionObj.urlToShow.substring(detail.sessionObj.urlToShow.lastIndexOf('/') + 1)) : null;
+			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+		},
+                    
+        ready: function() {
+            
+            var hostNode = this;
+            
+            this.species = spcArray;
+            this.uploadButtonText = "Upload local file";
+
+            this.$.uploadFileInput.addEventListener("change", this.inputFileChangedFunc.bind(this));
+            
+            this.$.fileSelectButton.addEventListener("click", this.$.uploadFileInput.click.bind(this.$.uploadFileInput));
+            
+            var trackSelectButtons = this.shadowRoot.querySelectorAll('.trackSelection');
+            Array.prototype.forEach.call(trackSelectButtons, function(item) {
+                item.addEventListener("click", function(e) {
+                    hostNode.fire("toggle-window");
+                });
+            });
+            
+            this.$.fileSubmit.addEventListener("click", this.submitForm.bind(this));
+            
+            this.$.fillSample.addEventListener("click", this.fillSampleFunc.bind(this));
+            
+        }
+        
+    });
+  </script>
+</polymer-element>

@@ -12,28 +12,13 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<title>CEpBrowser (Comparative epigenome browser)</title>
+<title>Main Content</title>
 <link href="mainstyles.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-</script>
 </head>
 <?php
 	if(empty($_REQUEST)) {
 		// new page, show something else
-		require 'introduction.php';
-?>
-<?php
+		// require 'introduction.php';
 	} else {
 		$num_spc = $_REQUEST["num_spc"];
 ?>
@@ -283,6 +268,7 @@ body {
 -->
 </style>
 <body onresize="resize_tbody();">
+<?php include_once(realpath(dirname(__FILE__) . '/../../includes/analyticstracking.php')); ?>
 <div style="position: absolute; top: 0px; bottom: 0px; right: 0px; width: 22px; padding: 0px; 
 	font-family:Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold;
     background: #999999; color: #FFFFFF;">

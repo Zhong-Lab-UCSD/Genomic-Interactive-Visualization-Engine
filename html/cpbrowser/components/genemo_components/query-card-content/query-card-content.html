@@ -1,0 +1,543 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-icon/core-icon.html">
+<link rel="import" href="../../bower_components/core-menu/core-menu.html">
+<link rel="import" href="../../bower_components/core-dropdown/core-dropdown.html">
+<link rel="import" href="../../bower_components/core-item/core-item.html">
+<link rel="import" href="../../bower_components/core-signals/core-signals.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-shadow/paper-shadow.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+
+<link rel="import" href="../manual-icon/manual-icon.html">
+<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
+
+<polymer-element name="query-card-content" attributes="isEncodeOn selectedRefs spcCoorSelection trackSelActive isDisabled querySent InputGeneName">
+  <template>
+    <link rel="stylesheet" href="./query-card-content.css">
+    <section>
+      <core-signals on-core-signal-toggle="{{signalToggle}}" 
+      	on-core-signal-disable="{{signalDisabled}}"
+        on-core-signal-encodecheck="{{signalEncodeCheck}}"></core-signals>
+      <paper-radio-group selected="{{geneRegionSelection}}">
+        <paper-radio-button name="gene" label="Gene"></paper-radio-button>
+        <paper-radio-button name="region" label="Region for"></paper-radio-button>
+      </paper-radio-group>
+      <paper-dropdown-menu disabled?="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined">
+        <paper-dropdown class="dropdown">
+          <core-menu class="menu" selected="{{spcCoorSelection}}" valueattr="value">
+            <template repeat="{{ s in selectedSpecies }}">
+              <paper-item value="{{s.db}}">{{s.db}}</paper-item>
+            </template>
+          </core-menu>
+        </paper-dropdown>
+      </paper-dropdown-menu>
+      <div class="lineContainer vertMargined">
+        <div relative id="geneNameHotRegion">
+          <paper-input class="fullWidth" id="geneName" label="Input your query here" value={{InputGeneName}}></paper-input>
+          <core-dropdown relatedTarget="{{$.geneName}}" id="geneNameDropDown" class="autoText" autoFocusDisabled>
+            <core-menu class="menu" selected="{{partialSelection}}" valueattr="value">
+              <template repeat="{{ i in candidates }}">
+                <core-item value="{{i.value}}" id="{{i.id}}">{{i.contentBefore}}<strong>{{i.contentBold}}</strong><em>{{i.contentItalic}}</em>{{i.contentAfter}}</core-item>
+              </template>
+            </core-menu>
+          </core-dropdown>
+        </div>
+        <div class="right">
+          <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled?="{{isDisabled}}">GO</paper-button>
+        </div>
+      </div>
+      <paper-shadow id="speciesTable" class="vertMargined" z='1'>
+        <div class="anno fullWidth">
+          Species to compare:
+        </div>
+        <template repeat="{{ s in species }}">
+          <div id="{{s.db}}_checkboxwrapper" class="vertCenterContainer">
+            <core-label>
+              <paper-checkbox noink checked name="{{s.db}}" id="{{s.db}}" value="{{s.db}}"></paper-checkbox>
+              <span><em>{{s.name}}</em> ({{s.commonName}}) [{{s.db}}]</span>
+            </core-label>
+          </div>
+        </template>
+      </paper-shadow>
+      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active?="{{trackSelActive}}">Data selection</paper-button>
+    </section>
+  </template>
+  <script>
+    Polymer({
+        
+        MAX_FILENAME_LEN: 25,
+        
+        isEncodeOn: true,
+        
+        trackSelActive: false,
+		toggleGroup: 'trackSelect',
+		
+		isDisabled: false,
+		disableGroup: 'query-search',
+        
+        timerOn: false,
+        inFocus: false,
+        mouseInGList: false,
+        gListOpen: false,
+        querySent: '',
+        
+        timeoutVar: null,
+        
+        geneRegionSelection: "gene",
+        direct: false,
+        spcCoorDropDisabled: true,
+		
+		collapseElement: null,
+		icon: 'view-list',
+		
+		firstRun: true,
+        
+        checkEncodeSpecies: function (flag) {
+            var spcAvailableCount = 0;
+			if(typeof(flag) == 'boolean') {
+				this.isEncodeOn = flag;
+			}
+            if(this.species) {
+                for(var i = 0; i < this.species.length; i++) {
+                    if(this.isEncodeOn && !this.species[i].isEncode) {
+                        this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'none';
+                        this.shadowRoot.querySelector('#' + this.species[i].db).checked = false;
+                    } else if (!this.isEncodeOn) {
+                        this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'block';
+                        this.shadowRoot.querySelector('#' + this.species[i].db).checked = true;
+                        spcAvailableCount++;
+                    }
+                }
+                this.updateAllSpcActive();
+                if(spcAvailableCount > 2) {
+                    this.$.speciesTable.style.display = 'block';
+                } else {
+                    this.$.speciesTable.style.display = 'none';
+                }
+                this.updateType();
+            }
+        },
+        
+        updateAllSpcActive: function () {
+            // numbersOnly means no update of checkboxes to species.isActive
+            // otherwise species.isActive will be updated first to reflect choice
+            this.updateAllSpcActiveUI();
+            this.species.updateAllSpcActiveNum();
+        },
+        
+        updateAllSpcActiveUI: function () {
+            for(var i = 0; i < this.species.length; i++) {
+                this.species[i].isActive = this.shadowRoot.querySelector('#' + this.species[i].db).checked;
+            }
+        },
+        
+        updateType: function () {
+            var typeSelected = this.spcCoorSelection;
+            if(!(this.species[this.species.map[typeSelected]]) || !this.species[this.species.map[typeSelected]].isActive) {
+                typeSelected = null;
+                this.geneRegionSelection = 'gene';
+            }
+            this.selectedSpecies = []
+            for(var i = 0; i < this.species.length; i++) {
+                if(this.species[i].isActive) {
+                    this.selectedSpecies.push(this.species[i]);
+                }
+            }
+            this.spcCoorSelection = typeSelected;
+        },
+        
+        encodeFilter: function(value) {
+            if(value) {
+                result = [];
+                for(var i = 0; i < value.length; i++) {
+                    if(value[i].isEncode || !this.isEncodeOn) {
+                        result.push(value[i]);
+                    }
+                }
+                return result;
+            }
+        },
+        
+        geneRegionSelectionChanged: function() {
+            this.spcCoorDropDisabled = (this.geneRegionSelection == 'gene');
+        },
+        
+        created: function() {
+			this.selectedRefs = [];
+            this.candidates = [];
+        },
+                    
+        queryTextChanged: function() {
+            // reset_selection();
+            if(this.timerOn) {
+                this.cancelAsync(this.timeoutVar);
+                this.timerOn = false;
+            }
+            //$("#waiting").html($("#geneName").val());
+            var chromRegex = /^chr\w+\s*(:|\s)/i;
+            if(this.geneRegionSelection == "gene"
+                && this.InputGeneName.trim().length > 1
+                && this.InputGeneName.trim() != this.querySent
+                && !chromRegex.test(this.InputGeneName.trim())) {
+                    // length is enough for ajax and also not already updated
+                    // start the timer to prepare for ajax
+                    this.direct = false;
+                    if(!this.gListOpen) {
+                        timerOn = true;
+                        timeoutVar = this.async(this.sendPartialQuery, null, 500);
+                    } else {
+                        this.sendPartialQuery();
+                    }
+            } else if(this.InputGeneName.trim().length <= 1
+                || chromRegex.test(this.InputGeneName.trim())) {
+                    this.toggleGList(false);
+            }
+        },
+        
+        sendPartialQuery: function() {
+            this.timerOn = false;
+            //$("#waiting").html($.trim($("#geneName").val()).length);
+            if(this.InputGeneName.trim().length > 1
+                && this.InputGeneName.trim() != this.querySent) {
+                // send Ajax
+                this.querySent = this.InputGeneName.trim();
+                //$('#geneName').addClass('searchFieldBusy');
+                //toggleGList(0);
+//					$('#GListResponse').html('<em>Loading...</em>');
+//					toggleGList(1);
+                this.fire("partial-genename", {query: this.querySent, func: this.updatePartialQuery.bind(this)});
+            }
+        },
+        
+        updatePartialQuery: function(data) {
+            //$('#geneName').removeClass('searchFieldBusy');
+            this.candidates = [];
+            var hostNode = this;
+            var hasItems = true;
+            $.each(data, function(key, val) {
+                //console.log(key);
+                var entry = {};
+                entry.contentBefore = '';
+                entry.contentItalic = '';
+                entry.contentBold = '';
+                entry.contentAfter = '';
+                if(key == "(none)") {
+                    entry.value = "(none)";
+                    entry.id = "none_dummy";
+                    entry.contentItalic = "(No results)";
+                    hostNode.candidates.push(entry);
+                    return false;
+                } else {
+                    key = key.replace(/__[0-9]+/, "");		// remove potential duplicate aliases
+                    entry.id = val;
+                    entry.value = val;
+                    if(key == val) {
+                        entry.contentBold = val.substr(0, hostNode.querySent.length);
+                        entry.contentAfter = val.substr(hostNode.querySent.length);
+                    } else {
+                        // key is alias, val is real gene name
+                        entry.contentBefore = val + ' (';
+                        entry.contentBold = key.substr(0, hostNode.querySent.length);
+                        entry.contentAfter = key.substr(hostNode.querySent.length) + ')';
+                    }
+                    hostNode.candidates.push(entry);
+                }
+            });
+            // this is to fix the bug that core-dropdown will not 
+            // 		update it's size automatically
+
+            var el = this.querySelector("::shadow core-dropdown");
+            
+            el.target.style.width = null;
+            el.target.style.height = null;	
+            
+            this.toggleGList(true);
+            
+            // this is to fix the bug that core-dropdown will not 
+            // 		update it's size automatically at first run
+			if(this.firstRun) {
+				this.firstRun = false;
+				this.job('flushdrop', this.updatePartialQuery.bind(this, data), 100);
+			} else {
+				data = null;
+			}
+			
+        },
+        
+        partialSelectionChanged: function(oldValue, newValue) {
+            if(newValue) {
+                this.change_text(newValue);
+            }
+        },
+        
+        toggleGList: function(toggle) {
+            if(toggle) {
+                // turn on GList
+                this.partialSelection = '';
+                this.gListIsOn = true;
+                this.$.geneNameDropDown.open();
+            } else {
+                this.gListIsOn = false;
+                this.$.geneNameDropDown.close();
+            }
+        },
+        
+        textFocused: function() {
+            this.inFocus = true;
+        },
+
+        textBlured: function() {
+            if(this.timerOn) {
+                this.cancelAsync(this.timeoutVar);
+            }
+            this.inFocus = false;
+            if(!this.inFocus && !this.mouseInGList) {
+                this.timerOn = true;
+                this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
+            }
+        },
+        
+        inGList: function(flag) {
+            if(timerOn) {
+                this.cancelAsync(this.timeoutVar);
+            }
+            this.mouseInGList = flag;
+            if(!this.inFocus && !this.mouseInGList) {
+                this.timerOn = true;
+                this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
+            }
+        },
+        
+        hideGListResponse: function() {
+            this.timerOn = false;
+            this.toggleGList(false);
+        },
+        
+
+        clear_text: function() {
+            if(this.geneRegionSelection != "gene") {
+                this.InputGeneName = "";
+            }
+        },
+        
+        change_text: function(txtValue) {
+            this.querySent = txtValue;
+            this.InputGeneName = this.querySent;
+            this.direct = true;
+            this.timerOn = false;
+            this.toggleGList(false);
+        },
+		
+		getIcon: function() {
+			var resIcon = document.createElement('core-icon');
+			resIcon.setAttribute('icon', this.icon);
+			resIcon.setAttribute('alt', 'search');
+			return resIcon;
+		},
+		
+		createResElement: function(anno, text, beforeNode, afterNode) {
+			var res = document.createElement('div');
+			res.classList.add('clearFix');
+			res.classList.add('fullWidth');
+			res.classList.add('collapseDb');
+			
+			if(beforeNode) {
+				res.appendChild(beforeNode);
+			}
+			
+			var resAnno = document.createElement('span');
+			resAnno.classList.add('anno');
+			resAnno.classList.add('leftFloat');
+			resAnno.textContent = anno;
+			var resContent = document.createElement('span');
+			resContent.textContent = text;
+			
+			res.appendChild(resAnno);
+			res.appendChild(resContent);
+			
+			if(afterNode) {
+				res.appendChild(afterNode);
+			}
+			
+			return res;
+			
+		},
+		
+		updateCurrentInfo: function(query, db) {
+			
+			if(query) {
+				
+				// prepare for shrinking and return the shrunk element
+				this.collapseElement = document.createElement('div');
+				// add shrunk icon, species, input file and display file
+				// icon and species in one line
+				var resHeader = document.createElement('div');
+				var resIcon = this.getIcon();
+				resIcon.classList.add('smallInline');
+				
+				var resHeaderText = document.createElement('span');
+				resHeaderText.textContent = "Cross-species query";
+				
+				resHeader.classList.add('headerText');
+				resHeader.classList.add('clearFix');
+				resHeader.appendChild(resIcon);
+				resHeader.appendChild(resHeaderText);
+				this.collapseElement.appendChild(resHeader);
+				
+				var resContent = document.createElement('div');
+				resContent.classList.add('collapseContent');
+				resContent.appendChild(this.createResElement('Query: ', query));
+				resContent.appendChild(this.createResElement('Species: ', (db.join? db.join(', '): db)));
+				
+				this.collapseElement.appendChild(resContent);
+				
+			} else {
+				this.collapseElement = null;
+			}
+		},
+
+		getCollapse: function() {
+			return this.collapseElement;
+		},
+		
+		getTabHeader: function() {
+			var res = document.createElement('div');
+			var coreIcon = this.getIcon();
+			coreIcon.classList.add('smallInline');
+			
+			var textSpan = document.createElement('span');
+			textSpan.textContent = 'Query';
+			res.appendChild(coreIcon);
+			res.appendChild(textSpan);
+			
+			return res;
+		},
+		
+		getExpandedHeader: function() {
+			var res = document.createElement('div');
+			var coreIcon = this.getIcon();
+			coreIcon.classList.add('smallInline');
+			
+			var textSpan = document.createElement('span');
+			textSpan.textContent = 'Cross-species query';
+			res.classList.add('headerText');
+			res.appendChild(coreIcon);
+			res.appendChild(textSpan);
+
+			return res;
+		},
+		
+		submitQuery: function() {
+			if(this.InputGeneName == "") {
+				this.fire("alert", {msg: "You need to either choose a gene or type in part of its name before proceeding."});
+				return false;
+			}
+			var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
+			if(chromRegex.test(this.InputGeneName)) {
+				if(this.geneRegionSelection == "gene") {
+					// should choose a species
+					this.fire("alert", {msg: "Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field."});
+					return false;
+				}
+			} else if(this.geneRegionSelection != "gene") {
+				// should input coordinate
+				this.fire("alert", {msg: "Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species."});
+				return false;
+			}
+			
+			this.updateAllSpcActive();
+		
+			if(this.species.activeNumber < 2) {
+				this.fire("alert", {msg: "You need to choose at least TWO (2) species."});
+				return false;
+			}
+			// Prepare post data
+			var postdata = {};
+			
+			if(this.geneRegionSelection == "gene") {
+				postdata['species'] = "gene";
+			} else {
+				postdata['species'] = this.spcCoorSelection;
+			}
+			postdata['geneName'] = this.InputGeneName;
+			postdata['direct'] = this.direct? 'true': 'false';
+			
+			this.selectedRefs = [];
+			for(var i = 0; i < this.species.length; i++) {
+				if(this.species[i].isActive) {
+					postdata[this.species[i].db] = this.species[i].db;
+					this.selectedRefs.push(this.species[i].db);
+				}
+			}
+			
+			this.updateCurrentInfo(this.InputGeneName, this.selectedRefs);
+			this.fire("core-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
+			
+			this.fire("submit-genequery", {postdata: postdata});
+		},
+        
+		signalToggle: function(e, detail, sender) {
+			if(detail.group == this.toggleGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.trackSelActive = detail.flag;
+				} else {
+					this.trackSelActive = !this.trackSelActive;
+				}
+			}
+		},
+		
+		signalDisabled: function(e, detail, sender) {
+			if(detail.group == this.disableGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.isDisabled = detail.flag;
+				} else {
+					this.isDisabled = !this.isDisabled;
+				}
+			}
+		},
+                    
+		signalEncodeCheck: function(e, detail, sender) {
+			this.checkEncodeSpecies(detail.flag);
+		},
+                    
+        ready: function() {
+            
+            var hostNode = this;
+            
+            this.species = spcArray;
+            
+            var trackSelectButtons = this.shadowRoot.querySelectorAll('.trackSelection');
+            Array.prototype.forEach.call(trackSelectButtons, function(item) {
+                item.addEventListener("click", function(e) {
+                    hostNode.fire("toggle-window");
+                });
+            });
+            
+            checkboxList = this.shadowRoot.querySelectorAll('paper-checkbox');
+            Array.prototype.forEach.call(checkboxList, function(item) {
+                item.addEventListener("change", function(e) {
+                    hostNode.updateAllSpcActive();
+                    hostNode.updateType();
+                });
+            });
+            
+            this.$.geneName.addEventListener('input', this.queryTextChanged.bind(this));
+            this.$.geneName.addEventListener('blur', this.textBlured.bind(this));
+            this.$.geneName.addEventListener('focus', this.textFocused.bind(this));
+            
+            this.$.geneNameHotRegion.addEventListener('mouseover', this.inGList.bind(this, true));
+            this.$.geneNameHotRegion.addEventListener('mouseout', this.inGList.bind(this, false));
+
+            this.$.querySubmit.addEventListener("click", this.submitQuery.bind(this));
+			
+        }
+        
+    });
+  </script> 
+</polymer-element>

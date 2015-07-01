@@ -1,0 +1,109 @@
+:host {
+	display: block;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	line-height: 1.2em;
+	vertical-align: middle;
+}
+
+a:link {
+	color: #FF9800;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+a:active {
+	text-decoration: underline;
+}
+a:visited {
+	color: #3F51B5;
+}
+
+/************************** Polymer and Material Design components below *********************/
+
+.fullWidth {
+	width: 100%;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.vertMargined {
+	margin: 0.2em 0;
+}
+
+.vertCenterContainer {
+	display: table;
+	width: 100%
+}
+
+.vertCenterContainer > * {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.noTextTransformButton {
+	text-transform: none;
+}
+
+.rightFloat {
+	float: right;
+}
+
+.clearFloat {
+	clear: both;
+}
+
+.clearFix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/************************** Polymer and Material Design color below *********************/
+
+paper-button[raised].colored {
+	background: #3f51B5;
+	color: #FFF;
+}
+
+paper-button[disabled] {
+	background: #eaeaea;
+	color: #a8a8a8;
+	cursor: auto;
+	pointer-events: none;
+}
+
+paper-button[raised][disabled].colored {
+	background: #eaeaea;
+	color: #a8a8a8;
+	cursor: auto;
+	pointer-events: none;
+}
+
+/************************** Polymer and Material Design size and others below *********************/
+
+core-icon.smallInline {
+	width: 1.25em;
+	height: 1.25em;
+	margin: 0 0.25em 0.1em 0.25em;
+}
+core-icon.transparent {
+	opacity: 0.54;
+}
+core-icon.transparent:hover {
+	opacity: 0.87;
+}
+core-tooltip::shadow #tooltip {
+	max-width: 350px;
+	min-width: 250px;
+	width: auto;
+	margin-top: 1px;
+	margin-bottom: 3px;
+	white-space: normal;
+	line-height: 20px;
+}
+
+.vertCenterContainer > paper-dropdown-menu {
+	padding-top: 0;
+}

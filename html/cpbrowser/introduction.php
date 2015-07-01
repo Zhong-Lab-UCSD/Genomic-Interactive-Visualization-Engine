@@ -10,6 +10,7 @@ body {
 -->
 </style>
 <body>
+<?php include_once(realpath(dirname(__FILE__) . '/../../includes/analyticstracking.php')); ?>
 <p class="normaltext"><strong>CEpBrowser</strong> (<strong>C</strong>omparative <strong>Ep</strong>igenome <strong>Browser</strong>) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs.</p>
 <p class="Header1">Quick Manual</p>
 <p class="normaltext">To use Comparative EpiGenome Browser, just select the wanted species and look the gene in interest up in the <span class="panel">gene query</span> panel. CEpBrowser will try to automatically complete your entry if possible. If there are more than one genes that match the query, the location, gene name and all other genes in the ortholog group will be shown in <span class="panel">gene information</span> panel and can be visualized via the

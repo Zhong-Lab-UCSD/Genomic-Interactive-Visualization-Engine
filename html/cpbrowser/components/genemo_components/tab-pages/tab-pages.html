@@ -1,0 +1,83 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-animated-pages/core-animated-pages.html">
+<link rel="import" href="../../bower_components/core-animated-pages/transitions/slide-from-right.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+
+<polymer-element name="tab-pages" attributes="selectedTab">
+  <template>
+    <link rel="stylesheet" href="tab-pages.css">
+    <section>
+      <div class="hidden">
+        <content id="tabHeader" select=".tabHeader"></content>
+        <content id="tabContent" select=".tabContent"></content>
+        <paper-tabs id="mainTab" selected="{{selectedTab}}" noink>
+        </paper-tabs>
+      </div>
+      <core-animated-pages id="mainPage" selected="{{selectedTab}}" transition="slide-from-right">
+      </core-animated-pages>
+    </section>
+  </template>
+  <script>
+    Polymer({
+        
+        selectedTab: 0,
+		
+		pages: null,
+		tabs: null,
+        
+ 		getCollapse: function() {
+			if(this.pages[this.selectedTab]) {
+				if(this.pages[this.selectedTab].getCollapse && this.pages[this.selectedTab].getCollapse()) {
+					return this.pages[this.selectedTab].getCollapse();
+				} else if(this.pages[this.selectedTab].getExpandedHeader) {
+					return this.pages[this.selectedTab].getExpandedHeader();
+				}
+			}
+			return null;
+		},
+		
+		getExpandedHeader: function() {
+			return this.$.mainTab;
+		},
+		
+        ready: function() {
+            
+            var hostNode = this;
+			
+			// populate tabs and animated pages
+            
+            this.pages = this.shadowRoot.querySelector('#tabContent').getDistributedNodes();
+			this.tabs = this.shadowRoot.querySelector('#tabHeader').getDistributedNodes();
+			
+			while(this.$.mainTab.firstChild) {
+				this.$.mainTab.removeChild(this.$.mainTab.firstChild);
+			}
+			
+			if(this.tabs.length <= 0) {
+				this.tabs = [];
+				for(var i = 0; i < this.pages.length; i++) {
+					if(this.pages[i].getTabHeader) {
+						this.tabs.push(this.pages[i].getTabHeader());
+					} else if(this.pages[i].getExpandedHeader) {
+						this.tabs.push(this.pages[i].getExpandedHeader());
+					}
+				}
+			}
+			
+			for(var i = 0; i < this.tabs.length; i++) {
+				var newTab = document.createElement('paper-tab');
+					newTab.appendChild(this.tabs[i]);
+				this.$.mainTab.appendChild(newTab);
+			}
+			
+			for(var i = 0; i < this.pages.length; i++) {
+				var divPage = document.createElement('div');
+				divPage.setAttribute('slide-from-right', 'true');
+				divPage.appendChild(this.pages[i]);
+				this.$.mainPage.appendChild(divPage);
+			}
+        }
+        
+    });
+  </script> 
+</polymer-element>
