@@ -1,0 +1,91 @@
+:host {
+	display: block;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	background: #F5F5F5;
+	margin: 0.6em 0;
+/*	border: #757575 solid 1px;
+	border: rgba(0, 0, 0, .54) solid 1px;
+*/}
+
+.header {
+	background: #E0E0E0;
+	font-size: 14px;
+	margin: 0;
+}
+
+.anno {
+	color: #3F51B5;
+}
+
+/************************** Polymer and Material Design components below *********************/
+
+.fullWidth {
+	width: 100%;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.vertCenterContainer {
+	display: table;
+	width: 100%;
+}
+
+.vertCenterContainer > div {
+	display: table-cell;
+	padding: 0px;
+	width: 100%;
+	vertical-align: middle;
+}
+
+.vertCenterContainer > .left {
+	float: left;
+}
+
+.vertCenterContainer > div.hidden {
+	display: none;
+}
+
+div.headerText {
+	font-weight: 700;
+	margin: 0.3em 0.6em 0.3em 0;
+	text-transform: capitalize;
+}
+
+.collapseDb {
+	font-size: 12px;
+}
+
+.collapseContent {
+	background: #F5F5F5;
+	padding: 0.3em 0.5em;
+}
+
+.clearFix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/************************** Polymer and Material Design size and others below *********************/
+
+core-icon.smallInline {
+	width: 1.25em;
+	height: 1.25em;
+	margin: 0 0.25em 0.1em 0.25em;
+}
+
+core-collapse {
+	padding: 0.6em;
+}
+
+paper-tabs::shadow #selectionBar {
+	background-color: #3F51B5;
+}
+
+.vertCenterContainer > div > paper-tabs {
+	width: auto;
+	height: 3em;
+	vertical-align: bottom;
+	padding: 0px;
+	margin: 0px;
+}

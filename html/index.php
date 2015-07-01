@@ -45,25 +45,25 @@
 <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs." />
 <title>GENEMO Search</title>
 <script src="cpbrowser/components/bower_components/webcomponentsjs/webcomponents.min.js"></script>
-<link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
-<link rel="import" href="cpbrowser/components/bower_components/polymer/polymer.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-tooltip/core-tooltip.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-animated-pages/core-animated-pages.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-animated-pages/transitions/slide-from-right.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-icons/core-icons.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-menu/core-menu.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-item/core-item.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-input/paper-input.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-item/paper-item.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-dropdown/paper-dropdown.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-tabs/paper-tabs.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-radio-group/paper-radio-group.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-radio-button/paper-radio-button.html">
 <link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
+<link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
+<script type="text/javascript" src="cpbrowser/js/uicomponent.js"></script>
+<script type="text/javascript" src="cpbrowser/js/generegion.js"></script>
+<script type="text/javascript" src="cpbrowser/js/regionlistui.js"></script>
+<script type="text/javascript" src="cpbrowser/js/sessionControl.js"></script>
+<script type="text/javascript" src="cpbrowser/js/navui.js"></script>
+<script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
+<script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
+<link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
+<link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
+    <?php if(isset($experimentalFeatures)) { ?>
+<link rel="import" href="cpbrowser/components/genemo_components/tab-pages/tab-pages.html">
+    <?php } ?>
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
+<link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
+<link rel="import" href="cpbrowser/components/bower_components/core-icons/core-icons.html">
+<link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
 <style type="text/css">
 <!--
 html {
@@ -81,13 +81,6 @@ body {
 }
 -->
 </style>
-<script type="text/javascript" src="cpbrowser/js/uicomponent.js"></script>
-<script type="text/javascript" src="cpbrowser/js/generegion.js"></script>
-<script type="text/javascript" src="cpbrowser/js/regionlistui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/sessionControl.js"></script>
-<script type="text/javascript" src="cpbrowser/js/navui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
 <script type="text/javascript">
 
 var UI = new UIObject(window);
@@ -504,11 +497,11 @@ function toggleWindowButtonText(textstem, action) {
 
 function toggleWindowButton(buttonid, action) {
 	if(action == 'hide') {
-		document.querySelector('#' + buttonid).trackSelActive = false;
+		fireCoreSignal('toggle', {group: buttonid, flag: false});
 	} else if(action == 'show') {
-		document.querySelector('#' + buttonid).trackSelActive = true;
+		fireCoreSignal('toggle', {group: buttonid, flag: true});
 	} else {
-		document.querySelector('#' + buttonid).trackSelActive = !document.querySelector('#' + buttonid).trackSelActive;
+		fireCoreSignal('toggle', {group: buttonid});
 	}
 }
 
@@ -532,7 +525,7 @@ function showWindow(panel) {
 	$('#' + panel).fadeIn('fast', toggleWindowButtonText(panel, 'show'));
 }
 
-function toggleWindow(panel, queryCardsId) {
+function toggleWindow(panel) {
 	/*for(var i = 0; i < listPanels.length; i++) {
 		if(listPanels[i] == panel) {
 			continue;
@@ -540,7 +533,7 @@ function toggleWindow(panel, queryCardsId) {
 		hidePanel(listPanels[i]);
 	}*/
 	indexToNav();
-	$('#' + panel).fadeToggle('fast', toggleWindowButtonText(queryCardsId));
+	$('#' + panel).fadeToggle('fast', toggleWindowButtonText(panel));
 	hideDownload();
 	hideSample();
 }
@@ -597,7 +590,7 @@ function toggleEncode() {
 		//$('#EncodeDataButton').html('View ENCODE Data');
 		$('#encodeSampleSettings').hide();
 	}
-	document.querySelector('#mainQueryCard').checkEncodeSpecies();	
+	fireCoreSignal('encodecheck', {flag: isEncodeOn});
 }
 
 function toggleSample() {
@@ -633,7 +626,6 @@ $(document).ready( function () {
 	<?php echo $genemoOn? "": "UI.initNavSidebar();"; ?>
 	resize_tbody();
 	
-	
 	jQuery(function() {
 		jQuery(".geneNameInsert").hide();
 		jQuery(".geneNameExpander").click(function(event) {
@@ -650,6 +642,45 @@ $(document).ready( function () {
 		});
 	});
 	
+});
+
+window.addEventListener("polymer-ready", function(e) {
+	isEncodeOn = !isEncodeOn;		// because doing toggleEncode() will reverse isEncodeOn as well
+	var searchCard = document.querySelector('#searchCard');
+	if(searchCard) {
+		searchCard.addEventListener('submit-form', validateUploadFileOrURL);
+	}
+	
+	var queryCard = document.querySelector('#queryCard');
+	if(queryCard) {
+		queryCard.addEventListener('partial-genename', function(e) { 
+			$.getJSON('cpbrowser/jsongenename.php', {name: e.detail.query}, e.detail.func); 
+		});
+		queryCard.addEventListener('submit-genequery', function(e) {
+			validate_form_genequery(e.detail.postdata); 
+		});
+	}
+	
+	var tabPages = document.querySelector('#tabPages');
+	if(tabPages) {
+		tabPages.addEventListener('submit-form', validateUploadFileOrURL);
+		tabPages.addEventListener('partial-genename', function(e) { 
+			$.getJSON('cpbrowser/jsongenename.php', {name: e.detail.query}, e.detail.func); 
+		});
+		tabPages.addEventListener('submit-genequery', function(e) {
+			validate_form_genequery(e.detail.postdata); 
+		});
+	}
+	
+	var manualBtn = document.querySelector('#manualBtn');
+	if(manualBtn) {
+		manualBtn.addEventListener('click', window.open.bind(window, 'cpbrowser/manual_genemo.php', '_blank'));
+	}
+
+	document.addEventListener('alert', function(e) { UI.alert(e.detail.msg); } );
+	document.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect');} );
+	
+	toggleEncode();
 <?php
 	// this is loading part
 	if($isResuming) {
@@ -660,6 +691,9 @@ $(document).ready( function () {
 	sessionObj.list = '<?php echo $sessionInfo['selected_tracks']; ?>';
 	sessionObj.urlToShow = '<?php echo $sessionInfo['display_file_url']; ?>';
 	sessionObj.originalFile = '<?php echo ($sessionInfo['original_file_name']? $sessionInfo['original_file_name']: basename($sessionInfo['display_file_url'])); ?>';
+	sessionObj.hasDisplay = <?php echo ((strpos($sessionInfo['display_file_url'], $sessionInfo['id']) !== false) || (strpos($sessionInfo['display_file_url'], $sessionInfo['original_file_name']) !== false))? 'false': 'true'; ?>;
+	
+	fireCoreSignal('updatecontent', {sessionObj: sessionObj});
 	
 	for(var i = 0; i < spcArray.length; i++) {
 		spcArray[i].isActive = (spcArray[i].db == sessionObj.db);
@@ -678,520 +712,28 @@ $(document).ready( function () {
 ?>
 });
 
-window.addEventListener("polymer-ready", function(e) {
-	isEncodeOn = !isEncodeOn;		// because doing toggleEncode() will reverse isEncodeOn as well
-	toggleEncode();
-	var querycard = document.querySelector('#mainQueryCard');
-	querycard.checkEncodeSpecies();
-	querycard.addEventListener('submit-form', validateUploadFileOrURL);
-	querycard.addEventListener('alert', function(e) { UI.alert(e.detail.msg); } );
-	querycard.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect', 'mainQueryCard');} );
-	querycard.addEventListener('partial-genename', function(e) { 
-		$.getJSON('cpbrowser/jsongenename.php', {name: querycard.querySent}, function(data) { querycard.updatePartialQuery(data); }); 
-	});
-	querycard.addEventListener('submit-genequery', function(e) {
-		validate_form_genequery(e.detail.postdata); 
-	});
-	
-});
-
-</script>
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
 </script>
 </head>
 <body unresolved class="<?php echo $genemoOn? "firstIndex": "twoColLiqLt"; ?>" onresize="resize_tbody();">
+<?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
 <div id="container">
   <div id="sidebar1">
-    <polymer-element name="query-cards" attributes="selectedTab InputUrl InputFile selectedRefs currentRef DisplayUrl UserEmail trackSelActive isDisabled querySent">
-      <template>
-        <link rel="stylesheet" href="cpbrowser/query-cards.css">
-        <section>
-          <paper-tabs selected="{{selectedTab}}" selectedindex="0" noink>
-            <paper-tab active>
-              <core-icon class="smallInline" icon="search" alt="search"></core-icon>
-              Search </paper-tab>
-            <paper-tab>
-              <core-icon class="smallInline" icon="view-list" alt="query genes"></core-icon>
-              Query</paper-tab>
-          </paper-tabs>
-          <core-animated-pages selected="{{selectedTab}}" transition="slide-from-right">
-            <div class="formstyle" slide-from-right> 
-              <!-- This is the upload new file part -->
-              <div class="vertMargined">
-                <div class="vertCenterContainer clearFix">
-                  <div class="vertCenterElement"> <strong>Peak file to search: </strong>
-                    <core-tooltip large>
-                      <core-icon class="smallInline transparent" icon="help" alt="help"></core-icon>
-                      <div tip> Please specify the reference genome you would like to search against， then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">bed file or peaks format accepted</a>) </div>
-                    </core-tooltip>
-                  </div>
-                  <paper-button id="fillSample" class="rightFloat vertMargined vertCenterElement" noink raised>Use sample file</paper-button>
-                </div>
-                Reference:
-                <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined">
-                  <paper-dropdown class="dropdown">
-                    <core-menu class="menu" id="speciesToUpload" valueattr="value">
-                      <template repeat="{{ s in species | encodeFilter }}">
-                        <paper-item value="{{s.db}}">{{s.commonName}} ({{s.db}})</paper-item>
-                      </template>
-                    </core-menu>
-                  </paper-dropdown>
-                </paper-dropdown-menu>
-                <br>
-                <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value={{InputUrl}}></paper-input>
-                <paper-button class="fullWidth" raised noink id="fileSelectButton">{{uploadButtonText}}</paper-button>
-                <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" />
-              </div>
-              <core-tooltip large class="fullWidth">
-                <paper-input id="returnEmail" class="fullWidth" label="Your email" floatingLabel="true" value={{UserEmail}}></paper-input>
-                <div tip> Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed. </div>
-              </core-tooltip>
-              <core-tooltip large class="fullWidth">
-                <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value={{DisplayUrl}}></paper-input>
-                <div tip> You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong> </div>
-              </core-tooltip>
-              <paper-button class="fullWidth vertMargined" toggle raised noink id="trackSelectButton">Track Selection &amp; Data Download</paper-button>
-              <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled?="{{isDisabled}}">
-                <core-icon class="smallInline" icon="search" alt="search"></core-icon>
-                Search </paper-button>
-              <!-- end upload new file part --> 
-            </div>
-            <div class="formstyle" slide-from-right>
-              <paper-radio-group selected="{{geneRegionSelection}}">
-                <paper-radio-button name="gene" label="Gene"></paper-radio-button>
-                <paper-radio-button name="region" label="Region for"></paper-radio-button>
-              </paper-radio-group>
-              <paper-dropdown-menu disabled?="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined">
-                <paper-dropdown class="dropdown">
-                  <core-menu class="menu" selected="{{spcCoorSelection}}" valueattr="value">
-                    <template repeat="{{ s in selectedSpecies }}">
-                      <paper-item value="{{s.db}}">{{s.db}}</paper-item>
-                    </template>
-                  </core-menu>
-                </paper-dropdown>
-              </paper-dropdown-menu>
-              <div class="lineContainer vertMargined">
-                <div relative id="geneNameHotRegion">
-                  <paper-input class="fullWidth" id="geneName" label="Input your query here" value={{InputGeneName}}></paper-input>
-                  <core-dropdown relatedTarget="{{$.geneName}}" id="geneNameDropDown" class="autoText" autoFocusDisabled>
-                  	<core-menu class="menu" selected="{{partialSelection}}" valueattr="value">
-                      <template repeat="{{ i in candidates }}">
-                      	<core-item value="{{i.value}}" id="{{i.id}}">{{i.contentBefore}}<strong>{{i.contentBold}}</strong><em>{{i.contentItalic}}</em>{{i.contentAfter}}</core-item>
-                      </template>
-                    </core-menu>
-                  </core-dropdown>
-                </div>
-                <div class="right">
-                  <paper-button class="colored" raised id="querySubmit" disabled?="{{isDisabled}}">GO</paper-button>
-                </div>
-              </div>
-              <form name="searchform" class="formstyle" id="searchform" onsubmit="return validate_form_genequery();">
-                <div class="BoxHide" id="GListResponse" onmouseover="inGList(true);" onmouseout="inGList(false);"></div>
-                <input type="hidden" id="direct" name="direct" value="false" />
-                <table id="speciesTable" width="100%" border="1" cellspacing="0" cellpadding="1px" bordercolor="#666666" style="border: 1px solid #666666; margin: 3px 0px; min-height: 60px;">
-                  <tr>
-                    <td width="18px" bgcolor="#666666" style="border: 1px solid #666666;"><div class="rotatedCCW"><span class="subHeaderNoHover">Species</span></div></td>
-                    <td style="border: 1px solid #666666;"><template repeat="{{ s in species }}">
-                        <div id="{{s.db}}_checkboxwrapper" >
-                          <core-label>
-                            <paper-checkbox checked name="{{s.db}}" id="{{s.db}}" value="{{s.db}}"></paper-checkbox>
-                            <em>{{s.name}}</em> ({{s.commonName}})
-                            [{{s.db}}]</core-label>
-                        </div>
-                      </template></td>
-                  </tr>
-                </table>
-              </form>
-              <!-- end #selection -->
-              <div style="clear: both;"></div>
-            </div>
-          </core-animated-pages>
-        </section>
-      </template>
-      <script>
-	    Polymer({
-			
-			MAX_FILENAME_LEN: 25,
-			
-			isEncodeOn: <?php echo $encodeOn? "true": "false"; ?>,
-			
-			selectedTab: <?php echo $genemoOn? "0": "1"; ?>,
-			InputUrl: "",
-			currentRef: "",
-			DisplayUrl: "",
-			UserEmail: "",
-			trackSelActive: "",
-			
-			timerOn: false,
-			mouseInGList: false,
-			gListOpen: false,
-			querySent: '',
-			
-			timeoutVar: null,
-			
-			geneRegionSelection: "gene",
-			direct: false,
-			spcCoorDropDisabled: true,
-			
-			checkEncodeSpecies: function () {
-				var spcAvailableCount = 0;
-				if(this.species) {
-					for(var i = 0; i < this.species.length; i++) {
-						if(this.isEncodeOn && !this.species[i].isEncode) {
-							this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'none';
-							this.shadowRoot.querySelector('#' + this.species[i].db).checked = false;
-						} else if (!this.isEncodeOn) {
-							this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'block';
-							this.shadowRoot.querySelector('#' + this.species[i].db).checked = true;
-							spcAvailableCount++;
-						}
-					}
-					this.updateAllSpcActive();
-					if(spcAvailableCount > 2) {
-						this.$.speciesTable.style.display = 'block';
-					} else {
-						this.$.speciesTable.style.display = 'none';
-					}
-					this.updateType();
-				}
-			},
-			
-			updateAllSpcActive: function () {
-				// numbersOnly means no update of checkboxes to species.isActive
-				// otherwise species.isActive will be updated first to reflect choice
-				this.updateAllSpcActiveUI();
-				this.species.updateAllSpcActiveNum();
-			},
-			
-			updateAllSpcActiveUI: function () {
-				for(var i = 0; i < this.species.length; i++) {
-					this.species[i].isActive = this.shadowRoot.querySelector('#' + this.species[i].db).checked;
-				}
-			},
-			
-			updateType: function () {
-				var typeSelected = this.spcCoorSelection;
-				if(!(this.species[this.species.map[typeSelected]]) || !this.species[this.species.map[typeSelected]].isActive) {
-					typeSelected = null;
-					this.geneRegionSelection = 'gene';
-				}
-				this.selectedSpecies = []
-				for(var i = 0; i < this.species.length; i++) {
-					if(this.species[i].isActive) {
-						this.selectedSpecies.push(this.species[i]);
-					}
-				}
-				this.spcCoorSelection = typeSelected;
-			},
-			
-			encodeFilter: function(value) {
-				if(value) {
-					result = [];
-					for(var i = 0; i < value.length; i++) {
-						if(value[i].isEncode || !this.isEncodeOn) {
-							result.push(value[i]);
-						}
-					}
-					return result;
-				}
-			},
-			
-			geneRegionSelectionChanged: function() {
-				this.spcCoorDropDisabled = (this.geneRegionSelection == 'gene');
-			},
-			
-			create: function() {
-				InputFile: new Blob();
-				selectedRefs: {};
-				candidates: [];
-			},
-						
-			queryTextChanged: function() {
-				// reset_selection();
-				if(this.timerOn) {
-					this.cancelAsync(this.timeoutVar);
-					this.timerOn = false;
-				}
-				//$("#waiting").html($("#geneName").val());
-				var chromRegex = /^chr\w+\s*(:|\s)/i;
-				if(this.geneRegionSelection == "gene"
-					&& this.InputGeneName.trim().length > 1
-					&& this.InputGeneName.trim() != this.querySent
-					&& !chromRegex.test(this.InputGeneName.trim())) {
-						// length is enough for ajax and also not already updated
-						// start the timer to prepare for ajax
-						this.direct = false;
-						if(!this.gListOpen) {
-							timerOn = true;
-							timeoutVar = this.async(this.sendPartialQuery, null, 500);
-						} else {
-							this.sendPartialQuery();
-						}
-				} else if(this.InputGeneName.trim().length <= 1
-					|| chromRegex.test(this.InputGeneName.trim())) {
-						this.toggleGList(false);
-				}
-			},
-			
-			sendPartialQuery: function() {
-				this.timerOn = false;
-				//$("#waiting").html($.trim($("#geneName").val()).length);
-				if(this.InputGeneName.trim().length > 1
-					&& this.InputGeneName.trim() != this.querySent) {
-					// send Ajax
-					this.querySent = this.InputGeneName.trim();
-					//$('#geneName').addClass('searchFieldBusy');
-					//toggleGList(0);
-//					$('#GListResponse').html('<em>Loading...</em>');
-//					toggleGList(1);
-					this.fire("partial-genename");
-				}
-			},
-			
-			updatePartialQuery: function(data) {
-				//$('#geneName').removeClass('searchFieldBusy');
-				this.candidates = [];
-				var hostNode = this;
-				var hasItems = true;
-				$.each(data, function(key, val) {
-					//console.log(key);
-					var entry = {};
-					entry.contentBefore = '';
-					entry.contentItalic = '';
-					entry.contentBold = '';
-					entry.contentAfter = '';
-					if(key == "(none)") {
-						entry.value = "(none)";
-						entry.id = "none_dummy";
-						entry.contentItalic = "(No results)";
-						hostNode.candidates.push(entry);
-						return false;
-					} else {
-						key = key.replace(/__[0-9]+/, "");		// remove potential duplicate aliases
-						entry.id = val;
-						entry.value = val;
-						if(key == val) {
-							entry.contentBold = val.substr(0, hostNode.querySent.length);
-							entry.contentAfter = val.substr(hostNode.querySent.length);
-						} else {
-							// key is alias, val is real gene name
-							entry.contentBefore = val + ' (';
-							entry.contentBold = key.substr(0, hostNode.querySent.length);
-							entry.contentAfter = key.substr(hostNode.querySent.length) + ')';
-						}
-						hostNode.candidates.push(entry);
-					}
-				});
-				
-				this.toggleGList(true);
-				
-			},
-			
-			partialSelectionChanged: function(oldValue, newValue) {
-				if(newValue) {
-					this.change_text(newValue);
-				}
-			},
-			
-			toggleGList: function(toggle) {
-				if(toggle) {
-					// turn on GList
-					this.partialSelection = '';
-					this.gListIsOn = true;
-					this.$.geneNameDropDown.open();
-				} else {
-					this.gListIsOn = false;
-					this.$.geneNameDropDown.close();
-				}
-			},
-
-			textBlured: function() {
-				if(this.timerOn) {
-					this.cancelAsync(this.timeoutVar);
-				}
-				if(!this.mouseInGList) {
-					this.timerOn = true;
-					this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
-				}
-			},
-			
-			inGList: function(flag) {
-				if(timerOn) {
-					this.cancelAsync(this.timeoutVar);
-				}
-				this.mouseInGList = flag;
-				if(!this.mouseInGList) {
-					this.timerOn = true;
-					this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
-				}
-			},
-			
-			hideGListResponse: function() {
-				this.timerOn = false;
-				this.toggleGList(false);
-			},
-			
-
-			clear_text: function() {
-				if(this.geneRegionSelection != "gene") {
-					this.InputGeneName = "";
-				}
-			},
-			
-			change_text: function(txtValue) {
-				this.querySent = txtValue;
-				this.InputGeneName = this.querySent;
-				this.direct = true;
-				this.timerOn = false;
-				this.toggleGList(false);
-			},
-			
-			ready: function() {
-				
-				var hostNode = this;
-				
-				this.species = spcArray;
-				this.uploadButtonText = "Upload local file";
-
-				this.$.uploadFileInput.addEventListener("change", function(e) {
-					var shortFileName = hostNode.$.uploadFileInput.files[0].name;
-					if(shortFileName == "") {
-						hostNode.$.fileSelectButton.classList.remove("noTextTransformButton");
-						hostNode.uploadButtonText = "Upload local file";
-					} else {
-						shortFileName = shortFileName.replace(/^C:\\fakepath\\/, "");
-						if(shortFileName.length > this.MAX_FILENAME_LEN) {
-							shortFileName = "..." + shortFileName.substring(shortFileName.length - hostNode.MAX_FILENAME_LEN);
-						}
-						hostNode.$.fileSelectButton.classList.add("noTextTransformButton");
-						hostNode.uploadButtonText = shortFileName;
-					}
-				});
-				
-				this.$.fileSelectButton.addEventListener("click", function(e) {
-					hostNode.$.uploadFileInput.click();
-				});
-				
-				this.$.trackSelectButton.addEventListener("click", function(e) {
-					hostNode.fire("toggle-window");
-				});
-				
-				this.$.fileSubmit.addEventListener("click", function(e) {
-
-					if(hostNode.$.uploadFileInput.files.length <= 0 && hostNode.InputUrl.length <= 0) {
-						hostNode.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
-						return false;
-					} else if(hostNode.$.speciesToUpload.selected == null) {
-						hostNode.fire("alert", {msg: 'You need to select the reference genome for your file!'});
-						return false;
-					} else if(hostNode.UserEmail.length > 0 && (hostNode.UserEmail.indexOf('@') <= 0 
-						|| (hostNode.UserEmail.indexOf('@') >= hostNode.UserEmail.lastIndexOf('.') - 1))) {
-							hostNode.fire("alert", {msg: 'Please provide a valid email address!'});
-							return false;
-					}
-					
-					hostNode.InputFile = hostNode.$.uploadFileInput.files[0];
-					hostNode.currentRef = hostNode.$.speciesToUpload.selected;
-					
-					hostNode.fire("submit-form");
-				});
-				
-				this.$.fillSample.addEventListener("click", function(e) {
-					hostNode.InputUrl = "http://www.genemo.org/sample/wgEncodeEM001937.txt";
-					hostNode.$.speciesToUpload.selected = "mm9";
-				});
-				
-				checkboxList = this.shadowRoot.querySelectorAll('paper-checkbox');
-				Array.prototype.forEach.call(checkboxList, function(item) {
-					item.addEventListener("change", function(e) {
-						hostNode.updateAllSpcActive();
-						hostNode.updateType();
-					});
-				});
-				
-				this.$.geneName.addEventListener('input', function(e) {
-					hostNode.queryTextChanged();
-				});
-				
-				this.$.geneName.addEventListener('blur', function(e) {
-					hostNode.textBlured();
-				});
-				
-				this.$.geneNameHotRegion.addEventListener('mouseover', function(e) {
-					hostNode.inGList(true);
-				});
-				
-				this.$.geneNameHotRegion.addEventListener('mouseout', function(e) {
-					hostNode.inGList(false);
-				});
-
-				this.$.querySubmit.addEventListener("click", function(e) {
-
-					if(hostNode.InputGeneName == "") {
-						hostNode.fire("alert", {msg: "You need to either choose a gene or type in part of its name before proceeding."});
-						return false;
-					}
-					var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
-					if(chromRegex.test(hostNode.InputGeneName)) {
-						if(hostNode.geneRegionSelection == "gene") {
-							// should choose a species
-							hostNode.fire("alert", {msg: "Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field."});
-							return false;
-						}
-					} else if(hostNode.geneRegionSelection != "gene") {
-						// should input coordinate
-						hostNode.fire("alert", {msg: "Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species."});
-						return false;
-					}
-					
-					hostNode.updateAllSpcActive();
-				
-					if(hostNode.species.activeNumber < 2) {
-						hostNode.fire("alert", {msg: "You need to choose at least TWO (2) species."});
-						return false;
-					}
-					// Prepare post data
-					var postdata = {};
-					
-					if(hostNode.geneRegionSelection == "gene") {
-						postdata['species'] = "gene";
-					} else {
-						postdata['species'] = hostNode.spcCoorSelection;
-					}
-					postdata['geneName'] = hostNode.InputGeneName;
-					postdata['direct'] = hostNode.direct? 'true': 'false';
-					for(var i = 0; i < hostNode.species.length; i++) {
-						if(hostNode.species[i].isActive) {
-							postdata[hostNode.species[i].db] = hostNode.species[i].db;
-						}
-					}
-					hostNode.isDisabled = true;
-					
-					hostNode.fire("submit-genequery", {postdata: postdata});
-				});
-				
-			}
-			
-		});
-	  </script> 
-    </polymer-element>
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
-    <div class="header" onclick="togglePanel('trackManip', false);"><span class="tableHeader"><span class="headerIndicator" id="trackManipIndicator">[-]</span> Search / Query Panels</span> </div>
-    <div id="trackManipHolder">
-      <query-cards id='mainQueryCard'></query-cards>
-    </div>
-    <div id="peakFileHolder" class="formstyle" style="display: none;"> </div>
-    <div id="displayFileHolder" class="formstyle" style="display: none;"> </div>
+    <genemo-card collapseGroup='query-search'>
+    <?php if(isset($experimentalFeatures)) { ?>
+      <tab-pages class='GenemoBody' id='tabPages' selectedTab='<?php echo $genemoOn? 0: 1; ?>'>
+    <?php }
+		  if($genemoOn) { ?>
+        <search-card-content class='tabContent GenemoBody' id='searchCard' isEncodeOn='<?php echo $encodeOn? "true": "false"; ?>'>
+        </search-card-content>
+    <?php } else { ?>
+        <query-card-content class='tabContent GenemoBody' id='queryCard' isEncodeOn='<?php echo $encodeOn? "true": "false"; ?>'>
+        </query-card-content>
+    <?php }
+		  if(isset($experimentalFeatures)) { ?>
+      </tab-pages>
+    <?php } ?>
+    </genemo-card>
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
@@ -1240,8 +782,18 @@ window.addEventListener("polymer-ready", function(e) {
       </div>
       <div id="navigationContent"> </div>
     </div>
+    <paper-button class="fullWidth" noink raised id="manualBtn">
+      <core-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></core-icon>
+      Genemo Manual
+    </paper-button>
     <!-- end #sidebar1 --> 
   </div>
+  
+  
+  
+  
+  
+  
   <div id="spcNaviTemplate" class="BoxHide">
     <div id="spcDbNameLoading" class="loadingCover" style="height: 50px; width: 218px;">
       <div class="loadingCoverBG"></div>

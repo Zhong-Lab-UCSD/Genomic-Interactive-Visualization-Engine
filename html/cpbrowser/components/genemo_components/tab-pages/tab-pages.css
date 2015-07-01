@@ -1,0 +1,24 @@
+:host {
+	display: block;
+}
+
+/************************** Polymer and Material Design components below *********************/
+
+.hidden {
+	display: none;
+}
+
+/************************** Polymer and Material Design color below *********************/
+
+paper-tabs::shadow #selectionBar {
+	background-color: #3F51B5;
+}
+
+/************************** Polymer and Material Design size and others below *********************/
+
+core-animated-pages > .core-selected {		
+/* this is to solve the "no height" bug for core-pages and core-animated-pages element */
+    position: relative;
+    display: block;
+}
+

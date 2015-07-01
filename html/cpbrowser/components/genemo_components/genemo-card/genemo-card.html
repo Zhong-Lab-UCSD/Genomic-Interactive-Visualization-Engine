@@ -1,0 +1,101 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-icon-button/core-icon-button.html">
+<link rel="import" href="../../bower_components/core-signals/core-signals.html">
+<link rel="import" href="../../bower_components/core-collapse/core-collapse.html">
+<link rel="import" href="../../bower_components/paper-shadow/paper-shadow.html">
+
+<polymer-element name="genemo-card" attributes="isOpened collapseGroup">
+  <template>
+    <link rel="stylesheet" href="./genemo-card.css">
+    <core-signals on-core-signal-collapse="{{collapseSignal}}"></core-signals>
+    <paper-shadow z='1'>
+      <div id="cardHeader" class="clearFix header vertCenterContainer">
+        <core-icon-button icon="{{expandIcon}}" class="left" id="expandButton" on-click="{{toggleCollapse}}"></core-icon-button>
+        <div id="cardHeadContent" class="vertCenterElement">
+          <content id="cardhead" select=".GenemoHead"></content>
+        </div>
+      </div>
+      <core-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
+        <content id="cardbody" select=".GenemoBody"></content>
+      </core-collapse>
+    </paper-shadow>
+  </template>
+  <script>
+    Polymer({
+        
+        isOpened: true,
+		collapseHeaderEl: null,
+		collapseGroup: '',
+		enableSignal: true,
+		expandIcon: 'expand-less',
+		
+		toggleCollapseHeader: function(flag) {
+			// the top node with GenemoBody should have a member function getShrunk()
+			// then use the returned DOM to replace GenemoShrunk
+			// if nothing, then GenemoShrunk is simply GenemoHead
+			// flag is the target status
+			
+			var currentHeader = this.shadowRoot.querySelector('#cardHeadContent');
+			if(flag && this.collapseHeaderEl) {
+				// there is old collapseHeader, needs to be removed
+				this.$.cardHeader.removeChild(this.collapseHeaderEl);
+				this.$.cardHeadContent.classList.remove('hidden');
+			} else if(!flag) {
+				var contentNode = this.shadowRoot.querySelector('#cardbody').getDistributedNodes();
+				if(contentNode) {
+					contentNode = contentNode[0];
+					if(contentNode.getCollapse) {
+						this.collapseHeaderEl = contentNode.getCollapse();
+						if(this.collapseHeaderEl) {
+							this.$.cardHeadContent.classList.add('hidden');
+							this.$.cardHeader.appendChild(this.collapseHeaderEl);
+						}
+					}
+				}
+			}
+		},
+		
+		isOpenedChanged: function(oldValue, newValue) {
+			this.enableSignal = false;
+			if(newValue) {
+				// un-collapse, send signal for all collapse groups
+				this.fire('core-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}});
+			}
+			this.expandIcon = newValue? 'expand-less': 'expand-more';
+			this.toggleCollapseHeader(newValue);
+			this.enableSignal = true;
+		},
+		
+		collapseSignal: function(e, detail, sender) {
+			if(this.enableSignal && this.collapseGroup == detail.group && this.isOpened != detail.flag) {
+				this.isOpened = detail.flag;
+			}
+		},
+		
+		toggleCollapse: function() {
+			// hide GenemoBody and convert GenemoHead to GenemoCollapse (if any)
+			this.isOpened = !this.isOpened;
+		},
+		
+		ready: function() {
+			// if the content has a .getExpandedHeader member, 
+			//		it will be used to generate the node to replace the node
+			//		given in .GenemoHead
+			var contentNode = this.shadowRoot.querySelector('#cardbody').getDistributedNodes();
+			if(contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
+				var oldHead = this.$.cardHeadContent;
+				while(oldHead.firstChild) {
+					oldHead.removeChild(oldHead.firstChild);
+				}
+				var newHead = contentNode[0].getExpandedHeader();
+				newHead.classList.add('headerText');
+				oldHead.appendChild(newHead);
+				this.expandedHeaderEl = newHead;
+			} else {
+				this.expandedHeaderEl = this.$.cardHeadContent;
+			}
+		}
+		               
+    });
+  </script> 
+</polymer-element>

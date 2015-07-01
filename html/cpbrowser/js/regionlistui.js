@@ -308,7 +308,7 @@ function regionUiHandler(data) {
 	if(geneList.length == 1) {
 		updateNavigation(geneList[0]);
 	}
-	$('#search').prop('disabled', false);
+	fireCoreSignal('disable', {group: 'query-search', flag: false});
 }
 
 
