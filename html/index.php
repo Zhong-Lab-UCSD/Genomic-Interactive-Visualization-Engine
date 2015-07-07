@@ -745,7 +745,7 @@ window.addEventListener("polymer-ready", function(e) {
       </div>
       <div id="genelistContentHolder"> </div>
       <!-- end #genelist -->
-      <div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>
+      <!--<div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>-->
     </div>
     <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
     <div class="smallformstyle" id="navigationHolder">
@@ -828,17 +828,18 @@ window.addEventListener("polymer-ready", function(e) {
       </tr>
     </table>
   </div>
+  
   <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
     <div class="loadingTrackCover" id="trackSelectLoading">
       <div class="loadingTrackCoverBG"></div>
       <div class="loadingTrackCoverImage"></div>
     </div>
-    <div class="headerNoHover">Tracks &amp; Data 
+    <div class="headerNoHover">Data Selection 
       <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
         onclick="toggleEncode();">View ENCODE Data</div>
       <div style="clear: both;"></div>--> 
     </div>
-    <div class="settingsNormal">Tracks can be turn on/off via the checkboxes below.
+    <div class="settingsNormal">Tracks can be turned on/off via the checkboxes below.
       <div id="encodeSampleSettings" style="display: inline;">You can also
         <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
     onclick="toggleSample();">Choose sample type</div>
@@ -847,7 +848,7 @@ window.addEventListener("polymer-ready", function(e) {
         <label>
         <input type="checkbox" id="useAllTracks" name="useAllTracks" />
         Use all ENCODE data.
-        <core-tooltip large position="top">
+        <core-tooltip large position="bottom">
           <core-icon class="smallInline transparent" icon="help" alt="help"></core-icon>
           <div tip> Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
             <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong> </div>

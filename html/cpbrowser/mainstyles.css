@@ -298,22 +298,6 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	padding: 0 5px;
 }
 
-.Header1 {
-	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
-	font-size: 24px;
-	font-weight: bold;
-	background-color: #003366;
-	width: auto;
-	padding: 6px;
-	color: #FFFFFF;
-	border-left-width: 10px;
-	border-left-style: double;
-	border-left-color: #FFFFFF;
-	position: relative;
-	clear: both;
-	margin-left: 5px;
-	margin-right: 10px;
-}
 .embededImage {
 	font-family: 'Roboto', Arial, Helvetica, sans-serif;
 	font-size: 12px;
@@ -328,34 +312,6 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	margin-top: 6px;
 	margin-bottom: 6px;
 	margin-right: 10px;
-}
-.Header1 img {
-	right: 10px;
-	float: right;
-	margin: 5px;
-	border-top-width: 0px;
-	border-right-width: 0px;
-	border-bottom-width: 0px;
-	border-left-width: 0px;
-	border-top-style: none;
-	border-right-style: none;
-	border-bottom-style: none;
-	border-left-style: none;
-}
-.Header2 img {
-	float: right;
-	margin-top: 10px;
-	margin-right: 5px;
-	margin-bottom: 5px;
-	margin-left: 5px;
-	border-top-width: 0px;
-	border-right-width: 0px;
-	border-bottom-width: 0px;
-	border-left-width: 0px;
-	border-top-style: none;
-	border-right-style: none;
-	border-bottom-style: none;
-	border-left-style: none;
 }
 
 
@@ -396,23 +352,6 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	margin-left: 35px;
 	border: 2px dotted #990000;
 }
-.Header2 {
-	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
-	font-size: 18px;
-	font-weight: bold;
-	color: #003366;
-	position: relative;
-	left: 0px;
-	border-bottom-width: 2px;
-	border-bottom-style: dotted;
-	border-bottom-color: #003366;
-	clear: both;
-	padding-top: 10px;
-	padding-bottom: 6px;
-	width: auto;
-	margin-left: 25px;
-	margin-right: 10px;
-}
 a:link {
 	color: #0099FF;
 	text-decoration: none;
@@ -430,21 +369,6 @@ a:visited {
 .headerIndicator {
 	font-family: "Consolas", "Courier New", Courier, monospace;
 	font-style: normal;
-}
-.Title {
-	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
-	font-size: 36px;
-	font-weight: 700;
-	width: auto;
-	padding: 6px;
-	color: #003366;
-	position: relative;
-	clear: both;
-	margin-left: 5px;
-	margin-right: 10px;
-	border-bottom-width: 3px;
-	border-bottom-style: double;
-	border-bottom-color: #003366;
 }
 .buttons {
 	padding: 5px;
@@ -1091,4 +1015,126 @@ core-icon.transparent {
 }
 core-icon.transparent:hover {
 	opacity: 0.87;
+}
+
+core-tooltip::shadow #tooltip {
+	max-width: 400px;
+	min-width: 250px;
+	width: auto;
+	margin-top: 1px;
+	margin-bottom: 3px;
+	white-space: normal;
+	line-height: 20px;
+}
+
+
+.paper-button-text {
+	display: inline-block;
+	text-transform: uppercase;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	padding: 0.1em 1em;
+	margin: 0 0.25em 0.1em 0.25em;
+	border-radius: 3px;
+	box-shadow: 0 1px 4px 1px #9E9E9E;
+}
+
+.paper-button-text.colored {
+	background: #3F51B5;
+	color: #FFF;
+}
+
+.paper-input-text {
+	display: inline-block;
+	border-bottom: 1px #3F51B5 solid;
+	padding-right: 1em;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	color: #3F51B5;
+}
+
+.genemo-card-title {
+	display: inline-block;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	font-weight: 700;
+	background: #E0E0E0;
+	text-transform: capitalize;
+	padding: 0.1em 0.25em;
+	margin: 0.1em 0.25em;
+}
+
+.floatRight {
+	right: 10px;
+	float: right;
+	margin: 5px;
+}
+
+.Header2 .floatRight {
+	font-weight: 500;
+	font-size: 14px;
+}
+
+.Header2 a {
+	color: inherit;
+}
+
+.clearFix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.Header1 {
+	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
+	font-size: 24px;
+	font-weight: bold;
+	background-color: #003366;
+	width: auto;
+	padding: 0.5em;
+	color: #FFFFFF;
+	border-left-width: 10px;
+	border-left-style: double;
+	border-left-color: #FFFFFF;
+	position: relative;
+	margin: 0.25em 10px 0.5em 5px;
+}
+
+.Header1 a {
+	color: inherit;
+}
+
+.Header1 .floatRight {
+	font-weight: 500;
+	font-size: 14px;
+}
+
+.Title {
+	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
+	font-size: 36px;
+	font-weight: 700;
+	width: auto;
+	padding: 6px;
+	color: #003366;
+	position: relative;
+	clear: both;
+	margin-left: 5px;
+	margin-right: 10px;
+	margin: 1em 0 0.5em 0;
+	border-bottom-width: 3px;
+	border-bottom-style: double;
+	border-bottom-color: #003366;
+}
+
+.Header2 {
+	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	color: #003366;
+	position: relative;
+	left: 0px;
+	border-bottom-width: 2px;
+	border-bottom-style: dotted;
+	border-bottom-color: #003366;
+	padding: 0.5em 0 0 0;
+	width: auto;
+	margin-left: 25px;
+	margin-right: 10px;
 }
