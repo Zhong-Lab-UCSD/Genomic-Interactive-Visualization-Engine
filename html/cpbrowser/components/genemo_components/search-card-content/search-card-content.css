@@ -50,6 +50,10 @@ a:visited {
 	float: right;
 }
 
+.sampleButton {
+	min-width: 9.5em;
+}
+
 .clearFloat {
 	clear: both;
 }

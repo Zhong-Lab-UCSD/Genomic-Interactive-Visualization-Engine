@@ -7,9 +7,11 @@
 <polymer-element name="genemo-card" attributes="isOpened collapseGroup">
   <template>
     <link rel="stylesheet" href="./genemo-card.css">
-    <core-signals on-core-signal-collapse="{{collapseSignal}}"></core-signals>
-    <paper-shadow z='1'>
-      <div id="cardHeader" class="clearFix header vertCenterContainer">
+    <core-signals on-core-signal-collapse="{{collapseSignal}}"
+    	on-core-signal-content-ready="{{contentReady}}">
+        </core-signals>
+    <paper-shadow z="1">
+      <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
         <core-icon-button icon="{{expandIcon}}" class="left" id="expandButton" on-click="{{toggleCollapse}}"></core-icon-button>
         <div id="cardHeadContent" class="vertCenterElement">
           <content id="cardhead" select=".GenemoHead"></content>
@@ -77,7 +79,7 @@
 			this.isOpened = !this.isOpened;
 		},
 		
-		ready: function() {
+		contentReady: function(e, detail, sender) {
 			// if the content has a .getExpandedHeader member, 
 			//		it will be used to generate the node to replace the node
 			//		given in .GenemoHead
@@ -94,6 +96,9 @@
 			} else {
 				this.expandedHeaderEl = this.$.cardHeadContent;
 			}
+		},
+		
+		ready: function() {
 		}
 		               
     });

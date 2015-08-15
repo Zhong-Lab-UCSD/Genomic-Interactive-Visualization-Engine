@@ -26,7 +26,7 @@
               <div tip> Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>) </div>
             </core-tooltip>
           </div>
-          <paper-button id="fillSample" class="rightFloat vertMargined" noink raised>Use sample file</paper-button>
+          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised>Use sample file</paper-button>
         </div>
         <div class="vertCenterContainer clearFix">
           <div>Reference: </div>
@@ -315,8 +315,8 @@
             this.$.fileSelectButton.addEventListener("click", this.$.uploadFileInput.click.bind(this.$.uploadFileInput));
             
             var trackSelectButtons = this.shadowRoot.querySelectorAll('.trackSelection');
-            Array.prototype.forEach.call(trackSelectButtons, function(item) {
-                item.addEventListener("click", function(e) {
+            Array.prototype.forEach.call(trackSelectButtons, function(arrItem) {
+                arrItem.addEventListener("click", function(e) {
                     hostNode.fire("toggle-window");
                 });
             });
@@ -324,7 +324,6 @@
             this.$.fileSubmit.addEventListener("click", this.submitForm.bind(this));
             
             this.$.fillSample.addEventListener("click", this.fillSampleFunc.bind(this));
-            
         }
         
     });

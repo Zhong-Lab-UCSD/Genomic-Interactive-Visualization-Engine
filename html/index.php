@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 	require_once (realpath(dirname(__FILE__) . '/../includes/common_func.php'));	
 	require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 	
@@ -37,15 +37,15 @@
 	}
 ?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 <head>
+<link href='//fonts.googleapis.com/css?family=Roboto:400,400italic,500,700italic,700' rel='stylesheet' type='text/css'>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="keywords" content="Comparative study,Epigenomics,Epigenetics,Visualization,Epigenome browser" />
 <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs." />
 <title>GENEMO Search</title>
 <script src="cpbrowser/components/bower_components/webcomponentsjs/webcomponents.min.js"></script>
-<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
 <link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
 <script type="text/javascript" src="cpbrowser/js/uicomponent.js"></script>
@@ -64,6 +64,7 @@
 <link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
 <link rel="import" href="cpbrowser/components/bower_components/core-icons/core-icons.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
+<link rel="import" href="cpbrowser/components/bower_components/core-signals/core-signals.html">
 <style type="text/css">
 <!--
 html {
@@ -646,6 +647,7 @@ $(document).ready( function () {
 
 window.addEventListener("polymer-ready", function(e) {
 	isEncodeOn = !isEncodeOn;		// because doing toggleEncode() will reverse isEncodeOn as well
+	fireCoreSignal('content-ready', null);
 	var searchCard = document.querySelector('#searchCard');
 	if(searchCard) {
 		searchCard.addEventListener('submit-form', validateUploadFileOrURL);
@@ -718,7 +720,7 @@ window.addEventListener("polymer-ready", function(e) {
 <?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
 <div id="container">
   <div id="sidebar1">
-    <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="Comparative Genome Browser Logo" border="0" /></a> </div>
+    <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
     <genemo-card collapseGroup='query-search'>
     <?php if(isset($experimentalFeatures)) { ?>
       <tab-pages class='GenemoBody' id='tabPages' selectedTab='<?php echo $genemoOn? 0: 1; ?>'>

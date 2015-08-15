@@ -4,8 +4,8 @@
 
 
 var GENELIST_LENGTH = 19;
-var geneList = new Array();
-geneList.map = new Object();
+var geneList = [];
+geneList.map = {};
 
 var activeRegion = null;		// this should be assigned currRegion once "Visualize" is chosen
 
@@ -14,7 +14,7 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
     ChrRegion.call(this, chrString, regionname);
     this.extendedstart = extendedstart || this.start;
     this.extendedend = extendedend || this.end;
-    this.data = new Object();
+    this.data = {};
     for(var entry in data) {
         if (data.hasOwnProperty(entry) && !this.hasOwnProperty(entry)) {
             this.data[entry] = data[entry];
@@ -28,9 +28,9 @@ ChrRegionToShow.prototype.extendedRegionToString = function(includeStrand) {
 	if (includeStrand == null) {
 		includeStrand = true;
 	}
-	return this.chr + ':' + this.extendedstart + '-' + this.extendedend
-		+ ((!includeStrand || this.strand === null)? '': (' ('
-		+ (this.strand? '+': '-') + ')'));
+	return this.chr + ':' + this.extendedstart + '-' + this.extendedend +
+		((!includeStrand || this.strand === null)? '': (' (' +
+		(this.strand? '+': '-') + ')'));
 };
 
 function setPeakListOnly(spcIndex, list) {
@@ -63,9 +63,9 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
     cell.prop('colspan', 2);
     cell.append('<strong>' + this.name + '</strong>');
     
-    if (this.hasOwnProperty('alias') && this['alias']) {
+    if (this.hasOwnProperty('alias') && this.alias) {
         // there is an alias for the region
-        cell.append('(<strong>' + this['alias'] + '</strong>)');
+        cell.append('(<strong>' + this.alias + '</strong>)');
     }
     
     cell.append($('<input>').prop('name', 'showinbrowser').prop('type', 'button').prop('id', 'showinbrowser')
@@ -162,9 +162,9 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
                 for(var iRegion = 0; iRegion < this.getSpcRegionLength(spcArray[i].db); iRegion++) {
                     var option = $('<option></option>');
                     option.prop('value', this.getSpcRegion(spcArray[i].db, iRegion).regionToString(false));
-					option.append(this.getSpcRegion(spcArray[i].db, iRegion).regionToString(true)
-                                + ((this.getSpcRegion(spcArray[i].db, iRegion).data.hasOwnProperty('liftovers')
-                                    && parseInt(this.getSpcRegion(spcArray[i].db, iRegion).data.liftovers) <= 0)? ' (*)': ''));
+					option.append(this.getSpcRegion(spcArray[i].db, iRegion).regionToString(true) + 
+						((this.getSpcRegion(spcArray[i].db, iRegion).data.hasOwnProperty('liftovers') &&
+						parseInt(this.getSpcRegion(spcArray[i].db, iRegion).data.liftovers) <= 0)? ' (*)': ''));
 					if(!iRegion) {
 						option.prop('selected', true);
 					}
@@ -176,13 +176,13 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
             if (currRegion.data.hasOwnProperty('track')) {
                 // provide selection for filtering out all the tracks
                 cell.append('<br>');
-                if (typeof(currRegion.data['track']) == 'string') {
-                    currRegion.data['track'] = [currRegion.data['track']];
+                if (typeof(currRegion.data.track) === 'string') {
+                    currRegion.data.track = [currRegion.data.track];
                 }
 				
                 var label = $('<label></label>');
                 label.append($('<strong></strong>').append('Tracks matching: '));
-                label.append($('<span></span>').css('float', 'right')
+                label.append($('<span></span>').css('float', 'right').css('display', 'none')
 							 .append($('<input>').prop('type', 'checkbox')
 									 .prop('id', this.getCleanName() + spcArray[i].db + 'Filter')
 									 .prop('checked', true))
@@ -191,23 +191,23 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 				cell.append($('<div></div>').css('clear', 'both'));
                 
                 var trackListDiv = $('<div></div>');
-				var currListedTrack = new Object();
-                for(var iTracks = 0; iTracks < currRegion.data['track'].length; iTracks++) {
+				var currListedTrack = {};
+                for(var iTracks = 0; iTracks < currRegion.data.track.length; iTracks++) {
 					// merge duplicated tracks
-                    var trackTableName = currRegion.data['track'][iTracks];
+                    var trackTableName = currRegion.data.track[iTracks];
 					var revLookupTrack;
 					if(cmnTracksEncode.reverseLookUpMap.hasOwnProperty(trackTableName)) {
-						revLookupTrack = cmnTracksEncode.reverseLookUpMap[trackTableName]
+						revLookupTrack = cmnTracksEncode.reverseLookUpMap[trackTableName];
 					} else {
 						// it's unique
-						revLookupTrack = spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName]
+						revLookupTrack = spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName];
 					}
 					if(revLookupTrack) {
 						if(!currListedTrack.hasOwnProperty(revLookupTrack.id)) {
 							if(iTracks > 0) {
-								cell.append('<br>');
+								trackListDiv.append('<br>');
 							}
-							cell.append(revLookupTrack.writeLongString());
+							trackListDiv.append(revLookupTrack.writeLongString());
 							currListedTrack[revLookupTrack.id] = true;
 						}
 					} else {
@@ -215,6 +215,7 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 						UI.alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
 					}
                 }
+				cell.append(trackListDiv);
             }
             row.append(cell);
             outTable.append(row);
@@ -235,11 +236,11 @@ function populateRegionList(rawObj, spcArray) {
     // this function will convert raw Object (from JSON input) into an array of Region class
     // and also, if the rawObj don't have name for each genes, "Region X" will be used
     var regionList = new Array();
-    regionList.map = new Object();
+    regionList.map = {};
     for(var regionName in rawObj) {
         if(rawObj.hasOwnProperty(regionName)) {
             var newName = regionName;
-            if (!isNaN(regionName) || regionName.slice(0, 6).toLowerCase() == 'region') {
+            if (!isNaN(regionName) || regionName.slice(0, 6).toLowerCase() === 'region') {
                 // it's a number or general name
                 // use "Region " + number here
                 newName = "Region " + (regionList.length + 1);
@@ -250,11 +251,11 @@ function populateRegionList(rawObj, spcArray) {
                     var db = spcArray[spcIndex].db;
                     var spcRegionRaw = rawObj[regionName][db];
                     for(var index = 0; index < spcRegionRaw.length; index++) {
-                        chrRegionRaw = spcRegionRaw[index];
+                        var chrRegionRaw = spcRegionRaw[index];
                         var start = parseInt(chrRegionRaw.start || chrRegionRaw.genestart);
                         var end = parseInt(chrRegionRaw.end || chrRegionRaw.geneend);
-                        chrCoorStr = chrRegionRaw.chr + ":" + start + "-" + end;
-                        newChrRegion = new ChrRegionToShow(chrCoorStr, chrRegionRaw.nameinspc,
+                        var chrCoorStr = chrRegionRaw.chr + ":" + start + "-" + end;
+                        var newChrRegion = new ChrRegionToShow(chrCoorStr, chrRegionRaw.nameinspc,
                                                            chrRegionRaw.extendedstart, chrRegionRaw.extendedend,
                                                            chrRegionRaw);
                         if (typeof(chrRegionRaw.strand) !== "undefined") {
@@ -295,7 +296,7 @@ function writeGeneListFromJSON(geneListJSON, spcarray, cmnTracksEnc, updateNavFu
 	spcarray = spcarray || spcArray;
 	var geneListRaw = $.parseJSON(geneListJSON);
 	if(geneListRaw.hasOwnProperty('error')) {
-		return $('<p></p>').addClass('formstyle').append(geneListRaw['error']);
+		return $('<p></p>').addClass('formstyle').append(geneListRaw.error);
 	}
 	geneList = populateRegionList(geneListRaw, spcarray);
 	return writeGeneListTable(geneList, spcarray, cmnTracksEnc, updateNavFunc, changeGeneNameFunc);
@@ -305,7 +306,7 @@ function regionUiHandler(data) {
 	$("#genelistContentHolder").html('');
 	$("#genelistContentHolder").append(writeGeneListFromJSON(data));
 	$('#genelistLoading').addClass('BoxHide');
-	if(geneList.length == 1) {
+	if(geneList.length === 1) {
 		updateNavigation(geneList[0]);
 	}
 	fireCoreSignal('disable', {group: 'query-search', flag: false});
