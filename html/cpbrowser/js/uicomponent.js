@@ -25,11 +25,11 @@ UIObject.prototype.initNavSidebar = function() {
 	if(this.navInitialized) {
 		return;
 	}
-	this.doc.getElementById('sidebar1').style.left = left_value + "px";
-	this.doc.getElementById('leftborder').style.left = left_value + left_width + "px";
-	this.doc.getElementById('mainContent').style.left = left_value + left_width + 5 + "px";
+	this.doc.getElementById('sidebar1').style.left = this.left_value + "px";
+	this.doc.getElementById('leftborder').style.left = this.left_value + this.left_width + "px";
+	this.doc.getElementById('mainContent').style.left = this.left_value + this.left_width + 5 + "px";
 	this.navInitialized = true;
-}
+};
 
 UIObject.prototype.switchLeft = function() {
 	if(!this.navInitialized) {
@@ -48,7 +48,7 @@ UIObject.prototype.switchLeft = function() {
 		this.doc.getElementById('mainContent').style.left = this.left_value + this.left_width + 5 + "px";
 		this.doc.getElementById('leftbutton').style.backgroundImage = "url(cpbrowser/images/left_arrow.gif)";
 	}
-}
+};
 
 function fireCoreSignal(signame, sigdata) {
 	// fire core-signals

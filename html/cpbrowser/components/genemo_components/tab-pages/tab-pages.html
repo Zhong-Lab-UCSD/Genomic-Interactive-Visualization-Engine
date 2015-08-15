@@ -2,10 +2,13 @@
 <link rel="import" href="../../bower_components/core-animated-pages/core-animated-pages.html">
 <link rel="import" href="../../bower_components/core-animated-pages/transitions/slide-from-right.html">
 <link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../bower_components/core-signals/core-signals.html">
 
 <polymer-element name="tab-pages" attributes="selectedTab">
   <template>
     <link rel="stylesheet" href="tab-pages.css">
+    <core-signals on-core-signal-content-ready="{{contentReady}}">
+        </core-signals>
     <section>
       <div class="hidden">
         <content id="tabHeader" select=".tabHeader"></content>
@@ -40,10 +43,7 @@
 			return this.$.mainTab;
 		},
 		
-        ready: function() {
-            
-            var hostNode = this;
-			
+		contentReady: function(e, detail, sender) {
 			// populate tabs and animated pages
             
             this.pages = this.shadowRoot.querySelector('#tabContent').getDistributedNodes();
@@ -76,6 +76,9 @@
 				divPage.appendChild(this.pages[i]);
 				this.$.mainPage.appendChild(divPage);
 			}
+		},
+		
+        ready: function() {
         }
         
     });
