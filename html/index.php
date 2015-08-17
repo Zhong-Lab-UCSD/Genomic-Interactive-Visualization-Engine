@@ -739,7 +739,7 @@ window.addEventListener("polymer-ready", function(e) {
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
-    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Gene / Region Selection</span></div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Results</span></div>
     <div id="genelistHolder">
       <div id="genelistLoading" class="loadingCover BoxHide" style="min-height: 36px; left: 0px; width: auto;">
         <div class="loadingCoverBG"></div>
