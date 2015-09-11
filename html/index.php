@@ -45,7 +45,7 @@
 <meta name="keywords" content="Comparative study,Epigenomics,Epigenetics,Visualization,Epigenome browser" />
 <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs." />
 <title>GENEMO Search</title>
-<script src="cpbrowser/components/bower_components/webcomponentsjs/webcomponents.min.js"></script>
+<script src="cpbrowser/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
 <script type="text/javascript" src="cpbrowser/js/uicomponent.js"></script>
@@ -55,23 +55,21 @@
 <script type="text/javascript" src="cpbrowser/js/navui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
-<link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
-<link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
-    <?php if(isset($experimentalFeatures)) { ?>
-<link rel="import" href="cpbrowser/components/genemo_components/tab-pages/tab-pages.html">
-    <?php } ?>
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
 <link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-icons/core-icons.html">
+<link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
+<?php if(isset($experimentalFeatures)) { ?>
+<link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
+<link rel="import" href="cpbrowser/components/genemo_components/tab-pages/tab-pages.html">
+<?php } ?>
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
-<link rel="import" href="cpbrowser/components/bower_components/core-signals/core-signals.html">
+<link rel="import" href="cpbrowser/components/bower_components/iron-signals/iron-signals.html">
 <style type="text/css">
 <!--
 html {
 	height: 100%;
 }
 body {
-	font: 100% Verdana, Arial, Helvetica, sans-serif;
 	background: #EEEEEE;
 	margin: 0; /* it's good practice to zero the margin and padding of the body element to account for differing browser defaults */
 	padding: 0;
@@ -645,7 +643,7 @@ $(document).ready( function () {
 	
 });
 
-window.addEventListener("polymer-ready", function(e) {
+window.addEventListener("WebComponentsReady", function(e) {
 	isEncodeOn = !isEncodeOn;		// because doing toggleEncode() will reverse isEncodeOn as well
 	fireCoreSignal('content-ready', null);
 	var searchCard = document.querySelector('#searchCard');
@@ -721,20 +719,18 @@ window.addEventListener("polymer-ready", function(e) {
 <div id="container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
-    <genemo-card collapseGroup='query-search'>
-    <?php if(isset($experimentalFeatures)) { ?>
-      <tab-pages class='GenemoBody' id='tabPages' selectedTab='<?php echo $genemoOn? 0: 1; ?>'>
-    <?php }
+    <genemo-card collapse-group='query-search'>
+      <?php if(isset($experimentalFeatures)) { ?>
+      <tab-pages class='GenemoBody' id='tabPages' selected-tab='<?php echo $genemoOn? 0: 1; ?>'>
+        <?php }
 		  if($genemoOn) { ?>
-        <search-card-content class='tabContent GenemoBody' id='searchCard' isEncodeOn='<?php echo $encodeOn? "true": "false"; ?>'>
-        </search-card-content>
-    <?php } else { ?>
-        <query-card-content class='tabContent GenemoBody' id='queryCard' isEncodeOn='<?php echo $encodeOn? "true": "false"; ?>'>
-        </query-card-content>
-    <?php }
+        <search-card-content class='tabContent GenemoBody' id='searchCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </search-card-content>
+        <?php } else { ?>
+        <query-card-content class='tabContent GenemoBody' id='queryCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </query-card-content>
+        <?php }
 		  if(isset($experimentalFeatures)) { ?>
       </tab-pages>
-    <?php } ?>
+      <?php } ?>
     </genemo-card>
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
@@ -746,8 +742,8 @@ window.addEventListener("polymer-ready", function(e) {
         <div class="loadingCoverImage"></div>
       </div>
       <div id="genelistContentHolder"> </div>
-      <!-- end #genelist -->
-      <!--<div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>-->
+      <!-- end #genelist --> 
+      <!--<div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>--> 
     </div>
     <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
     <div class="smallformstyle" id="navigationHolder">
@@ -785,17 +781,10 @@ window.addEventListener("polymer-ready", function(e) {
       <div id="navigationContent"> </div>
     </div>
     <paper-button class="fullWidth" noink raised id="manualBtn">
-      <core-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></core-icon>
-      Genemo Manual
-    </paper-button>
+      <iron-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></iron-icon>
+      Genemo Manual </paper-button>
     <!-- end #sidebar1 --> 
   </div>
-  
-  
-  
-  
-  
-  
   <div id="spcNaviTemplate" class="BoxHide">
     <div id="spcDbNameLoading" class="loadingCover" style="height: 50px; width: 218px;">
       <div class="loadingCoverBG"></div>
@@ -830,7 +819,6 @@ window.addEventListener("polymer-ready", function(e) {
       </tr>
     </table>
   </div>
-  
   <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
     <div class="loadingTrackCover" id="trackSelectLoading">
       <div class="loadingTrackCoverBG"></div>
@@ -848,13 +836,12 @@ window.addEventListener("polymer-ready", function(e) {
       </div>
       <div>
         <label>
-        <input type="checkbox" id="useAllTracks" name="useAllTracks" />
-        Use all ENCODE data.
-        <core-tooltip large position="bottom">
-          <core-icon class="smallInline transparent" icon="help" alt="help"></core-icon>
-          <div tip> Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
-            <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong> </div>
-        </core-tooltip>
+          <input type="checkbox" id="useAllTracks" name="useAllTracks" />
+          Use all ENCODE data.
+          <iron-icon class="smallInline transparent" icon="help" alt="help" id="allEncodeHelp">
+          </core-icon>
+          <paper-tooltip large position="bottom" for="allEncodeHelp"> Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
+            <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong> </paper-tooltip>
         </label>
       </div>
     </div>

@@ -1,77 +1,72 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/core-icon/core-icon.html">
-<link rel="import" href="../../bower_components/core-menu/core-menu.html">
-<link rel="import" href="../../bower_components/core-dropdown/core-dropdown.html">
-<link rel="import" href="../../bower_components/core-item/core-item.html">
-<link rel="import" href="../../bower_components/core-signals/core-signals.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../../bower_components/paper-shadow/paper-shadow.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
 
 <link rel="import" href="../manual-icon/manual-icon.html">
-<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 
 <polymer-element name="query-card-content" attributes="isEncodeOn selectedRefs spcCoorSelection trackSelActive isDisabled querySent InputGeneName">
   <template>
     <link rel="stylesheet" href="./query-card-content.css">
     <section>
-      <core-signals on-core-signal-toggle="{{signalToggle}}" 
-      	on-core-signal-disable="{{signalDisabled}}"
-        on-core-signal-encodecheck="{{signalEncodeCheck}}"></core-signals>
+      <iron-signals on-iron-signal-toggle="{{signalToggle}}" 
+      	on-iron-signal-disable="{{signalDisabled}}"
+        on-iron-signal-encodecheck="{{signalEncodeCheck}}"></iron-signals>
       <paper-radio-group selected="{{geneRegionSelection}}">
         <paper-radio-button name="gene" label="Gene"></paper-radio-button>
         <paper-radio-button name="region" label="Region for"></paper-radio-button>
       </paper-radio-group>
-      <paper-dropdown-menu disabled?="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined">
+      <paper-dropdown-menu disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined">
         <paper-dropdown class="dropdown">
           <core-menu class="menu" selected="{{spcCoorSelection}}" valueattr="value">
-            <template repeat="{{ s in selectedSpecies }}">
-              <paper-item value="{{s.db}}">{{s.db}}</paper-item>
+            <template is="dom-repeat" items="{{selectedSpecies}}">
+              <paper-item value="{{item.db}}">{{item.db}}</paper-item>
             </template>
           </core-menu>
         </paper-dropdown>
       </paper-dropdown-menu>
       <div class="lineContainer vertMargined">
         <div relative id="geneNameHotRegion">
-          <paper-input class="fullWidth" id="geneName" label="Input your query here" value={{InputGeneName}}></paper-input>
+          <paper-input class="fullWidth" id="geneName" label="Input your query here" value="{{InputGeneName}}"></paper-input>
           <core-dropdown relatedTarget="{{$.geneName}}" id="geneNameDropDown" class="autoText" autoFocusDisabled>
             <core-menu class="menu" selected="{{partialSelection}}" valueattr="value">
-              <template repeat="{{ i in candidates }}">
-                <core-item value="{{i.value}}" id="{{i.id}}">{{i.contentBefore}}<strong>{{i.contentBold}}</strong><em>{{i.contentItalic}}</em>{{i.contentAfter}}</core-item>
+              <template is="dom-repeat" items="{{candidates}}">
+                <core-item value="{{item.value}}" id="{{item.id}}"><span>{{item.contentBefore}}</span><strong>{{item.contentBold}}</strong><em>{{item.contentItalic}}</em><span>{{item.contentAfter}}</span></core-item>
               </template>
             </core-menu>
           </core-dropdown>
         </div>
         <div class="right">
-          <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled?="{{isDisabled}}">GO</paper-button>
+          <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled$="{{isDisabled}}">GO</paper-button>
         </div>
       </div>
-      <paper-shadow id="speciesTable" class="vertMargined" z='1'>
+      <paper-card id="speciesTable" class="vertMargined">
         <div class="anno fullWidth">
           Species to compare:
         </div>
-        <template repeat="{{ s in species }}">
-          <div id="{{s.db}}_checkboxwrapper" class="vertCenterContainer">
+        <template is="dom-repeat" items="{{species}}">
+          <div id="{{computeCheckboxWrapper(item.db)}}" class="vertCenterContainer">
             <core-label>
-              <paper-checkbox noink checked name="{{s.db}}" id="{{s.db}}" value="{{s.db}}"></paper-checkbox>
-              <span><em>{{s.name}}</em> ({{s.commonName}}) [{{s.db}}]</span>
+              <paper-checkbox noink checked name="{{item.db}}" id="{{item.db}}" value="{{item.db}}"></paper-checkbox>
+              <span><em>{{item.name}}</em> (<span>{{item.commonName}}</span>) [<span>{{item.db}}</span>]</span>
             </core-label>
           </div>
         </template>
-      </paper-shadow>
-      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active?="{{trackSelActive}}">Data selection</paper-button>
+      </paper-card>
+      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active$="{{trackSelActive}}">Data selection</paper-button>
     </section>
   </template>
   <script>
     Polymer({
-        
-        MAX_FILENAME_LEN: 25,
         
         isEncodeOn: true,
         
@@ -97,6 +92,10 @@
 		icon: 'view-list',
 		
 		firstRun: true,
+		
+		computeCheckboxWrapper: function(textstem) {
+			return textstem + '_checkboxwrapper';
+		},
         
         checkEncodeSpecies: function (flag) {
             var spcAvailableCount = 0;
@@ -106,11 +105,11 @@
             if(this.species) {
                 for(var i = 0; i < this.species.length; i++) {
                     if(this.isEncodeOn && !this.species[i].isEncode) {
-                        this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'none';
-                        this.shadowRoot.querySelector('#' + this.species[i].db).checked = false;
+                        Polymer.dom(this.root).querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'none';
+                        Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked = false;
                     } else if (!this.isEncodeOn) {
-                        this.shadowRoot.querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'block';
-                        this.shadowRoot.querySelector('#' + this.species[i].db).checked = true;
+                        Polymer.dom(this.root).querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'block';
+                        Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked = true;
                         spcAvailableCount++;
                     }
                 }
@@ -133,7 +132,7 @@
         
         updateAllSpcActiveUI: function () {
             for(var i = 0; i < this.species.length; i++) {
-                this.species[i].isActive = this.shadowRoot.querySelector('#' + this.species[i].db).checked;
+                this.species[i].isActive = Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked;
             }
         },
         
@@ -270,7 +269,7 @@
 			
         },
         
-        partialSelectionChanged: function(oldValue, newValue) {
+        partialSelectionChanged: function(newValue, oldValue) {
             if(newValue) {
                 this.change_text(newValue);
             }
@@ -335,7 +334,7 @@
         },
 		
 		getIcon: function() {
-			var resIcon = document.createElement('core-icon');
+			var resIcon = document.createElement('iron-icon');
 			resIcon.setAttribute('icon', this.icon);
 			resIcon.setAttribute('alt', 'search');
 			return resIcon;
@@ -477,12 +476,12 @@
 			}
 			
 			this.updateCurrentInfo(this.InputGeneName, this.selectedRefs);
-			this.fire("core-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
+			this.fire("iron-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
 			
 			this.fire("submit-genequery", {postdata: postdata});
 		},
         
-		signalToggle: function(e, detail, sender) {
+		signalToggle: function(e, detail) {
 			if(detail.group == this.toggleGroup) {
 				if(detail.flag || (detail.flag == false)) {
 					this.trackSelActive = detail.flag;
@@ -492,7 +491,7 @@
 			}
 		},
 		
-		signalDisabled: function(e, detail, sender) {
+		signalDisabled: function(e, detail) {
 			if(detail.group == this.disableGroup) {
 				if(detail.flag || (detail.flag == false)) {
 					this.isDisabled = detail.flag;
@@ -502,7 +501,7 @@
 			}
 		},
                     
-		signalEncodeCheck: function(e, detail, sender) {
+		signalEncodeCheck: function(e, detail) {
 			this.checkEncodeSpecies(detail.flag);
 		},
                     
@@ -512,14 +511,14 @@
             
             this.species = spcArray;
             
-            var trackSelectButtons = this.shadowRoot.querySelectorAll('.trackSelection');
+            var trackSelectButtons = Polymer.dom(this.root).querySelectorAll('.trackSelection');
             Array.prototype.forEach.call(trackSelectButtons, function(item) {
                 item.addEventListener("click", function(e) {
                     hostNode.fire("toggle-window");
                 });
             });
             
-            checkboxList = this.shadowRoot.querySelectorAll('paper-checkbox');
+            checkboxList = Polymer.dom(this.root).querySelectorAll('paper-checkbox');
             Array.prototype.forEach.call(checkboxList, function(item) {
                 item.addEventListener("change", function(e) {
                     hostNode.updateAllSpcActive();
