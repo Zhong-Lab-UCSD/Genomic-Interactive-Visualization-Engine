@@ -1005,19 +1005,19 @@ paper-button {
 	margin: 0.6em 0;
 }
 
-core-icon.smallInline {
+iron-icon.smallInline {
 	width: 1.25em;
 	height: 1.25em;
 	margin: 0 0.25em 0.1em 0.25em;
 }
-core-icon.transparent {
+iron-icon.transparent {
 	opacity: 0.54;
 }
-core-icon.transparent:hover {
+iron-icon.transparent:hover {
 	opacity: 0.87;
 }
 
-core-tooltip::shadow #tooltip {
+paper-tooltip::shadow #tooltip {
 	max-width: 400px;
 	min-width: 250px;
 	width: auto;

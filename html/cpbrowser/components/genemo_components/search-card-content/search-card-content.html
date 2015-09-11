@@ -1,94 +1,280 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/core-tooltip/core-tooltip.html">
-<link rel="import" href="../../bower_components/core-icon/core-icon.html">
-<link rel="import" href="../../bower_components/core-menu/core-menu.html">
-<link rel="import" href="../../bower_components/core-signals/core-signals.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
-<polymer-element name="search-card-content" attributes="isEncodeOn selectedTab InputUrl InputFile selectedRefs currentRef DisplayUrl UserEmail trackSelActive isDisabled">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="search-card-content">
   <template>
-    <link rel="stylesheet" href="./search-card-content.css">
+    <style>
+	:host {
+		display: block;
+		font-family: 'Roboto', Arial, Helvetica, sans-serif;
+		font-size: 12px;
+		line-height: 1.2em;
+		vertical-align: middle;
+	}
+	
+	a:link {
+		color: #FF9800;
+		text-decoration: none;
+	}
+	a:hover {
+		text-decoration: underline;
+	}
+	a:active {
+		text-decoration: underline;
+	}
+	a:visited {
+		color: #3F51B5;
+	}
+	
+	/************************** Polymer and Material Design components below *********************/
+	
+	.fullWidth {
+		width: 100%;
+		margin-left: 0;
+		margin-right: 0;
+	}
+	
+	.vertMargined {
+		margin: 0.2em 0;
+	}
+	
+	.vertCenterContainer {
+		display: table;
+		width: 100%
+	}
+	
+	.vertCenterContainer > * {
+		display: table-cell;
+		vertical-align: middle;
+	}
+	
+	.noTextTransformButton {
+		text-transform: none;
+	}
+	
+	.rightFloat {
+		float: right;
+	}
+	
+	.sampleButton {
+		min-width: 9.5em;
+	}
+	
+	.clearFloat {
+		clear: both;
+	}
+	
+	.clearFix:after {
+		content: "";
+		display: table;
+		clear: both;
+	}
+	
+	/************************** Polymer and Material Design color below *********************/
+	
+	paper-button[raised].colored {
+		background: #3f51B5;
+		color: #FFF;
+	}
+	
+	paper-button[disabled] {
+		background: #eaeaea;
+		color: #a8a8a8;
+		cursor: auto;
+		pointer-events: none;
+	}
+	
+	paper-button[raised][disabled].colored {
+		background: #eaeaea;
+		color: #a8a8a8;
+		cursor: auto;
+		pointer-events: none;
+	}
+	
+	/************************** Polymer and Material Design size and others below *********************/
+	
+	paper-input {
+		font-size: 12px;
+	}
+	
+	iron-icon.smallInline {
+		width: 1.25em;
+		height: 1.25em;
+		margin: 0 0.25em 0.1em 0.25em;
+	}
+	iron-icon.transparent {
+		opacity: 0.54;
+	}
+	iron-icon.transparent:hover {
+		opacity: 0.87;
+	}
+	paper-tooltip::shadow #tooltip {
+		max-width: 350px;
+		min-width: 250px;
+		width: auto;
+		margin-top: 1px;
+		margin-bottom: 3px;
+		white-space: normal;
+		line-height: 20px;
+	}
+	
+	.vertCenterContainer > paper-dropdown-menu {
+		padding-top: 0;
+	}
+	</style>
+    <link rel="import" type="css" href="./search-card-content.css">
     <section>
-      <core-signals on-core-signal-toggle="{{signalToggle}}" 
-      	on-core-signal-disable="{{signalDisabled}}"
-        on-core-signal-encodecheck="{{signalEncodeCheck}}"
-        on-core-signal-updatecontent="{{signalUpdateContent}}">
-        </core-signals>
+      <iron-signals on-iron-signal-toggle="signalToggle" 
+      	on-iron-signal-disable="signalDisabled"
+        on-iron-signal-encodecheck="signalEncodeCheck"
+        on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
       <div class="vertMargined">
         <div class="vertCenterContainer clearFix">
           <div> <strong>Peak file to search: </strong>
-            <core-tooltip large>
-              <core-icon class="smallInline transparent" icon="help" alt="help"></core-icon>
-              <div tip> Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>) </div>
-            </core-tooltip>
+            <iron-icon class="smallInline transparent" icon="help" alt="help" id="peakHelp"></iron-icon>
+            <paper-tooltip large for="peakHelp">
+              Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>)
+            </paper-tooltip>
           </div>
-          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised>Use sample file</paper-button>
+          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised> Use sample file </paper-button>
         </div>
         <div class="vertCenterContainer clearFix">
           <div>Reference: </div>
-          <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined">
-            <paper-dropdown class="dropdown">
-              <core-menu class="menu" id="speciesToUpload" valueattr="value" selected={{currentRef}}>
-                <template repeat="{{ s in species | encodeFilter }}">
-                  <paper-item value="{{s.db}}">{{s.commonName}} ({{s.db}})</paper-item>
-                </template>
-              </core-menu>
-            </paper-dropdown>
+          <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
+            <!--<paper-dropdown class="dropdown">-->
+            <paper-menu class="menu dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
+              <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
+                <paper-item value="[[item.db]]"><span>[[item.commonName]]</span> (<span>[[item.db]]</span>)</paper-item>
+              </template>
+            </paper-menu>
+            <!--</paper-dropdown>-->
           </paper-dropdown-menu>
         </div>
-        <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value={{InputUrl}}></paper-input>
+        <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
         <paper-button class="fullWidth" raised noink id="fileSelectButton">{{uploadButtonText}}</paper-button>
         <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" />
       </div>
-      <core-tooltip large class="fullWidth">
-        <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value={{UserEmail}}></paper-input>
-        <div tip> Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed. </div>
-      </core-tooltip>
-      <core-tooltip large class="fullWidth" position="top">
-        <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value={{DisplayUrl}}></paper-input>
-        <div tip> You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong> </div>
-      </core-tooltip>
-      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active?="{{trackSelActive}}">Data selection</paper-button>
-      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled?="{{isDisabled}}">
-        <core-icon class="smallInline" icon="search" alt="search"></core-icon>
+      <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
+      <paper-tooltip large class="fullWidth" for="returnEmail">
+        Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.
+      </paper-tooltip>
+      <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
+      <paper-tooltip large class="fullWidth" position="top" for="urlFileToShow">
+        You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong>
+      </paper-tooltip>
+      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active$="{{trackSelActive}}"> Data selection </paper-button>
+      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}">
+        <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
         Search </paper-button>
       <!-- end upload new file part --> 
     </section>
   </template>
   <script>
     Polymer({
-        
-        MAX_FILENAME_LEN: 25,
-        
-        isEncodeOn: true,
-        
-        InputUrl: "",
-        currentRef: null,
-        DisplayUrl: "",
-        UserEmail: "",
 		
-        trackSelActive: false,
-		toggleGroup: 'trackSelect',
+		is: "search-card-content",
 		
-		isDisabled: false,
-		disableGroup: 'query-search',
-        
-		collapseElement: null,
-		icon: 'search',
-		
-		sampleFile: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
-		sampleRef: "mm9",
+		properties: {
+			MAX_FILENAME_LEN: {
+				type: Number,
+				readOnly: true,
+				value: 25
+			},
+			
+			sampleFile: {
+				type: String,
+				value: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
+				readOnly: true
+			},
+			
+			sampleRef: {
+				type: String,
+				value: "mm9",
+				readOnly: true
+			},
+			
+			isEncodeOn: {
+				type: Boolean,
+				value: true
+			},
+			
+			InputUrl: {
+				type: String,
+				value: "",
+				observer: "InputUrlChanged"
+			},
+			
+			currentRef: {
+				type: String,
+				value: ""
+			},
+			
+			DisplayUrl: {
+				type: String,
+				value: ""
+			},
+			
+			UserEmail: {
+				type: String,
+				value: ""
+			},
+			
+			trackSelActive: {
+				type: Boolean,
+				value: false
+			},
+			
+			toggleGroup: {
+				type: String,
+				value: 'trackSelect'
+			},
+			
+			isDisabled: {
+				type: Boolean,
+				value: false
+			},
+			
+			disableGroup: {
+				type: String,
+				value: 'query-search'
+			},
+			
+			collapseElement: {
+				type: String,
+				value: ""
+			},
+			
+			uploadButtonText: {
+				type: String,
+				value: ''
+			},
+			
+			icon: {
+				type: String,
+				value: 'search'
+			},
+			
+			species: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			}
+		},
         
         checkEncodeSpecies: function (flag) {
 			if(typeof(flag) == 'boolean') {
 				this.isEncodeOn = flag;
 			}
             var spcAvailableCount = 0;
-            if(this.species) {
+            if(this.species.length > 0) {
                 this.updateAllSpcActive();
             }
         },
@@ -100,15 +286,7 @@
         },
         
         encodeFilter: function(value) {
-            if(value) {
-                result = [];
-                for(var i = 0; i < value.length; i++) {
-                    if(value[i].isEncode || !this.isEncodeOn) {
-                        result.push(value[i]);
-                    }
-                }
-                return result;
-            }
+			return (value.isEncode || !this.isEncodeOn);
         },
         
         created: function() {
@@ -141,7 +319,7 @@
 		},
 		
 		getIcon: function() {
-			var resIcon = document.createElement('core-icon');
+			var resIcon = document.createElement('iron-icon');
 			resIcon.setAttribute('icon', this.icon);
 			resIcon.setAttribute('alt', 'search');
 			return resIcon;
@@ -227,7 +405,7 @@
 			}
 		},
 		
-		InputUrlChanged: function(oldValue, newValue) {
+		InputUrlChanged: function(newValue, oldValue) {
 			if(newValue.length > 0) {
 				this.$.fileSelectButton.classList.remove("noTextTransformButton");
 				this.uploadButtonText = "Upload local file";
@@ -271,7 +449,7 @@
 			return res;
 		},
 		
-		signalToggle: function(e, detail, sender) {
+		signalToggle: function(e, detail) {
 			if(detail.group == this.toggleGroup) {
 				if(detail.flag || (detail.flag == false)) {
 					this.trackSelActive = detail.flag;
@@ -281,7 +459,7 @@
 			}
 		},
 		
-		signalDisabled: function(e, detail, sender) {
+		signalDisabled: function(e, detail) {
 			if(detail.group == this.disableGroup) {
 				if(detail.flag || (detail.flag == false)) {
 					this.isDisabled = detail.flag;
@@ -291,11 +469,11 @@
 			}
 		},
                     
-		signalEncodeCheck: function(e, detail, sender) {
+		signalEncodeCheck: function(e, detail) {
 			this.checkEncodeSpecies(detail.flag);
 		},
 		
-		signalUpdateContent: function(e, detail, sender) {
+		signalUpdateContent: function(e, detail) {
 			this.currentRef = detail.sessionObj.db;
 			var inputFileName = detail.sessionObj.originalFile;
 			var DisplayFileName = detail.sessionObj.hasDisplay? 
@@ -307,14 +485,17 @@
             
             var hostNode = this;
             
-            this.species = spcArray;
+			for(var spcIndex = 0; spcIndex < spcArray.length; spcIndex++) {
+				this.push('species', spcArray[spcIndex]);
+			}
+			console.log(this.species);
             this.uploadButtonText = "Upload local file";
 
             this.$.uploadFileInput.addEventListener("change", this.inputFileChangedFunc.bind(this));
             
             this.$.fileSelectButton.addEventListener("click", this.$.uploadFileInput.click.bind(this.$.uploadFileInput));
             
-            var trackSelectButtons = this.shadowRoot.querySelectorAll('.trackSelection');
+            var trackSelectButtons = Polymer.dom(this.root).querySelectorAll('.trackSelection');
             Array.prototype.forEach.call(trackSelectButtons, function(arrItem) {
                 arrItem.addEventListener("click", function(e) {
                     hostNode.fire("toggle-window");
@@ -328,4 +509,4 @@
         
     });
   </script>
-</polymer-element>
+</dom-module>

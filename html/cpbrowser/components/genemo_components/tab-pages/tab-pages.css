@@ -16,7 +16,7 @@ paper-tabs::shadow #selectionBar {
 
 /************************** Polymer and Material Design size and others below *********************/
 
-core-animated-pages > .core-selected {		
+neon-animated-pages > .core-selected {		
 /* this is to solve the "no height" bug for core-pages and core-animated-pages element */
     position: relative;
     display: block;

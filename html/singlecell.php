@@ -12,21 +12,8 @@
 <head>
 <meta charset="utf-8">
 <title>Single Cell Data Browser (powered by UCSC Genome Browser)</title>
-<link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
+<link href='//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
 <link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css">
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-</script>
 <script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
 <script language="javascript">
 
@@ -124,6 +111,7 @@ $(document).ready( function () {
 </head>
 
 <body onResize="resize_tbody();" style="overflow: hidden;">
+<?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
 <iframe id="mm10" name="mm10" class="cpbrowserFrame" src="<?php 
 	  echo "/cgi-bin/hgTracks?clade=mammal&org=mouse&db=mm10&position=chr17%3A35%2C504%2C846-35%2C511%2C964&pix=850&Submit=submit&hgControlOnly=off&hgSingleCell=on&hgsid=" . ($_SESSION['ID']*10) . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": "");?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Single Cell Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
 <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
