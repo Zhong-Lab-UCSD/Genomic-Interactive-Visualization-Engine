@@ -10,89 +10,282 @@
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
-
-<link rel="import" href="../manual-icon/manual-icon.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../genemo-styles.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-
-<polymer-element name="query-card-content" attributes="isEncodeOn selectedRefs spcCoorSelection trackSelActive isDisabled querySent InputGeneName">
+<dom-module id="query-card-content">
   <template>
-    <link rel="stylesheet" href="./query-card-content.css">
-    <section>
-      <iron-signals on-iron-signal-toggle="{{signalToggle}}" 
-      	on-iron-signal-disable="{{signalDisabled}}"
-        on-iron-signal-encodecheck="{{signalEncodeCheck}}"></iron-signals>
-      <paper-radio-group selected="{{geneRegionSelection}}">
-        <paper-radio-button name="gene" label="Gene"></paper-radio-button>
-        <paper-radio-button name="region" label="Region for"></paper-radio-button>
-      </paper-radio-group>
-      <paper-dropdown-menu disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined">
-        <paper-dropdown class="dropdown">
-          <core-menu class="menu" selected="{{spcCoorSelection}}" valueattr="value">
-            <template is="dom-repeat" items="{{selectedSpecies}}">
-              <paper-item value="{{item.db}}">{{item.db}}</paper-item>
-            </template>
-          </core-menu>
-        </paper-dropdown>
-      </paper-dropdown-menu>
-      <div class="lineContainer vertMargined">
-        <div relative id="geneNameHotRegion">
-          <paper-input class="fullWidth" id="geneName" label="Input your query here" value="{{InputGeneName}}"></paper-input>
-          <core-dropdown relatedTarget="{{$.geneName}}" id="geneNameDropDown" class="autoText" autoFocusDisabled>
-            <core-menu class="menu" selected="{{partialSelection}}" valueattr="value">
-              <template is="dom-repeat" items="{{candidates}}">
-                <core-item value="{{item.value}}" id="{{item.id}}"><span>{{item.contentBefore}}</span><strong>{{item.contentBold}}</strong><em>{{item.contentItalic}}</em><span>{{item.contentAfter}}</span></core-item>
-              </template>
-            </core-menu>
-          </core-dropdown>
-        </div>
-        <div class="right">
-          <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled$="{{isDisabled}}">GO</paper-button>
-        </div>
-      </div>
-      <paper-card id="speciesTable" class="vertMargined">
-        <div class="anno fullWidth">
-          Species to compare:
-        </div>
-        <template is="dom-repeat" items="{{species}}">
-          <div id="{{computeCheckboxWrapper(item.db)}}" class="vertCenterContainer">
-            <core-label>
-              <paper-checkbox noink checked name="{{item.db}}" id="{{item.db}}" value="{{item.db}}"></paper-checkbox>
-              <span><em>{{item.name}}</em> (<span>{{item.commonName}}</span>) [<span>{{item.db}}</span>]</span>
-            </core-label>
-          </div>
+    <style include="genemo-shared-styles">
+		:host {
+			display: block;
+			font-family: 'Roboto', Arial, Helvetica, sans-serif;
+			font-size: 12px;
+			line-height: 1.2em;
+			vertical-align: middle;
+		}
+		
+		#searchform input.searchFieldBusy {
+			background: #FFFFFF url(../../../images/loading1.gif) no-repeat 100% 50%;
+		}
+		
+		#spcDropDownMenu {
+			width: 7em;
+			--paper-menu-button: {
+				padding: 0.3em 0 0.3em 0.1em;
+			};
+		}
+		
+		paper-menu.autoText {
+			max-height: 25em;
+			min-width: 180px;
+			cursor: pointer;
+		}
+		
+		paper-menu.autoText paper-item {
+			--paper-item-min-height: 1.5em;
+			--paper-item: {
+				display: block;
+				font-size: 12px;
+				text-transform: none;
+			};
+		}
+		
+		paper-menu.autoText paper-item * {
+			display: inline;
+			margin: 0;
+			padding: 0;
+		}
+		
+		/************************** Polymer and Material Design components below *********************/
+		
+		.lineContainer {
+			display: table;
+			border-collapse: collapse;
+			width: 100%;
+		}
+		
+		.lineContainer > * {
+			display: table-cell;
+		}
+		
+		.lineContainer > :not(.right) {
+			padding-left: 0.3em;
+		}
+		
+		.lineContainer > .right {
+			width: 45px;
+		}
+		
+		.rightNoMargin {
+			margin: 0 0 0 0.5em;
+		}
+		
+		.anno {
+			color: #3F51B5;
+			margin: 0.3em;
+			font-weight: 700;
+		}
+		
+		/************************** Polymer and Material Design color below *********************/
+		
+		/************************** Polymer and Material Design size and others below *********************/
+		
+		paper-radio-group > * {
+			padding: 1em 0.5em !important;
+		}
+		
+		paper-radio-button::shadow #radioLabel {
+			margin-left: 0.5em;
+		}
+		
+		paper-material {
+			padding: 0.5em;
+		}
+		
+	</style>
+    <iron-signals on-iron-signal-toggle="signalToggle" on-iron-signal-disable="signalDisabled" on-iron-signal-encodecheck="signalEncodeCheck"></iron-signals>
+    <paper-radio-group selected="{{geneRegionSelection}}">
+      <paper-radio-button name="gene">Gene</paper-radio-button>
+      <paper-radio-button name="region">Region for</paper-radio-button>
+    </paper-radio-group>
+    <paper-dropdown-menu id="spcDropDownMenu" disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined" no-label-float noink>
+      <paper-menu class="dropdown-content" selected="{{spcCoorSelection}}" attr-for-selected="value">
+        <template is="dom-repeat" items="[[currSelectedSpecies]]">
+          <paper-item value="[[item.db]]">[[item.db]]</paper-item>
         </template>
-      </paper-card>
-      <paper-button class="fullWidth vertMargined trackSelection" toggle raised noink active$="{{trackSelActive}}">Data selection</paper-button>
-    </section>
+      </paper-menu>
+    </paper-dropdown-menu>
+    <div class="lineContainer vertMargined">
+      <div id="geneNameHotRegion">
+        <paper-input class="fullWidth" id="geneName" label="Input your query here" value="{{InputGeneName}}" no-label-float></paper-input>
+        <iron-dropdown id="geneNameDropDown" vertical-offset="24">
+          <paper-menu class="dropdown-content autoText" selected="{{partialSelection}}" attr-for-selected="value">
+            <template is="dom-repeat" items="[[candidates]]">
+              <paper-item disabled$="[[item.disabled]]" value="[[item.value]]"><span>[[item.contentBefore]]</span><strong>[[item.contentBold]]</strong><em>[[item.contentItalic]]</em><span>[[item.contentAfter]]</span></paper-item>
+            </template>
+          </paper-menu>
+        </iron-dropdown>
+      </div>
+      <div class="right">
+        <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled$="{{isDisabled}}">GO</paper-button>
+      </div>
+    </div>
+    <iron-ajax id="partialNameAjax" url="jsongenename.php" handle-as="json" on-response="updatePartialQuery" debounce-duration="300"></iron-ajax>
+    <paper-material id="speciesTable" class="vertMargined" elevation="1">
+      <div class="anno fullWidth"> Species to compare: </div>
+      <template is="dom-repeat" items="[[species]]">
+        <div id="[[computeCheckboxWrapper(item.db)]]">
+          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]">
+            <span><em>[[item.name]]</em> (<span>[[item.commonName]]</span>) [<span>[[item.db]]</span>]</span>
+          </paper-checkbox>
+        </div>
+      </template>
+    </paper-material>
+	<paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}">Data selection</paper-button>
   </template>
   <script>
     Polymer({
-        
-        isEncodeOn: true,
-        
-        trackSelActive: false,
-		toggleGroup: 'trackSelect',
 		
-		isDisabled: false,
-		disableGroup: 'query-search',
+		is: "query-card-content",
         
-        timerOn: false,
-        inFocus: false,
-        mouseInGList: false,
-        gListOpen: false,
-        querySent: '',
+		properties: {
+			isEncodeOn: {
+				type: Boolean,
+				value: true
+			},
+			
+			spcCoorSeletion: {
+				type: String,
+				value: ""
+			},
+			
+			spcCoorDropDisabled: {
+				type: Boolean,
+				value: true
+			},
+			
+			trackSelActive: {
+				type: Boolean,
+				value: false
+			},
+			
+			toggleGroup: {
+				type: String,
+				value: 'trackSelect'
+			},
+			
+			isDisabled: {
+				type: Boolean,
+				value: false
+			},
+			
+			disableGroup: {
+				type: String,
+				value: 'query-search'
+			},
+			
+			collapseElement: {
+				type: String,
+				value: ""
+			},
+			
+			icon: {
+				type: String,
+				value: 'view-list'
+			},
+			
+			species: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+			
+			selectedRefs: {			// This is the references selected during submission
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+			
+			currSelectedSpecies: {	// This is the current selected species (not submitted yet)
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+			
+			candidates: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+			
+			timerOn: {
+				type: Boolean,
+				value: false
+			},
+			
+			inFocus: {
+				type: Boolean,
+				value: false
+			},
+			
+			mouseInGList: {
+				type: Boolean,
+				value: false
+			},
+			
+			gListOpen: {
+				type: Boolean,
+				value: false
+			},
+			
+			querySent: {
+				type: String,
+				value: '',
+			},
+			
+			mouseOutJobName: {
+				type: String,
+				value: 'MouseOutJob'
+			},
+			
+			mouseOutTimeOut: {
+				// this is the number of ms before hiding the menu
+				type: Number,
+				value: 10000000
+			},
+			
+			geneRegionSelection: {
+				type: String,
+				value: "gene",
+				observer: "geneRegionSelectionChanged"
+			},
+			
+			partialSelection: {
+				type: String,
+				value: "",
+				observer: "partialSelectionChanged"
+			},
+			
+			direct: {
+				type: Boolean,
+				value: false
+			},
+			
+			firstRun: {
+				type: Boolean,
+				value: true
+			},
+			
+			InputGeneName: {
+				type: String,
+				value: ""
+			}
+		},
         
-        timeoutVar: null,
-        
-        geneRegionSelection: "gene",
-        direct: false,
-        spcCoorDropDisabled: true,
-		
-		collapseElement: null,
-		icon: 'view-list',
-		
-		firstRun: true,
-		
 		computeCheckboxWrapper: function(textstem) {
 			return textstem + '_checkboxwrapper';
 		},
@@ -139,45 +332,27 @@
         updateType: function () {
             var typeSelected = this.spcCoorSelection;
             if(!(this.species[this.species.map[typeSelected]]) || !this.species[this.species.map[typeSelected]].isActive) {
-                typeSelected = null;
+                typeSelected = '';
                 this.geneRegionSelection = 'gene';
             }
-            this.selectedSpecies = []
+            this.splice('currSelectedSpecies', 0, this.currSelectedSpecies.length);
             for(var i = 0; i < this.species.length; i++) {
                 if(this.species[i].isActive) {
-                    this.selectedSpecies.push(this.species[i]);
+                    this.push('currSelectedSpecies', this.species[i]);
                 }
             }
             this.spcCoorSelection = typeSelected;
         },
         
         encodeFilter: function(value) {
-            if(value) {
-                result = [];
-                for(var i = 0; i < value.length; i++) {
-                    if(value[i].isEncode || !this.isEncodeOn) {
-                        result.push(value[i]);
-                    }
-                }
-                return result;
-            }
+			return (value.isEncode || !this.isEncodeOn);
         },
         
         geneRegionSelectionChanged: function() {
             this.spcCoorDropDisabled = (this.geneRegionSelection == 'gene');
         },
         
-        created: function() {
-			this.selectedRefs = [];
-            this.candidates = [];
-        },
-                    
         queryTextChanged: function() {
-            // reset_selection();
-            if(this.timerOn) {
-                this.cancelAsync(this.timeoutVar);
-                this.timerOn = false;
-            }
             //$("#waiting").html($("#geneName").val());
             var chromRegex = /^chr\w+\s*(:|\s)/i;
             if(this.geneRegionSelection == "gene"
@@ -187,12 +362,7 @@
                     // length is enough for ajax and also not already updated
                     // start the timer to prepare for ajax
                     this.direct = false;
-                    if(!this.gListOpen) {
-                        timerOn = true;
-                        timeoutVar = this.async(this.sendPartialQuery, null, 500);
-                    } else {
-                        this.sendPartialQuery();
-                    }
+					this.sendPartialQuery();
             } else if(this.InputGeneName.trim().length <= 1
                 || chromRegex.test(this.InputGeneName.trim())) {
                     this.toggleGList(false);
@@ -200,7 +370,6 @@
         },
         
         sendPartialQuery: function() {
-            this.timerOn = false;
             //$("#waiting").html($.trim($("#geneName").val()).length);
             if(this.InputGeneName.trim().length > 1
                 && this.InputGeneName.trim() != this.querySent) {
@@ -210,62 +379,70 @@
                 //toggleGList(0);
 //					$('#GListResponse').html('<em>Loading...</em>');
 //					toggleGList(1);
-                this.fire("partial-genename", {query: this.querySent, func: this.updatePartialQuery.bind(this)});
+                this.$.partialNameAjax.params = {"name": this.querySent};
             }
         },
         
-        updatePartialQuery: function(data) {
+        updatePartialQuery: function(e, detail) {
             //$('#geneName').removeClass('searchFieldBusy');
-            this.candidates = [];
-            var hostNode = this;
-            var hasItems = true;
-            $.each(data, function(key, val) {
-                //console.log(key);
-                var entry = {};
-                entry.contentBefore = '';
-                entry.contentItalic = '';
-                entry.contentBold = '';
-                entry.contentAfter = '';
-                if(key == "(none)") {
-                    entry.value = "(none)";
-                    entry.id = "none_dummy";
-                    entry.contentItalic = "(No results)";
-                    hostNode.candidates.push(entry);
-                    return false;
-                } else {
-                    key = key.replace(/__[0-9]+/, "");		// remove potential duplicate aliases
-                    entry.id = val;
-                    entry.value = val;
-                    if(key == val) {
-                        entry.contentBold = val.substr(0, hostNode.querySent.length);
-                        entry.contentAfter = val.substr(hostNode.querySent.length);
-                    } else {
-                        // key is alias, val is real gene name
-                        entry.contentBefore = val + ' (';
-                        entry.contentBold = key.substr(0, hostNode.querySent.length);
-                        entry.contentAfter = key.substr(hostNode.querySent.length) + ')';
-                    }
-                    hostNode.candidates.push(entry);
-                }
-            });
+            this.splice('candidates', 0, this.candidates.length);
+			var data = detail.response;
+			for(var key in data) {
+				if(data.hasOwnProperty(key)) {
+					var val = data[key];
+					var entry = {};
+					entry.contentBefore = '';
+					entry.contentItalic = '';
+					entry.contentBold = '';
+					entry.contentAfter = '';
+					if(key == "(none)") {
+						entry.value = "(none)";
+						entry.id = "none_dummy";
+						entry.contentItalic = "(No results)";
+						entry.disabled = true;
+						this.push('candidates', entry);
+					} else if(key == "(too_many)") {
+						entry.value = "(too_many)";
+						entry.id = "toomany_dummy";
+						entry.contentItalic = "(Type more for candidates)";
+						entry.disabled = true;
+						this.push('candidates', entry);
+					} else {
+						key = key.replace(/__[0-9]+/, "");		// remove potential duplicate aliases
+						entry.id = val;
+						entry.value = val;
+						if(key == val) {
+							entry.contentBold = val.substr(0, this.querySent.length);
+							entry.contentAfter = val.substr(this.querySent.length);
+						} else {
+							// key is alias, val is real gene name
+							entry.contentBefore = val + ' (';
+							entry.contentBold = key.substr(0, this.querySent.length);
+							entry.contentAfter = key.substr(this.querySent.length) + ')';
+						}
+						this.push('candidates', entry);
+					}
+				}
+			}
             // this is to fix the bug that core-dropdown will not 
             // 		update it's size automatically
 
-            var el = this.querySelector("::shadow core-dropdown");
-            
-            el.target.style.width = null;
-            el.target.style.height = null;	
-            
-            this.toggleGList(true);
-            
-            // this is to fix the bug that core-dropdown will not 
-            // 		update it's size automatically at first run
-			if(this.firstRun) {
-				this.firstRun = false;
-				this.job('flushdrop', this.updatePartialQuery.bind(this, data), 100);
-			} else {
-				data = null;
+//            var el = this.querySelector("::shadow core-dropdown");
+//            
+//            el.target.style.width = null;
+//            el.target.style.height = null;	
+            if(this.candidates.length > 0) {
+				this.toggleGList(true);
 			}
+            
+ //           // this is to fix the bug that core-dropdown will not 
+//            // 		update it's size automatically at first run
+//			if(this.firstRun) {
+//				this.firstRun = false;
+//				this.job('flushdrop', this.updatePartialQuery.bind(this, data), 100);
+//			} else {
+//				data = null;
+//			}
 			
         },
         
@@ -281,37 +458,33 @@
                 this.partialSelection = '';
                 this.gListIsOn = true;
                 this.$.geneNameDropDown.open();
+				this.$.partialNameAjax.debounceDuration = 50;
             } else {
                 this.gListIsOn = false;
                 this.$.geneNameDropDown.close();
+				this.$.partialNameAjax.debounceDuration = 300;
             }
         },
         
-        textFocused: function() {
-            this.inFocus = true;
+        textFocus: function(flag) {
+            this.inFocus = flag;
+			this.checkGList();
         },
 
-        textBlured: function() {
-            if(this.timerOn) {
-                this.cancelAsync(this.timeoutVar);
-            }
-            this.inFocus = false;
-            if(!this.inFocus && !this.mouseInGList) {
-                this.timerOn = true;
-                this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
-            }
-        },
-        
         inGList: function(flag) {
-            if(timerOn) {
-                this.cancelAsync(this.timeoutVar);
-            }
             this.mouseInGList = flag;
-            if(!this.inFocus && !this.mouseInGList) {
-                this.timerOn = true;
-                this.timeoutVar = this.async(this.hideGListResponse, null, 1000);
-            }
+			this.checkGList();
         },
+		
+		checkGList: function() {
+			if(!this.inFocus && !this.mouseInGList) {
+				this.debounce(this.mouseOutJobName, this.hideGListResponse, this.mouseOutTimeOut);
+			} else {
+				if(this.isDebouncerActive(this.mouseOutJobName)) {
+					this.cancelDebouncer(this.mouseOutJobName);
+				}
+			}
+		},
         
         hideGListResponse: function() {
             this.timerOn = false;
@@ -467,11 +640,11 @@
 			postdata['geneName'] = this.InputGeneName;
 			postdata['direct'] = this.direct? 'true': 'false';
 			
-			this.selectedRefs = [];
+			this.splice('selectedRefs', 0, this.selectedRefs.length);
 			for(var i = 0; i < this.species.length; i++) {
 				if(this.species[i].isActive) {
 					postdata[this.species[i].db] = this.species[i].db;
-					this.selectedRefs.push(this.species[i].db);
+					this.push('selectedRefs', this.species[i].db);
 				}
 			}
 			
@@ -509,7 +682,13 @@
             
             var hostNode = this;
             
-            this.species = spcArray;
+//			for(var i=0; i<spcArray.length; i++) {
+//				this.push('species', spcArray[i]);
+//			}
+//			
+//			this.species.map = spcArray.map;
+
+			this.species = spcArray;
             
             var trackSelectButtons = Polymer.dom(this.root).querySelectorAll('.trackSelection');
             Array.prototype.forEach.call(trackSelectButtons, function(item) {
@@ -527,16 +706,24 @@
             });
             
             this.$.geneName.addEventListener('input', this.queryTextChanged.bind(this));
-            this.$.geneName.addEventListener('blur', this.textBlured.bind(this));
-            this.$.geneName.addEventListener('focus', this.textFocused.bind(this));
+            this.$.geneName.addEventListener('blur', this.textFocus.bind(this, false));
+            this.$.geneName.addEventListener('focus', this.textFocus.bind(this, true));
             
             this.$.geneNameHotRegion.addEventListener('mouseover', this.inGList.bind(this, true));
             this.$.geneNameHotRegion.addEventListener('mouseout', this.inGList.bind(this, false));
 
+            this.$.geneNameDropDown.addEventListener('mouseover', this.inGList.bind(this, true));
+            this.$.geneNameDropDown.addEventListener('mouseout', this.inGList.bind(this, false));
+
             this.$.querySubmit.addEventListener("click", this.submitQuery.bind(this));
+			
+			this.$.geneNameDropDown.positionTarget = this.$.geneName;
+			this.$.geneNameDropDown.focusTarget = this.$.geneName;
+			
+			this.$.partialNameAjax.auto = true;
 			
         }
         
     });
-  </script> 
-</polymer-element>
+  </script>
+</dom-module>

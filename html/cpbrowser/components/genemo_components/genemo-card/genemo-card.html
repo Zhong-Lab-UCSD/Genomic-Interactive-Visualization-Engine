@@ -3,106 +3,35 @@
 <link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../genemo-styles.html">
+<link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="genemo-card" attributes="isOpened collapseGroup">
   <template>
-    <style>
+    <style include="genemo-shared-styles">
 		:host {
 			display: block;
 			font-family: 'Roboto', Arial, Helvetica, sans-serif;
-			background: #F5F5F5;
+			background: var(--card-background-color);
 			margin: 0.6em 0;
 		/*	border: #757575 solid 1px;
 			border: rgba(0, 0, 0, .54) solid 1px;
 		*/}
 		
-		.genemoHeader {
-			background: #E0E0E0;
-			font-size: 14px;
-			margin: 0;
-		}
-		
-		.anno {
-			color: #3F51B5;
-		}
-		
 		/************************** Polymer and Material Design components below *********************/
 		
-		.fullWidth {
-			width: 100%;
-			margin-left: 0;
-			margin-right: 0;
-		}
-		
-		.vertCenterContainer {
-			display: table;
-			width: 100%;
-		}
-		
-		.vertCenterContainer > div {
-			display: table-cell;
-			padding: 0px;
-			width: 100%;
-			vertical-align: middle;
-		}
-		
-		.vertCenterContainer > .left {
-			float: left;
-		}
-		
-		.vertCenterContainer > div.hidden {
+		/************************** Polymer and Material Design size and others below *********************/
+		#cardHeadHolder {
 			display: none;
 		}
 		
-		div.headerText {
-			font-weight: 700;
-			margin: 0.3em 0.6em 0.3em 0;
-			text-transform: capitalize;
-		}
-		
-		.collapseDb {
-			font-size: 12px;
-		}
-		
-		.collapseContent {
-			background: #F5F5F5;
-			padding: 0.3em 0.5em;
-		}
-		
-		.clearFix:after {
-			content: "";
-			display: table;
-			clear: both;
-		}
-		
-		/************************** Polymer and Material Design size and others below *********************/
-		
-		iron-icon.smallInline {
-			width: 1.25em;
-			height: 1.25em;
-			margin: 0 0.25em 0.1em 0.25em;
-		}
-		
-		iron-collapse {
-			padding: 0.6em;
-		}
-		
-		paper-tabs::shadow #selectionBar {
-			background-color: #3F51B5;
-		}
-		
-		.vertCenterContainer > div > paper-tabs {
-			width: auto;
-			height: 3em;
-			vertical-align: bottom;
-			padding: 0px;
-			margin: 0px;
-		}  
 	</style>
     <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
     <paper-material elevation="1">
-      <div class="card-content">
-        <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer"> <paper-icon-button icon="{{expandIcon}}" class="left" id="expandButton" on-click="toggleCollapse"></paper-icon-button>
-          <div id="cardHeadContent" class="vertCenterElement">
+      <div class="cardContent">
+        <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
+          <paper-icon-button icon="{{expandIcon}}" class="leftFloat" id="expandButton" on-click="toggleCollapse"></paper-icon-button>
+          <div id="cardHeadContent" class="vertCenterElement"></div>
+          <div id="cardHeadHolder">
             <content id="cardhead" select=".GenemoHead"></content>
           </div>
         </div>
@@ -147,10 +76,9 @@
 			// if nothing, then GenemoShrunk is simply GenemoHead
 			// flag is the target status
 			
-			var currentHeader = Polymer.dom(this.root).querySelector('#cardHeadContent');
 			if(flag && this.collapseHeaderEl) {
 				// there is old collapseHeader, needs to be removed
-				this.$.cardHeader.removeChild(this.collapseHeaderEl);
+				Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl);
 				this.$.cardHeadContent.classList.remove('hidden');
 			} else if(!flag) {
 				var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes();
@@ -160,7 +88,7 @@
 						this.collapseHeaderEl = contentNode.getCollapse();
 						if(this.collapseHeaderEl) {
 							this.$.cardHeadContent.classList.add('hidden');
-							this.$.cardHeader.appendChild(this.collapseHeaderEl);
+							Polymer.dom(this.$.cardHeader).appendChild(this.collapseHeaderEl);
 						}
 					}
 				}
@@ -195,18 +123,21 @@
 				//		it will be used to generate the node to replace the node
 				//		given in .GenemoHead
 				var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes();
+				var oldHead = Polymer.dom(this.$.cardHeadContent);
 				if(contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
-					var oldHead = this.$.cardHeadContent;
-					while(oldHead.firstChild) {
-						oldHead.removeChild(oldHead.firstChild);
-					}
 					var newHead = contentNode[0].getExpandedHeader();
 					newHead.classList.add('headerText');
 					oldHead.appendChild(newHead);
-					this.expandedHeaderEl = newHead;
 				} else {
-					this.expandedHeaderEl = this.$.cardHeadContent;
+					// populate header with #cardhead
+					var newHead = Polymer.dom(this.$.cardhead).getDistributedNodes();
+					if(newHead) {
+						for(var i = 0; i < newHead.length; i++) {
+							oldHead.appendChild(newHead[i]);
+						}
+					}
 				}
+					
 			});
 		},
 		
