@@ -59,12 +59,14 @@
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
 <?php if(isset($experimentalFeatures)) { ?>
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
-<link rel="import" href="cpbrowser/components/genemo_components/tab-pages/tab-pages.html">
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
 <?php } ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-styles.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
+<link rel="import" href="cpbrowser/components/bower_components/paper-tooltip/paper-tooltip.html">
 <link rel="import" href="cpbrowser/components/bower_components/iron-signals/iron-signals.html">
-<style type="text/css">
+<style is="custom-style" include="genemo-shared-styles">
 <!--
 html {
 	height: 100%;
@@ -836,12 +838,16 @@ window.addEventListener("WebComponentsReady", function(e) {
       </div>
       <div>
         <label>
-          <input type="checkbox" id="useAllTracks" name="useAllTracks" />
-          Use all ENCODE data.
-          <iron-icon class="smallInline transparent" icon="help" alt="help" id="allEncodeHelp">
-          </core-icon>
-          <paper-tooltip large position="bottom" for="allEncodeHelp"> Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
-            <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong> </paper-tooltip>
+        <input type="checkbox" id="useAllTracks" name="useAllTracks" />
+        Use all ENCODE data.
+        <div class="inlineDiv">
+          <iron-icon class="smallInline transparent" icon="help" alt="help">
+          </iron-icon>
+          <paper-tooltip position="bottom" offset="0">
+            Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
+            <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong>
+          </paper-tooltip>
+        </div>
         </label>
       </div>
     </div>
