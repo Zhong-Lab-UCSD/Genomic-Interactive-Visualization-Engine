@@ -1,11 +1,11 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animated-pages.html">
-<link rel="import" href="../../bower_components/neon-animation/animations/slide-from-right-animation.html">
 <link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
-<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../resizable-tab-pages/resizable-tab-pages.html">
 <link rel="import" href="../genemo-styles.html">
 <dom-module id="genemo-tab-cards">
   <template>
@@ -31,6 +31,11 @@
 			margin: 0px;
 		}
 		
+		#mainCollapse {
+			overflow: hidden;
+			padding: 0;
+		}
+		
 	</style>
     <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
     <paper-material elevation="1">
@@ -45,9 +50,11 @@
           </div>
         </div>
         <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
-          <neon-animated-pages id="mainPage" selected="{{selectedTab}}" transition="slide-from-right">
-            <content id="tabContent" select=".tabContent"></content>
-          </neon-animated-pages>
+          <div>
+            <resizable-tab-pages id="mainPage" selected="{{selectedTab}}" greater-entry-animation="slide-from-right-animation" greater-exit-animation="slide-left-animation" lesser-entry-animation="slide-from-left-animation" lesser-exit-animation="slide-right-animation">
+              <content id="tabContent" select=".tabContent"></content>
+            </resizable-tab-pages>
+          </div>
         </iron-collapse>
       </div>
     </paper-material>
