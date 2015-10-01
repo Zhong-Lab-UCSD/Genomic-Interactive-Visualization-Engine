@@ -32,6 +32,10 @@
 			$result['genemoOn'] = false;
 		}
 		
+		if($result['genemoOn'] && isset($_REQUEST['exp']) && $_REQUEST['exp'] == "XCExp") {
+			$result['experimental'] = true;
+		}
+		
 		if($result['genemoOn'] || strpos(getenv('SERVER_NAME'), 'encode') !== false) {
 			$result['encodeOn'] = true;
 			$_SESSION["Encode"] = "XCEncode";

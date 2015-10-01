@@ -18,7 +18,9 @@
 <?php
 	if(empty($_REQUEST)) {
 		// new page, show something else
-		// require 'introduction.php';
+		if(!$genemoOn) {
+			require 'introduction.php';
+		}
 	} else {
 		$num_spc = $_REQUEST["num_spc"];
 ?>
