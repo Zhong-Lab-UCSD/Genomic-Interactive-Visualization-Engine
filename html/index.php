@@ -13,6 +13,10 @@
 	$encodeOn = $res['encodeOn'];
 	$in_debug = $res['in_debug'];
 	$genemoOn = $res['genemoOn'];
+	
+	if($res['experimental']) {
+		$experimentalFeatures = true;
+	}
 	unset($res);
 	
 	$isResuming = false;
@@ -57,8 +61,8 @@
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
 <link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
-<?php if(isset($experimentalFeatures)) { ?>
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
+<?php if(isset($experimentalFeatures)) { ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
 <?php } ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
@@ -721,19 +725,22 @@ window.addEventListener("WebComponentsReady", function(e) {
 <div id="container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
+      <?php if(!isset($experimentalFeatures)) { ?>
     <genemo-card collapse-group='query-search'>
-      <?php if(isset($experimentalFeatures)) { ?>
-      <tab-pages class='GenemoBody' id='tabPages' selected-tab='<?php echo $genemoOn? 0: 1; ?>'>
-        <?php }
-		  if($genemoOn) { ?>
-        <search-card-content class='tabContent GenemoBody' id='searchCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </search-card-content>
-        <?php } else { ?>
-        <query-card-content class='tabContent GenemoBody' id='queryCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </query-card-content>
-        <?php }
-		  if(isset($experimentalFeatures)) { ?>
-      </tab-pages>
-      <?php } ?>
+      <?php } else { ?>
+    <genemo-tab-cards collapse-group='query-search' id='tabPages' selected-tab='<?php echo $genemoOn? 0: 1; ?>'>
+      <?php }
+		    if($genemoOn) { ?>
+      <search-card-content class='tabContent GenemoBody' id='searchCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </search-card-content>
+      <?php }
+		    if($genemoOn === isset($experimentalFeatures)) { ?>
+      <query-card-content class='tabContent GenemoBody' id='queryCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </query-card-content>
+      <?php }
+		    if(isset($experimentalFeatures)) { ?>
+    </genemo-tab-cards>
+      <?php } else { ?>
     </genemo-card>
+      <?php } ?>
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>

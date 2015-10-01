@@ -88,6 +88,11 @@
 			font-weight: 700;
 		}
 		
+		#speciesTable > div {
+			margin-top: 0.3em;
+			margin-bottom: 0.3em;
+		}
+		
 		/************************** Polymer and Material Design color below *********************/
 		
 		/************************** Polymer and Material Design size and others below *********************/
@@ -137,7 +142,7 @@
       <div class="anno fullWidth"> Species to compare: </div>
       <template is="dom-repeat" items="[[species]]">
         <div id="[[computeCheckboxWrapper(item.db)]]">
-          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]">
+          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]" disabled$="[[item.checkDisabled]]">
             <span><em>[[item.name]]</em> (<span>[[item.commonName]]</span>) [<span>[[item.db]]</span>]</span>
           </paper-checkbox>
         </div>
@@ -160,7 +165,7 @@
 				value: true
 			},
 			
-			spcCoorSeletion: {
+			spcCoorSelection: {
 				type: String,
 				value: ""
 			},
@@ -261,7 +266,7 @@
 			mouseOutTimeOut: {
 				// this is the number of ms before hiding the menu
 				type: Number,
-				value: 10000000
+				value: 1000
 			},
 			
 			geneRegionSelection: {
@@ -337,17 +342,18 @@
         
         updateType: function () {
             var typeSelected = this.spcCoorSelection;
-            if(!(this.species[this.species.map[typeSelected]]) || !this.species[this.species.map[typeSelected]].isActive) {
-                typeSelected = '';
-                this.geneRegionSelection = 'gene';
-            }
             this.splice('currSelectedSpecies', 0, this.currSelectedSpecies.length);
+			var lastActiveSpecies;
             for(var i = 0; i < this.species.length; i++) {
                 if(this.species[i].isActive) {
                     this.push('currSelectedSpecies', this.species[i]);
-                }
+					lastActiveSpecies = this.species[i].db;
+                } else if(i == this.species.map[typeSelected]) {
+					typeSelected = lastActiveSpecies;
+					this.spcCoorSelection = typeSelected;
+					this.geneRegionSelection = 'gene';
+				}
             }
-            this.spcCoorSelection = typeSelected;
         },
         
         encodeFilter: function(value) {
@@ -695,19 +701,12 @@
 //			this.species.map = spcArray.map;
 
 			this.species = spcArray;
+			spcArray[spcArray.map['hg19']].checkDisabled = true;
             
             var trackSelectButtons = Polymer.dom(this.root).querySelectorAll('.trackSelection');
             Array.prototype.forEach.call(trackSelectButtons, function(item) {
                 item.addEventListener("click", function(e) {
                     hostNode.fire("toggle-window");
-                });
-            });
-            
-            checkboxList = Polymer.dom(this.root).querySelectorAll('paper-checkbox');
-            Array.prototype.forEach.call(checkboxList, function(item) {
-                item.addEventListener("change", function(e) {
-                    hostNode.updateAllSpcActive();
-                    hostNode.updateType();
                 });
             });
             
@@ -728,7 +727,20 @@
 			
 			this.$.partialNameAjax.auto = true;
 			
-        }
+        },
+		
+		attached: function() {
+			this.async(function() {
+				var hostNode = this;
+				var checkboxList = Polymer.dom(this.root).querySelectorAll('paper-checkbox');
+				Array.prototype.forEach.call(checkboxList, function(item) {
+					item.addEventListener("change", function(e) {
+						hostNode.updateAllSpcActive();
+						hostNode.updateType();
+					});
+				});
+			});
+		}
         
     });
   </script>
