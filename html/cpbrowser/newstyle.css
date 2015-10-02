@@ -41,6 +41,9 @@
 .commentformtext div {
 	margin: 6px 0;
 }
+.commentformtext input {
+	margin: 6px 0;
+}
 .error {
 	width: auto;
 	background-color: #FCC;

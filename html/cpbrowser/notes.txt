@@ -4,6 +4,12 @@ Release Notes
 
 	Major UI update. Polymer 1.0 has been used in the query panel.
 
+* 2/19/2015
+
+	Changed the display method so that ENCODE data are no longer log-transformed. This should present a better representation of the actual signal.
+
+	Updated comment function and now you may leave us a comment at https://secure.cepbrowser.org/cpbrowser/feedback.php . 
+
 * 12/13/2014
 
 	Genomic regions can now be used as query. CEpBrowser will find significant orthologous segments within the specified region in the response. Please check the manual for how this works.

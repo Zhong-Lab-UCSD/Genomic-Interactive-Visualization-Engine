@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?php
 	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
 	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));

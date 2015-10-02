@@ -855,8 +855,23 @@ window.addEventListener("WebComponentsReady", function(e) {
             <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong>
           </paper-tooltip>
         </div>
+<<<<<<< HEAD
         </label>
       </div>
+=======
+        <label>
+        <input type="checkbox" id="useAllTracks" name="useAllTracks" />
+        Use all tracks.
+        </label>
+        <input type="file" id="uploadFileInput" name="uploadFileInput" />
+        <input type="submit" value="Upload Data" name="fileSubmit" id="fileSubmit" />
+      </form>
+      <div style="clear: both;"></div>
+      <div style="display: none;">
+      <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
+      </div>
+      -->
+>>>>>>> master
     </div>
     <div id="NonEncodeData">
       <div class="subBox">

@@ -46,6 +46,10 @@ ChrRegion.prototype.regionFromString = function(regionString) {
 	this.strand = ((elements.length < 4)? this.strand: ((elements[3] == 'NEGSTR')? false: true));
 };
 
+ChrRegion.prototype.getLength = function() {
+	return this.end - this.start;
+};
+
 ChrRegion.prototype.regionToString = function(includeStrand) {
 	// default is including strand
 	if (includeStrand == null) {
