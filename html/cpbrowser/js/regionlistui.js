@@ -191,7 +191,6 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 				cell.append($('<div></div>').css('clear', 'both'));
                 
                 var trackListDiv = $('<div></div>');
-<<<<<<< HEAD
 				var currListedTrack = {};
                 for(var iTracks = 0; iTracks < currRegion.data.track.length; iTracks++) {
 					// merge duplicated tracks
@@ -202,39 +201,18 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 					} else {
 						// it's unique
 						revLookupTrack = spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName];
-=======
-				var currListedTrack = new Object();
-                for(var iTracks = 0; iTracks < currRegion.data['track'].length; iTracks++) {
-                    var trackTableName = currRegion.data['track'][iTracks];
-					var revLookupTrack;
-					if(cmnTracksEncode.reverseLookUpMap.hasOwnProperty(trackTableName)) {
-						revLookupTrack = cmnTracksEncode.reverseLookUpMap[trackTableName]
-					} else {
-						// it's unique
-						revLookupTrack = spcArray[i].uniTracksEncode.reverseLookUpMap[trackTableName]
->>>>>>> master
 					}
 					if(revLookupTrack) {
 						if(!currListedTrack.hasOwnProperty(revLookupTrack.id)) {
 							if(iTracks > 0) {
-<<<<<<< HEAD
 								trackListDiv.append('<br>');
 							}
 							trackListDiv.append(revLookupTrack.writeLongString());
-=======
-								cell.append('<br>');
-							}
-							cell.append(revLookupTrack.writeLongString());
->>>>>>> master
 							currListedTrack[revLookupTrack.id] = true;
 						}
 					} else {
 						console.log('Error: ' + trackTableName + ' cannot be reverse looked up.');
-<<<<<<< HEAD
 						UI.alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
-=======
-						alert('Error: ' + trackTableName + ' cannot be reverse looked up.');
->>>>>>> master
 					}
                 }
 				cell.append(trackListDiv);
