@@ -193,7 +193,7 @@ animations to be run when switching to or switching out of the page.
       // display the selectedPage during the transition.
       selectedPage.classList.add('neon-animating');
 	  
-	  this.updateSize((this.horizontal? selectedPage.offsetWidth: selectedPage.offsetHeight) +
+	  this.updateSize((this.horizontal? selectedPage.getBoundingClientRect().width: selectedPage.getBoundingClientRect().height) +
 		'px', true);
 	  
       // actually run the animations.
@@ -229,9 +229,9 @@ animations to be run when switching to or switching out of the page.
       if (selectedPage) {
         selectedPage.classList.remove('neon-animating');
 	    if(this.horizontal) {
-			this.style.width = selectedPage.offsetWidth + 'px';
+			this.style.width = selectedPage.getBoundingClientRect().width + 'px';
 	    } else {
-			this.style.height = selectedPage.offsetHeight + 'px';
+			this.style.height = selectedPage.getBoundingClientRect().height + 'px';
 	    }
       }
       if (oldPage) {

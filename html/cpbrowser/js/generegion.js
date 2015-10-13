@@ -22,7 +22,7 @@ function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regions
 		this.chr = elements[0];
 		this.start = parseInt(elements[1]);
 		this.end = parseInt(elements[2]);
-		this.strand = ((elements.length < 3)? null: ((elements[3] == 'NEGSTR')? false: true));
+		this.strand = ((elements.length < 3)? null: ((elements[3] === 'NEGSTR')? false: true));
 	} else {
 		this.chr = chrom;
 		this.start = parseInt(regionstart);
@@ -36,6 +36,14 @@ ChrRegion.prototype.getLength = function() {
 	return this.end - this.start;
 };
 
+ChrRegion.prototype.getStart = function() {
+	return {chr: this.chr, coor: this.start};
+};
+
+ChrRegion.prototype.getEnd = function() {
+	return {chr: this.chr, coor: this.end};
+};
+
 ChrRegion.prototype.regionFromString = function(regionString) {
 	var cleanedChrString = regionString.replace(/,/g, '')
 		.replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR');
@@ -43,11 +51,7 @@ ChrRegion.prototype.regionFromString = function(regionString) {
 	this.chr = elements[0];
 	this.start = parseInt(elements[1]);
 	this.end = parseInt(elements[2]);
-	this.strand = ((elements.length < 4)? this.strand: ((elements[3] == 'NEGSTR')? false: true));
-};
-
-ChrRegion.prototype.getLength = function() {
-	return this.end - this.start;
+	this.strand = ((elements.length < 4)? this.strand: ((elements[3] === 'NEGSTR')? false: true));
 };
 
 ChrRegion.prototype.regionToString = function(includeStrand) {
@@ -128,10 +132,18 @@ ChrRegion.prototype.intersect = function(region) {
 	return this;
 };
 
+function compareChrRegion(region1, region2) {
+	return ((region1.chr === region2.chr)? 
+				((region1.start === region2.start)?
+					((region1.end === region2.end)? 0: ((region1.end > region2.end)? 1: -1)
+				): ((region1.start > region2.start)? 1: -1)
+			): ((region1.chr > region2.chr)? 1: -1)); // region1.chr !== region2.chr
+}
+
 function SpcRegionArray(spcregion) {
 	this.activeRegion = spcregion;
-	this.array = new Array();
-	this.map = new Object();
+	this.array = [];
+	this.map = {};
 	if (spcregion) {
 		this.array.push(spcregion);
 		if (spcregion.name) {
