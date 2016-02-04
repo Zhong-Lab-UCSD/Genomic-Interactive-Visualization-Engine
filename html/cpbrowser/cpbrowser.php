@@ -318,15 +318,20 @@ body {
 		if(!isset($_COOKIE['NoTipTrackSettings']) || $_COOKIE['NoTipTrackSettings'] != 'true') {
 ?>
 <script type="text/javascript">
-function doNotShow() {
-	$.post('postcookie.php', { varName: 'NoTipTrackSettings', value: 'true' } );
+function hideTrackHint() {
+	//$.post('cpbrowser/postcookie.php', { varName: 'NoTipTrackSettings', value: 'false' } );
+	$('#trackSelectHint').fadeOut('fast');
+}
+function hideTrackHintForever() {
+	$.post('cpbrowser/postcookie.php', { varName: 'NoTipTrackSettings', value: 'true' } );
 	$('#trackSelectHint').fadeOut('fast');
 }
 setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
 </script>
-<div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
-font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on/off via the <span class="panel">track selection</span> panel; click button on the right to show. --&gt;
-  <div class="header buttons" style="float: right; margin-top: 5px;" onclick="doNotShow();">Do not show in the future</div>
+  <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
+font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.
+    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="hideTrackHintForever();">Do not show in the future</div>
+	<div class="header buttons" style="float: left; margin-top: 5px;" onclick="hideTrackHint();">Close</div>
   <div style="clear: both"></div>
 </div>
 <?php
