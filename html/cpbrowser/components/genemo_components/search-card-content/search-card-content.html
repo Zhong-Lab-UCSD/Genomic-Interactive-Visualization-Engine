@@ -61,14 +61,14 @@
             <div class="inlineDiv">
               <iron-icon class="smallInline transparent" icon="help" alt="help"></iron-icon>
               <paper-tooltip offset="0">
-                Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>)
+                <span id = "text1" class="translatetext"></span> (<a href="/goldenPath/help/customTrack.html#BED" target="_blank"> <span id = "text2" class="translatetext"></span></a>)
               </paper-tooltip>
             </div>
           </div>
-          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised> Use sample file </paper-button>
+          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised> <span id = "text3" class="translatetext"> </paper-button>
         </div>
         <div class="vertTextBottomContainer clearFix">
-          <div>Reference: </div>
+          <div><span id = "text4" class="translatetext"></span></div>
           <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
             <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
               <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
@@ -84,19 +84,19 @@
       <div>
         <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
         <paper-tooltip class="fullWidth" position="top" offset="0">
-          Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.
+          <span id = "text5" class="translatetext"></span>
         </paper-tooltip>
       </div>
       <div>
         <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
         <paper-tooltip class="fullWidth" position="top" offset="0">
-          You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong>
+          <span id = "text6" class="translatetext"></span><a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a><span id = "text7" class="translatetext"></span><strong><em><span id = "text8" class="translatetext"></span></em></strong>
         </paper-tooltip>
       </div>
-      <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}"> Data selection </paper-button>
+      <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}"><span id = "text9" class="translatetext"></span></paper-button>
       <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}">
         <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
-        Search </paper-button>
+        <span id = "text10" class="translatetext"></span></paper-button>
       <!-- end upload new file part --> 
   </template>
   <script>
