@@ -18,11 +18,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../web-component-tester/browser.js"></script>
-    <script src="../../test-fixture/test-fixture-mocha.js"></script>
 
     <link rel="import" href="../paper-tabs.html">
-    <link rel="import" href="../../test-fixture/test-fixture.html">
-
+    
   </head>
   <body>
 
@@ -51,6 +49,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         test('selected tab has iron-selected class', function() {
+          Polymer.dom.flush();
           assert.isTrue(tabs.querySelector('[name=bar]').classList.contains('iron-selected'));
         });
 
@@ -71,6 +70,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         test('selected tab has iron-selected class', function() {
+          Polymer.dom.flush();
           assert.isTrue(tab.classList.contains('iron-selected'));
         });
 

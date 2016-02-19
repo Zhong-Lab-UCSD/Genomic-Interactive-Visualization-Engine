@@ -14,17 +14,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
 
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
   <script src="../../web-component-tester/browser.js"></script>
-  <script src="../../test-fixture/test-fixture-mocha.js"></script>
-
   <script src="../../iron-test-helpers/test-helpers.js"></script>
   <script src="../../iron-test-helpers/mock-interactions.js"></script>
 
-  <link rel="import" href="../../test-fixture/test-fixture.html">
   <link rel="import" href="../paper-input.html">
   <link rel="import" href="letters-only.html">
 
@@ -34,6 +31,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="basic">
     <template>
       <paper-input></paper-input>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="has-tabindex">
+    <template>
+      <paper-input tabindex="0"></paper-input>
     </template>
   </test-fixture>
 
@@ -67,7 +70,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
-
   <test-fixture id="required-char-counter">
     <template>
       <paper-input auto-validate char-counter required error-message="error"></paper-input>
@@ -89,6 +91,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="placeholder">
     <template>
       <paper-input label="foo" placeholder="bar"></paper-input>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="date">
+    <template>
+      <paper-input label="foo" type="date"></paper-input>
     </template>
   </test-fixture>
 
@@ -116,6 +124,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(input.noLabelFloat, false);
         var floatingLabel = Polymer.dom(Polymer.dom(input.root).querySelector('paper-input-container').root).querySelector('.label-is-floating');
         assert.ok(floatingLabel);
+      });
+
+      test('special types autofloat the label', function() {
+        var input = fixture('date');
+        // Browsers that don't support special <input> types like `date` fallback
+        // to `text`, so make sure to only test if type is still preserved after
+        // the element is attached.
+        if (input.inputElement.type === "date") {
+          assert.equal(input.alwaysFloatLabel, true);
+          var floatingLabel = Polymer.dom(Polymer.dom(input.root).querySelector('paper-input-container').root).querySelector('.label-is-floating');
+          assert.ok(floatingLabel);
+        }
       });
 
       test('always-float-label attribute works without placeholder', function() {
@@ -176,23 +196,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         input = fixture('basic');
       });
 
-      test('focus/blur events fired on host element', function() {
-        var nFocusEvents = 0;
-        var nBlurEvents = 0;
+      // At the moment, it is very hard to correctly fire exactly
+      // one focus/blur events on a paper-input. This is because
+      // when a paper-input is focused, it needs to focus
+      // its underlying native input, which will also fire a `blur`
+      // event.
+      test('focus events fired on host element', function() {
         input.addEventListener('focus', function(event) {
-          nFocusEvents += 1;
           assert(input.focused, 'input is focused');
-          MockInteractions.blur(input.inputElement);
         });
-        input.addEventListener('blur', function() {
-          nBlurEvents += 1;
-          assert(!input.focused, 'input is blurred');
-        });
-        MockInteractions.focus(input.inputElement);
-        assert.isTrue(nFocusEvents >= 1, 'focus event fired');
-        assert.isTrue(nBlurEvents >= 1, 'blur event fired');
+        MockInteractions.focus(input);
       });
 
+      test('focus events fired on host element if nested element is focused', function() {
+        input.addEventListener('focus', function(event) {
+          assert(input.focused, 'input is focused');
+        });
+        MockInteractions.focus(input.inputElement);
+      });
+
+      test('blur events fired on host element', function() {
+        MockInteractions.focus(input);
+        input.addEventListener('blur', function(event) {
+          assert(!input.focused, 'input is blurred');
+        });
+        MockInteractions.blur(input);
+      });
+
+      test('blur events fired on host element nested element is blurred', function() {
+        MockInteractions.focus(input);
+        input.addEventListener('blur', function(event) {
+          assert(!input.focused, 'input is blurred');
+        });
+        MockInteractions.blur(input.inputElement);
+      });
+
+      test('focusing then bluring sets the focused attribute correctly', function() {
+        MockInteractions.focus(input);
+        assert(input.focused, 'input is focused');
+        MockInteractions.blur(input);
+        assert(!input.focused, 'input is blurred');
+        MockInteractions.focus(input.inputElement);
+        assert(input.focused, 'input is focused');
+        MockInteractions.blur(input.inputElement);
+        assert(!input.focused, 'input is blurred');
+      });
     });
 
     suite('focused styling (integration test)', function() {
@@ -210,7 +258,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       });
 
     });
-
 
     suite('validation', function() {
 
@@ -255,6 +302,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(input.inputElement.getAttribute('aria-describedby'), Polymer.dom(input.root).querySelector('paper-input-error').id + ' ' + Polymer.dom(input.root).querySelector('paper-input-char-counter').id, 'aria-describedby points to the error message and character counter');
       });
 
+      test('focus an input with tabindex', function(done) {
+        var input = fixture('has-tabindex');
+        flush(function() {
+          MockInteractions.focus(input);
+          flush(function() {
+            assert.equal(input.shadowRoot ? input.shadowRoot.activeElement :
+                document.activeElement, input._focusableElement);
+            done();
+          });
+        });
+      });
     });
 
   </script>

@@ -42,6 +42,9 @@
     "paper-tooltip": "PolymerElements/paper-tooltip#^1.0.0",
     "polymer": "Polymer/polymer#^1.0.0",
     "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.0",
-    "paper-slider": "PolymerElements/paper-slider#^1.0.0"
+    "paper-slider": "PolymerElements/paper-slider#^1.0.0",
+    "paper-drawer-panel": "PolymerElements/paper-drawer-panel#^1.0.0",
+    "paper-scroll-header-panel": "PolymerElements/paper-scroll-header-panel#^1.0.0",
+    "paper-toolbar": "PolymerElements/paper-toolbar#^1.0.0"
   }
 }

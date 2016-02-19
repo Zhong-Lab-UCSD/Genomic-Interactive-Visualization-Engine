@@ -15,12 +15,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <script src="../../web-component-tester/browser.js"></script>
-  <script src="../../test-fixture/test-fixture-mocha.js"></script>
   <script src="../../iron-test-helpers/mock-interactions.js"></script>
 
-  <link rel="import" href="../../test-fixture/test-fixture.html">
   <link rel="import" href="../paper-checkbox.html">
 
+  <style is="custom-style">
+    paper-checkbox.no-label-spacing {
+      --paper-checkbox-label-spacing: 0;
+    }
+
+    paper-checkbox.giant {
+      --paper-checkbox-size: 50px;
+    }
+
+    paper-checkbox.tiny {
+      --paper-checkbox-size: 5px;
+    }
+
+    paper-checkbox.large-line-height {
+      line-height: 3;
+    }
+
+    paper-checkbox.small-line-height {
+      line-height: 0.25;
+    }
+  </style>
 </head>
 <body>
 
@@ -39,6 +58,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="AriaLabel">
     <template>
       <paper-checkbox id="check3" aria-label="Batman">Robin</paper-checkbox>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="WithDifferentSizes">
+    <template>
+      <paper-checkbox class="no-label-spacing"></paper-checkbox>
+      <paper-checkbox class="no-label-spacing giant"></paper-checkbox>
+      <paper-checkbox class="no-label-spacing tiny"></paper-checkbox>
+    </template>
+  </test-fixture>
+
+  <test-fixture id="WithLineHeight">
+    <template>
+      <paper-checkbox class="large-line-height">Checkbox</paper-checkbox>
+      <paper-checkbox class="small-line-height">Checkbox</paper-checkbox>
     </template>
   </test-fixture>
 
@@ -95,6 +129,48 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         c1.checked = true;
         assert.isTrue(c1.validate());
+      });
+
+      test('checkbox can check sizes', function() {
+        var c2 = fixture('WithDifferentSizes');
+        var normal = c2[0].getBoundingClientRect();
+        var giant = c2[1].getBoundingClientRect();
+        var tiny = c2[2].getBoundingClientRect();
+
+        assert.isTrue(5 === tiny.height);
+        assert.isTrue(tiny.height < normal.height);
+        assert.isTrue(normal.height < giant.height);
+        assert.isTrue(giant.height <= 50);
+        
+        assert.isTrue(5 === tiny.width);
+        assert.isTrue(tiny.width < normal.width);
+        assert.isTrue(normal.width < giant.width);
+        assert.isTrue(giant.width === 50);
+      });
+
+      suite('checkbox line-height', function() {
+        var large;
+        var small;
+
+        setup(function() {
+          var checkboxes = fixture('WithLineHeight');
+          large = checkboxes[0];
+          small = checkboxes[1];
+        });
+
+        test('checkboxes with >1 line-height have an equal height', function() {
+          var largeRect = large.getBoundingClientRect();
+          var largeStyle = getComputedStyle(large);
+
+          assert.isTrue(largeRect.height === 3 * parseFloat(largeStyle.fontSize));
+        });
+
+        test('checkbox with <1 line-height are at least 1em tall', function() {
+          var smallRect = small.getBoundingClientRect();
+          var smallStyle = getComputedStyle(small);
+
+          assert.isTrue(smallRect.height >= 1 * parseFloat(smallStyle.fontSize));
+        });
       });
     });
 

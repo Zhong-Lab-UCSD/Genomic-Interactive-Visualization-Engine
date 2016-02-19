@@ -18,12 +18,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../web-component-tester/browser.js"></script>
-    <script src="../../test-fixture/test-fixture-mocha.js"></script>
 
     <link rel="import" href="../paper-tabs.html">
     <link rel="import" href="../../iron-test-helpers/iron-test-helpers.html">
-    <link rel="import" href="../../test-fixture/test-fixture.html">
-
+    
   </head>
   <body>
 
@@ -185,6 +183,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           MockInteractions.pressEnter(tab);
+        });
+      });
+
+      suite('noink attribute', function() {
+        var tabs;
+
+        setup(function () {
+          tabs = fixture('basic');
+        });
+
+        test('noink attribute propagates to all descendant tabs', function() {
+          tabs.noink = true;
+          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab')).forEach(function(tab) {
+            assert.isTrue(tab.noink);
+          });
+
+          tabs.noink = false;
+          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab')).forEach(function(tab) {
+            assert.isFalse(tab.noink);
+          });
         });
       });
 
