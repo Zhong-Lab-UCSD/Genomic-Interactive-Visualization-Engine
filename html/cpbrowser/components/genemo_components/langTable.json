@@ -1,0 +1,23 @@
+lang Table:{
+'text1':{'en':'Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here.',
+	 'zh':'-------'},
+'text2':{'en':'BED file or peaks format accepted'
+	 'zh':'----'},
+'text3':{'en':'Use sample file'
+	 'zh':'----'},
+'text4':{'en':'Reference: '
+	 'zh':'----'},
+'text5':{'en':'Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.'
+	 'zh':'----'},
+'text6':{'en':'You may also provide a URL for a '
+	 'zh':'----'},
+'text7':{'en':' file '
+	 'zh':'----'},
+'text8':{'en':'for display purposes only'
+	 'zh':'----'},
+'text9':{'en':' Data selection '
+	 'zh':'----'},
+'text10':{'en':'Search '
+	 'zh':'----'},
+
+}

@@ -57,7 +57,7 @@
         on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
       <div class="vertMargined">
         <div class="vertTextBottomContainer clearFix">
-          <div>Reference: </div>
+          <div><span id = "text4" class="translatetext">Reference: </span></div>
           <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
             <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
               <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
@@ -77,19 +77,19 @@
       <div>
         <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
         <paper-tooltip class="fullWidth" position="top" offset="0">
-          Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.
+          <span id = "text5" class="translatetext">Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.</span>
         </paper-tooltip>
       </div>
       <div>
         <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
         <paper-tooltip class="fullWidth" position="top" offset="-1">
-          You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong>
+          <span id = "text6" class="translatetext">You may also provide a URL for a </span><a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a><span id = "text7" class="translatetext"> file </span><strong><em><span id = "text8" class="translatetext">for display purposes only</span></em></strong>
         </paper-tooltip>
       </div>
       <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
       <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
         <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
-        Search </paper-button>
+        <span id = "text10" class="translatetext"></span></paper-button>
       <!-- end upload new file part --> 
   </template>
   <script>
