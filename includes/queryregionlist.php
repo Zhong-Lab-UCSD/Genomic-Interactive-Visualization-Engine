@@ -1,6 +1,7 @@
 <?php
 	// through the gene region to search conresponding gene region in different species
 	require_once(realpath(dirname(__FILE__) . "/common_func.php"));
+	require_once(realpath(dirname(__FILE__) . "/species_func.php"));
 	set_time_limit(100);
 	ini_set('memory_limit','30G');
 	

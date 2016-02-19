@@ -30,7 +30,7 @@ class ChromRegion {
 		$this->end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
     } 
     
-    function __construct3($chr, $start, $end) 
+    function __construct2($chr, $start, $end) 
     { 
 		$this->chr = $chr;
 		$this->start = $start;

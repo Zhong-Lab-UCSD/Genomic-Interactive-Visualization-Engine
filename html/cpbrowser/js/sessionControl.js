@@ -28,6 +28,12 @@ function saveSession(db, hgsid, email, url, file, urlToShow, callback) {
 	if(url) {
 		// no file
 		IDPrepQuery.append('url', url);
+		// check whether the file is bigwig format (.bw or .bigwig)
+		var ext = url.substr((~-url.lastIndexOf(".") >>> 0) + 2).toLowerCase();
+		if(ext === 'bw' || ext === 'bigwig') {
+			// is bigwig file, add bigwig flag
+			IDPrepQuery.append('bwData', true);
+		}
 	} else {
 		IDPrepQuery.append('file', file);
 	}

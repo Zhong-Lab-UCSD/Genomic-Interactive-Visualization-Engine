@@ -17,7 +17,6 @@
 <title>CEpBrowser Manual</title>
 <link href="mainstyles.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
-<!-- What is this for?
 #GeneLookUp {
 	width: 270px;
 }
@@ -60,7 +59,6 @@ body {
 .style2 li {
 	margin-left: -20px;
 }
--->
 </style>
 <script type="text/javascript">
 

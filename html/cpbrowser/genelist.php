@@ -1,6 +1,7 @@
 <?php
 	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
 	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
+	require_once (realpath(dirname(__FILE__) . '/../../includes/species_func.php'));	
 	require_once (realpath(dirname(__FILE__) . '/../../includes/queryregionlist.php'));
 	require_once (realpath(dirname(__FILE__) . '/../../includes/querygenelist.php'));
 	

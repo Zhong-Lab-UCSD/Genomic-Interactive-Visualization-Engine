@@ -189,15 +189,15 @@ SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) 
 	}
 	for(var i = 0; i < this.entries.length; i++) {
 		var newresult = this.entries[i].getCompareValue(length, methodind);
-		if(methodall == "max") {
+		if(methodall === "max") {
 			if(result < newresult) {
 				result = newresult;
 			}
-		} else if(methodall == "sum" || methodall == "mean") {
+		} else if(methodall === "sum" || methodall === "mean") {
 			result += newresult;
 		} 
 	}
-	if(methodall == "mean") {
+	if(methodall === "mean") {
 		result /= this.entries.length;
 	}
 	return result;

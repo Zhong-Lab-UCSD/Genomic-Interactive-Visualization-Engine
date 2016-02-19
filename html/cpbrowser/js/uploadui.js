@@ -162,12 +162,15 @@ function validateUploadFileOrURL(event) {
 				
 				var data = $.parseJSON(IDPrepData);
 			
-				if(data['error']) {
-					throw data['error'];
+				if(data.error) {
+					throw data.error;
 				}
-				tableNameQuery.append('id', data['id']);
-				var customTrackUrl = data['urlToShow'];
-				var computeDataAndCallback = new Object();
+				tableNameQuery.append('id', data.id);
+				var customTrackUrl = data.urlToShow;
+				var computeDataAndCallback = {};
+				if(data.bwFlag) {
+					computeDataAndCallback.bwFlag = true;
+				}
 				computeDataAndCallback.data = tableNameQuery;
 				computeDataAndCallback.callback = uploadUiHandler;
 				setCustomTrack(customTrackUrl, db, hgsid, computeDataAndCallback, sendRegionsToCompute);
@@ -234,7 +237,7 @@ function sendRegionsToCompute(dataAndCallback, otherdata) {
 	var tableNameQuery = dataAndCallback.data;
 	
 	$.ajax({
-		url: 'cpbrowser/geneTrackComparison.php',
+		url: dataAndCallback.bwFlag? 'cpbrowser/geneTrackBigwig.php': 'cpbrowser/geneTrackComparison.php',
 		type: 'POST',
 		data: tableNameQuery,
 		cache: false,

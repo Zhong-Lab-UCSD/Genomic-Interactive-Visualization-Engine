@@ -10,49 +10,55 @@
 	$filename = '../upload/file_' . $idbase;
 	$orifilename = '';
 	
-	if(isset($_REQUEST['url'])) {
-		// use url, not file
-		if(!copy($_REQUEST['url'], $filename)) {
-			$result['error'] = "Cannot open file at " . htmlspecialchars($_REQUEST['url']) . " . ";
-			echo json_encode($result);
-			exit();
-		}
-		$customTrackURL = $_REQUEST['url'];
-		$orifilename = basename($_REQUEST['url']);
-	} else {
-		// is uploaded file
-		if((!empty($_FILES['file'])) && ($_FILES['file']['error'] == 0)){
-			if ($_FILES['file']['size'] < MAX_UPLOAD_FILE_SIZE){
-				if (!file_exists($filename)) {
-					//Attempt to move the uploaded file to it's new place
-					if (!move_uploaded_file($_FILES['file']['tmp_name'], $filename)){
-						$result['error'] = "Error: A problem occurred during file uploading!";
+	if(!isset($_REQUEST['bwData'])) {
+		if(isset($_REQUEST['url'])) {
+			// use url, not file
+			if(!copy($_REQUEST['url'], $filename)) {
+				$result['error'] = "Cannot open file at " . htmlspecialchars($_REQUEST['url']) . " . ";
+				echo json_encode($result);
+				exit();
+			}
+			$customTrackURL = $_REQUEST['url'];
+			$orifilename = basename($_REQUEST['url']);
+		} else {
+			// is uploaded file
+			if((!empty($_FILES['file'])) && ($_FILES['file']['error'] == 0)){
+				if ($_FILES['file']['size'] < MAX_UPLOAD_FILE_SIZE){
+					if (!file_exists($filename)) {
+						//Attempt to move the uploaded file to it's new place
+						if (!move_uploaded_file($_FILES['file']['tmp_name'], $filename)){
+							$result['error'] = "Error: A problem occurred during file uploading!";
+							echo json_encode($result);
+							exit();
+						}
+					} else {
+						$result['error'] = "Error: File " . htmlspecialchars($_FILES['file']['name']) . " already exists.";
 						echo json_encode($result);
 						exit();
 					}
 				} else {
-					$result['error'] = "Error: File " . htmlspecialchars($_FILES['file']['name']) . " already exists.";
+					$result['error'] = "Error: File size " . $_FILES['file']['size'] . " exceeded maximum size of " . MAX_UPLOAD_FILE_SIZE . " bytes.";
 					echo json_encode($result);
 					exit();
 				}
 			} else {
-				$result['error'] = "Error: File size " . $_FILES['file']['size'] . " exceeded maximum size of " . MAX_UPLOAD_FILE_SIZE . " bytes.";
+				$result['error'] = "Error: No file was uploaded. " . $_FILES['file']['error'];
 				echo json_encode($result);
 				exit();
 			}
-		} else {
-			$result['error'] = "Error: No file was uploaded. " . $_FILES['file']['error'];
-			echo json_encode($result);
-			exit();
+			$customTrackURL = "http://" . getenv('SERVER_NAME') . ":" . getenv('SERVER_PORT') . "/upload/file_" . $idbase;
+			$orifilename = basename($_FILES['file']['name']);
 		}
-		$customTrackURL = "http://" . getenv('SERVER_NAME') . ":" . getenv('SERVER_PORT') . "/upload/file_" . $idbase;
-		$orifilename = basename($_FILES['file']['name']);
 	}
 	
 	
-	if(isset($_REQUEST['urlToShow'])) {
-		$urlToShow = $_REQUEST['urlToShow'];
-		if(strpos($urlToShow, 'track') === false) {
+	if(isset($_REQUEST['urlToShow']) || isset($_REQUEST['bwData'])) {
+		$urlToShow = isset($_REQUEST['bwData'])? $_REQUEST['url']: $_REQUEST['urlToShow'];
+		$filename = isset($_REQUEST['bwData'])? $_REQUEST['url']: $filename;
+		if($_REQUEST['bwData']) {
+			$result['bwFlag'] = true;
+		}
+		if(strpos(trim($urlToShow), 'track') !== 0) {
 			$ch = curl_init($urlToShow);
 		
 			curl_setopt($ch, CURLOPT_NOBODY, true);
@@ -61,7 +67,7 @@
 			// $retcode >= 400 -> not found, $retcode = 200, found.
 			curl_close($ch);
 			if($retcode >= 400) {
-				$result['error'] = "Cannot open file at " . htmlspecialchars($_REQUEST['urlToShow']) . " . ";
+				$result['error'] = "Cannot open file at " . htmlspecialchars($urlToShow) . " . ";
 				echo json_encode($result);
 				exit();
 			}
@@ -72,9 +78,13 @@
 				$orifilename = basename($urlToShow);
 				$urlToShow = "track type=bigWig name=\"" . basename($urlToShow). "\" description=\"Tracks to show as input\" bigDataUrl=" . $urlToShow;
 			}
-		}	// otherwise it's track definition, directly hand over to UCSC
+			$customTrackURL = $urlToShow;
+		} else {
+			// otherwise it's track definition, directly hand over to UCSC
+			$customTrackURL = substr($urlToShow, strpos(strtolower($urlToShow), "bigdataurl=") + 11);
+			$customTrackURL = preg_split("/\s+/", $customTrackURL)[0];
+		}
 
-		$customTrackURL = $urlToShow;
 	}
 	
 	$result['urlToShow'] = $customTrackURL;

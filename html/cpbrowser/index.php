@@ -17,7 +17,7 @@
 <title>GIVe (Genomic Interaction Visualizer)</title>
 <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link rel="import" href="components/genemo_components/genemo-card/genemo-card.html">
-<link rel="import" href="components/genemo_components/chart-card-content/chart-card-content.html">
+<link rel="import" href="components/genemo_components/chart-card-content/chart-card-content-new.html">
 <link rel="import" href="components/bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="components/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="components/bower_components/iron-icons/editor-icons.html">
@@ -39,14 +39,44 @@ p {
 	line-height: 1.4em;
 }
 </style>
+<script src="js/jquery-1.7.js"></script>
+<script src="js/basicFunc.js"></script>
+<script src="js/generegion.js"></script>
+<script src="js/geneobject.js"></script>
+<script src="js/tracksSpecies.js"></script>
+<script type="text/javascript">
+// initialize species and tracks
+function initTrackComponent(spcArray) {
+	var mainCard = this.querySelector('#mainCard');
+	if(mainCard && mainCard.initTracks) {
+		// webcomponents are ready before species are ready
+		mainCard.initTracks(spcArray);
+	}
+}
+
+var spcArray = Species.initAllSpecies(null, null, initTrackComponent.bind(document));
+	
+window.addEventListener("WebComponentsReady", function(e) {
+	var mainCard = document.querySelector('#mainCard');
+	mainCard.initTracks = function(spcArray) {
+		var mainChartArea = new ChartCardContent(spcArray);
+		mainChartArea.classList.add('GenemoBody');
+		Polymer.dom(mainCard).appendChild(mainChartArea);
+	};
+	if(spcArray && spcArray.ready) {
+		// species are ready before webcomponents
+		mainCard.initTracks(spcArray);
+	}
+});
+</script>
 </head>
 <body unresolved>
-<genemo-card>
+<iron-ajax id="mainAjax" handle-as="json" on-response="updatePartialQuery" debounce-duration="300" method="POST"></iron-ajax>
+<genemo-card id='mainCard'>
   <div class="GenemoHead">
     <iron-icon class="smallInline" icon="editor:insert-photo" alt="chart"></iron-icon>
     GIVe (Genomic Interaction Visualizer)
   </div>
-  <chart-card-content class="GenemoBody" id="mainChart"></chart-card-content>
 </genemo-card>
 <h2><strong>Description</strong></h2>
 <p>

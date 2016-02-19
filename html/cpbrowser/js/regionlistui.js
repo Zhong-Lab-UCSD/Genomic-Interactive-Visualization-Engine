@@ -9,9 +9,9 @@ geneList.map = {};
 
 var activeRegion = null;		// this should be assigned currRegion once "Visualize" is chosen
 
-function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data) {
+function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data, species) {
     // data is everything else for ChrRegionToShow
-    ChrRegion.call(this, chrString, regionname);
+    ChrRegion.call(this, chrString, regionname, species);
     this.extendedstart = extendedstart || this.start;
     this.extendedend = extendedend || this.end;
     this.data = {};

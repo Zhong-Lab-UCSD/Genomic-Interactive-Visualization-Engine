@@ -1,0 +1,237 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../genemo-styles.html">
+<link rel="import" href="./track-behavior.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="bed-track">
+  <template>
+    <style include="genemo-shared-styles"></style>
+    <style include="genemo-track-styles"></style>
+  </template>
+  <script>
+  	BedTrack = Polymer({
+		is: "bed-track",
+		
+		behaviors: [
+			Polymer.IronResizableBehavior, 
+			GIVeBehaviors.TrackBehavior
+		],
+		
+		properties: {
+		
+			// data structure for bed tracks:
+			// data has one key (chrom), all other keys will be deleted upon changing chromosome
+			// data[chrom] is an array of Genes (for now)
+			//		Future plan: arrays
+			//		outside indices are start coordinates of every gene 
+			//		inside indices are used if multiple genes start at the same location
+			//		NOTICE: start is always smaller than end, if the strand is negative, start is TTS, end is TSS
+			// 		values in the inner array are Gene objects 
+			
+		},
+		
+		created: function() {
+			this.GENE_MARGIN = 10;
+			this.GENE_NOTEXT_MARGIN = 2;
+			this.ADAPTIVE_MAXLINES = 10;		// limit to downgrade visibility
+		},
+		
+		// ****** customized methods below ******
+		
+		dataHandler: function(e, detail) {
+			// this is to handle data within response
+			var res = detail.response;
+			// first, purge buffer if different chromosome
+			for(var chrom in this.data) {
+				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
+					// not the same chromosome
+					delete this.data[chrom];
+				}
+			}
+			for(var chrom in res) {
+				if(res.hasOwnProperty(chrom)) {
+					this.data[chrom] = [];
+					this.data[chrom].map = {};
+					// TODO: use some better method to organize data
+					// for now: enum all res.data, add them to this.data[chrom]
+					res[chrom].forEach(function(transcript) {
+						var newTrans = new Transcript(transcript.geneBed, null, null, null, null, null, 
+																	this.track.species, transcript.geneSymbol);
+						if(this.data[chrom].map.hasOwnProperty(transcript.geneSymbol) &&
+							this.data[chrom].map[transcript.geneSymbol].overlaps(newTrans)) {
+							this.data[chrom].map[transcript.geneSymbol].addTranscript(newTrans);
+						} else {
+							var newGene = new Gene(newTrans);
+							this.data[chrom].push(newGene);
+							this.data[chrom].map[newGene.name] = newGene;
+						}
+					}, this);
+				}
+			}
+			
+			this.bufferWindow = this.mainSvg.viewWindow.clone();
+		},
+		
+		drawData: function() {
+			// this is to draw everything from this.data to the svg
+			// Steps:
+			// 		put genes into lines (pack display)
+			//		draw genes out line by line
+			
+			// clear text Margin svg
+			this.clear();
+			
+			this.activeVisibility = this.track.getSetting('visibility');
+			
+			var lines;
+			while(!(lines = this.prepareLines(this.data[this.mainSvg.viewWindow.chr])) && this.activeVisibility > Track.StatusEnum.VIS_NONE);
+			var y = 0;
+			lines.forEach(function(line) {
+				line.genes.forEach(function(gene) {
+					this.drawSingleGene(gene, y);
+				}, this);
+				y += (this.fullHeight + this.bedGap) * this.textSize;
+			}, this);
+
+			// resize the heights
+			this.trackHeight = y - this.bedGap * this.textSize;
+			this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
+			this.mainSvg.setAttribute("viewBox", "0 0 " + this.windowWidth + " " + this.trackHeight);
+			if(this.textMargin) {
+				this.textSvg.setAttributeNS(null, 'height', this.trackHeight);
+				this.textSvg.setAttribute("viewBox", "0 0 " + this.textMargin + " " + this.trackHeight);
+			}
+			this.trackSvg.setAttributeNS(null, 'height', this.trackHeight);
+			this.trackSvg.setAttribute("viewBox", "0 0 " + this.totalWidth + " " + this.trackHeight);
+		},
+		
+		// prepare genes
+		
+		prepareLines: function(genes) {
+			// calculate the x0 and x1 for every gene, (taking text width into consideration)
+			var lines = [{end: 0, genes: []}];		// arrays of objects {end: Number, genes: []}
+			if(genes) {
+				genes.every(function(gene) {
+					
+					// calculate x0 and x1 for the gene
+					var y = -30;		// hide the testing texts
+					var x0 = this.transformXCoordinate({chr: gene.chr, coor: gene.start}, true),
+						x1 = this.transformXCoordinate({chr: gene.chr, coor: gene.end}, true);
+					if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT) {
+						var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP, y, 
+													 gene.name, "end");
+						// move text to textMargin if out of bounds
+						if(this.textMargin && newLabel.getBBox().x < 0) {
+							x0 = 0;
+						} else {
+							x0 = newLabel.getBBox().x;
+						}
+						
+						Polymer.dom(this.mainSvg.holder).removeChild(newLabel);
+					}
+					
+					if(!lines.some(function(line) {
+						if(line.end <= x0 || this.activeVisibility <= Track.StatusEnum.VIS_DENSE) {
+							// this gene can be fit into this line
+							line.genes.push(gene);
+							line.end = x1 + (this.activeVisibility > Track.StatusEnum.VIS_NOTEXT? this.GENE_MARGIN: this.GENE_NOTEXT_MARGIN);
+							return true;
+						}
+						return false;
+					}, this)) {
+						// no empty lines, create a new line
+						if(this.isAdaptive && lines.length >= this.ADAPTIVE_MAXLINES) {
+							this.activeVisibility--;
+							lines = null;
+							return false;
+						}
+						lines.push({end: x1 + this.GENE_MARGIN, genes: [gene]});
+					}
+					return true;
+				}, this);
+			}
+			
+			return lines;
+		},
+		
+		drawSingleGene: function(gene, y, height, halfHeight) {
+			// gene: the gene to be drawn
+			// y: the y coordinate of the gene (line location)
+			// height: the height of gene (notice that thin regions will have this.halfHeight * height)
+			
+			height = height || this.fullHeight * this.textSize * 0.8;
+			halfHeight = halfHeight || this.halfHeight;
+			
+			var coor, isThick = false, blockStart, blockEnd = gene.start + gene.blockStarts[0];
+//			// draw thin segments (if any)
+//			if(gene.thickStart > gene.start) {
+//				coor = new ChrRegion(null, null, gene.chr, gene.start, gene.thickStart, gene.strand);
+//				this.drawRectangle(coor, 0, y + height * 0.5 * halfHeight, height * halfHeight);
+//			}
+//			if(gene.thickEnd < gene.end) {
+//				coor = new ChrRegion(null, null, gene.chr, gene.thickEnd, gene.end, gene.strand);
+//			}
+			
+			// draw thick blocks and connecting lines
+			for(var i = 0; i < gene.numOfBlocks; i++) {
+				blockStart = gene.start + gene.blockStarts[i];
+				// first draw connecting lines (intron, if any)
+				if(blockEnd < blockStart) {
+					coor = new ChrRegion(null, null, gene.chr, blockEnd, blockStart, gene.strand);
+					this.drawSpanningLine(coor, 0, y, height);
+				}
+				blockEnd = blockStart + gene.blockSizes[i];
+				if(gene.thickStart < blockEnd && gene.thickStart > blockStart) {
+					// CDS start is in this block
+					coor = new ChrRegion(null, null, gene.chr, blockStart, gene.thickStart, gene.strand);
+					this.drawRectangle(coor, 0, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, 0);
+					blockStart = gene.thickStart;
+				}
+				if(gene.thickEnd < blockEnd && gene.thickEnd > blockStart) {
+					// CDS end is in this block
+					coor = new ChrRegion(null, null, gene.chr, blockStart, gene.thickEnd, gene.strand, null, 0);
+					this.drawRectangle(coor, 0, y, height);
+					blockStart = gene.thickEnd;
+				}
+				
+				isThick = (gene.thickStart < blockEnd) && (gene.thickEnd > blockStart);
+				coor = new ChrRegion(null, null, gene.chr, blockStart, blockEnd, gene.strand);
+				this.drawRectangle(coor, 0, y + (isThick? 0: height * 0.5 * (1 - halfHeight)), 
+									height * (isThick? 1: halfHeight), null, 0);
+				
+			}
+			
+			// draw text
+			if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT) {
+				var newLabel = this.drawText(this.transformXCoordinate({chr: gene.chr, coor: gene.start}) - this.TEXT_MARGIN_GAP,
+											 y + 0.5 * height, gene.name, "end",
+											 {style: "fill: " + this.rgbToHex(this.colorSet[0])});
+				
+				// move text to textMargin if out of bounds
+				if(this.textMargin && newLabel.getBBox().x < 0) {
+					newLabel.setAttributeNS(null, "x", this.textMargin);
+					Polymer.dom(this.textSvg.holder).appendChild(newLabel);
+				}
+			}
+
+		},
+		
+		drawSpanningLine: function(region, colorIndex, y, height) {
+			height = height || 1;
+			y = y || 0;
+			
+			var svgToDraw = this.mainSvg;
+			var windowToDraw = svgToDraw.viewWindow;
+			
+			if(windowToDraw.overlaps(region) > 0) {
+				var x0 = this.transformXCoordinate(region.getStart(), true),
+					x1 = this.transformXCoordinate(region.getEnd(), true);
+				this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, this.colorSet[colorIndex]);
+				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), this.colorSet[colorIndex]);
+			}
+		},
+		
+	});
+  </script>
+</dom-module>

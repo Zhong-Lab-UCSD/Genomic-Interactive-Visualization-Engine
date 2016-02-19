@@ -189,7 +189,8 @@ map<string, string> getShortAndLongLabel(const map<string, string> &KeyValuePair
 }
 
 string getSettings(const map<string, string> &KeyValuePair, const map<string, string> &dbEntry, 
-		const string &ID, double priority, const string &groupInfo = "", const string &groupID = "",
+		const string &ID, double priority, const map<string, vector<string> > &thresholds,
+		const string &groupInfo = "", const string &groupID = "",
 		const string &super = "") {
 	// do the settings;
 	// groupInfo is the information used to display the group stuff, currently it's only tissue type
@@ -202,9 +203,11 @@ string getSettings(const map<string, string> &KeyValuePair, const map<string, st
 		<< "labName " << KeyValuePair.find("lab")->second << "\n" << groupInfo 
 		<< (groupInfo.empty()? "": "\n") << "longLabel " << dbEntry.find("longlabel")->second << "\nmaxHeightPixels 128:36:16\npriority " << priority
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
-		<< "\ntype " << TRACKTYPE << "\nviewLimits 0.00:3\nvisibility "
-		<< ((super.empty() && !groupID.empty())? "dense": "hide") << "\nwindowingFunction mean+whiskers\n"
-		<< "transformFunc LOG";
+		<< "\ntype " << TRACKTYPE 
+		<< "\nviewLimits " << ((dbEntry.find("url") != dbEntry.end() && thresholds.find(dbEntry.find("url")->second) != thresholds.end())? thresholds.find(dbEntry.find("url")->second)->second[0] + ":" + thresholds.find(dbEntry.find("url")->second)->second[1]: "0.00:20") 
+		<< "\nvisibility " << ((super.empty() && !groupID.empty())? "dense": "hide") 
+		<< "\nwindowingFunction mean+whiskers\n"
+		<< "transformFunc NONE";
 	if(!super.empty()) {
 		// super is not empty
 		// add super track
@@ -295,7 +298,8 @@ map<string, string> getShortAndLongLabel(const map<string, map<string, string> >
 }
 
 string getSettings(const map<string, map<string, string> > &trackMap, const map<string, string> &dbEntry, 
-		const string &ID, double priority, const string &groupInfo = "", const string &groupID = "") {
+		const string &ID, double priority, const map<string, vector<string> > &thresholds,
+		const string &groupInfo = "", const string &groupID = "") {
 	// do the settings;
 	// groupInfo is the information used to display the group stuff, currently it's only tissue type
 	const map<string, string> &KeyValuePair = trackMap.begin()->second;	// according to the first track
@@ -308,14 +312,45 @@ string getSettings(const map<string, map<string, string> > &trackMap, const map<
 		<< "labName " << KeyValuePair.find("lab")->second << "\n" << groupInfo 
 		<< (groupInfo.empty()? "": "\n") << "longLabel " << dbEntry.find("longlabel")->second << "\nmaxHeightPixels 128:36:16\npriority " << priority
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
-		<< "\ntype " << TRACKTYPE << "\nviewLimits 0.00:3\nvisibility "
-		<< (!groupID.empty()? "dense": "hide") << "\nwindowingFunction mean+whiskers\n"
-		<< "transformFunc LOG\ncompositeTrack on";
+		<< "\ntype " << TRACKTYPE 
+		<< "\nviewLimits " << ((dbEntry.find("url") != dbEntry.end() && thresholds.find(dbEntry.find("url")->second) != thresholds.end())? thresholds.find(dbEntry.find("url")->second)->second[0] + ":" + thresholds.find(dbEntry.find("url")->second)->second[1]: "0.00:20")
+		<< "\nvisibility " << (!groupID.empty()? "dense": "hide") 
+		<< "\nwindowingFunction mean+whiskers\n"
+		<< "transformFunc NONE\ncompositeTrack on";
 	if(!groupID.empty()) {
 		settingsostr << "\ncompSeries " << groupID << "series";
 	}
 	settingsostr << ends;
 	return settingsostr.str();
+}
+
+int findPriority(const vector<vector<string> > &priorityList, const map<string, string> &KVPair1, const map<string, string> &KVPair2) {
+	// return -1 if KVPair1 has lower priority
+	// return 1 if KVPair1 has higher priority
+	// return 0 if not able to determine
+	for(vector<vector<string> >::const_iterator itorPriorKey = priorityList.begin(); itorPriorKey < priorityList.end(); itorPriorKey++) {
+		string key = *(itorPriorKey->begin());
+		if(KVPair1.find(key) != KVPair1.end() && KVPair2.find(key) != KVPair2.end()) {
+			for(unsigned int i = 1; i < itorPriorKey->size(); i++) {
+				if(KVPair1.find(key)->second == (*itorPriorKey)[i] && KVPair2.find(key)->second == (*itorPriorKey)[i]) {
+					break;
+				}
+				if(KVPair1.find(key)->second == (*itorPriorKey)[i]) {
+					return 1;
+				}
+				if(KVPair2.find(key)->second == (*itorPriorKey)[i]) {
+					return -1;
+				}
+			}
+		} else {
+			if(KVPair1.find(key) != KVPair1.end()) {
+				return 1;
+			} else if(KVPair2.find(key) != KVPair2.end()) {
+				return -1;
+			}
+		}
+	}
+	return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -361,7 +396,7 @@ int main(int argc, char *argv[]) {
 	// visibility dense
 	// windowingFunction Mean
 	// compositeTrack on (for parents)
-	// transformFunc LOG
+	// transformFunc NONE
 	// parent <super track> (for children)
 	// centerLabels OFF (for children)
 	// compSeries <series name> (for those with series among species)
@@ -369,7 +404,8 @@ int main(int argc, char *argv[]) {
 	// User also need to supply linked stuff
 
 	// Usage: ./batchAddEncode <ucsc mysql username> <ucsc mysql pass> <cpbrowser mysql username> <cpbrowser mysql pass>
-	//						<key file> <species 1 db name> <species 1 track file> [species 2 db name] [species 2 track file] ...
+	//						<key file> <threshold file> 
+	//						<species 1 db name> <species 1 track file> [species 2 db name] [species 2 track file] ...
 	
 	long count = 0;
 	
@@ -380,15 +416,28 @@ int main(int argc, char *argv[]) {
 	// read group data first;
 	// group data format:
 	// (First line)<key1>	<key2>	<key3> <[naming but ungrouping key]>
+	// PRIORITIES
+	// <key> <value priority> <value priority>
+	// ...
+	// GROUPS
 	// <group name>	<key col>	<value1>	<value2>	<value3>	...
-	// If datatype & antibody is the same BETWEEN SPECIES, jave a compSeries
+	// ...
+	// If datatype & antibody is the same BETWEEN SPECIES, save a compSeries
 	// If datatype & antibody is the same WITHIN THE SAME SPECIES, merge into a supertrack
+	
+	ifstream finThr(argv[6]);	// this is the file for threshold
+	// threshold file format:
+	// <file name> <lower threshold> <upper threshold>
 	
 	cout << "Reading groupmap..." << flush;
 	map<string, vector<string> > groupMap;	
 	// Outer key: group name, Inner vector: [0] = key and the rest is values according to species
 	vector<string> namingKeys;
 	vector<string> groupingKeys;
+
+	vector<vector<string> > priorityKeys;
+	map<string, vector<string> > thresholds;
+
 	string line;
 	getline(finGroup, line);
 	{
@@ -401,6 +450,15 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+	getline(finGroup, line);
+	while(line != "GROUPS") {
+		if(line == "PRIORITIES") {
+			getline(finGroup, line);
+		}
+		vector<string> tokens = splitTokens(line);
+		priorityKeys.push_back(tokens);
+		getline(finGroup, line);
+	}
 	while(getline(finGroup, line)) {
 		vector<string> tokens = splitTokens(line);
 		string groupname = tokens[0];
@@ -412,6 +470,18 @@ int main(int argc, char *argv[]) {
 	cout << "done." << endl;
 	cout << "Grouping keys: " << groupingKeys.size() << "; Naming keys: " << namingKeys.size() << endl;
 	cout << "GroupMap size(): " << groupMap.size() << endl;
+
+	cout << "Reading threshold..." << flush;
+
+	while(getline(finThr, line)) {
+		vector<string> tokens = splitTokens(line);
+		string url = tokens[0];
+		tokens.erase(tokens.begin());
+		thresholds.insert(pair<string, vector<string> >(url, tokens));
+	}
+
+	cout << "done." << endl;
+	cout << "ThresholdMap size(): " << thresholds.size() << endl;
 
 	cout << "Reading tracks..." << endl;
 	// generate species track data
@@ -486,7 +556,18 @@ int main(int argc, char *argv[]) {
 				}
 				map<string, map<string, string> > &trackTable = trackGroupTable[groupname];
 				// write to map
-				trackTable.insert(pair<string, map<string, string> >(name, keyValuePair));
+				// if tracks with the same name exists, compare priority of the keys
+				if(trackTable.find(name) != trackTable.end()) {
+					int priorFlag = findPriority(priorityKeys, trackTable[name], keyValuePair);
+					if(priorFlag < 0) {
+						// old one has lower priority
+						trackTable[name] = keyValuePair;
+					} else if(priorFlag == 0) {
+						cerr << "Duplicated track found at line " << count << ". Name = " << name << endl;
+					}
+				} else {
+					trackTable.insert(pair<string, map<string, string> >(name, keyValuePair));
+				}
 			}
 
 		}
@@ -576,7 +657,7 @@ int main(int argc, char *argv[]) {
 						cout << (hasSuperTrack? "": "(Single) ") << trackItor->first << " ..." << flush;
 						allValues["settings"] = getSettings(trackItor->second, allValues, trackItor->first,
 							PRIORITY_BASE + ((float) superPriority) + ((float) subPriority) / (float) 100,
-							compGroupSettings, compGroupID, superName);
+							thresholds,	compGroupSettings, compGroupID, superName);
 						istringstream istrhtml(allValues["html"]), istrSettings(allValues["settings"]);
 						// now everything is there, write into database
 						ostrsql << "REPLACE INTO trackDb VALUES('"
@@ -628,7 +709,7 @@ int main(int argc, char *argv[]) {
 					ostringstream ostrsql;
 					map<string, string> allValues = getShortAndLongLabel(grpItor->second);
 					allValues["settings"] = getSettings(grpItor->second, allValues, superName,
-						PRIORITY_BASE + ((float) superPriority),
+						PRIORITY_BASE + ((float) superPriority), thresholds,
 						compGroupSettings, compGroupID);
 					istringstream istrhtml(allValues["html"]), istrSettings(allValues["settings"]);
 					// now everything is there, write into database

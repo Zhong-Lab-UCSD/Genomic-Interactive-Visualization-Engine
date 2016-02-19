@@ -71,7 +71,7 @@
 		
 		paper-dropdown-menu {
 			--paper-menu-button: {
-				padding-top: 0.3em;
+				padding-top: 0em;
 				padding-bottom: 0.3em;
 			};
 			--paper-input-container: {
@@ -162,7 +162,12 @@
 		
 		.vertTextBottomContainer > * {
 			display: table-cell;
-			vertical-align: text-bottom;
+			vertical-align: middle;
+		}
+	
+		.vertTextBottomContainer > paper-button {
+			display: table-cell;
+			vertical-align: middle;
 		}
 	
 		.clearFix:after {
@@ -196,6 +201,7 @@
 		
 		.anno {
 			color: #3F51B5;
+			margin-right: 0.2em;
 		}
 		
 		.vertCenterElement {
@@ -220,6 +226,7 @@
 		.collapseContent {
 			background: #F5F5F5;
 			padding: 0.3em 0.5em;
+			word-break: break-all;
 		}
 		
     </style>

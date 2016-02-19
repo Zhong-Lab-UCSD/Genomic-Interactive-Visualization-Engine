@@ -47,7 +47,7 @@
 		}
 		
 		.sampleButton {
-			min-width: 9.5em;
+			min-width: 7.5em;
 		}
 		
 	</style>
@@ -56,30 +56,23 @@
         on-iron-signal-encodecheck="signalEncodeCheck"
         on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
       <div class="vertMargined">
-        <div class="vertCenterContainer clearFix">
-          <div> <strong>Peak file to search: </strong>
-            <div class="inlineDiv">
-              <iron-icon class="smallInline transparent" icon="help" alt="help"></iron-icon>
-              <paper-tooltip offset="0">
-                Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED file or peaks format accepted</a>)
-              </paper-tooltip>
-            </div>
-          </div>
-          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised> Use sample file </paper-button>
-        </div>
         <div class="vertTextBottomContainer clearFix">
           <div>Reference: </div>
           <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
             <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
               <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
-                <paper-item value="[[item.db]]"><span>[[item.commonName]]</span> (<span>[[item.db]]</span>)</paper-item>
+                <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
               </template>
             </paper-menu>
           </paper-dropdown-menu>
+          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised on-tap="fillSampleHandler">Use sample</paper-button>
         </div>
         <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
-        <paper-button class="fullWidth" raised noink id="fileSelectButton">{{uploadButtonText}}</paper-button>
-        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" />
+        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
+        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
+		<paper-tooltip position="bottom" class="fullWidth" offset="-1">
+          Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED, peaks format</a> files are accepted either by uploading or providing URL, <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig files</a> are accepted by URL only.)
+        </paper-tooltip>
       </div>
       <div>
         <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
@@ -89,12 +82,12 @@
       </div>
       <div>
         <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
-        <paper-tooltip class="fullWidth" position="top" offset="0">
+        <paper-tooltip class="fullWidth" position="top" offset="-1">
           You may also provide a URL for a <a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a> file <strong><em>for display purposes only</em></strong>
         </paper-tooltip>
       </div>
-      <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}"> Data selection </paper-button>
-      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}">
+      <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
+      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
         <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
         Search </paper-button>
       <!-- end upload new file part --> 
@@ -196,6 +189,14 @@
 			}
 		},
         
+        created: function() {
+            this.InputFile = new Blob();
+        },
+		
+        encodeFilter: function(value) {
+			return (value.isEncode || !this.isEncodeOn);
+        },
+        
         checkEncodeSpecies: function (flag) {
 			if(typeof(flag) == 'boolean') {
 				this.isEncodeOn = flag;
@@ -212,39 +213,6 @@
             this.species.updateAllSpcActiveNum();
         },
         
-        encodeFilter: function(value) {
-			return (value.isEncode || !this.isEncodeOn);
-        },
-        
-        created: function() {
-            this.InputFile = new Blob();
-        },
-		
-		submitForm: function(e) {
-			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
-				this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
-				return false;
-			} else if(this.currentRef == null) {
-				this.fire("alert", {msg: 'You need to select the reference genome for your file!'});
-				return false;
-			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0 
-				|| (this.UserEmail.indexOf('@') >= this.UserEmail.lastIndexOf('.') - 1))) {
-					this.fire("alert", {msg: 'Please provide a valid email address!'});
-					return false;
-			}
-			
-			this.InputFile = this.$.uploadFileInput.files[0];
-			
-			var inputFileName = (this.InputUrl.length > 0? (this.InputUrl.substring(this.InputUrl.lastIndexOf('/') + 1))
-				: (this.InputFile.name.substring(this.InputFile.name.lastIndexOf('/') + 1)));
-			var DisplayFileName = this.DisplayUrl.length > 0? 
-				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
-				
-			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
-			
-			this.fire("submit-form", {card: this});
-		},
-		
 		getIcon: function() {
 			var resIcon = document.createElement('iron-icon');
 			resIcon.setAttribute('icon', this.icon);
@@ -293,7 +261,7 @@
 				resIcon.classList.add('smallInline');
 				
 				var resHeaderText = document.createElement('span');
-				resHeaderText.textContent = "Search ENCODE data";
+				resHeaderText.textContent = "Input file";
 				
 				resHeader.classList.add('headerText');
 				resHeader.classList.add('clearFix');
@@ -339,11 +307,6 @@
 			}
 		},
 		
-		fillSampleFunc: function() {
-			this.InputUrl = this.sampleFile;
-			this.currentRef = this.sampleRef;
-		},
-		
 		getCollapse: function() {
 			return this.collapseElement;
 		},
@@ -356,6 +319,7 @@
 			
 			var textSpan = document.createElement('span');
 			textSpan.textContent = 'Search';
+
 			res.appendChild(coreIcon);
 			res.appendChild(textSpan);
 			
@@ -368,7 +332,8 @@
 			coreIcon.classList.add('smallInline');
 			
 			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Search ENCODE data';
+			textSpan.textContent = 'Input file';
+
 			res.classList.add('headerText');
 			res.appendChild(coreIcon);
 			res.appendChild(textSpan);
@@ -407,7 +372,45 @@
 				(detail.sessionObj.urlToShow.substring(detail.sessionObj.urlToShow.lastIndexOf('/') + 1)) : null;
 			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
 		},
+		
+		fileSelectionHandler: function() {
+			this.$.uploadFileInput.click();
+		},
+		
+		trackSelectionHandler: function() {
+			this.fire("toggle-window");
+		},
                     
+		fillSampleHandler: function() {
+			this.InputUrl = this.sampleFile;
+			this.currentRef = this.sampleRef;
+		},
+		
+		submitForm: function() {
+			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
+				this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
+				return false;
+			} else if(this.currentRef == null) {
+				this.fire("alert", {msg: 'You need to select the reference genome for your file!'});
+				return false;
+			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0 
+				|| (this.UserEmail.indexOf('@') >= this.UserEmail.lastIndexOf('.') - 1))) {
+					this.fire("alert", {msg: 'Please provide a valid email address!'});
+					return false;
+			}
+			
+			this.InputFile = this.$.uploadFileInput.files[0];
+			
+			var inputFileName = (this.InputUrl.length > 0? (this.InputUrl.substring(this.InputUrl.lastIndexOf('/') + 1))
+				: (this.InputFile.name.substring(this.InputFile.name.lastIndexOf('/') + 1)));
+			var DisplayFileName = this.DisplayUrl.length > 0? 
+				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
+				
+			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			
+			this.fire("submit-form", {card: this});
+		},
+		
         ready: function() {
             
             var hostNode = this;
@@ -420,20 +423,6 @@
 			
             this.uploadButtonText = "Upload local file";
 
-            this.$.uploadFileInput.addEventListener("change", this.inputFileChangedFunc.bind(this));
-            
-            this.$.fileSelectButton.addEventListener("click", this.$.uploadFileInput.click.bind(this.$.uploadFileInput));
-            
-            var trackSelectButtons = Polymer.dom(this.root).querySelectorAll('.trackSelection');
-            Array.prototype.forEach.call(trackSelectButtons, function(arrItem) {
-                arrItem.addEventListener("click", function(e) {
-                    hostNode.fire("toggle-window");
-                });
-            });
-            
-            this.$.fileSubmit.addEventListener("click", this.submitForm.bind(this));
-            
-            this.$.fillSample.addEventListener("click", this.fillSampleFunc.bind(this));
         }
         
     });

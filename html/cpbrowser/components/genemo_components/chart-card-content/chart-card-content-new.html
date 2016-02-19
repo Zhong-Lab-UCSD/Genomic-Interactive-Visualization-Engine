@@ -6,9 +6,9 @@
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
-<link rel="import" href="../chart-area/chart-area.html">
+<link rel="import" href="../chart-area/tracks-backbone.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<dom-module id="chart-card-content">
+<dom-module id="chart-card-content-new">
   <template>
     <style include="genemo-shared-styles">
 		:host {
@@ -55,6 +55,7 @@
 		}
 		
     </style>
+    <!-- TODO: add paper-dropmenu for species -->
     <paper-material z="1" class="lineContainer">
       <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
       <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
@@ -66,24 +67,28 @@
         <paper-button class="colored" raised id="updateChart" on-tap="updateSvg">Update</paper-button>
       </div>
     </paper-material>
-    <chart-area id="mainChart" view-window-string="{{mainCoor}}" sub-window-string="{{subCoor}}" species="[[species]]"></chart-area>
   </template>
   <script>
-  	Polymer({
-		is: "chart-card-content",
+  	ChartCardContent = Polymer({
+		is: "chart-card-content-new",
 		
 		behaviors: [
 			Polymer.NeonAnimatableBehavior
 		],
 		
 		properties: {
+			spcIndex: {
+				type: Number,
+				value: 0,
+				observer: 'spcChanged',
+			},
 			mainCoor: {
 				type: String,
 				value: "chr10:30000000-50000000"
 			},
 			subCoor: {
 				type: String,
-				value: "chr10:35000000-55000000"
+				value: "chr10:30000000-50000000"
 			},
 			threshold: {
 				type: Number,
@@ -91,18 +96,56 @@
 			},
 			species: {
 				type: Object
+			},
+		},
+		
+		getCurrentSpecies: function() {
+			return this.getSpecies(this.spcIndex);
+		},
+		
+		getSpecies: function(index) {
+			return this.spcArray[index];
+		},
+		
+		spcChanged: function() {
+			// initialize the tracks of the species
+			if(this.spcArray) {
+				this.getCurrentSpecies().initTracksFromServer(null, this.changeMainChartSpecies.bind(this));
 			}
 		},
 		
+		changeMainChartSpecies: function() {
+			var correctedVWindows;
+			if(this.mainChart) {
+				// species is changed
+				correctedVWindows = this.mainChart.changeSpecies(this.getCurrentSpecies());
+			} else {
+				this.mainChart = new TracksBackbone(this.getCurrentSpecies(), 2, null, this.threshold);
+				Polymer.dom(this.root).appendChild(this.mainChart);
+				Polymer.dom.flush();
+				correctedVWindows = this.mainChart.getViewWindowStrings();
+			}
+			this.mainCoor = correctedVWindows[0];
+			this.subCoor = correctedVWindows[1];
+		},
+		
 		updateSvg: function() {
-			this.$.mainChart.drawDemo(this.mainCoor, [this.subCoor], this.threshold);
+			if(this.mainChart) {
+				var correctedVWindows = this.mainChart.updateAll([this.mainCoor, this.subCoor], this.threshold);
+				this.mainCoor = correctedVWindows[0];
+				this.subCoor = correctedVWindows[1];
+			}
+		},
+		
+		factoryImpl: function(spcArray, index) {
+			this.spcArray = spcArray;
+			this.spcIndex = index || this.spcIndex;
+			this.spcChanged();
 		},
 		
 		attached: function() {
-			this.async(function() {
-				this.$.mainChart.drawDemo(this.mainCoor, [this.subCoor], this.threshold);
-			});
-		}
+		},
+		
 	});
   </script>
 </dom-module>

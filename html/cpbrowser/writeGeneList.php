@@ -1,5 +1,6 @@
 <?php 
 	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+	require_once(realpath(dirname(__FILE__) . "/../../includes/species_func.php"));
 	
 	// TODO: convert this into a JavaScript function instead of a php function
 	// Taking JSON data and populate the table

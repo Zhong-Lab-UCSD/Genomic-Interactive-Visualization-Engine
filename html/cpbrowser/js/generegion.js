@@ -13,7 +13,7 @@ function extend(base, sub) {
 }
 
 
-function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regionstrand) {
+function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regionstrand, species) {
 	var cleanedChrString, elements; 
 	if(chrString) {
 		cleanedChrString = chrString.replace(/,/g, '')
@@ -29,8 +29,49 @@ function ChrRegion(chrString, regionname, chrom, regionstart, regionend, regions
 		this.end = parseInt(regionend);
 		this.strand = this.setStrand(regionstrand);
 	}
+	if(this.start < ChrRegion.CHROM_BASE) {
+		this.start = ChrRegion.CHROM_BASE;
+	}
+	if(species && species.chromInfo) {
+		if(species.chromInfo[this.chr] && 
+			species.chromInfo[this.chr].chrRegion.end < this.end) {
+				this.end = species.chromInfo[this.chr].chrRegion.end;
+		} else if(!species.chromInfo[this.chr]) {
+			// this is not a valid chromosome
+			throw({value: this.chr, message: this.chr + ' is not a valid chromosome for ' + species.db + '!'});
+		}
+	}
+	if(this.start > this.end) {
+		throw({value: this.chr + ':' + this.start + '-' + this.end,
+			message: 'Coordinates out of bounds: ' + this.chr + ':' + this.start + '-' + this.end + '!'});
+	}
 	this.name = regionname || '';
 }
+
+ChrRegion.CHROM_BASE = 1;			// may be 0 for UCSC
+
+ChrRegion.clipCoordinate = function(coor, species) {
+	// this is to clip single coordinate
+	if(coor.coor < ChrRegion.CHROM_BASE) {
+		coor.coor = ChrRegion.CHROM_BASE;
+	} else if(species && species.chromInfo && species.chromInfo[coor.chr] &&
+			 species.chromInfo[coor.chr].chrRegion.end < coor.coor) {
+				 coor.coor = species.chromInfo[coor.chr].chrRegion.end;
+	}
+	return coor;
+};
+
+ChrRegion.prototype.clipRegion = function(species) {
+	if(this.start < ChrRegion.CHROM_BASE) {
+		this.start = ChrRegion.CHROM_BASE;
+	}
+	if(species && species.chromInfo && species.chromInfo[this.chr] &&
+		species.chromInfo[this.chr].chrRegion.end < this.end) {
+			this.end = species.chromInfo[this.chr].chrRegion.end;
+	}
+	return this;
+};		
+		
 
 ChrRegion.prototype.getLength = function() {
 	return this.end - this.start;
@@ -90,9 +131,10 @@ ChrRegion.prototype.setStrand = function(newStr) {
 };
 
 ChrRegion.prototype.getStrand = function(flankbefore, flankafter) {
-	return ((typeof(flankbefore) == "string")? flankbefore: '')
-		+ (this.strand? '+': '&minus;')
-		+ ((typeof(flankafter) == "string")? flankafter: '');
+	return (typeof(this.strand) === 'boolean')?
+		(((typeof(flankbefore) === "string")? flankbefore: '') +
+		(this.strand? '+': '-')	+ 
+		((typeof(flankafter) === "string")? flankafter: '')): null;
 };
 
 ChrRegion.prototype.getShortName = function() {
@@ -130,6 +172,74 @@ ChrRegion.prototype.intersect = function(region) {
 	this.start = parseInt(Math.max(this.start, region.start));
 	this.end = parseInt(Math.min(this.end, region.end));
 	return this;
+};
+
+ChrRegion.prototype.move = function(distance, isProportion, species) {
+	// isProportion means whether move by proportion
+	// may clip distance to what we have
+	if(isProportion) {
+		distance *= this.getLength();
+	}
+	distance = parseInt(distance + 0.5);
+	if(distance + this.start < ChrRegion.CHROM_BASE) {
+		distance = ChrRegion.CHROM_BASE - this.start;
+	} else if(species && species.chromInfo && species.chromInfo[this.chr] &&
+			 species.chromInfo[this.chr].chrRegion.end < this.end + distance) {
+				 distance = species.chromInfo[this.chr].chrRegion.end - this.end;
+	}
+	this.start += distance;
+	this.end += distance;
+	return this;
+};
+
+ChrRegion.prototype.clone = function() {
+	return new ChrRegion(null, this.name, this.chr, this.start, this.end, this.strand);
+};
+
+ChrRegion.prototype.getShift = function(distance, isProportion, species) {
+	return this.clone().move(distance, isProportion. species);
+};
+
+ChrRegion.prototype.extend = function(sizediff, center, isProportion, species) {
+	// isProportion means whether extend by proportion
+	if(isProportion) {
+		sizediff *= this.getLength();
+	}
+	sizediff = parseInt(sizediff + 0.5);
+	var newsize = this.getLength() + sizediff;
+	center = center || (this.start + this.end) / 2;
+	if(center < this.start) {
+		center = this.start;
+	} else if(center > this.end) {
+		center = this.end;
+	}
+	if(newsize <= 0) {
+		newsize = 1;
+	} else if(species && species.chromInfo && species.chromInfo[this.chr] &&
+			 species.chromInfo[this.chr].chrRegion.getLength() < newsize) {
+				 newsize = species.chromInfo[this.chr].chrRegion.getLength();
+	}
+	if(center > this.start) {
+		// extend left
+		this.start -= parseInt(sizediff * (center - this.start) / this.getLength() + 0.5);
+		if(this.start < ChrRegion.CHROM_BASE) {
+			this.start = ChrRegion.CHROM_BASE;
+		}
+		this.end = this.start + newsize;
+	} else {
+		this.end += sizediff;
+	}
+	if(species && species.chromInfo && species.chromInfo[this.chr] &&
+		 species.chromInfo[this.chr].chrRegion.end < this.end) {
+			 this.end = species.chromInfo[this.chr].chrRegion.end;
+			 this.start = this.end - newsize;
+	}
+	return this;
+		
+};
+
+ChrRegion.prototype.getExtension = function(sizediff, center, isProportion, species) {
+	return this.clone().extend(sizediff, center, isProportion, species);
 };
 
 function compareChrRegion(region1, region2) {

@@ -204,7 +204,7 @@ string getSettings(const map<string, string> &KeyValuePair, const map<string, st
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
 		<< "\ntype " << TRACKTYPE << "\nviewLimits 0.00:3\nvisibility "
 		<< ((super.empty() && !groupID.empty())? "dense": "hide") << "\nwindowingFunction mean+whiskers\n"
-		<< "transformFunc LOG";
+		<< "transformFunc NONE";
 	if(!super.empty()) {
 		// super is not empty
 		// add super track
@@ -310,7 +310,7 @@ string getSettings(const map<string, map<string, string> > &trackMap, const map<
 		<< "\nshortLabel " << dbEntry.find("shortlabel")->second << "\nspanList 300\ntrack " << ID 
 		<< "\ntype " << TRACKTYPE << "\nviewLimits 0.00:3\nvisibility "
 		<< (!groupID.empty()? "dense": "hide") << "\nwindowingFunction mean+whiskers\n"
-		<< "transformFunc LOG\ncompositeTrack on";
+		<< "transformFunc NONE\ncompositeTrack on";
 	if(!groupID.empty()) {
 		settingsostr << "\ncompSeries " << groupID << "series";
 	}
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
 	// visibility dense
 	// windowingFunction Mean
 	// compositeTrack on (for parents)
-	// transformFunc LOG
+	// transformFunc NONE
 	// parent <super track> (for children)
 	// centerLabels OFF (for children)
 	// compSeries <series name> (for those with series among species)
@@ -380,15 +380,28 @@ int main(int argc, char *argv[]) {
 	// read group data first;
 	// group data format:
 	// (First line)<key1>	<key2>	<key3> <[naming but ungrouping key]>
+	// PRIORITIES
+	// <key> <value priority> <value priority>
+	// ...
+	// GROUPS
 	// <group name>	<key col>	<value1>	<value2>	<value3>	...
-	// If datatype & antibody is the same BETWEEN SPECIES, jave a compSeries
+	// ...
+	// If datatype & antibody is the same BETWEEN SPECIES, save a compSeries
 	// If datatype & antibody is the same WITHIN THE SAME SPECIES, merge into a supertrack
+
+	ifstream finThr(argv[6]);	// this is the file for threshold
+	// threshold file format:
+	// <file name> <lower threshold> <upper threshold>
 	
 	cout << "Reading groupmap..." << flush;
 	map<string, vector<string> > groupMap;	
 	// Outer key: group name, Inner vector: [0] = key and the rest is values according to species
 	vector<string> namingKeys;
 	vector<string> groupingKeys;
+
+	vector<vector<string> > priorityKeys;
+	map<string, vector<double> > thresholds;
+
 	string line;
 	getline(finGroup, line);
 	{
@@ -400,6 +413,15 @@ int main(int argc, char *argv[]) {
 				namingKeys.push_back(getBetween(toLower(*itor), "[", "]"));
 			}
 		}
+	}
+	getline(finGroup, line);
+	while(line != "GROUPS") {
+		if(line == "PRIORITIES") {
+			getline(finGroup, line);
+		}
+		vector<string> tokens = splitTokens(line);
+		priorityKeys.push_back(tokens);
+		getline(finGroup, line);
 	}
 	while(getline(finGroup, line)) {
 		vector<string> tokens = splitTokens(line);
@@ -418,7 +440,7 @@ int main(int argc, char *argv[]) {
 
 	map<string, map<string, map<string, map<string, string> > > > spcTrackTable;
 
-	for(int i = 6; i < argc; i += 2) {
+	for(int i = 7; i < argc; i += 2) {
 		string spcName(argv[i]);
 		int speciesIndex = i / 2 - 3;
 		cout << spcName << endl;

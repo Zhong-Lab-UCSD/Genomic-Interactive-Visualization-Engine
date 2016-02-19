@@ -1,5 +1,6 @@
 <?php
 	require_once(realpath(dirname(__FILE__) . "/common_func.php"));
+	require_once(realpath(dirname(__FILE__) . "/species_func.php"));
 	
 	function findGeneList($geneName, $isDirect, $spcDbNames) {
 		// notice that the function has its own mysqli

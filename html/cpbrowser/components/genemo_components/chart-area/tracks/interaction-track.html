@@ -1,0 +1,397 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../genemo-styles.html">
+<link rel="import" href="./track-behavior.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="interaction-track">
+  <template>
+    <style include="genemo-shared-styles"></style>
+    <style include="genemo-track-styles"></style>
+  </template>
+  <script>
+  	InteractionTrack = Polymer({
+		is: "interaction-track",
+		
+		behaviors: [
+			Polymer.IronResizableBehavior, 
+			GIVeBehaviors.TrackBehavior
+		],
+		
+		properties: {
+			
+			// note that this track will have childSvgs to match all the different coordinates
+			// each childSvg will have one viewWindow property
+			// but there will be only one textSvg object
+			// also, height will be calculated
+			
+			subWindowString: {
+				type: String,
+				notify: true
+			},
+			
+			borderHeight: {		// this is the height for chromosomal box (lines and centromeres)
+				type: Number,
+				value: 1		// em
+			},
+			
+			subTrackGap: {
+				type: Number,
+				value: 4		// em
+			},
+			
+			// data structure for interaction tracks:
+			// data has one key (chrom), all other keys will be deleted upon changing chromosome (for now)
+			// data[chrom] is an array of ChrRegionToShow (for now)
+			// if two ChrRegionToShows are linked together, they will have same linkID
+			
+			threshold: {
+				type: Number,
+				value: 0.000001
+			},
+			
+			boxBorderColor: {
+				type: Number,
+				value: 0,
+			},
+			
+		},
+		
+		observers: [
+			'updateTracks(viewWindowString, subWindowString)'
+		],
+		
+		trackImpl: function(track, properties) {
+			
+			properties = properties || {};
+			
+			this.fullHeight = properties.lineHeight || this.fullHeight;
+			this.subTrackGap = properties.subTrackGap || this.subTrackGap;
+			this.trackHeight = properties.height 
+							   || (this.fullHeight + (this.fullHeight + this.subTrackGap) 
+							   						 * (properties.numOfSubs - 1)) * this.textSize;
+			this._setDynamicHeight(false);
+			
+			this.subSvgs = [];
+			this.numOfSubs = properties.numOfSubs;
+			this.bufferWindow = [];
+		},
+		
+		initSvgComponents: function() {
+			for(var i = 0; i < this.numOfSubs; i++) {
+				var newSubSvg = document.createElementNS(this.svgNS, 'svg');
+				newSubSvg.setAttribute('id', this.track.getCleanID() + '_subSvg' + i);
+				newSubSvg.setAttributeNS(null, 'x', 0);
+				newSubSvg.setAttributeNS(null, 'y', (this.fullHeight + this.subTrackGap) * i * this.textSize);
+				newSubSvg.setAttributeNS(null, 'width', this.windowWidth);
+			
+				newSubSvg.setAttributeNS(null, 'height', this.fullHeight * this.textSize);
+				newSubSvg.setAttribute("viewBox", "0 0 " 
+					+ this.windowWidth + " " + this.fullHeight * this.textSize);
+				Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg);
+				this.subSvgs.push(newSubSvg);
+			}
+			this.initSubSvgHolders();
+		},
+		
+		// ****** customized methods below ******
+		
+		prepareData: function() {
+			// provide data to mainAjax
+			// for most of the tracks, this is only trackID and window
+			var windows = [];
+			for(var i = 0; i < this.numOfSubs; i++) {
+				windows.push(this.subSvgs[i].viewWindow.regionToString(false));
+			}
+			return {
+				db: this.track.species.db,
+				trackID: this.track.getID(), 
+				window: windows,
+			};			
+		},
+		
+		getBufferRefreshFlag: function() {
+			// check whether buffer needs to be updated
+			return this.subSvgs.every(function(subSvg){
+				// every subViewWindow needs to be covered ...
+				this.bufferWindow.some(function(buffer) {
+					// ... by at least one buffer
+					return buffer.overlaps(subSvg.viewWindow) >= subSvg.viewWindow.getLength();
+				}, this);
+			}, this);
+		},
+		
+		dataHandler: function(e, detail) {
+			// this is to handle data within response
+			var res = detail.response;
+			// first, purge buffer if different chromosome
+			var chrom;
+			for(chrom in this.data) {
+				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
+					// not the same chromosome
+					delete this.data[chrom];
+				}
+			}
+			for(chrom in res) {
+				if(res.hasOwnProperty(chrom) && res[chrom].forEach) {
+					this.data[chrom] = [];
+					// TODO: use some better method to organize data
+					// for now: enum all res.data, add them to this.data[chrom]
+					res[chrom].forEach(function(region) {
+						this.data[chrom].push(new ChrRegionToShow(region.regionString, null, null, null, 
+										{linkID: region.linkID, regionID: region.ID, value: region.value}, this.track.species));
+					}, this);
+				}
+			}
+			
+			this.bufferWindow = [];
+			this.subSvgs.forEach(function(subSvg, index) {
+				this.bufferWindow.push(subSvg.viewWindow.clone());
+			}, this);
+
+		},
+		
+		drawData: function() {
+			// this is to draw everything from this.data to the svg
+			// Steps:
+			// 		put genes into lines (pack display)
+			//		draw genes out line by line
+			
+			// clear text Margin svg
+			this.clear();
+			
+			this.linkMap = {};
+			// draw box track for each child svg
+			this.subSvgs.forEach(function(subSvg) {
+				this.drawBoxTrack(this.data[subSvg.viewWindow.chr], this.linkMap, this.threshold, 0.5, 
+								  this.textSize * this.fullHeight - 1, subSvg);
+			}, this);
+
+			// draw interaction track for main svg
+			this.drawConnectionBetweenTracks(this.linkMap, this.threshold, this.subSvgs, this.svgMain);
+		},
+		
+		initSubSvgHolders: function() {
+			for(i = 0; i < this.numOfSubs; i++) {
+				this.subSvgs[i].holder = document.createElementNS(this.svgNS, 'g');
+				Polymer.dom(this.subSvgs[i]).appendChild(this.subSvgs[i].holder);
+			}
+		},
+		
+		clear: function() {
+			var i;
+			if(this.textMargin) {
+				while(Polymer.dom(this.textSvg).firstChild) {
+					Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+				}
+			}
+			for(i = 0; i < this.numOfSubs; i++) {
+				while(Polymer.dom(this.subSvgs[i]).firstChild) {
+					Polymer.dom(this.subSvgs[i]).removeChild(Polymer.dom(this.subSvgs[i]).firstChild);
+				}
+			}
+			while(Polymer.dom(this.mainSvg).firstChild) {
+				Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild);
+			}
+			this.initSvgHolder();
+			for(i = 0; i < this.numOfSubs; i++) {
+				Polymer.dom(this.mainSvg.holder).appendChild(this.subSvgs[i]);
+			}
+			this.initSubSvgHolders();
+		},
+		
+		updateTracks: function(viewWindow, index, threshold) {
+			// viewWindow: ChrRegion object or an array of ChrRegion objects
+			// index: if viewWindow is a single ChrRegion Object, index will be the index
+			this.threshold = threshold || this.threshold;
+			
+			try {
+				// Steps:
+				// Change view window by calling changeViewWindow() 
+				//		May clip viewwindow by species
+				if(viewWindow) {
+					if(Array.isArray(viewWindow)) {
+						// then it must have enough elements
+						viewWindow.forEach(this.changeViewWindow, this);
+					} else {
+						this.changeViewWindow(viewWindow, index);
+					}
+				}
+
+				if(this.subSvgs.every(function(subSvg) {
+					return subSvg.viewWindow;
+				}, this)) { 
+					// Get data clipped by viewWindow by calling getData()
+					//		May also include data preparation
+					this.checkDataAndUpdate();
+					// Update detailed content by calling drawData()
+					//		Will be debounced to prevent lagging
+				}
+			
+			} catch(e) {
+				console.log(e.message);
+//				if(this.oldViewWindowString) {
+//					this.set('viewWindowString', this.oldViewWindowString);
+//				}
+			}
+			
+		},
+		
+		updateThreshold: function(threshold) {
+			this.threshold = threshold || this.threshold;
+			this.checkDataAndUpdate();
+		},
+		
+		changeViewWindow: function(viewWindow, index) {
+			if(typeof(viewWindow) === 'string') {
+				this.subSvgs[index].viewWindow = new ChrRegion(viewWindow, null, null, null, null, null, this.track.species);
+			} else {
+				this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.species).clone();
+			}
+		},
+		
+		drawBoxTrack: function(regions, linkMap, threshold, y, height, svgToDraw) {
+			// regions is an array of all connections
+			// regions with the same ID is connected and needs to be colored accordingly
+			// linkMap is an object with regionID as key and value as following:
+			// 		color: the color index of the link;
+			//		regions: the regions with the same ID (array);
+			
+			// may need to filter the regions first, either here or outside
+			
+			var colorIndex = 0;
+			threshold = threshold || 1;
+			svgToDraw = svgToDraw || this.mainSvg;
+			height = height || this.borderHeight * this.textSize;
+			y = y || 0;
+			
+			var windowToDraw = svgToDraw.viewWindow;
+			
+			if(regions && regions.forEach) {
+				regions.forEach(function(value, index) {
+					// value is a window-ish
+					if(windowToDraw.overlaps(value) <= 0 || value.data.value < threshold) {
+						return;
+					}
+					var linkID = value.data.linkID;
+					if(linkMap.hasOwnProperty(linkID)) {
+						// color is already there
+						colorIndex = linkMap[linkID].color;
+						if(!linkMap[linkID].regions.some(function(region, index){
+							return region.data.regionID === value.data.regionID;
+							})) {
+								linkMap[linkID].regions.push(value);
+						}
+					} else {
+						colorIndex++;
+						if(colorIndex >= this.colorSet.length) {
+							colorIndex = 0;
+						}
+						linkMap[linkID] = {color: colorIndex, regions: [value]};
+					}
+					//this.drawRectangle(windowToDraw, value, colorIndex, 1);
+				}, this);
+			}
+			
+			// then draw the two horizontal lines
+			if(windowToDraw.overlaps(this.track.species.chromInfo[windowToDraw.chr].cent) <= 0) {
+				// no centromere, just draw two lines
+				this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw);
+				this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw);
+			} else {
+				// has centromere, draw p part first
+				var pX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getStart(), true, svgToDraw);
+				this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw);
+				this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw);
+				// then centromere
+				var qX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getEnd(), true, svgToDraw);
+				this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw);
+				this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw);
+				// then q part
+				this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor, svgToDraw);
+				this.drawLine(qX, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw);
+			}
+			
+		},
+		
+		generatePerm: function(length) {
+			if(length === 2) {
+				return [[0, 1], [1, 0]];
+			} else {
+				//console.log(length);
+			}
+		},
+		
+		drawConnectionBetweenTracks: function(linkMap, threshold, svgChildren, svgMain) {
+			// linkMap is an object with regionID as key and regions as value (array)
+			// the colorMap should have been already populated
+			// NOTE: the actual track should be a svg with class "linked" under svgChildren
+			// Also, windowsToDraw should be 'viewWindow' property of svgChildren
+			threshold = threshold || 1;
+			
+			svgMain = svgMain || this.mainSvg;
+			svgChildren = svgChildren || this.subSvgs;
+			
+			for(var regionID in linkMap) {
+				if(linkMap.hasOwnProperty(regionID)) {
+					// region is here, draw the link (polygon)
+					
+					if(linkMap[regionID].regions[0].data.value < threshold) {
+						continue;
+					}
+					
+					var perm = this.generatePerm(linkMap[regionID].regions.length);
+					if(!perm) {
+						continue;
+					}
+					
+					perm.forEach(function(permIndex, index) {
+						if(permIndex.some(function(currentPerm, svgIndex) {
+							var windowToDraw = svgChildren[svgIndex].viewWindow;
+							if(windowToDraw.overlaps(linkMap[regionID].regions[currentPerm]) > 0) {
+								return true;
+							} else {
+								return false;
+							}
+						}, this)) {
+						
+							// prepare the points
+							var startPoints = [];
+							var endPoints = [];
+
+							svgChildren.forEach(function(svgChild, index) {
+								var x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getStart(),
+																  true, svgChild);
+								
+								var y = (parseInt(svgChild.getAttributeNS(null, "y")) || 0);
+								
+								startPoints.push(x + "," + y);
+								startPoints.push(x + "," + (y + svgChild.height.animVal.value));
+								
+								x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getEnd(),
+															  true, svgChild);
+								x += (parseInt(svgChild.getAttributeNS(null, "x")) || 0);
+								
+								endPoints.push(x + "," + y);
+								endPoints.push(x + "," + (y + svgChild.height.animVal.value));
+							}, this);
+
+							var points = startPoints.join(" ") + " " + endPoints.reverse().join(" ");
+							
+							var newLink = document.createElementNS(this.svgNS, "polygon");
+							newLink.setAttributeNS(null, "id", regionID);
+							newLink.setAttributeNS(null, "class", "linkedRegion");
+							newLink.setAttributeNS(null, "points", points);
+							newLink.setAttributeNS(null, "fill", this.rgbToHex(this.colorSet[linkMap[regionID].color]));
+							
+							Polymer.dom(svgMain.holder).appendChild(newLink);
+						}
+						
+					}, this);
+					
+				}
+			}
+		},
+		
+	});
+  </script>
+</dom-module>

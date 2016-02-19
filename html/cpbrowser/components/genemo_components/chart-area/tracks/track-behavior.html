@@ -1,0 +1,609 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+<script type="text/javascript" src="../../../../js/generegion.js"></script>
+<script type="text/javascript" src="../../../../js/geneobject.js"></script>
+<script type="text/javascript" src="../../../../js/regionlistui.js"></script>
+<script type="text/javascript" src="../../../../js/tracksSpecies.js"></script>
+<script>
+ 	window.GIVeBehaviors = window.GIVeBehaviors || {};
+	GIVeBehaviors.TrackBehavior = {
+
+		properties: {
+			species: Object, // this is the species defined in libtracks.js
+			// notice that species should have chromSizes and location of centromeres included
+			// tracks is also within species
+			// may need to provide additional API to get track data
+			
+			track: {
+				type: Object,
+				readOnly: true
+			},
+			// this is the track object
+			// including all meta information of the track, together with the settings
+			// species is a reference within the track object
+			
+			textSize: {
+				type: Number,
+				value: 12
+			},
+			
+			fullHeight: {
+				type: Number,
+				value: 1		// em
+			},
+			
+			halfHeight: {
+				type: Number,
+				value: 0.6		// this is the proportion to fullHeight
+			},
+			
+			bedGap: {
+				// this is the gap between multiple bed lines
+				type: Number,
+				value: 0.1
+			},
+						
+			lineGap: {
+				// this is the gap between multiple lines
+				type: Number,
+				value: 0.2
+			},
+						
+			data: {
+				type: Object,	// main data buffer of the track
+				value: function() {
+					return {};
+				},
+			},
+			
+			bufferWindow: {
+				type: Object	// ChrRegion indicating what data we have in the buffer
+			},
+			
+			requestURL: {
+				// this is the URL to request data
+				type: String,
+				value: ""
+			},
+			
+			drawDebounceInt: {	// interval for update drawing, needs to be a small value for coordinates
+				type: Number,
+				value: 300
+			},
+			
+			getDataDebounceInt: {	// interval for getting data
+				type: Number,
+				value: 300
+			},
+			
+			colorSet: {
+				type: Array,
+				value: function() {
+					return [0x3F51B5, 0x2196F3, 0x009688, 
+							0x4CAF50, 0xCDDC39, 0xFFC107, 
+							0x795548, 0xF44336, 0x9C27B0, ];		// put color set here
+				}
+			},
+			
+			dynamicHeight: {	// use true if the height of the track is dynamic
+				type: Boolean,
+				value: true,
+				readOnly: true
+			},
+			
+			trackHeight: {
+				type: Number
+			},
+			
+			isReady: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
+//			initialized: {
+//				type: Boolean,
+//				value: false,
+//				readOnly: true,
+//			},
+
+			isAdaptive: {
+				type: Boolean,
+				value: false,
+			},
+			
+		},
+		
+		listeners: {
+			'response': 'responseHandler',		// this is for iron-ajax
+		},
+		
+		// lifecycle events
+		
+		created: function() {
+			
+			this.ARROW_HEIGHT_PROP = 0.5;		// percentage of arrow (to height of gene)
+			this.ARROW_MAX_HEIGHT_PROP = 0.9;		// max percentage of arrow
+			this.ARROW_MIN_HEIGHT = 4;			// minimum height required for arrow
+			this.ARROW_RECT_MIN_WIDTH = 1.5;	// minimum rectangle width to draw arrow
+			this.ARROW_GAP_WIDTH = 1.5;			// gap width for arrow
+			this.ARROW_FLANK_WIDTH = 0.5;		// flank width for arrow
+			
+			this.TEXT_MARGIN_GAP = 5;		// flank width for arrow
+			
+			this.svgNS = "http://www.w3.org/2000/svg";
+			
+			// the following names are used in debouncing
+			this.updateJobName = 'UPDATE';
+			this.getDataJobName = 'GETDATA';
+			
+			this.getDataCallback = null;
+		},
+		
+		factoryImpl: function(track, properties) {
+			// request URL is the target to get data from
+			// width is the width given for the track (including text margin), units in px
+			// type is reserved
+			
+			properties = properties || {};
+			
+			this.x = properties.x || 0;
+			this.y = properties.y || 0;
+			this.trackHeight = properties.height || 100;
+			
+			this._setTrack(track);
+			
+			if(this.track.getSetting('adaptive') === 'on') {
+				this.isAdaptive = true;
+			}
+			
+			if(properties.textMargin) {
+				this.textMargin = properties.textMargin;
+			}
+			this.windowWidth = properties.width - 
+							  (properties.textMargin? properties.textMargin + this.TEXT_MARGIN_GAP: 0);
+			this.totalWidth = properties.width;
+			if(properties.requestUrl) {
+				this.requestUrl = properties.requestUrl;
+			}
+			
+			// call "constructors" of child classes
+			if(this.trackImpl) {
+				this.trackImpl(track, properties);
+			}
+		},
+		
+		getTrackSvg: function() {
+			
+			if(!this.trackSvg) {
+				this.trackSvg = document.createElementNS(this.svgNS, 'svg');
+				this.trackSvg.setAttribute('id', this.track.getCleanID() + '_trackSvg');
+				this.trackSvg.setAttribute('class', 'trackSvg');
+				this.trackSvg.setAttributeNS(null, 'x', this.x);
+				this.trackSvg.setAttributeNS(null, 'y', this.y);
+				this.trackSvg.setAttributeNS(null, 'width', this.totalWidth);
+				// notice that the heights are placeholder and will change
+				this.trackSvg.setAttributeNS(null, 'height', this.trackHeight);
+				this.trackSvg.setAttribute("viewBox", "0 0 " 
+					+ this.totalWidth + " " + this.trackHeight);
+					
+				// attach ajax to bed-track dom
+				if(this.requestUrl) {
+					this.mainAjax = document.createElement('iron-ajax');
+					this.mainAjax.setAttribute('id', this.track.getCleanID() + '_mainAjax');
+					this.mainAjax.setAttribute('url', this.requestUrl);
+					this.mainAjax.setAttribute('handle-as', 'json');
+					this.mainAjax.setAttribute('on-response', 'responseHandler');
+					this.mainAjax.setAttribute('method', 'POST');
+					this.mainAjax.setAttribute('content-type', 'application/json');
+					this.mainAjax.setAttribute('debounce-duration', this.getDataDebounceInt);
+					Polymer.dom(this.root).appendChild(this.mainAjax);
+				}
+				// if textMargin is specified, create a svg element for text labels
+				
+				if(this.textMargin) {
+					this.textSvg = document.createElementNS(this.svgNS, 'svg');
+					this.textSvg.setAttribute('id', this.track.getCleanID() + '_textSvg');
+					this.textSvg.setAttributeNS(null, 'x', this.x);
+					this.textSvg.setAttributeNS(null, 'y', this.y);
+					this.textSvg.setAttributeNS(null, 'width', this.textMargin);
+				
+					// notice that the heights are placeholder and will change
+					this.textSvg.setAttributeNS(null, 'height', this.trackHeight);
+					this.textSvg.setAttribute("viewBox", "0 0 " 
+						+ this.textMargin + " " + this.trackHeight);
+					Polymer.dom(this.trackSvg).appendChild(this.textSvg);
+				}
+				
+				// create dom elements (svg)
+				this.mainSvg = document.createElementNS(this.svgNS, 'svg');
+				this.mainSvg.setAttribute('id', this.track.getCleanID() + '_mainSvg');
+				this.mainSvg.setAttributeNS(null, 'x', (this.textMargin? this.textMargin + this.TEXT_MARGIN_GAP: 0) + this.x);
+				this.mainSvg.setAttributeNS(null, 'y', this.y);
+				this.mainSvg.setAttributeNS(null, 'width', this.windowWidth);
+			
+				// notice that the heights are placeholder and will change
+				this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
+				this.mainSvg.setAttribute("viewBox", "0 0 " 
+					+ this.windowWidth + " " + this.trackHeight);
+				
+				Polymer.dom(this.trackSvg).appendChild(this.mainSvg);
+				
+	//			this._setInitialized(true);
+	//			
+	//			this.fire('track-initialized', {ID: this.track.getID()});
+				this.initSvgHolder();
+				
+				if(this.initSvgComponents) {
+					this.initSvgComponents();
+				}
+			}
+			return this.trackSvg;
+		},
+		
+		getHeight: function() {
+			return this.trackHeight;
+		},
+		
+		initSvgHolder: function() {
+			if(this.textMargin) {
+				this.textSvg.holder = document.createElementNS(this.svgNS, 'g');
+				Polymer.dom(this.textSvg).appendChild(this.textSvg.holder);
+			}
+			this.mainSvg.holder = document.createElementNS(this.svgNS, 'g');
+			Polymer.dom(this.mainSvg).appendChild(this.mainSvg.holder);
+		},
+		
+		// ****** customized methods ******
+		
+		prepareData: function() {
+			// provide data to mainAjax
+			// for most of the tracks, this is only trackID and window
+			return {
+				db: this.track.species.db, 
+				trackID: this.track.getID(), 
+				window: this.mainSvg.viewWindow.regionToString(false)
+			};			
+		},
+		
+		dataHandler: function(e, detail) {
+			// placeholder for data handler
+		},
+		
+		drawData: function() {
+			// placeholder for data drawing
+		},
+		
+		getBufferRefreshFlag: function() {
+			// check whether buffer needs to be updated
+			return this.bufferWindow && this.bufferWindow.overlaps && 
+				this.bufferWindow.overlaps(this.mainSvg.viewWindow) >= this.mainSvg.viewWindow.getLength();
+		},
+		
+		// ****** common methods used by all tracks ******
+		// ** coordinates **
+		
+		transformXCoordinate: function(coordinate, moveOutsideToBorder, svgToDraw) {
+			// this function is used to transform a given coordinate to svg x
+			// TODO: implement chromosomal based coordinates
+			// TODO: move this to TrackBehavior behavior
+			// coordinate should be {chr: xxx, coor: xxx}
+			moveOutsideToBorder = moveOutsideToBorder || false;
+			svgToDraw = svgToDraw || this.mainSvg;
+			var windowToDraw = svgToDraw.viewWindow;
+			if(windowToDraw.chr !== coordinate.chr) {
+				return 0;
+			}
+			try {
+				result = (coordinate.coor - windowToDraw.start + 0.5) * this.windowWidth 
+					/ parseFloat(windowToDraw.getLength());
+				if(moveOutsideToBorder) {
+					if(result < 0) {
+						return 0;
+					} else if(result > this.windowWidth) {
+						return this.windowWidth;
+					}
+				}
+				return result;
+			} catch(e) {
+				return 0;
+			}
+		},
+		
+		revTransXCoordinate: function(x, svgToDraw) {
+			// reversely translate X value from JavaScript to chromosome coordinate
+			svgToDraw = svgToDraw || this.mainSvg;
+			var windowToDraw = svgToDraw.viewWindow || Polymer.dom(svgToDraw).parentNode.viewWindow;
+			return ChrRegion.clipCoordinate({chr: windowToDraw.chr, 
+											coor: parseInt(x / this.windowWidth * windowToDraw.getLength() 
+															+ windowToDraw.start + 0.5)}, this.track.species);
+		},
+		
+		// ** Simple SVG Drawing **
+		
+		clear: function() {
+			if(this.textMargin) {
+				while(Polymer.dom(this.textSvg).firstChild) {
+					Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+				}
+			}
+			while(Polymer.dom(this.mainSvg).firstChild) {
+				Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild);
+			}
+			this.initSvgHolder();
+		},
+		
+		updateLocationSize: function(x, y, width, height) {
+			this.x = x || this.x;
+			this.y = y || this.y;
+			// notice that width and height are placeholders and have no effect for now
+			this.trackSvg.setAttributeNS(null, 'x', this.x);
+			this.trackSvg.setAttributeNS(null, 'y', this.y);
+		},
+		
+		drawLine: function(x1, y1, x2, y2, colorRGB, svgToDraw) {
+			// notice that this function draws line according to svg coordinates, not genomic coordinates
+			// color is a 24-bit number
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			var newLine = document.createElementNS(this.svgNS, "line");
+			newLine.setAttributeNS(null, "x1", x1);
+			newLine.setAttributeNS(null, "x2", x2);
+			newLine.setAttributeNS(null, "y1", y1);
+			newLine.setAttributeNS(null, "y2", y2);
+			if(colorRGB || colorRGB === 0) {
+				newLine.setAttributeNS(null, "stroke", this.rgbToHex(colorRGB));
+			}
+			Polymer.dom(svgToDraw).appendChild(newLine);
+			return newLine;
+		},
+		
+		createRawRectangle: function(x1, y1, x2, y2, colorRGB, svgToDraw, id, strokeColorRGB) {
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			var xmin = Math.min(x1, x2);
+			var ymin = Math.min(y1, y2);
+			var newRegion = document.createElementNS(this.svgNS, "rect");
+			newRegion.setAttributeNS(null, "x", xmin);
+			newRegion.setAttributeNS(null, "y", ymin);
+			newRegion.setAttributeNS(null, "width", Math.abs(x2 - x1));
+			newRegion.setAttributeNS(null, "height", Math.abs(y2 - y1));
+			if(id) {
+				newRegion.setAttributeNS(null, "id", id);
+			}
+			if(typeof colorRGB === 'number') {
+				newRegion.setAttributeNS(null, "fill", this.rgbToHex(colorRGB));
+			}
+			if(typeof strokeColorRGB === 'number') {
+				newRegion.setAttributeNS(null, "stroke", this.rgbToHex(strokeColorRGB));
+			}
+			Polymer.dom(svgToDraw).appendChild(newRegion);
+			return newRegion;
+		},
+		
+		createRawPolymer: function(coordinates, svgToDraw, id, cssClass, fillColorRGB, strokeColorRGB, strokeSize) {
+			// coordinates is an array of string "x,y"
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			var newPolygon = document.createElementNS(this.svgNS, "polygon");
+			newPolygon.setAttributeNS(null, "points", coordinates.join(' '));
+			if(id) {
+				newPolygon.setAttributeNS(null, "id", id);
+			}
+			if(cssClass) {
+				newPolygon.setAttributeNS(null, "class", cssClass);
+			}
+			if(typeof fillColor === 'number') {
+				newPolygon.setAttributeNS(null, "fill", this.rgbToHex(fillColorRGB));
+			}
+			if(typeof strokeColorRGB === 'number') {
+				newPolygon.setAttributeNS(null, "stroke", this.rgbToHex(strokeColorRGB));
+			}
+			if(strokeSize) {
+				newPolygon.setAttributeNS(null, "stroke-width", strokeSize);
+			}
+			
+			Polymer.dom(svgToDraw).appendChild(newPolygon);
+			return newPolygon;	
+		},
+		
+		createEventRectangle: function(svgParent, svgTrack) {
+			// create a rectangle to handle events
+		},
+		
+		createText: function(x, y, text, textAnchor, params) {
+			var newLabel = document.createElementNS(this.svgNS, "text");
+			if(textAnchor) {
+				newLabel.setAttributeNS(null, "text-anchor", textAnchor);
+			}
+			newLabel.setAttributeNS(null, "x", x);
+			newLabel.setAttributeNS(null, "y", y);
+			for(var key in params) {
+				if(params.hasOwnProperty(key)) {
+					newLabel.setAttributeNS(null, key, params[key]);
+				}
+			}
+			Polymer.dom(newLabel).appendChild(document.createTextNode(text));
+			return newLabel;
+		},
+		
+		drawText: function(x, y, text, textAnchor, params, svgToDraw) {
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			var newLabel = this.createText(x, y, text, textAnchor, params);
+			Polymer.dom(svgToDraw).appendChild(newLabel);
+			return newLabel;
+		},
+		
+		// ** Complex SVG drawing for track **
+		
+		drawRectangle: function(region, colorIndex, y, height, svgToDraw, strokeColorIndex) {
+			// height is the percentage of svgToDraw, top-aligned
+			// color is an index from colorSet
+			// TODO: allow different alignment
+				
+			height = height || 1;
+			y = y || 0;
+			
+			svgToDraw = svgToDraw || this.mainSvg;
+			var windowToDraw = svgToDraw.viewWindow;
+			
+			if(windowToDraw.overlaps(region) > 0) {
+				var x0 = this.transformXCoordinate(region.getStart(), true),
+					x1 = this.transformXCoordinate(region.getEnd(), true);
+				var newRegion = this.createRawRectangle(x0, y, x1, y + height, 
+							this.colorSet[colorIndex], svgToDraw, region.id, 
+							(typeof strokeColorIndex === 'number')? this.colorSet[strokeColorIndex]: null);
+				
+				// add strand info
+				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), 0xFFFFFF);
+			}
+		},
+		
+		drawStrandArrows: function(x0, y0, x1, y1, strand, colorRGB, svgToDraw) {
+			if(typeof(strand) === 'string') {
+				// first calculate number of arrows
+				var arrowWidth = (y1 - y0) * 0.5 * this.ARROW_HEIGHT_PROP;
+				if(arrowWidth < this.ARROW_MIN_HEIGHT * 0.5) {
+					arrowWidth = Math.min(this.ARROW_MIN_HEIGHT, (y1 - y0) * 0.5 * this.ARROW_MAX_HEIGHT_PROP);
+				}
+				if(x1 - x0 >= arrowWidth * this.ARROW_RECT_MIN_WIDTH) {
+					// needs some width to draw arrow
+					var arrowCenters = [];
+					if(x1 - x0 > arrowWidth * (this.ARROW_FLANK_WIDTH * 2 + this.ARROW_GAP_WIDTH + 2)) {
+						// multiple arrows
+						var numArrows = Math.floor(((x1 - x0) / arrowWidth - this.ARROW_FLANK_WIDTH * 2 - 1)
+													/ (this.ARROW_GAP_WIDTH + 1)) + 1;
+						// calculate the center for the first arrow
+						var arrowCenter = (x0 + x1) * 0.5 - ((this.ARROW_GAP_WIDTH + 1) * arrowWidth * (numArrows - 1) * 0.5);
+						for(var i = 0; i < numArrows; i++) {
+							arrowCenters.push(arrowCenter);
+							arrowCenter = arrowCenter + (1 + this.ARROW_GAP_WIDTH) * arrowWidth;
+						}							
+					} else {
+						arrowCenters.push(0.5 * (x1 + x0));
+					}
+					
+					arrowCenters.forEach(function(xCtr){
+						this.drawSingleStrandArrow(xCtr, (y1 + y0) * 0.5, arrowWidth, strand, colorRGB, svgToDraw);
+						}, this); 
+				}
+			}
+		},
+		
+		drawSingleStrandArrow: function(xCtr, yCtr, width, strand, colorRGB, svgToDraw) {
+			var halfWidthX = ((strand === '+')? width * 0.5: -width * 0.5);
+			this.drawLine(xCtr - halfWidthX, yCtr - width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw);
+			this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw);
+		},
+		
+		// ** Track event handling and functions **
+		
+		getData: function() {
+			// directly from request URL
+			// use iron-ajax to submit request directly
+			// customized components are used in data preparation and data handler
+			// use dataHandler(e, detail) as return handler
+			// callback is in case update is needed
+			if(this.mainAjax) {
+				var requestData = this.prepareData();		// this is data object
+				// notice that this could be an Object, so JSON.stringify if needed
+				if(typeof(requestData) === 'object') {
+					requestData = JSON.stringify(requestData);
+				}
+				this.mainAjax.body = requestData;
+				this.mainAjax.generateRequest();
+			} else {
+				if(this.getDataCallback) {
+					this.getDataCallback();
+					this.getDataCallback = null;
+				}
+			}
+		},
+		
+		responseHandler: function(e, detail) {
+			this.dataHandler(e, detail);
+			if(this.getDataCallback) {
+				this.getDataCallback();
+				this.getDataCallback = null;
+			}
+		},
+		
+		checkDataAndUpdate: function() {
+			// Steps:
+			// 		* If data is already in buffer, run drawData (debounced)
+			//		Meanwhile, run fetch data (debounced) without visible callback
+			//		* Otherwise, run fetch data with drawData (debounced) as callback
+			if(this.getBufferRefreshFlag()) {
+				// data is already in buffer
+				this.drawDataDebounceWrapper();
+				this.getDataCallback = null;		// reset callback
+			} else {
+				// needs to get new data before updating
+				this.getDataCallback = this.drawDataDebounceWrapper.bind(this);
+			}
+			this.getData();
+		},
+		
+		drawDataFireWrapper: function() {
+			// fire track-ready event to its container (to calculate size and do other stuff)
+			this.drawData();
+			this._setIsReady(true);
+			this.fire('track-ready', {ID: this.track.getID()});
+		},
+		
+		drawDataDebounceWrapper: function() {
+			// debounce wrapper for drawData()
+			this.debounce(this.updateJobName, this.drawDataFireWrapper, this.drawDebounceInt);
+		},
+		
+		updateTracks: function(viewWindow, index) {
+			// viewWindow is the new viewWindow value of coordinates
+			// index is the index of viewWindow (for tracks with multiple viewWindows)
+			// if both are omitted, just refresh the track
+			
+			viewWindow = viewWindow || this.mainSvg.viewWindow;
+			
+			try {
+				// Steps:
+				// Change view window by calling changeViewWindow() 
+				//		May clip viewwindow by species
+				this.changeViewWindow(viewWindow);
+				this._setIsReady(false);
+				//this.oldViewWindow = this.mainSvg.viewWindow;
+				
+				// Get data clipped by viewWindow by calling getData()
+				//		May also include data preparation
+				this.checkDataAndUpdate();
+				
+				// Update detailed content by calling drawData()
+				//		Will be debounced to prevent lagging
+			
+			} catch(e) {
+				console.log(e.message);
+//				if(this.oldViewWindowString) {
+//					this.set('viewWindowString', this.oldViewWindowString);
+//				}
+			}
+			
+		},
+		
+		setTrackVisibility: function(visString) {
+			this.track.setVisFromStr(visString);
+		},
+		
+		changeViewWindow: function(viewWindow) {
+			if(typeof(viewWindow) === 'string') {
+				this.mainSvg.viewWindow = new ChrRegion(viewWindow, null, null, null, null, null, this.track.species);
+			} else {
+				this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.species).clone();
+			}
+			// this.set('viewWindowString', newValue);
+		},
+		
+		rgbToHex: function(colorRGB) {
+			return '#' + ((1 << 24) + colorRGB).toString(16).slice(1);
+		}
+		
+	};
+</script>

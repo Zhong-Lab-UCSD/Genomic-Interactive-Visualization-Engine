@@ -5,17 +5,25 @@ ini_set("memory_limit", "2048M");
 ini_set('max_execution_time', 300);
 
 function connectCPB($db = 'compbrowser') {
-	$mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS, $db);
+	$mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
 	if($mysqli->connect_errno) {
 		die("Connect failed:" . $mysqli->connect_error);
+	}
+	if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
+		error_log("(ConnectCPB) DB does not exist: " . $db);
+		die();
 	}
 	return $mysqli;
 }
 
 function connectGB($db) {
-	$mysqli = new mysqli(GB_HOST, GB_USER, GB_PASS, $db);
+	$mysqli = new mysqli(GB_HOST, GB_USER, GB_PASS);
 	if($mysqli->connect_errno) {
 		die("Connect failed:" . $mysqli->connect_error);
+	}
+	if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
+		error_log("(ConnectGB) DB does not exist: " . $db);
+		die();
 	}
 	return $mysqli;
 }
@@ -52,60 +60,6 @@ function rangeIntersection($start1, $end1, $start2, $end2) {
 	$s = max($start1, $start2);
 	$e = min($end1, $end2);
 	return $e - $s;
-}
-
-function getSpeciesDbNames() {
-	// return a full list of species db names
-	$mysqli = connectCPB();
-	$result = array();
-	$species = $mysqli->query("SELECT dbname FROM species");
-	while($spcitor = $species->fetch_assoc()) {
-		$result[] = $spcitor["dbname"];
-	}
-	$species->free();
-	$mysqli->close();
-	return $result;
-}
-
-function getSpeciesInfoFromArray($spcDbNameList = NULL) {
-	// return everything about species from db indicated by spcDbNameList
-	$mysqli = connectCPB();
-	$spcinfo = array();
-	$sqlstmt = "SELECT * FROM species";
-	if(!empty($spcDbNameList)) {
-		$sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
-		$stmt = $mysqli->prepare($sqlstmt);
-		$sqltype = str_repeat('s', count($spcDbNameList));
-		$a_params = array();
-		$a_params []= & $sqltype;
-		for($i = 0; $i < count($spcDbNameList); $i++) {
-			$a_params []= & $spcDbNameList[$i];
-		}
-		call_user_func_array(array($stmt, 'bind_param'), $a_params);
-		$stmt->execute();
-		$species = $stmt->get_result();
-	} else {
-		$species = $mysqli->query($sqlstmt);
-	}
-	while($spcitor = $species->fetch_assoc()) {
-		$spcinfo[] = $spcitor;
-	}	
-	$species->free();
-	$mysqli->close();
-	return $spcinfo;
-}
-
-function getSpeciesDatabaseFromGapInfo($gap, $spcDbName) {
-	// return the database name according the gap value from each species
-	$mysqli = connectCPB();
-	$spcinfo = array();
-	$spcinfo = $mysqli->query("SELECT * FROM $spcDbName WHERE gap<=$gap ORDER BY gap DESC LIMIT 1");
-	while($specdb = $spcinfo->fetch_assoc()){
-		$bb = $specdb['databaseName'];
-	}
-	$spcinfo->free();
-	$mysqli->close();
-	return $bb;
 }
 
 ?>
