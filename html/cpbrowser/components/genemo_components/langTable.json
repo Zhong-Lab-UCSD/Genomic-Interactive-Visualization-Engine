@@ -1,23 +1,76 @@
 lang Table:{
-'text1':{'en':'Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here.',
+'Results Panel Name':{'en':' Results',
 	 'zh':'-------'},
-'text2':{'en':'BED file or peaks format accepted'
+'Navigation Panel Name':{'en':' Navigation'
 	 'zh':'----'},
-'text3':{'en':'Use sample file'
+'Master Control Box':{'en':'MASTER CONTROL'
 	 'zh':'----'},
-'text4':{'en':'Reference: '
+'Gene Name':{'en':'Gene Name'
 	 'zh':'----'},
-'text5':{'en':'Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.'
+'Base(Zooming)':{'en':'Base'
 	 'zh':'----'},
-'text6':{'en':'You may also provide a URL for a '
+'Genemo Manual':{'en':'Genemo Manual '
 	 'zh':'----'},
-'text7':{'en':' file '
+'Species Common Name':{'en':'spcCmnName'
 	 'zh':'----'},
-'text8':{'en':'for display purposes only'
+'Species Gene Name':{'en':'spcGeneName '
 	 'zh':'----'},
-'text9':{'en':' Data selection '
+'Data Selection':{'en':' Data selection '
 	 'zh':'----'},
-'text10':{'en':'Search '
+'Tracks On/Off':{'en':'Tracks can be turned on/off via the checkboxes below.'
 	 'zh':'----'},
-
+'You can also':{'en':'You can also'
+	 'zh':'----'},
+'Choose sample type':{'en':'Choose sample type'
+	 'zh':'----'},
+'Use all encode data':{'en':'Use all ENCODE data.'
+	 'zh':'----'},
+'Use entire encode dataset':{'en':'Use the entire ENCODE dataset to query similar tracks instead of the selected ones. '
+	 'zh':'----'},
+'Caution on using entire encode':{'en':'Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.'
+	 'zh':'----'},
+'Common tracks':{'en':'Common tracks'
+	 'zh':'----'},	 
+'Unique tracks':{'en':'Unique tracks'
+	 'zh':'----'},	 
+'Common tracks encode':{'en':' Common tracks from ENCODE'
+	 'zh':'----'},	 
+'Track Name':{'en':'Track Name'
+	 'zh':'----'},	 
+'Sample Type':{'en':'Sample Type'
+	 'zh':'----'},	 
+'Preview':{'en':'Preview'
+	 'zh':'----'},	 
+'Data':{'en':'Data'
+	 'zh':'----'},	 
+'Insignificant signals':{'en':' Tracks with insignificant signals'
+	 'zh':'----'},		 
+'Unique encode':{'en':'Unique tracks from ENCODE'
+	 'zh':'----'},		 
+'Browser support':{'en':'Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)'
+	 'zh':'----'},		 
+'Update':{'en':'Update'
+	 'zh':'----'},		 
+'Reset View':{'en':'Reset View'
+	 'zh':'----'},		 
+'Close':{'en':'Close'
+	 'zh':'----'},		 
+'Sample List':{'en':'Sample List'
+	 'zh':'----'},		 
+'Common sample types':{'en':'Common sample types:'
+	 'zh':'----'},		 
+'Species only sample types':{'en':'Species-only sample types'
+	 'zh':'----'},		 
+'Download Data':{'en':'Download Data'
+	 'zh':'----'},		 
+'Hint':{'en':' Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.'
+	 'zh':'----'},		 
+'Do not show':{'en':'Do not show in the future'
+	 'zh':'----'},		 
+'Lab':{'en':'Lab'
+	 'zh':'----'},		 	 
+'Insignificant spcCmnName Tracks':{'en':' Tracks with insignificant signals for spcCmnName'
+	 'zh':'----'},		 
+'':{'en':''
+	 'zh':'----'},		 		 
 }

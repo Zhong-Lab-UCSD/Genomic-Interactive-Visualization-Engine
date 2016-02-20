@@ -744,7 +744,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
-    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span> Results</span></div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span></div>
     <div id="genelistHolder">
       <div id="genelistLoading" class="loadingCover BoxHide" style="min-height: 36px; left: 0px; width: auto;">
         <div class="loadingCoverBG"></div>
@@ -754,7 +754,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       <!-- end #genelist --> 
       <!--<div id="genelistfooter"> <span class="smallformstyle">(*): there is no orthologous region in that section.</span> </div>--> 
     </div>
-    <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span> Navigation</span></div>
+    <div class="header" id="navigationHeader" onclick="togglePanel('navigation', false);"> <span class="tableHeader"><span class="headerIndicator" id="navigationIndicator">[-]</span><span class="text" id="Navigation Panel Name"> Navigation</span></span></div>
     <div class="smallformstyle" id="navigationHolder">
       <div style="border: 1px #000000 solid;" id="masterHolder" class="BoxHide">
         <div id="masterLoading" class="loadingCover" style="height: 36px; width: 218px;">
@@ -763,14 +763,14 @@ window.addEventListener("WebComponentsReady", function(e) {
         </div>
         <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
           <tr>
-            <td rowspan="2" scope="col" class="speciesHeader"><span>MASTER CONTROL</span></td>
+            <td rowspan="2" scope="col" class="speciesHeader"><span><span class="text" id="Master Control Box">MASTER CONTROL</span></span></td>
             <td align="center" valign="middle" scope="col" style="padding-top: 2px;"><div onmouseover="showHover('L3');" onmouseout="hideHover('L3');" class="toolButtonImage" style="float: left;" title="Move 95% to upstream" onclick="callMasterViewChange('left3', false);"><img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /></div>
               <div onmouseover="showHover('L2');" onmouseout="hideHover('L2');" class="toolButtonImage" style="float: left;" title="Move 47.5% to upstream" onclick="callMasterViewChange('left2', false);"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
               <div onmouseover="showHover('L1');" onmouseout="hideHover('L1');" class="toolButtonImage" style="float: left;" title="Move 10% to upstream" onclick="callMasterViewChange('left1', false);"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
               <div onmouseover="showHover('R3');" onmouseout="hideHover('R3');" class="toolButtonImage" style="float: right;" title="Move 95% to downstream" onclick="callMasterViewChange('right3', false);"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
               <div onmouseover="showHover('R2');" onmouseout="hideHover('R2');" class="toolButtonImage" style="float: right;" title="Move 47.5% to downstream" onclick="callMasterViewChange('right2', false);"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
               <div onmouseover="showHover('R1');" onmouseout="hideHover('R1');" class="toolButtonImage" style="float: right;" title="Move 10% to downstream" onclick="callMasterViewChange('right1', false);"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
-              <span id="overallGeneName">Gene name</span> 
+              <span id="overallGeneName"><span class="text" id="Gene Name">Gene name</span></span>
               <!--<div style="clear: both"></div>--></td>
           </tr>
           <tr>
@@ -778,7 +778,7 @@ window.addEventListener("WebComponentsReady", function(e) {
               <div onmouseover="showZoomHover('I1');" onmouseout="hideZoomHover('I1');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in1', true);">1.5x</div>
               <div onmouseover="showZoomHover('I2');" onmouseout="hideZoomHover('I2');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in2', true);">3x</div>
               <div onmouseover="showZoomHover('I3');" onmouseout="hideZoomHover('I3');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in3', true);">10x</div>
-              <div onmouseover="showZoomHover('I4');" onmouseout="hideZoomHover('I4');" class="toolButton" style="float: left;" onclick="callMasterViewChange('inBase', true);">Base</div>
+              <div onmouseover="showZoomHover('I4');" onmouseout="hideZoomHover('I4');" class="toolButton" style="float: left;" onclick="callMasterViewChange('inBase', true);"><span class="text" id="Base(Zooming)">Base</span></div>
               <div onmouseover="showZoomHover('O1');" onmouseout="hideZoomHover('O1');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out3', true);">10x</div>
               <div onmouseover="showZoomHover('O2');" onmouseout="hideZoomHover('O2');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out2', true);">3x</div>
               <div onmouseover="showZoomHover('O3');" onmouseout="hideZoomHover('O3');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out1', true);">1.5x</div>
@@ -791,7 +791,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     </div>
     <paper-button class="fullWidth" noink raised id="manualBtn">
       <iron-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></iron-icon>
-      Genemo Manual </paper-button>
+      <span class="text" id="Genemo Manual">Genemo Manual </span></paper-button>
     <!-- end #sidebar1 --> 
   </div>
   <div id="spcNaviTemplate" class="BoxHide">
@@ -801,7 +801,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     </div>
     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed; height: 50px;">
       <tr>
-        <td rowspan="3" scope="col" class="speciesLead"><span>spcCmnName</span></td>
+        <td rowspan="3" scope="col" class="speciesLead"><span><span class="text" id="Species Common Name">spcCmnName</span></span></td>
         <td align="center" valign="middle" scope="col" style="padding: 2px;"><span id="spcDbNameCoor">spcCoor</span></td>
       </tr>
       <tr>
@@ -811,7 +811,7 @@ window.addEventListener("WebComponentsReady", function(e) {
           <div id="spcDbNameright3" class="toolButtonImage" style="float: right;" title="Move 95% to the right" onclick="callViewChange('spcDbName', 'right3');"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
           <div id="spcDbNameright2" class="toolButtonImage" style="float: right;" title="Move 47.5% to the right" onclick="callViewChange('spcDbName', 'right2');"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
           <div id="spcDbNameright1" class="toolButtonImage" style="float: right;" title="Move 10% to the right" onclick="callViewChange('spcDbName', 'right1');"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
-          spcGeneName 
+          <span class="text" id="Species Gene Name">spcGeneName </span>
           <!--<div style="clear: both"></div>--></td>
       </tr>
       <tr>
@@ -819,7 +819,7 @@ window.addEventListener("WebComponentsReady", function(e) {
           <div id="spcDbNameI1" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in1');">1.5x</div>
           <div id="spcDbNameI2" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in2');">3x</div>
           <div id="spcDbNameI3" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in3');">10x</div>
-          <div id="spcDbNameI4" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'inBase');">Base</div>
+          <div id="spcDbNameI4" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'inBase');"><span class="text" id="Base(Zooming)">Base</span></div>
           <div id="spcDbNameO1" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out3');">10x</div>
           <div id="spcDbNameO2" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out2');">3x</div>
           <div id="spcDbNameO3" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out1');">1.5x</div>
@@ -833,26 +833,26 @@ window.addEventListener("WebComponentsReady", function(e) {
       <div class="loadingTrackCoverBG"></div>
       <div class="loadingTrackCoverImage"></div>
     </div>
-    <div class="headerNoHover">Data Selection 
+    <div class="headerNoHover"><span class="text" id="Data Selection">Data Selection </span>
       <!--<div class="header buttons" id="EncodeDataButton" style="float: right; padding: 2px 3px; margin: -3px 5px -3px -2px;"
         onclick="toggleEncode();">View ENCODE Data</div>
       <div style="clear: both;"></div>--> 
     </div>
-    <div class="settingsNormal">Tracks can be turned on/off via the checkboxes below.
-      <div id="encodeSampleSettings" style="display: inline;">You can also
+    <div class="settingsNormal"><span class="text" id="Tracks On/Off">Tracks can be turned on/off via the checkboxes below.</span>
+      <div id="encodeSampleSettings" style="display: inline;"><span class="text" id="You can also">You can also</span>
         <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
-    onclick="toggleSample();">Choose sample type</div>
+    onclick="toggleSample();"><span class="text" id="Choose sample type">Choose sample type</span></div>
       </div>
       <div>
         <label>
         <input type="checkbox" id="useAllTracks" name="useAllTracks" />
-        Use all ENCODE data.
+        <span class="text" id="Use all encode data">Use all ENCODE data.</span>
         <div class="inlineDiv">
           <iron-icon class="smallInline transparent" icon="help" alt="help">
           </iron-icon>
           <paper-tooltip position="bottom" offset="0">
-            Use the entire ENCODE dataset to query similar tracks instead of the selected ones. <br>
-            <strong><em>Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</em></strong>
+            <span class="text" id="Use entire encode dataset">Use the entire ENCODE dataset to query similar tracks instead of the selected ones. </span><br>
+            <strong><em><span class="text" id="Caution on using entire encode">Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.</span></em></strong>
           </paper-tooltip>
         </div>
         </label>
@@ -860,32 +860,32 @@ window.addEventListener("WebComponentsReady", function(e) {
     </div>
     <div id="NonEncodeData">
       <div class="subBox">
-        <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span> Common tracks</div>
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrack', false);"><span class="headerIndicator" id="cmnTrackIndicator">[-]</span><span class="text" id="Common tracks"> Common tracks</span></div>
         <div class="trackHolder" id="cmnTrackHolder"></div>
       </div>
       <div class="subBox">
-        <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span> Unique tracks</div>
+        <div class="subHeader" onclick="toggleSubPanel('unique', false);"><span class="headerIndicator" id="uniqueIndicator">[-]</span><span class="text" id="Unique tracks"> Unique tracks</span></div>
         <div id="uniqueHolder"></div>
       </div>
     </div>
     <div id="EncodeData" style="overflow-y: auto;" class="BoxHide">
       <div class="subBox ENCODETracks">
-        <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);"> <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span> Common tracks from ENCODE</div>
+        <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);"> <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span><span class="text" id="Common tracks encode"> Common tracks from ENCODE</span></div>
         <div class="trackHolder" id="cmnTrackEncodeHolder">
           <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
             <thead>
               <tr class="trackHeaderEncode">
-                <th style="width: 35%;">Track Name</th>
-                <th>Sample Type</th>
-                <th style="width: 20%;">Preview</th>
-                <th style="width: 5%;">Data</th>
+                <th style="width: 35%;"><span class="text" id="Track Name">Track Name</span></th>
+                <th><span class="text" id="Sample Type">Sample Type</span></th>
+                <th style="width: 20%;"><span class="text" id="Preview">Preview</span></th>
+                <th style="width: 5%;"><span class="text" id="Data">Data</span></th>
               </tr>
             </thead>
             <tbody id="cmnTrackEncodeSortedTbodyHolder" style="display: none;">
             </tbody>
             <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolderHeader" style="display: none;">
               <tr>
-                <td class="insigHeader" onclick="toggleTbody('cmnTrackEncodeInsigTbody', false);" colspan="4"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals</td>
+                <td class="insigHeader" onclick="toggleTbody('cmnTrackEncodeInsigTbody', false);" colspan="4"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span><span class="text" id="Insignificant signals"> Tracks with insignificant signals</span></td>
               </tr>
             </tbody>
             <tbody class="insigTbody" id="cmnTrackEncodeInsigTbodyHolder" style="display: none;">
@@ -896,7 +896,7 @@ window.addEventListener("WebComponentsReady", function(e) {
         </div>
       </div>
       <div class="subBox ENCODETracks">
-        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span> Unique tracks from ENCODE</div>
+        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span><span class="text" id="Unique encode"> Unique tracks from ENCODE</span></div>
         <div id="uniqueEncodeHolder"></div>
       </div>
       <div style="display: none;">
@@ -907,31 +907,31 @@ window.addEventListener("WebComponentsReady", function(e) {
         <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
          name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
 	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . requestSpeciesHgsID($spcinfo[$i]["dbname"]) . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on" . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
-	  ?>">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+	  ?>"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
         <?php
 	}
 	$_SESSION['resetView'] = false;
 		?>
       </div>
     </div>
-    <div class="header buttons" style="float: right;" onclick="updateTracks(); hideWindow('trackSelect');">Update</div>
-    <div class="header buttons" style="float: right;" onclick="resetTracks();">Reset view</div>
-    <div class="header buttons" style="float: right;" onclick="hideWindow('trackSelect');">Close</div>
+    <div class="header buttons" style="float: right;" onclick="updateTracks(); hideWindow('trackSelect');"><span class="text" id="Update">Update</span></div>
+    <div class="header buttons" style="float: right;" onclick="resetTracks();"><span class="text" id="Reset view">Reset view</span></div>
+    <div class="header buttons" style="float: right;" onclick="hideWindow('trackSelect');"><span class="text" id="Close">Close</span></div>
     <div style="clear: both"></div>
   </div>
   <div id="sampleTypeBox" class="downloadBox" style="left: 637px; top: 58px; width: 300px;">
-    <div class="subHeaderNoHover">Sample List
-      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideSample();">Close</div>
+    <div class="subHeaderNoHover"><span class="text" id="Sample List">Sample List</span>
+      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideSample();"><span class="text" id="Close">Close</span></div>
       <div style="clear: both;"></div>
     </div>
-    <div class="speciesTrackHeader">Common sample types:</div>
+    <div class="speciesTrackHeader"><span class="text" id="Commons sample types">Common sample types:</span></div>
     <div id="cmnSampleEncodeHolder" style="padding: 4px;"></div>
-    <div class="speciesTrackHeader">Species-only sample types</div>
+    <div class="speciesTrackHeader"><span class="text" id="Species only sample types">Species-only sample types</span></div>
     <div id="uniSampleEncodeHolder" style="padding: 4px; max-height: 300px; overflow-y: auto; overflow-x: hide;"></div>
   </div>
   <div id="downloadBox" class="downloadBox" onmouseover="inDownload(true);" onmouseout="inDownload(false);">
-    <div class="subHeaderNoHover">Download Data
-      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideDownload();">Close</div>
+    <div class="subHeaderNoHover"><span class="text" id="Download Data">Download Data</span>
+      <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideDownload();"><span class="text" id="Close">Close</span></div>
       <div style="clear: both;"></div>
     </div>
     <div id="downloadContent" style="padding: 4px;"></div>
@@ -951,28 +951,28 @@ function hideTrackHintForever() {
 //setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
 </script>
   <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
-font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.
-    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="hideTrackHintForever();">Do not show in the future</div>
-    <div class="header buttons" style="float: left; margin-top: 5px;" onclick="hideTrackHint();">Close</div>
+font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"><span class="text" id="Hint"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.</span>
+    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="hideTrackHintForever();"><span class="text" id="Do not show">Do not show in the future</span></div>
+    <div class="header buttons" style="float: left; margin-top: 5px;" onclick="hideTrackHint();"><span class="text" id="Close">Close</span></div>
     <div style="clear: both"></div>
   </div>
   <?php
 		}
 ?>
   <div style="display: none;" id="uniqueTemplate">
-    <div class="speciesTrackHeader">spcCmnName</div>
+    <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
     <div class="trackHolder" id="spcDbNameTableHolder"></div>
   </div>
   <div style="display: none;" id="uniqueEncodeTemplate">
-    <div class="speciesTrackHeader">spcCmnName</div>
+    <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
     <div class="trackHolder" id="spcDbNameEncodeTableHolder">
       <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
         <thead>
           <tr class="trackHeaderEncode">
-            <th style="width: 30%;">Track Name</th>
-            <th style="width: 20%;">Sample Type</th>
-            <th>Lab</th>
-            <th style="width: 15%;">Preview</th>
+            <th style="width: 30%;"><span class="text" id="Track Name">Track Name</span></th>
+            <th style="width: 20%;"><span class="text" id="Sample Type">Sample Type</span></th>
+            <th><span class="text" id="Lab">Lab</span></th>
+            <th style="width: 15%;"><span class="text" id="Previes">Preview</span></th>
             <th style="width: 7%;">Data</th>
           </tr>
         </thead>
@@ -980,7 +980,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
         </tbody>
         <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolderHeader" style="display: none;">
           <tr>
-            <td class="insigHeader" onclick="toggleTbody('spcDbNameEncodeInsigTbody', false);" colspan="5"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span> Tracks with insignificant signals for spcCmnName</td>
+            <td class="insigHeader" onclick="toggleTbody('spcDbNameEncodeInsigTbody', false);" colspan="5"><span class="headerIndicator" id="spcDbNameEncodeInsigTbodyIndicator">[+]</span><span class="text" id="Insignificant spcCmnName Tracks"> Tracks with insignificant signals for spcCmnName</span></td>
           </tr>
         </tbody>
         <tbody class="insigTbody" id="spcDbNameEncodeInsigTbodyHolder" style="display: none;">
@@ -991,7 +991,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     </div>
   </div>
   <div style="display: none;" id="uniqueSampleEncodeTemplate">
-    <div class="speciesTrackHeader">spcCmnName</div>
+    <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
     <div class="trackHolder" id="spcDbNameSampleEncodeHolder"></div>
   </div>
   <!--
@@ -1008,7 +1008,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div id="leftbutton" onclick="UI.switchLeft();"></div>
   </div>
   <div id="mainContent">
-    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser/cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser/cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0"><span class="text" id="Browser Support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
     <!-- end #mainContent --> 
   </div>
   <!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats --> 
