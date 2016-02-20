@@ -1,34 +1,34 @@
 lang Table:{
 'Results Panel Name':{'en':' Results',
-	 'zh':'-------'},
+	 'zh':'结果'},
 'Navigation Panel Name':{'en':' Navigation'
-	 'zh':'----'},
+	 'zh':'导航'},
 'Master Control Box':{'en':'MASTER CONTROL'
-	 'zh':'----'},
+	 'zh':'主控'},
 'Gene Name':{'en':'Gene Name'
-	 'zh':'----'},
+	 'zh':'基因名'},
 'Base(Zooming)':{'en':'Base'
-	 'zh':'----'},
+	 'zh':'原来'},
 'Genemo Manual':{'en':'Genemo Manual '
-	 'zh':'----'},
+	 'zh':'Genemo 说明书'},
 'Species Common Name':{'en':'spcCmnName'
-	 'zh':'----'},
+	 'zh':'种类通用名称'},
 'Species Gene Name':{'en':'spcGeneName '
-	 'zh':'----'},
+	 'zh':'种类基因名'},
 'Data Selection':{'en':' Data selection '
-	 'zh':'----'},
+	 'zh':'数据选择'},
 'Tracks On/Off':{'en':'Tracks can be turned on/off via the checkboxes below.'
 	 'zh':'----'},
 'You can also':{'en':'You can also'
-	 'zh':'----'},
+	 'zh':'你也可以'},
 'Choose sample type':{'en':'Choose sample type'
-	 'zh':'----'},
+	 'zh':'选择标本类型'},
 'Use all encode data':{'en':'Use all ENCODE data.'
-	 'zh':'----'},
+	 'zh':'使用所有得ENCODE数据'},
 'Use entire encode dataset':{'en':'Use the entire ENCODE dataset to query similar tracks instead of the selected ones. '
 	 'zh':'----'},
 'Caution on using entire encode':{'en':'Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.'
-	 'zh':'----'},
+	 'zh':'警告:因为结果可能需要很多时间才能计算,所以推荐用户使用电子邮件。'},
 'Common tracks':{'en':'Common tracks'
 	 'zh':'----'},	 
 'Unique tracks':{'en':'Unique tracks'
@@ -47,7 +47,7 @@ lang Table:{
 	 'zh':'----'},		 
 'Unique encode':{'en':'Unique tracks from ENCODE'
 	 'zh':'----'},		 
-'Browser support':{'en':'Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)'
+'Browser support':{'en':'Your browser doesn\'t support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)'
 	 'zh':'----'},		 
 'Update':{'en':'Update'
 	 'zh':'----'},		 
