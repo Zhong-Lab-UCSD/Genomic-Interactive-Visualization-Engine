@@ -16,7 +16,7 @@ lang Table:{
 'Species Gene Name':{'en':'spcGeneName '
 	 'zh':'种类基因名'},
 'Data Selection':{'en':' Data selection '
-	 'zh':'数据选择'},
+	 'zh':'材料选择'},
 'Tracks On/Off':{'en':'Tracks can be turned on/off via the checkboxes below.'
 	 'zh':'----'},
 'You can also':{'en':'You can also'
@@ -24,7 +24,7 @@ lang Table:{
 'Choose sample type':{'en':'Choose sample type'
 	 'zh':'选择标本类型'},
 'Use all encode data':{'en':'Use all ENCODE data.'
-	 'zh':'使用所有得ENCODE数据'},
+	 'zh':'使用所有得ENCODE材料'},
 'Use entire encode dataset':{'en':'Use the entire ENCODE dataset to query similar tracks instead of the selected ones. '
 	 'zh':'----'},
 'Caution on using entire encode':{'en':'Caution: the result may take significant amount of time to compute, so providing your email is highly recommended.'
@@ -38,37 +38,37 @@ lang Table:{
 'Track Name':{'en':'Track Name'
 	 'zh':'----'},	 
 'Sample Type':{'en':'Sample Type'
-	 'zh':'----'},	 
+	 'zh':'标本类型'},	 
 'Preview':{'en':'Preview'
-	 'zh':'----'},	 
+	 'zh':'预习'},	 
 'Data':{'en':'Data'
-	 'zh':'----'},	 
+	 'zh':'材料'},	 
 'Insignificant signals':{'en':' Tracks with insignificant signals'
 	 'zh':'----'},		 
 'Unique encode':{'en':'Unique tracks from ENCODE'
 	 'zh':'----'},		 
 'Browser support':{'en':'Your browser doesn\'t support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)'
-	 'zh':'----'},		 
+	 'zh':'你的网络浏览器不支持iframe tag。你要用一个支持iframe tag得网络浏览器才能用Comparison Browser。最新的网络浏览器版本应该都支持这个tag。'},		 
 'Update':{'en':'Update'
-	 'zh':'----'},		 
+	 'zh':'更新'},		 
 'Reset View':{'en':'Reset View'
-	 'zh':'----'},		 
+	 'zh':'复位观点'},		 
 'Close':{'en':'Close'
-	 'zh':'----'},		 
+	 'zh':'关闭'},		 
 'Sample List':{'en':'Sample List'
-	 'zh':'----'},		 
+	 'zh':'样本名单'},		 
 'Common sample types':{'en':'Common sample types:'
-	 'zh':'----'},		 
+	 'zh':'普通标本类型'},		 
 'Species only sample types':{'en':'Species-only sample types'
 	 'zh':'----'},		 
 'Download Data':{'en':'Download Data'
-	 'zh':'----'},		 
+	 'zh':'下载材料'},		 
 'Hint':{'en':' Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.'
 	 'zh':'----'},		 
 'Do not show':{'en':'Do not show in the future'
-	 'zh':'----'},		 
+	 'zh':'以后再也不要给我看这个东西。'},		 
 'Lab':{'en':'Lab'
-	 'zh':'----'},		 	 
+	 'zh':'实验室'},		 	 
 'Insignificant spcCmnName Tracks':{'en':' Tracks with insignificant signals for spcCmnName'
 	 'zh':'----'},		 
 '':{'en':''
