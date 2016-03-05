@@ -84,11 +84,10 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			if(!is_array($chrRegion)) {
 				$chrRegion = [$chrRegion];
 			}
-			$sqlstmt .= " WHERE "
+			$sqlstmt .= " WHERE linkID IN (SELECT DISTINCT linkID FROM `" . $mysqli->real_escape_string($tableName) . "` WHERE "
 						. implode(' OR ', array_fill(0, count($chrRegion), '(chrom = ? AND start < ? AND end > ?)'));
-			$sqlstmt .= " ORDER BY txStart";
+			$sqlstmt .= ") ORDER BY start";
 			$stmt = $mysqli->prepare($sqlstmt);
-			error_log($sqlstmt);
 			$a_params = array();
 			$ref_params = array();
 			$a_params []= str_repeat('sii', count($chrRegion));
@@ -96,16 +95,16 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 				$chrRegionObj = new ChromRegion($region);
 				array_push($a_params, $chrRegionObj->chr, $chrRegionObj->end, $chrRegionObj->start);
 			}
-			error_log(serialize($a_params));
 			for($i = 0; $i < count($a_params); $i++) {
 				$ref_params []= & $a_params[$i];
 			}
-			error_log(serialize($ref_params));
 			call_user_func_array(array($stmt, 'bind_param'), $ref_params);
-			$stmt->execute();
+			if(!$stmt->execute()) {
+				error_log($stmt->error);
+			}
 			$regions = $stmt->get_result();
 		} else {
-			$sqlstmt .= " ORDER BY txStart";
+			$sqlstmt .= " ORDER BY start";
 			$regions = $mysqli->query($sqlstmt);
 		}
 		while($itor = $regions->fetch_assoc()) {

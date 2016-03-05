@@ -71,6 +71,28 @@ function getTracks($db, $grp = NULL) {
 	$result = [];
 	if(isset($db)) {
 		$mysqli = connectCPB($db);
+		// first get group information
+		$sqlstmt = "SELECT * FROM grp";
+		if(!is_null($grp)) {		// whether grp is specified
+			$sqlstmt .= " WHERE name = ?";
+			$stmt = $mysqli->prepare($sqlstmt);
+			$stmt->bind_param('s', $grp);
+			$stmt->execute();
+			$groups = $stmt->get_result();
+		} else {
+			$groups = $mysqli->query($sqlstmt);
+		}
+		while($itor = $groups->fetch_assoc()) {
+			// needs to redo settings part
+			// settings should be a json object
+			$result[$itor['name']] = $itor;
+			$result[$itor['name']]['tracks'] = [];
+		}
+		$result['_ungrouped'] = [];	
+		$result['_ungrouped']['tracks'] = [];	// this is to hold ungrouped tracks
+		$groups->free();
+		
+		// then get track information
 		$sqlstmt = "SELECT * FROM trackDb";
 		if(!is_null($grp)) {		// whether grp is specified
 			$sqlstmt .= " WHERE grp = ?";
@@ -85,7 +107,11 @@ function getTracks($db, $grp = NULL) {
 			// needs to redo settings part
 			// settings should be a json object
 			$itor['settings'] = json_decode($itor['settings']);
-			$result[] = $itor;
+			if(array_key_exists($itor['grp'], $result)) {
+				$result[$itor['grp']]['tracks'] []= $itor;
+			} else {
+				$result['_ungrouped']['tracks'] []= $itor;
+			}
 		}	
 		$tracks->free();
 		$mysqli->close();

@@ -64,7 +64,7 @@
 				value: ''
 			},
 			collapseHeaderEl: {
-				type: String,
+				type: Object,
 				value: null
 			},
 			enableSignal: {
@@ -77,10 +77,14 @@
 			}
 		},
 		
+		listeners: {
+			'content-ready': 'contentReady',
+		},
+		
 		toggleCollapseHeader: function(flag) {
-			// the top node with GenemoBody should have a member function getShrunk()
-			// then use the returned DOM to replace GenemoShrunk
-			// if nothing, then GenemoShrunk is simply GenemoHead
+			// the top node with GenemoBody should have a member function getCollapse()
+			// then use the returned DOM to replace collapseHeaderEl
+			// if nothing, then collapseHeaderEl is simply GenemoHead
 			// flag is the target status
 			
 			if(flag && this.collapseHeaderEl) {
@@ -124,33 +128,34 @@
 			this.isOpened = !this.isOpened;
 		},
 		
-		attached: function() {
-			this.async(function() {
-				// if the content has a .getExpandedHeader member, 
-				//		it will be used to generate the node to replace the node
-				//		given in .GenemoHead
-				var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes();
-				var oldHead = Polymer.dom(this.$.cardHeadContent);
-				if(contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
-					var newHead = contentNode[0].getExpandedHeader();
-					newHead.classList.add('headerText');
-					oldHead.appendChild(newHead);
-				} else {
-					// populate header with #cardhead
-					var newHead = Polymer.dom(this.$.cardhead).getDistributedNodes();
-					if(newHead) {
-						for(var i = 0; i < newHead.length; i++) {
-							oldHead.appendChild(newHead[i]);
-						}
+		contentReady: function() {
+			// if the content has a .getExpandedHeader member, 
+			//		it will be used to generate the node to replace the node
+			//		given in .GenemoHead
+			var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes();
+			var oldHead = Polymer.dom(this.$.cardHeadContent);
+			while(oldHead.firstChild) {
+				oldHead.removeChild(oldHead.firstChild);
+			}
+			if(contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
+				var newHead = contentNode[0].getExpandedHeader();
+				newHead.classList.add('headerText');
+				oldHead.appendChild(newHead);
+			} else {
+				// populate header with #cardhead
+				var newHead = Polymer.dom(this.$.cardhead).getDistributedNodes();
+				if(newHead) {
+					for(var i = 0; i < newHead.length; i++) {
+						oldHead.appendChild(newHead[i]);
 					}
 				}
-					
-			});
+			}
 		},
 		
-		ready: function() {
-		}
-		               
+		attached: function() {
+			this.async(this.contentReady);
+		},
+		
     });
   </script>
 </dom-module>

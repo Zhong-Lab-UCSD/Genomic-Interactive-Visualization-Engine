@@ -71,16 +71,23 @@ Transcript.prototype.setBlocks = function(numOfExons, exonLengths, exonStarts) {
 	}
 };
 
+Transcript.prototype.getGeneName = function(withTransNums) {
+	return this.geneName;
+};
+
 function Gene(transcript) {
 	// first copy everything from transcript
 	for(var key in transcript) {
 		if(transcript.hasOwnProperty(key)) {
-			this[key] = transcript[key];
+			if(Array.isArray(transcript[key])) {
+				this[key] = transcript[key].slice();
+			} else {
+				this[key] = transcript[key];
+			}
 		}
 	}
 	// then change name
 	this.name = transcript.geneName;
-	delete this.geneName;
 	// then put the transcript into this.transcripts
 	this.transcripts = [];
 	this.transcripts.push(transcript);
@@ -126,4 +133,9 @@ Gene.prototype.addTranscript = function(newTrans) {
 	
 	// add the new transcript to this.transcripts
 	this.transcripts.push(newTrans);
+};
+
+Gene.prototype.getGeneName = function(withTransNums) {
+	return this.geneName + ((withTransNums && this.transcripts.length > 1)?
+			' (' + this.transcripts.length + ')': '');
 };

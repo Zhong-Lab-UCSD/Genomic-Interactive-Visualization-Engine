@@ -7,8 +7,8 @@
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="search-card-content">
   <template>
@@ -89,7 +89,7 @@
       <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
       <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
         <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
-        <span id = "text10" class="translatetext"></span></paper-button>
+        <span id = "text10" class="translatetext">Search</span></paper-button>
       <!-- end upload new file part --> 
   </template>
   <script>
@@ -98,7 +98,7 @@
 		is: "search-card-content",
 		
 		behaviors: [
-			Polymer.NeonAnimatableBehavior
+			GIVeBehaviors.GenemoTabCardContentBehavior
 		],
 		
 		properties: {
@@ -166,19 +166,9 @@
 				value: 'query-search'
 			},
 			
-			collapseElement: {
-				type: String,
-				value: ""
-			},
-			
 			uploadButtonText: {
 				type: String,
 				value: ''
-			},
-			
-			icon: {
-				type: String,
-				value: 'search'
 			},
 			
 			species: {
@@ -213,77 +203,6 @@
             this.species.updateAllSpcActiveNum();
         },
         
-		getIcon: function() {
-			var resIcon = document.createElement('iron-icon');
-			resIcon.setAttribute('icon', this.icon);
-			resIcon.setAttribute('alt', 'search');
-			return resIcon;
-		},
-		
-		createResElement: function(anno, text, beforeNode, afterNode) {
-			var res = document.createElement('div');
-			res.classList.add('clearFix');
-			res.classList.add('fullWidth');
-			res.classList.add('collapseDb');
-			
-			if(beforeNode) {
-				res.appendChild(beforeNode);
-			}
-			
-			var resAnno = document.createElement('span');
-			resAnno.classList.add('anno');
-			resAnno.classList.add('leftFloat');
-			resAnno.textContent = anno;
-			var resContent = document.createElement('span');
-			resContent.textContent = text;
-			
-			res.appendChild(resAnno);
-			res.appendChild(resContent);
-			
-			if(afterNode) {
-				res.appendChild(afterNode);
-			}
-			
-			return res;
-			
-		},
-		
-		updateCurrentInfo: function(db, input, display) {
-			
-			if(db) {
-				
-				// prepare for shrinking and return the shrunk element
-				this.collapseElement = document.createElement('div');
-				// add shrunk icon, species, input file and display file
-				// icon and species in one line
-				var resHeader = document.createElement('div');
-				var resIcon = this.getIcon();
-				resIcon.classList.add('smallInline');
-				
-				var resHeaderText = document.createElement('span');
-				resHeaderText.textContent = "Input file";
-				
-				resHeader.classList.add('headerText');
-				resHeader.classList.add('clearFix');
-				resHeader.appendChild(resIcon);
-				resHeader.appendChild(resHeaderText);
-				this.collapseElement.appendChild(resHeader);
-				
-				var resContent = document.createElement('div');
-				resContent.classList.add('collapseContent');
-				resContent.appendChild(this.createResElement('Ref: ', db));
-				resContent.appendChild(this.createResElement('Input: ', input));
-				if(display) {
-					resContent.appendChild(this.createResElement('Display: ', display));
-				}
-				
-				this.collapseElement.appendChild(resContent);
-				
-			} else {
-				this.collapseElement = null;
-			}
-		},
-		
 		inputFileChangedFunc: function() {
 			var shortFileName = this.$.uploadFileInput.files[0].name;
 			if(shortFileName == "") {
@@ -305,40 +224,6 @@
 				this.$.fileSelectButton.classList.remove("noTextTransformButton");
 				this.uploadButtonText = "Upload local file";
 			}
-		},
-		
-		getCollapse: function() {
-			return this.collapseElement;
-		},
-		
-		getTabHeader: function() {
-			var res = document.createElement('div');
-
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Search';
-
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-			
-			return res;
-		},
-		
-		getExpandedHeader: function() {
-			var res = document.createElement('div');
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Input file';
-
-			res.classList.add('headerText');
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-
-			return res;
 		},
 		
 		signalToggle: function(e, detail) {
@@ -370,7 +255,11 @@
 			var inputFileName = detail.sessionObj.originalFile;
 			var DisplayFileName = detail.sessionObj.hasDisplay? 
 				(detail.sessionObj.urlToShow.substring(detail.sessionObj.urlToShow.lastIndexOf('/') + 1)) : null;
-			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
+			if(DisplayFileName) {
+				collapseObj.display = DisplayFileName;
+			}
+			this.updateCurrentInfo(collapseObj);
 		},
 		
 		fileSelectionHandler: function() {
@@ -406,19 +295,26 @@
 			var DisplayFileName = this.DisplayUrl.length > 0? 
 				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
 				
-			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
+			if(DisplayFileName) {
+				collapseObj.display = DisplayFileName;
+			}
+			this.updateCurrentInfo(collapseObj);
 			
 			this.fire("submit-form", {card: this});
 		},
 		
         ready: function() {
             
-            var hostNode = this;
-			
 //			for(var i=0; i<spcArray.length; i++) {
 //				this.push('species', spcArray[i]);
 //			}
             
+			this._setIcon('search');
+			this._setIconAlt('search');
+			this._setHeaderText('Input file');
+			this._setTabText('Search');
+
 			this.species = spcArray;
 			
             this.uploadButtonText = "Upload local file";

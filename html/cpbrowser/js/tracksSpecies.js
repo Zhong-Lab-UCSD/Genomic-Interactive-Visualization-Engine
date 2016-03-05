@@ -118,6 +118,13 @@ Track.prototype.getCleanID = function() {
 	return this.getID().replace(/[\s\(\)\+\/]/g, '');
 };
 
+Track.prototype.getPriority = function() {
+	// TODO: 
+	//	1. implement group priority
+	// 	2. implement customized temporary priority
+	return this.priority;
+}
+
 Track.createCoorTrack = function(species, id) {
 	var newTrack = new Track(id || 'coor_' + species.db, null, species);
 	newTrack.setSetting('type', 'coordinate');
@@ -177,6 +184,19 @@ TrackBundle.prototype.clear = function() {
 	this.map = {};
 	this.array.splice(0, this.array.length);
 }
+
+function TrackGroup(groupID, groupLabel, priority, visibility, singleOnly, idprefix, idpostfix) {
+	TrackBundle.call(this, idprefix, idpostfix);
+	this.id = groupID;
+	this.label = groupLabel;
+	this.priority = priority;
+	this.visibility = visibility;
+	this.singleOnly = singleOnly;
+}
+
+extend(TrackBundle, TrackGroup);
+
+TrackGroup.MAX_GROUP_PRIORITY = 100000;
 
 //TrackBundle.prototype.setCheckBox = function(track, flag) {
 //	// set the checkbox of the track, and track.status as well
@@ -284,6 +304,7 @@ function Species(DB, Name, CommonName, IsEncode, Ref, ChromInfo) {
 	this.commonName = CommonName;
 	this.isEncode = IsEncode;
 	this.ref = Ref;
+	this.groups = {};				// this is used to get all the groups
 	
 	// read Object for species chrom info (if there)
 	if(ChromInfo) {
@@ -363,14 +384,26 @@ Species.initAllSpecies = function(target, spcArray, callback) {
 	return spcArray;
 };
 
-Species.prototype.initTracks = function(trackInfo, keepOld) {
+Species.prototype.initTracks = function(groupInfo, keepOld) {
 	// notice that trackInfo is supposed to be an array
 	if(!keepOld) {
 		this.uniTracks.clear();
+		this.groups = {};
 	}
-	trackInfo.forEach(function(track) {
-		this.uniTracks.addTrack(new Track(track.tableName, track, this));
-	}, this);
+	for(var groupID in groupInfo) {
+		if(groupInfo.hasOwnProperty(groupID)) {
+			this.groups[groupID] = new TrackGroup(groupInfo[groupID].name, 
+									groupInfo[groupID].label,
+									parseFloat(groupInfo[groupID].priority || TrackGroup.MAX_GROUP_PRIORITY), 
+									groupInfo[groupID].defaultIsClosed != 0, 
+									groupInfo[groupID].singleChoice != 0);
+			groupInfo[groupID].tracks.forEach(function(track) {
+				var newTrack = new Track(track.tableName, track, this)
+				this.uniTracks.addTrack(newTrack);
+				this.groups[groupID].addTrack(newTrack);
+			}, this);
+		}
+	}
 };
 
 Species.prototype.initTracksFromServer = function(target, callback) {

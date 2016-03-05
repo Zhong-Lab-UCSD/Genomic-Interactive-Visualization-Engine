@@ -197,7 +197,7 @@ ChrRegion.prototype.clone = function() {
 };
 
 ChrRegion.prototype.getShift = function(distance, isProportion, species) {
-	return this.clone().move(distance, isProportion. species);
+	return this.clone().move(distance, isProportion, species);
 };
 
 ChrRegion.prototype.extend = function(sizediff, center, isProportion, species) {
