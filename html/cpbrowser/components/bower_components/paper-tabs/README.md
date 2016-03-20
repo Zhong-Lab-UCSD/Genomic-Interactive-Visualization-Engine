@@ -61,10 +61,35 @@ element in `paper-tab`.
 
 Example:
 
-```html
-<style is="custom-style">
+<pre><code>
+&lt;style is="custom-style">
   .link {
-```
+    &#64;apply(--layout-horizontal);
+    &#64;apply(--layout-center-center);
+  }
+&lt;/style>
+
+&lt;paper-tabs selected="0">
+  &lt;paper-tab link>
+    &lt;a href="#link1" class="link">TAB ONE&lt;/a>
+  &lt;/paper-tab>
+  &lt;paper-tab link>
+    &lt;a href="#link2" class="link">TAB TWO&lt;/a>
+  &lt;/paper-tab>
+  &lt;paper-tab link>
+    &lt;a href="#link3" class="link">TAB THREE&lt;/a>
+  &lt;/paper-tab>
+&lt;/paper-tabs>
+</code></pre>
+
+### Styling
+
+The following custom properties and mixins are available for styling:
+
+| Custom property | Description | Default |
+| --- | --- | --- |
+| `--paper-tabs-selection-bar-color` | Color for the selection bar | `--paper-yellow-a100` |
+| `--paper-tabs` | Mixin applied to the tabs | `{}` |
 
 
 
