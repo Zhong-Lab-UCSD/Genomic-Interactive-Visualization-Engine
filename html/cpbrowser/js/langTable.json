@@ -66,7 +66,7 @@ lang Table:{
 'Hint':{'en':' Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.'
 	 'zh':'----'},		 
 'Do not show':{'en':'Do not show in the future'
-	 'zh':'以后再也不要给我看这个东西。'},		 
+	 'zh':'以后别显示'},		 
 'Lab':{'en':'Lab'
 	 'zh':'实验室'},		 	 
 'Insignificant spcCmnName Tracks':{'en':' Tracks with insignificant signals for spcCmnName'

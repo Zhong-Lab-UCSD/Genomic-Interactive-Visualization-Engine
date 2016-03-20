@@ -108,6 +108,10 @@ Track.prototype.getInfoString = function() {
 	return this.info.replace(/\t/g, ' - ');
 };
 
+Track.prototype.getInfoArray = function() {
+	return this.info.split(/\s+/);
+};
+
 Track.prototype.getID = function() {
 	return this.id;
 };
@@ -173,7 +177,8 @@ SpeciesTableEntry.prototype.getTableName = function() {
 
 function SpeciesTable() {
 	this.tableName = '';
-	this.entries = new Object();
+	this.entries = {};
+	this.info = '';
 }
 
 SpeciesTable.prototype.getCompareValue = function(length, methodind, methodall) {
@@ -217,8 +222,16 @@ SpeciesTable.prototype.getTableName = function() {
 	return this.tableName;
 };
 
+SpeciesTable.prototype.getInfo = function() {
+	return this.info;
+};
+
 SpeciesTable.prototype.setTableName = function(name) {
 	this.tableName = name;
+};
+
+SpeciesTable.prototype.setInfo = function(Info) {
+	this.info = Info;
 };
 
 SpeciesTable.prototype.getLength = function() {
@@ -236,7 +249,7 @@ SpeciesTable.prototype.clearValues = function() {
 	
 // this will clear all table names
 SpeciesTable.prototype.clear = function() {
-	this.entries = new Object();
+	this.entries = {};
 };
 
 SpeciesTable.prototype.addTable = function(name) {
@@ -266,13 +279,14 @@ SpeciesTable.prototype.getSubTableNames = function() {
 
 function CmnTrack(ID, Status, SpcArray) {
 	Track.call(this, ID, Status);
-	this.spcTables = new Object();
+	this.spcTables = {};
 	if(SpcArray instanceof Array) {
 		for(var i = 0; i < SpcArray.length; i++) {
 			this.spcTables[SpcArray[i].db] = new SpeciesTable();
 		}
 	}
 	this.spcArrayUpdated = false;
+	this.spcInfos = {};
 }
 extend(Track, CmnTrack);
 
@@ -280,8 +294,28 @@ CmnTrack.prototype.setSpeciesTblName = function(DB, TableName) {
 	this.spcTables[DB].setTableName(TableName);
 };
 
+CmnTrack.prototype.setSpeciesInfo = function(DB, Info) {
+	this.spcTables[DB].setInfo(Info);
+};
+
 CmnTrack.prototype.getSpeciesTblName = function(DB) {
 	return this.spcTables[DB].getTableName();
+};
+
+CmnTrack.prototype.getSpeciesInfo = function(DB) {
+	return this.spcTables[DB].getInfo();
+};
+
+CmnTrack.prototype.getSpcInfoTable = function(DB) {
+	return "<td>" + this.getSpeciesInfo(DB).replace(/\t/g, "</td>\n<td>") + "</td>";
+};
+
+CmnTrack.prototype.getSpcInfoString = function(DB) {
+	return this.getSpeciesInfo(DB).replace(/\t/g, ' - ');
+};
+
+CmnTrack.prototype.getSpcInfoArray = function(DB) {
+	return this.getSpeciesInfo(DB).split(/\s+/);
 };
 
 CmnTrack.prototype.getWholeSpcTblName = function() {
@@ -354,13 +388,13 @@ CmnTrack.prototype.writeTable = function() {
 	return result;
 };
 
-CmnTrack.prototype.updateStatus = function(spcarray) {
+CmnTrack.prototype.updateStatus = function(spcarray, currentDb) {
 	// this is to update UniTrack.status from the checkboxes;
 	// then update the hidden inputs in UCSC parts
 	// when engine changed, this should be more straightforward
 	// maybe directly sending tableNames out
 	
-	this.status = document.getElementById(this.getCleanID()).checked;
+	this.status = document.getElementById((currentDb? currentDb + '_': '') + this.getCleanID()).checked;
 	for(var i = 0; i < spcarray.length; i++) {
 		var target = spcarray[i].browserConDoc.getElementById(this.id);
 		if(target) {
@@ -453,6 +487,31 @@ CmnTrackEncode.prototype.writeTable = function() {
 		+ this.title + '" width="15" height="15" id="' 
 		+ this.getCleanID() + '_cmnedlbtn" onclick="return callDownloadMenu(\''
 		+ this.id + '\', true, \'' + this.getCleanID() 
+		+ '_cmnedlbtn\', true);" />';
+	// close tags
+	result += '</td>\n';
+	
+	return result;
+};
+
+CmnTrackEncode.prototype.writeSpcUniTable = function(DB) {
+	// write unique table for the species
+	// label, checkbox and title
+	var result = '<td><label>\n<input id="' + DB + '_' + this.getCleanID()
+		+ '" type="checkbox" value="dense" '
+		+ (this.status? 'checked ': '') + '/>' 
+		+ this.title + '</label>\n</td>\n';
+		
+	// info table elements
+	result += this.getSpcInfoTable(DB) + '\n';
+	// preview panel
+	result += '<td><div id="' + DB + '_'  + this.getCleanID() + 'Preview"></div></td>\n';
+	// download button
+	// img
+	result += '<td><img class="downloadButton" src="cpbrowser/images/download.png" alt="Download data for '
+		+ this.title + '" width="15" height="15" id="' 
+		+ DB + '_' + this.getCleanID() + '_cmnedlbtn" onclick="return callDownloadMenu(\''
+		+ this.id + '\', true, \'' + DB + '_' + this.getCleanID() 
 		+ '_cmnedlbtn\', true);" />';
 	// close tags
 	result += '</td>\n';
@@ -917,7 +976,8 @@ Species.prototype.replaceText = function(text) {
 	return text.replace(/spcDbName/g, this.db).replace(/spcCmnName/g, this.commonName).replace(/spcSciName/g, this.name);
 };
 
-Species.prototype.writeUniqueTable = function(isencode) {
+Species.prototype.writeUniqueTable = function(isencode, cmnTracksEncodeBundle) {
+	// cmnTracksEncodeBundle is to change common tracks into unique tracks
 	if(!isencode) {
 		var uniqTemp = $('#uniqueTemplate').html();
 		uniqTemp = this.replaceText(uniqTemp);
@@ -952,8 +1012,14 @@ Species.prototype.writeUniqueTable = function(isencode) {
 		this.orderedUniTracksEncode.length = 0;	// this is the sorted common track array
 		this.orderedUniTracksEncode.sigLength = 0;	// number of tracks that have significant results
 		
-		if(this.uniTracksEncode.length() > 0) {
+		if(this.uniTracksEncode.length() > 0 || (cmnTracksEncodeBundle && cmnTracksEncodeBundle.length() > 0)) {
 			items = [];
+			for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
+				items.push('<tr class="trackCell" id="' + this.db + '_'
+					+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
+				items.push(cmnTracksEncodeBundle.get(i).writeSpcUniTable(this.db));
+				items.push('</tr>\n');
+			}
 			for(var j = 0; j < this.uniTracksEncode.length(); j++) {
 				items.push('<tr class="trackCell" id="' 
 					+ this.uniTracksEncode.get(j).getCleanID() + '_tr">');
@@ -1072,6 +1138,9 @@ Species.prototype.setTrackReady = function(speciesArray, cmnTracksBundle, cmnTra
 			if(!currentTrack.getSpeciesTblName(this.db)) {
 				currentTrack.setSpeciesTblName(this.db, hiddenCommons[i].name);
 			}
+			if(genemoIsOn && !currentTrack.getSpeciesInfo(this.db)) {
+				currentTrack.setSpeciesInfo(this.db, hiddenCommonsEncodeData[hiddenCommons[i].id + "_inddata"].innerHTML);
+			}
 			currentTrack.setStatusFromUcsc(hiddenCommons[i].value);
 		}
 	}
@@ -1188,6 +1257,10 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 			return;
 		}
 	}
+	
+	if(genemoIsOn && (!encodeMeta || !encodeMeta.isReady)) {
+		return;
+	}
 
 	// all tracks initialized
 	// do panel initialization
@@ -1209,37 +1282,105 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 		speciesArray[i].writeUniqueTable(false);
 	}
 	
-	$('#cmnTrackEncodeTbodyHolder').html('');
 	$('#uniqueEncodeHolder').html('');
 	
 	// this is for common track ENCODE part
 	items = [];
-	for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
-		items.push('<tr class="trackCell" id="' 
-			+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
-		items.push(cmnTracksEncodeBundle.get(i).writeTable());
-		items.push('</tr>\n');
+	if(!genemoIsOn) {
+		$('#cmnTrackEncodeTbodyHolder').html('');
+		for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
+			items.push('<tr class="trackCell" id="' 
+				+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
+			items.push(cmnTracksEncodeBundle.get(i).writeTable());
+			items.push('</tr>\n');
+		}
+		$('#cmnTrackEncodeTbodyHolder').append(items.join(''));
 	}
-	$('#cmnTrackEncodeTbodyHolder').append(items.join(''));
 	
 	for(var i = 0; i < speciesArray.length; i++) {
-		speciesArray[i].writeUniqueTable(true);
+		speciesArray[i].writeUniqueTable(true, genemoIsOn? cmnTracksEncodeBundle: null);
 	}
 	
-	$('#cmnSampleEncodeHolder').html('');
-	
-	cmnTracksEncodeBundle.writeSampleTable('cmnSampleEncodeHolder');
-	
-	$('#uniSampleEncodeHolder').html('');
-	for(var i = 0; i < speciesArray.length; i++) {
-		if (speciesArray[i].isEncode) {
-			var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
-			uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, speciesArray[i].db).replace(/spcCmnName/g, speciesArray[i].commonName);
-			$('#uniSampleEncodeHolder').append(uniqSampleTemp);
-			var uniqueSampleHolderId = speciesArray[i].db + 'SampleEncodeHolder';
-			if(speciesArray[i].uniTracksEncode.writeSampleTable(uniqueSampleHolderId) <= 0) {
-				$('#' + uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
+	if(!genemoIsOn) {
+		$('#cmnSampleEncodeHolder').html('');
+		
+		cmnTracksEncodeBundle.writeSampleTable('cmnSampleEncodeHolder');
+		
+		$('#uniSampleEncodeHolder').html('');
+		for(var i = 0; i < speciesArray.length; i++) {
+			if (speciesArray[i].isEncode) {
+				var uniqSampleTemp = $('#uniqueSampleEncodeTemplate').html();
+				uniqSampleTemp = uniqSampleTemp.replace(/spcDbName/g, speciesArray[i].db).replace(/spcCmnName/g, speciesArray[i].commonName);
+				$('#uniSampleEncodeHolder').append(uniqSampleTemp);
+				var uniqueSampleHolderId = speciesArray[i].db + 'SampleEncodeHolder';
+				if(speciesArray[i].uniTracksEncode.writeSampleTable(uniqueSampleHolderId) <= 0) {
+					$('#' + uniqueSampleHolderId).append('<span class="settingsNormal"><em>(No unique samples)</em></span>');
+				}
 			}
+		}
+	} else {
+		// register all keys to different objects
+		for(var i = 0; i < speciesArray.length; i++) {
+			if(speciesArray[i].isEncode) {
+				var track, cellType, labName, tissueType = null;
+				for(var j = 0; j < cmnTracksEncodeBundle.length(); j++) {
+					track = cmnTracksEncodeBundle.get(j);
+					cellType = track.getSpcInfoArray(speciesArray[i].db)[0];
+					labName = track.getSpcInfoArray(speciesArray[i].db)[1];
+					if(encodeMeta.entries[speciesArray[i].commonName.toLowerCase()] && 
+						encodeMeta.entries[speciesArray[i].commonName.toLowerCase()][cellType]) {
+							tissueType = encodeMeta.entries[speciesArray[i].commonName.toLowerCase()][cellType]['tissue'];
+					}
+					if(!expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g,'').toLowerCase()]) {
+						expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g,'').toLowerCase()] = [];
+						expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g,'').toLowerCase()].name = track.title;
+					}
+					expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g,'').toLowerCase()].push(speciesArray[i].db + '_' + track.getCleanID());
+					if(!cellLineMap[speciesArray[i].db][cellType]) {
+						cellLineMap[speciesArray[i].db][cellType] = [];
+					}
+					cellLineMap[speciesArray[i].db][cellType].push(speciesArray[i].db + '_' + track.getCleanID());
+					if(!labMap[speciesArray[i].db][labName]) {
+						labMap[speciesArray[i].db][labName] = [];
+					}
+					labMap[speciesArray[i].db][labName].push(speciesArray[i].db + '_' + track.getCleanID());
+					if(tissueType) {
+						if(!tissueMap[speciesArray[i].db][tissueType]) {
+							tissueMap[speciesArray[i].db][tissueType] = [];
+						}
+						tissueMap[speciesArray[i].db][tissueType].push(speciesArray[i].db + '_' + track.getCleanID());
+					}
+				}
+				for(var j = 0; j < speciesArray[i].uniTracksEncode.length(); j++) {
+					track = speciesArray[i].uniTracksEncode.get(j);
+					cellType = track.getInfoArray()[0];
+					labName = track.getInfoArray()[1];
+					if(encodeMeta.entries[speciesArray[i].commonName.toLowerCase()] && 
+						encodeMeta.entries[speciesArray[i].commonName.toLowerCase()][cellType]) {
+							tissueType = encodeMeta.entries[speciesArray[i].commonName.toLowerCase()][cellType]['tissue'];
+					}
+					if(!expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g, '').toLowerCase()]) {
+						expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g, '').toLowerCase()] = [];
+						expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g, '').toLowerCase()].name = track.title;
+					}
+					expMap[speciesArray[i].db][track.title.replace(/[\s\-]+/g, '').toLowerCase()].push(track.getCleanID());
+					if(!cellLineMap[speciesArray[i].db][cellType]) {
+						cellLineMap[speciesArray[i].db][cellType] = [];
+					}
+					cellLineMap[speciesArray[i].db][cellType].push(track.getCleanID());
+					if(!labMap[speciesArray[i].db][labName]) {
+						labMap[speciesArray[i].db][labName] = [];
+					}
+					labMap[speciesArray[i].db][labName].push(track.getCleanID());
+					if(tissueType) {
+						if(!tissueMap[speciesArray[i].db][tissueType]) {
+							tissueMap[speciesArray[i].db][tissueType] = [];
+						}
+						tissueMap[speciesArray[i].db][tissueType].push(track.getCleanID());
+					}
+				}
+			}
+			
 		}
 	}
 	
@@ -1247,9 +1388,13 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	trackUpdatedCallback.callback();
 }
 
-function updateTracks(setIsInBrowser, hideShades) {
+function updateTracks(setIsInBrowser, hideShades, currentSpcDb) {
 	
 	hideShades = hideShades || (spcArray.activeNumber <= 1);
+	var speciesDb = null;
+	if(genemoIsOn) {
+		speciesDb = (typeof currentSpcDb === 'string')? currentSpcDb: document.querySelector('#searchCard').currentRef;
+	}
 	
 	// Enum all CmnTracks and UniTracks element
 	isInBrowser = (typeof setIsInBrowser === 'boolean')? setIsInBrowser: isInBrowser;
@@ -1259,7 +1404,7 @@ function updateTracks(setIsInBrowser, hideShades) {
 	}
 		
 	for(var index = 0; index < cmnTracksEncode.length(); index++) {
-		cmnTracksEncode.get(index).updateStatus(spcArray);
+		cmnTracksEncode.get(index).updateStatus(spcArray, speciesDb);
 	}
 	
 	for(var index = 0; index < spcArray.length; index++) {

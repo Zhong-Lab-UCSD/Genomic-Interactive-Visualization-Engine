@@ -314,8 +314,7 @@
 		drawConnectionBetweenTracks: function(linkMap, threshold, svgChildren, svgMain) {
 			// linkMap is an object with regionID as key and regions as value (array)
 			// the colorMap should have been already populated
-			// NOTE: the actual track should be a svg with class "linked" under svgChildren
-			// Also, windowsToDraw should be 'viewWindow' property of svgChildren
+			// windowsToDraw should be 'viewWindow' property of svgChildren
 			threshold = threshold || 1;
 			
 			svgMain = svgMain || this.mainSvg;

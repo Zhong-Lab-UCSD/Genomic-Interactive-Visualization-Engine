@@ -130,9 +130,11 @@ function validateUploadFileOrURL(event) {
 	tableNameQuery.append('Submit', 'Submit');
 	tableNameQuery.append('species', db);
 	tableNameQuery.append('email', email);
+	
+	var cmnIDPrefix = genemoIsOn? querycard.currentRef + '_': '';
 		
 	$.each(cmnTracksEncode.array, function(key, value) {
-		if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
+		if($('#' + cmnIDPrefix + value.getCleanID()).prop('checked') || useAllTracks) {
 			$.each(value.getSpeciesSubTables(db), function(index, tableName) {
 				tableNameQuery.append('geneTracks[]', tableName);
 			});
