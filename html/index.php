@@ -64,6 +64,7 @@
 <link rel="import" href="cpbrowser/components/genemo_components/meta-entries/meta-entries.html">
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-track-filter/genemo-track-filter.html">
 <?php if(isset($experimentalFeatures)) { ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
 <?php } ?>
@@ -195,6 +196,7 @@ var isEncodeOn = <?php echo ($encodeOn? 'true': 'false'); ?>;			// Switch this t
 var cpbrowserURL = 'cpbrowser/cpbrowser.php<?php echo ($encodeOn? '?Encode=XCEncode': ''); ?>';
 
 var encodeMeta = null;
+var bedFileLink = null;
 
 function setTrackReady(index) {
 	spcArray[index].setTrackReady(spcArray, cmnTracks, cmnTracksEncode, !tracksInitialized, isInBrowser);
@@ -642,11 +644,19 @@ function toggleEncode() {
 }
 
 function toggleSample() {
-	if($('#sampleTypeBox').css('display') == 'none') {
-		$('#sampleTypeBox').show();
-		updateSampleCheckbox();
-	} else {
-		$('#sampleTypeBox').hide();
+	if(!genemoIsOn) {
+		if($('#sampleTypeBox').css('display') == 'none') {
+			$('#sampleTypeBox').show();
+			updateSampleCheckbox();
+		} else {
+			$('#sampleTypeBox').hide();
+		}
+	} else if(document.querySelector('genemo-track-filter')) {
+		if(document.querySelector('genemo-track-filter').opened) {
+			document.querySelector('genemo-track-filter').hide();
+		} else {
+			document.querySelector('genemo-track-filter').show();
+		}
 	}
 }
 
@@ -664,6 +674,19 @@ spcArray.updateAllSpcActiveNum = function () {
 	for(var i = 0; i < this.length; i++) {
 		if(this[i].isActive) {
 			this.activeNumber++;
+		}
+	}
+}
+
+function filterTracksFromList(map, flags) {
+	var totalCheckboxList = document.querySelector('#' + document.querySelector('#searchCard').currentRef + 'EncodeTableHolder')
+									.querySelectorAll('.trackCheckbox');
+	for(var i = 0; i < totalCheckboxList.length; i++) {
+		if(flags.hasOwnProperty('matched') && map.hasOwnProperty(totalCheckboxList[i].id)) {
+			totalCheckboxList[i].checked = flags.matched;
+		}
+		if(flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(totalCheckboxList[i].id)) {
+			totalCheckboxList[i].checked = flags.unmatched;
 		}
 	}
 }
@@ -729,8 +752,15 @@ window.addEventListener("WebComponentsReady", function(e) {
 	Polymer.dom(document.documentElement).appendChild(encodeMeta);
 
 	document.addEventListener('alert', function(e) { UI.alert(e.detail.msg); } );
-	document.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect', e.detail.action);} );
+	document.addEventListener('species-changed', function(e) { 
+		toggleWindow('trackSelect', 'hide');
+		if(document.querySelector('genemo-track-filter')) {
+			document.querySelector('genemo-track-filter').initialize(e.detail.newRef, expMap, cellLineMap, tissueMap, labMap);
+		}
+	} );
+	document.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect', e.detail.action); } );
 	document.addEventListener('species-ready', function(e) { allSpeciesDoneCheck(spcArray, cmnTracks, cmnTracksEncode);} );
+	document.addEventListener('filter-tracks', function(e) { filterTracksFromList(e.detail.map, e.detail.flags);} );
 	
 	toggleEncode();
 <?php
@@ -790,7 +820,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
-    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span></div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span><div style="float: right; display: none" id="bedDownloadHolder">[<a id="bedDownloadLink" target="_blank">Export BED file</a>]</div></div>
     <div id="genelistHolder">
       <div id="genelistLoading" class="loadingCover BoxHide" style="min-height: 36px; left: 0px; width: auto;">
         <div class="loadingCoverBG"></div>
@@ -874,6 +904,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       </tr>
     </table>
   </div>
+  <genemo-track-filter id='mainFilter'></genemo-track-filter>
   <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
     <div class="loadingTrackCover" id="trackSelectLoading">
       <div class="loadingTrackCoverBG"></div>
@@ -887,9 +918,9 @@ window.addEventListener("WebComponentsReady", function(e) {
     <div class="settingsNormal"><span class="text" id="Tracks On/Off">Tracks can be turned on/off via the checkboxes below.</span>
       <div id="encodeSampleSettings" style="display: inline;"><span class="text" id="You can also">You can also</span>
         <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
-    onclick="toggleSample();"><span class="text" id="Choose sample type">Choose sample type</span></div>
+    onclick="toggleSample();"><span class="text" id="Choose sample type">Use filters</span></div>
       </div>
-      <div>
+      <div style="display: none;">
         <label>
         <input type="checkbox" id="useAllTracks" name="useAllTracks" />
         <span class="text" id="Use all encode data">Use all ENCODE data.</span>

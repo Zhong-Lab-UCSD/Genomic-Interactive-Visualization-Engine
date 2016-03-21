@@ -46,6 +46,18 @@ function setPeakListOnly(spcIndex, list) {
 	}
 }
 
+Region.prototype.writeBED = function(spcArray, includeStrand) {
+	var result = "";
+    for(var i = 0; i < spcArray.length; i++) {
+        if (spcArray[i].isActive && this.spcRegions.hasOwnProperty(spcArray[i].db) && this.getSpcRegionLength(spcArray[i].db) > 0) {
+			for(var iRegion = 0; iRegion < this.getSpcRegionLength(spcArray[i].db); iRegion++) {
+				result += this.getSpcRegion(spcArray[i].db, iRegion).regionToBED(includeStrand);
+			}
+		}
+	}
+	return result;	
+}
+
 Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // this will return the <tr> node for the region
     var outsideTD = $('<td></td>');
@@ -280,13 +292,22 @@ function populateRegionList(rawObj, spcArray) {
 
 function writeGeneListTable(geneListElem, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc) {
     // geneListElem is the an array of Region class
-    // 
 	var table = $('<table></table>');
 	table.addClass('geneListTable');
 	$.each(geneListElem, function(i, entry) {
 		table.append(entry.writeDOM(spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
 	});
 	return table;
+}
+
+function writeGeneListBED(geneListElem, spcArray, includeStrand) {
+    // geneListElem is the an array of Region class
+    // 
+	var result = '';
+	$.each(geneListElem, function(i, entry) {
+		result += entry.writeBED(spcArray, includeStrand) + '\n';
+	});
+	return result;
 }
 
 function writeGeneListFromJSON(geneListJSON, spcarray, cmnTracksEnc, updateNavFunc, changeGeneNameFunc) {

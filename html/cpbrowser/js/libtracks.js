@@ -370,7 +370,7 @@ CmnTrack.prototype.getID = function() {
 
 CmnTrack.prototype.writeTable = function() {
 	// checkbox
-	var result = '<td class="trackCell"><label>\n<input id="';
+	var result = '<td class="trackCell"><label>\n<input class="trackCheckbox" id="';
 	result += this.getCleanID() + '" type="checkbox" value="dense" ' 
 		+ (this.status? 'checked ': '') + '/>'
 		+ this.getReadableID() + '</label>\n';
@@ -472,7 +472,7 @@ CmnTrackEncode.prototype.getCompareValue = function(length, methodind, methodall
 
 CmnTrackEncode.prototype.writeTable = function() {
 	// label, checkbox and title
-	var result = '<td><label>\n<input id="' + this.getCleanID()
+	var result = '<td><label>\n<input class="trackCheckbox" id="' + this.getCleanID()
 		+ '" type="checkbox" value="dense" '
 		+ (this.status? 'checked ': '') + '/>' 
 		+ this.title + '</label>\n</td>\n';
@@ -497,7 +497,7 @@ CmnTrackEncode.prototype.writeTable = function() {
 CmnTrackEncode.prototype.writeSpcUniTable = function(DB) {
 	// write unique table for the species
 	// label, checkbox and title
-	var result = '<td><label>\n<input id="' + DB + '_' + this.getCleanID()
+	var result = '<td><label>\n<input class="trackCheckbox" id="' + DB + '_' + this.getCleanID()
 		+ '" type="checkbox" value="dense" '
 		+ (this.status? 'checked ': '') + '/>' 
 		+ this.title + '</label>\n</td>\n';
@@ -846,7 +846,7 @@ UniTrack.prototype.getReadableID = function() {
 
 UniTrack.prototype.writeTable = function(speciesCmnName) {
 	// checkbox
-	var result = '<td class="trackCell"><label>\n<input id="'
+	var result = '<td class="trackCell"><label>\n<input class="trackCheckbox" id="'
 		+ this.getCleanID() + '" type="checkbox" value="dense" '
 		+ (this.status? 'checked ': '') + '/>'
 		+ this.getReadableID() + '</label>\n';
@@ -906,7 +906,7 @@ UniTrackEncode.prototype.getSampleType = function() {
 
 UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
 	// label, checkbox and title
-	var result = '<td><label>\n<input id="'
+	var result = '<td><label>\n<input class="trackCheckbox" id="'
 		+ this.getCleanID() + '" type="checkbox" value="dense" '
 		+ (this.status? 'checked ': '') + '/>'
 		+ this.title + '</label>\n</td>\n';
@@ -1377,6 +1377,8 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 							tissueMap[speciesArray[i].db][tissueType] = [];
 						}
 						tissueMap[speciesArray[i].db][tissueType].push(track.getCleanID());
+					} else {
+						console.log(cellType + ' does not have a tissue type.');
 					}
 				}
 			}

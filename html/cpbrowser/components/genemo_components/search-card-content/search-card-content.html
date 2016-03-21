@@ -86,6 +86,12 @@
         <span id = "text6" class="translatetext">You may also provide a URL for a </span><a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a><span id = "text7" class="translatetext"> file </span><strong><em><span id = "text8" class="translatetext">for display purposes only</span></em></strong>
       </paper-tooltip>
     </div>
+    <div>
+      <paper-input id="searchRangeInput" class="fullWidth" label="(Optional) Search range" floatingLabel="true" value="{{SearchRange}}"></paper-input>
+      <paper-tooltip class="fullWidth" position="top" offset="0">
+        <span id = "searchRangeText" class="translatetext">You can also specify the range to limit the search results to a certain genome location.</span>
+      </paper-tooltip>
+    </div>
     <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
     <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
       <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
@@ -144,6 +150,11 @@
 			},
 			
 			UserEmail: {
+				type: String,
+				value: ""
+			},
+			
+			SearchRange: {
 				type: String,
 				value: ""
 			},
@@ -229,7 +240,7 @@
 		},
 		
 		currentRefChanged: function(newValue, oldValue) {
-			this.fire("toggle-window", {action: 'hide'});
+			this.fire("species-changed", {newRef: newValue});
 		},
 		
 		signalToggle: function(e, detail) {
