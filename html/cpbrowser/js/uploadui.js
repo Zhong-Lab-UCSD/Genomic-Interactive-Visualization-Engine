@@ -162,9 +162,9 @@ function validateUploadFileOrURL(event) {
 	
 	if(querycard.SearchRange) {
 		
-		tableNameQuery.append('chrom', querycard.SearchRange.split(/[:\-]/g)[0]);
-		tableNameQuery.append('start', parseInt(querycard.SearchRange.split(/[:\-]/g)[1]));
-		tableNameQuery.append('end',parseInt(querycard.SearchRange.split(/[:\-]/g)[2]));
+		tableNameQuery.append('chrom', querycard.SearchRange.split(/[\s:\-]+/g)[0]);
+		tableNameQuery.append('start', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[1]));
+		tableNameQuery.append('end', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[2]));
 	}
 
 	trackUpdatedCallback.data = event;

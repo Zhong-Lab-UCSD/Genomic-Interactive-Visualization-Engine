@@ -73,7 +73,7 @@
 			},
 			expandIcon: {
 				type: String,
-				value: 'expand-less'
+				value: 'expand-more'
 			}
 		},
 		
@@ -112,7 +112,7 @@
 				// un-collapse, send signal for all collapse groups
 				this.fire('iron-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}});
 			}
-			this.expandIcon = newValue? 'expand-less': 'expand-more';
+			this.expandIcon = newValue? 'expand-more': 'chevron-right';
 			this.toggleCollapseHeader(newValue);
 			this.enableSignal = true;
 		},

@@ -558,11 +558,11 @@ TrackBundle.prototype.length = function() {
 	return this.array.length;
 };
 
-TrackBundle.prototype.setCheckBox = function(track, flag) {
+TrackBundle.prototype.setCheckBox = function(track, flag, db) {
 	// set the checkbox of the track, and track.status as well
 	try{
 		track.status = flag;
-		document.getElementById(this.IDPrefix
+		document.getElementById((db? db + '_': '') + this.IDPrefix
 			+ track.getCleanID() + this.IDPostfix).checked = flag;
 		return true;
 	} catch(e) {
@@ -570,52 +570,52 @@ TrackBundle.prototype.setCheckBox = function(track, flag) {
 	}
 };
 
-TrackBundle.prototype.setCheckBoxFromID = function(trackID, flag) {
+TrackBundle.prototype.setCheckBoxFromID = function(trackID, flag, db) {
 	try{
-		return this.setCheckBox(this.get(trackID), flag);
+		return this.setCheckBox(this.get(trackID), flag, db);
 	} catch(e) {
 		return false;
 	}
 };
 
-TrackBundle.prototype.setCheckBoxFromTableName = function(tableName, flag) {
-	return this.setCheckBox(this.reverseLookUpMap[tableName], flag);
+TrackBundle.prototype.setCheckBoxFromTableName = function(tableName, flag, db) {
+	return this.setCheckBox(this.reverseLookUpMap[tableName], flag, db);
 };
 
-TrackBundle.prototype.setAll = function(flag) {
+TrackBundle.prototype.setAll = function(flag, db) {
 	flag = flag || false;
 	for(var i = 0; i < this.length(); i++) {
-		this.setCheckBox(this.get(i), flag);
+		this.setCheckBox(this.get(i), flag, db);
 	}
 	return false;
 };
 
-TrackBundle.prototype.setListOnly = function(tableNameList) {
+TrackBundle.prototype.setListOnly = function(tableNameList, db) {
 	// tableNameList is the array of table names;
 	// tableNames other than the ones in the bundle can be included with no effect
-	this.setAll(false);
+	this.setAll(false, db);
 	for(var i = 0; i < tableNameList.length; i++) {
-		this.setCheckBoxFromTableName(tableNameList[i], true);
+		this.setCheckBoxFromTableName(tableNameList[i], true, db);
 	}
 	return true;
 }
 
-TrackBundle.prototype.setIDListOnly = function(IDList) {
+TrackBundle.prototype.setIDListOnly = function(IDList, db) {
 	// tableNameList is the array of table names;
 	// tableNames other than the ones in the bundle can be included with no effect
-	this.setAll(false);
+	this.setAll(false, db);
 	for(var i = 0; i < IDList.length; i++) {
-		this.setCheckBoxFromID(IDList[i], true);
+		this.setCheckBoxFromID(IDList[i], true, db);
 	}
 	return true;
 }
 
-TrackBundle.prototype.getIDList = function(returnall) {
+TrackBundle.prototype.getIDList = function(returnall, db) {
 	returnall = returnall || false;
 	var result = Array();
 	$.each(this.array, function(key, value) {
 		// first, use getdownload.php to get all the tableNames
-		if($('#' + value.getCleanID()).prop('checked') || returnall) {
+		if($('#' + (db? db + '_': '') + value.getCleanID()).prop('checked') || returnall) {
 			result.push(value.id);
 		}
 	});

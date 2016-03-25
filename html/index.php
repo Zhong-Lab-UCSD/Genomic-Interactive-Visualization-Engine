@@ -87,6 +87,10 @@ body {
 	height: 100%;
 	overflow: hidden;
 }
+paper-button#manualBtn {
+	font-size: 14px;
+	margin: 0.5em 0;
+}
 -->
 </style>
 <script type="text/javascript">
