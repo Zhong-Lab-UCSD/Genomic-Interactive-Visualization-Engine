@@ -7,8 +7,8 @@
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="search-card-content">
   <template>
@@ -38,8 +38,8 @@
 		
 		/************************** Polymer and Material Design components below *********************/
 		
-		.vertCenterContainer > paper-dropdown-menu {
-			padding-top: 0;
+		.vertTextBottomContainer > paper-dropdown-menu {
+			padding: 0 0.4em 0 0.15em;
 		}
 		
 		.vertMargined {
@@ -51,46 +51,53 @@
 		}
 		
 	</style>
-      <iron-signals on-iron-signal-toggle="signalToggle" 
-      	on-iron-signal-disable="signalDisabled"
-        on-iron-signal-encodecheck="signalEncodeCheck"
-        on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
-      <div class="vertMargined">
-        <div class="vertTextBottomContainer clearFix">
-          <div><span id = "text4" class="translatetext">Reference: </span></div>
-          <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
-            <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
-              <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
-                <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
-              </template>
-            </paper-menu>
-          </paper-dropdown-menu>
-          <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised on-tap="fillSampleHandler">Use sample</paper-button>
-        </div>
-        <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
-        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
-        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
-		<paper-tooltip position="bottom" class="fullWidth" offset="-1">
-          Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED, peaks format</a> files are accepted either by uploading or providing URL, <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig files</a> are accepted by URL only.)
-        </paper-tooltip>
+    <iron-signals on-iron-signal-toggle="signalToggle" 
+      on-iron-signal-disable="signalDisabled"
+      on-iron-signal-encodecheck="signalEncodeCheck"
+      on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
+    <div class="vertMargined">
+      <div class="vertTextBottomContainer clearFix">
+        <div><span id = "text4" class="translatetext">Reference: </span></div>
+        <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
+          <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
+            <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
+              <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
+            </template>
+          </paper-menu>
+        </paper-dropdown-menu>
+        <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised on-tap="fillSampleHandler">Use sample</paper-button>
       </div>
-      <div>
-        <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
-        <paper-tooltip class="fullWidth" position="top" offset="0">
-          <span id = "text5" class="translatetext">Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.</span>
-        </paper-tooltip>
-      </div>
-      <div>
-        <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
-        <paper-tooltip class="fullWidth" position="top" offset="-1">
-          <span id = "text6" class="translatetext">You may also provide a URL for a </span><a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a><span id = "text7" class="translatetext"> file </span><strong><em><span id = "text8" class="translatetext">for display purposes only</span></em></strong>
-        </paper-tooltip>
-      </div>
-      <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
-      <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
-        <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
-        <span id = "text10" class="translatetext"></span></paper-button>
-      <!-- end upload new file part --> 
+      <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
+      <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
+      <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
+      <paper-tooltip position="bottom" class="fullWidth" offset="-1">
+        Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href="/goldenPath/help/customTrack.html#BED" target="_blank">BED, peaks format</a> files are accepted either by uploading or providing URL, <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig files</a> are accepted by URL only.)
+      </paper-tooltip>
+    </div>
+    <div>
+      <paper-input id="returnEmail" class="fullWidth" label="(Optional) Your email address" floatingLabel="true" value="{{UserEmail}}"></paper-input>
+      <paper-tooltip class="fullWidth" position="top" offset="0">
+        <span id = "text5" class="translatetext">Some results may take a while to compute. You may provide an email here to get notification once the analysis is completed.</span>
+      </paper-tooltip>
+    </div>
+    <div>
+      <paper-input id="urlFileToShow" class="fullWidth" label="(Optional) Display file URL" floatingLabel="true" value="{{DisplayUrl}}"></paper-input>
+      <paper-tooltip class="fullWidth" position="top" offset="-1">
+        <span id = "text6" class="translatetext">You may also provide a URL for a </span><a href="/goldenPath/help/wiggle.html">wig</a> / <a href="/goldenPath/help/bigWig.html" target="_blank">bigWig</a><span id = "text7" class="translatetext"> file </span><strong><em><span id = "text8" class="translatetext">for display purposes only</span></em></strong>
+      </paper-tooltip>
+    </div>
+    <div>
+      <paper-input id="searchRangeInput" class="fullWidth" label="(Optional) Search range" floatingLabel="true" value="{{SearchRange}}"></paper-input>
+      <paper-tooltip class="fullWidth" position="top" offset="0">
+        <span id = "searchRangeText" class="translatetext">You can also specify the range to limit the search results to a certain genome location.</span>
+      </paper-tooltip>
+    </div>
+    <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
+    <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
+      <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
+      <span id = "text10" class="translatetext">Search</span>
+    </paper-button>
+    <!-- end upload new file part --> 
   </template>
   <script>
     Polymer({
@@ -98,7 +105,7 @@
 		is: "search-card-content",
 		
 		behaviors: [
-			Polymer.NeonAnimatableBehavior
+			GIVeBehaviors.GenemoTabCardContentBehavior
 		],
 		
 		properties: {
@@ -133,7 +140,8 @@
 			
 			currentRef: {
 				type: String,
-				value: ""
+				value: "",
+				observer: "currentRefChanged",
 			},
 			
 			DisplayUrl: {
@@ -142,6 +150,11 @@
 			},
 			
 			UserEmail: {
+				type: String,
+				value: ""
+			},
+			
+			SearchRange: {
 				type: String,
 				value: ""
 			},
@@ -166,19 +179,9 @@
 				value: 'query-search'
 			},
 			
-			collapseElement: {
-				type: String,
-				value: ""
-			},
-			
 			uploadButtonText: {
 				type: String,
 				value: ''
-			},
-			
-			icon: {
-				type: String,
-				value: 'search'
 			},
 			
 			species: {
@@ -213,77 +216,6 @@
             this.species.updateAllSpcActiveNum();
         },
         
-		getIcon: function() {
-			var resIcon = document.createElement('iron-icon');
-			resIcon.setAttribute('icon', this.icon);
-			resIcon.setAttribute('alt', 'search');
-			return resIcon;
-		},
-		
-		createResElement: function(anno, text, beforeNode, afterNode) {
-			var res = document.createElement('div');
-			res.classList.add('clearFix');
-			res.classList.add('fullWidth');
-			res.classList.add('collapseDb');
-			
-			if(beforeNode) {
-				res.appendChild(beforeNode);
-			}
-			
-			var resAnno = document.createElement('span');
-			resAnno.classList.add('anno');
-			resAnno.classList.add('leftFloat');
-			resAnno.textContent = anno;
-			var resContent = document.createElement('span');
-			resContent.textContent = text;
-			
-			res.appendChild(resAnno);
-			res.appendChild(resContent);
-			
-			if(afterNode) {
-				res.appendChild(afterNode);
-			}
-			
-			return res;
-			
-		},
-		
-		updateCurrentInfo: function(db, input, display) {
-			
-			if(db) {
-				
-				// prepare for shrinking and return the shrunk element
-				this.collapseElement = document.createElement('div');
-				// add shrunk icon, species, input file and display file
-				// icon and species in one line
-				var resHeader = document.createElement('div');
-				var resIcon = this.getIcon();
-				resIcon.classList.add('smallInline');
-				
-				var resHeaderText = document.createElement('span');
-				resHeaderText.textContent = "Input file";
-				
-				resHeader.classList.add('headerText');
-				resHeader.classList.add('clearFix');
-				resHeader.appendChild(resIcon);
-				resHeader.appendChild(resHeaderText);
-				this.collapseElement.appendChild(resHeader);
-				
-				var resContent = document.createElement('div');
-				resContent.classList.add('collapseContent');
-				resContent.appendChild(this.createResElement('Ref: ', db));
-				resContent.appendChild(this.createResElement('Input: ', input));
-				if(display) {
-					resContent.appendChild(this.createResElement('Display: ', display));
-				}
-				
-				this.collapseElement.appendChild(resContent);
-				
-			} else {
-				this.collapseElement = null;
-			}
-		},
-		
 		inputFileChangedFunc: function() {
 			var shortFileName = this.$.uploadFileInput.files[0].name;
 			if(shortFileName == "") {
@@ -307,38 +239,8 @@
 			}
 		},
 		
-		getCollapse: function() {
-			return this.collapseElement;
-		},
-		
-		getTabHeader: function() {
-			var res = document.createElement('div');
-
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Search';
-
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-			
-			return res;
-		},
-		
-		getExpandedHeader: function() {
-			var res = document.createElement('div');
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Input file';
-
-			res.classList.add('headerText');
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-
-			return res;
+		currentRefChanged: function(newValue, oldValue) {
+			this.fire("species-changed", {newRef: newValue});
 		},
 		
 		signalToggle: function(e, detail) {
@@ -370,7 +272,11 @@
 			var inputFileName = detail.sessionObj.originalFile;
 			var DisplayFileName = detail.sessionObj.hasDisplay? 
 				(detail.sessionObj.urlToShow.substring(detail.sessionObj.urlToShow.lastIndexOf('/') + 1)) : null;
-			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
+			if(DisplayFileName) {
+				collapseObj.display = DisplayFileName;
+			}
+			this.updateCurrentInfo(collapseObj);
 		},
 		
 		fileSelectionHandler: function() {
@@ -378,7 +284,13 @@
 		},
 		
 		trackSelectionHandler: function() {
-			this.fire("toggle-window");
+			if(genemoIsOn && !this.currentRef) {
+				this.fire("alert", {msg: 'Please select a reference genome before selecting data.'});
+				this.trackSelActive = false;
+			} else {
+				this.trackSelActive = !this.trackSelActive;
+				this.fire("toggle-window");
+			}
 		},
                     
 		fillSampleHandler: function() {
@@ -390,7 +302,7 @@
 			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
 				this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
 				return false;
-			} else if(this.currentRef == null) {
+			} else if(!this.currentRef) {
 				this.fire("alert", {msg: 'You need to select the reference genome for your file!'});
 				return false;
 			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0 
@@ -406,19 +318,26 @@
 			var DisplayFileName = this.DisplayUrl.length > 0? 
 				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
 				
-			this.updateCurrentInfo(this.currentRef, inputFileName, DisplayFileName);
+			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
+			if(DisplayFileName) {
+				collapseObj.display = DisplayFileName;
+			}
+			this.updateCurrentInfo(collapseObj);
 			
 			this.fire("submit-form", {card: this});
 		},
 		
         ready: function() {
             
-            var hostNode = this;
-			
 //			for(var i=0; i<spcArray.length; i++) {
 //				this.push('species', spcArray[i]);
 //			}
             
+			this._setIcon('search');
+			this._setIconAlt('search');
+			this._setHeaderText('Input file');
+			this._setTabText('Search');
+
 			this.species = spcArray;
 			
             this.uploadButtonText = "Upload local file";

@@ -12,8 +12,8 @@
 <link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="query-card-content">
   <template>
@@ -157,7 +157,7 @@
 		is: "query-card-content",
         
 		behaviors: [
-			Polymer.NeonAnimatableBehavior
+			GIVeBehaviors.GenemoTabCardContentBehavior
 		],
 		
 		properties: {
@@ -199,11 +199,6 @@
 			collapseElement: {
 				type: String,
 				value: ""
-			},
-			
-			icon: {
-				type: String,
-				value: 'view-list'
 			},
 			
 			species: {
@@ -297,7 +292,7 @@
 				value: ""
 			}
 		},
-        
+		
 		computeCheckboxWrapper: function(textstem) {
 			return textstem + '_checkboxwrapper';
 		},
@@ -519,103 +514,7 @@
             this.toggleGList(false);
         },
 		
-		getIcon: function() {
-			var resIcon = document.createElement('iron-icon');
-			resIcon.setAttribute('icon', this.icon);
-			resIcon.setAttribute('alt', 'search');
-			return resIcon;
-		},
-		
-		createResElement: function(anno, text, beforeNode, afterNode) {
-			var res = document.createElement('div');
-			res.classList.add('clearFix');
-			res.classList.add('fullWidth');
-			res.classList.add('collapseDb');
-			
-			if(beforeNode) {
-				res.appendChild(beforeNode);
-			}
-			
-			var resAnno = document.createElement('span');
-			resAnno.classList.add('anno');
-			resAnno.classList.add('leftFloat');
-			resAnno.textContent = anno;
-			var resContent = document.createElement('span');
-			resContent.textContent = text;
-			
-			res.appendChild(resAnno);
-			res.appendChild(resContent);
-			
-			if(afterNode) {
-				res.appendChild(afterNode);
-			}
-			
-			return res;
-			
-		},
-		
-		updateCurrentInfo: function(query, db) {
-			
-			if(query) {
-				
-				// prepare for shrinking and return the shrunk element
-				this.collapseElement = document.createElement('div');
-				// add shrunk icon, species, input file and display file
-				// icon and species in one line
-				var resHeader = document.createElement('div');
-				var resIcon = this.getIcon();
-				resIcon.classList.add('smallInline');
-				
-				var resHeaderText = document.createElement('span');
-				resHeaderText.textContent = "Cross-species query";
-				
-				resHeader.classList.add('headerText');
-				resHeader.classList.add('clearFix');
-				resHeader.appendChild(resIcon);
-				resHeader.appendChild(resHeaderText);
-				this.collapseElement.appendChild(resHeader);
-				
-				var resContent = document.createElement('div');
-				resContent.classList.add('collapseContent');
-				resContent.appendChild(this.createResElement('Query: ', query));
-				resContent.appendChild(this.createResElement('Species: ', (db.join? db.join(', '): db)));
-				
-				this.collapseElement.appendChild(resContent);
-				
-			} else {
-				this.collapseElement = null;
-			}
-		},
-
-		getCollapse: function() {
-			return this.collapseElement;
-		},
-		
 		getTabHeader: function() {
-			var res = document.createElement('div');
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Query';
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-			
-			return res;
-		},
-		
-		getExpandedHeader: function() {
-			var res = document.createElement('div');
-			var coreIcon = this.getIcon();
-			coreIcon.classList.add('smallInline');
-			
-			var textSpan = document.createElement('span');
-			textSpan.textContent = 'Cross-species query';
-			res.classList.add('headerText');
-			res.appendChild(coreIcon);
-			res.appendChild(textSpan);
-
-			return res;
 		},
 		
 		submitQuery: function() {
@@ -661,7 +560,7 @@
 				}
 			}
 			
-			this.updateCurrentInfo(this.InputGeneName, this.selectedRefs);
+			this.updateCurrentInfo({ Query: this.InputGeneName, Species: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
 			this.fire("iron-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
 			
 			this.fire("submit-genequery", {postdata: postdata});
@@ -702,13 +601,16 @@
                     
         ready: function() {
             
-            var hostNode = this;
-            
 //			for(var i=0; i<spcArray.length; i++) {
 //				this.push('species', spcArray[i]);
 //			}
 //			
 //			this.species.map = spcArray.map;
+
+			this._setIcon('view-list');
+			this._setIconAlt('query');
+			this._setHeaderText('Cross-species query');
+			this._setTabText('Query');
 
 			this.species = spcArray;
 			spcArray[spcArray.map['hg19']].checkDisabled = true;

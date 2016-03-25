@@ -17,6 +17,15 @@
 			dominant-baseline: central;
 		}
 		
+		svg polygon.linkedRegion {
+			mix-blend-mode: multiply;
+			opacity: 0.2;
+		}
+		
+		svg polygon.linkedRegion:hover {
+			opacity: 1;
+		}
+		
     	svg.coordinates rect.pointerHandler {
 			pointer-events: fill;
 			cursor: grab;
@@ -32,16 +41,7 @@
 		svg.coordinates text::selection {
 			background: none;
 		}
-		
-		svg polygon.linkedRegion {
-			mix-blend-mode: multiply;
-			opacity: 0.2;
-		}
-		
-		svg polygon.linkedRegion:hover {
-			opacity: 1;
-		}
-		
+
     </style>
   </template>
 </dom-module>

@@ -109,6 +109,12 @@ function validateUploadFileOrURL(event) {
 		}
 	}
 	
+	var chromRegex = /^chr\w+\s*(:|\s)/i;
+	if(querycard.SearchRange && !chromRegex.test(querycard.SearchRange.trim())) {
+		UI.alert('Please give a valid genome range for Search Range!');
+		return false;
+	}
+	
 	$("#genelistContentHolder").html('');
 	$('#genelistLoading').removeClass('BoxHide');
 
@@ -130,9 +136,11 @@ function validateUploadFileOrURL(event) {
 	tableNameQuery.append('Submit', 'Submit');
 	tableNameQuery.append('species', db);
 	tableNameQuery.append('email', email);
+	
+	var cmnIDPrefix = genemoIsOn? querycard.currentRef + '_': '';
 		
 	$.each(cmnTracksEncode.array, function(key, value) {
-		if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
+		if($('#' + cmnIDPrefix + value.getCleanID()).prop('checked') || useAllTracks) {
 			$.each(value.getSpeciesSubTables(db), function(index, tableName) {
 				tableNameQuery.append('geneTracks[]', tableName);
 			});
@@ -151,6 +159,13 @@ function validateUploadFileOrURL(event) {
 		spcArray[i].isActive = (spcArray[i].db == db);
 	}
 	spcArray.updateAllSpcActiveNum();
+	
+	if(querycard.SearchRange) {
+		
+		tableNameQuery.append('chrom', querycard.SearchRange.split(/[\s:\-]+/g)[0]);
+		tableNameQuery.append('start', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[1]));
+		tableNameQuery.append('end', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[2]));
+	}
 
 	trackUpdatedCallback.data = event;
 	// 1) get ID and save some stuff and also upload to UCSC as well
@@ -286,6 +301,19 @@ function uploadUiHandler(data) {
 		fireCoreSignal('collapse', {group: 'query-search', flag: false});
 		
 		$("#genelistContentHolder").append(writeGeneListTable(geneList, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
+		
+		if(genemoIsOn) {
+			// bedFileLink is the link for BED files (global object)
+			if(bedFileLink !== null) {
+				window.URL.revokeObjectURL(bedFileLink);
+			}
+			var BEDdata = new Blob([writeGeneListBED(geneList, spcArray)], {type: 'text/plain'});
+			bedFileLink = window.URL.createObjectURL(BEDdata);
+			$('#bedDownloadHolder').show();
+			document.querySelector('#bedDownloadLink').href = bedFileLink;
+			document.querySelector('#bedDownloadLink').download = 'result.bed';
+		}
+		
 	} catch(e) {
 		UI.alert(e);
 		hasError = true;

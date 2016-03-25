@@ -7,7 +7,7 @@
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-  ga('create', '<?php echo GOOGLE_ANALYTICS_ACCOUNT; ?>', 'auto');
+  ga('create', '<?php echo (strpos(getenv('SERVER_NAME'), 'give') !== false)? GOOGLE_ANALYTICS_ACCOUNT_GIVE: GOOGLE_ANALYTICS_ACCOUNT; ?>', 'auto');
   ga('send', 'pageview');
 
 </script>

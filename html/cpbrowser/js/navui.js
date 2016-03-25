@@ -38,7 +38,7 @@ function updateNavigation(geneInList, spcarray, cmntracksencode, setpeakfunc) {
 			
 			if($('#' + formid + spcarray[spcIndex].db + 'Filter').prop('checked')) {
 				needToUpdateTracks = true;
-				cmntracksencode.setListOnly(currSpcRegion.data['track']);
+				cmntracksencode.setListOnly(currSpcRegion.data['track'], genemoIsOn? spcarray[spcIndex].db: null);
 				spcarray[spcIndex].uniTracksEncode.setListOnly(currSpcRegion.data['track']);
 				if(setpeakfunc) {
 					setpeakfunc(spcIndex, currSpcRegion.data['track']);

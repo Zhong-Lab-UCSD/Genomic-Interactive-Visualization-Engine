@@ -1,66 +1,27 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="genemo-track-styles.html">
+<link rel="import" href="tracks-header.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-area">
   <template>
     <style include="genemo-shared-styles">
+        #trackDOMHolder {
+            display: none;
+        }
 		:host {
-			display: block;
+			margin: 1.2em 0;
 		}
-		
-    	svg {
-			width: 100%;
-			min-width: 400px;
-			min-height: 250px;
-		}
-		
-		svg line {
-			stroke: black;
-			stroke-width: 1;
-		}
-		
-    	svg.coordinates rect.pointerHandler {
-			pointer-events: all;
-			cursor: grab;
-			cursor: -webkit-grab;
-		}
-		
-    	svg.coordinates rect.pointerHandler.grabbing {
-			cursor: grabbing;
-			cursor: -webkit-grabbing;
-		}
-		
-		svg.coordinates text {
-			font-size: 12px;
-			pointer-events: none;
-		}
-		
-		svg.coordinates text::selection {
-			background: none;
-		}
-		
-		svg polygon.linkedRegion {
-			mix-blend-mode: multiply;
-			opacity: 0.2;
-		}
-		
-		svg polygon.linkedRegion:hover {
-			opacity: 1;
-		}
-		
     </style>
-    <iron-ajax id="chartAjax" handle-as="json" debounce-duration="300" method="POST"></iron-ajax>
+    <style include="genemo-track-styles"></style>
     <svg id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
 	</svg>
+    <div id="trackDOMHolder"></div>
   </template>
-  <script type="text/javascript" src="../../../js/generegion.js"></script>
-  <script type="text/javascript" src="../../../js/regionlistui.js"></script>
-  <script type="text/javascript" src="getTestRegion.js"></script>
   <script>
-  	Polymer({
+  	ChartArea = Polymer({
 		is: "chart-area",
 		
 		behaviors: [
@@ -68,613 +29,387 @@
 		],
 		
 		properties: {
-			species: {
-				// this is the species defined in libtracks.js
-				// notice that species should have chromSizes and location of centromeres included
-				// tracks is also within species
-				// may need to provide additional API to get track data
-				type: Object,
-				// observer: "initSpecies"
-			},
+			species: Object, // this is the species defined in libtracks.js
+			// notice that species should have chromSizes and location of centromeres included
+			// tracks is also within species
+			// may need to provide additional API to get track data
 			
-			viewWindowString: {
-				type: String,
-				notify: true
-			},
-			
-			subWindowString: {
-				type: String,
-				notify: true
-			},
-			
-			coorGroup: Object,
-			
-			tickLength: {
-				type: Number,
-				value: 9
-			},
-						
-			textSize: {
-				type: Number,
-				value: 12
-			},
-						
-			lineGap: {
-				type: Number,
-				value: 0.2 		// notice that the unit here is "em"
-			},
-			
-			scrollPercentage: {
-				type: Number,
-				value: 0.3 		// * deltaY in scrolling is the amount of zoom in/out
-			},
-			
-			colorSet: {
+			viewWindows: {
+				// this will be an array of strings (viewWindowString),
+				// may be changed to viewWindows directly for performance in the future
 				type: Array,
 				value: function() {
-					return [0xF44336, 0x9C27B0, 0x3F51B5, 0x2196F3, 0x009688, 
-							0x4CAF50, 0xCDDC39, 0xFFC107, 0x795548];		// put color set here
+					return [];
 				}
-			}
-						
-		},
-		
-		changeViewWindow: function(newValue, oldValue) {
-			this.$.mainSvg.setAttribute("viewBox", "0 0 " + this.$.mainSvg.getBoundingClientRect().width 
-				+ " " + this.$.mainSvg.getBoundingClientRect().height);
-			if(this.isReady) {
-				this.drawCoordinates(this.$.mainSvg, newValue, 'up');
-			}
-		},
-		
-		getRealTicks: function(viewWindow, maxNumOfTicks) {
-			// will get the span between ticks for viewWindow
-			// should be an array of [1,2,5] * 10^x
-			var span = viewWindow.getLength() / maxNumOfTicks;
-			if(parseInt(span) > 0) {
-				// round up to closest [1,2,5] * 10^x
-				var spanExp = parseInt(Math.log(span) / Math.LN10);
-				var spanHeader = span / Math.pow(10, spanExp);
-				if(spanHeader > 5) {
-					spanExp ++;
-					spanHeader = 1;
-				} else if(spanHeader > 2) {
-					spanHeader = 5;
-				} else if(spanHeader > 1) {
-					spanHeader = 2;
-				}
-				span = spanHeader * Math.pow(10, spanExp);
-			}
-			span = parseInt(span);
+			},
 			
-			if(span <= 0) {
-				span = 1;
-			}
-			var currIndex = Math.ceil(viewWindow.start / span) * span;
-			var result = [{chr: viewWindow.chr, coor: currIndex}];
-			currIndex += span;
-			while(currIndex < viewWindow.end) {
-				result.push({chr: viewWindow.chr, coor: currIndex});
-				currIndex += span;
-			}
+			initialized: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
 			
-			return result;							
+			trackGap: {
+				type: Number,
+				value: 0.3,		// unit is em
+			},
+			
+			textSize: {
+				type: Number,
+				value: 12,		// unit is px
+			},
+			
+			threshold: {
+				type: Number,
+				value: 0.1,
+			},
 			
 		},
 		
-		transformXCoordinate: function(svgToDraw, coordinate, moveOutsideToBorder) {
-			// this function is used to transform a given coordinate to svg x
-			// TODO: implement chromosomal based coordinates
-			// coordinate should be {chr: xxx, coor: xxx}
-			moveOutsideToBorder = moveOutsideToBorder || false;
-			var windowToDraw = svgToDraw.viewWindow || Polymer.dom(svgToDraw).parentNode.viewWindow;
-			
-			if(windowToDraw.chr !== coordinate.chr) {
-				return 0;
-			}
-			try {
-				result = (coordinate.coor - windowToDraw.start + 0.5) * svgToDraw.width.animVal.value 
-					/ parseFloat(windowToDraw.getLength());
-				if(moveOutsideToBorder) {
-					if(result < 0) {
-						return 0;
-					} else if(result > svgToDraw.width.animVal.value) {
-						return svgToDraw.width.animVal.value;
-					}
-				}
-				return result;
-			} catch(e) {
-				return 0;
-			}
-		},
-		
-		revTransXCoordinate: function(svgToDraw, x, moveOutsideToBorder) {
-			// reversely translate X value from JavaScript to chromosome coordinate
-			var windowToDraw = svgToDraw.viewWindow || Polymer.dom(svgToDraw).parentNode.viewWindow;
-			return ChrRegion.clipCoordinate({chr: windowToDraw.chr, 
-											coor: parseInt(x / svgToDraw.width.animVal.value * windowToDraw.getLength() 
-															+ windowToDraw.start + 0.5)}, this.species);
-		},
-		
-		drawLine: function(svgToDraw, x1, y1, x2, y2, color) {
-			// notice that this function draws line according to svg coordinates, not genomic coordinates
-			var newLine = document.createElementNS(this.svgNS, "line");
-			newLine.setAttributeNS(null, "x1", x1);
-			newLine.setAttributeNS(null, "x2", x2);
-			newLine.setAttributeNS(null, "y1", y1);
-			newLine.setAttributeNS(null, "y2", y2);
-			if(color) {
-				newLine.setAttributeNS(null, "stroke", "#" + color);
-			}
-			Polymer.dom(svgToDraw).appendChild(newLine);
-		},
-		
-		drawCoordinates: function(svgToDraw, labels) {
-			// svgToDraw is the DOM svg component (the track element, not the figure itself)
-			// windowToDraw is the window object (chr, start, end, subwindows)
-			// this will draw coordinate for windowToDraw at the top of svgToDraw
-			// labels will be some values to indicate whether a label needs to be included:
-			//		'up' means the labels will be put on top of the ticks
-			//		'down' means the labels will be put below the ticks
-			
-			var windowToDraw = Polymer.dom(svgToDraw).parentNode.viewWindow;
-			var ticksGroup;
-			labels = labels || svgToDraw.labelLocation;
-			
-			// clear svgToDraw
-			if(Polymer.dom(svgToDraw).querySelector('#ticksGroup')) {
-				ticksGroup = Polymer.dom(svgToDraw).querySelector('#ticksGroup')
-				while(Polymer.dom(ticksGroup).firstChild) {
-					Polymer.dom(ticksGroup).removeChild(Polymer.dom(ticksGroup).firstChild);
-				}
-			} else {
-				ticksGroup = document.createElementNS(this.svgNS, "svg");
-				ticksGroup.setAttributeNS(null, "id", "ticksGroup");
-				ticksGroup.setAttributeNS(null, "x", 0);
-				ticksGroup.setAttributeNS(null, "y", 0);
-				Polymer.dom(svgToDraw).appendChild(ticksGroup);
-			}
-			// first get the drawing window size from svgToDraw
-			// calculate number of ticks in the svg
-			var ticks = this.getRealTicks(windowToDraw, svgToDraw.width.animVal.value / this.MIN_TICK_GAP + 1);
-			ticks.forEach(function(value, index) {
-				var tickX = this.transformXCoordinate(svgToDraw, value)
-				var tickY = 0;
-				if(labels == 'up') {
-					tickY += this.textSize * (1 + this.lineGap * 1.5);
-				}
-				this.drawLine(ticksGroup, tickX, tickY, tickX, tickY + this.tickLength);
-
-				if(tickX > this.MIN_TICK_TEXT_MARGIN_LEFT 
-					&& tickX < svgToDraw.width.animVal.value - this.MIN_TICK_TEXT_MARGIN_RIGHT 
-					&& (labels == 'up' || labels == 'down')) {
-						// add text label for the tick
-						var newLabel = document.createElementNS(this.svgNS, "text");
-						newLabel.setAttributeNS(null, "text-anchor", "middle");
-						newLabel.setAttributeNS(null, "x", tickX);
-						newLabel.setAttributeNS(null, "y", 
-							((labels == 'up')? 0: this.lineGap * this.textSize + this.tickLength) + this.textSize);
-						Polymer.dom(newLabel).appendChild(document.createTextNode(value.coor));
-						Polymer.dom(ticksGroup).appendChild(newLabel);
-				}
-				
-			}, this);
-			if(labels == 'up' || labels == 'down') {
-				var newLabel = document.createElementNS(this.svgNS, "text");
-				newLabel.setAttributeNS(null, "text-anchor", "left");
-				newLabel.setAttributeNS(null, "x", 0);
-				newLabel.setAttributeNS(null, "y", 
-					((labels == 'up')? 0: this.lineGap * this.textSize + this.tickLength) + this.textSize);
-				Polymer.dom(newLabel).appendChild(document.createTextNode(windowToDraw.chr));
-				Polymer.dom(ticksGroup).appendChild(newLabel);
-			}
-			
-			// draw a rectangle over the coordinate track to handle mouse events
-			
-			if(!Polymer.dom(svgToDraw).querySelector(".pointerHandler")) {
-				var newRegion = document.createElementNS(this.svgNS, "rect");
-				newRegion.setAttributeNS(null, "x", 0);
-				newRegion.setAttributeNS(null, "y", 0);
-				newRegion.setAttributeNS(null, "width", svgToDraw.width.animVal.value);
-				newRegion.setAttributeNS(null, "height", svgToDraw.getBBox().height);
-				newRegion.setAttributeNS(null, "fill", "none");
-				newRegion.setAttributeNS(null, "class", "pointerHandler");
-				
-				Polymer.dom(svgToDraw).appendChild(newRegion);
-			}
-			Polymer.dom.flush();
-			this.listen(svgToDraw, 'track', 'dragHandler');
-			this.listen(svgToDraw, 'wheel', 'wheelHandler');
-		},
-		
-		createRawRectangle: function(x1, y1, x2, y2) {
-			var xmin = Math.min(x1, x2);
-			var ymin = Math.min(y1, y2);
-			var newRegion = document.createElementNS(this.svgNS, "rect");
-			newRegion.setAttributeNS(null, "x", xmin);
-			newRegion.setAttributeNS(null, "y", ymin);
-			newRegion.setAttributeNS(null, "width", Math.abs(x2 - x1));
-			newRegion.setAttributeNS(null, "height", Math.abs(y2 - y1));
-			return newRegion;
-		},
-		
-		createEventRectangle: function(svgParent, svgTrack) {
-			// create a rectangle to handle events
-		},
-		
-		drawRectangle: function(svgToDraw, region, color, height) {
-			// height is the percentage of svgToDraw, top-aligned
-			// color is an index from colorSet
-			// TODO: allow different alignment
-			
-			height = height || 1;
-			
-			var windowToDraw = Polymer.dom(svgToDraw).parentNode.viewWindow;
-			
-			if(windowToDraw.overlaps(region) > 0) {
-				var newRegion = this.createRawRectangle(this.transformXCoordinate(svgToDraw, region.getStart()),
-														0, this.transformXCoordinate(svgToDraw, region.getEnd()), 
-														height * svgToDraw.height.animVal.value);
-				newRegion.setAttributeNS(null, "id", region.id);
-				newRegion.setAttributeNS(null, "fill", "#" + this.colorSet[color].toString(16));
-				
-				Polymer.dom(svgToDraw).appendChild(newRegion);
-			}
-		},
-		
-		drawBoxTrack: function(svgToDraw, regions, linkMap, threshold) {
-			// regions is an array of all connections
-			// regions with the same ID is connected and needs to be colored accordingly
-			// linkMap is an object with regionID as key and value as following:
-			// 		color: the color index of the link;
-			//		regions: the regions with the same ID (array);
-			
-			// may need to filter the regions first, either here or outside
-			
-			var colorIndex = 0;
-			threshold = threshold || 1;
-			
-			var windowToDraw = Polymer.dom(svgToDraw).parentNode.viewWindow;
-			
-			// clear svgToDraw
-			while(Polymer.dom(svgToDraw).firstChild) {
-				Polymer.dom(svgToDraw).removeChild(Polymer.dom(svgToDraw).firstChild);
-			}
-					
-			regions.forEach(function(value, index) {
-				// value is a window-ish
-				if(windowToDraw.overlaps(value) <= 0 || value.data.value < threshold) {
-					return;
-				}
-				var linkID = value.data.linkID;
-				if(linkMap.hasOwnProperty(linkID)) {
-					// color is already there
-					colorIndex = linkMap[linkID].color;
-					if(!linkMap[linkID].regions.some(function(region, index){
-						return region.data.regionID === value.data.regionID;
-						})) {
-							linkMap[linkID].regions.push(value);
-					}
-				} else {
-					colorIndex++;
-					if(colorIndex >= this.colorSet.length) {
-						colorIndex = 0;
-					}
-					linkMap[linkID] = {color: colorIndex, regions: [value]};
-				}
-				//this.drawRectangle(svgToDraw, windowToDraw, value, colorIndex, 1);
-			}, this);
-			
-			// then draw the two horizontal lines
-			if(windowToDraw.overlaps(this.species.chromInfo[windowToDraw.chr].cent) <= 0) {
-				// no centromere, just draw two lines
-				this.drawLine(svgToDraw, 0, 0.5, svgToDraw.width.animVal.value, 0.5);
-				this.drawLine(svgToDraw, 0, svgToDraw.height.animVal.value - 0.5, 
-								svgToDraw.width.animVal.value, svgToDraw.height.animVal.value - 0.5);
-			} else {
-				// has centromere, draw p part first
-				var pX = this.transformXCoordinate(svgToDraw, 
-									this.species.chromInfo[windowToDraw.chr].cent.getStart(), true);
-				this.drawLine(svgToDraw, 0, 0.5, pX, 0.5);
-				this.drawLine(svgToDraw, 0, svgToDraw.height.animVal.value - 0.5, 
-								pX, svgToDraw.height.animVal.value - 0.5);
-				// then centromere
-				var qX = this.transformXCoordinate(svgToDraw, 
-									this.species.chromInfo[windowToDraw.chr].cent.getEnd(), true);
-				this.drawLine(svgToDraw, pX, svgToDraw.height.animVal.value - 0.5, qX, 0.5);
-				this.drawLine(svgToDraw, pX, 0.5, 
-								qX, svgToDraw.height.animVal.value - 0.5);
-				// then q part
-				this.drawLine(svgToDraw, qX, 0.5, svgToDraw.width.animVal.value, 0.5);
-				this.drawLine(svgToDraw, qX, svgToDraw.height.animVal.value - 0.5, 
-								svgToDraw.width.animVal.value, svgToDraw.height.animVal.value - 0.5);
-			}
-			
-		},
-		
-		generatePerm: function(length) {
-			if(length === 2) {
-				return [[0, 1], [1, 0]];
-			} else {
-				//console.log(length);
-			}
-		},
-		
-		drawConnectionBetweenTracks: function(svgToDraw, svgChildren, linkMap, threshold) {
-			// linkMap is an object with regionID as key and regions as value (array)
-			// the colorMap should have been already populated
-			// NOTE: the actual track should be a svg with class "linked" under svgChildren
-			// Also, windowsToDraw should be 'viewWindow' property of svgChildren
-			threshold = threshold || 1;
-			
-			// clear svgToDraw
-			while(Polymer.dom(svgToDraw).firstChild) {
-				Polymer.dom(svgToDraw).removeChild(Polymer.dom(svgToDraw).firstChild);
-			}
-					
-			for(var regionID in linkMap) {
-				if(linkMap.hasOwnProperty(regionID)) {
-					// region is here, draw the link (polygon)
-					
-					if(linkMap[regionID].regions[0].data.value < threshold) {
-						continue;
-					}
-					
-					var perm = this.generatePerm(linkMap[regionID].regions.length);
-					if(!perm) {
-						continue;
-					}
-					
-					perm.forEach(function(permIndex, index) {
-						
-						
-						if(permIndex.some(function(currentPerm, svgIndex) {
-							var windowToDraw = svgChildren[svgIndex].viewWindow;
-							if(windowToDraw.overlaps(linkMap[regionID].regions[currentPerm]) > 0) {
-								return true;
-							} else {
-								return false;
-							}
-						}, this)) {
-						
-							// prepare the points
-							var startPoints = [];
-							var endPoints = [];
-
-							svgChildren.forEach(function(svgChild, index) {
-								var svgTrack = Polymer.dom(svgChild).querySelector("svg.linked");
-								
-								var x = this.transformXCoordinate(svgTrack, 
-												linkMap[regionID].regions[permIndex[index]].getStart(), true);
-								x += (parseInt(svgChild.getAttributeNS(null, "x")) || 0)
-									+ (parseInt(svgTrack.getAttributeNS(null, "x")) || 0);
-								
-								var y = (parseInt(svgChild.getAttributeNS(null, "y")) || 0)
-									+ (parseInt(svgTrack.getAttributeNS(null, "y")) || 0);
-								
-								startPoints.push(x + "," + y);
-								startPoints.push(x + "," + (y + svgTrack.height.animVal.value));
-								
-								x = this.transformXCoordinate(svgTrack, 
-												linkMap[regionID].regions[permIndex[index]].getEnd(), true);
-								x += (parseInt(svgChild.getAttributeNS(null, "x")) || 0)
-									+ (parseInt(svgTrack.getAttributeNS(null, "x")) || 0);
-								
-								endPoints.push(x + "," + y);
-								endPoints.push(x + "," + (y + svgTrack.height.animVal.value));
-							}, this);
-
-							var points = startPoints.join(" ") + " " + endPoints.reverse().join(" ");
-							
-							var newLink = document.createElementNS(this.svgNS, "polygon");
-							newLink.setAttributeNS(null, "id", regionID);
-							newLink.setAttributeNS(null, "class", "linkedRegion");
-							newLink.setAttributeNS(null, "points", points);
-							newLink.setAttributeNS(null, "fill", "#" + this.colorSet[linkMap[regionID].color].toString(16));
-							
-							Polymer.dom(svgToDraw).appendChild(newLink);
-						}
-						
-					}, this);
-					
-				}
-			}
-		},
-		
-		dragHandler: function(e, detail) {
-			// this is used to handle all 'track' events
-			switch(detail.state) {
-				case 'start':
-					// register initial window
-					try {
-						e.target.classList.add('grabbing');
-						this.dragData = {};
-						this.dragData.svgNode = Polymer.dom(Polymer.dom(e.target).parentNode).parentNode;
-						this.dragData.oldWindow = this.dragData.svgNode.viewWindow.clone();
-						this.dragData.ratio = -1 / parseFloat(Polymer.dom(e.target).parentNode.width.animVal.value);
-						console.log(this.dragData.svgNode);
-					} catch(err) {
-						console.log(err);
-					}
-					break;
-				case 'track':
-					// update track coordinates on the fly
-					// also update window text
-					if(this.dragData) {
-						this.dragData.svgNode.viewWindow = this.dragData.oldWindow.getShift(detail.dx * this.dragData.ratio, true);
-						this.dragData.svgNode.needsUpdate = true;
-						this.updateChart(100);
-					}
-					break;
-				case 'end':
-					// update window content
-					e.target.classList.remove('grabbing');
-					this.updateChart(100, true);
-					break;
-			}
-		},
-		
-		wheelHandler: function(e, detail) {
-			var diff = e.deltaY / 100 * this.scrollPercentage;
-			var svgTarget = Polymer.dom(Polymer.dom(e.target).parentNode).parentNode;
-			svgTarget.viewWindow.extend(diff, this.revTransXCoordinate(svgTarget, e.x).coor, true);
-			svgTarget.needsUpdate = true;
-			this.updateChart(50);		
-		},
-		
-		updateChart: function(debounceTime, forceUpdate) {
-			this.viewWindowString = this.mainSvg.viewWindow.regionToString(false);
-			this.subWindowString = this.subWindowSvg.viewWindow.regionToString(false);
-			try {
-				if(this.mainSvg.viewWindow.overlaps(this.species.chromInfo.chr10.chrRegion) 
-					&& this.subWindowSvg.viewWindow.overlaps(this.species.chromInfo.chr10.chrRegion)) {
-					
-						if(forceUpdate || this.mainSvg.needsUpdate) {
-							this.drawCoordinates(this.mainCoorTrackSvg);
-						}
-						if(forceUpdate || this.subWindowSvg.needsUpdate) {
-							this.drawCoordinates(this.subCoorTrackSvg);
-						}
-						
-						if(forceUpdate || this.mainSvg.needsUpdate || this.subWindowSvg.needsUpdate) {
-							this.debounce('updateChartDebouncer', function() {
-								this.linkMap = {};
-							
-								this.drawBoxTrack(this.mainBlockTrackSvg, this.testRegions, this.linkMap, this.threshold);
-								this.drawBoxTrack(this.subBlockTrackSvg, this.testRegions, this.linkMap, this.threshold);
-								this.drawConnectionBetweenTracks(this.connectionSvg, [this.mainSvg, this.subWindowSvg], 
-																this.linkMap, this.threshold);
-								this.mainSvg.needsUpdate = false;
-								this.subWindowSvg.needsUpdate = false;
-							}, debounceTime);
-						}
-				}
-			} catch(e) {
-				console.log(e);
-			}			
-		},
-		
-		drawDemo: function(mainWindow, subWindows, threshold, debounceTime) {
-			if(this.isReady) {
-				this.mainSvg.viewWindow = new ChrRegion(mainWindow, null, null, null, null, null, this.species);
-				this.subWindowSvg.viewWindow = new ChrRegion(subWindows[0], null, null, null, null, null, this.species);
-				
-				this.threshold = threshold || 1;
-				this.updateChart(debounceTime, true);
-			}
-		},
-		
-		initSpecies: function(newValue, oldValue) {
-			if(newValue && newValue.db) {
-				this.$.chartAjax.url = "chromInfo.php";
-				var params = {};
-				params.db = newValue.db;
-				this.$.chartAjax.params = params;
-				this.listen(this.$.chartAjax, 'response', 'chrResponse');
-				this.$.chartAjax.generateRequest();
-				this.species.chromInfo = {};
-			}
-		},
-		
-		chrResponse: function(e, detail) {
-			var data = detail.response;
-			for(var chrom in data) {
-				this.species.chromInfo[chrom] = {chrRegion: new ChrRegion(data[chrom].chrRegion)};
-				if(data[chrom].cent) {
-					this.species.chromInfo[chrom].cent = new ChrRegion(data[chrom].cent);
-				}
-			}
+		listeners: {
+			'track-ready': 'trackReadyHandler',
+			'update-window': 'updateWindowHandler',
 		},
 		
 		created: function() {
-			this.MIN_TICK_GAP = 100;
-			this.MIN_TICK_TEXT_MARGIN_LEFT = 75;
-			this.MIN_TICK_TEXT_MARGIN_RIGHT = 30;
 			this.svgNS = "http://www.w3.org/2000/svg";
 		},
 		
-		ready: function() {
-			// initialize chrom information via chartAjax
-			// ChrRegion.chromInfo.chr10 = {chrRegion: new ChrRegion("chr10:1-135374737"), cent: new ChrRegion("chr10: 38800000-42100000")};
-			// Species needs to be provided from the outside container (chart-card-content)
-			this.species = {
-				db: 'hg18', 
-				chromInfo: {
-					chr10: {
-						chrRegion: new ChrRegion("chr10:1-135374737"), cent: new ChrRegion("chr10: 38800000-42100000")
-					}
-				}
-			};
-			this.mainSvg = this.$.mainSvg;
+		factoryImpl: function(species, numOfSubs, viewWindow, threshold) {
+			this.threshold = threshold || 1.0;
+			this.changeSpecies(species, numOfSubs, viewWindow);
 		},
 		
 		attached: function() {
 			this.async(function() {
-				this.isReady = true;
-				this.mainSvg.setAttribute("viewBox", "0 0 " 
-					+ this.$.mainSvg.getBoundingClientRect().width + " " + this.$.mainSvg.getBoundingClientRect().height);
-				
-				// dummy test code to create connection svgs, sub-window svgs and track svgs
-				
-				// connection svg
-				this.connectionGs = document.createElementNS(this.svgNS, "g");
-				this.connectionSvg = document.createElementNS(this.svgNS, "svg");
-				Polymer.dom(this.connectionGs).appendChild(this.connectionSvg);
-				Polymer.dom(this.mainSvg).appendChild(this.connectionGs);
-				
-				// sub-window svg and window
-				this.subWindowSvg = document.createElementNS(this.svgNS, "svg");
-				this.subWindowSvg.setAttributeNS(null, "x", 0);
-				this.subWindowSvg.setAttributeNS(null, "width", this.mainSvg.getBoundingClientRect().width);
-				this.subWindowSvg.setAttributeNS(null, "y", 150);
-				this.subWindowSvg.setAttributeNS(null, "id", "subWindow");
-				
-				// track svg
-				this.mainCoorTrackSvg = document.createElementNS(this.svgNS, "svg");
-				this.mainCoorTrackSvg.labelLocation = "up";
-				this.mainCoorTrackSvg.setAttributeNS(null, "x", 0);
-				this.mainCoorTrackSvg.setAttributeNS(null, "width", this.mainSvg.getBoundingClientRect().width);
-				this.mainCoorTrackSvg.setAttributeNS(null, "class", "coordinates");
-				this.mainCoorTrackSvg.setAttributeNS(null, "draggable", "false");
-				
-				this.mainBlockTrackSvg = document.createElementNS(this.svgNS, "svg");
-				this.mainBlockTrackSvg.setAttributeNS(null, "y", 30);
-				this.mainBlockTrackSvg.setAttributeNS(null, "x", 0);
-				this.mainBlockTrackSvg.setAttributeNS(null, "width", this.mainSvg.getBoundingClientRect().width);
-				this.mainBlockTrackSvg.setAttributeNS(null, "height", 20);
-				this.mainBlockTrackSvg.setAttributeNS(null, "class", "linked");
-				Polymer.dom(this.mainSvg).appendChild(this.mainCoorTrackSvg);
-				Polymer.dom(this.mainSvg).appendChild(this.mainBlockTrackSvg);
-				
-				this.subCoorTrackSvg = document.createElementNS(this.svgNS, "svg");
-				this.subCoorTrackSvg.labelLocation = "down";
-				this.subCoorTrackSvg.setAttributeNS(null, "x", 0);
-				this.subCoorTrackSvg.setAttributeNS(null, "width", this.mainSvg.getBoundingClientRect().width);
-				this.subCoorTrackSvg.setAttributeNS(null, "y", 30);
-				this.subCoorTrackSvg.setAttributeNS(null, "class", "coordinates");
-				this.subCoorTrackSvg.setAttributeNS(null, "draggable", "false");
-				
-				this.subBlockTrackSvg = document.createElementNS(this.svgNS, "svg");
-				this.subBlockTrackSvg.setAttributeNS(null, "x", 0);
-				this.subBlockTrackSvg.setAttributeNS(null, "width", this.mainSvg.getBoundingClientRect().width);
-				this.subBlockTrackSvg.setAttributeNS(null, "height", 20);
-				this.subBlockTrackSvg.setAttributeNS(null, "class", "linked");
-				Polymer.dom(this.subWindowSvg).appendChild(this.subCoorTrackSvg);
-				Polymer.dom(this.subWindowSvg).appendChild(this.subBlockTrackSvg);
-
-				Polymer.dom(this.mainSvg).appendChild(this.subWindowSvg);
-				
-				Polymer.dom.flush();
-				
-				// preparation is done, draw the real content
-			
-				
-				this.testRegions = getTestInteractionRegions();
-					
-				// this.drawDemo("chr10:30000000-50000000", ["chr10:35000000-55000000"], 1.0, 50);
-				
+				// attach all trackDOMs
+				this._setInitialized(true);
+				this.resetDOM();
 			});
-		}		
+		},
+		
+		createBedTrackProp: function(viewWindowIndex, properties) {
+			return {x: 0, y: 0, width: this.offsetWidth,
+					textMargin: 100, requestUrl: Track.fetchDataTarget,
+					windowIndex: viewWindowIndex,
+					};
+		},
+		
+		createCoorTrackProp: function(viewWindowIndex, properties) {
+			return {x: 0, y: 0, width: this.offsetWidth,
+					textMargin: 100, labelLocation: ((viewWindowIndex === 0)? 'up': 'down'),
+					windowIndex: viewWindowIndex,
+					};
+		},
+		
+		createInteractionTrackProp: function(viewWindowIndex, properties) {
+			return {x: 0, y: 0, width: this.offsetWidth,
+					textMargin: 100, requestUrl: Track.fetchDataTarget,
+					numOfSubs: this.viewWindows.length, threshold: this.threshold,
+					};
+		},
+		
+		createTrackProp: function(track, viewWindowIndex, props) {
+			var trackDOMMap = {
+				bed: this.createBedTrackProp.bind(this),
+				genebed: this.createBedTrackProp.bind(this),
+				genepred: this.createBedTrackProp.bind(this),
+				interaction: this.createInteractionTrackProp.bind(this),
+				coordinate: this.createCoorTrackProp.bind(this),
+			};
+			return trackDOMMap[track.getTypeTrunk()](viewWindowIndex, props);
+		},
+		
+		createTrackDOM: function(track, viewWindowIndex, props) {
+			var trackDOMMap = {
+				bed: BedTrack,
+				genebed: BedTrack,
+				genepred: BedTrack,
+				interaction: InteractionTrack,
+				coordinate: CoorTrack,
+			};
+			return new trackDOMMap[track.getTypeTrunk()](track, 
+								this.createTrackProp(track, viewWindowIndex, props));
+		},
+		
+		addOrdinaryTrackDOM: function(trackDOM, viewWindowIndex) {
+			this.trackDOMsByWindow[viewWindowIndex].splice(
+					locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex], 
+						null, null, function(trackDOM1, trackDOM2) {
+							return trackDOM1.track.getPriority() < trackDOM2.track.getPriority()? -1: 
+								trackDOM1.track.getPriority() > trackDOM2.track.getPriority()? 1: 0;
+						}) + 1,
+					0, trackDOM);
+			this.trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true;
+		},
+		
+		addInteractionTrackDOM: function(trackDOM, viewWindowIndex) {
+			// actually this will enum all viewWindowIndices
+			this.viewWindows.forEach(function(vwindow, index) {
+				this.addOrdinaryTrackDOM(trackDOM, index);
+			}, this);
+		},
+		
+		addVisibleTrack: function(track, viewWindowIndex, forceAdd) {
+			var trackDOMAddMap = {
+				bed: this.addOrdinaryTrackDOM.bind(this),
+				genebed: this.addOrdinaryTrackDOM.bind(this),
+				genepred: this.addOrdinaryTrackDOM.bind(this),
+				coordinate: this.addOrdinaryTrackDOM.bind(this),
+				interaction: this.addInteractionTrackDOM.bind(this),
+			};
+			if(forceAdd || !this.trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
+				var newTrackDOM = this.createTrackDOM(track, viewWindowIndex);
+				if(newTrackDOM) {
+					trackDOMAddMap[track.getTypeTrunk()](newTrackDOM, viewWindowIndex);
+				}
+			}
+		},
+		
+		mergeTrackDOMsByWindow: function() {
+			this.trackDOMs.splice(0, this.trackDOMs.length);
+			this.trackDOMsByWindow.forEach(function(indTrackDOMs, windowIndex) {
+				if(windowIndex !== 0) {
+					indTrackDOMs = indTrackDOMs.slice().reverse();
+				}
+				indTrackDOMs.forEach(function(track, trackIndex) {
+					if(!track._domMergeFlag) {
+						this.trackDOMs.push(track);
+						track._domMergeFlag = true;
+					}
+				}, this);
+			}, this);
+			this.trackDOMs.forEach(function(track) {
+				delete track._domMergeFlag;
+			}, this);			
+		},
+		
+		updateHeightLocation: function() {
+			// calculate the heights for all tracks
+			// note that by the time this is called, all tracks should be ready
+			// (this is handled in track-ready event handler)
+			// this will also rearrange the y value for all tracks as well
+			var currY = 0;
+			this.trackDOMs.forEach(function(trackDOM, index) {
+				trackDOM.updateLocationSize(0, currY);
+				currY += trackDOM.getHeight() + this.trackGap * this.textSize;
+			}, this);
+			currY -= this.trackGap * this.textSize;
+			this.$.mainSvg.setAttribute("height", currY);
+			this.$.mainSvg.setAttribute("viewBox", "0 0 " + this.offsetWidth 
+				+ " " + currY);
+		},
+		
+		updateTracks: function(index) {
+			// index is the window index
+			// only need to update tracks involved with that index
+			if(index) {
+				this.updateTracksInWindow(index);
+			} else {
+				this.trackDOMsByWindow.forEach(function(trackDOMs, windex) {
+					this.updateTracksInWindow(windex);
+				}, this);
+			}
+		},
+		
+		updateTracksInWindow: function(index) {
+			// index is the window index
+			// only need to update tracks involved with that index
+			this.trackDOMsByWindow[index].forEach(function(trackDOM, tindex) {
+				trackDOM.updateTracks(this.viewWindows[index], index, this.threshold);
+			}, this);
+		},
+		
+		trackReadyHandler: function(e) {
+			// check if all tracks are ready, otherwise do nothing
+			if(this.trackDOMs.every(function(trackDOM) {
+				return trackDOM.isReady;
+			}, this)) {
+				this.updateHeightLocation();
+			}
+		},
+		
+		changeViewWindow: function(viewWindow, index) {
+			this.viewWindows[index] = new ChrRegion(viewWindow, null, null, null, null, null, this.species)
+			this.updateTracksInWindow(index);
+		},
+		
+		changeAllViewWindows: function(viewWindows) {
+			viewWindows.forEach(function(vwindow, index) {
+				this.changeViewWindow(vwindow, index);
+			}, this);
+		},
+		
+		changeThreshold: function(threshold) {
+			this.threshold = threshold || this.threshold;
+			this.trackDOMs.forEach(function(trackDOM, index) {
+				if(trackDOM.updateThreshold) {
+					// is an interaction track
+					trackDOM.updateThreshold(this.threshold);
+				}
+			}, this);
+		},
+		
+		refreshAll(viewWindows, threshold) {
+			if(typeof(threshold) !== 'undefined' && threshold !== null && !viewWindows) {
+				// only update threshold only
+				this.changeThreshold(threshold);
+				return this.getViewWindowStrings();
+			} else {
+				threshold = threshold || this.threshold;
+				if(viewWindows) {
+					this.changeAllViewWindows(viewWindows);
+				} else {
+					this.updateTracks();
+				}
+			}
+			return this.getViewWindowStrings();
+		},
+		
+		getViewWindowStrings: function() {
+			var result = [];
+			this.viewWindows.forEach(function(vwindow, index) {
+				result.push(vwindow.regionToString(false));
+			}, this);
+			return result;
+		},
+		
+		changeSpecies: function(newSpecies, numOfSubs, viewWindow) {
+			// this will reset all tracks and redo the species
+			// note that the tracks should already be initialized before switching here
+			if(!newSpecies) {
+				throw("No new species specified!");
+			}
+			this.species = newSpecies;
+			numOfSubs = numOfSubs || this.viewWindows.length;
+			
+			if(!viewWindow) {
+				// viewWindow is not specified, then use the old viewWindows
+				this.viewWindows = new Array(numOfSubs);
+				this.viewWindows.fill(null);
+				var defaultElem = this.species.defaultWindow || ['chr10:30000000-55000000', 'chr10:34900000-65000000'];
+				this.viewWindows.forEach(function(vwindow, index) {
+					var windowStr;
+					if(typeof(viewWindow) === 'string') {
+						// that's a single view window
+						windowStr = viewWindow;
+					} else if(Array.isArray(viewWindow) && viewWindow.length > 0) {
+						// more than one viewWindows are specified
+						windowStr = viewWindow[index];
+					} else {
+						// use default
+						windowStr = defaultElem[index % defaultElem.length];
+					}
+					if(windowStr) {
+						this.viewWindows[index] = new ChrRegion(windowStr, null, null, null, null, null, this.species);
+					}
+				}, this);
+			} else {
+				// but need to be clipped
+				this.viewWindows.forEach(function(vwindow, index) {
+					vwindow.clipRegion(this.species);
+				}, this);
+			}
+
+			// notice that the tracks of species should be already initialized
+			// so create a list of toggles to turn on/off all the tracks, and create a list of visible tracks
+			this.resetDOM();
+			return this.getViewWindowStrings();
+			
+		},
+		
+		resetDOM: function() {
+			if(this.initialized) {
+				this.trackDOMs = [];		// this is the array for visible tracks (DOMs with corresponding stuff)
+											// every track is included
+				this.trackDOMsByWindow = [];
+												// this is the array for visible tracks by window
+												// notice that this is an array of array
+												// tracks are grouped by its corresponding viewWindow Index
+				for(var i = 0; i < this.viewWindows.length; i++) {
+					this.trackDOMsByWindow.push([]);
+					this.trackDOMsByWindow[i].map = {};
+				}
+
+				this.viewWindows.forEach(function(vwindow, windowIndex) {
+					// coordinate track
+					this.addVisibleTrack(Track.createCoorTrack(this.species, 'coor_' + this.species.db + '_' + windowIndex), windowIndex);
+				}, this);
+				
+				this.addAllTrackDOMs();
+			}
+		},
+		
+		clearDOM: function() {
+			while(Polymer.dom(this.$.mainSvg).firstChild) {
+				Polymer.dom(this.$.mainSvg).removeChild(Polymer.dom(this.$.mainSvg).firstChild);
+			}
+			while(Polymer.dom(this.$.trackDOMHolder).firstChild) {
+				Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild);
+			}
+		},
+		
+		addAllTrackDOMs: function(noRefreshContent) {
+			this.viewWindows.forEach(function(vwindow, windowIndex) {
+				this.species.uniTracks.forEach(function(track, index) {
+					// notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
+					if(track.getSetting('visibility') > Track.StatusEnum.VIS_NONE) {
+						this.addVisibleTrack(track, windowIndex);
+					}
+				}, this);
+			}, this);
+			this.mergeTrackDOMsByWindow();
+			this.populateDOM(noRefreshContent);
+		},
+		
+		removeInvisibleTrackDOMs: function() {
+			this.trackDOMsByWindow.forEach(function(indTrackDOMs, windowIndex) {
+				// notice that because tracks may get deleted, don't use forEach with splice
+				var i;
+				for(i = indTrackDOMs.length - 1; i >= 0; i--) {
+					if(indTrackDOMs[i].track.getSetting('visibility') === Track.StatusEnum.VIS_NONE) {
+						// this track should be hidden by now
+						delete indTrackDOMs.map[indTrackDOMs[i].track.id];
+						indTrackDOMs.splice(i, 1);
+					}
+				}
+			}, this);
+		},
+		
+		populateDOM: function(noRefreshContent) {
+			// first clear old DOMs
+			this.clearDOM();
+			// then populate all new DOMS
+			this.trackDOMs.forEach(function(trackDOM, index) {
+				Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM);
+				Polymer.dom(this.$.mainSvg).appendChild(trackDOM.getTrackSvg());
+			}, this);
+			Polymer.dom.flush();
+			if(!noRefreshContent) {
+				// then update everything
+				this.refreshAll();
+			}
+		},
+		
+		updateDOM: function(noRefreshContent) {
+			// update existing DOMs, first remove all tracks that should be hidden
+			// if noRefreshContent = true, do not refresh content (should be refreshed later)
+			if(this.trackDOMs.length > 0) {
+				this.removeInvisibleTrackDOMs();
+			}
+			
+			// then add new Tracks (if not there already)
+			this.addAllTrackDOMs(noRefreshContent);
+		},
+		
+		updateWindowHandler: function(e) {
+			// update the windows by events bubbled up from bottom tracks
+			if(e.detail.hasOwnProperty('windowIndex')) {
+				this.changeViewWindow(e.detail.newWindow, e.detail.windowIndex);
+			}
+		},
+		
+		// TODO: add/remove/rearrange tracks
 		
 	});
   </script>

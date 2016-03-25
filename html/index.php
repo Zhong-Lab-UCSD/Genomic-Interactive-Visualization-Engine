@@ -59,9 +59,12 @@
 <script type="text/javascript" src="cpbrowser/js/navui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
 <script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
+<script type="text/javascript" src="cpbrowser/js/languagechange.js"></script>
 <link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
+<link rel="import" href="cpbrowser/components/genemo_components/meta-entries/meta-entries.html">
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
+<link rel="import" href="cpbrowser/components/genemo_components/genemo-track-filter/genemo-track-filter.html">
 <?php if(isset($experimentalFeatures)) { ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
 <?php } ?>
@@ -84,12 +87,28 @@ body {
 	height: 100%;
 	overflow: hidden;
 }
+paper-button#manualBtn {
+	font-size: 14px;
+	margin: 0.5em 0;
+}
 -->
 </style>
 <script type="text/javascript">
 
 var UI = new UIObject(window);
 
+var genemoIsOn = false;
+<?php 
+if($genemoOn) {
+?>
+genemoIsOn = true;
+var cellLineMap = {};
+var tissueMap = {}
+var labMap = {};
+var expMap = {};
+<?php
+}
+?>
 
 var spcArray = new Array();		// this will be the array of species (Species Object)
 spcArray.map = new Object();
@@ -113,7 +132,15 @@ spcArray.push(new Species("<?php echo $spcinfo[$i]["dbname"]; ?>",
 	"<?php echo $spcinfo[$i]["name"]; ?>", "<?php echo $spcinfo[$i]["commonname"]; ?>",
 	<?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>));
 spcArray.map["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
-                    <?php
+<?php 
+		if($genemoOn) {
+?>
+cellLineMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
+tissueMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
+labMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
+expMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
+<?php 
+		}
 	}
 	$species->free();
 	$mysqli->close();
@@ -171,6 +198,9 @@ var tracksInitialized = false;
 
 var isEncodeOn = <?php echo ($encodeOn? 'true': 'false'); ?>;			// Switch this to on to make ENCODE data as default, 
 var cpbrowserURL = 'cpbrowser/cpbrowser.php<?php echo ($encodeOn? '?Encode=XCEncode': ''); ?>';
+
+var encodeMeta = null;
+var bedFileLink = null;
 
 function setTrackReady(index) {
 	spcArray[index].setTrackReady(spcArray, cmnTracks, cmnTracksEncode, !tracksInitialized, isInBrowser);
@@ -399,12 +429,14 @@ function validate_form_genequery(postdata) {
 }
 
 function updateSampleCheckbox() {
-	cmnTracksEncode.updateAllStates();
-	for(var s = 0; s < spcArray.length; s++) {
-		if(!spcArray[s].isEncode) {
-			continue;
+	if(!genemoIsOn) {
+		cmnTracksEncode.updateAllStates();
+		for(var s = 0; s < spcArray.length; s++) {
+			if(!spcArray[s].isEncode) {
+				continue;
+			}
+			spcArray[s].uniTracksEncode.updateAllStates();
 		}
-		spcArray[s].uniTracksEncode.updateAllStates();
 	}
 }
 
@@ -530,17 +562,34 @@ function showWindow(panel) {
 	$('#' + panel).fadeIn('fast', toggleWindowButtonText(panel, 'show'));
 }
 
-function toggleWindow(panel) {
+function toggleWindow(panel, action) {
 	/*for(var i = 0; i < listPanels.length; i++) {
 		if(listPanels[i] == panel) {
 			continue;
 		}
 		hidePanel(listPanels[i]);
 	}*/
-	indexToNav();
-	$('#' + panel).fadeToggle('fast', toggleWindowButtonText(panel));
-	hideDownload();
-	hideSample();
+	if(action === 'hide') {
+		hideWindow(panel);
+	} else {
+		if(genemoIsOn) {
+			$('#CommonENCODEBox').hide();
+			for(var i = 0; i < spcArray.length; i++) {
+				if(spcArray[i].isEncode) {
+					$('#' + spcArray[i].db + 'EncodeTableHolder').hide();
+				}
+			}
+			$('#' + document.querySelector('#searchCard').currentRef + 'EncodeTableHolder').show();
+		}
+		if(action === 'show') {
+			showWindow(panel);
+		} else {
+			indexToNav();
+			$('#' + panel).fadeToggle('fast', toggleWindowButtonText(panel, action));
+			hideDownload();
+			hideSample();
+		}
+	}
 }
 
 function trackSettingsOnLoad() {
@@ -599,11 +648,19 @@ function toggleEncode() {
 }
 
 function toggleSample() {
-	if($('#sampleTypeBox').css('display') == 'none') {
-		$('#sampleTypeBox').show();
-		updateSampleCheckbox();
-	} else {
-		$('#sampleTypeBox').hide();
+	if(!genemoIsOn) {
+		if($('#sampleTypeBox').css('display') == 'none') {
+			$('#sampleTypeBox').show();
+			updateSampleCheckbox();
+		} else {
+			$('#sampleTypeBox').hide();
+		}
+	} else if(document.querySelector('genemo-track-filter')) {
+		if(document.querySelector('genemo-track-filter').opened) {
+			document.querySelector('genemo-track-filter').hide();
+		} else {
+			document.querySelector('genemo-track-filter').show();
+		}
 	}
 }
 
@@ -625,6 +682,18 @@ spcArray.updateAllSpcActiveNum = function () {
 	}
 }
 
+function filterTracksFromList(map, flags) {
+	var totalCheckboxList = document.querySelector('#' + document.querySelector('#searchCard').currentRef + 'EncodeTableHolder')
+									.querySelectorAll('.trackCheckbox');
+	for(var i = 0; i < totalCheckboxList.length; i++) {
+		if(flags.hasOwnProperty('matched') && map.hasOwnProperty(totalCheckboxList[i].id)) {
+			totalCheckboxList[i].checked = flags.matched;
+		}
+		if(flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(totalCheckboxList[i].id)) {
+			totalCheckboxList[i].checked = flags.unmatched;
+		}
+	}
+}
 
 $(document).ready( function () {
 
@@ -682,9 +751,20 @@ window.addEventListener("WebComponentsReady", function(e) {
 	if(manualBtn) {
 		manualBtn.addEventListener('click', window.open.bind(window, 'cpbrowser/manual_genemo.php', '_blank'));
 	}
+	
+	encodeMeta = new MetaEntries();
+	Polymer.dom(document.documentElement).appendChild(encodeMeta);
 
 	document.addEventListener('alert', function(e) { UI.alert(e.detail.msg); } );
-	document.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect');} );
+	document.addEventListener('species-changed', function(e) { 
+		toggleWindow('trackSelect', 'hide');
+		if(document.querySelector('genemo-track-filter')) {
+			document.querySelector('genemo-track-filter').initialize(e.detail.newRef, expMap, cellLineMap, tissueMap, labMap);
+		}
+	} );
+	document.addEventListener('toggle-window', function(e) { toggleWindow('trackSelect', e.detail.action); } );
+	document.addEventListener('species-ready', function(e) { allSpeciesDoneCheck(spcArray, cmnTracks, cmnTracksEncode);} );
+	document.addEventListener('filter-tracks', function(e) { filterTracksFromList(e.detail.map, e.detail.flags);} );
 	
 	toggleEncode();
 <?php
@@ -744,7 +824,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
-    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span></div>
+    <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span><div style="float: right; display: none" id="bedDownloadHolder">[<a id="bedDownloadLink" target="_blank">Export BED file</a>]</div></div>
     <div id="genelistHolder">
       <div id="genelistLoading" class="loadingCover BoxHide" style="min-height: 36px; left: 0px; width: auto;">
         <div class="loadingCoverBG"></div>
@@ -828,6 +908,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       </tr>
     </table>
   </div>
+  <genemo-track-filter id='mainFilter'></genemo-track-filter>
   <div id="trackSelect" class="trackSelectClass" style="width: 380px; min-height: 275px;" onclick="updateSampleCheckbox();">
     <div class="loadingTrackCover" id="trackSelectLoading">
       <div class="loadingTrackCoverBG"></div>
@@ -841,9 +922,9 @@ window.addEventListener("WebComponentsReady", function(e) {
     <div class="settingsNormal"><span class="text" id="Tracks On/Off">Tracks can be turned on/off via the checkboxes below.</span>
       <div id="encodeSampleSettings" style="display: inline;"><span class="text" id="You can also">You can also</span>
         <div class="header buttons" style="display: inline; padding: 2px 3px; margin: -3px 0px -3px -2px;"
-    onclick="toggleSample();"><span class="text" id="Choose sample type">Choose sample type</span></div>
+    onclick="toggleSample();"><span class="text" id="Choose sample type">Use filters</span></div>
       </div>
-      <div>
+      <div style="display: none;">
         <label>
         <input type="checkbox" id="useAllTracks" name="useAllTracks" />
         <span class="text" id="Use all encode data">Use all ENCODE data.</span>
@@ -869,7 +950,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       </div>
     </div>
     <div id="EncodeData" style="overflow-y: auto;" class="BoxHide">
-      <div class="subBox ENCODETracks">
+      <div class="subBox ENCODETracks" id='CommonENCODEBox'>
         <div class="subHeader" onclick="toggleSubPanel('cmnTrackEncode', false);"> <span class="headerIndicator" id="cmnTrackEncodeIndicator">[-]</span><span class="text" id="Common tracks encode"> Common tracks from ENCODE</span></div>
         <div class="trackHolder" id="cmnTrackEncodeHolder">
           <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
@@ -915,7 +996,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       </div>
     </div>
     <div class="header buttons" style="float: right;" onclick="updateTracks(); hideWindow('trackSelect');"><span class="text" id="Update">Update</span></div>
-    <div class="header buttons" style="float: right;" onclick="resetTracks();"><span class="text" id="Reset view">Reset view</span></div>
+    <div class="header buttons" style="float: right;" onclick="resetTracks();"><span class="text" id="Reset View">Reset view</span></div>
     <div class="header buttons" style="float: right;" onclick="hideWindow('trackSelect');"><span class="text" id="Close">Close</span></div>
     <div style="clear: both"></div>
   </div>
@@ -924,7 +1005,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       <div class="header buttons" style="float: right; padding: 2px 3px; margin: -2px;" onclick="hideSample();"><span class="text" id="Close">Close</span></div>
       <div style="clear: both;"></div>
     </div>
-    <div class="speciesTrackHeader"><span class="text" id="Commons sample types">Common sample types:</span></div>
+    <div class="speciesTrackHeader"><span class="text" id="Common sample types">Common sample types:</span></div>
     <div id="cmnSampleEncodeHolder" style="padding: 4px;"></div>
     <div class="speciesTrackHeader"><span class="text" id="Species only sample types">Species-only sample types</span></div>
     <div id="uniSampleEncodeHolder" style="padding: 4px; max-height: 300px; overflow-y: auto; overflow-x: hide;"></div>
@@ -964,15 +1045,15 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div class="trackHolder" id="spcDbNameTableHolder"></div>
   </div>
   <div style="display: none;" id="uniqueEncodeTemplate">
-    <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
     <div class="trackHolder" id="spcDbNameEncodeTableHolder">
+    <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
       <table width="100%" style="border-collapse: collapse; border-spacing: 0;">
         <thead>
           <tr class="trackHeaderEncode">
             <th style="width: 30%;"><span class="text" id="Track Name">Track Name</span></th>
             <th style="width: 20%;"><span class="text" id="Sample Type">Sample Type</span></th>
             <th><span class="text" id="Lab">Lab</span></th>
-            <th style="width: 15%;"><span class="text" id="Previes">Preview</span></th>
+            <th style="width: 15%;"><span class="text" id="Preview">Preview</span></th>
             <th style="width: 7%;">Data</th>
           </tr>
         </thead>
@@ -1008,7 +1089,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div id="leftbutton" onclick="UI.switchLeft();"></div>
   </div>
   <div id="mainContent">
-    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser/cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0"><span class="text" id="Browser Support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
+    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser/cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
     <!-- end #mainContent --> 
   </div>
   <!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats --> 

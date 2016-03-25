@@ -1,5 +1,5 @@
 function loadSelectedTrackIDs(db, IDList) {
-	cmnTracksEncode.setIDListOnly(IDList);
+	cmnTracksEncode.setIDListOnly(IDList, genemoIsOn? db: null);
 	spcArray[spcArray.map[db]].uniTracksEncode.setIDListOnly(IDList);
 }
 

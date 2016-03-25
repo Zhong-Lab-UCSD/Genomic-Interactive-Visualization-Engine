@@ -79,6 +79,7 @@ body {
       <li><a href="#input">Select Input Data</a></li>
       <li><a href="#dataSelect">Choose Epigenetic Data Sets to Search</a></li>
       <li><a href="#output">Visualizing Output</a></li>
+      <li><a href="#export">Exporting Results for Other Tools</a></li>
     </ul>
   </li>
   <li class="style2"><a href="#contact">Contact Us</a></li>
@@ -132,22 +133,37 @@ body {
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><core-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></core-icon> Index</div>
 </a><a name="dataSelect" id="dataSelect"></a>Choose Epigenetic Data Sets to Search</div>
 <p class="normaltext">GENEMO Search incorporated all data sets from ENCODE project as potential search targets. To choose the specific data sets you would like to search, you can click <span class="paper-button-text">Data selection</span> to open the <span class="panel">data selection</span> panel.</p>
-<p class="inlineImage"><img src="images/Figure_3_DataSelection.png" width="500" height="423" alt="Data Selection" /><br />
-<span class="panel">Figure 3</span> Data selection panel. Three different methods to select the data for comparison are shown.</p>
-<p class="normaltext">To select the specific data sets for comparison, you can use a combination of three methods:</p>
+<p class="inlineImage"><img src="images/Figure_3_DataSelection.png" width="605" height="442" alt=""/><br />
+<span class="panel">Figure 3</span> Data selection panel.</p>
+<p class="normaltext">To select the specific data sets for comparison, you can use a combination of two methods:</p>
 <ul class="normalnotes">
   <li>Select ENCODE data sets individually with the checkboxes in the list;</li>
-  <li>Use <strong>Choose sample type</strong> to open the <span class="panel">Sample list</span> panel, and choose data sets by sample type;</li>
-  <li>Check &quot;Use all ENCODE data&quot; to select all data sets for searching. (NOTE: the computation time will be quite significant if this checkbox is checked, so providing an email address is strongly recommended.)</li>
+  <li>Use the built-in filter (explained below).</li>
 </ul>
 <p class="normaltext">Epigenetic signals in ES cells (H1 in human, E14 in mouse) are selected by default.</p>
+<p class="normaltext">To filter data sets by specific criteria, click <span class="panel">use filter</span> to bring out the filter panel, in this panel you can specify what type of criteria to use (by experiment, by tissue type, by cell line, or by lab), and perform one of the three operations on currently selected items:</p>
+<ul class="normalnotes">
+  <li><span class="panel">Add</span> to current selection: tracks matching given criteria will be added to the current selection (tracks already selected will not be affected);</li>
+  <li><span class="panel">Filter</span> current selection: currently selected tracks will be deselected (filtered) if they do not match given criteria (unselected tracks  will not be affected);</li>
+  <li><span class="panel">Exclude</span> from current selection: currently selected tracks will be deselected if they match given criteria (unselected tracks  will not be affected).</li>
+  <li><span class="panel">Select all</span> and <span class="panel">select none</span> can be used to select all or deselect all criteria from the current page.</li>
+</ul>
+<p class="normaltext"></p>
+<p class="inlineImage"><img src="images/Figure_4_Filter.png" width="447" height="400" alt=""/><br />
+  <span class="panel">Figure 4</span> Filter panel.</p>
+<p class="normaltext"></p>
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><core-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></core-icon> Index</div></a><a name="output" id="output"></a>Visualizing Output</div>
-<p class="normaltext">The output includes the<span class="panel">Gene / Region Selection</span>, <span class="panel">Navigation</span> and <span class="panel">Visualization</span> panels (see Figure 4 below). After the calculation is complete, the resulting gene regions will be shown in the <span class="panel">Gene / Region Selection</span> panel. The results will be ordered according to  scores obtained by the algorithm. Select the Visualize button for any one result to visualize it in the <span class="panel">Visualization</span> panel.</p>
+<p class="normaltext">The output includes the <span class="panel">Gene / Region Selection</span>, <span class="panel">Navigation</span> and <span class="panel">Visualization</span> panels (see Figure 4 below). After the calculation is complete, the resulting gene regions will be shown in the <span class="panel">Gene / Region Selection</span> panel. The results will be ordered according to  scores obtained by the algorithm. Select the Visualize button for any one result to visualize it in the <span class="panel">Visualization</span> panel.</p>
 <p class="normaltext">The&nbsp;<span class="panel">Navigation</span>&nbsp;panel  is provided to navigate through the selected gene region. There are  two types of controls in the navigation panel: sliding controls that enable the user to  slide to the upstream/downstream regions of the current view, and zooming controls that allow the user to zoom in/out a certain part of the genome.</p>
 <p class="inlineImage"><img src="images/Figure_4_UI.png" alt="GENEMO Search Goals" width="600" height="293" /><br />
-<span class="panel">Figure 4</span> This example of the output  shows the result from the input file. The <span class="panel">Input file </span>Panel (collapsed), <span class="panel">Gene / Region Selection</span> Panel, <span class="panel">Navigation</span> Panel and <span class="panel">Visualization</span> Panel are shown.</p>
+<span class="panel">Figure 5</span> This example of the output  shows the result from the input file. The <span class="panel">Input file </span>Panel (collapsed), <span class="panel">Gene / Region Selection</span> Panel, <span class="panel">Navigation</span> Panel and <span class="panel">Visualization</span> Panel are shown.</p>
 <div style="clear: both;"></div>
-
+<div class="Header2 clearFix"><a href="#top"><div class="floatRight"><core-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></core-icon> Index</div>
+</a><a name="export" id="export"></a>Exporting Results for Other Tools</div>
+<p class="normaltext">By clicking [Export BED file] in the Results panel, the output regions can be exported into a BED file to be used as input for other tools, such as GREAT (<a href="http://bejerano.stanford.edu/great/public/html/">http://bejerano.stanford.edu/great/public/html/</a>).</p>
+<p class="inlineImage"><img src="images/Figure_6_export.png" alt="GENEMO Search Goals" width="275" height="129" /><br />
+<span class="panel">Figure 6</span> The [Export BED file] link</p>
+<div style="clear: both;"></div>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><core-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></core-icon> Index</div></a><a name="contact" id="intro9"></a>Contact Us</div>
 <p class="normaltext">If you have any questions or comments regarding to GENEMO Search, you may contact us by sending an email to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>). </p>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><core-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></core-icon> Index</div></a><a name="reference" id="intro7"></a>References</div>

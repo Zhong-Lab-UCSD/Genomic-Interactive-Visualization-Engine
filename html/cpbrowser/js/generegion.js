@@ -105,6 +105,11 @@ ChrRegion.prototype.regionToString = function(includeStrand) {
 		+ (this.strand? '+': '-') + ')'));
 };
 
+ChrRegion.prototype.regionToBED = function(includeStrand) {
+	return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') + 
+			(includeStrand? '\t0\t' + (!this.strand? '-': '+'): '');
+};
+
 ChrRegion.prototype.toString = function() {
 	// default is including strand
 	return this.regionToString(true);
@@ -197,7 +202,7 @@ ChrRegion.prototype.clone = function() {
 };
 
 ChrRegion.prototype.getShift = function(distance, isProportion, species) {
-	return this.clone().move(distance, isProportion. species);
+	return this.clone().move(distance, isProportion, species);
 };
 
 ChrRegion.prototype.extend = function(sizediff, center, isProportion, species) {

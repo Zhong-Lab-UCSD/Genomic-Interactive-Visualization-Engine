@@ -1,12 +1,13 @@
 <link rel="import" href="../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <script type="text/javascript" src="../../../../js/generegion.js"></script>
 <script type="text/javascript" src="../../../../js/geneobject.js"></script>
 <script type="text/javascript" src="../../../../js/regionlistui.js"></script>
 <script type="text/javascript" src="../../../../js/tracksSpecies.js"></script>
 <script>
  	window.GIVeBehaviors = window.GIVeBehaviors || {};
-	GIVeBehaviors.TrackBehavior = {
+	GIVeBehaviors.TrackBehaviorImpl = {
 
 		properties: {
 			species: Object, // this is the species defined in libtracks.js
@@ -16,11 +17,21 @@
 			
 			track: {
 				type: Object,
-				readOnly: true
+				readOnly: true,
 			},
 			// this is the track object
 			// including all meta information of the track, together with the settings
 			// species is a reference within the track object
+			
+			trackType: {
+				type: String,
+				readOnly: true,
+			},
+			
+			trackMainDOMClass: {
+				type: String,
+				readOnly: true,
+			},
 			
 			textSize: {
 				type: Number,
@@ -37,7 +48,7 @@
 				value: 0.6		// this is the proportion to fullHeight
 			},
 			
-			bedGap: {
+			textLineGap: {
 				// this is the gap between multiple bed lines
 				type: Number,
 				value: 0.1
@@ -68,12 +79,12 @@
 			
 			drawDebounceInt: {	// interval for update drawing, needs to be a small value for coordinates
 				type: Number,
-				value: 300
+				value: 200
 			},
 			
 			getDataDebounceInt: {	// interval for getting data
 				type: Number,
-				value: 300
+				value: 200
 			},
 			
 			colorSet: {
@@ -131,6 +142,8 @@
 			
 			this.TEXT_MARGIN_GAP = 5;		// flank width for arrow
 			
+			this.Y_HIDDEN = -30;			// value to hide stuff in svg (to calculate size)
+			
 			this.svgNS = "http://www.w3.org/2000/svg";
 			
 			// the following names are used in debouncing
@@ -152,18 +165,24 @@
 			this.trackHeight = properties.height || 100;
 			
 			this._setTrack(track);
+			this._setTrackType(track.getTypeTrunk());
 			
 			if(this.track.getSetting('adaptive') === 'on') {
 				this.isAdaptive = true;
 			}
 			
-			if(properties.textMargin) {
+			if(properties.hasOwnProperty('textMargin')) {
 				this.textMargin = properties.textMargin;
 			}
+			
+			if(properties.hasOwnProperty('windowIndex')) {
+				this.windowIndex = properties.windowIndex;
+			}
+			
 			this.windowWidth = properties.width - 
 							  (properties.textMargin? properties.textMargin + this.TEXT_MARGIN_GAP: 0);
 			this.totalWidth = properties.width;
-			if(properties.requestUrl) {
+			if(properties.hasOwnProperty('requestUrl')) {
 				this.requestUrl = properties.requestUrl;
 			}
 			
@@ -174,6 +193,8 @@
 		},
 		
 		getTrackSvg: function() {
+			
+			// this will be called after the trackDOM is initialized (should be later than "attached")
 			
 			if(!this.trackSvg) {
 				this.trackSvg = document.createElementNS(this.svgNS, 'svg');
@@ -187,7 +208,7 @@
 				this.trackSvg.setAttribute("viewBox", "0 0 " 
 					+ this.totalWidth + " " + this.trackHeight);
 					
-				// attach ajax to bed-track dom
+				// attach ajax to tracks with a Url for requests
 				if(this.requestUrl) {
 					this.mainAjax = document.createElement('iron-ajax');
 					this.mainAjax.setAttribute('id', this.track.getCleanID() + '_mainAjax');
@@ -196,7 +217,7 @@
 					this.mainAjax.setAttribute('on-response', 'responseHandler');
 					this.mainAjax.setAttribute('method', 'POST');
 					this.mainAjax.setAttribute('content-type', 'application/json');
-					this.mainAjax.setAttribute('debounce-duration', this.getDataDebounceInt);
+					//this.mainAjax.setAttribute('debounce-duration', this.getDataDebounceInt);
 					Polymer.dom(this.root).appendChild(this.mainAjax);
 				}
 				// if textMargin is specified, create a svg element for text labels
@@ -207,7 +228,7 @@
 					this.textSvg.setAttributeNS(null, 'x', this.x);
 					this.textSvg.setAttributeNS(null, 'y', this.y);
 					this.textSvg.setAttributeNS(null, 'width', this.textMargin);
-				
+					
 					// notice that the heights are placeholder and will change
 					this.textSvg.setAttributeNS(null, 'height', this.trackHeight);
 					this.textSvg.setAttribute("viewBox", "0 0 " 
@@ -221,6 +242,10 @@
 				this.mainSvg.setAttributeNS(null, 'x', (this.textMargin? this.textMargin + this.TEXT_MARGIN_GAP: 0) + this.x);
 				this.mainSvg.setAttributeNS(null, 'y', this.y);
 				this.mainSvg.setAttributeNS(null, 'width', this.windowWidth);
+			
+				if(this.trackMainDOMClass) {
+					this.mainSvg.setAttribute('class', this.trackMainDOMClass);
+				}
 			
 				// notice that the heights are placeholder and will change
 				this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
@@ -323,12 +348,20 @@
 		
 		clear: function() {
 			if(this.textMargin) {
-				while(Polymer.dom(this.textSvg).firstChild) {
-					Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+				if(this.textSvg.holder) {
+					Polymer.dom(this.textSvg).removeChild(this.textSvg.holder);
+				} else {
+					while(Polymer.dom(this.textSvg).firstChild) {
+						Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+					}
 				}
 			}
-			while(Polymer.dom(this.mainSvg).firstChild) {
-				Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild);
+			if(this.mainSvg.holder) {
+				Polymer.dom(this.mainSvg).removeChild(this.mainSvg.holder);
+			} else {
+				while(Polymer.dom(this.mainSvg).firstChild) {
+					Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild);
+				}
 			}
 			this.initSvgHolder();
 		},
@@ -344,8 +377,6 @@
 		drawLine: function(x1, y1, x2, y2, colorRGB, svgToDraw) {
 			// notice that this function draws line according to svg coordinates, not genomic coordinates
 			// color is a 24-bit number
-			svgToDraw = svgToDraw || this.mainSvg;
-			svgToDraw = svgToDraw.holder || svgToDraw;
 			var newLine = document.createElementNS(this.svgNS, "line");
 			newLine.setAttributeNS(null, "x1", x1);
 			newLine.setAttributeNS(null, "x2", x2);
@@ -354,13 +385,11 @@
 			if(colorRGB || colorRGB === 0) {
 				newLine.setAttributeNS(null, "stroke", this.rgbToHex(colorRGB));
 			}
-			Polymer.dom(svgToDraw).appendChild(newLine);
+			this.addElement(newLine, svgToDraw);
 			return newLine;
 		},
 		
 		createRawRectangle: function(x1, y1, x2, y2, colorRGB, svgToDraw, id, strokeColorRGB) {
-			svgToDraw = svgToDraw || this.mainSvg;
-			svgToDraw = svgToDraw.holder || svgToDraw;
 			var xmin = Math.min(x1, x2);
 			var ymin = Math.min(y1, y2);
 			var newRegion = document.createElementNS(this.svgNS, "rect");
@@ -377,14 +406,12 @@
 			if(typeof strokeColorRGB === 'number') {
 				newRegion.setAttributeNS(null, "stroke", this.rgbToHex(strokeColorRGB));
 			}
-			Polymer.dom(svgToDraw).appendChild(newRegion);
+			this.addElement(newRegion, svgToDraw);
 			return newRegion;
 		},
 		
 		createRawPolymer: function(coordinates, svgToDraw, id, cssClass, fillColorRGB, strokeColorRGB, strokeSize) {
 			// coordinates is an array of string "x,y"
-			svgToDraw = svgToDraw || this.mainSvg;
-			svgToDraw = svgToDraw.holder || svgToDraw;
 			var newPolygon = document.createElementNS(this.svgNS, "polygon");
 			newPolygon.setAttributeNS(null, "points", coordinates.join(' '));
 			if(id) {
@@ -393,7 +420,7 @@
 			if(cssClass) {
 				newPolygon.setAttributeNS(null, "class", cssClass);
 			}
-			if(typeof fillColor === 'number') {
+			if(typeof fillColorRGB === 'number') {
 				newPolygon.setAttributeNS(null, "fill", this.rgbToHex(fillColorRGB));
 			}
 			if(typeof strokeColorRGB === 'number') {
@@ -403,7 +430,7 @@
 				newPolygon.setAttributeNS(null, "stroke-width", strokeSize);
 			}
 			
-			Polymer.dom(svgToDraw).appendChild(newPolygon);
+			this.addElement(newPolygon, svgToDraw);
 			return newPolygon;	
 		},
 		
@@ -428,11 +455,30 @@
 		},
 		
 		drawText: function(x, y, text, textAnchor, params, svgToDraw) {
+			var newLabel = this.createText(x, y, text, textAnchor, params);
+			this.addElement(newLabel, svgToDraw);
+			return newLabel;
+		},
+		
+		addElement: function(elem, svgToDraw) {
 			svgToDraw = svgToDraw || this.mainSvg;
 			svgToDraw = svgToDraw.holder || svgToDraw;
-			var newLabel = this.createText(x, y, text, textAnchor, params);
-			Polymer.dom(svgToDraw).appendChild(newLabel);
-			return newLabel;
+			Polymer.dom(svgToDraw).appendChild(elem);
+		},
+		
+		removeElement: function(elem, svgToDraw) {
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			Polymer.dom(svgToDraw).removeChild(elem);
+		},
+		
+		testTextWidth: function(text, textAnchor, params, svgToDraw) {
+			// this is used to test the length of the text
+			var tmpText = this.drawText(0, this.Y_HIDDEN, text, 
+									textAnchor, params, svgToDraw);
+			var result = tmpText.getBBox().width;
+			this.removeElement(tmpText, svgToDraw);
+			return result;
 		},
 		
 		// ** Complex SVG drawing for track **
@@ -456,7 +502,7 @@
 							(typeof strokeColorIndex === 'number')? this.colorSet[strokeColorIndex]: null);
 				
 				// add strand info
-				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), 0xFFFFFF);
+				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), 0xFFFFFF, svgToDraw);
 			}
 		},
 		
@@ -497,7 +543,85 @@
 			this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw);
 		},
 		
+		drawWordWrappedText: function(x, y, text, textAnchor, extendDirection, params, svgToDraw, maxWidth, maxHeight) {
+			// notice that all whitespaces in text will be subsituted by ' ' and consecutive spaces will be collapsed
+			// extendDirection ('up' | 'both' | 'down') determine how extra text will be extended
+			var textArray = text.split(/\s+/), results = [], currHeight = this.textSize * this.fullHeight;
+			results.push('');
+			
+			textArray.every(function(currWord, index) {
+				var currWidth, i;
+				do {
+					currWidth = this.testTextWidth((results[results.length - 1].length > 0? 
+												results[results.length - 1] + ' ': '') + currWord, 
+												textAnchor, params, svgToDraw);
+	
+					if(currWidth > maxWidth) {
+						// this line is full
+						if(results[results.length - 1].length <= 0) {
+							// single super long word, break the word first
+							i = 0;
+							do {
+								i++;
+								results[results.length - 1] = currWord.slice(0, -i);
+								currWidth = this.testTextWidth(results[results.length - 1], 
+											textAnchor, params, svgToDraw);
+							} while(currWidth > maxWidth && i < currWord.length);
+							currWord = currWord.slice(-i);
+						}
+						
+						// then add another line
+						if(currHeight + this.textSize * (this.textLineGap + this.fullHeight) > maxHeight) {
+							// too many lines, use '...', and end processing
+							do {
+								results[results.length - 1] = results[results.length - 1].slice(0, -1);
+								currWidth = this.testTextWidth((results[results.length - 1].length > 0? 
+											results[results.length - 1] + ' ...': '...'), 
+											textAnchor, params, svgToDraw);
+							} while(currWidth > maxWidth && results[results.length - 1].length > 0);
+							results[results.length - 1] = results[results.length - 1].length > 0? 
+											results[results.length - 1] + ' ...': '...';
+							return false;
+						}
+						results.push('');
+						currHeight += this.textSize * (this.textLineGap + this.fullHeight);
+					} else {
+						results[results.length - 1] = (results[results.length - 1].length > 0? 
+												results[results.length - 1] + ' ': '') + currWord;
+						return true;
+					}
+				} while(currWord.length > 0);
+			}, this);
+			
+			// calculate the top line y based on number of lines and everything
+			var vertParam = 0.5;		// this is for default value ('middle')
+			switch(extendDirection) {
+				case 'up':
+					vertParam = 1;
+					break;
+				case 'down':
+					vertParam = 0;
+					break;
+			}
+			var currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;
+			// then draw everything in results
+			results.forEach(function(line, index) {
+				this.drawText(x, currY, line, textAnchor, params, svgToDraw);
+				currY += (this.textLineGap + this.fullHeight) * this.textSize;
+			}, this);
+
+		},
+		
+		drawShortLabel: function(label) {
+			this.drawWordWrappedText(this.textMargin, this.trackHeight * 0.5, label || this.track.getSetting('shortLabel'), 
+									'end', 'both', null, this.textSvg, this.textMargin, this.trackHeight);
+		},
+		
 		// ** Track event handling and functions **
+		
+		getDataDebounceWrapper: function() {
+			this.debounce(this.getDataJobName, this.getData, this.getDataDebounceInt);
+		},
 		
 		getData: function() {
 			// directly from request URL
@@ -542,7 +666,7 @@
 				// needs to get new data before updating
 				this.getDataCallback = this.drawDataDebounceWrapper.bind(this);
 			}
-			this.getData();
+			this.getDataDebounceWrapper();
 		},
 		
 		drawDataFireWrapper: function() {
@@ -557,7 +681,7 @@
 			this.debounce(this.updateJobName, this.drawDataFireWrapper, this.drawDebounceInt);
 		},
 		
-		updateTracks: function(viewWindow, index) {
+		updateTracks: function(viewWindow, index, threshold) {
 			// viewWindow is the new viewWindow value of coordinates
 			// index is the index of viewWindow (for tracks with multiple viewWindows)
 			// if both are omitted, just refresh the track
@@ -592,6 +716,25 @@
 			this.track.setVisFromStr(visString);
 		},
 		
+		regionInWindow: function(region, svgToDraw) {
+			// return true if region overlaps with svgToDraw.viewWindow
+			svgToDraw = svgToDraw || this.mainSvg;
+			return svgToDraw.viewWindow.overlaps(region) > 0;
+		},
+		
+		regionWindowDirection: function(region, svgToDraw) {
+			// return relative direction of the region with svgToDraw.viewWindow
+			// null if not on the same chromosome
+			// -1 if region is to the left
+			// 1 if region is to the right
+			// 0 if overlapping
+			svgToDraw = svgToDraw || this.mainSvg;
+			return svgToDraw.viewWindow.chr === region.chr?(
+						svgToDraw.viewWindow.start > region.end? -1: (
+							svgToDraw.viewWindow.end < region.start? 1: 0)
+						): null;
+		},
+		
 		changeViewWindow: function(viewWindow) {
 			if(typeof(viewWindow) === 'string') {
 				this.mainSvg.viewWindow = new ChrRegion(viewWindow, null, null, null, null, null, this.track.species);
@@ -606,4 +749,9 @@
 		}
 		
 	};
+	
+	GIVeBehaviors.TrackBehavior = [
+		Polymer.IronResizableBehavior, 
+		GIVeBehaviors.TrackBehaviorImpl,
+	];
 </script>

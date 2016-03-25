@@ -111,6 +111,10 @@
 			}
 		},
         
+		listeners: {
+			'content-ready': 'contentReady',
+		},
+		
 		toggleCollapseHeader: function(flag) {
 			// the top node with GenemoBody should have a member function getShrunk()
 			// then use the returned DOM to replace GenemoShrunk
@@ -163,47 +167,46 @@
 			return null;
 		},
 		
-		attached: function() {
-			this.async(function() {
-				// populate tabs and animated pages
-				
-				this.pages = Polymer.dom(this.$.tabContent).getDistributedNodes();
-				this.tabs = Polymer.dom(this.$.tabHeader).getDistributedNodes();
-				
-				while(Polymer.dom(this.$.mainTab).firstChild) {
-					Polymer.dom(this.$.mainTab).removeChild(Polymer.dom(this.$.mainTab).firstChild);
-				}
-				
-				if(this.tabs.length <= 0) {
-					this.tabs = [];
-					for(var i = 0; i < this.pages.length; i++) {
-						if(this.pages[i].getTabHeader) {
-							this.tabs.push(this.pages[i].getTabHeader());
-						} else if(this.pages[i].getExpandedHeader) {
-							this.tabs.push(this.pages[i].getExpandedHeader());
-						}
+		contentReady: function() {
+			// populate tabs and animated pages
+			
+			this.pages = Polymer.dom(this.$.tabContent).getDistributedNodes();
+			this.tabs = Polymer.dom(this.$.tabHeader).getDistributedNodes();
+			
+			while(Polymer.dom(this.$.mainTab).firstChild) {
+				Polymer.dom(this.$.mainTab).removeChild(Polymer.dom(this.$.mainTab).firstChild);
+			}
+			
+			if(this.tabs.length <= 0) {
+				this.tabs = [];
+				for(var i = 0; i < this.pages.length; i++) {
+					if(this.pages[i].getTabHeader) {
+						this.tabs.push(this.pages[i].getTabHeader());
+					} else if(this.pages[i].getExpandedHeader) {
+						this.tabs.push(this.pages[i].getExpandedHeader());
 					}
 				}
-				
-				for(var i = 0; i < this.tabs.length; i++) {
-					var newTab = document.createElement('paper-tab');
-					Polymer.dom(newTab).appendChild(this.tabs[i]);
-					Polymer.dom(this.$.mainTab).appendChild(newTab);
-				}
-				
-				/*for(var i = 0; i < this.pages.length; i++) {
-					var divPage = document.createElement('div');
-					divPage.setAttribute('slide-from-right', 'true');
-					Polymer.dom(this.$.mainPage).appendChild(divPage);
-					Polymer.dom(this.$.mainPage).childNodes[i].appendChild(this.pages[i]);
-				}*/
-				
-			});
+			}
+			
+			for(var i = 0; i < this.tabs.length; i++) {
+				var newTab = document.createElement('paper-tab');
+				Polymer.dom(newTab).appendChild(this.tabs[i]);
+				Polymer.dom(this.$.mainTab).appendChild(newTab);
+			}
+			
+			/*for(var i = 0; i < this.pages.length; i++) {
+				var divPage = document.createElement('div');
+				divPage.setAttribute('slide-from-right', 'true');
+				Polymer.dom(this.$.mainPage).appendChild(divPage);
+				Polymer.dom(this.$.mainPage).childNodes[i].appendChild(this.pages[i]);
+			}*/
+			
 		},
 		
-        ready: function() {
-        }
-        
+		attached: function() {
+			this.async(this.contentReady);
+		},
+		
     });
   </script>
 </dom-module>

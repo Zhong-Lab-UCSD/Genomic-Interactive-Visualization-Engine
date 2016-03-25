@@ -1,20 +1,12 @@
-<link rel="import" href="../../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
-<link rel="import" href="../../genemo-styles.html">
 <link rel="import" href="./track-behavior.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="coor-track">
   <template>
-    <style include="genemo-shared-styles"></style>
-    <style include="genemo-track-styles"></style>
   </template>
   <script>
   	CoorTrack = Polymer({
 		is: "coor-track",
 		
 		behaviors: [
-			Polymer.IronResizableBehavior,
 			GIVeBehaviors.TrackBehavior
 		],
 		
@@ -22,7 +14,17 @@
 
 			tickLength: {
 				type: Number,
-				value: 9
+				value: 9,
+			},
+
+			minorMajorRatio: {	// how big minor span gaps should be 
+				type: Number,
+				value: 0.2,
+			},
+
+			minorLength: {		// how long minor span ticks should be 
+				type: Number,
+				value: 0.75,
 			},
 
 			labelLocation: {
@@ -47,6 +49,7 @@
 			this.MIN_TICK_GAP = 100;
 			this.MIN_TICK_TEXT_MARGIN = 50;
 			this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50;
+			this.LINEGAP_RATIO = 1.2;		// this is the actual gap used to display between ticks and numbers
 		},
 		
 		trackImpl: function(track, properties) {
@@ -55,8 +58,9 @@
 
 			this._setDynamicHeight(false);
 			this._setLabelLocation(properties.labelLocation || 'up');
+			this._setTrackMainDOMClass('coordinates');
 			
-			this.trackHeight = properties.height || this.tickLength + (this.lineGap + 1) * this.textSize;
+			this.trackHeight = properties.height || this.tickLength + (this.lineGap * this.LINEGAP_RATIO + 1) * this.textSize;
 			
 			if(properties.hasOwnProperty('colorIndex')) {
 				this.foreColor = this.colorSet[properties.colorIndex];
@@ -73,7 +77,7 @@
 				this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG;
 			}
 			
-			this.drawDebounceInt = 100;
+			this.drawDebounceInt = 0;
 			
 		},
 		
@@ -99,10 +103,11 @@
 		getRealTicks: function(viewWindow, maxNumOfTicks) {
 			// will get the span between ticks for viewWindow
 			// should be an array of [1,2,5] * 10^x
+			// the results will contain two sets of ticks
 			viewWindow = viewWindow || this.mainSvg.viewWindow;
 			maxNumOfTicks = maxNumOfTicks || this.windowWidth / this.MIN_TICK_GAP + 1;
-			var span = viewWindow.getLength() / maxNumOfTicks;
-			if(parseInt(span) > 0) {
+			var span = viewWindow.getLength() / maxNumOfTicks, minorSpan, majorMinorRatio;
+			if(Math.ceil(span) > 0) {
 				// round up to closest [1,2,5] * 10^x
 				var spanExp = parseInt(Math.log(span) / Math.LN10);
 				var spanHeader = span / Math.pow(10, spanExp);
@@ -116,17 +121,19 @@
 				}
 				span = spanHeader * Math.pow(10, spanExp);
 			}
-			span = parseInt(span);
-			
+			span = Math.ceil(span);
 			if(span <= 0) {
 				span = 1;
 			}
-			var currIndex = Math.ceil(viewWindow.start / span) * span;
-			var result = [{chr: viewWindow.chr, coor: currIndex}];
-			currIndex += span;
+			
+			minorSpan = Math.ceil(span * this.minorMajorRatio);
+			
+			var currIndex = Math.ceil(viewWindow.start / minorSpan) * minorSpan;
+			var result = [{chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)}];
+			currIndex += minorSpan;
 			while(currIndex < viewWindow.end) {
-				result.push({chr: viewWindow.chr, coor: currIndex});
-				currIndex += span;
+				result.push({chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)});
+				currIndex += minorSpan;
 			}
 			return result;							
 		},
@@ -149,13 +156,14 @@
 			var ticks = this.getRealTicks();
 			ticks.forEach(function(value, index) {
 				var tickX = this.transformXCoordinate(value, false, svgToDraw)
-				var tickY = 0;
+				var tickY = 0.5;
 				if(labels == 'up') {
-					tickY += this.textSize * (1 + this.lineGap * 1.5);
+					tickY += this.textSize * (1 + this.lineGap * this.LINEGAP_RATIO) + 
+							((!value.major)? this.tickLength * (1 - this.minorLength): 0) - 0.5;
 				}
-				this.drawLine(tickX, tickY, tickX, tickY + this.tickLength, this.foreColor, svgToDraw);
+				this.drawLine(tickX, tickY, tickX, tickY + this.tickLength * ((!value.major)? this.minorLength: 1), this.foreColor, svgToDraw);
 
-				if(tickX > this.MIN_TICK_TEXT_MARGIN 
+				if(value.major && tickX > this.MIN_TICK_TEXT_MARGIN 
 					&& tickX < this.windowWidth - this.MIN_TICK_TEXT_MARGIN 
 					&& (labels == 'up' || labels == 'down')) {
 						// add text label for the tick
@@ -165,9 +173,13 @@
 				}
 				
 			}, this);
+			// then draw a line connecting all the ticks
+			this.drawLine(0, labels == 'up'? this.trackHeight - 0.5: 0.5, this.windowWidth, 
+							labels == 'up'? this.trackHeight - 0.5: 0.5, this.foreColor, svgToDraw);
+			
 			if(labels === 'up' || labels === 'down') {
 				this.drawText(this.textMargin? this.textMargin: 0, 
-							  ((labels == 'up')? 0: this.lineGap * this.textSize + this.tickLength) + 0.5 * this.textSize,
+							  ((labels == 'up')? 0.5: this.lineGap * this.LINEGAP_RATIO * this.textSize + this.tickLength) + 0.5 * this.textSize,
 							  windowToDraw.chr, this.textMargin? 'end': 'start', null, 
 							  this.textMargin? this.textSvg: this.mainSvg);
 			}
@@ -177,7 +189,7 @@
 			if(!Polymer.dom(svgToDraw).querySelector(".pointerHandler")) {
 				var newRegion = this.createRawRectangle(0, 0, this.windowWidth, this.trackHeight);
 				newRegion.setAttributeNS(null, "fill", "none");
-				newRegion.setAttributeNS(null, "class", "pointerHandler");
+				newRegion.setAttribute('class', "pointerHandler");
 				
 				Polymer.dom(svgToDraw).appendChild(newRegion);
 			}
@@ -199,6 +211,7 @@
 						this.dragData.svgNode = this.mainSvg;
 						this.dragData.oldWindow = this.dragData.svgNode.viewWindow.clone();
 						this.dragData.ratio = -1 / parseFloat(this.windowWidth);
+						window.getSelection().removeAllRanges();
 					} catch(err) {
 						console.log(err);
 					}
@@ -207,8 +220,14 @@
 					// update track coordinates on the fly
 					// also update window text
 					if(this.dragData) {
-						this.setViewWindowString(this.dragData.oldWindow.getShift(
-							detail.dx * this.dragData.ratio, true, this.track.species).regionToString(false));
+						this.fire('update-window', { 
+									windowIndex: this.windowIndex,
+									newWindow: this.dragData.oldWindow.getShift(
+												detail.dx * this.dragData.ratio, true, 
+												this.track.species).regionToString(false),
+						});
+						//this.setViewWindowString(this.dragData.oldWindow.getShift(
+						//	detail.dx * this.dragData.ratio, true, this.track.species).regionToString(false));
 					}
 					break;
 				case 'end':
@@ -216,14 +235,21 @@
 					e.target.classList.remove('grabbing');
 					Polymer.dom.flush();
 					delete(this.dragData);
+					window.getSelection().removeAllRanges();
 					break;
 			}
 		},
 		
 		wheelHandler: function(e, detail) {
 			var diff = e.deltaY / 100 * this.scrollPercentage;
-			this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
-				diff, this.revTransXCoordinate(e.x).coor, true, this.track.species).regionToString(false));
+			this.fire('update-window', { 
+						windowIndex: this.windowIndex,
+						newWindow: this.mainSvg.viewWindow.getExtension(
+									diff, this.revTransXCoordinate(e.screenX - e.target.getBoundingClientRect().left).coor, 
+									true, this.track.species).regionToString(false),
+			});
+			//this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
+			//	diff, this.revTransXCoordinate(e.x).coor, true, this.track.species).regionToString(false));
 			// svgTarget.needsUpdate = true;
 			//this.updateChart(50);			
 		},
