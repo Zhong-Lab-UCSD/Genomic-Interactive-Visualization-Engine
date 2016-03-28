@@ -47,6 +47,8 @@
     "paper-scroll-header-panel": "PolymerElements/paper-scroll-header-panel#^1.0.0",
     "paper-toolbar": "PolymerElements/paper-toolbar#^1.0.0",
     "paper-card": "PolymerElements/paper-card#^1.1.1",
-    "iron-pages": "PolymerElements/iron-pages#^1.0.0"
+    "iron-pages": "PolymerElements/iron-pages#^1.0.0",
+    "paper-dialog": "PolymerElements/paper-dialog#^1.0.0",
+    "paper-dialog-scrollable": "PolymerElements/paper-dialog-scrollable#^1.0.0"
   }
 }

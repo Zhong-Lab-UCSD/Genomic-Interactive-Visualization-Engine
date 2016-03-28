@@ -218,6 +218,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </template>
       </demo-snippet>
 
+      <h3>
+        Use <code>autoselect</code> to enable automatic tab selection.
+      </h3>
+      <demo-snippet>
+        <template>
+          <paper-tabs selected="0" autoselect>
+            <paper-tab>ITEM ONE</paper-tab>
+            <paper-tab>ITEM TWO</paper-tab>
+            <paper-tab>ITEM THREE</paper-tab>
+          </paper-tabs>
+        </template>
+      </demo-snippet>
+
+      <h3>
+        Use <code>autoselect-delay</code> to adjust the delay between the last
+        keyup event and when the tab is automatically selected (when
+        <code>autoselect</code> is true).
+      </h3>
+      <demo-snippet>
+        <template>
+          <h4>
+            <code>autoselect-delay="0"</code>
+          </h4>
+          <paper-tabs selected="0" no-slide autoselect autoselect-delay="0">
+            <paper-tab>ITEM ONE</paper-tab>
+            <paper-tab>ITEM TWO</paper-tab>
+            <paper-tab>ITEM THREE</paper-tab>
+          </paper-tabs>
+
+          <h4>
+            <code>autoselect-delay="1000"</code>
+          </h4>
+          <paper-tabs selected="0" autoselect autoselect-delay="1000">
+            <paper-tab>ITEM ONE</paper-tab>
+            <paper-tab>ITEM TWO</paper-tab>
+            <paper-tab>ITEM THREE</paper-tab>
+          </paper-tabs>
+        </template>
+      </demo-snippet>
+
       <!--
       Nested templates are not supported in IE, meaning they can't be used in a
       demo-snippet. See Polymer/polymer#2495 for more details.

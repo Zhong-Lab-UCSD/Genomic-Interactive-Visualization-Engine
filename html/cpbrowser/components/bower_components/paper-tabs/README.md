@@ -89,6 +89,7 @@ The following custom properties and mixins are available for styling:
 | Custom property | Description | Default |
 | --- | --- | --- |
 | `--paper-tabs-selection-bar-color` | Color for the selection bar | `--paper-yellow-a100` |
+| `--paper-tabs-selection-bar` | Mixin applied to the selection bar | {} |
 | `--paper-tabs` | Mixin applied to the tabs | `{}` |
 
 
