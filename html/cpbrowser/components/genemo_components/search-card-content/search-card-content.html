@@ -116,9 +116,12 @@
 			},
 			
 			sampleFile: {
-				type: String,
-				value: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
-				readOnly: true
+				type: Object,
+				value: {
+					mm9: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
+					hg19: "http://www.genemo.org/sample/wgEncodeEH000987_1.bigWig",
+				},
+				readOnly: true,
 			},
 			
 			sampleRef: {
@@ -294,8 +297,15 @@
 		},
                     
 		fillSampleHandler: function() {
-			this.InputUrl = this.sampleFile;
-			this.currentRef = this.sampleRef;
+			if(!this.currentRef) {
+				this.fire("alert", {msg: 'No reference is selected. Please select a reference before using the provided sample.'});
+				return;
+			}
+			if(!this.sampleFile[this.currentRef]) {
+				this.fire("alert", {msg: 'No sample file is available for the selected reference.'});
+				return;
+			}
+			this.InputUrl = this.sampleFile[this.currentRef];
 		},
 		
 		submitForm: function() {

@@ -23,6 +23,12 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
 }
 extend(ChrRegion, ChrRegionToShow);
 
+ChrRegionToShow.prototype.regionToBED = function(includeStrand) {
+	return this.chr + '\t' + this.start + '\t' + this.end + '\t' +
+			(this.name? this.name: (this.trackString? this.trackString: '.')) + 
+			(includeStrand? '\t0\t' + (!this.strand? '-': '+'): '');
+};
+
 ChrRegionToShow.prototype.extendedRegionToString = function(includeStrand) {
 	// default is including strand
 	if (includeStrand == null) {
@@ -187,6 +193,11 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
             
             if (currRegion.data.hasOwnProperty('track')) {
                 // provide selection for filtering out all the tracks
+				if(currRegion.data.hasOwnProperty('score')) {
+					currRegion.trackString = 'Score=' + parseFloat(currRegion.data.score).toFixed(2) + ';Tracks=';
+				} else {
+					currRegion.trackString = 'Tracks=';
+				}
                 cell.append('<br>');
                 if (typeof(currRegion.data.track) === 'string') {
                     currRegion.data.track = [currRegion.data.track];
@@ -219,8 +230,10 @@ Region.prototype.writeDOM = function(spcArray, cmnTracksEncode, updateNavFunc, c
 							if(iTracks > 0) {
 								trackListDiv.append('<br>');
 							}
-							trackListDiv.append(revLookupTrack.writeLongString());
+							trackListDiv.append(revLookupTrack.writeLongString(genemoIsOn? spcArray[i].db: null));
 							currListedTrack[revLookupTrack.id] = true;
+							currRegion.trackString += (iTracks? ',': '') + 
+								revLookupTrack.writeLongString(genemoIsOn? spcArray[i].db: null).replace(/\s+/g, '');
 						}
 					} else {
 						console.log('Error: ' + trackTableName + ' cannot be reverse looked up.');

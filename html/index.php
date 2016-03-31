@@ -62,6 +62,7 @@
 <script type="text/javascript" src="cpbrowser/js/languagechange.js"></script>
 <link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
 <link rel="import" href="cpbrowser/components/genemo_components/meta-entries/meta-entries.html">
+<link rel="import" href="cpbrowser/components/genemo_components/cell-line-info-card/cell-line-info-card.html">
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-track-filter/genemo-track-filter.html">
@@ -695,6 +696,11 @@ function filterTracksFromList(map, flags) {
 	}
 }
 
+function showMetaInfo(term) {
+	document.querySelector('cell-line-info-card').generateDialog(encodeMeta, 
+		term, spcArray[spcArray.map[document.querySelector('#searchCard').currentRef]].commonName);
+}
+
 $(document).ready( function () {
 
 	<?php echo $genemoOn? "": "UI.initNavSidebar();"; ?>
@@ -1096,5 +1102,6 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
   <br class="clearfloat" />
   <!-- end #container --> 
 </div>
+<cell-line-info-card></cell-line-info-card>
 </body>
 </html>

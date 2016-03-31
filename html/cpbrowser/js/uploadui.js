@@ -284,6 +284,18 @@ function uploadUiHandler(data) {
 	$("#genelistContentHolder").html('');
 	var hasError = false;
 	
+	var querycard = document.querySelector('#searchCard');
+	
+	var fileToCalc = querycard.InputFile;
+	var urlFileInput = querycard.InputUrl;
+	var inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
+		: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1))), inputFileNameStem;
+	if(inputFileName.lastIndexOf('.') >= 0) {
+		inputFileNameStem = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
+	} else {
+		inputFileNameStem = inputFileName;
+	}
+
 	var geneListRaw;
 	try {
 		try {
@@ -307,11 +319,12 @@ function uploadUiHandler(data) {
 			if(bedFileLink !== null) {
 				window.URL.revokeObjectURL(bedFileLink);
 			}
-			var BEDdata = new Blob([writeGeneListBED(geneList, spcArray)], {type: 'text/plain'});
+			var BEDdata = new Blob(['#sourceFile=' + (urlFileInput? urlFileInput: inputFileName) + '\n' +
+									writeGeneListBED(geneList, spcArray)], {type: 'text/plain'});
 			bedFileLink = window.URL.createObjectURL(BEDdata);
 			$('#bedDownloadHolder').show();
 			document.querySelector('#bedDownloadLink').href = bedFileLink;
-			document.querySelector('#bedDownloadLink').download = 'result.bed';
+			document.querySelector('#bedDownloadLink').download = inputFileNameStem + '_result.bed';
 		}
 		
 	} catch(e) {

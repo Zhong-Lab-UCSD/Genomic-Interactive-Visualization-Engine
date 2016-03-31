@@ -324,6 +324,11 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	margin-right: 0px;
 	margin-left: 30px;
 }
+.codes {
+	font-family: Consolas, "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	background: #bdbdbd;
+}
+
 .inlineImage {
 	font-size: 12px;
 	font-family: 'Roboto', Arial, Helvetica, sans-serif;

@@ -494,6 +494,12 @@ CmnTrackEncode.prototype.writeTable = function() {
 	return result;
 };
 
+CmnTrack.prototype.getSpcInfoTable = function(DB) {
+	var arr = this.getSpcInfoArray(DB);
+	arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	return "<td>" + arr.join("</td>\n<td>") + "</td>";
+};
+
 CmnTrackEncode.prototype.writeSpcUniTable = function(DB) {
 	// write unique table for the species
 	// label, checkbox and title
@@ -519,8 +525,11 @@ CmnTrackEncode.prototype.writeSpcUniTable = function(DB) {
 	return result;
 };
 
-CmnTrackEncode.prototype.writeLongString = function() {
-	return this.title + ' - ' + this.getInfoString();
+CmnTrackEncode.prototype.writeLongString = function(db) {
+	if(!db) {
+		return this.title + ' - ' + this.getInfoString();
+	}
+	return this.title + ' - ' + this.getSpcInfoString(db);
 };
 
 
@@ -902,6 +911,12 @@ UniTrackEncode.prototype.getSampleType = function() {
 	// extract sampleType from this.info
 	// maybe needs to be called in constructor
 	return this.sample;
+};
+
+UniTrackEncode.prototype.getInfoTable = function() {
+	var arr = this.getInfoArray();
+	arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	return "<td>" + arr.join("</td>\n<td>") + "</td>";
 };
 
 UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
