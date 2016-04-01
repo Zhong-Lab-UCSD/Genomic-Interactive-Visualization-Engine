@@ -97,8 +97,8 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"----"},
 "Threshold":{"en":"Threshold (# of reads / 1Mbp)",
          "zh":"----"},
-"Optional Email":{"en":"<paper-input id=\"returnEmail\" class=\"fullWidth\" label=\"(Optional) Your email address\" floatingLabel=\"true\" value=\"{{UserEmail}}\"></paper-input>",
-         "zh":"<paper-input id=\"returnEmail\" class=\"fullWidth\" label=\"(Optional) chinese stuff\" floatingLabel=\"true\" value=\"{{UserEmail}}\"></paper-input>"},
+"returnEmail":{"en":"(Optional) Display file URL",
+         "zh":"Chinese stuff"},
 "":{"en":"",
          "zh":"----"},
 "":{"en":"",
@@ -107,7 +107,7 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"----"},
 		 
 }
-
+//use x[i].tagName
 function setTexts(language){
 
 var x=document.querySelectorAll('.text');
@@ -117,7 +117,10 @@ var x=document.querySelectorAll('.text');
 //var keys2 = Object.keys(x);
 
 for (i=0;i<x.length;i++){
+	if (x[i].tagName=="SPAN")
 	x[i].innerHTML=json[x[i].id][language];
+	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="PAPER-INPUT")
+		x[i].label=json[x[i].id][language];
 	/*for (j=0;j<keys.length;j++){
 		if (x[i]==keys[j]())
 			x[i].innerHTML=y[j][language];
