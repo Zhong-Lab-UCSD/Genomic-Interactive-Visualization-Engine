@@ -1,46 +1,4 @@
-﻿<?php
-	require_once (realpath(dirname(__FILE__) . '/../includes/common_func.php'));	
-	require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
-	
-	if(strpos(getenv('SERVER_NAME'), 'singlecell') !== false) {
-		// is single cell, redirect to singlecell.php
-		header("HTTP/1.1 301 Moved Permanently"); 
-		header("Location: ./singlecell.php"); 
-		exit();
-	}
-	
-	$res = initialize_session();
-	$encodeOn = $res['encodeOn'];
-	$in_debug = $res['in_debug'];
-	$genemoOn = $res['genemoOn'];
-	
-	if($res['experimental']) {
-		$experimentalFeatures = true;
-	}
-	unset($res);
-	
-	$isResuming = false;
-	if(isset($_REQUEST['sessionID'])) {
-		// this is to recover an old session
-		// went to database to make sure this is a correct sessionID
-		$mysqli = connectCPB();
-		$stmt = $mysqli->prepare("SELECT * FROM `userInput` WHERE `id` = ?");
-		$sessionID = trim($_REQUEST['sessionID']);
-		$stmt->bind_param('s', $sessionID);
-		$stmt->execute();
-		$sessionresult = $stmt->get_result();
-		if($sessionresult->num_rows > 0) {
-			$sessionInfo = $sessionresult->fetch_assoc();
-			$sessionresult->free();
-			$isResuming = true;
-		} else {
-			$sessionError = "Invalid address or address expired.";
-		}
-		$stmt->close();
-		$mysqli->close();
-	}
-?>
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <link href='//fonts.googleapis.com/css?family=Roboto:400,400italic,500,700italic,700' rel='stylesheet' type='text/css'>
@@ -66,9 +24,6 @@
 <link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-track-filter/genemo-track-filter.html">
-<?php if(isset($experimentalFeatures)) { ?>
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
-<?php } ?>
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-styles.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
@@ -99,53 +54,40 @@ paper-button#manualBtn {
 var UI = new UIObject(window);
 
 var genemoIsOn = false;
-<?php 
-if($genemoOn) {
-?>
 genemoIsOn = true;
 var cellLineMap = {};
 var tissueMap = {}
 var labMap = {};
 var expMap = {};
-<?php
-}
-?>
 
 var spcArray = new Array();		// this will be the array of species (Species Object)
 spcArray.map = new Object();
 spcArray.activeNumber = 0;
 
-    <?php
-	$mysqli = connectCPB();
-	// TODO: need to do something about the species here
-	// first connect to database and find the number of species
-	$species = $mysqli->query("SELECT * FROM species");
-	$spcinfo = array();
-	while($spcitor = $species->fetch_assoc()) {
-		// get all the species ready
-		//	if(isset($_REQUEST[$spcitor["dbname"]])) { should use this later
-		$spcinfo[] = $spcitor;
-	}
-	$num_spc = sizeof($spcinfo);
-	for($i = 0; $i < $num_spc; $i++) {
-		?>
-spcArray.push(new Species("<?php echo $spcinfo[$i]["dbname"]; ?>", 
-	"<?php echo $spcinfo[$i]["name"]; ?>", "<?php echo $spcinfo[$i]["commonname"]; ?>",
-	<?php echo ($spcinfo[$i]["encode"]? "true": "false"); ?>));
-spcArray.map["<?php echo $spcinfo[$i]["dbname"]; ?>"] = <?php echo $i; ?>;
-<?php 
-		if($genemoOn) {
-?>
-cellLineMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
-tissueMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
-labMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
-expMap["<?php echo $spcinfo[$i]["dbname"]; ?>"] = {};
-<?php 
-		}
-	}
-	$species->free();
-	$mysqli->close();
-		?>
+    spcArray.push(new Species("hg19", 
+	"Homo sapiens", "human",
+	true));
+spcArray.map["hg19"] = 0;
+cellLineMap["hg19"] = {};
+tissueMap["hg19"] = {};
+labMap["hg19"] = {};
+expMap["hg19"] = {};
+spcArray.push(new Species("mm9", 
+	"Mus musculus", "mouse",
+	true));
+spcArray.map["mm9"] = 1;
+cellLineMap["mm9"] = {};
+tissueMap["mm9"] = {};
+labMap["mm9"] = {};
+expMap["mm9"] = {};
+spcArray.push(new Species("susScr2", 
+	"Sus scrofa", "pig",
+	false));
+spcArray.map["susScr2"] = 2;
+cellLineMap["susScr2"] = {};
+tissueMap["susScr2"] = {};
+labMap["susScr2"] = {};
+expMap["susScr2"] = {};
 
 var cmnTracks = new TrackBundle();	// this will be holding common tracks (CmnTrack Object)
 
@@ -197,8 +139,8 @@ var isInDownload = false;
 var isInBrowser = false;
 var tracksInitialized = false;
 
-var isEncodeOn = <?php echo ($encodeOn? 'true': 'false'); ?>;			// Switch this to on to make ENCODE data as default, 
-var cpbrowserURL = 'cpbrowser/cpbrowser.php<?php echo ($encodeOn? '?Encode=XCEncode': ''); ?>';
+var isEncodeOn = true;			// Switch this to on to make ENCODE data as default, 
+var cpbrowserURL = 'cpbrowser/cpbrowser.php?Encode=XCEncode';
 
 var encodeMeta = null;
 var bedFileLink = null;
@@ -218,7 +160,7 @@ function validate_form_searchregion() {
 	//		}
 			postdata[field.name] = field.value;
 			});
-		$.post("regionsearch.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, function (data) {
+		$.post("regionsearch.php", postdata, function (data) {
 			$("#contentHolder").html(data);
 		});
 		return false;
@@ -423,7 +365,7 @@ function validate_form_genequery(postdata) {
 	$('#genelistLoading').removeClass('BoxHide');
 	trackUpdatedCallback.data = event;
 	trackUpdatedCallback.func = function(eventData) {
-		$.post("cpbrowser/genelist.php<?php echo $in_debug? "?Debug=XCDebug": ""; ?>", postdata, regionUiHandler);
+		$.post("cpbrowser/genelist.php", postdata, regionUiHandler);
 	};
 	updateTracks(false);
 	return false;
@@ -703,8 +645,7 @@ function showMetaInfo(term) {
 
 $(document).ready( function () {
 
-	<?php echo $genemoOn? "": "UI.initNavSidebar();"; ?>
-	resize_tbody();
+		resize_tbody();
 	
 	jQuery(function() {
 		jQuery(".geneNameInsert").hide();
@@ -773,61 +714,27 @@ window.addEventListener("WebComponentsReady", function(e) {
 	document.addEventListener('filter-tracks', function(e) { filterTracksFromList(e.detail.map, e.detail.flags);} );
 	
 	toggleEncode();
-<?php
-	// this is loading part
-	if($isResuming) {
-?>
-	var sessionObj = new Object();
-	sessionObj.id = '<?php echo $sessionInfo['id']; ?>';
-	sessionObj.db = '<?php echo $sessionInfo['db']; ?>';
-	sessionObj.list = '<?php echo $sessionInfo['selected_tracks']; ?>';
-	sessionObj.urlToShow = '<?php echo $sessionInfo['display_file_url']; ?>';
-	sessionObj.originalFile = '<?php echo ($sessionInfo['original_file_name']? $sessionInfo['original_file_name']: basename($sessionInfo['display_file_url'])); ?>';
-	sessionObj.hasDisplay = <?php echo ((strpos($sessionInfo['display_file_url'], $sessionInfo['id']) !== false) || (strpos($sessionInfo['display_file_url'], $sessionInfo['original_file_name']) !== false))? 'false': 'true'; ?>;
-	
-	fireCoreSignal('updatecontent', {sessionObj: sessionObj});
-	
-	for(var i = 0; i < spcArray.length; i++) {
-		spcArray[i].isActive = (spcArray[i].db == sessionObj.db);
-	}
-	spcArray.updateAllSpcActiveNum();
-	
-	trackUpdatedCallback.func = loadResults;
-	trackUpdatedCallback.data = sessionObj;
-<?php		
-	} elseif(isset($sessionError)) {
-?>
-	trackUpdatedCallback.func = function(data) { UI.alert.call(UI, data); };
-	trackUpdatedCallback.data = '<?php echo $sessionError; ?>';
-<?php		
-	}
-?>
 });
 
 </script>
 </head>
-<body unresolved class="<?php echo $genemoOn? "firstIndex": "twoColLiqLt"; ?>" onresize="resize_tbody();">
-<?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
-<div id="container">
+<body unresolved class="firstIndex" onresize="resize_tbody();">
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-3695776-8', 'auto');
+  ga('send', 'pageview');
+
+</script><div id="container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
-      <?php if(!isset($experimentalFeatures)) { ?>
-    <genemo-card collapse-group='query-search'>
-      <?php } else { ?>
-    <genemo-tab-cards collapse-group='query-search' id='tabPages' selected-tab='<?php echo $genemoOn? 0: 1; ?>'>
-      <?php }
-		    if($genemoOn) { ?>
-      <search-card-content class='tabContent GenemoBody' id='searchCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </search-card-content>
-      <?php }
-		    if($genemoOn === isset($experimentalFeatures)) { ?>
-      <query-card-content class='tabContent GenemoBody' id='queryCard' is-encode-on='<?php echo $encodeOn? "true": "false"; ?>'> </query-card-content>
-      <?php }
-		    if(isset($experimentalFeatures)) { ?>
-    </genemo-tab-cards>
-      <?php } else { ?>
-    </genemo-card>
-      <?php } ?>
-    <div style="display: none;">
+          <genemo-card collapse-group='query-search'>
+            <search-card-content class='tabContent GenemoBody' id='searchCard' is-encode-on='true'> </search-card-content>
+          </genemo-card>
+          <div style="display: none;">
       <iframe style="display: none;" name="uploadFileHolder" id="uploadFileHolder"></iframe>
     </div>
     <div class="header" id="genelistHeader" onclick="togglePanel('genelist', false);"> <span class="tableHeader"><span class="headerIndicator" id="genelistIndicator">[-]</span><span class="text" id="Results Panel Name"> Results</span></span><div style="float: right; display: none" id="bedDownloadHolder">[<a id="bedDownloadLink" target="_blank">Export BED file</a>]</div></div>
@@ -987,19 +894,13 @@ window.addEventListener("WebComponentsReady", function(e) {
         <div id="uniqueEncodeHolder"></div>
       </div>
       <div style="display: none;">
-        <?php
-	for($i = 0; $i < $num_spc; $i++) {
-		
-?>
-        <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
-         name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . requestSpeciesHgsID($spcinfo[$i]["dbname"]) . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on" . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
-	  ?>"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
-        <?php
-	}
-	$_SESSION['resetView'] = false;
-		?>
-      </div>
+                <iframe onload="setTrackReady(0);" id="hg19_controls" 
+         name="hg19_controls" src="/cgi-bin/hgTracks?clade=mammal&org=human&db=hg19&Submit=submit&hgsid=39019&showEncode=on&hgControlOnly=on"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
+                <iframe onload="setTrackReady(1);" id="mm9_controls" 
+         name="mm9_controls" src="/cgi-bin/hgTracks?clade=mammal&org=mouse&db=mm9&Submit=submit&hgsid=39017&showEncode=on&hgControlOnly=on"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
+                <iframe onload="setTrackReady(2);" id="susScr2_controls" 
+         name="susScr2_controls" src="/cgi-bin/hgTracks?clade=mammal&org=pig&db=susScr2&Submit=submit&hgsid=39018&showEncode=on&hgControlOnly=on"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
+              </div>
     </div>
     <div class="header buttons" style="float: right;" onclick="updateTracks(); hideWindow('trackSelect');"><span class="text" id="Update">Update</span></div>
     <div class="header buttons" style="float: right;" onclick="resetTracks();"><span class="text" id="Reset View">Reset view</span></div>
@@ -1023,30 +924,7 @@ window.addEventListener("WebComponentsReady", function(e) {
     </div>
     <div id="downloadContent" style="padding: 4px;"></div>
   </div>
-  <?php
-		if((!isset($_COOKIE['NoTipTrackSettings']) || $_COOKIE['NoTipTrackSettings'] != 'true') && !$genemoOn) {
-?>
-  <script type="text/javascript">
-function hideTrackHint() {
-	//$.post('cpbrowser/postcookie.php', { varName: 'NoTipTrackSettings', value: 'false' } );
-	$('#trackSelectHint').fadeOut('fast');
-}
-function hideTrackHintForever() {
-	$.post('cpbrowser/postcookie.php', { varName: 'NoTipTrackSettings', value: 'true' } );
-	$('#trackSelectHint').fadeOut('fast');
-}
-//setTimeout("$('#trackSelectHint').fadeOut('fast')", 7500);
-</script>
-  <div id="trackSelectHint" style="z-index: 20; width: 250px; display: block; padding: 5px; font-family: Verdana, Arial, Helvetica, sans-serif;
-font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClass"><span class="text" id="Hint"> Hint: tracks can be turned on / off via the <span class="panel">track selection</span> panel, click button on the left to show.</span>
-    <div class="header buttons" style="float: right; margin-top: 5px;" onclick="hideTrackHintForever();"><span class="text" id="Do not show">Do not show in the future</span></div>
-    <div class="header buttons" style="float: left; margin-top: 5px;" onclick="hideTrackHint();"><span class="text" id="Close">Close</span></div>
-    <div style="clear: both"></div>
-  </div>
-  <?php
-		}
-?>
-  <div style="display: none;" id="uniqueTemplate">
+    <div style="display: none;" id="uniqueTemplate">
     <div class="speciesTrackHeader"><span class="text" id="Species Common Name">spcCmnName</span></div>
     <div class="trackHolder" id="spcDbNameTableHolder"></div>
   </div>
