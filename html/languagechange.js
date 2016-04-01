@@ -97,8 +97,8 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"----"},
 "Threshold":{"en":"Threshold (# of reads / 1Mbp)",
          "zh":"----"},
-"":{"en":"",
-         "zh":"----"},
+"Optional Email":{"en":"<paper-input id=\"returnEmail\" class=\"fullWidth\" label=\"(Optional) Your email address\" floatingLabel=\"true\" value=\"{{UserEmail}}\"></paper-input>",
+         "zh":"<paper-input id=\"returnEmail\" class=\"fullWidth\" label=\"(Optional) chinese stuff\" floatingLabel=\"true\" value=\"{{UserEmail}}\"></paper-input>"},
 "":{"en":"",
          "zh":"----"},
 "":{"en":"",
@@ -110,7 +110,7 @@ var json = {"Results Panel Name":{"en":" Results",
 
 function setTexts(language){
 
-var x=Polymer.dom(document).querySelectorAll('.text');
+var x=document.querySelectorAll('.text');
 
 
 //var keys = Object.keys(json);
