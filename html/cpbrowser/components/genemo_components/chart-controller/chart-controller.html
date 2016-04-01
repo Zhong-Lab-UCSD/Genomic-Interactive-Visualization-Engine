@@ -50,14 +50,14 @@
     <paper-drawer-panel>
       <div main>
         <div id='chartHolder'></div>
-        <h2><strong><div id="Data References" class="text">Data References</div></strong></h2>
-        <p><div id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</div></p>
+        <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
+        <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
       </div>
       <div drawer style="height: auto;">
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
         <div>
-          <div class="smallText">Threshold (# of reads / 1Mbp)</div>
+          <div class="smallText"><span id="Threshold" class="text">Threshold (# of reads / 1Mbp)</span></div>
           <paper-slider value="{{threshold}}" max="1000" step="0.1" editable></paper-slider>
         </div>
         <div>

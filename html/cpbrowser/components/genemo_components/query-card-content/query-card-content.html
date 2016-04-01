@@ -113,8 +113,8 @@
 	</style>
     <iron-signals on-iron-signal-toggle="signalToggle" on-iron-signal-disable="signalDisabled" on-iron-signal-encodecheck="signalEncodeCheck"></iron-signals>
     <paper-radio-group selected="{{geneRegionSelection}}">
-      <paper-radio-button name="gene"><div id="Gene" class="text">Gene</div></paper-radio-button>
-      <paper-radio-button name="region"><div id="Region for" class="text">Region for</div></paper-radio-button>
+      <paper-radio-button name="gene"><span id="Gene" class="text">Gene</span></paper-radio-button>
+      <paper-radio-button name="region"><span id="Region for" class="text">Region for</span></paper-radio-button>
     </paper-radio-group>
     <paper-dropdown-menu id="spcDropDownMenu" disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined" no-label-float noink>
       <paper-menu class="dropdown-content" selected="{{spcCoorSelection}}" attr-for-selected="value">
@@ -140,7 +140,7 @@
     </div>
     <iron-ajax id="partialNameAjax" url="jsongenename.php" handle-as="json" on-response="updatePartialQuery" debounce-duration="300" method="POST"></iron-ajax>
     <paper-material id="speciesTable" class="vertMargined" elevation="1">
-      <div class="anno fullWidth"><div id="Species to compare" class="text"> Species to compare: </div></div>
+      <div class="anno fullWidth"><span id="Species to compare" class="text"> Species to compare: </span></div>
       <template is="dom-repeat" items="[[species]]">
         <div id="[[computeCheckboxWrapper(item.db)]]">
           <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]" disabled$="[[item.checkDisabled]]" on-change="speciesCheckHandler">
