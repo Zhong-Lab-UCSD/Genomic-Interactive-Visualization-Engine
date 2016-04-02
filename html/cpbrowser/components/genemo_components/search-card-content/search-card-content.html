@@ -58,7 +58,7 @@
     <div class="vertMargined">
       <div class="vertTextBottomContainer clearFix">
         <div><span id = "Reference" class="text">Reference: </span></div>
-        <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined" no-label-float>
+        <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined text" no-label-float>
           <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
             <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
               <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
@@ -67,7 +67,7 @@
         </paper-dropdown-menu>
         <paper-button id="fillSample" class="rightFloat vertMargined sampleButton" noink raised on-tap="fillSampleHandler"><span id="Use sample" class="text">Use sample</span></paper-button>
       </div>
-      <paper-input id="urlFileInput" class="fullWidth" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
+      <paper-input id="urlFileInput" class="fullWidth text" label="URL for data file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
       <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
       <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
       <paper-tooltip position="bottom" class="fullWidth" offset="-1">
@@ -87,7 +87,7 @@
       </paper-tooltip>
     </div>
     <div>
-      <paper-input id="searchRangeInput" class="fullWidth" label="(Optional) Search range" floatingLabel="true" value="{{SearchRange}}"></paper-input>
+      <paper-input id="searchRangeInput" class="fullWidth text" label="(Optional) Search range" floatingLabel="true" value="{{SearchRange}}"></paper-input>
       <paper-tooltip class="fullWidth" position="top" offset="0">
         <span id = "Search Range" class="text">You can also specify the range to limit the search results to a certain genome location.</span>
       </paper-tooltip>
