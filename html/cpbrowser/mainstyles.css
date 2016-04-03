@@ -326,7 +326,7 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 }
 .codes {
 	font-family: Consolas, "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
-	background: #bdbdbd;
+	background: #eaeaea;
 }
 
 .inlineImage {
@@ -1142,4 +1142,15 @@ paper-tooltip::shadow #tooltip {
 	width: auto;
 	margin-left: 25px;
 	margin-right: 10px;
+}
+
+.metaLink {
+	border-bottom: 1px dotted;
+	cursor: pointer;
+}
+
+.metaLink::after {
+	content: " (?)";
+	vertical-align: text-bottom;
+	font-size: 0.8em;
 }

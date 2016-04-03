@@ -288,8 +288,13 @@ function uploadUiHandler(data) {
 	
 	var fileToCalc = querycard.InputFile;
 	var urlFileInput = querycard.InputUrl;
-	var inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
-		: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1))), inputFileNameStem;
+	var inputFileName, inputFileNameStem;
+	if((fileToCalc && fileToCalc.name) || urlFileInput) {
+		inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
+			: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1)));
+	} else if(window.originalFile) {
+		inputFileName = window.originalFile;
+	}
 	if(inputFileName.lastIndexOf('.') >= 0) {
 		inputFileNameStem = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
 	} else {
@@ -341,6 +346,7 @@ function loadResults(sessionObj) {
 	loadQuery = new Object();
 	loadQuery.id = sessionObj.id;
 	loadQuery.species = sessionObj.db;
+	window.originalFile = sessionObj.originalFile;
 	
 	$('#peakFileHolder').text('[' + sessionObj.db + '] Display file: ' + sessionObj.originalFile);
 	$('#peakFileHolder').show();

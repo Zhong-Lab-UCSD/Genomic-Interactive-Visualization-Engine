@@ -494,9 +494,11 @@ CmnTrackEncode.prototype.writeTable = function() {
 	return result;
 };
 
-CmnTrack.prototype.getSpcInfoTable = function(DB) {
+CmnTrackEncode.prototype.getSpcInfoTable = function(DB) {
 	var arr = this.getSpcInfoArray(DB);
-	arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	if(genemoIsOn) {
+		arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	}
 	return "<td>" + arr.join("</td>\n<td>") + "</td>";
 };
 
@@ -523,6 +525,14 @@ CmnTrackEncode.prototype.writeSpcUniTable = function(DB) {
 	result += '</td>\n';
 	
 	return result;
+};
+
+CmnTrackEncode.prototype.getSpcInfoString = function(DB) {
+	var arr = this.getSpcInfoArray(DB);
+	if(genemoIsOn) {
+		arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	}
+	return arr.join(" - ");
 };
 
 CmnTrackEncode.prototype.writeLongString = function(db) {
@@ -915,8 +925,18 @@ UniTrackEncode.prototype.getSampleType = function() {
 
 UniTrackEncode.prototype.getInfoTable = function() {
 	var arr = this.getInfoArray();
-	arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	if(genemoIsOn) {
+		arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	}
 	return "<td>" + arr.join("</td>\n<td>") + "</td>";
+};
+
+UniTrackEncode.prototype.getInfoString = function() {
+	var arr = this.getInfoArray();
+	if(genemoIsOn) {
+		arr[0] = '<span class="metaLink" onclick="showMetaInfo(\'' + arr[0] + '\');">' + arr[0] + '</span>';
+	}
+	return arr.join(" - ");
 };
 
 UniTrackEncode.prototype.writeTable = function(speciesCmnName) {
