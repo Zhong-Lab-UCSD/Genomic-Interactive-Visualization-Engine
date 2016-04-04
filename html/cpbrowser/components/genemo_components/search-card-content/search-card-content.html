@@ -118,8 +118,13 @@
 			sampleFile: {
 				type: Object,
 				value: {
-					mm9: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
-					hg19: "http://www.genemo.org/sample/wgEncodeEH000987_1.bigWig",
+					mm9:  {
+						file: "http://www.genemo.org/sample/wgEncodeEM001954.txt",
+					},
+					hg19: {
+						file: "http://www.genemo.org/sample/wgEncodeEH000987_1.bigWig",
+						range: "chr10:1-135534747",
+					},
 				},
 				readOnly: true,
 			},
@@ -305,7 +310,10 @@
 				this.fire("alert", {msg: 'No sample file is available for the selected reference.'});
 				return;
 			}
-			this.InputUrl = this.sampleFile[this.currentRef];
+			this.InputUrl = this.sampleFile[this.currentRef].file;
+			if(this.sampleFile[this.currentRef].range) {
+				this.SearchRange = this.sampleFile[this.currentRef].range;
+			}
 		},
 		
 		submitForm: function() {

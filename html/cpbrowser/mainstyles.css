@@ -515,10 +515,10 @@ a:visited {
 }
 .settingsNormal {
 	font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
-	font-size: 12px;
+	font-size: 14px;
 	font-weight: normal;
 	padding: 4px 16px 0px 16px;
-	line-height: 17px;
+	line-height: 19px;
 }
 .trackHolder {
 	margin: 0px 4px;

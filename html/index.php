@@ -983,7 +983,7 @@ window.addEventListener("WebComponentsReady", function(e) {
         </div>
       </div>
       <div class="subBox ENCODETracks">
-        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span><span class="text" id="Unique encode"> Unique tracks from ENCODE</span></div>
+        <div class="subHeader" onclick="toggleSubPanel('uniqueEncode', false);"> <span class="headerIndicator" id="uniqueEncodeIndicator">[-]</span><span class="text" id="Unique encode"> <?php echo $genemoOn? "ENCODE tracks": "Unique tracks from ENCODE" ?></span></div>
         <div id="uniqueEncodeHolder"></div>
       </div>
       <div style="display: none;">

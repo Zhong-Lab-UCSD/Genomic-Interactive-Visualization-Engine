@@ -153,7 +153,7 @@ Search</span> to initialize your search.</p>
   <li>Use the built-in filter (explained below).</li>
 </ul>
 <p class="normaltext">Epigenetic signals in ES cells (H1 in human, E14 in mouse) are selected by default.</p>
-<p class="normaltext">To filter data sets by specific criteria, click <span class="panel">use filter</span> to bring out the filter panel, in this panel you can specify what type of information to use (by experiment, by tissue type, by cell line, or by lab) through clicking on corresponding tab. After a tab is selected, you can perform one of the three operations on currently selected items:</p>
+<p class="normaltext">To filter data sets by specific criteria, click <span class="panel">use filters</span> to bring out the filter panel, in this panel you can specify what type of information to use (by experiment, by tissue type, by cell line, or by lab) through clicking on corresponding tab. After a tab is selected, you can perform one of the three operations on currently selected items:</p>
 <ul class="normalnotes">
   <li><span class="panel">Add</span> to current selection: tracks matching given criteria will be added to the current selection (tracks already selected will not be affected);</li>
   <li><span class="panel">Filter</span> current selection: currently selected tracks will be deselected (filtered) if they do not match given criteria (unselected tracks  will not be affected);</li>
