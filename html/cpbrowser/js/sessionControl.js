@@ -15,30 +15,33 @@ function loadSession(sessionObj) {
 
 function saveSelectedTrackIDs(db) {
 	var useAllTracks = $('#useAllTracks').prop('checked');
-	return cmnTracksEncode.getIDList(useAllTracks).concat(
+	return cmnTracksEncode.getIDList(useAllTracks, genemoIsOn? db: null).concat(
 		spcArray[spcArray.map[db]].uniTracksEncode.getIDList(useAllTracks));
 }
 
-function saveSession(db, hgsid, email, url, file, urlToShow, callback) {
+function saveSession(dataObj, callback) {
 	var IDPrepQuery = new FormData();
-	IDPrepQuery.append('db', db);
-	IDPrepQuery.append('hgsid', hgsid);
-	IDPrepQuery.append('selected', JSON.stringify(saveSelectedTrackIDs(db)));
-	IDPrepQuery.append('email', email);
-	if(url) {
+	IDPrepQuery.append('db', dataObj.db);
+	IDPrepQuery.append('hgsid', dataObj.hgsid);
+	IDPrepQuery.append('selected', JSON.stringify(saveSelectedTrackIDs(dataObj.db)));
+	IDPrepQuery.append('email', dataObj.email);
+	if(dataObj.url) {
 		// no file
-		IDPrepQuery.append('url', url);
+		IDPrepQuery.append('url', dataObj.url);
 		// check whether the file is bigwig format (.bw or .bigwig)
-		var ext = url.substr((~-url.lastIndexOf(".") >>> 0) + 2).toLowerCase();
+		var ext = dataObj.url.substr((~-dataObj.url.lastIndexOf(".") >>> 0) + 2).toLowerCase();
 		if(ext === 'bw' || ext === 'bigwig') {
 			// is bigwig file, add bigwig flag
 			IDPrepQuery.append('bwData', true);
 		}
 	} else {
-		IDPrepQuery.append('file', file);
+		IDPrepQuery.append('file', dataObj.file);
 	}
-	if(urlToShow) {
-		IDPrepQuery.append('urlToShow', urlToShow);
+	if(dataObj.urlToShow) {
+		IDPrepQuery.append('urlToShow', dataObj.urlToShow);
+	}
+	if(dataObj.searchRange) {
+		IDPrepQuery.append('searchRange', dataObj.searchRange);
 	}
 	$.ajax({
 		url: 'cpbrowser/uploadPrepare.php',

@@ -784,6 +784,7 @@ window.addEventListener("WebComponentsReady", function(e) {
 	sessionObj.urlToShow = '<?php echo $sessionInfo['display_file_url']; ?>';
 	sessionObj.originalFile = '<?php echo ($sessionInfo['original_file_name']? $sessionInfo['original_file_name']: basename($sessionInfo['display_file_url'])); ?>';
 	sessionObj.hasDisplay = <?php echo ((strpos($sessionInfo['display_file_url'], $sessionInfo['id']) !== false) || (strpos($sessionInfo['display_file_url'], $sessionInfo['original_file_name']) !== false))? 'false': 'true'; ?>;
+	sessionObj.searchRange = '<?php echo trim($sessionInfo['search_range']); ?>';
 	
 	fireCoreSignal('updatecontent', {sessionObj: sessionObj});
 	

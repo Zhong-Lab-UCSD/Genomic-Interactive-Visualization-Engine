@@ -167,6 +167,13 @@
 				value: ""
 			},
 			
+			SearchRangeArr: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
 			trackSelActive: {
 				type: Boolean,
 				value: false
@@ -284,6 +291,9 @@
 			if(DisplayFileName) {
 				collapseObj.display = DisplayFileName;
 			}
+			if(detail.sessionObj.searchRange) {
+				collapseObj.range = detail.sessionObj.searchRange;
+			}
 			this.updateCurrentInfo(collapseObj);
 		},
 		
@@ -340,6 +350,13 @@
 			if(DisplayFileName) {
 				collapseObj.display = DisplayFileName;
 			}
+			
+			if(this.SearchRange) {
+				this.SearchRangeArr = this.SearchRange.split(/[\s:\-]+/g);
+				this.SearchRange = this.SearchRangeArr[0] + ':' + this.SearchRangeArr[1] + '-' + this.SearchRangeArr[2];
+				collapseObj.range = this.SearchRange;
+			}
+
 			this.updateCurrentInfo(collapseObj);
 			
 			this.fire("submit-form", {card: this});
