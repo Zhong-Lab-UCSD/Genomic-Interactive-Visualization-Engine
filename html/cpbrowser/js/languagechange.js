@@ -97,18 +97,16 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"----"},
 "Threshold":{"en":"Threshold (# of reads / 1Mbp)",
          "zh":"----"},
-"returnEmail":{"en":"(Optional) Display file URL",
-         "zh":"Chinese stuff"},
+"returnEmail":{"en":"(Optional) Your email address",
+         "zh":"(自选) 你的电子邮件地址"},
 "urlFileToShow":{"en":"(Optional) Display file URL",
-         "zh":"More Chinese stuff"},
+         "zh":"(自选) 显示文件的网址"},
 "searchRangeInput":{"en":"(Optional) Search range",
-         "zh":"Even more Chinese Stuff"},
-"urlFileInput":{"en":"URL for data file",
-         "zh":"mhm"},
+         "zh":"(自选) 搜索范围"},
 "regionDropdown":{"en":"Reference",
-         "zh":"chinese reference"},
-"":{"en":"",
-         "zh":"----"},
+         "zh":"参考"},
+"urlFileInput":{"en":"URL for data file",
+         "zh":"数据文件的网址"},
 "":{"en":"",
          "zh":"----"},
 "":{"en":"",
@@ -131,7 +129,7 @@ var x=document.querySelectorAll('.text');
 for (i=0;i<x.length;i++){
 	if (x[i].tagName=="SPAN")
 	x[i].innerHTML=json[x[i].id][language];
-	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="PAPER-INPUT")
+	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="PAPER-INPUT"||x[i].tagName=="PAPER-DROPDOWN-MENU")
 		x[i].label=json[x[i].id][language];
 	/*for (j=0;j<keys.length;j++){
 		if (x[i]==keys[j]())
