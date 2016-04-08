@@ -83,7 +83,7 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"----"},
 "Search against":{"en":"Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href=\"/goldenPath/help/customTrack.html#BED\" target=\"_blank\">BED, peaks format</a> files are accepted either by uploading or providing URL, <a href=\"/goldenPath/help/bigWig.html\" target=\"_blank\">bigWig files</a> are accepted by URL only.)      ",
          "zh":"----"},
-"Insignificant mouse Tracks":{"en":"Tracks with insignificant signals for mouse",
+"":{"en":"",
          "zh":"----"},
 "Data References":{"en":"Data References",
          "zh":"----"},
@@ -107,6 +107,8 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"mhm"},
 "regionDropdown":{"en":"Reference",
          "zh":"chinese reference"},
+"Insignificant mouse Tracks":{"en":"Tracks with insignificant signals for mouse",
+         "zh":"----"},
 "":{"en":"",
          "zh":"----"},
 "":{"en":"",
@@ -122,17 +124,21 @@ var json = {"Results Panel Name":{"en":" Results",
 //use x[i].tagName
 function setTexts(language){
 
+
 var x=document.querySelectorAll('.text');
+
 
 
 //var keys = Object.keys(json);
 //var keys2 = Object.keys(x);
 
 for (i=0;i<x.length;i++){
+
 	if (x[i].tagName=="SPAN")
 	x[i].innerHTML=json[x[i].id][language];
 	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="PAPER-INPUT")
 		x[i].label=json[x[i].id][language];
+
 	/*for (j=0;j<keys.length;j++){
 		if (x[i]==keys[j]())
 			x[i].innerHTML=y[j][language];
