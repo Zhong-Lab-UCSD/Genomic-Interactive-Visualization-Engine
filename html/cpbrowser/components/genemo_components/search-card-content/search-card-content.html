@@ -92,7 +92,7 @@
         <span id = "Search Range" class="text">You can also specify the range to limit the search results to a certain genome location.</span>
       </paper-tooltip>
     </div>
-    <paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
+    <paper-button id="Data selection" class="fullWidth vertMargined trackSelection text" toggles raised noink active="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
     <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
       <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
       <span id = "Search" class="text">Search</span>

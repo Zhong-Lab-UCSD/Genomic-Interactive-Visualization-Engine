@@ -78,25 +78,25 @@ var json = {"Results Panel Name":{"en":" Results",
 "Provide url":{"en":"You may also provide a URL for a <a href=\"/goldenPath/help/wiggle.html\">wig</a> / <a href=\"/goldenPath/help/bigWig.html\" target=\"_blank\">bigWig</a> file <strong><em>for display purposes only</em></strong>",
          "zh":"----"},
 "Search Range":{"en":"You can also specify the range to limit the search results to a certain genome location.",
-         "zh":"----"},
+         "zh":"您还可以指定范围来限制搜索结果有一定的基因组位置。"},
 "Search":{"en":"Search",
-         "zh":"----"},
+         "zh":"搜索"},
 "Search against":{"en":"Please specify the reference genome you would like to search against, then upload your custom peak file below for analysis. Either put your file on a public server and provide the URL, or directly upload the file here. (<a href=\"/goldenPath/help/customTrack.html#BED\" target=\"_blank\">BED, peaks format</a> files are accepted either by uploading or providing URL, <a href=\"/goldenPath/help/bigWig.html\" target=\"_blank\">bigWig files</a> are accepted by URL only.)      ",
-         "zh":"----"},
+         "zh":"请指定参考基因组，你想搜索对抗，然后在下面上传您的自定义峰值文件进行分析。要么把你的文件在公共服务器上，并提供URL，或者直接在这里上传的文件。(<a href=\"/goldenPath/help/customTrack.html#BED\" target=\"_blank\">BED, peaks 格式</a> 文件上传或提供URL要么接受， <a href=\"/goldenPath/help/bigWig.html\" target=\"_blank\">bigWig 文件</a> 仅通过网址被接受。)      "},
 "Insignificant mouse Tracks":{"en":"Tracks with insignificant signals for mouse",
-         "zh":"----"},
+         "zh":"与微不足道的信号，鼠标曲目"},
 "Data References":{"en":"Data References",
-         "zh":"----"},
+         "zh":"数据引用"},
 "":{"en":"Please refer to <a href=\"http://data.genomegitar.org/\">http://data.genomegitar.org/</a> for description and download of all data sets used here.",
-         "zh":"----"},
+         "zh":"请参阅 <a href=\"http://data.genomegitar.org/\">http://data.genomegitar.org/</a> 这里使用的所有数据集的描述和下载。"},
 "Species to compare":{"en":" Species to compare: ",
-         "zh":"----"},
+         "zh":"物种进行比较："},
 "Gene":{"en":"Gene",
-         "zh":"----"},
+         "zh":"基因"},
 "Region for":{"en":"Region for",
-         "zh":"----"},
+         "zh":"对于地"},
 "Threshold":{"en":"Threshold (# of reads / 1Mbp)",
-         "zh":"----"},
+         "zh":"阈"},
 "returnEmail":{"en":"(Optional) Your email address",
          "zh":"(自选) 你的电子邮件地址"},
 "urlFileToShow":{"en":"(Optional) Display file URL",
@@ -107,8 +107,8 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"参考"},
 "urlFileInput":{"en":"URL for data file",
          "zh":"数据文件的网址"},
-"":{"en":"",
-         "zh":"----"},
+"Data selection":{"en":"Data selection",
+         "zh":"数据选择"},
 "":{"en":"",
          "zh":"----"},
 "":{"en":"",
@@ -127,9 +127,9 @@ var x=document.querySelectorAll('.text');
 //var keys2 = Object.keys(x);
 
 for (i=0;i<x.length;i++){
-	if (x[i].tagName=="SPAN")
+	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="SPAN")
 	x[i].innerHTML=json[x[i].id][language];
-	if (x[i].tagName=="PAPER-BUTTON"||x[i].tagName=="PAPER-INPUT"||x[i].tagName=="PAPER-DROPDOWN-MENU")
+	if (x[i].tagName=="PAPER-INPUT"||x[i].tagName=="PAPER-DROPDOWN-MENU")
 		x[i].label=json[x[i].id][language];
 	/*for (j=0;j<keys.length;j++){
 		if (x[i]==keys[j]())
