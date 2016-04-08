@@ -94,10 +94,11 @@
 	$db = trim($_REQUEST['db']);
 	$selected = trim($_REQUEST['selected']);
 	$email = trim($_REQUEST['email']);
+	$searchRange = (isset($_REQUEST['searchRange'])? trim($_REQUEST['searchRange']): '');
 	
 	$mysqli = connectCPB();
-	$stmt = $mysqli->prepare("INSERT INTO `userInput` (`id`, `db`, `email`, `selected_tracks`, `fileName`, `display_file_url`, `original_file_name`) VALUES (?, ?, ?, ?, ?, ?, ?)");
-	$stmt->bind_param('sssssss', $generatedID, $db, $email, $selected, $filename, $customTrackURL, $orifilename);
+	$stmt = $mysqli->prepare("INSERT INTO `userInput` (`id`, `db`, `email`, `selected_tracks`, `fileName`, `display_file_url`, `original_file_name`, `search_range`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+	$stmt->bind_param('ssssssss', $generatedID, $db, $email, $selected, $filename, $customTrackURL, $orifilename, $searchRange);
 	$stmt->execute();
 	echo json_encode($result);
 	$stmt->close();

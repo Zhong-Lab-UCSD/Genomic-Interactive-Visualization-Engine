@@ -97,11 +97,12 @@ function validateUploadFileOrURL(event) {
 	
 	var querycard = event.detail.card;
 	
+	var sessionDataObj = {};
 	var hasEmail = (querycard.UserEmail.length > 0);
-	var email = querycard.UserEmail;
-	var fileToCalc = querycard.InputFile;
-	var urlFileInput = querycard.InputUrl;
-	var urlFileToShow = querycard.DisplayUrl;
+	sessionDataObj.email = querycard.UserEmail;
+	sessionDataObj.file = querycard.InputFile;
+	sessionDataObj.url = querycard.InputUrl;
+	sessionDataObj.urlToShow = querycard.DisplayUrl;
 	
 	if($('#useAllTracks').prop('checked') && !hasEmail) {
 		if(!UI.confirm('It may take a long time (hours) to analyze with all tracks, \ntherefore, an email address is atrongly recommended.\n\nPlease click \'OK\' if you want to proceed without an email.\nClick \'Cancel\' to return.')) {
@@ -118,36 +119,31 @@ function validateUploadFileOrURL(event) {
 	$("#genelistContentHolder").html('');
 	$('#genelistLoading').removeClass('BoxHide');
 
-	var inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
-		: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1)));
-	
-	var dispFileName = (urlFileToShow? (urlFileToShow.substring(urlFileToShow.lastIndexOf('/') + 1)): inputFileName);
-	
-	var db = querycard.currentRef;
+	sessionDataObj.db = querycard.currentRef;
 	
 	toggleUpload(false, true);
 	
 	// 1) update reverse lookup table
 	// TODO: May need to move it to earlier once the major revemp is done
 	var useAllTracks = $('#useAllTracks').prop('checked');
-	var hgsid = spcArray[spcArray.map[db]].hgsID;
+	sessionDataObj.hgsid = spcArray[spcArray.map[sessionDataObj.db]].hgsID;
 	
 	var tableNameQuery = new FormData();
 	tableNameQuery.append('Submit', 'Submit');
-	tableNameQuery.append('species', db);
-	tableNameQuery.append('email', email);
+	tableNameQuery.append('species', sessionDataObj.db);
+	tableNameQuery.append('email', sessionDataObj.email);
 	
-	var cmnIDPrefix = genemoIsOn? querycard.currentRef + '_': '';
+	var cmnIDPrefix = genemoIsOn? sessionDataObj.db + '_': '';
 		
 	$.each(cmnTracksEncode.array, function(key, value) {
 		if($('#' + cmnIDPrefix + value.getCleanID()).prop('checked') || useAllTracks) {
-			$.each(value.getSpeciesSubTables(db), function(index, tableName) {
+			$.each(value.getSpeciesSubTables(sessionDataObj.db), function(index, tableName) {
 				tableNameQuery.append('geneTracks[]', tableName);
 			});
 		}
 	});
 	
-	$.each(spcArray[spcArray.map[db]].uniTracksEncode.array, function(key, value) {
+	$.each(spcArray[spcArray.map[sessionDataObj.db]].uniTracksEncode.array, function(key, value) {
 		if($('#' + value.getCleanID()).prop('checked') || useAllTracks) {
 			$.each(value.getSpeciesSubTables(), function(index, tableName) {
 				tableNameQuery.append('geneTracks[]', tableName);
@@ -156,22 +152,22 @@ function validateUploadFileOrURL(event) {
 	});
 	
 	for(var i = 0; i < spcArray.length; i++) {
-		spcArray[i].isActive = (spcArray[i].db == db);
+		spcArray[i].isActive = (spcArray[i].db == sessionDataObj.db);
 	}
 	spcArray.updateAllSpcActiveNum();
 	
 	if(querycard.SearchRange) {
-		
-		tableNameQuery.append('chrom', querycard.SearchRange.split(/[\s:\-]+/g)[0]);
-		tableNameQuery.append('start', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[1]));
-		tableNameQuery.append('end', parseInt(querycard.SearchRange.split(/[\s:\-]+/g)[2]));
+		tableNameQuery.append('chrom', querycard.SearchRangeArr[0]);
+		tableNameQuery.append('start', parseInt(querycard.SearchRangeArr[1]));
+		tableNameQuery.append('end', parseInt(querycard.SearchRangeArr[2]));
+		sessionDataObj.searchRange = querycard.SearchRange;
 	}
 
 	trackUpdatedCallback.data = event;
 	// 1) get ID and save some stuff and also upload to UCSC as well
 	trackUpdatedCallback.func = function(eventData) {
 		
-		saveSession(db, hgsid, email, urlFileInput, fileToCalc, urlFileToShow, function(IDPrepData, status, jsXHR) {
+		saveSession(sessionDataObj, function(IDPrepData, status, jsXHR) {
 			
 			try {
 				
@@ -188,7 +184,7 @@ function validateUploadFileOrURL(event) {
 				}
 				computeDataAndCallback.data = tableNameQuery;
 				computeDataAndCallback.callback = uploadUiHandler;
-				setCustomTrack(customTrackUrl, db, hgsid, computeDataAndCallback, sendRegionsToCompute);
+				setCustomTrack(customTrackUrl, sessionDataObj.db, sessionDataObj.hgsid, computeDataAndCallback, sendRegionsToCompute);
 			} catch(e) {
 				UI.alert(e);
 				toggleUpload(true, true);
@@ -281,6 +277,7 @@ function getComputedRegions(dataAndCallback, otherdata) {
 function uploadUiHandler(data) {
 	var updateNavFunc = updateNavigation;
 	var changeGeneNameFunc = changeGeneName;
+	var searchRange;
 	$("#genelistContentHolder").html('');
 	var hasError = false;
 	
@@ -288,8 +285,17 @@ function uploadUiHandler(data) {
 	
 	var fileToCalc = querycard.InputFile;
 	var urlFileInput = querycard.InputUrl;
-	var inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
-		: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1))), inputFileNameStem;
+	var inputFileName, inputFileNameStem;
+	if((fileToCalc && fileToCalc.name) || urlFileInput) {
+		inputFileName = (urlFileInput? (urlFileInput.substring(urlFileInput.lastIndexOf('/') + 1))
+			: (fileToCalc.name.substring(fileToCalc.name.lastIndexOf('/') + 1)));
+		searchRange = querycard.SearchRange;
+	} else if(window.originalFile) {
+		inputFileName = window.originalFile;
+		if(window.originalRange) {
+			searchRange = window.originalRange;
+		}
+	}
 	if(inputFileName.lastIndexOf('.') >= 0) {
 		inputFileNameStem = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
 	} else {
@@ -341,6 +347,10 @@ function loadResults(sessionObj) {
 	loadQuery = new Object();
 	loadQuery.id = sessionObj.id;
 	loadQuery.species = sessionObj.db;
+	window.originalFile = sessionObj.originalFile;
+	if(sessionObj.originalRange) {
+		window.originalRange = sessionObj.originalFile;
+	}
 	
 	$('#peakFileHolder').text('[' + sessionObj.db + '] Display file: ' + sessionObj.originalFile);
 	$('#peakFileHolder').show();
