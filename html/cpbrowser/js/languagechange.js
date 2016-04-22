@@ -108,14 +108,11 @@ var json = {"Results Panel Name":{"en":" Results",
          "zh":"参考"},
 "urlFileInput":{"en":"URL for data file",
          "zh":"数据文件的网址"},
-"Data selection":{"en":"Data selection",
+"Data selection":{"en":" Data selection ",
          "zh":"数据选择"},
 "":{"en":"",
-         "zh":"----"},
-"":{"en":"",
-         "zh":"----"},
-"":{"en":"",
-         "zh":"----"},
+         "zh":"asdf"},
+
 		 
 }
 //use x[i].tagName
@@ -132,11 +129,12 @@ for (i=0;i<x.length;i++){
 	x[i].innerHTML=json[x[i].id][language];
 	if (x[i].tagName=="PAPER-INPUT"||x[i].tagName=="PAPER-DROPDOWN-MENU")
 		x[i].label=json[x[i].id][language];
+	
 	/*for (j=0;j<keys.length;j++){
 		if (x[i]==keys[j]())
 			x[i].innerHTML=y[j][language];
 
 	}*/
 }
-
+console.log(this);
 }

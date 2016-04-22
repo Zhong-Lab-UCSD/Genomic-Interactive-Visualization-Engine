@@ -757,6 +757,15 @@ window.addEventListener("WebComponentsReady", function(e) {
 	if(manualBtn) {
 		manualBtn.addEventListener('click', window.open.bind(window, 'cpbrowser/manual_genemo.php', '_blank'));
 	}
+	var engBtn = document.querySelector('#engBtn');
+	if(engBtn) {
+		engBtn.addEventListener('click', setTexts.bind(window, "en"));
+	}
+	
+	var zhBtn = document.querySelector('#zhBtn');
+	if(zhBtn) {
+		zhBtn.addEventListener('click', setTexts.bind(window, "zh"));
+	}
 	
 	encodeMeta = new MetaEntries();
 	Polymer.dom(document.documentElement).appendChild(encodeMeta);
@@ -879,6 +888,12 @@ window.addEventListener("WebComponentsReady", function(e) {
     <paper-button class="fullWidth" noink raised id="manualBtn">
       <iron-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></iron-icon>
       <span class="text" id="Genemo Manual">Genemo Manual </span></paper-button>
+	  <paper-button class="halfWidth" noink raised id="engBtn">
+		English<img src="https://www.pegasusautoracing.com/Images/S/3610-101.GIF" style="width:50px;height:30px;">
+		</paper-button>
+		<paper-button class="halfWidth" noink raised id="zhBtn">  中文  <br>
+		<img src="http://www.flags.net/images/smallflags/CHIN0001.GIF"  style="width:50px;height:30px;">
+		</paper-button>
     <!-- end #sidebar1 --> 
   </div>
   <div id="spcNaviTemplate" class="BoxHide">
