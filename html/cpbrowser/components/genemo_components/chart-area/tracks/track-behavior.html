@@ -103,7 +103,7 @@
 			},
 			
 			trackHeight: {
-				type: Number
+				type: Number,
 			},
 			
 			isReady: {
@@ -140,6 +140,8 @@
 			this.ARROW_GAP_WIDTH = 1.5;			// gap width for arrow
 			this.ARROW_FLANK_WIDTH = 0.5;		// flank width for arrow
 			
+			this.MIN_TOTAL_WIDTH = 100;
+			
 			this.TEXT_MARGIN_GAP = 5;		// flank width for arrow
 			
 			this.Y_HIDDEN = -30;			// value to hide stuff in svg (to calculate size)
@@ -151,6 +153,8 @@
 			this.getDataJobName = 'GETDATA';
 			
 			this.getDataCallback = null;
+			
+			this.narrowMode = false;
 		},
 		
 		factoryImpl: function(track, properties) {
@@ -182,6 +186,10 @@
 			this.windowWidth = properties.width - 
 							  (properties.textMargin? properties.textMargin + this.TEXT_MARGIN_GAP: 0);
 			this.totalWidth = properties.width;
+			
+			if(this.windowWidth < this.MIN_TOTAL_WIDTH) {
+				this.switchNarrowMode(true);
+			}
 			if(properties.hasOwnProperty('requestUrl')) {
 				this.requestUrl = properties.requestUrl;
 			}
@@ -200,13 +208,6 @@
 				this.trackSvg = document.createElementNS(this.svgNS, 'svg');
 				this.trackSvg.setAttribute('id', this.track.getCleanID() + '_trackSvg');
 				this.trackSvg.setAttribute('class', 'trackSvg');
-				this.trackSvg.setAttributeNS(null, 'x', this.x);
-				this.trackSvg.setAttributeNS(null, 'y', this.y);
-				this.trackSvg.setAttributeNS(null, 'width', this.totalWidth);
-				// notice that the heights are placeholder and will change
-				this.trackSvg.setAttributeNS(null, 'height', this.trackHeight);
-				this.trackSvg.setAttribute("viewBox", "0 0 " 
-					+ this.totalWidth + " " + this.trackHeight);
 					
 				// attach ajax to tracks with a Url for requests
 				if(this.requestUrl) {
@@ -223,8 +224,40 @@
 				// if textMargin is specified, create a svg element for text labels
 				
 				if(this.textMargin) {
-					this.textSvg = document.createElementNS(this.svgNS, 'svg');
-					this.textSvg.setAttribute('id', this.track.getCleanID() + '_textSvg');
+					this.initTextSvgAndHolder();
+				}
+				
+				// create dom elements (svg)
+				this.mainSvg = document.createElementNS(this.svgNS, 'svg');
+				this.mainSvg.setAttribute('id', this.track.getCleanID() + '_mainSvg');
+				if(this.trackMainDOMClass) {
+					this.mainSvg.setAttribute('class', this.trackMainDOMClass);
+				}
+				Polymer.dom(this.trackSvg).appendChild(this.mainSvg);
+				
+	//			this._setInitialized(true);
+	//			this.fire('track-initialized', {ID: this.track.getID()});
+				this.initSvgHolder();
+				
+				if(this.initSvgComponents) {
+					this.initSvgComponents();
+				}
+				
+				this.setSvgSizeLocation();
+			}
+			return this.trackSvg;
+		},
+		
+		setSvgSizeLocation: function() {
+			if(this.trackSvg) {
+				this.trackSvg.setAttributeNS(null, 'x', this.x);
+				this.trackSvg.setAttributeNS(null, 'y', this.y);
+				this.trackSvg.setAttributeNS(null, 'width', this.totalWidth);
+				// notice that the heights are placeholder and will change
+				this.trackSvg.setAttributeNS(null, 'height', this.trackHeight);
+				this.trackSvg.setAttribute("viewBox", "0 0 " 
+					+ this.totalWidth + " " + this.trackHeight);
+				if(this.textSvg) {
 					this.textSvg.setAttributeNS(null, 'x', this.x);
 					this.textSvg.setAttributeNS(null, 'y', this.y);
 					this.textSvg.setAttributeNS(null, 'width', this.textMargin);
@@ -233,50 +266,63 @@
 					this.textSvg.setAttributeNS(null, 'height', this.trackHeight);
 					this.textSvg.setAttribute("viewBox", "0 0 " 
 						+ this.textMargin + " " + this.trackHeight);
-					Polymer.dom(this.trackSvg).appendChild(this.textSvg);
 				}
-				
-				// create dom elements (svg)
-				this.mainSvg = document.createElementNS(this.svgNS, 'svg');
-				this.mainSvg.setAttribute('id', this.track.getCleanID() + '_mainSvg');
-				this.mainSvg.setAttributeNS(null, 'x', (this.textMargin? this.textMargin + this.TEXT_MARGIN_GAP: 0) + this.x);
+				this.mainSvg.setAttributeNS(null, 'x', (this.narrowMode? 0: this.textMargin + this.TEXT_MARGIN_GAP) + this.x);
 				this.mainSvg.setAttributeNS(null, 'y', this.y);
 				this.mainSvg.setAttributeNS(null, 'width', this.windowWidth);
-			
-				if(this.trackMainDOMClass) {
-					this.mainSvg.setAttribute('class', this.trackMainDOMClass);
-				}
 			
 				// notice that the heights are placeholder and will change
 				this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
 				this.mainSvg.setAttribute("viewBox", "0 0 " 
 					+ this.windowWidth + " " + this.trackHeight);
-				
-				Polymer.dom(this.trackSvg).appendChild(this.mainSvg);
-				
-	//			this._setInitialized(true);
-	//			
-	//			this.fire('track-initialized', {ID: this.track.getID()});
-				this.initSvgHolder();
-				
-				if(this.initSvgComponents) {
-					this.initSvgComponents();
-				}
 			}
-			return this.trackSvg;
 		},
 		
 		getHeight: function() {
 			return this.trackHeight;
 		},
 		
+		initTextSvgAndHolder: function() {
+			this.textSvg = document.createElementNS(this.svgNS, 'svg');
+			this.textSvg.setAttribute('id', this.track.getCleanID() + '_textSvg');
+			Polymer.dom(this.trackSvg).appendChild(this.textSvg);
+			this.initTextSvgHolder();
+		}
+		
+		initTextSvgHolder: function() {
+			// notice that this.textSvg should be there
+			this.textSvg.holder = document.createElementNS(this.svgNS, 'g');
+			Polymer.dom(this.textSvg).appendChild(this.textSvg.holder);
+		},
+		
 		initSvgHolder: function() {
-			if(this.textMargin) {
-				this.textSvg.holder = document.createElementNS(this.svgNS, 'g');
-				Polymer.dom(this.textSvg).appendChild(this.textSvg.holder);
-			}
 			this.mainSvg.holder = document.createElementNS(this.svgNS, 'g');
 			Polymer.dom(this.mainSvg).appendChild(this.mainSvg.holder);
+		},
+		
+		setWidthParameters: function(newWidth, newTxtMargin) {
+			var widthChanged = false;
+			if(typeof(newTxtMargin) === 'number' && newTxtMargin > 0 && newTxtMargin !== this.textMargin) {
+				this.textMargin = newTxtMargin;
+				if(!this.textSvg) {
+					this.initTextSvgAndHolder();
+				}
+				widthChanged = true;
+			} else if(typeof(newTxtMargin) === 'number' && newTxtMargin <= 0) {
+				// delete textSvg
+				delete this.textMargin;
+				if(this.textSvg) {
+					Polymer.dom(this.trackSvg).removeChild(this.textSvg);
+					delete this.textSvg;
+				}
+				widthChanged = true;
+			}
+			
+			if(typeof(newWidth) === 'number' && this.totalWidth !== newWidth) {
+			}
+		},
+		
+		setHeight: function(newHeight) {
 		},
 		
 		// ****** customized methods ******
@@ -347,7 +393,7 @@
 		// ** Simple SVG Drawing **
 		
 		clear: function() {
-			if(this.textMargin) {
+			if(this.textSvg) {
 				if(this.textSvg.holder) {
 					Polymer.dom(this.textSvg).removeChild(this.textSvg.holder);
 				} else {
@@ -355,6 +401,7 @@
 						Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
 					}
 				}
+				this.initTextSvgHolder();
 			}
 			if(this.mainSvg.holder) {
 				Polymer.dom(this.mainSvg).removeChild(this.mainSvg.holder);
@@ -367,11 +414,21 @@
 		},
 		
 		updateLocationSize: function(x, y, width, height) {
-			this.x = x || this.x;
-			this.y = y || this.y;
-			// notice that width and height are placeholders and have no effect for now
-			this.trackSvg.setAttributeNS(null, 'x', this.x);
-			this.trackSvg.setAttributeNS(null, 'y', this.y);
+			if(typeof(x) === 'number') {
+				this.x = x;
+				this.trackSvg.setAttributeNS(null, 'x', this.x);
+			}
+			if(typeof(y) === 'number') {
+				this.y = y;
+				this.trackSvg.setAttributeNS(null, 'y', this.y);
+			}
+			if(typeof(width) === 'number') {
+				this.setWidthParameters(width);	// may involve narrowMode
+			}
+			if(typeof(height) === 'number') {
+				this.setHeight(height); // may also involve narrowMode?
+			}
+			this.setSvgSizeLocation();
 		},
 		
 		drawLine: function(x1, y1, x2, y2, colorRGB, svgToDraw) {
@@ -710,6 +767,9 @@
 //				}
 			}
 			
+		},
+		
+		updateTrackWidth: function(width) {
 		},
 		
 		setTrackVisibility: function(visString) {

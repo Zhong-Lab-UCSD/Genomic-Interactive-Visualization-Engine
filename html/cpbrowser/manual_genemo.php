@@ -99,6 +99,8 @@ body {
 <div style="clear: both;"></div>
 <p class="normaltext">You can submit any peak or bigWig file from your experiment to search the ENCODE database for similar regions across the genome. This may help in finding genomic regions of interest, related epigenetic information or other insights for your research.</p>
 <p class="normaltext">The gene track displaying mechanism in GeNemo Search is powered by UCSC Genome Browser (<a href="http://genome.ucsc.edu/">http://genome.ucsc.edu/</a>)<sup><a name="cite1_ref" id="cite1_ref"></a><a href="#cite1">[1]</a></sup> with some source modification.</p>
+<p class="normaltext">If you find GENEMO helpful in your project, please cite the following publication to support future development:</p>
+<p class="normaltext">Zhang Y, Cao X, Zhong S. (2016) <a href="http://nar.oxfordjournals.org/content/early/2016/04/20/nar.gkw299.full" target="_blank">GeNemo: a search engine for web-based functional genomic data.</a><abbr title="Nucleic Acids Research"> <em>Nucl. Acids Res.</em></abbr> doi:10.1093/nar/gkw299</p>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a> <a name="datasets" id="datasets"></a>Available Datasets</div>
 <p class="normaltext">So far two species are supported in GeNemo Search:</p>
 <ul class="normalnotes">

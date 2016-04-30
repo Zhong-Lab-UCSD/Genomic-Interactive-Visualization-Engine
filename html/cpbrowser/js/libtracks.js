@@ -1049,17 +1049,21 @@ Species.prototype.writeUniqueTable = function(isencode, cmnTracksEncodeBundle) {
 		
 		if(this.uniTracksEncode.length() > 0 || (cmnTracksEncodeBundle && cmnTracksEncodeBundle.length() > 0)) {
 			items = [];
-			for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
-				items.push('<tr class="trackCell" id="' + this.db + '_'
-					+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
-				items.push(cmnTracksEncodeBundle.get(i).writeSpcUniTable(this.db));
-				items.push('</tr>\n');
+			if(cmnTracksEncodeBundle && cmnTracksEncodeBundle.length() > 0) {
+				for(var i = 0; i < cmnTracksEncodeBundle.length(); i++) {
+					items.push('<tr class="trackCell" id="' + this.db + '_'
+						+ cmnTracksEncodeBundle.get(i).getCleanID() + '_tr">');
+					items.push(cmnTracksEncodeBundle.get(i).writeSpcUniTable(this.db));
+					items.push('</tr>\n');
+				}
 			}
-			for(var j = 0; j < this.uniTracksEncode.length(); j++) {
-				items.push('<tr class="trackCell" id="' 
-					+ this.uniTracksEncode.get(j).getCleanID() + '_tr">');
-				items.push(this.uniTracksEncode.get(j).writeTable(this.commonName));
-				items.push('</tr>\n')
+			if(this.uniTracksEncode.length() > 0) {
+				for(var j = 0; j < this.uniTracksEncode.length(); j++) {
+					items.push('<tr class="trackCell" id="' 
+						+ this.uniTracksEncode.get(j).getCleanID() + '_tr">');
+					items.push(this.uniTracksEncode.get(j).writeTable(this.commonName));
+					items.push('</tr>\n')
+				}
 			}
 			$(document.getElementById(this.unsortedTbodyID)).append(items.join(''));
 		} else {

@@ -17,11 +17,12 @@
 <title>GIVe (Genomic Interaction Visualizer)</title>
 <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link rel="import" href="components/genemo_components/chart-controller/chart-controller.html">
+<link rel="import" href="components/genemo_components/genemo-styles.html">
 <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="components/bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
-<link rel="import" href="components/bower_components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<style is="custom-style" include="genemo-shared-styles">
+<style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
 body {
 	font-family: 'Roboto';
 	font-size: 14px;

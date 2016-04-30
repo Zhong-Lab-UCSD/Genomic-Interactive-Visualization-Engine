@@ -84,10 +84,13 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			if(!is_array($chrRegion)) {
 				$chrRegion = [$chrRegion];
 			}
-			$sqlstmt .= " WHERE linkID IN (SELECT DISTINCT linkID FROM `" . $mysqli->real_escape_string($tableName) . "` WHERE "
+			// create temporary table in memory first for performance considerations
+			$sqlstmtTTable = "CREATE TEMPORARY TABLE `linkIDTable` (" 
+						. "linkID INT UNSIGNED PRIMARY KEY NOT NULL"
+						. ") ENGINE=MEMORY AS SELECT DISTINCT linkID FROM `" 
+						. $mysqli->real_escape_string($tableName) . "` WHERE "
 						. implode(' OR ', array_fill(0, count($chrRegion), '(chrom = ? AND start < ? AND end > ?)'));
-			$sqlstmt .= ") ORDER BY start";
-			$stmt = $mysqli->prepare($sqlstmt);
+			$stmt = $mysqli->prepare($sqlstmtTTable);
 			$a_params = array();
 			$ref_params = array();
 			$a_params []= str_repeat('sii', count($chrRegion));
@@ -102,11 +105,12 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			if(!$stmt->execute()) {
 				error_log($stmt->error);
 			}
-			$regions = $stmt->get_result();
+			
+			$sqlstmt .= " WHERE linkID IN (SELECT linkID FROM `linkIDTable`) ORDER BY start";
 		} else {
 			$sqlstmt .= " ORDER BY start";
-			$regions = $mysqli->query($sqlstmt);
 		}
+		$regions = $mysqli->query($sqlstmt);
 		while($itor = $regions->fetch_assoc()) {
 			if(!isset($result[$itor['chrom']])) {
 				$result[$itor['chrom']] = array();

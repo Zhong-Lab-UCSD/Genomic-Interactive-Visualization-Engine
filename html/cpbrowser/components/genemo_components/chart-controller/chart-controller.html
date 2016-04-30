@@ -29,15 +29,13 @@
           display: block;
 		  margin-left: 0.5em
       }
-	  paper-drawer-panel {
-		  --paper-drawer-panel-drawer-container: {
-			  overflow-y: auto;
-			  padding: 1em;
-		  };
-		  --paper-drawer-panel-main-container: {
-			  overflow-y: auto;
-			  padding: 1em;
-		  };
+	  paper-drawer-panel div[drawer] {
+		  overflow-y: auto;
+		  padding: 1em;
+	  }
+	  paper-drawer-panel div[main] {
+		  overflow-y: auto;
+		  padding: 1em;
 	  }
 	  paper-slider {
 		  --paper-slider-input: {
@@ -53,7 +51,7 @@
         <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
         <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
       </div>
-      <div drawer style="height: auto;">
+      <div drawer>
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
         <div>

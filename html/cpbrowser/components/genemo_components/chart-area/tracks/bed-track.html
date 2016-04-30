@@ -89,16 +89,8 @@
 			}, this);
 
 			// resize the heights
-			this.trackHeight = y - this.textLineGap * this.textSize;
-			this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
-			this.mainSvg.setAttribute("viewBox", "0 0 " + this.windowWidth + " " + this.trackHeight);
-			if(this.textMargin) {
-				this.textSvg.setAttributeNS(null, 'height', this.trackHeight);
-				this.textSvg.setAttribute("viewBox", "0 0 " + this.textMargin + " " + this.trackHeight);
-			}
-			this.trackSvg.setAttributeNS(null, 'height', this.trackHeight);
-			this.trackSvg.setAttribute("viewBox", "0 0 " + this.totalWidth + " " + this.trackHeight);
-			
+			this.updateLocationSize(null, null, null, y - this.textLineGap * this.textSize);
+
 			// add labels (if visibility < noText)
 			if(this.activeVisibility <= Track.StatusEnum.VIS_NOTEXT 
 				&& this.activeVisibility > Track.StatusEnum.VIS_NONE) {

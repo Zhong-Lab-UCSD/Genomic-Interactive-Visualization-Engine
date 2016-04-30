@@ -69,6 +69,7 @@
 		listeners: {
 			'track-ready': 'trackReadyHandler',
 			'update-window': 'updateWindowHandler',
+			'iron-resize': '_onIronResize',
 		},
 		
 		created: function() {
@@ -250,13 +251,13 @@
 			}, this);
 		},
 		
-		refreshAll(viewWindows, threshold) {
+		refreshAll: function(viewWindows, threshold) {
 			if(typeof(threshold) !== 'undefined' && threshold !== null && !viewWindows) {
 				// only update threshold only
 				this.changeThreshold(threshold);
 				return this.getViewWindowStrings();
 			} else {
-				threshold = threshold || this.threshold;
+				this.threshold = threshold || this.threshold;
 				if(viewWindows) {
 					this.changeAllViewWindows(viewWindows);
 				} else {
@@ -408,6 +409,9 @@
 				this.changeViewWindow(e.detail.newWindow, e.detail.windowIndex);
 			}
 		},
+		
+		_onIronResize: function(e, detail) {
+		}
 		
 		// TODO: add/remove/rearrange tracks
 		
