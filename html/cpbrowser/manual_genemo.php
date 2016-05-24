@@ -89,6 +89,7 @@ body {
     </ul>
   </li>
   <li class="style2"><a href="#contact">Contact Us</a></li>
+  <li class="style2"><a href="#citation">Citing GeNemo</a></li>
   <li class="style2"><a href="#reference">References</a></li>
 </ul>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div><a name="intro" id="intro"></a>Introduction</div>
@@ -99,8 +100,6 @@ body {
 <div style="clear: both;"></div>
 <p class="normaltext">You can submit any peak or bigWig file from your experiment to search the ENCODE database for similar regions across the genome. This may help in finding genomic regions of interest, related epigenetic information or other insights for your research.</p>
 <p class="normaltext">The gene track displaying mechanism in GeNemo Search is powered by UCSC Genome Browser (<a href="http://genome.ucsc.edu/">http://genome.ucsc.edu/</a>)<sup><a name="cite1_ref" id="cite1_ref"></a><a href="#cite1">[1]</a></sup> with some source modification.</p>
-<p class="normaltext">If you find GENEMO helpful in your project, please cite the following publication to support future development:</p>
-<p class="normaltext">Zhang Y, Cao X, Zhong S. (2016) <a href="http://nar.oxfordjournals.org/content/early/2016/04/20/nar.gkw299.full" target="_blank">GeNemo: a search engine for web-based functional genomic data.</a><abbr title="Nucleic Acids Research"> <em>Nucl. Acids Res.</em></abbr> doi:10.1093/nar/gkw299</p>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a> <a name="datasets" id="datasets"></a>Available Datasets</div>
 <p class="normaltext">So far two species are supported in GeNemo Search:</p>
 <ul class="normalnotes">
@@ -192,6 +191,9 @@ chr1     65224589        65232694        Score=2191.60;Tracks=
 <div style="clear: both;"></div>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a><a name="contact" id="intro9"></a>Contact Us</div>
 <p class="normaltext">If you have any questions or comments regarding to GeNemo Search, you may contact us by sending an email to Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>). </p>
+<div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a> <a name="citation" id="citation"></a>Citing GeNemo</div>
+<p class="normaltext">If you find GENEMO helpful in your project, please cite the following publication to support future development:</p>
+<p class="normaltext">Zhang Y, Cao X, Zhong S. (2016) <a href="http://nar.oxfordjournals.org/content/early/2016/04/20/nar.gkw299.full" target="_blank">GeNemo: a search engine for web-based functional genomic data.</a><abbr title="Nucleic Acids Research"> <em>Nucl. Acids Res.</em></abbr> doi:10.1093/nar/gkw299</p>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a><a name="reference" id="intro7"></a>References</div>
 <ol class="normaltext">
   <li><a name="cite1" id="cite1"></a> <a href="#cite1_ref">↑</a>Kent WJ, <em>et al.</em> (2002) <a href="http://www.genome.org/cgi/content/abstract/12/6/996" target="_blank">The human genome browser at UCSC</a>. <em>Genome Research </em>12(6): 996-1006.</li>
