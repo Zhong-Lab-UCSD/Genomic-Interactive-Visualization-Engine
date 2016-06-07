@@ -553,7 +553,7 @@
 					fillColorRGB === 'none'? 'none': this.rgbToHex(fillColorRGB));
 			}
 			if(typeof strokeColorRGB === 'number' || strokeColorRGB === 'none') {
-				newRegion.setAttributeNS(null, "stroke", 
+				newPolygon.setAttributeNS(null, "stroke", 
 					strokeColorRGB === 'none'? 'none': this.rgbToHex(strokeColorRGB));
 			}
 			if(strokeSize) {
