@@ -258,8 +258,8 @@
 				this.trackSvg.setAttribute("viewBox", "0 0 " 
 					+ this.totalWidth + " " + this.trackHeight);
 				if(this.textSvg) {
-					this.textSvg.setAttributeNS(null, 'x', this.x);
-					this.textSvg.setAttributeNS(null, 'y', this.y);
+					this.textSvg.setAttributeNS(null, 'x', 0);
+					this.textSvg.setAttributeNS(null, 'y', 0);
 					this.textSvg.setAttributeNS(null, 'width', this.textMargin);
 					
 					// notice that the heights are placeholder and will change
@@ -267,8 +267,8 @@
 					this.textSvg.setAttribute("viewBox", "0 0 " 
 						+ this.textMargin + " " + this.trackHeight);
 				}
-				this.mainSvg.setAttributeNS(null, 'x', (this.narrowMode? 0: this.textMargin + this.TEXT_MARGIN_GAP) + this.x);
-				this.mainSvg.setAttributeNS(null, 'y', this.y);
+				this.mainSvg.setAttributeNS(null, 'x', (this.narrowMode? 0: this.textMargin + this.TEXT_MARGIN_GAP));
+				this.mainSvg.setAttributeNS(null, 'y', 0);
 				this.mainSvg.setAttributeNS(null, 'width', this.windowWidth);
 			
 				// notice that the heights are placeholder and will change
@@ -378,6 +378,7 @@
 		},
 		
 		setHeight: function(newHeight) {
+			this.trackHeight = newHeight;
 		},
 		
 		// ****** customized methods ******
@@ -485,11 +486,11 @@
 		updateLocationSize: function(x, y, width, height) {
 			if(typeof(x) === 'number') {
 				this.x = x;
-				this.trackSvg.setAttributeNS(null, 'x', this.x);
+				//this.trackSvg.setAttributeNS(null, 'x', this.x);
 			}
 			if(typeof(y) === 'number') {
 				this.y = y;
-				this.trackSvg.setAttributeNS(null, 'y', this.y);
+				//this.trackSvg.setAttributeNS(null, 'y', this.y);
 			}
 			if(typeof(width) === 'number') {
 				this.setWidthParameters(width);	// may involve narrowMode
