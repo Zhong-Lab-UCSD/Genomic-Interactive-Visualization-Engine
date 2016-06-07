@@ -287,7 +287,7 @@
 			this.textSvg.setAttribute('id', this.track.getCleanID() + '_textSvg');
 			Polymer.dom(this.trackSvg).appendChild(this.textSvg);
 			this.initTextSvgHolder();
-		}
+		},
 		
 		initTextSvgHolder: function() {
 			// notice that this.textSvg should be there
@@ -300,25 +300,80 @@
 			Polymer.dom(this.mainSvg).appendChild(this.mainSvg.holder);
 		},
 		
-		setWidthParameters: function(newWidth, newTxtMargin) {
+		initSvgReceiver: function(svgToDraw) {
+			// Add a gesture listener (rectangle) to the track.
+			//		Notice that text holder and main holder have their listeners separately.
+			//		Also the actual listener is attached to svg elements, not the rectangles
+			if(!svgToDraw.gestureReceiver) {
+				// draw a rectangle over the coordinate track to handle mouse events
+			
+				svgToDraw.gestureReceiver = this.createRawRectangle(0, 0, 
+												svgToDraw.getAttributeNS(null, 'width'),
+												svgToDraw.getAttributeNS(null, 'height'), 
+												'none', svgToDraw);
+				svgToDraw.gestureReceiver.setAttribute('class', "pointerHandler");
+				
+				Polymer.dom(svgToDraw).appendChild(svgToDraw.gestureReceiver);
+			}
+			Polymer.dom.flush();
+			//this.listen(svgToDraw, 'track', 'dragHandler');
+			//this.listen(svgToDraw, 'wheel', 'wheelHandler');
+		},
+		
+		// Functions for changing window width and height (e.g. resizing browser window from iron-resized)
+		// Notice that this is a track-level solution
+		// the first track(s) (very likely to be coordinates) will generate a new newViewWindow
+		// while the rest of the tracks will follow such window
+			
+		changeViewWindowAfterResize: function(newWindowWidth, newViewWindow) {
+			// this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
+			if(!newViewWindow) {
+				// no new window, need to calculate
+				newViewWindow = this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
+					null, true, this.track.species);
+			}
+			this.updateTracks(newViewWindow);
+			return this.mainSvg.viewWindow;
+		},
+		
+		setWideModeWidthParameters: function(newWidth, newTxtMargin, newViewWindow) {
 			var widthChanged = false;
-			if(typeof(newTxtMargin) === 'number' && newTxtMargin > 0 && newTxtMargin !== this.textMargin) {
-				this.textMargin = newTxtMargin;
-				if(!this.textSvg) {
-					this.initTextSvgAndHolder();
-				}
-				widthChanged = true;
-			} else if(typeof(newTxtMargin) === 'number' && newTxtMargin <= 0) {
-				// delete textSvg
-				delete this.textMargin;
-				if(this.textSvg) {
-					Polymer.dom(this.trackSvg).removeChild(this.textSvg);
-					delete this.textSvg;
+			if(newTxtMargin && newTxtMargin !== this.textMargin) {
+				// needs to change txtMargin
+				if(newTxtMargin > 0) {
+					this.textMargin = newTxtMargin;
+					if(!this.textSvg) {
+						this.initTextSvgAndHolder();
+					}
+				} else {
+					// delete textSvg
+					delete this.textMargin;
+					if(this.textSvg) {
+						Polymer.dom(this.trackSvg).removeChild(this.textSvg);
+						delete this.textSvg;
+					}
 				}
 				widthChanged = true;
 			}
 			
-			if(typeof(newWidth) === 'number' && this.totalWidth !== newWidth) {
+			if(newWidth !== this.totalWidth || widthChanged) {
+				// needs to change totalWidth as well
+				this.totalWidth = newWidth;
+				this.changeWidthAndViewWindow(newWidth - (newTxtMargin? newTxtMargin + this.TEXT_MARGIN_GAP: 0), newViewWindow);
+			}
+			return this.mainSvg.viewWindow;
+			
+		},
+		
+		setWidthParameters: function(newWidth, newTxtMargin, newWindow) {
+			newWidth = (typeof(newWidth) === 'number' && newWidth > 0)? newWidth: this.totalWidth;
+			newTxtMargin = (typeof(newTxtMargin) === 'number' && newTxtMargin > 0)? newTxtMargin: (this.textMargin? this.textMargin: null);
+			
+			if(newWidth - (newTxtMargin? newTxtMargin + this.TEXT_MARGIN_GAP: 0) < this.MIN_TOTAL_WIDTH) {
+				this.switchNarrowMode(true);
+				// TODO: complete narrow mode codes
+			} else {
+				this.setWideModeWidthParameters(newWidth, newTxtMargin);
 			}
 		},
 		
@@ -392,6 +447,20 @@
 		
 		// ** Simple SVG Drawing **
 		
+		addElement: function(elem, svgToDraw) {
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			Polymer.dom(svgToDraw).appendChild(elem);
+		},
+		
+		removeElement: function(elem, svgToDraw) {
+			svgToDraw = svgToDraw || this.mainSvg;
+			svgToDraw = svgToDraw.holder || svgToDraw;
+			Polymer.dom(svgToDraw).removeChild(elem);
+		},
+		
+		// Create another group on top of the holder group, used to capture gesture events
+		
 		clear: function() {
 			if(this.textSvg) {
 				if(this.textSvg.holder) {
@@ -457,11 +526,13 @@
 			if(id) {
 				newRegion.setAttributeNS(null, "id", id);
 			}
-			if(typeof colorRGB === 'number') {
-				newRegion.setAttributeNS(null, "fill", this.rgbToHex(colorRGB));
+			if(typeof colorRGB === 'number' || colorRGB === 'none') {
+				newRegion.setAttributeNS(null, "fill", 
+					colorRGB === 'none'? 'none': this.rgbToHex(colorRGB));
 			}
-			if(typeof strokeColorRGB === 'number') {
-				newRegion.setAttributeNS(null, "stroke", this.rgbToHex(strokeColorRGB));
+			if(typeof strokeColorRGB === 'number' || strokeColorRGB === 'none') {
+				newRegion.setAttributeNS(null, "stroke", 
+					strokeColorRGB === 'none'? 'none': this.rgbToHex(strokeColorRGB));
 			}
 			this.addElement(newRegion, svgToDraw);
 			return newRegion;
@@ -477,11 +548,13 @@
 			if(cssClass) {
 				newPolygon.setAttributeNS(null, "class", cssClass);
 			}
-			if(typeof fillColorRGB === 'number') {
-				newPolygon.setAttributeNS(null, "fill", this.rgbToHex(fillColorRGB));
+			if(typeof fillColorRGB === 'number' || fillColorRGB === 'none') {
+				newPolygon.setAttributeNS(null, "fill", 
+					fillColorRGB === 'none'? 'none': this.rgbToHex(fillColorRGB));
 			}
-			if(typeof strokeColorRGB === 'number') {
-				newPolygon.setAttributeNS(null, "stroke", this.rgbToHex(strokeColorRGB));
+			if(typeof strokeColorRGB === 'number' || strokeColorRGB === 'none') {
+				newRegion.setAttributeNS(null, "stroke", 
+					strokeColorRGB === 'none'? 'none': this.rgbToHex(strokeColorRGB));
 			}
 			if(strokeSize) {
 				newPolygon.setAttributeNS(null, "stroke-width", strokeSize);
@@ -489,10 +562,6 @@
 			
 			this.addElement(newPolygon, svgToDraw);
 			return newPolygon;	
-		},
-		
-		createEventRectangle: function(svgParent, svgTrack) {
-			// create a rectangle to handle events
 		},
 		
 		createText: function(x, y, text, textAnchor, params) {
@@ -515,18 +584,6 @@
 			var newLabel = this.createText(x, y, text, textAnchor, params);
 			this.addElement(newLabel, svgToDraw);
 			return newLabel;
-		},
-		
-		addElement: function(elem, svgToDraw) {
-			svgToDraw = svgToDraw || this.mainSvg;
-			svgToDraw = svgToDraw.holder || svgToDraw;
-			Polymer.dom(svgToDraw).appendChild(elem);
-		},
-		
-		removeElement: function(elem, svgToDraw) {
-			svgToDraw = svgToDraw || this.mainSvg;
-			svgToDraw = svgToDraw.holder || svgToDraw;
-			Polymer.dom(svgToDraw).removeChild(elem);
 		},
 		
 		testTextWidth: function(text, textAnchor, params, svgToDraw) {

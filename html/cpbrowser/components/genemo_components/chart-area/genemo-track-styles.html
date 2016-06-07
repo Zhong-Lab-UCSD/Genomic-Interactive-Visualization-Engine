@@ -17,6 +17,10 @@
 			dominant-baseline: central;
 		}
 		
+		svg text::selection {
+			background: none;
+		}
+
 		svg polygon.linkedRegion {
 			mix-blend-mode: multiply;
 			opacity: 0.2;
@@ -26,22 +30,21 @@
 			opacity: 1;
 		}
 		
-    	svg.coordinates rect.pointerHandler {
+    	svg rect.pointerHandler {
+			fill: none;
 			pointer-events: fill;
+		}
+		
+    	svg rect.pointerHandler.grab {
 			cursor: grab;
 			cursor: -webkit-grab;
 		}
 		
-    	svg.coordinates rect.pointerHandler.grabbing {
-			pointer-events: fill;
+    	svg rect.pointerHandler.grabbing {
 			cursor: grabbing;
 			cursor: -webkit-grabbing;
 		}
 		
-		svg.coordinates text::selection {
-			background: none;
-		}
-
     </style>
   </template>
 </dom-module>
