@@ -10,6 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-a11y-keys-behavior/iron-a11y-keys-behavior.html">
+<link rel="import" href="iron-overlay-backdrop.html">
 
 <script>
 
@@ -40,9 +41,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     // Enable document-wide tap recognizer.
     Polymer.Gestures.add(document, 'tap', null);
-    // We should be using only 'tap', but this would be a breaking change.
-    var tapEvent = ('ontouchstart' in window) ? 'tap' : 'click';
-    document.addEventListener(tapEvent, this._onCaptureClick.bind(this), true);
+    // Need to have useCapture=true, Polymer.Gestures doesn't offer that.
+    document.addEventListener('tap', this._onCaptureClick.bind(this), true);
     document.addEventListener('focus', this._onCaptureFocus.bind(this), true);
     document.addEventListener('keydown', this._onCaptureKeyDown.bind(this), true);
   };
@@ -53,7 +53,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     /**
      * The shared backdrop element.
-     * @type {Element} backdropElement
+     * @type {!Element} backdropElement
      */
     get backdropElement() {
       if (!this._backdropElement) {
@@ -64,7 +64,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     /**
      * The deepest active element.
-     * @type {Element} activeElement the active element
+     * @type {!Element} activeElement the active element
      */
     get deepActiveElement() {
       // document.activeElement can be null
@@ -84,9 +84,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      */
     _bringOverlayAtIndexToFront: function(i) {
       var overlay = this._overlays[i];
+      if (!overlay) {
+        return;
+      }
       var lastI = this._overlays.length - 1;
+      var currentOverlay = this._overlays[lastI];
+      // Ensure always-on-top overlay stays on top.
+      if (currentOverlay && this._shouldBeBehindOverlay(overlay, currentOverlay)) {
+        lastI--;
+      }
       // If already the top element, return.
-      if (!overlay || i === lastI) {
+      if (i >= lastI) {
         return;
       }
       // Update z-index to be on top.
@@ -106,7 +114,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     /**
      * Adds the overlay and updates its z-index if it's opened, or removes it if it's closed.
      * Also updates the backdrop z-index.
-     * @param {Element} overlay
+     * @param {!Element} overlay
      */
     addOrRemoveOverlay: function(overlay) {
       if (overlay.opened) {
@@ -114,31 +122,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       } else {
         this.removeOverlay(overlay);
       }
-      this.trackBackdrop();
     },
 
     /**
      * Tracks overlays for z-index and focus management.
-     * @param {Element} overlay
+     * Ensures the last added overlay with always-on-top remains on top.
+     * @param {!Element} overlay
      */
     addOverlay: function(overlay) {
       var i = this._overlays.indexOf(overlay);
       if (i >= 0) {
         this._bringOverlayAtIndexToFront(i);
+        this.trackBackdrop();
         return;
       }
-      var minimumZ = Math.max(this.currentOverlayZ(), this._minimumZ);
-      this._overlays.push(overlay);
-      var newZ = this.currentOverlayZ();
+      var insertionIndex = this._overlays.length;
+      var currentOverlay = this._overlays[insertionIndex - 1];
+      var minimumZ = Math.max(this._getZ(currentOverlay), this._minimumZ);
+      var newZ = this._getZ(overlay);
+
+      // Ensure always-on-top overlay stays on top.
+      if (currentOverlay && this._shouldBeBehindOverlay(overlay, currentOverlay)) {
+        // This bumps the z-index of +2.
+        this._applyOverlayZ(currentOverlay, minimumZ);
+        insertionIndex--;
+        // Update minimumZ to match previous overlay's z-index.
+        var previousOverlay = this._overlays[insertionIndex - 1];
+        minimumZ = Math.max(this._getZ(previousOverlay), this._minimumZ);
+      }
+
+      // Update z-index and insert overlay.
       if (newZ <= minimumZ) {
         this._applyOverlayZ(overlay, minimumZ);
       }
+      this._overlays.splice(insertionIndex, 0, overlay);
+
+      // Get focused node.
       var element = this.deepActiveElement;
       overlay.restoreFocusNode = this._overlayParent(element) ? null : element;
+      this.trackBackdrop();
     },
 
     /**
-     * @param {Element} overlay
+     * @param {!Element} overlay
      */
     removeOverlay: function(overlay) {
       var i = this._overlays.indexOf(overlay);
@@ -146,7 +172,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return;
       }
       this._overlays.splice(i, 1);
-      this._setZ(overlay, '');
 
       var node = overlay.restoreFocusOnClose ? overlay.restoreFocusNode : null;
       overlay.restoreFocusNode = null;
@@ -154,6 +179,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       if (node && Polymer.dom(document.body).deepContains(node)) {
         node.focus();
       }
+      this.trackBackdrop();
     },
 
     /**
@@ -201,7 +227,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      * Updates the backdrop z-index.
      */
     trackBackdrop: function() {
-      this.backdropElement.style.zIndex = this.backdropZ();
+      var overlay = this._overlayWithBackdrop();
+      // Avoid creating the backdrop if there is no overlay with backdrop.
+      if (!overlay && !this._backdropElement) {
+        return;
+      }
+      this.backdropElement.style.zIndex = this._getZ(overlay) - 1;
+      this.backdropElement.opened = !!overlay;
     },
 
     /**
@@ -246,7 +278,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     _getZ: function(overlay) {
       var z = this._minimumZ;
       if (overlay) {
-        var z1 = Number(window.getComputedStyle(overlay).zIndex);
+        var z1 = Number(overlay.style.zIndex || window.getComputedStyle(overlay).zIndex);
         // Check if is a number
         // Number.isNaN not supported in IE 10+
         if (z1 === z1) {
@@ -257,7 +289,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     /**
-     * @param {Element} element
+     * @param {!Element} element
      * @param {number|string} z
      * @private
      */
@@ -266,7 +298,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     /**
-     * @param {Element} overlay
+     * @param {!Element} overlay
      * @param {number} aboveZ
      * @private
      */
@@ -294,8 +326,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     /**
      * Returns the deepest overlay in the path.
-     * @param {?Array<Element>} path
+     * @param {Array<Element>=} path
      * @return {Element|undefined}
+     * @suppress {missingProperties}
      * @private
      */
     _overlayInPath: function(path) {
@@ -346,6 +379,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           overlay._onCaptureTab(event);
         }
       }
+    },
+
+    /**
+     * Returns if the overlay1 should be behind overlay2.
+     * @param {!Element} overlay1
+     * @param {!Element} overlay2
+     * @return {boolean}
+     * @suppress {missingProperties}
+     * @private
+     */
+    _shouldBeBehindOverlay: function(overlay1, overlay2) {
+      return !overlay1.alwaysOnTop && overlay2.alwaysOnTop;
     }
   };
 
