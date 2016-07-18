@@ -107,6 +107,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         expect(menuButton.hasAttribute('aria-haspopup')).to.be.equal(true);
       });
 
+      test('closes on iron-activate if close-on-activate is true', function(done) {
+        menuButton.closeOnActivate = true;
+
+        menuButton.addEventListener('paper-dropdown-open', function() {
+          menuButton.addEventListener('paper-dropdown-close', function() {
+            done();
+          });
+
+          content.dispatchEvent(new CustomEvent('iron-activate', {
+            bubbles: true,
+            cancelable: true
+          }));
+        });
+
+        MockInteractions.tap(trigger);
+      });
+
     });
 
     suite('when there are two buttons', function() {

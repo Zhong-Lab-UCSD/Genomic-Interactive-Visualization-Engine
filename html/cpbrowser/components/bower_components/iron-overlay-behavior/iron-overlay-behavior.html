@@ -351,6 +351,8 @@ context. You should place this element as a child of `<body>` whenever possible.
           this._prepareRenderOpened();
           this._renderOpened();
         } else {
+          // Move the focus before actually closing.
+          this._applyFocus();
           this._renderClosed();
         }
       }.bind(this));
@@ -387,6 +389,9 @@ context. You should place this element as a child of `<body>` whenever possible.
       this.refit();
       this._finishPositioning();
 
+      // Move the focus to the child node with [autofocus].
+      this._applyFocus();
+
       // Safari will apply the focus to the autofocus element when displayed for the first time,
       // so we blur it. Later, _applyFocus will set the focus if necessary.
       if (this.noAutoFocus && document.activeElement === this._focusNode) {
@@ -415,8 +420,6 @@ context. You should place this element as a child of `<body>` whenever possible.
      * @protected
      */
     _finishRenderOpened: function() {
-      // Focus the child node with [autofocus]
-      this._applyFocus();
 
       this.notifyResize();
       this.__isAnimating = false;
@@ -438,8 +441,6 @@ context. You should place this element as a child of `<body>` whenever possible.
       this.style.display = 'none';
       // Reset z-index only at the end of the animation.
       this.style.zIndex = '';
-
-      this._applyFocus();
 
       this.notifyResize();
       this.__isAnimating = false;

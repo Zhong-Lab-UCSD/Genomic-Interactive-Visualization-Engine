@@ -268,7 +268,7 @@ To style it:
     </style>
 
     <!-- this div fulfills an a11y requirement for combobox, do not remove -->
-    <div role="button"></div>
+    <span role="button"></span>
     <paper-menu-button
       id="menuButton"
       vertical-align="[[verticalAlign]]"
@@ -278,7 +278,9 @@ To style it:
       no-animations="[[noAnimations]]"
       on-iron-select="_onIronSelect"
       on-iron-deselect="_onIronDeselect"
-      opened="{{opened}}">
+      opened="{{opened}}"
+      close-on-activate
+      allow-outside-scroll="[[allowOutsideScroll]]">
       <div class="dropdown-trigger">
         <label hidden$="[[!label]]"
             class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">[[label]]</label>
@@ -366,6 +368,17 @@ To style it:
             observer: '_openedChanged'
           },
 
+          /**
+           * By default, the dropdown will constrain scrolling on the page
+           * to itself when opened.
+           * Set to true in order to prevent scroll from being constrained
+           * to the dropdown when it opens.
+           */
+          allowOutsideScroll: {
+            type: Boolean,
+            value: false
+          },
+          
           /**
            * Set to true to disable the floating label. Bind this to the
            * `<paper-input-container>`'s `noLabelFloat` property.

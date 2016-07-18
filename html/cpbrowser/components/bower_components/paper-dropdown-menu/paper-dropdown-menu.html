@@ -85,7 +85,7 @@ respectively.
     <style include="paper-dropdown-menu-shared-styles"></style>
 
     <!-- this div fulfills an a11y requirement for combobox, do not remove -->
-    <div role="button"></div>
+    <span role="button"></span>
     <paper-menu-button
       id="menuButton"
       vertical-align="[[verticalAlign]]"
@@ -95,7 +95,9 @@ respectively.
       no-animations="[[noAnimations]]"
       on-iron-select="_onIronSelect"
       on-iron-deselect="_onIronDeselect"
-      opened="{{opened}}">
+      opened="{{opened}}"
+      close-on-activate
+      allow-outside-scroll="[[allowOutsideScroll]]">
       <div class="dropdown-trigger">
         <paper-ripple></paper-ripple>
         <!-- paper-input has type="text" for a11y, do not remove -->
@@ -196,6 +198,17 @@ respectively.
             notify: true,
             value: false,
             observer: '_openedChanged'
+          },
+
+          /**
+           * By default, the dropdown will constrain scrolling on the page
+           * to itself when opened.
+           * Set to true in order to prevent scroll from being constrained
+           * to the dropdown when it opens.
+           */
+          allowOutsideScroll: {
+            type: Boolean,
+            value: false
           },
 
           /**
@@ -336,7 +349,7 @@ respectively.
           if (!selectedItem) {
             value = '';
           } else {
-            value = selectedItem.label || selectedItem.textContent.trim();
+            value = selectedItem.label || selectedItem.getAttribute('label') || selectedItem.textContent.trim();
           }
 
           this._setValue(value);
