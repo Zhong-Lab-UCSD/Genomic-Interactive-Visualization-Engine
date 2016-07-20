@@ -152,7 +152,25 @@
 		},
 		
 		// TODO: add/remove/rearrange tracks
-		
+		addTrack: function (track,trackCtrlDOM){
+			trackCtrlDOM.push(track);
+		}
+		removeTrack: function (track,trackCtrlDOM){
+			var index=trackCtrlDOM.indexOf(track);
+			if (index !== -1){
+				trackCtrlDOM.splice(index,1);
+			}
+			else{
+				throw("Element to remove does not exist!");
+			}
+		}
+		rearrangeTrack: function(track1, track2, trackCtrlDOM){
+			var tempTrack = track2;
+			var index1 = trackCtrlDOM.indexOf(track1);
+			var index2 = trackCtrlDOM.indexOf(track2);
+			trackCtrlDOM[index2]=track1;
+			trackCtrlDOM[index1]=tempTrack;
+		}
 	});
   </script>
 </dom-module>
