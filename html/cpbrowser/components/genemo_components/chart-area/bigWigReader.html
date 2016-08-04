@@ -1,0 +1,294 @@
+<html>
+<input type='file' accept='text/plain' onchange='openFile(event)'><br>
+<p id='test'>Sample Table</p>
+<script>
+    var openFile = function(event) {
+        var input = event.target;
+
+        var reader = new FileReader();
+        reader.onload = function() {
+            var bigWig = new bigWigFile(reader.result);
+            var ten = bigWig.getInt32();
+            var ten2 = bigWig.getInt32();
+            //console.log(reader.result.substring(0, 200));
+
+            var stuff = document.getElementById('test');
+            stuff.innerHTML = ten;
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    };
+
+
+
+
+    function bigWigFile(arrayBuffer) {
+		this.text=new DataView(arrayBuffer);
+		var index = 0;
+        this.dataPoints = [];
+        this.zoomLevelHeaders = [];
+        this.chromeTreeNodeChildren = [];
+        this.unzoomedIndexNodeChildren = [];
+		this.readAllStuff = function(){
+		this.readBigWigHeader(index);
+		for(var i=0;i<this.zoomLevel;i++){
+		this.readZoomLevelHeader(index);
+		}
+		
+		};
+        this.readBigWigHeader = function() {
+            var magicNumber = this.getInt32(index);
+            //do stuff with magic number
+            this.bigWigHeader.version = this.getInt16(index);
+            this.bigWigHeader.zoomLevel = this.getInt16(index);
+            this.bigWigHeader.chromTreeOffest = this.getInt64(index);
+            this.bigWigHeader.unzoomedDataOffset = this.getInt64(index);
+            this.bigWigHeader.unzoomedIndexOffset = this.getInt64(index);
+            this.bigWigHeader.fieldCount = this.getInt16(index);
+            this.bigWigHeader.definedFieldCount = this.getInt16(index);
+            this.bigWigHeader.asOffset = this.getInt64(index);
+            this.bigWigHeader.totalSummaryOffset = this.getInt64(index);
+            this.bigWigHeader.uncompressBufferSize = this.getInt32(index);
+            this.bigWigHeader.reserved = this.getInt64(index);
+
+        };
+		
+        this.readZoomLevelHeader = function() {
+            var reductionLevel = this.getInt32(index);
+            var reserved = this.getInt32(index);
+            var dataOffset = this.getInt64(index);
+            var indexOffset = this.getInt64(index);
+            this.zoomLevelHeaders.push(new zoomLevelHeader(reductionLevel, reserved, dataOffset, indexOffset));
+        };
+        this.readSummaryHeader = function() {
+            this.summaryHeader.validCount = this.getInt64(index);
+            this.summaryHeader.minimumValue = this.getDouble(index);
+            this.summaryHeader.maximumValue = this.getDouble(index);
+            this.summaryHeader.sumOfData = this.getDouble(index);
+            this.summaryHeader.sumOfSquareOfData = this.getDouble(index);
+        };
+        this.readChromTreeHeader = function() {
+            this.chromTreeHeader.magicNumber = this.getInt32(index);
+            this.chromTreeHeader.blockSize = this.getInt32(index);
+            this.chromTreeHeader.keySize = this.getInt32(index);
+            this.chromTreeHeader.valueSize =this.getInt32(index);
+            this.chromTreeHeader.itemCount = this.getInt64(index);
+            this.chromTreeHeader.reserved =this.getInt64(index);
+        };
+        this.readChromTreeNode = function() {
+            thid.chromTreeNode.isLeaf = this.getInt8(index);
+            thid.chromTreeNode.reserved = this.getInt8(index);
+            thid.chromTreeNode.childCount = this.getInt16(index);
+        };
+        this.readChromeTreeNodeChild = function() {
+            var chromKey = this.getInt40(index);
+            var chromID = this.getInt32(index);
+            var chromSize = this.getInt32(index);
+            this.chromeTreeNodeChildren.push(new chromTreeNodeChild(chromKey, chromID, chromSize));
+        };
+        this.readUnzoomedIndexHeader = function() {
+            this.unzoomedIndexHeader.magicNumber = this.getInt32(index);
+            this.unzoomedIndexHeader.blockSize = this.getInt32(index);
+            this.unzoomedIndexHeader.itemCount = this.getInt64(index);
+            this.unzoomedIndexHeader.startChromID = this.getInt32(index);
+            this.unzoomedIndexHeader.startBase = this.getInt32(index);
+            this.unzoomedIndexHeader.endChromID = this.getInt32(index);
+            this.unzoomedIndexHeader.endBase = this.getInt32(index);
+            this.unzoomedIndexHeader.fileSize = this.getInt64(index);
+            this.unzoomedIndexHeader.itemsPerSlot = this.getInt32(index);
+            this.unzoomedIndexHeader.reserved = this.getInt32(index);
+        };
+        this.readUnzoomedIndexNode = function() {
+            this.unzoomedIndexNode.isLeaf = this.getInt8(index);
+            this.unzoomedIndexNode.reserved = this.getInt8(index);
+            this.unzoomedIndexNode.childCount = this.getInt16(index);
+        };
+        this.readUnzoomedIndexNodeChild = function() {
+            var startChromID = this.getInt32(index);
+            var startBase = this.getInt32(index);
+            var endChromID = this.getInt32(index);
+            var endBase = this.getInt32(index);
+            var offset = this.getInt64(index);
+            var size = this.getInt64(index);
+            this.unzoomedIndexNodeChildren.push(new unzoomedIndexNodeChild(startChromID, startBase, endChromID, endBase, offset, size));
+        };
+        var readDataBlockHeader = function() {
+            var chromID = this.getInt32(index);
+            if (!this.datapoints.hasOwnProperty[chromIDToNumber(chromID)])
+                this.datapoints[chromIDToNumber(chromID)] = [];
+            var startBase = this.getInt32(index);
+            var endBase = this.getInt32(index);
+            var itemStep = this.getInt32(index);
+            var itemSpan = this.getInt32(index);
+            var type = this.getInt8(index);//should this be some new getchar method?
+            var reserved = this.getInt8(index);
+            var itemCount = this.getInt16(index);
+            for (var i = 0; i < itemCount; i++) {
+                var start = 0;
+                var end = 0;
+                var value = 0;
+                switch (type) {
+                    case 1:
+                        start = this.getInt32(index);
+                        end = this.getInt32(index);
+                        value = this.getFloat(index);
+                        break;
+                    case 2:
+                        start = this.getInt32(index);
+                        end = start + itemSpan;
+                        value = this.getFloat(index);
+                        break;
+                    case 3:
+                        start = startBase + i * itemStep;
+                        end = start + itemSpan;
+                        value = this.getFloat(index);
+                        break;
+                    default:
+                        console.log('error with data type.');
+                }
+                this.datapoints[chromIDToNumber(chromID)].push([start, end, value]);
+            }
+        };
+        var readZoomedSummaryData = function() {
+            this.zoomedSummaryData.chromID = this.getInt32(index);
+            this.zoomedSummaryData.start = this.getInt32(index);
+            this.zoomedSummaryData.end = this.getInt32(index);
+            this.zoomedSummaryData.validCount = this.getInt32(index);
+            this.zoomedSummaryData.minimumValue = this.getFloat(index);
+            this.zoomedSummaryData.maximumValue = this.getFloat(index);
+            this.zoomedSummaryData.sumOfData = this.getFloat(index);
+            this.zoomedSummaryData.sumOfSquareOfData = this.getFloat(index);
+        };
+
+
+        function zoomLevelHeader(reductionLevel, reserved, dataOffset, indexOffset) {
+            this.reductionLevel = reductionLevel;
+            this.reserved = reserved;
+            this.dataOffset = dataOffset;
+            this.indexOffset = indexOffset;
+        }
+
+        function chromTreeNodeChild(chromKey, chromID, chromSize) {
+            this.chromKey = chromKey;
+            this.chromID = chromID;
+            this.chromSize = chromSize;
+        }
+
+        function unzoomedIndexNodeChild(startChromID, startBase, endChromID, endBase, offset, size) {
+            this.startChromID = startChromID;
+            this.startBase = startBase;
+            this.endChromID = endChromID;
+            this.endBase = endBase;
+            this.offset = offset;
+            this.size = size;
+        }
+
+        function chromIDToNumber(chromID) {
+            //do something
+            return 4;
+        }
+/*
+        this.read = function(bytes) { //add support for doubles and floats
+            var raw = this.text.substring(0, bytes)
+            var number = 0;
+            for (var i = 0; i < raw.length; i++) {
+                number = number << 8;
+                number += raw.charCodeAt(i);
+
+            }
+            this.text = this.text.substring(bytes);
+            return number;
+        };
+        this.read8 = function() {
+            this.read(8);
+        };
+        this.read2 = function() {
+            this.read(2);
+        };
+        this.read4 = function() {
+            this.read(4);
+        };*/
+		this.getInt8 = function(index){
+		var text= this.text.getUint8(index);
+		index+=8;
+		return text;
+		}
+		this.getInt16= function(index){
+		var text= this.text.getUint16(index);
+		index+=16;
+		return text;
+		}
+		this.getInt32= function(index){
+		var text= this.text.getUint32(index);
+		index+=32;
+		return text;
+		}
+		this.getInt40= function(index){
+		var int32=getInt32(index);
+		index+=32;
+		var int8=getInt8(index);
+		index+=8;
+		return (int32 << 8) +int8;
+		}
+		this.getInt64= function(index){
+		var part1=getInt32(index);
+		index+=32;
+		var part2=getInt32(index);
+		index+=32;
+		return (part1 << 32) +part2;
+		}
+		this.getFloat= function(index){
+		var text= this.text.getFloat32(index);
+		index+=32;
+		return text;
+		}
+		this.getDouble= function(index){
+		var text= this.text.getFloat64(index);
+		index+=64;
+		return text;
+		}
+    }
+
+
+
+
+    function read(obj, bytes) {
+        var raw = obj.text.substring(0, bytes);
+        var number = 0;
+        for (var i = 0; i < raw.length; i++) {
+            number = number << 8;
+            number += raw.charCodeAt(i);
+
+        }
+        obj.text = obj.text.substring(bytes);
+        return number;
+    }
+
+
+
+
+    /*function read(func, bytes){
+    	var result = func.text.substring(0,bytes);
+    	var numberString='';
+    	for (var i = 0; i<result.length;i++){
+    	if(result.charCodeAt(i)<10)numberString+='00'+result.charCodeAt(i);
+    	else if(result.charCodeAt(i)<100)numberString+='0'+result.charCodeAt(i);
+    	else numberString+=result.charCodeAt(i);
+    	}
+    	func.text = func.text.substring(bytes);
+    	console.log(numberString);
+    	console.log(parseInt(numberString, 256));
+    	return parseInt(numberString, 256);
+    }
+
+    function from256To16Base(s){
+    var result = s+'';
+    	while(result.length<2){
+    	result = '0'+result;
+    	}
+    	return result;
+    }
+
+    */
+</script>
+
+</html>
