@@ -10,76 +10,96 @@
         reader.onload = function() {
             var bigWig = new bigWigFile(reader.result);
             //var ten = bigWig.getInt8();
- 
-            //console.log(reader.result.substring(0, 200));
-			bigWig.readAllStuff();
-			console.log(bigWig.dataPoints);
+
+
+            //bigWig.readAllStuff();
+            bigWig.readSection(3, 1, 200000000);
+            console.log(bigWig.dataPoints);
+			console.log(bigWig.pointCount);
+			console.log(bigWig);
             var stuff = document.getElementById('test');
             //stuff.innerHTML = ten;
         };
         reader.readAsArrayBuffer(input.files[0]);
     };
+/*
+ToDo:
 
+make a separate super dataview prototype that stores its own dataview and can handle reads and advance automatically
+fix efficiency for filtering(read less data before filter)
+fix similar function efficiency 
+aye lurned ahlought
 
-
-
-    function bigWigFile(arrayBuffer) {
-		this.text=new DataView(arrayBuffer);
-		console.log(this.text.byteLength);
-		this.bigWigHeader={};
-		this.summaryHeader={};
-		this.chromTreeHeader={};
-		this.unzoomedIndexHeader={};
-		this.zoomedSummaryData={};
-		this.isLittleEndian=false;
-		this.index = 0;
+*/
+    function bigWigFile(arrayBuffer) {this.pointCount=0;
+        this.text = new DataView(arrayBuffer);
+        console.log(this.text.byteLength);
+        this.bigWigHeader = {};
+        this.summaryHeader = {};
+        this.chromTreeHeader = {};
+        this.unzoomedIndexHeader = {};
+        this.zoomedSummaryData = {};
+        this.isLittleEndian = false;
+        this.index = 0;
         this.dataPoints = [];
         this.zoomLevelHeaders = [];
         this.chromTreeNodeChildren = [];
-		
-		this.readSection = function(chromNumber,startBase,endBase){
-		this.readBigWigHeader();
-		for(var i=0;i<this.zoomLevel;i++){
-			this.readZoomLevelHeader();
-		}	
-		this.index=this.bigWigHeader.totalSummaryOffset;
-			this.readSummaryHeader();
-			this.index=this.bigWigHeader.chromTreeOffset;
-			this.readChromTreeHeader();
-			this.readChromTreeNode();
-		}
-		
-		this.readAllStuff = function(){
-			this.readBigWigHeader();
-			for(var i=0;i<this.zoomLevel;i++){
-			this.readZoomLevelHeader();
-		}	
-			this.index=this.bigWigHeader.totalSummaryOffset;
-			this.readSummaryHeader();
-			this.index=this.bigWigHeader.chromTreeOffset;
-			this.readChromTreeHeader();
-			this.readChromTreeNode();
-			
-			this.index=this.bigWigHeader.unzoomedIndexOffset;
-			this.readUnzoomedIndexHeader();
-			this.readUnzoomedIndexNode();
-			//data should all be loaded by now
-			//do something with zoomed summary data
-	
-		};
-        this.readBigWigHeader = function() {console.log(this.index);
-            var magicNumber = this.getInt32(this.index);console.log(magicNumber);console.log(this.index);
-			if (magicNumber!==0x888FFC26)
-			{console.log('endian wrong');
-			this.isLittleEndian=true;
-			}
+
+        this.readSection = function(chromNumber, startBase, endBase) {
+            var readSection = true;
+            this.readBigWigHeader();
+            this.chromNumber = chromNumber;
+            this.startBase = startBase;
+            this.endBase = endBase;
+            for (var i = 0; i < this.zoomLevel; i++) {
+                this.readZoomLevelHeader();
+            }
+            this.index = this.bigWigHeader.totalSummaryOffset;
+            this.readSummaryHeader();
+            this.index = this.bigWigHeader.chromTreeOffset;
+            this.readChromTreeHeader();
+            this.readChromTreeNode();
+
+            this.index = this.bigWigHeader.unzoomedIndexOffset;
+            this.readUnzoomedIndexHeader();
+            this.readUnzoomedIndexNode(readSection);
+            //data should all be loaded by now
+            //do something with zoomed summary data
+        }
+
+        this.readAllStuff = function() {
+            var readSection = false;
+            this.readBigWigHeader();
+            for (var i = 0; i < this.zoomLevel; i++) {
+                this.readZoomLevelHeader();
+            }
+            this.index = this.bigWigHeader.totalSummaryOffset;
+            this.readSummaryHeader();
+            this.index = this.bigWigHeader.chromTreeOffset;
+            this.readChromTreeHeader();
+            this.readChromTreeNode();
+
+            this.index = this.bigWigHeader.unzoomedIndexOffset;
+            this.readUnzoomedIndexHeader();
+            this.readUnzoomedIndexNode(readSection);
+            //data should all be loaded by now
+            //do something with zoomed summary data
+
+        };
+        this.readBigWigHeader = function() {
+            var magicNumber = this.getInt32(this.index);
+            console.log(magicNumber);
+            if (magicNumber !== 0x888FFC26) {
+                console.log('endian wrong');
+                this.isLittleEndian = true;
+            }
             this.bigWigHeader.version = this.getInt16(this.index);
             this.bigWigHeader.zoomLevel = this.getInt16(this.index);
             this.bigWigHeader.chromTreeOffset = this.getInt64(this.index);
             this.bigWigHeader.unzoomedDataOffset = this.getInt64(this.index);
             this.bigWigHeader.unzoomedIndexOffset = this.getInt64(this.index);
             this.bigWigHeader.fieldCount = this.getInt16(this.index);
-			
+
             this.bigWigHeader.definedFieldCount = this.getInt16(this.index);
             this.bigWigHeader.asOffset = this.getInt64(this.index);
             this.bigWigHeader.totalSummaryOffset = this.getInt64(this.index);
@@ -87,7 +107,7 @@
             this.bigWigHeader.reserved = this.getInt64(this.index);
 
         };
-		
+
         this.readZoomLevelHeader = function() {
             var reductionLevel = this.getInt32(this.index);
             var reserved = this.getInt32(this.index);
@@ -106,18 +126,18 @@
             this.chromTreeHeader.magicNumber = this.getInt32(this.index);
             this.chromTreeHeader.blockSize = this.getInt32(this.index);
             this.chromTreeHeader.keySize = this.getInt32(this.index);
-            this.chromTreeHeader.valueSize =this.getInt32(this.index);
+            this.chromTreeHeader.valueSize = this.getInt32(this.index);
             this.chromTreeHeader.itemCount = this.getInt64(this.index);
-            this.chromTreeHeader.reserved =this.getInt64(this.index);
+            this.chromTreeHeader.reserved = this.getInt64(this.index);
         };
         this.readChromTreeNode = function() {
             var isLeaf = this.getInt8(this.index);
             var reserved = this.getInt8(this.index);
             var childCount = this.getInt16(this.index);
-			for(var i=0;i<childCount;i++){
-			if(isLeaf)this.readChromeTreeNodeChild();
-			else this.readChromTreeNode();
-			}
+            for (var i = 0; i < childCount; i++) {
+                if (isLeaf) this.readChromeTreeNodeChild();
+                else this.readChromTreeNode();
+            }
         };
         this.readChromeTreeNodeChild = function() {
             var chromKey = this.getString40(this.index);
@@ -137,81 +157,106 @@
             this.unzoomedIndexHeader.itemsPerSlot = this.getInt32(this.index);
             this.unzoomedIndexHeader.reserved = this.getInt32(this.index);
         };
-        this.readUnzoomedIndexNode = function() {
+        this.readUnzoomedIndexNode = function(readSection) {
             var isLeaf = this.getInt8(this.index);
             var reserved = this.getInt8(this.index);
             var childCount = this.getInt16(this.index);
-			//var oldIndex = this.index;
-			for(var i=0;i<childCount;i++){
-			this.readUnzoomedIndexNodeChild(isLeaf);
-			
-			
-			//index=oldIndex;
-			}
-			
+            //var oldIndex = this.index;
+            for (var i = 0; i < childCount; i++) {
+                this.readUnzoomedIndexNodeChild(isLeaf, readSection);
+
+
+                //index=oldIndex;
+            }
+
         };
-        this.readUnzoomedIndexNodeChild = function(isLeaf) {
+        this.readUnzoomedIndexNodeChild = function(isLeaf, readSection) {
             var startChromID = this.getInt32(this.index);
             var startBase = this.getInt32(this.index);
             var endChromID = this.getInt32(this.index);
             var endBase = this.getInt32(this.index);
             var offset = this.getInt64(this.index);
-			var oldIndex=this.index;
-            if (isLeaf) {var size = this.getInt64(this.index);this.index=offset;this.readDataBlockHeader(size);this.index=oldIndex+8;}
-			else  {this.index=offset;this.readUnzoomedIndexNode();this.index=oldIndex;}
-            
+
+            var oldIndex = this.index;
+            if (!readSection || (readSection && this.withinSection(startChromID, endChromID, startBase, endBase))) {
+
+                if (isLeaf) {
+                    var size = this.getInt64(this.index);
+                    this.index = offset;
+                    this.readDataBlockHeader(size);
+                    this.index = oldIndex + 8;
+                } else {
+                    this.index = offset;
+                    this.readUnzoomedIndexNode(readSection);
+                    this.index = oldIndex;
+                }
+            } else if (isLeaf) {
+                this.index += 8;
+            }
         };
         this.readDataBlockHeader = function(length) {
-		var charData=[];
-		for(var i=0;i<length;i++){
-		charData.push(this.getInt8(this.index));
-		}
-		var subIndex=0;
-		var unPacked = pako.inflate(charData);
-		//var unPackedString     = String.fromCharCode.apply(null, new Uint16Array(unPacked));
-		
-		//var arrayData=str2ab(unPackedString);
-		//var arrayData=new ArrayBuffer(unPacked);
-		var arrayView=new DataView(unPacked.buffer);
-		
-		
-		
-            var chromID = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-			var chromNumber=this.chromIDToNumber(chromID);
-			console.log(chromNumber);
-            if (!this.dataPoints.hasOwnProperty[chromNumber])
-				
+            var charData = [];
+            for (var i = 0; i < length; i++) {
+                charData.push(this.getInt8(this.index));
+            }
+            var subIndex = 0;
+            var unPacked = pako.inflate(charData);
+
+            var arrayView = new DataView(unPacked.buffer);
+
+
+
+            var chromID = arrayView.getUint32(subIndex, this.isLittleEndian);
+            subIndex += 4;
+            var chromNumber = this.chromIDToNumber(chromID);
+            //console.log(chromNumber);
+            if (!this.dataPoints.hasOwnProperty(chromNumber))
+
                 this.dataPoints[chromNumber] = [];
-            var startBase = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-            var endBase = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-            var itemStep = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-            var itemSpan = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-            var type = arrayView.getUint8(subIndex,this.isLittleEndian);subIndex+=1;
-            var reserved = arrayView.getUint8(subIndex,this.isLittleEndian);subIndex+=1;//dont need to read all reserved
-            var itemCount = arrayView.getUint16(subIndex,this.isLittleEndian);subIndex+=2;
+            var startBase = arrayView.getUint32(subIndex, this.isLittleEndian);
+            subIndex += 4;
+            var endBase = arrayView.getUint32(subIndex, this.isLittleEndian);
+            subIndex += 4;
+            var itemStep = arrayView.getUint32(subIndex, this.isLittleEndian);
+            subIndex += 4;
+            var itemSpan = arrayView.getUint32(subIndex, this.isLittleEndian);
+            subIndex += 4;
+            var type = arrayView.getUint8(subIndex, this.isLittleEndian);
+            subIndex += 1;
+            var reserved = arrayView.getUint8(subIndex, this.isLittleEndian);
+            subIndex += 1; //dont need to read all reserved
+            var itemCount = arrayView.getUint16(subIndex, this.isLittleEndian);
+            subIndex += 2;
             for (var i = 0; i < itemCount; i++) {
                 var start = 0;
                 var end = 0;
                 var value = 0;
                 switch (type) {
                     case 1:
-                        start = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-                        end = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
-                        value = arrayView.getFloat32(subIndex,this.isLittleEndian);subIndex+=4;
+                        start = arrayView.getUint32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
+                        end = arrayView.getUint32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
+                        value = arrayView.getFloat32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
                         break;
                     case 2:
-                        start = arrayView.getUint32(subIndex,this.isLittleEndian);subIndex+=4;
+                        start = arrayView.getUint32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
                         end = start + itemSpan;
-                        value = arrayView.getFloat32(subIndex,this.isLittleEndian);subIndex+=4;
+                        value = arrayView.getFloat32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
                         break;
                     case 3:
                         start = startBase + i * itemStep;
                         end = start + itemSpan;
-                        value = arrayView.getFloat32(subIndex,this.isLittleEndian);subIndex+=4;
+                        value = arrayView.getFloat32(subIndex, this.isLittleEndian);
+                        subIndex += 4;
                         break;
                     default:
-                        //console.log('error with data type.');
+                        console.log('error with data type.');
                 }
+				this.pointCount+=1;
                 this.dataPoints[chromNumber].push([start, end, value]);
             }
         };
@@ -250,79 +295,95 @@
         }
 
         this.chromIDToNumber = function(chromID) {
-            for(var i=0;i<this.chromTreeNodeChildren.length;i++){//console.log(this.chromTreeNodeChildren[i].chromID);console.log(chromID);
-			if (this.chromTreeNodeChildren[i].chromID==chromID){
-			return this.chromKeyToNumber(this.chromTreeNodeChildren[i].chromKey);}
-			}
-			console.log('error getting chrom number from key');
+            for (var i = 0; i < this.chromTreeNodeChildren.length; i++) {
+                if (this.chromTreeNodeChildren[i].chromID == chromID) {
+                    return this.chromKeyToNumber(this.chromTreeNodeChildren[i].chromKey);
+                }
+            }
+            console.log('error getting chrom number from key');
             return null;
         };
-		this.chromKeyToNumber=function(chromKey){
-			var chrom = chromKey.trim().substring(3);
-			//var chrom=chromTrim.subString(3);
-			if (chrom=='X')return 24;
-			else if(chrom=='Y')return 25;
-			else return parseInt(chrom);
-		
-		};
-		function str2ab(str) {
-  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
-  var bufView = new Uint16Array(buf);
-  for (var i=0, strLen=str.length; i<strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  return buf;
-}
+        this.chromKeyToNumber = function(chromKey) {
+            var chrom = chromKey.trim().substring(3);
+            //var chrom=chromTrim.subString(3);
+            if (chrom == 'X') return 24;
+            else if (chrom == 'Y') return 25;
+            else return parseInt(chrom);
 
-		this.getInt8 = function(index){
-		this.index=index;
-		var text= this.text.getUint8(index,this.isLittleEndian);
-		this.index+=1;
-		return text;
-		}
-		this.getInt16= function(index){
-		this.index=index;
-		var text= this.text.getUint16(index,this.isLittleEndian);
-		this.index+=2;
-		return text;
-		}
-		this.getInt32= function(index){
-		this.index=index;
-		var text= this.text.getUint32(index,this.isLittleEndian);
-		this.index+=4;
-		return text;
-		}
-		this.getString40= function(index){//need to implement a varying size for this one defined by keySize
-		var result='';
-		for (var i=0;i<5;i++){
-		var letter=String.fromCharCode(this.getInt8(this.index));
-		result+=letter;
-		}
-		return result;
-		}
-		this.getInt64= function(index){//fix later, right now just gets a 32.
-		this.index=index;
-		if(this.isLittleEndian){var int32 = this.getInt32(this.index);
-		this.index+=4;
-		return int32;}
-		else{
-		this.index+=4;
-		return this.getInt32(this.index);
-		}
-		
-		}
-		this.getFloat= function(index){
-		this.index=index;
-		var text= this.text.getFloat32(index,this.isLittleEndian);
-		this.index+=4;
-		return text;
-		}
-		this.getDouble= function(index){
-		this.index=index;
-		var text= this.text.getFloat64(index,this.isLittleEndian);
-		this.index+=8;
-		return text;
-		}
+        };
+        this.withinSection = function(chrom1, chrom2, base1, base2) { //no support for datablocks with data for multiple chromosomes yet
+
+
+            var chr1 = this.chromIDToNumber(chrom1);
+            var chr2 = this.chromIDToNumber(chrom2);
+            if ((chr1 <= this.chromNumber) && (chr2 >= this.chromNumber)) {
+			if((base2>this.startBase) && (this.endBase>base1))
+                
+                    return true;
+            }
+
+            return false;
+        }
+
+        function str2ab(str) {
+            var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
+            var bufView = new Uint16Array(buf);
+            for (var i = 0, strLen = str.length; i < strLen; i++) {
+                bufView[i] = str.charCodeAt(i);
+            }
+            return buf;
+        }
+
+        this.getInt8 = function(index) {
+            this.index = index;
+            var text = this.text.getUint8(index, this.isLittleEndian);
+            this.index += 1;
+            return text;
+        }
+        this.getInt16 = function(index) {
+            this.index = index;
+            var text = this.text.getUint16(index, this.isLittleEndian);
+            this.index += 2;
+            return text;
+        }
+        this.getInt32 = function(index) {
+            this.index = index;
+            var text = this.text.getUint32(index, this.isLittleEndian);
+            this.index += 4;
+            return text;
+        }
+        this.getString40 = function(index) { //need to implement a varying size for this one defined by keySize
+            var result = '';
+            for (var i = 0; i < 5; i++) {
+                var letter = String.fromCharCode(this.getInt8(this.index));
+                result += letter;
+            }
+            return result;
+        }
+        this.getInt64 = function(index) { //fix later, right now just gets a 32.
+            this.index = index;
+            if (this.isLittleEndian) {
+                var int32 = this.getInt32(this.index);
+                this.index += 4;
+                return int32;
+            } else {
+                this.index += 4;
+                return this.getInt32(this.index);
+            }
+
+        }
+        this.getFloat = function(index) {
+            this.index = index;
+            var text = this.text.getFloat32(index, this.isLittleEndian);
+            this.index += 4;
+            return text;
+        }
+        this.getDouble = function(index) {
+            this.index = index;
+            var text = this.text.getFloat64(index, this.isLittleEndian);
+            this.index += 8;
+            return text;
+        }
     }
 
 
@@ -339,11 +400,6 @@
         obj.text = obj.text.substring(bytes);
         return number;
     }
-
-
-
-
-
 </script>
 
 </html>
