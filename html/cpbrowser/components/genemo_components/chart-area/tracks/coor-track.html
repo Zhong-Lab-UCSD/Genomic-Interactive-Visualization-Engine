@@ -187,10 +187,7 @@
 			// draw a rectangle over the coordinate track to handle mouse events
 			
 			if(!Polymer.dom(svgToDraw).querySelector(".pointerHandler")) {
-				var newRegion = this.createRawRectangle(0, 0, this.windowWidth, this.trackHeight);
-				newRegion.setAttributeNS(null, "fill", "none");
-				newRegion.setAttribute('class', "pointerHandler");
-				
+				var newRegion = this.createRawRectangle(0, 0, this.windowWidth, this.trackHeight, {fill: 'none', class: 'pointerHandler'});
 				Polymer.dom(svgToDraw).appendChild(newRegion);
 			}
 			Polymer.dom.flush();

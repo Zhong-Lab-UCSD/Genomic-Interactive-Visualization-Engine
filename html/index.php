@@ -19,25 +19,27 @@
 	}
 	unset($res);
 	
-	$isResuming = false;
+	$sessionInfo = NULL;
 	if(isset($_REQUEST['sessionID'])) {
 		// this is to recover an old session
 		// went to database to make sure this is a correct sessionID
-		$mysqli = connectCPB();
-		$stmt = $mysqli->prepare("SELECT * FROM `userInput` WHERE `id` = ?");
-		$sessionID = trim($_REQUEST['sessionID']);
-		$stmt->bind_param('s', $sessionID);
-		$stmt->execute();
-		$sessionresult = $stmt->get_result();
-		if($sessionresult->num_rows > 0) {
-			$sessionInfo = $sessionresult->fetch_assoc();
-			$sessionresult->free();
-			$isResuming = true;
+		
+		// if testing flag is set, go to the new server to check
+		if(isset($_REQUEST['XCGenemoTest'])) {
+			$ch = curl_init((isset($_SERVER["HTTPS"])? "https": "http") +
+				"://comp.genemo.org/cpbrowser/loadSession.php?sessionID=" + $_REQUEST['sessionID']);
+			try {
+				$sessionInfo = json_decode(curl_exec($ch));
+			} catch(Exception $e) {
+				$sessionError = "Invalid address or address expired.";
+			}
 		} else {
-			$sessionError = "Invalid address or address expired.";
+			try {
+				$sessionInfo = loadGenemoSession($_REQUEST['sessionID']);
+			} catch(Exception $e) {
+				$sessionError = $e->getMessage();
+			}
 		}
-		$stmt->close();
-		$mysqli->close();
 	}
 ?>
 <!DOCTYPE html>
@@ -72,8 +74,12 @@
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
 <link rel="import" href="cpbrowser/components/genemo_components/genemo-styles.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
+<link rel="import" href="cpbrowser/components/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="cpbrowser/components/bower_components/google-youtube/google-youtube.html">
 <link rel="import" href="cpbrowser/components/bower_components/paper-tooltip/paper-tooltip.html">
 <link rel="import" href="cpbrowser/components/bower_components/iron-signals/iron-signals.html">
+<link rel="import" href="cpbrowser/components/bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="cpbrowser/components/bower_components/iron-icons/notification-icons.html">
 <style is="custom-style" include="genemo-shared-styles">
 <!--
 html {
@@ -88,9 +94,9 @@ body {
 	height: 100%;
 	overflow: hidden;
 }
-paper-button#manualBtn {
+paper-button {
 	font-size: 14px;
-	margin: 0.5em 0;
+	margin: 0.2em 0;
 }
 -->
 </style>
@@ -757,6 +763,24 @@ window.addEventListener("WebComponentsReady", function(e) {
 	if(manualBtn) {
 		manualBtn.addEventListener('click', window.open.bind(window, 'cpbrowser/manual_genemo.php', '_blank'));
 	}
+	var videoBtn = document.querySelector('#videoBtn');
+	if(videoBtn) {
+		var videoDialog = document.querySelector('#videoDialog');
+		var videoPlayer = document.querySelector('#videoPlayer');
+		if(videoDialog) {
+			videoDialog.addEventListener('iron-overlay-opened', function(e) {
+				if(videoPlayer && videoPlayer.playsupported) {
+					videoPlayer.play();
+				}
+			});
+			videoDialog.addEventListener('iron-overlay-closed', function(e) {
+				if(videoPlayer && videoPlayer.playsupported) {
+					videoPlayer.pause();
+				}
+			});
+			videoBtn.addEventListener('click', videoDialog.open.bind(videoDialog));
+		}
+	}
 	var engBtn = document.querySelector('#engBtn');
 	if(engBtn) {
 		engBtn.addEventListener('click', setTexts.bind(window, "en"));
@@ -784,7 +808,7 @@ window.addEventListener("WebComponentsReady", function(e) {
 	toggleEncode();
 <?php
 	// this is loading part
-	if($isResuming) {
+	if($sessionInfo) {
 ?>
 	var sessionObj = new Object();
 	sessionObj.id = '<?php echo $sessionInfo['id']; ?>';
@@ -818,7 +842,7 @@ window.addEventListener("WebComponentsReady", function(e) {
 </head>
 <body unresolved class="<?php echo $genemoOn? "firstIndex": "twoColLiqLt"; ?>" onresize="resize_tbody();">
 <?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
-<div id="container">
+<div id="genemo-container">
   <div id="sidebar1">
     <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
       <?php if(!isset($experimentalFeatures)) { ?>
@@ -888,6 +912,9 @@ window.addEventListener("WebComponentsReady", function(e) {
     <paper-button class="fullWidth" noink raised id="manualBtn">
       <iron-icon class="smallInline" icon="genemo-iconset:manual-icon" alt="manual"></iron-icon>
       <span class="text" id="Genemo Manual">Genemo Manual </span></paper-button>
+    <paper-button class="fullWidth" noink raised id="videoBtn">
+      <iron-icon class="smallInline" icon="notification:ondemand-video" alt="manual"></iron-icon>
+      <span class="text" id="Video Intro">Video introduction </span></paper-button>
 	  <paper-button class="halfWidth" noink raised id="engBtn">
 		English<img src="https://www.pegasusautoracing.com/Images/S/3610-101.GIF" style="width:50px;height:30px;">
 		</paper-button>
@@ -895,6 +922,10 @@ window.addEventListener("WebComponentsReady", function(e) {
 		<img src="http://www.flags.net/images/smallflags/CHIN0001.GIF"  style="width:50px;height:30px;">
 		</paper-button>
     <!-- end #sidebar1 --> 
+    <paper-dialog with-backdrop id="videoDialog">
+      <google-youtube id="videoPlayer" video-id="r0SQHCOth2A" height="540px" width="960px" rel="0">
+      </google-youtube>
+    </paper-dialog>
   </div>
   <div id="spcNaviTemplate" class="BoxHide">
     <div id="spcDbNameLoading" class="loadingCover" style="height: 50px; width: 218px;">

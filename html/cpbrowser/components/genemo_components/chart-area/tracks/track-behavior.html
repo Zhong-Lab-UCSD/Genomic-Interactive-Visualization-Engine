@@ -194,6 +194,17 @@
 				this.requestUrl = properties.requestUrl;
 			}
 			
+			if(this.track.getSetting('isCustom')) {
+				this.isCustom = true;
+				if(this.track.getSetting('localFile')) {
+					// should be a File Object (extension of Blob)
+					this.localFile = this.track.getSetting('localFile');
+				} else if(this.track.getSetting('remoteUrl')) {
+					// should be a URL
+					this.remoteFile = this.track.getSetting('remoteUrl');
+				}
+			}
+			
 			// call "constructors" of child classes
 			if(this.trackImpl) {
 				this.trackImpl(track, properties);
@@ -310,9 +321,7 @@
 				svgToDraw.gestureReceiver = this.createRawRectangle(0, 0, 
 												svgToDraw.getAttributeNS(null, 'width'),
 												svgToDraw.getAttributeNS(null, 'height'), 
-												'none', svgToDraw);
-				svgToDraw.gestureReceiver.setAttribute('class', "pointerHandler");
-				
+												{fill: 'none', class: 'pointerHandler'}, svgToDraw);
 				Polymer.dom(svgToDraw).appendChild(svgToDraw.gestureReceiver);
 			}
 			Polymer.dom.flush();
@@ -359,7 +368,7 @@
 			if(newWidth !== this.totalWidth || widthChanged) {
 				// needs to change totalWidth as well
 				this.totalWidth = newWidth;
-				this.changeWidthAndViewWindow(newWidth - (newTxtMargin? newTxtMargin + this.TEXT_MARGIN_GAP: 0), newViewWindow);
+				this.changeViewWindowAfterResize(newWidth - (newTxtMargin? newTxtMargin + this.TEXT_MARGIN_GAP: 0), newViewWindow);
 			}
 			return this.mainSvg.viewWindow;
 			
@@ -383,7 +392,7 @@
 		
 		// ****** customized methods ******
 		
-		prepareData: function() {
+		prepareRemoteQuery: function() {
 			// provide data to mainAjax
 			// for most of the tracks, this is only trackID and window
 			return {
@@ -392,6 +401,12 @@
 				window: this.mainSvg.viewWindow.regionToString(false)
 			};			
 		},
+		
+		prepareCustomQuery: function() {
+			// provide data to custom track query
+			// for most of the tracks, this is only window (does not need to stringify)
+			return this.mainSvg.viewWindow;
+		},			
 		
 		dataHandler: function(e, detail) {
 			// placeholder for data handler
@@ -483,7 +498,7 @@
 			this.initSvgHolder();
 		},
 		
-		updateLocationSize: function(x, y, width, height) {
+		updateLocationSize: function(x, y, width, height, newTxtWidth, newWindow) {
 			if(typeof(x) === 'number') {
 				this.x = x;
 				//this.trackSvg.setAttributeNS(null, 'x', this.x);
@@ -493,7 +508,7 @@
 				//this.trackSvg.setAttributeNS(null, 'y', this.y);
 			}
 			if(typeof(width) === 'number') {
-				this.setWidthParameters(width);	// may involve narrowMode
+				this.setWidthParameters(width, newTxtWidth, newWindow);	// may involve narrowMode
 			}
 			if(typeof(height) === 'number') {
 				this.setHeight(height); // may also involve narrowMode?
@@ -516,7 +531,7 @@
 			return newLine;
 		},
 		
-		createRawRectangle: function(x1, y1, x2, y2, colorRGB, svgToDraw, id, strokeColorRGB) {
+		createRawRectangle: function(x1, y1, x2, y2, params, svgToDraw) {
 			var xmin = Math.min(x1, x2);
 			var ymin = Math.min(y1, y2);
 			var newRegion = document.createElementNS(this.svgNS, "rect");
@@ -524,43 +539,16 @@
 			newRegion.setAttributeNS(null, "y", ymin);
 			newRegion.setAttributeNS(null, "width", Math.abs(x2 - x1));
 			newRegion.setAttributeNS(null, "height", Math.abs(y2 - y1));
-			if(id) {
-				newRegion.setAttributeNS(null, "id", id);
-			}
-			if(typeof colorRGB === 'number' || colorRGB === 'none') {
-				newRegion.setAttributeNS(null, "fill", 
-					colorRGB === 'none'? 'none': this.rgbToHex(colorRGB));
-			}
-			if(typeof strokeColorRGB === 'number' || strokeColorRGB === 'none') {
-				newRegion.setAttributeNS(null, "stroke", 
-					strokeColorRGB === 'none'? 'none': this.rgbToHex(strokeColorRGB));
-			}
+			this.setElementParams(newRegion, params);
 			this.addElement(newRegion, svgToDraw);
 			return newRegion;
 		},
 		
-		createRawPolymer: function(coordinates, svgToDraw, id, cssClass, fillColorRGB, strokeColorRGB, strokeSize) {
+		createRawPolygon: function(coordinates, params, svgToDraw) {
 			// coordinates is an array of string "x,y"
 			var newPolygon = document.createElementNS(this.svgNS, "polygon");
 			newPolygon.setAttributeNS(null, "points", coordinates.join(' '));
-			if(id) {
-				newPolygon.setAttributeNS(null, "id", id);
-			}
-			if(cssClass) {
-				newPolygon.setAttributeNS(null, "class", cssClass);
-			}
-			if(typeof fillColorRGB === 'number' || fillColorRGB === 'none') {
-				newPolygon.setAttributeNS(null, "fill", 
-					fillColorRGB === 'none'? 'none': this.rgbToHex(fillColorRGB));
-			}
-			if(typeof strokeColorRGB === 'number' || strokeColorRGB === 'none') {
-				newPolygon.setAttributeNS(null, "stroke", 
-					strokeColorRGB === 'none'? 'none': this.rgbToHex(strokeColorRGB));
-			}
-			if(strokeSize) {
-				newPolygon.setAttributeNS(null, "stroke-width", strokeSize);
-			}
-			
+			this.setElementParams(newPolygon, params);
 			this.addElement(newPolygon, svgToDraw);
 			return newPolygon;	
 		},
@@ -572,11 +560,7 @@
 			}
 			newLabel.setAttributeNS(null, "x", x);
 			newLabel.setAttributeNS(null, "y", y);
-			for(var key in params) {
-				if(params.hasOwnProperty(key)) {
-					newLabel.setAttributeNS(null, key, params[key]);
-				}
-			}
+			this.setElementParams(newLabel, params);
 			Polymer.dom(newLabel).appendChild(document.createTextNode(text));
 			return newLabel;
 		},
@@ -591,14 +575,27 @@
 			// this is used to test the length of the text
 			var tmpText = this.drawText(0, this.Y_HIDDEN, text, 
 									textAnchor, params, svgToDraw);
+			Polymer.dom.flush();
 			var result = tmpText.getBBox().width;
 			this.removeElement(tmpText, svgToDraw);
 			return result;
 		},
 		
+		setElementParams: function(elem, params) {
+			for(var key in params) {
+				if(params.hasOwnProperty(key)) {
+					if((key === 'fill' || key === 'stroke') && (typeof params[key] === 'number')) {
+						// need to convert integer color to string
+						params[key] = this.rgbToHex(params[key]);
+					}
+					elem.setAttributeNS(null, key, params[key]);
+				}
+			}
+		},
+		
 		// ** Complex SVG drawing for track **
 		
-		drawRectangle: function(region, colorIndex, y, height, svgToDraw, strokeColorIndex) {
+		drawRectangle: function(region, colorRGB, y, height, svgToDraw, strokeColorRGB) {
 			// height is the percentage of svgToDraw, top-aligned
 			// color is an index from colorSet
 			// TODO: allow different alignment
@@ -613,8 +610,9 @@
 				var x0 = this.transformXCoordinate(region.getStart(), true),
 					x1 = this.transformXCoordinate(region.getEnd(), true);
 				var newRegion = this.createRawRectangle(x0, y, x1, y + height, 
-							this.colorSet[colorIndex], svgToDraw, region.id, 
-							(typeof strokeColorIndex === 'number')? this.colorSet[strokeColorIndex]: null);
+							{fill: colorRGB, 
+							stroke: (typeof strokeColorRGB === 'number')? strokeColorRGB: 'none',
+							id: region.id}, svgToDraw);
 				
 				// add strand info
 				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), 0xFFFFFF, svgToDraw);
@@ -744,20 +742,45 @@
 			// customized components are used in data preparation and data handler
 			// use dataHandler(e, detail) as return handler
 			// callback is in case update is needed
-			if(this.mainAjax) {
-				var requestData = this.prepareData();		// this is data object
+			if(this.isCustom) {
+				// if track has its own getLocalData function, then get local data instead of getting remote data
+				this.getCustomData();
+				// afterwards it's this.dataHandler()'s job.
+			} else if(this.mainAjax) {
+				var requestData = this.prepareRemoteQuery();		// this is data object
 				// notice that this could be an Object, so JSON.stringify if needed
 				if(typeof(requestData) === 'object') {
 					requestData = JSON.stringify(requestData);
 				}
 				this.mainAjax.body = requestData;
 				this.mainAjax.generateRequest();
-			} else {
-				if(this.getDataCallback) {
-					this.getDataCallback();
-					this.getDataCallback = null;
-				}
+			} else if(this.getDataCallback) {
+				// nothing really needs to be done to get data, so just call callback function
+				this.getDataCallback();
+				this.getDataCallback = null;
 			}
+		},
+		
+		getCustomData: function() {
+			// this is to get the raw custom data file(s)
+			// format conversion is handled by customDataHandler
+			if(this.localFile) {
+				this.readLocalFile(this.localFile, this.prepareCustomQuery(), this.responseHandler.bind(this));
+			} else if(this.remoteFile) {
+				this.readRemoteFile(this.remoteFile, this.prepareCustomQuery(), this.responseHandler.bind(this));
+			}
+		},
+		
+		readLocalFile: function(file, query, callback) {
+			// placeholder to read local file content
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via callback(e, detail), in which detail = e.detail
+		},
+		
+		readRemoteFile: function(URL, query, callback) {
+			// placeholder to read remote URL
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via callback(e, detail), in which detail = e.detail
 		},
 		
 		responseHandler: function(e, detail) {
@@ -825,9 +848,6 @@
 //				}
 			}
 			
-		},
-		
-		updateTrackWidth: function(width) {
 		},
 		
 		setTrackVisibility: function(visString) {

@@ -246,9 +246,10 @@ function setCustomTrack(url, db, hgsid, otherdata, callback) {
 function sendRegionsToCompute(dataAndCallback, otherdata) {
 	
 	var tableNameQuery = dataAndCallback.data;
+	var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
 	
 	$.ajax({
-		url: dataAndCallback.bwFlag? 'cpbrowser/geneTrackBigwig.php': 'cpbrowser/geneTrackComparison.php',
+		url: compDomain + (dataAndCallback.bwFlag? 'geneTrackBigwig.php': 'geneTrackComparison.php'),
 		type: 'POST',
 		data: tableNameQuery,
 		cache: false,

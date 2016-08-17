@@ -10,6 +10,7 @@ var glo_methodall = "max";		// global settings for method to get value across ta
 var glo_methodspc = "max";		// global settings for method to get value across species
 
 function locationOf(element, array, start, end, length, methodind, methodall, methodspc, orderBySpcID) {
+	// get the location of element in an ASCENDING array
 	// this is to return the index that element will be put AFTER
 	// so if the element needs to be put to the top, it will return start-1
 	start = start || 0;
@@ -26,7 +27,7 @@ function locationOf(element, array, start, end, length, methodind, methodall, me
 	try {
 		var pivot = parseInt(start + (end - start) / 2, 10);
 		if (end - start <= 1 
-			|| element.compareTo(array[pivot], length, methodind, methodall, methodspc, orderBySpcID) == 0)
+			|| element.compareTo(array[pivot], length, methodind, methodall, methodspc, orderBySpcID) === 0)
 			return pivot;
 		if (element.compareTo(array[pivot], length, methodind, methodall, methodspc, orderBySpcID) > 0) {
 			return locationOf(element, array, pivot, end, length, methodind, methodall, methodspc, orderBySpcID);

@@ -163,4 +163,3 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
 	// otherwise, directly use the corresponding function
 	return $trackLoadMap[$type]($db, $tableName, $chrRegion, $linkedTable);
 }
-?>

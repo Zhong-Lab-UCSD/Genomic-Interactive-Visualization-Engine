@@ -142,5 +142,25 @@
 		$mysqli->close();
 		return $result;
 	}
-
-?>
+	
+	function loadGenemoSession($sessionID) {
+		// get session info (raw php object)
+		$mysqli = connectCPB();
+		$stmt = $mysqli->prepare("SELECT * FROM `userInput` WHERE `id` = ?");
+		$sessionID = trim($sessionID);
+		$stmt->bind_param('s', $sessionID);
+		$stmt->execute();
+		$sessionresult = $stmt->get_result();
+		$sessionInfo = NULL;
+		if($sessionresult->num_rows > 0) {
+			$sessionInfo = $sessionresult->fetch_assoc();
+			$sessionresult->free();
+		} else {
+			$stmt->close();
+			$mysqli->close();
+			throw new Exception("Invalid address or address expired.");
+		}
+		$stmt->close();
+		$mysqli->close();
+		return $sessionInfo;
+	}
