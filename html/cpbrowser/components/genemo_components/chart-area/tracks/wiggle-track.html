@@ -1,0 +1,199 @@
+<link rel="import" href="./track-behavior.html">
+<dom-module id="wiggle-track">
+ <template>
+  </template>
+ <script>
+WiggleTrack = Polymer({
+	is: "wiggle-track",
+	behaviors: [
+			GIVeBehaviors.TrackBehavior
+		],
+	properties: {
+	},
+	created: function(){
+	
+			this.GENE_MARGIN = 10;
+			this.GENE_NOTEXT_MARGIN = 2;
+			this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
+			this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
+			this.FORECOLOR_INDEX = 0;			// the color index for fore color
+			this.HEIGHT = 100;					//height for display?
+			this.SCALE = 2;
+			this.trackHeight = 200;
+			this.windowMax = 0;
+			this.windowMin = 0;
+			this.windowRange = 0;
+			this.autoScale = true;
+	},
+	dataHandler: function(datapoints){
+		/*read file will turn in an object with data for at least one chromosome.
+		datapoints[chromosome#][base pair #] will be the signal strength.
+		datapoints is the object given to this class.
+		datapoints is an array with objects that are chromosomes. For example, datapoints[12] holds all the info for chromosome 12.
+		each chromosome object isn an array, containing point values. These point values are arrays containing two numbers: the base pair and the strength value.
+		For example, the object datapoints[12][2] is an array with two numbers in it. It is also the third point stored in chromosome 12. Since the wiggle tracks are in the 
+		format of 
+		Base Strength
+		xxxx xxxx
+		xxxx xxxx
+		the points will be added to the chromosome object just in the order they are written in the wiggle file, when being read.
+		
+		*/
+		var res=datapoints;
+		for(var chrom in this.data) {
+				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
+					delete this.data[chrom];
+				}
+			}
+		
+		this.points = []; 
+		for (var chrom in this.data){
+			for (var pair in chrom){
+			var point=[pair[0],pair[2]];
+			points[chrom].push(point);
+			}
+		}
+
+		
+			this.bufferWindow = this.mainSvg.viewWindow.clone();
+	},
+	drawData: function(chromosome){
+	//draw the given point with height determined by signal strength
+		this.clear();
+		this.activeVisibility = this.track.getSetting('visibility');
+		var shape=[];
+		shape.push([0,0]);
+		var y=0;
+		
+		for(var i=0;i<this.points[chromosome].length;i++){
+			
+			drawPeak[this.points[i], this.points[i][0], this.points[i][1], y];
+		}
+		//shape.push([0,this.windowWidth]);
+		//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
+		
+	},
+	convertPoint: function(chr, base, strength){
+		
+		var x = this.transformXCoordinate({chr: chr, coor: base}, false);
+		var y = this.trackHeight-strength*this.SCALE;
+		var result=[x, y];
+		return result;
+	}
+	findExtremes: function(chr){
+		var max = Number.MIN_SAFE_INTEGER
+		var min = Number.MAX_SAFE_INTEGER
+		for (var i = 0; i < this.points[chr].length; i++ ){
+			if (this.points[chr][1] > max) max = this.points[chr][1];
+			if (this.points[chr][1] < min) min = this.points[chr][1];
+		}
+		return [min, max, (min+max)/2, max-min];
+	},
+	scaleLine: function(strength, extremes){
+		if (extremes[0] < 0 && extremes [1] > 0){//if range is from - to +
+			var zero = ((0 - extremes[0]) / extremes[3] * this.height);
+			var value = ((value - extremes[0]) / extremes[3] * this.height);
+		}
+		else{ //if range is only + or only -
+			if (extremes[0] > 0 && extremes [1] > 0){//if range is only +
+				var zero = 0;
+				var value = (value/extremes[1]*this.height)
+			}
+			else if (extremes[0] > 0 && extremes [1] > 0){//if range is only -
+				var zero = this.height;
+				var value = this.height - (value/extremes[1]*this.height)
+			}
+			else {
+					//there is something wrong
+			}
+		}
+		return [this.height - zero, this.height - value];
+	},
+	scaleLineCustom: function(strength){
+		var zero = 0;
+		var value = 0;
+		var cutOff = 0;
+		zero = this.windowMax / this.windowRange * this.trackHeight;
+		value = (this.windowMax - strength) / this.windowRange * this.trackHeight;
+		if (0 > this.windowMax ){
+			zero = 0;
+			cutOff += 1;
+			}
+		if (0 < this.windowMin ){
+			zero = this.trackHeight;
+			cutOff -= 1;
+			}
+		if (strength > this.windowMax ){
+			value = 0;
+			cutOff += 1;
+			}
+		if (strength < this.windowMin ){
+			value = this.trackHeight;
+			cutOff -= 1;
+			}
+		if ((0 < this.windowMin && strength > this.windowMax) || (0 > this.windowMax && strength < this.windowMin)){
+			cutOff += 3;
+		}	
+		return [zero, value, cutOff];
+	}
+	drawPeak: function (chromosome, base, strength, y){ 
+		var svgToDraw = this.mainSvg;
+		var windowToDraw = svgToDraw.viewWindow;
+		
+		var x = this.transformXCoordinate({chr: chromosome, coor: base}, false);
+		
+		if (this.autoScale){
+			var extremes = findExtremes(chromosome);//inefficient as of now
+			var scaledPoint = scaleLine(strength, extremes);
+			if(windowToDraw.overlaps(region) > 0) {	//still needs fix
+			this.drawLine(x, y + scaledPoint[0], x, y + scaledPoint[1], this.colorSet[colorIndex]);
+			
+			}
+		}
+		else{
+			var customLine = scaleLineCustom(strength);
+			this.drawLine(x, y + customLine[0], x, y + customLine[1]);
+			switch (customLine[2]){//drawing color dots for cut-off signals
+				case 1:
+				case 2: 
+					this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
+					break;
+				case -1:
+				case -2:
+					this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
+					break;
+				case 3:
+					this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
+					this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
+					break;
+				default:
+						
+			}
+			if(customLine[2] == 3){}
+			else if(customLine[2] == 1 || this){
+				this.drawLine()
+			}
+			else if(customLine[2] == -1){
+			
+			}//use switch
+			el
+			
+		}
+		
+	},
+	setExtremes: function(min, max){
+		if (max > min){
+			this.windowMin = min;
+			this.windowMax = max;
+			this.windowRange = max - min;
+			this.autoScale = false;
+			}
+		else {}//there is an error
+	},
+	autoWindow: function(){
+		this.autoScale = true;
+	},
+			
+ })
+ </script>
+ </dom-module>

@@ -6,6 +6,7 @@
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-list.html">
@@ -43,6 +44,13 @@
 		  };
 		  width: 100%;
 	  }
+	  paper-card{
+		
+	  }
+	  paper-dropdown-menu{
+		noink;
+		no-animations;
+	  }
     </style>
     <!-- TODO: add paper-dropmenu for species -->
     <paper-drawer-panel>
@@ -51,7 +59,16 @@
         <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
         <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
       </div>
+	 
       <div drawer>
+	   <paper-dropdown-menu id="Species" label="Species">
+  <paper-listbox class="dropdown-content">
+    <paper-item>allosaurus</paper-item>
+    <paper-item>brontosaurus</paper-item>
+    <paper-item>carcharodontosaurus</paper-item>
+    <paper-item>diplodocus</paper-item>
+  </paper-listbox>
+</paper-dropdown-menu>
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
         <div>
@@ -62,6 +79,7 @@
           <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
+		
         <genemo-card id="trackSelectHolder">
         </genemo-card>
       </div>
@@ -122,6 +140,10 @@
 				this.getCurrentSpecies().initTracksFromServer(null, this.changeMainChartSpecies.bind(this));
 			}
 		},
+		
+		addSpecies: function(){
+			//add all the available species to the dropdown menu
+		}
 		
 		changeMainChartSpecies: function() {
 			var correctedVWindows;

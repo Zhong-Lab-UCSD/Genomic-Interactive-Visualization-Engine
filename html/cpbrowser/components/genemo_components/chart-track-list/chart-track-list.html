@@ -3,6 +3,8 @@
 <link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-card-content-behavior/genemo-card-content-behavior.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -26,6 +28,10 @@
 		}
 		paper-radio-group > paper-radio-button {
 			padding: 0.5em;
+		
+		}
+		paper-dialog-scrollable{
+			height: 300px;
 		}
     </style>
   </template>
@@ -55,44 +61,59 @@
 		},
 		
 		ready: function() {
-			this._setIcon('view-list');
-			this._setIconAlt('Track list');
-			this._setHeaderText('Track list');
-		},
-		
-		factoryImpl: function(species) {
-			this.changeSpecies(species);
-		},
-		
-		changeSpecies: function(newSpecies) {
-			// this will reset all tracks and redo the species
-			// note that the tracks should already be initialized before switching here
-			if(!newSpecies) {
-				throw("No new species specified!");
-			}
-			this.species = newSpecies;
-			while(Polymer.dom(this.root).firstChild) {
-				Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
-			}
-			this.trackCtrlDOMs = [];
-			for(var groupID in this.species.groups) {
-				if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID)) {
-					// create paper-material for the group
-					var newMaterial = document.createElement('paper-material');
-					var container = newMaterial;
-					newMaterial.setAttribute('z', '1');
-					var label = document.createElement('div');
-					label.textContent = this.species.groups[groupID].label;
-					label.setAttribute('class', 'header');
-					Polymer.dom(newMaterial).appendChild(label);
-					if(this.species.groups[groupID].singleOnly) {
-						container = document.createElement('paper-radio-group');
-						container.groupRef = this.species.groups[groupID];
-						Polymer.dom(newMaterial).appendChild(container);
+                        this._setIcon('view-list');
+                        this._setIconAlt('Track list');
+                        this._setHeaderText('Track list');
+                        this.style.textAlign="Center";
+
+                },
+
+                factoryImpl: function(species) {
+                        this.changeSpecies(species);
+                },
+
+                changeSpecies: function(newSpecies) {
+                        // this will reset all tracks and redo the species
+                        // note that the tracks should already be initialized before switching here
+                        if(!newSpecies) {
+                                throw("No new species specified!");
+                        }
+                        this.species = newSpecies;
+                        while(Polymer.dom(this.root).firstChild) {
+                                Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
+                        }
+                        this.trackCtrlDOMs = [];
+                        for(var groupID in this.species.groups) {
+                                if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID)) {
+                                        // create paper-material for the group
+                                        var newMaterial = document.createElement('paper-material');
+                                        var container = newMaterial;
+                                        newMaterial.setAttribute('height','50');
+                                        newMaterial.setAttribute('z', '1');
+                                        var label = document.createElement('div');
+                                        label.textContent = this.species.groups[groupID].label;
+                                        label.setAttribute('class', 'header');
+                                        Polymer.dom(newMaterial).appendChild(label);
+                                        if(this.species.groups[groupID].singleOnly) {
+                                                container = document.createElement('paper-radio-group');
+                                                expander = document.createElement('paper-icon-button');
+                                                expander.setAttribute('class','leftFloat');
+                                                expander.setAttribute('id','expandButton')
+                                                expander.setAttribute('on-click','toggleCollapse')
+                                                expander.setAttribute('color','#cc00cc')
+                                                container.groupRef = this.species.groups[groupID];
+                                                scroller = document.createElement('paper-dialog-scrollable');
+
+						
+						Polymer.dom(scroller).appendChild(container);
+						//Polymer.dom(expander).appendChild(scroller);
+						Polymer.dom(newMaterial).appendChild(scroller);
+						
 					}
 					this.species.groups[groupID].forEach(function(track, index) {
 						var newTrackSelectionDOM = document.createElement(
 							this.species.groups[groupID].singleOnly? 'paper-radio-button': 'paper-checkbox');
+						
 						newTrackSelectionDOM.trackRef = track;
 						var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
 						newTrackSelectionDOM.name = track.id;
@@ -152,6 +173,41 @@
 		},
 		
 		// TODO: add/remove/rearrange tracks
+		addTrack: function (track,container){
+			var newTrackSelectionDOM = document.createElement("paper-radio-button");
+			newTrackSelectionDOM.trackRef = track;
+						var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
+						newTrackSelectionDOM.name = track.id;
+						newTrackSelectionDOM.appendChild(newTrackLabel);
+						container.appendChild(newTrackSelectionDOM);
+			this.trackToDOM();
+			Polymer.dom(this.root).appendChild(container);
+			/*to-do: search track groups for matching track group if it is single-only
+			if so, add to container and re-render
+			if not, add to trackCtrlDOMs after creating the appropriate object.
+		*/
+		}
+		removeTrack: function (track,trackCtrlDOM){
+			var index=trackCtrlDOM.indexOf(track);
+			if (index !== -1){
+				trackCtrlDOM.splice(index,1);
+			}
+			else{
+				throw("Element to remove does not exist!");
+			}
+		}
+		rearrangeTrack: function(track1, track2, trackCtrlDOM){
+			var tempTrack = track2;
+			var index1 = trackCtrlDOM.indexOf(track1);
+			var index2 = trackCtrlDOM.indexOf(track2);
+			trackCtrlDOM[index2]=track1;
+			trackCtrlDOM[index1]=tempTrack;
+		}
+		rearrangeTrackIndex: function(n1, n2, container){
+			var tempTrack = trackCtrlDOM[n1];
+			trackCtrlDOM[n1] = trackCtrlDOM[n2];
+			trackCtrlDOM[n2] = tempTrack;
+		},
 		
 	});
   </script>

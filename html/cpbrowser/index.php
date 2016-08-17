@@ -21,6 +21,7 @@
 <link rel="import" href="components/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="components/genemo_components/genemo-styles.html">
 <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="components/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="components/bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
 <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -77,8 +78,8 @@ window.addEventListener("WebComponentsReady", function(e) {
       <paper-icon-button icon="menu" id="drawerToggle"></paper-icon-button>
       <div class="title">GIVe (Genomic Interaction Visualizer)</div>
     </paper-toolbar>
-    <div id="mainCard">
-    </div>
+    <paper-dialog-scrollable><section id="mainCard"></section>
+    </paper-dialog-scrollable>
 	
   </paper-scroll-header-panel>
 </body>
