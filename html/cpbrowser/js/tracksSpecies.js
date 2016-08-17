@@ -28,6 +28,36 @@ Track.StatusEnum = {
 	VIS_DENSE: 1,
 };
 
+Track.Parsers = {};
+
+Track.Parsers.WigParser = function(fileBlob, coordinates) {
+};
+
+Track.TypeMap = {
+	// This is trying to map type trunks to actual actors
+	// All parsers should take the file (Blob) object, window(s) (optional) or other stuff as parameters,
+	//			return value should be data object directly usable by the DOM part of the track
+	'bed': {
+		parser: Track.Parsers.BedParser,
+	},
+	'genebed': {
+		parser: Track.Parsers.BedParser,
+	},
+	'genepred': {
+		parser: Track.Parsers.BedParser,
+	},
+	'interaction': {
+		parser: Track.Parsers.InteractionParser,
+	},
+	'coordinate': {
+		parser: Track.Parsers.CoorParser,
+	},
+	'wig': {
+		parser: Track.Parsers.WigParser,
+	},
+};
+	
+
 Track.DEFAULT_PRIORITY = 100.0;
 Track.fetchDataTarget = '/cpbrowser/getTrackData.php';
 
@@ -123,7 +153,23 @@ Track.prototype.getPriority = function() {
 	//	1. implement group priority
 	// 	2. implement customized temporary priority
 	return this.priority;
-}
+};
+
+Track.comparePriorities = function(track1, track2, groups) {
+	// compare group priorities first, then local priorities
+	var group1Prior = TrackGroup.MAX_GROUP_PRIORITY + 1, group2Prior = TrackGroup.MAX_GROUP_PRIORITY + 1;
+	try {
+		group1Prior = groups[track1.groupID].priority;
+	} catch(e) {
+	}
+	try {
+		group2Prior = groups[track2.groupID].priority;
+	} catch(e) {
+	}
+	return group1Prior !== group2Prior? (group1Prior < group2Prior? -1: 1)
+		: (track1.getPriority() < track2.getPriority()? -1: 
+		track1.getPriority() > track2.getPriority()? 1: 0);
+};
 
 Track.createCoorTrack = function(species, id) {
 	var newTrack = new Track(id || 'coor_' + species.db, null, species);
@@ -131,6 +177,16 @@ Track.createCoorTrack = function(species, id) {
 	newTrack.priority = 0;
 	return newTrack;
 };
+
+Track.prototype.getDataFromBlob = function() {
+};
+
+
+
+
+
+
+
 
 function TrackBundle(idprefix, idpostfix) {
 	this.array = [];
@@ -146,6 +202,22 @@ function TrackBundle(idprefix, idpostfix) {
 TrackBundle.prototype.addTrack = function(track) {
 	this.array.push(track);
 	this.map[track.id] = track;
+};
+
+TrackBundle.prototype.removeTrack = function(track) {
+	var id = track.id || track;
+	if (typeof id === 'number') {
+		delete this.map[this.array[id].id];
+		this.array.splice(id, 1);
+	} else if(this.hasTrack(id)) {
+		delete this.map[id];
+		for(var i = 0; i < this.getLength(); i++) {
+			if(this.array[i].id === id) {
+				this.array.splice(i, 1);
+				break;
+			}
+		}
+	}
 };
 
 TrackBundle.prototype.get = function(index) {
@@ -170,20 +242,37 @@ TrackBundle.prototype.getLength = function() {
 
 TrackBundle.prototype.forEach = function(callback, thisArg) {
 	return this.array.forEach(callback, thisArg);
-}
+};
 
 TrackBundle.prototype.some = function(callback, thisArg) {
 	return this.array.some(callback, thisArg);
-}
+};
 
 TrackBundle.prototype.every = function(callback, thisArg) {
 	return this.array.every(callback, thisArg);
-}
+};
 
 TrackBundle.prototype.clear = function() {
 	this.map = {};
 	this.array.splice(0, this.array.length);
+};
+
+TrackBundle.prototype.filter = function(callback, thisArg) {
+	// filter stuff
+	for(var i = 0; i < this.getLength(); i++) {
+		if(!callback.call(thisArg, this.array[i], i, this.array)) {
+			// need to filter
+			// remove from map and array
+			delete this.map[this.array[i].id];
+			this.array.splice(i, 1);
+		}
+	}
 }
+
+TrackBundle.prototype.hasTrack = function(track) {
+	// can provide trackID or track itself
+	return track && (this.map.hasOwnProperty(track) || (track.id && this.map.hasOwnProperty(track.id)));
+};
 
 function TrackGroup(groupID, groupLabel, priority, visibility, singleOnly, idprefix, idpostfix) {
 	TrackBundle.call(this, idprefix, idpostfix);
@@ -197,6 +286,7 @@ function TrackGroup(groupID, groupLabel, priority, visibility, singleOnly, idpre
 extend(TrackBundle, TrackGroup);
 
 TrackGroup.MAX_GROUP_PRIORITY = 100000;
+TrackGroup.CUSTOM_GROUP_PRIORITY = 90000;
 
 //TrackBundle.prototype.setCheckBox = function(track, flag) {
 //	// set the checkbox of the track, and track.status as well
@@ -399,6 +489,7 @@ Species.prototype.initTracks = function(groupInfo, keepOld) {
 									groupInfo[groupID].singleChoice != 0);
 			groupInfo[groupID].tracks.forEach(function(track) {
 				var newTrack = new Track(track.tableName, track, this)
+				newTrack.groupID = groupID;
 				this.uniTracks.addTrack(newTrack);
 				this.groups[groupID].addTrack(newTrack);
 			}, this);
@@ -417,6 +508,34 @@ Species.prototype.initTracksFromServer = function(target, callback) {
 	}, 'json');
 };
 
+Species.createCustomGroup = function(group) {
+	group = group || {};
+	return new TrackGroup(group.id || 'customTracks', group.label || 'Custom Tracks', 
+						group.priority || TrackGroup.CUSTOM_GROUP_PRIORITY, 
+						group.defaultIsClosed != 0, false);
+};
+
+Species.prototype.addCustomTrack = function(track, group, callback) {
+	// if group ID is not specified, use "customTracks" as ID;
+	// replace tracks with the same groupID and track.tableName
+	group = group || {};
+	var groupID = group.id || 'customTracks';
+	if(!this.groups.hasOwnProperty(groupID)) {
+		this.groups[groupID] = Species.createCustomGroup(group);
+	}
+	// remove existing track
+	if(this.groups[groupID].hasTrack(track.tableName)) {
+		this.groups[groupID].removeTrack(track.tableName);
+		this.uniTracks.removeTrack(track.tableName);
+	}
+	var newTrack = new Track(track.tableName, track, this);
+	newTrack.groupID = groupID;
+	this.uniTracks.addTrack(newTrack);
+	this.groups[groupID].addTrack(newTrack);
+	if(callback) {
+		callback(this);
+	}
+};
 
 //Species.prototype.replaceText = function(text) {
 //	// used to replace texts in templates

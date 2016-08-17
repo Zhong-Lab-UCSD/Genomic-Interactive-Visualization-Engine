@@ -4,7 +4,7 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	margin: 0;
 }
 
-.twoColLiqLt #container {
+.twoColLiqLt #genemo-container {
 	width: 100%;  /* this will create a container 100% of the browser width */
 	background: #EEEEEE;
 	margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */
@@ -150,7 +150,7 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 }
 
 /************************ firstIndex class, hide everything except the sidebar and put it to the center **************************/
-.firstIndex #container {
+.firstIndex #genemo-container {
 	width: 100%;  /* this will create a container 100% of the browser width */
 	background: #EEEEEE;
 	margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */

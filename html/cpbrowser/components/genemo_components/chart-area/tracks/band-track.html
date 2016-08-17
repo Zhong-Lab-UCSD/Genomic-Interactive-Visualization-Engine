@@ -1,10 +1,10 @@
 <link rel="import" href="./track-behavior.html">
-<dom-module id="bed-track">
+<dom-module id="band-track">
   <template>
   </template>
   <script>
-  	BedTrack = Polymer({
-		is: "bed-track",
+  	BandTrack = Polymer({
+		is: "band-track",
 		
 		behaviors: [
 			GIVeBehaviors.TrackBehavior
@@ -12,7 +12,7 @@
 		
 		properties: {
 		
-			// data structure for bed tracks:
+			// data structure for band tracks is the same as bed tracks.
 			// data has one key (chrom), all other keys will be deleted upon changing chromosome
 			// data[chrom] is an array of Genes (for now)
 			//		Future plan: arrays
@@ -20,9 +20,16 @@
 			//		inside indices are used if multiple genes start at the same location
 			//		NOTICE: start is always smaller than end, if the strand is negative, start is TTS, end is TSS
 			// 		values in the inner array are Gene objects 
+			// Different display methods from the settings:
+			//		pack-notext:	bands may occupy different lines
+			//		dense:			all bands in one line (multiply color when overlapping?)
+			//		full:			bands will have text annotated
+			
+			// Notice that a background track may be attached to every track
 			
 			honorItemRGB: {
 				// whether this track honors itemRGB values
+				// however since this is a bandtrack, this property may not be as useful
 				type: Boolean,
 				value: false,
 			},
@@ -30,7 +37,6 @@
 		},
 		
 		created: function() {
-			this.GENE_MARGIN = 10;
 			this.GENE_NOTEXT_MARGIN = 2;
 			this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
 			this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
@@ -91,7 +97,7 @@
 						if(this.data[chrom].map.hasOwnProperty(name)) {
 							this.data[chrom].map[name].forEach(function(gene) {
 								this.data[chrom].push(gene);
-							}, this);
+							});
 						}
 					}
 				}
@@ -129,6 +135,11 @@
 				&& this.activeVisibility > Track.StatusEnum.VIS_NONE) {
 					this.drawShortLabel();
 			}
+		},
+		
+		// calculate the length of element drawn on the canvas
+		
+		calcElemLength: function(elem) {
 		},
 		
 		// prepare genes

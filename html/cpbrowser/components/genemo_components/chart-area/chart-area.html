@@ -61,7 +61,7 @@
 			
 			threshold: {
 				type: Number,
-				value: 0.1,
+				value: 0,
 			},
 			
 		},
@@ -74,10 +74,37 @@
 		
 		created: function() {
 			this.svgNS = "http://www.w3.org/2000/svg";
+			this.trackDOMMap = {
+				'bed': {
+					prop: this.createBedTrackProp.bind(this),
+					ctor: BedTrack,
+					addDom: this.addOrdinaryTrackDOM.bind(this),
+				},
+				'genebed': {
+					prop: this.createBedTrackProp.bind(this),
+					ctor: BedTrack,
+					addDom: this.addOrdinaryTrackDOM.bind(this),
+				},
+				'genepred': {
+					prop: this.createBedTrackProp.bind(this),
+					ctor: BedTrack,
+					addDom: this.addOrdinaryTrackDOM.bind(this),
+				},
+				'interaction': {
+					prop: this.createInteractionTrackProp.bind(this),
+					ctor: InteractionTrack,
+					addDom: this.addInteractionTrackDOM.bind(this),
+				},
+				'coordinate': {
+					prop: this.createCoorTrackProp.bind(this),
+					ctor: CoorTrack,
+					addDom: this.addOrdinaryTrackDOM.bind(this),
+				},
+			};
 		},
 		
 		factoryImpl: function(species, numOfSubs, viewWindow, threshold) {
-			this.threshold = threshold || 1.0;
+			this.threshold = threshold || 0.0;
 			this.changeSpecies(species, numOfSubs, viewWindow);
 		},
 		
@@ -89,57 +116,58 @@
 			});
 		},
 		
+		mergeProperty: function(original, newProp) {
+			for(var key in newProp) {
+				if(newProp.hasOwnProperty(key)) {
+					original[key] = newProp[key];
+				}
+			}
+			return original;
+		},
+		
 		createBedTrackProp: function(viewWindowIndex, properties) {
-			return {x: 0, y: 0, width: this.offsetWidth,
+			// notice that 
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 					textMargin: 100, requestUrl: Track.fetchDataTarget,
 					windowIndex: viewWindowIndex,
-					};
+				}, properties);
 		},
 		
 		createCoorTrackProp: function(viewWindowIndex, properties) {
-			return {x: 0, y: 0, width: this.offsetWidth,
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 					textMargin: 100, labelLocation: ((viewWindowIndex === 0)? 'up': 'down'),
 					windowIndex: viewWindowIndex,
-					};
+				}, properties);
 		},
 		
 		createInteractionTrackProp: function(viewWindowIndex, properties) {
-			return {x: 0, y: 0, width: this.offsetWidth,
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 					textMargin: 100, requestUrl: Track.fetchDataTarget,
 					numOfSubs: this.viewWindows.length, threshold: this.threshold,
-					};
+				}, properties);
+		},
+		
+		createWiggleTrackProp: function(viewWindowIndex, properties) {
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
+					textMargin: 100, requestUrl: Track.fetchDataTarget,
+				}, properties);
 		},
 		
 		createTrackProp: function(track, viewWindowIndex, props) {
-			var trackDOMMap = {
-				bed: this.createBedTrackProp.bind(this),
-				genebed: this.createBedTrackProp.bind(this),
-				genepred: this.createBedTrackProp.bind(this),
-				interaction: this.createInteractionTrackProp.bind(this),
-				coordinate: this.createCoorTrackProp.bind(this),
-			};
-			return trackDOMMap[track.getTypeTrunk()](viewWindowIndex, props);
+			return this.trackDOMMap[track.getTypeTrunk()].prop(viewWindowIndex, props);
 		},
 		
 		createTrackDOM: function(track, viewWindowIndex, props) {
-			var trackDOMMap = {
-				bed: BedTrack,
-				genebed: BedTrack,
-				genepred: BedTrack,
-				interaction: InteractionTrack,
-				coordinate: CoorTrack,
-			};
-			return new trackDOMMap[track.getTypeTrunk()](track, 
+			return new this.trackDOMMap[track.getTypeTrunk()].ctor(track, 
 								this.createTrackProp(track, viewWindowIndex, props));
 		},
 		
 		addOrdinaryTrackDOM: function(trackDOM, viewWindowIndex) {
 			this.trackDOMsByWindow[viewWindowIndex].splice(
 					locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex], 
-						null, null, function(trackDOM1, trackDOM2) {
-							return trackDOM1.track.getPriority() < trackDOM2.track.getPriority()? -1: 
-								trackDOM1.track.getPriority() > trackDOM2.track.getPriority()? 1: 0;
-						}) + 1,
+						null, null, (function(trackDOM1, trackDOM2) {
+							return Track.comparePriorities(trackDOM1.track, trackDOM2.track, this.species.groups);
+						}).bind(this)) + 1,
 					0, trackDOM);
 			this.trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true;
 		},
@@ -151,18 +179,11 @@
 			}, this);
 		},
 		
-		addVisibleTrack: function(track, viewWindowIndex, forceAdd) {
-			var trackDOMAddMap = {
-				bed: this.addOrdinaryTrackDOM.bind(this),
-				genebed: this.addOrdinaryTrackDOM.bind(this),
-				genepred: this.addOrdinaryTrackDOM.bind(this),
-				coordinate: this.addOrdinaryTrackDOM.bind(this),
-				interaction: this.addInteractionTrackDOM.bind(this),
-			};
+		addVisibleTrack: function(track, viewWindowIndex, forceAdd, props) {
 			if(forceAdd || !this.trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
-				var newTrackDOM = this.createTrackDOM(track, viewWindowIndex);
+				var newTrackDOM = this.createTrackDOM(track, viewWindowIndex, props);
 				if(newTrackDOM) {
-					trackDOMAddMap[track.getTypeTrunk()](newTrackDOM, viewWindowIndex);
+					this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex);
 				}
 			}
 		},
@@ -185,14 +206,15 @@
 			}, this);			
 		},
 		
-		updateHeightLocation: function() {
+		updateHeightLocation: function(width) {
 			// calculate the heights for all tracks
 			// note that by the time this is called, all tracks should be ready
 			// (this is handled in track-ready event handler)
 			// this will also rearrange the y value for all tracks as well
+			width = width || this.offsetWidth;
 			var currY = 0;
 			this.trackDOMs.forEach(function(trackDOM, index) {
-				trackDOM.updateLocationSize(0, currY);
+				trackDOM.updateLocationSize(0, currY, width);
 				currY += trackDOM.getHeight() + this.trackGap * this.textSize;
 			}, this);
 			currY -= this.trackGap * this.textSize;
@@ -257,7 +279,7 @@
 				this.changeThreshold(threshold);
 				return this.getViewWindowStrings();
 			} else {
-				this.threshold = threshold || this.threshold;
+				this.threshold = (typeof(threshold) !== 'undefined' && threshold !== null? threshold: this.threshold);
 				if(viewWindows) {
 					this.changeAllViewWindows(viewWindows);
 				} else {
@@ -411,6 +433,9 @@
 		},
 		
 		_onIronResize: function(e, detail) {
+			if(this.trackDOMs) {
+				this.updateHeightLocation();
+			}
 		}
 		
 		// TODO: add/remove/rearrange tracks

@@ -9,6 +9,7 @@
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-list.html">
+<link rel="import" href="../custom-track-controller/custom-track-controller.html">
 <link rel="import" href="../genemo-card/genemo-card.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-controller">
@@ -55,8 +56,8 @@
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
         <div>
-          <div class="smallText"><span id="Threshold" class="text">Threshold (# of reads / 1Mbp)</span></div>
-          <paper-slider value="{{threshold}}" max="1000" step="0.1" editable></paper-slider>
+          <div class="smallText"><span id="Threshold" class="text">Threshold (percentile)</span></div>
+          <paper-slider value="{{threshold}}" max="100" step="5" editable></paper-slider>
         </div>
         <div>
           <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
@@ -64,6 +65,8 @@
         </div>
         <genemo-card id="trackSelectHolder">
         </genemo-card>
+        <div id="customTrackCtrlHolder">
+        </div>
       </div>
     </paper-drawer-panel>
   </template>
@@ -100,6 +103,7 @@
 		
 		listeners: {
 			'update-window': 'updateWindowHandler',
+			'update-track-structure': 'updateTrackStructureHandler',
 		},
 		
 		factoryImpl: function(spcArray, index) {
@@ -128,12 +132,16 @@
 			if(this.mainChart) {
 				// species is changed
 				correctedVWindows = this.mainChart.changeSpecies(this.getCurrentSpecies());
+				this.trackSelect.changeSpecies(this.getCurrentSpecies());
+				this.customTrackController.changeSpecies(this.getCurrentSpecies());
 			} else {
 				this.mainChart = new ChartArea(this.getCurrentSpecies(), 2, null, this.threshold);
 				this.trackSelect = new ChartTrackList(this.getCurrentSpecies());
+				this.customTrackController = new CustomTrackController(this.getCurrentSpecies());
 				this.trackSelect.setAttribute('class', 'GenemoBody');
 				Polymer.dom(this.$.chartHolder).appendChild(this.mainChart);
 				Polymer.dom(this.$.trackSelectHolder).appendChild(this.trackSelect);
+				Polymer.dom(this.$.customTrackCtrlHolder).appendChild(this.customTrackController);
 				Polymer.dom.flush();
 				correctedVWindows = this.mainChart.getViewWindowStrings();
 			}
@@ -157,6 +165,15 @@
 			}
 		},
 		
+		updateTrackStructure: function() {
+			// almost same thing as updateTracks, only needs to update trackSelect
+			if(this.trackSelect) {
+				this.trackSelect.updateAllGroupDOM();
+				this.mainChart.updateDOM(true);
+				this.updateSvg();
+			}
+		},
+		
 		resetTracks: function() {
 			if(this.trackSelect) {
 				this.trackSelect.trackToDOM();
@@ -173,6 +190,10 @@
 			} else if(e.detail.windowIndex === 1) {
 				this.subCoor = e.detail.newWindow;
 			}
+		},
+		
+		updateTrackStructureHandler: function(e) {
+			this.updateTrackStructure();
 		},
 		
 	});

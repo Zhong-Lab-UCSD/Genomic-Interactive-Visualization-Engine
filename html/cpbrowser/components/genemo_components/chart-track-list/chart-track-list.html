@@ -71,44 +71,64 @@
 				throw("No new species specified!");
 			}
 			this.species = newSpecies;
-			while(Polymer.dom(this.root).firstChild) {
-				Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
+			this.updateAllGroupDOM();
+		},
+		
+		updateAllGroupDOM: function(keepOld) {
+			if(!keepOld) {
+				while(Polymer.dom(this.root).firstChild) {
+					Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
+				}
 			}
 			this.trackCtrlDOMs = [];
 			for(var groupID in this.species.groups) {
-				if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID)) {
-					// create paper-material for the group
-					var newMaterial = document.createElement('paper-material');
-					var container = newMaterial;
-					newMaterial.setAttribute('z', '1');
-					var label = document.createElement('div');
-					label.textContent = this.species.groups[groupID].label;
-					label.setAttribute('class', 'header');
-					Polymer.dom(newMaterial).appendChild(label);
-					if(this.species.groups[groupID].singleOnly) {
-						container = document.createElement('paper-radio-group');
-						container.groupRef = this.species.groups[groupID];
-						Polymer.dom(newMaterial).appendChild(container);
-					}
-					this.species.groups[groupID].forEach(function(track, index) {
-						var newTrackSelectionDOM = document.createElement(
-							this.species.groups[groupID].singleOnly? 'paper-radio-button': 'paper-checkbox');
-						newTrackSelectionDOM.trackRef = track;
-						var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
-						newTrackSelectionDOM.name = track.id;
-						Polymer.dom(newTrackSelectionDOM).appendChild(newTrackLabel);
-						Polymer.dom(container).appendChild(newTrackSelectionDOM);
-						if(!this.species.groups[groupID].singleOnly) {
-							this.trackCtrlDOMs.push(newTrackSelectionDOM);
-						}
-					}, this);
-					if(this.species.groups[groupID].singleOnly) {
-						this.trackCtrlDOMs.push(container);
-					}
-					Polymer.dom(this.root).appendChild(newMaterial);
+				if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID) 
+					&& this.species.groups[groupID].getLength() > 0) {
+						this.updateGroupDOM(groupID);
 				}
 			}
 			this.trackToDOM();
+		},
+		
+		updateGroupDOM: function(groupID) {
+			// create paper-material for the group
+			var newMaterial;
+			if(Polymer.dom(this.root).querySelector('#' + groupID + '_material')) {
+				newMaterial = Polymer.dom(this.root).querySelector('#' + groupID + '_material');
+				while(Polymer.dom(newMaterial).firstChild) {
+					Polymer.dom(newMaterial).removeChild(Polymer.dom(newMaterial).firstChild);
+				}
+			} else {				
+				newMaterial = document.createElement('paper-material');
+				newMaterial.setAttribute('id', groupID + '_material');
+				Polymer.dom(this.root).appendChild(newMaterial);
+				newMaterial.setAttribute('z', '1');
+			}
+			var label = document.createElement('div');
+			label.textContent = this.species.groups[groupID].label;
+			label.setAttribute('class', 'header');
+			Polymer.dom(newMaterial).appendChild(label);
+			var container = newMaterial;
+			if(this.species.groups[groupID].singleOnly) {
+				container = document.createElement('paper-radio-group');
+				container.groupRef = this.species.groups[groupID];
+				Polymer.dom(newMaterial).appendChild(container);
+			}
+			this.species.groups[groupID].forEach(function(track, index) {
+				var newTrackSelectionDOM = document.createElement(
+					this.species.groups[groupID].singleOnly? 'paper-radio-button': 'paper-checkbox');
+				newTrackSelectionDOM.trackRef = track;
+				var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
+				newTrackSelectionDOM.name = track.id;
+				Polymer.dom(newTrackSelectionDOM).appendChild(newTrackLabel);
+				Polymer.dom(container).appendChild(newTrackSelectionDOM);
+				if(!this.species.groups[groupID].singleOnly) {
+					this.trackCtrlDOMs.push(newTrackSelectionDOM);
+				}
+			}, this);
+			if(this.species.groups[groupID].singleOnly) {
+				this.trackCtrlDOMs.push(container);
+			}
 		},
 		
 		trackToDOM: function() {
@@ -151,26 +171,6 @@
 			}
 		},
 		
-		// TODO: add/remove/rearrange tracks
-		addTrack: function (track,trackCtrlDOM){
-			trackCtrlDOM.push(track);
-		}
-		removeTrack: function (track,trackCtrlDOM){
-			var index=trackCtrlDOM.indexOf(track);
-			if (index !== -1){
-				trackCtrlDOM.splice(index,1);
-			}
-			else{
-				throw("Element to remove does not exist!");
-			}
-		}
-		rearrangeTrack: function(track1, track2, trackCtrlDOM){
-			var tempTrack = track2;
-			var index1 = trackCtrlDOM.indexOf(track1);
-			var index2 = trackCtrlDOM.indexOf(track2);
-			trackCtrlDOM[index2]=track1;
-			trackCtrlDOM[index1]=tempTrack;
-		}
 	});
   </script>
 </dom-module>

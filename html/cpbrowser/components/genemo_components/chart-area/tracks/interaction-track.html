@@ -42,8 +42,30 @@
 				value: 0,
 			},
 			
+			percentiles: {
+				type: Array,
+				value: function () {
+					return Array();
+				},
+			},
+			
+			gradient: {
+				type: Array,
+				value: function() {
+					return [{percent: 0, color: 0x3F51B5}, 
+							{percent: 0.33, color: 0x4CAF50},
+							{percent: 0.67, color: 0xCDDC39}, 
+							{percent: 1, color: 0xF44336}];		// Gradient (indigo-green-lime-red)
+				}
+			},
 		},
 		
+		created: function() {
+			this.MAX_FILL_OPACITY = 0.3;
+		},
+		
+		// ****** customized methods below ******
+
 		trackImpl: function(track, properties) {
 			
 			properties = properties || {};
@@ -59,6 +81,7 @@
 			this.subSvgs = [];
 			this.numOfSubs = properties.numOfSubs;
 			this.bufferWindow = [];
+			this.percentiles = this.track.getSetting('thresholdPercentile');
 		},
 		
 		initSvgComponents: function() {
@@ -80,7 +103,7 @@
 		
 		// ****** customized methods below ******
 		
-		prepareData: function() {
+		prepareRemoteQuery: function() {
 			// provide data to mainAjax
 			// for most of the tracks, this is only trackID and window
 			var windows = [];
@@ -147,12 +170,12 @@
 			this.linkMap = {};
 			// draw box track for each child svg
 			this.subSvgs.forEach(function(subSvg) {
-				this.drawBoxTrack(this.data[subSvg.viewWindow.chr], this.linkMap, this.threshold, 0.5, 
+				this.drawBoxTrack(this.data[subSvg.viewWindow.chr], this.linkMap, 0.5, 
 								  this.textSize * this.fullHeight - 1, subSvg);
 			}, this);
 
 			// draw interaction track for main svg
-			this.drawConnectionBetweenTracks(this.linkMap, this.threshold, this.subSvgs, this.svgMain);
+			this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs, this.svgMain);
 			this.drawShortLabel();
 		},
 		
@@ -166,9 +189,14 @@
 		clear: function() {
 			var i;
 			if(this.textMargin) {
-				while(Polymer.dom(this.textSvg).firstChild) {
-					Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+				if(this.textSvg.holder) {
+					Polymer.dom(this.textSvg).removeChild(this.textSvg.holder);
+				} else {
+					while(Polymer.dom(this.textSvg).firstChild) {
+						Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild);
+					}
 				}
+				this.initTextSvgHolder();
 			}
 			for(i = 0; i < this.numOfSubs; i++) {
 				while(Polymer.dom(this.subSvgs[i]).firstChild) {
@@ -188,7 +216,7 @@
 		updateTracks: function(viewWindow, index, threshold) {
 			// viewWindow: ChrRegion object or an array of ChrRegion objects
 			// index: if viewWindow is a single ChrRegion Object, index will be the index
-			this.threshold = threshold || this.threshold;
+			this.threshold = (typeof(threshold) !== 'undefined' && threshold !== null? threshold: this.threshold);
 			
 			try {
 				// Steps:
@@ -223,7 +251,7 @@
 		},
 		
 		updateThreshold: function(threshold) {
-			this.threshold = threshold || this.threshold;
+			this.threshold = (typeof(threshold) !== 'undefined' && threshold !== null? threshold: this.threshold);
 			this.checkDataAndUpdate();
 		},
 		
@@ -235,7 +263,7 @@
 			}
 		},
 		
-		drawBoxTrack: function(regions, linkMap, threshold, y, height, svgToDraw) {
+		drawBoxTrack: function(regions, linkMap, y, height, svgToDraw) {
 			// regions is an array of all connections
 			// regions with the same ID is connected and needs to be colored accordingly
 			// linkMap is an object with regionID as key and value as following:
@@ -245,7 +273,6 @@
 			// may need to filter the regions first, either here or outside
 			
 			var colorIndex = 0;
-			threshold = threshold || 1;
 			svgToDraw = svgToDraw || this.mainSvg;
 			height = height || this.borderHeight * this.textSize;
 			y = y || 0;
@@ -255,7 +282,7 @@
 			if(regions && regions.forEach) {
 				regions.forEach(function(value, index) {
 					// value is a window-ish
-					if(value.data.value < threshold) {
+					if(!this.isAboveThreshold(value.data.value)) {
 						return;
 					}
 					var linkID = value.data.linkID;
@@ -311,20 +338,23 @@
 			}
 		},
 		
-		drawConnectionBetweenTracks: function(linkMap, threshold, svgChildren, svgMain) {
+		drawConnectionBetweenTracks: function(linkMap, svgChildren, svgMain) {
 			// linkMap is an object with regionID as key and regions as value (array)
 			// the colorMap should have been already populated
 			// windowsToDraw should be 'viewWindow' property of svgChildren
-			threshold = threshold || 1;
 			
 			svgMain = svgMain || this.mainSvg;
 			svgChildren = svgChildren || this.subSvgs;
 			
+			var regionMap = {};
+						
 			for(var regionID in linkMap) {
 				if(linkMap.hasOwnProperty(regionID)) {
 					// region is here, draw the link (polygon)
 					
-					if(linkMap[regionID].regions[0].data.value < threshold) {
+					//if(linkMap[regionID].regions[0].data.value < threshold)
+					// now percentile is used instead of raw # of reads
+					if(!this.isAboveThreshold(linkMap[regionID].regions[0].data.value)) {
 						continue;
 					}
 					
@@ -360,8 +390,23 @@
 							}, this);
 
 							var points = startPoints.concat(endPoints.reverse());
-							
-							this.createRawPolymer(points, svgMain, regionID, "linkedRegion", this.colorSet[linkMap[regionID].color]);
+							if(!regionMap.hasOwnProperty(points)) {
+//								this.createRawPolygon(points, {id: regionID,
+//									class: 'linkedRegion',
+//									fill: this.colorSet[3],
+//									stroke: this.colorSet[5],
+//									'stroke-width': 3,
+//									}, svgMain);
+								this.createRawPolygon(points, {id: regionID,
+									class: 'linkedRegion',
+									fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID].regions[0].data.value))),
+									stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
+									'stroke-width': 2,
+									'fill-opacity': this.valueToPercentile(linkMap[regionID].regions[0].data.value) 
+										* this.MAX_FILL_OPACITY,
+									}, svgMain);
+								regionMap[points] = true;
+							}
 						}
 						
 					}, this);
@@ -369,6 +414,48 @@
 				}
 			}
 		},
+		
+		isAboveThreshold: function(value, threshold) {
+			threshold = threshold || this.threshold;
+			return this.valueToPercentile(value) >= threshold / 100;
+		},
+		
+		valueToPercentile: function(value, considerThreshold) {
+			if(Array.isArray(this.percentiles) && this.percentiles.length > 0) {
+				var result = 0;
+				this.percentiles.every(function(percentile, index) {
+					result = index;
+					return percentile < value;
+				});
+				result = result / (this.percentiles.length - 1)
+				return considerThreshold? (this.threshold < 100? (result - this.threshold / 100) / (1 - this.threshold / 100): 0.5): result;
+			}
+			// otherwise, throw exception
+			throw("Percentile data missing!");
+		},
+		
+		percentileToGradient: function(percentile) {
+			// return the gradient value from this.gradient
+			// first find the closest two colors
+			var leftColor, rightColor, colorIndex;
+			this.gradient.every(function(colorSet, index) {
+				colorIndex = index;
+				return colorSet.percent < percentile;
+			});
+			if(colorIndex === 0) {
+				return this.gradient[0].color;
+			}
+			leftColor = this.gradient[colorIndex - 1];
+			rightColor = this.gradient[colorIndex];
+			return this.getColorBetween(leftColor.color, rightColor.color, 
+				(percentile - leftColor.percent) / (rightColor.percent - leftColor.percent))
+		},
+		
+		getColorBetween(lColor, rColor, weight) {
+			return (parseInt((rColor & 0xFF0000) * weight + (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000)
+				+ (parseInt((rColor & 0x00FF00) * weight + (lColor & 0x00FF00) * (1 - weight)) & 0x00FF00)
+				+ (parseInt((rColor & 0x0000FF) * weight + (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF);
+		},			
 		
 	});
   </script>

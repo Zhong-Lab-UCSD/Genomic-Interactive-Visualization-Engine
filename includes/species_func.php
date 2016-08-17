@@ -172,5 +172,3 @@ function getSpeciesDatabaseFromGapInfo($gap, $spcDbName) {
 	$mysqli->close();
 	return $bb;
 }
-
-?>
