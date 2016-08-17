@@ -124,37 +124,13 @@ aye lurned ahlought
 
             this.masterView.setIndex(this.bigWigHeader.unzoomedIndexOffset);
             this.readUnzoomedIndexHeader();
-            this.readUnzoomedIndexNode(readSection);
-            //data should all be loaded by now
-            //do something with zoomed summary data
+            this.readUnzoomedIndexNode(readSection);//also, remove readSection if everytime is a read section anyways
         }
 
-        this.readAllStuff = function() {//outdated
-            var readSection = false;
-            this.readBigWigHeader();
-            for (var i = 0; i < this.zoomLevel; i++) {
-                this.readZoomLevelHeader();
-            }
-            this.masterView.setIndex(this.bigWigHeader.totalSummaryOffset);
-            this.readSummaryHeader();
-            this.masterView.setIndex(this.bigWigHeader.chromTreeOffset);
-            this.readChromTreeHeader();
-            this.readChromTreeNode();
-
-            this.masterView.setIndex(this.bigWigHeader.unzoomedIndexOffset);
-            this.readUnzoomedIndexHeader();
-            this.readUnzoomedIndexNode(readSection);
-            //data should all be loaded by now
-            //do something with zoomed summary data
-
-        };
+       
         this.readBigWigHeader = function() {
             var magicNumber = this.masterView.getInt32();
-            console.log(magicNumber);
-            if (magicNumber !== 0x888FFC26) {
-                console.log('endian wrong');
-                this.masterView.isLittleEndian = true;
-            }
+			this.masterView.isLittleEndian = (magicNumber!==0x888FFC26)? true : false;
             this.bigWigHeader.version = this.masterView.getInt16();
             this.bigWigHeader.zoomLevel = this.masterView.getInt16();
             this.bigWigHeader.chromTreeOffset = this.masterView.getInt64();
@@ -166,7 +142,8 @@ aye lurned ahlought
             this.bigWigHeader.asOffset = this.masterView.getInt64();
             this.bigWigHeader.totalSummaryOffset = this.masterView.getInt64();
             this.bigWigHeader.uncompressBufferSize = this.masterView.getInt32();
-            this.bigWigHeader.reserved = this.masterView.getInt64();
+            //this.bigWigHeader.reserved = this.masterView.getInt64();
+			this.masterView.moveIndex(8);
 
         };
 
@@ -178,7 +155,7 @@ aye lurned ahlought
             this.zoomLevelHeaders.push(new zoomLevelHeader(reductionLevel, reserved, dataOffset, indexOffset));
 			this.zoomedIndexHeaders[reductionLevel]={};
 			this.zoomedSummaryData[reductionLevel]=[];
-			this.zoomedIndexHeaders.size+=1;
+			this.zoomedIndexHeaders.size+=1;//there must be a better wat
 			
         };
         this.readSummaryHeader = function() {
