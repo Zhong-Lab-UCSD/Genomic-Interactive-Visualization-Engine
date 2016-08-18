@@ -146,10 +146,10 @@
 		},
 		
 		createWigTrackProp: function(viewWindowIndex, properties) {
-			return {x: 0, y: 0, width: this.offsetWidth,
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 					textMargin: 100, requestUrl: Track.fetchDataTarget,
 					windowIndex: viewWindowIndex,
-					};
+				}, properties);
 		},
 		
 		createCoorTrackProp: function(viewWindowIndex, properties) {

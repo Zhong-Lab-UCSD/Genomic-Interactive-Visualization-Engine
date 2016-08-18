@@ -115,21 +115,23 @@
 			label.textContent = this.species.groups[groupID].label;
 			label.setAttribute('class', 'header');
 			Polymer.dom(newMaterial).appendChild(label);
-			var container = newMaterial;
+			var scroller = document.createElement('paper-dialog-scrollable');
+			Polymer.dom(newMaterial).appendChild(scroller);
+			var container = scroller;
 			if(this.species.groups[groupID].singleOnly) {
 				container = document.createElement('paper-radio-group');
 				container.groupRef = this.species.groups[groupID];
-				Polymer.dom(newMaterial).appendChild(container);
+				
 				var expander = document.createElement('paper-icon-button');
                 expander.setAttribute('class','leftFloat');
                 expander.setAttribute('id','expandButton')
                 expander.setAttribute('on-click','toggleCollapse')
                 expander.setAttribute('color','#cc00cc')
                 container.groupRef = this.species.groups[groupID];
-                scroller = document.createElement('paper-dialog-scrollable');
+                
 				Polymer.dom(scroller).appendChild(container);
 						//Polymer.dom(expander).appendChild(scroller);
-				Polymer.dom(newMaterial).appendChild(scroller);
+				
 			}
 			this.species.groups[groupID].forEach(function(track, index) {
 				var newTrackSelectionDOM = document.createElement(
