@@ -16,7 +16,7 @@
 			margin: 1.2em 0;
 		}
 		paper-card{
-			background-color: #cc00cc
+			/*background-color: #cc00cc;*/
 			
 		}
 		svg{
@@ -94,7 +94,7 @@
 				},
 				'wig':{
 					prop: this.createWigTrackProp.bind(this),
-					ctor: WigTrack,
+					ctor: WiggleTrack,
 					addDom: this.addOrdinaryTrackDOM.bind(this),
 					
 				},
@@ -152,10 +152,10 @@
 		},
 		
 		createWigTrackProp: function(viewWindowIndex, properties) {
-			return {x: 0, y: 0, width: this.offsetWidth,
+			return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 					textMargin: 100, requestUrl: Track.fetchDataTarget,
 					windowIndex: viewWindowIndex,
-					};
+				}, properties);
 		},
 		
 		createCoorTrackProp: function(viewWindowIndex, properties) {
