@@ -13,17 +13,11 @@
             display: none;
         }
 		:host {
-			margin: 1.2em 0;
+			margin: 0;
 		}
-		paper-card{
-			background-color: #cc00cc
-			
-		}
-		svg{
-			margin-left: 50px;
-			margin-right: 50px;
-			margin-bottom: 5px;
-			margin-top: 5px;
+		paper-card {
+			width: 100%;
+			padding: 0.5em;
 		}
     </style>
     <style include="genemo-track-styles"></style>
@@ -94,7 +88,7 @@
 				},
 				'wig':{
 					prop: this.createWigTrackProp.bind(this),
-					ctor: WigTrack,
+					ctor: WiggleTrack,
 					addDom: this.addOrdinaryTrackDOM.bind(this),
 					
 				},

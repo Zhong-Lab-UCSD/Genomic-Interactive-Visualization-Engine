@@ -57,6 +57,8 @@ function Transcript(bed12String, transName, chrom, regionstart, regionend, regio
 	if(geneName) {
 		// this is used when geneName (ID) differs from display Name
 		this.geneName = geneName;
+	} else {
+		this.geneName = this.name;
 	}
 }
 

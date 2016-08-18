@@ -159,7 +159,7 @@
 		},
 		
 		inputFileChangedFunc: function() {
-			var shortFileName = this.$.uploadFileInput.files[0].name;
+			var shortFileName = this.$.uploadFileInput.files.length > 0? this.$.uploadFileInput.files[0].name: "";
 			if(shortFileName == "") {
 				this.$.fileSelectButton.classList.remove("noTextTransformButton");
 				this.uploadButtonText = "Upload local file";
@@ -196,7 +196,8 @@
 			} else {
 				track.settings.remoteUrl = this.InputUrl;
 			}
-			track.settings.shortLabel = this.trackShortLabel;
+			track.settings.shortLabel = this.trackShortLabel.length > 0? this.trackShortLabel:
+				'Custom track #' + (this.customGroup.getLength() + 1);
 			track.tableName = 'custom' + this.customGroup.getLength();
 			this.species.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'));
 			this.$.mainDialog.close();

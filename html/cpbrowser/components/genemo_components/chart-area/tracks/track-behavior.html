@@ -656,11 +656,14 @@
 			this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw);
 		},
 		
-		drawWordWrappedText: function(x, y, text, textAnchor, extendDirection, params, svgToDraw, maxWidth, maxHeight) {
+		drawWordWrappedText: function(x, y, text, textAnchor, extendDirection, params, svgToDraw, maxWidth, maxHeight, avoidCollision) {
 			// notice that all whitespaces in text will be subsituted by ' ' and consecutive spaces will be collapsed
 			// extendDirection ('up' | 'both' | 'down') determine how extra text will be extended
-			var textArray = text.split(/\s+/), results = [], currHeight = this.textSize * this.fullHeight;
+			// when avoidCollision is true, no text will be drawn 
+			//		if any of the text component is overlapping with existing text elements
+			var textArray = text.split(/\s+/), results = [], resultWidths = [], currHeight = this.textSize * this.fullHeight;
 			results.push('');
+			resultWidths.push(0);
 			
 			textArray.every(function(currWord, index) {
 				var currWidth, i;
@@ -680,6 +683,7 @@
 								currWidth = this.testTextWidth(results[results.length - 1], 
 											textAnchor, params, svgToDraw);
 							} while(currWidth > maxWidth && i < currWord.length);
+							resultWidths[resultWidths.length - 1] = currWidth;
 							currWord = currWord.slice(-i);
 						}
 						
@@ -694,13 +698,16 @@
 							} while(currWidth > maxWidth && results[results.length - 1].length > 0);
 							results[results.length - 1] = results[results.length - 1].length > 0? 
 											results[results.length - 1] + ' ...': '...';
+							resultWidths[resultWidths.length - 1] = currWidth;
 							return false;
 						}
 						results.push('');
+						resultWidths.push(0);
 						currHeight += this.textSize * (this.textLineGap + this.fullHeight);
 					} else {
 						results[results.length - 1] = (results[results.length - 1].length > 0? 
 												results[results.length - 1] + ' ': '') + currWord;
+						resultWidths[resultWidths.length - 1] = currWidth;
 						return true;
 					}
 				} while(currWord.length > 0);
@@ -716,18 +723,31 @@
 					vertParam = 0;
 					break;
 			}
-			var currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;
 			// then draw everything in results
-			results.forEach(function(line, index) {
-				this.drawText(x, currY, line, textAnchor, params, svgToDraw);
+			// get all text elements in the svg in case collision detection is needed
+			var textList = Polymer.dom(svgToDraw).querySelectorAll('text');
+			var textArray = Array.prototype.slice.call(textList);
+			var currY = y - ((results.length - 1) * vertParam + 1) * (this.textLineGap + this.fullHeight) * this.textSize;
+			if(!avoidCollision || resultWidths.every(function(width, index) {
 				currY += (this.textLineGap + this.fullHeight) * this.textSize;
-			}, this);
+				return textArray.every(function(text, index_t) {
+					var rect = text.getBoundingClientRect();
+					return (rect.left >= x + width || rect.right <= x ||
+							rect.top > currY + this.fullHeight * this.textSize || rect.bottom < currY);
+				}, this);
+			}, this)) {
+				currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;
+				results.forEach(function(line, index) {
+					this.drawText(x, currY, line, textAnchor, params, svgToDraw);
+					currY += (this.textLineGap + this.fullHeight) * this.textSize;
+				}, this);
+			}
 
 		},
 		
 		drawShortLabel: function(label) {
 			this.drawWordWrappedText(this.textMargin, this.trackHeight * 0.5, label || this.track.getSetting('shortLabel'), 
-									'end', 'both', null, this.textSvg, this.textMargin, this.trackHeight);
+									'end', 'both', null, this.textSvg, this.textMargin, this.trackHeight, true);
 		},
 		
 		// ** Track event handling and functions **
@@ -765,22 +785,24 @@
 			// this is to get the raw custom data file(s)
 			// format conversion is handled by customDataHandler
 			if(this.localFile) {
-				this.readLocalFile(this.localFile, this.prepareCustomQuery(), this.responseHandler.bind(this));
+				this.readLocalFile(this.localFile, this.prepareCustomQuery());
 			} else if(this.remoteFile) {
-				this.readRemoteFile(this.remoteFile, this.prepareCustomQuery(), this.responseHandler.bind(this));
+				this.readRemoteFile(this.remoteFile, this.prepareCustomQuery());
 			}
 		},
 		
 		readLocalFile: function(file, query, callback) {
 			// placeholder to read local file content
 			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-			// data will be passed via callback(e, detail), in which detail = e.detail
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
 		},
 		
 		readRemoteFile: function(URL, query, callback) {
 			// placeholder to read remote URL
 			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-			// data will be passed via callback(e, detail), in which detail = e.detail
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
 		},
 		
 		responseHandler: function(e, detail) {

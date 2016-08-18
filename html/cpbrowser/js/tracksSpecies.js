@@ -157,7 +157,8 @@ Track.prototype.getPriority = function() {
 
 Track.comparePriorities = function(track1, track2, groups) {
 	// compare group priorities first, then local priorities
-	var group1Prior = TrackGroup.MAX_GROUP_PRIORITY + 1, group2Prior = TrackGroup.MAX_GROUP_PRIORITY + 1;
+	// tracks without groups will be considered as top priority (for now)
+	var group1Prior = 0, group2Prior = 0;
 	try {
 		group1Prior = groups[track1.groupID].priority;
 	} catch(e) {
