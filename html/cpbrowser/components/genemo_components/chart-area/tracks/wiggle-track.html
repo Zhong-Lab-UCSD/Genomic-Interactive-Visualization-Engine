@@ -29,12 +29,110 @@ WiggleTrack = Polymer({
 			
 			
 			var reader = new FileReader();
-			reader.onload = (function(e) {
+			//if the file is bigWig
+			{reader.onload = (function(e) {
 				var bigWig=new bigWigFile(reader.result);
 				bigWig.readSection(query);//not sure how this works yet
 				//give the datapoints to the datahandler
 			}).bind(this);
-			reader.readAsArrayBuffer(file);
+			reader.readAsArrayBuffer(file);}
+			//else if the file is wiggle
+			{
+			reader.datapoints = [];
+
+        reader.onload = function() {
+
+            var text = reader.result;
+            var lines = text.split(/[\r\n]+/g);
+
+            for (var i = 0; i < lines.length; i++) {
+                if (lines[i].substring(0, 8) == 'browser') {} else if (lines[i].substring(0, 5) == 'track') {
+
+                    var dataInfo = lines[i + 1].split(' ');
+                    var chrom = parseInt(dataInfo[1].substring(9));
+                    if (!this.datapoints.hasOwnProperty(chrom)) this.datapoints[chrom] = [];
+                    var newI = i + 2;
+
+
+                    switch (dataInfo[0]) {
+                        case 'variableStep':
+                            {	
+								var span = parseInt(dataInfo[2].substring(5));
+                                for (newI; firstCharIsNumber(lines[newI]); newI++) {
+                                    var point = lines[newI].split(' ');
+                                    this.datapoints[chrom].push([parseInt(point[0]), parseInt(point[0]) + span,parseFloat(point[1])]);
+                                }
+                                break;
+                            }
+                        case 'fixedStep':
+                            {
+                                var start = parseInt(dataInfo[2].substring(6));
+                                var step = parseInt(dataInfo[3].substring(5));
+								var span = parseInt(dataInfo[4].substring(5));
+                                for (newI; firstCharIsNumber(lines[newI]); newI++) {
+                                    var point = lines[newI].trim().split(' ');
+                                    var strength = parseFloat(point[0]);
+                                    var basePair = parseInt(start + ((newI - i - 2) * step));
+                                    this.datapoints[chrom].push([basePair, basePair + span, strength]);
+                                }
+                                break;
+                            }
+                        default:
+                            {
+
+                                console.log("No organization type specified.")
+
+                            }
+                    }
+
+                } else if (lines[i].charAt(0) == '#') {
+                    lines.splice(i, 1);
+                    i -= 1;
+                }
+            }
+            console.log(this.datapoints);
+            for (chrom in this.datapoints) {
+                var table = document.createElement('table');
+                table.setAttribute('border', '2px');
+                var caption = document.createElement('caption');
+                caption.innerHTML = 'Chromosome ' + chrom;
+                table.appendChild(caption);
+                var position = document.createElement('th');
+                position.innerHTML = 'Base Pair';
+                var signal = document.createElement('th');
+                signal.innerHTML = 'Signal Strength';
+                var tableRow = document.createElement('tr');
+                tableRow.appendChild(position);
+                tableRow.appendChild(signal);
+                table.appendChild(tableRow);
+
+                for (var i = 0; i < this.datapoints[chrom].length; i++) {
+
+                    var basePair = document.createElement('td');
+                    basePair.innerHTML = this.datapoints[chrom][i][0] + '-' + this.datapoints[chrom][i][1];
+                    var strength = document.createElement('td');
+                    strength.innerHTML = this.datapoints[chrom][i][2];
+                    var row = document.createElement('tr');
+                    console.log("row done");
+                    row.appendChild(basePair);
+                    row.appendChild(strength);
+                    table.appendChild(row);
+
+                }
+                document.getElementById("test").appendChild(table);
+            }
+
+
+
+        };
+        reader.readAsText(input.files[0]);
+		function firstCharIsNumber(s) {
+        if (s == undefined) return false;
+        return !isNaN(parseInt(s.trim().charAt(0)));
+    }
+			
+			
+			}
 		},
 	dataHandler: function(datapoints){
 		/*read file will turn in an object with data for at least one chromosome.
