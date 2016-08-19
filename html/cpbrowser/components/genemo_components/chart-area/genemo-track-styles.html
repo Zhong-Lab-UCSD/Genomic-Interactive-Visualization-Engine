@@ -26,7 +26,20 @@
 			stroke-opacity: 0;
 		}
 		
-		svg polygon.linkedRegion:hover {
+		svg polygon.linkedRegion.partialOutside {
+			fill-opacity: 0.01;
+		}
+		
+		svg polygon.linkedRegion.fullyInside {
+			fill-opacity: 0.2;
+		}
+		
+		svg polygon.linkedRegion.partialOutside:hover {
+			stroke-opacity: 1;
+			fill-opacity: 0.2;
+		}
+		
+		svg polygon.linkedRegion.fullyInside:hover {
 			stroke-opacity: 1;
 			fill-opacity: 0.7;
 		}

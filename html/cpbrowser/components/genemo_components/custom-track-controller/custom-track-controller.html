@@ -190,7 +190,7 @@
 				this.fire("alert", {msg: 'You need to select the type of the track!'});
 				return false;
 			}
-			var track = {settings: {isCustom: true, type: this.currentType}};
+			var track = {settings: {isCustom: true, type: this.currentType, visibility: Track.StatusEnum.VIS_FULL, adaptive: 'on'}};
 			if(this.$.uploadFileInput.files.length > 0) {
 				track.settings.localFile = this.$.uploadFileInput.files[0];
 			} else {

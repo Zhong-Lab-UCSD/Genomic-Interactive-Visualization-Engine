@@ -16,7 +16,9 @@ function Track(ID, Settings, species) {
 	this.species = species;
 	this.priority = this.getSetting('priority') || Track.DEFAULT_PRIORITY;
 	this.info = "";				// reserved for "children"
-	this.setVisFromStr(this.getSetting('visibility') || 'full');
+	if(this.getSetting('visibility')) {
+		this.setVisFromStr(this.getSetting('visibility'));
+	} // otherwise leave it to DOM
 }
 
 Track.StatusEnum = {
@@ -24,39 +26,9 @@ Track.StatusEnum = {
 	VIS_NONE: 0,
 	VIS_PACK: 4,
 	VIS_COLLAPSED: 3,			// this is for gene track only, will collapse overlapping transcripts
-	VIS_NOTEXT: 2,			// this is for gene track only, will remove all texts
+	VIS_NOTEXT: 2,				// this is for gene track only, will remove all texts
 	VIS_DENSE: 1,
 };
-
-Track.Parsers = {};
-
-Track.Parsers.WigParser = function(fileBlob, coordinates) {
-};
-
-Track.TypeMap = {
-	// This is trying to map type trunks to actual actors
-	// All parsers should take the file (Blob) object, window(s) (optional) or other stuff as parameters,
-	//			return value should be data object directly usable by the DOM part of the track
-	'bed': {
-		parser: Track.Parsers.BedParser,
-	},
-	'genebed': {
-		parser: Track.Parsers.BedParser,
-	},
-	'genepred': {
-		parser: Track.Parsers.BedParser,
-	},
-	'interaction': {
-		parser: Track.Parsers.InteractionParser,
-	},
-	'coordinate': {
-		parser: Track.Parsers.CoorParser,
-	},
-	'wig': {
-		parser: Track.Parsers.WigParser,
-	},
-};
-	
 
 Track.DEFAULT_PRIORITY = 100.0;
 Track.fetchDataTarget = '/cpbrowser/getTrackData.php';

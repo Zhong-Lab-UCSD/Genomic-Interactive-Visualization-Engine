@@ -171,6 +171,19 @@
 			this._setTrack(track);
 			this._setTrackType(track.getTypeTrunk());
 			
+			// this is the type of visibility values that are allowed in a particular track
+			this.allowedVisibilities = [
+				Track.StatusEnum.VIS_NONE,
+				Track.StatusEnum.VIS_DENSE,
+				Track.StatusEnum.VIS_NOTEXT,	
+				Track.StatusEnum.VIS_COLLAPSED,
+				Track.StatusEnum.VIS_PACK,
+				Track.StatusEnum.VIS_FULL,
+			];
+			this.defaultVisibility = Track.StatusEnum.VIS_FULL;
+			
+			this.activeVisibility = this.track.getSetting('visibility') || this.defaultVisibility;
+			
 			if(this.track.getSetting('adaptive') === 'on') {
 				this.isAdaptive = true;
 			}
@@ -390,6 +403,32 @@
 			this.trackHeight = newHeight;
 		},
 		
+		// ****** visibility control ******
+		
+		changeVisibility: function(newValue, relative) {
+			if(!relative) {
+				// setting the absolute visibility value,
+				// if not allowed, the closest one *with more detail* (read: later in this.allowedVisibilities) will be chosen
+				if(this.allowedVisibilities.indexOf(newValue) >= 0) {
+					this.activeVisibility = newValue;
+				} else {
+					this.allowedVisibilities.every(function(vis) {
+						this.activeVisibility = vis;
+						return vis < newValue;
+					}, this);
+				}
+			} else {
+				// just move values within this.allowedVisibilities
+				var newIndex = this.allowedVisibilities.indexOf(this.activeVisibility) + newValue;
+				if(newIndex < 0) {
+					newIndex = 0;
+				} else if(newIndex >= this.allowedVisibilities.length) {
+					newIndex = this.allowedVisibilities.length - 1;
+				}
+				this.activeVisibility = this.allowedVisibilities[newIndex];
+			}
+		},
+		
 		// ****** customized methods ******
 		
 		prepareRemoteQuery: function() {
@@ -441,9 +480,9 @@
 					/ parseFloat(windowToDraw.getLength());
 				if(moveOutsideToBorder) {
 					if(result < 0) {
-						return 0;
+						return -1;
 					} else if(result > this.windowWidth) {
-						return this.windowWidth;
+						return this.windowWidth + 1;
 					}
 				}
 				return result;
@@ -730,10 +769,23 @@
 			var currY = y - ((results.length - 1) * vertParam + 1) * (this.textLineGap + this.fullHeight) * this.textSize;
 			if(!avoidCollision || resultWidths.every(function(width, index) {
 				currY += (this.textLineGap + this.fullHeight) * this.textSize;
+				var left = x, right = x;
+				switch(textAnchor) {
+					case 'start':
+						right += width;
+						break;
+					case 'end':
+						left -= width;
+						break;
+					case 'middle':
+						right += width / 2;
+						left -= width / 2;
+						break;
+				}
 				return textArray.every(function(text, index_t) {
-					var rect = text.getBoundingClientRect();
-					return (rect.left >= x + width || rect.right <= x ||
-							rect.top > currY + this.fullHeight * this.textSize || rect.bottom < currY);
+					var rect = text.getBBox();
+					return (rect.x >= right || rect.x + rect.width <= left ||
+							rect.y > currY + this.fullHeight * this.textSize || rect.y + rect.height < currY);
 				}, this);
 			}, this)) {
 				currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;

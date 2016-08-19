@@ -62,14 +62,6 @@
       </div>
 	 
       <div drawer>
-	   <paper-dropdown-menu id="Species" label="Species">
-  <paper-listbox class="dropdown-content">
-    <paper-item>allosaurus</paper-item>
-    <paper-item>brontosaurus</paper-item>
-    <paper-item>carcharodontosaurus</paper-item>
-    <paper-item>diplodocus</paper-item>
-  </paper-listbox>
-</paper-dropdown-menu>
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
         <div>
@@ -127,6 +119,9 @@
 		factoryImpl: function(spcArray, index) {
 			this.spcArray = spcArray;
 			this.spcIndex = index || this.spcIndex;
+			if(window.location.search.indexOf('hg38') >= 0) {
+				this.spcIndex = 1;
+			}
 			this.spcChanged();
 		},
 		
@@ -144,10 +139,6 @@
 				this.getCurrentSpecies().initTracksFromServer(null, this.changeMainChartSpecies.bind(this));
 			}
 		},
-		
-		addSpecies: function(){
-			//add all the available species to the dropdown menu
-		}
 		
 		changeMainChartSpecies: function() {
 			var correctedVWindows;

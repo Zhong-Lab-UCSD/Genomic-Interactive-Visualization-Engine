@@ -58,6 +58,11 @@
 							{percent: 1, color: 0xF44336}];		// Gradient (indigo-green-lime-red)
 				}
 			},
+			
+			bandBorder: {
+				type: Number,
+				value: 1.0,
+			},
 		},
 		
 		created: function() {
@@ -101,7 +106,56 @@
 			this.initSubSvgHolders();
 		},
 		
+		readLocalFile: function(file, query) {
+			// placeholder to read local file content
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
+			
+			// BED file implementation:
+			//		brutal force going through the file to find regions that intersect the query region
+			//		return the lines filtered
+			//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
+			//			like in http://matthewmeye.rs/blog/post/html5-line-reader/
+			//			or		http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
+			
+			var reader = new FileReader();
+			var result = {};
+			reader.onload = (function(e) {
+				var lines = e.target.result.split(/\r\n|\r|\n/g);
+				lines.forEach(function(line, index) {
+					var transcript = new Transcript(line);
+					if(transcript.overlaps(query)) {
+						// needs to push this line to result
+						if(!result.hasOwnProperty(transcript.chr)) {
+							result[transcript.chr] = [];
+						}
+						result[transcript.chr].push({geneBed: line});
+					}
+				}, this);
+				this.fire('response', {response: result});
+			}).bind(this);
+			reader.readAsText(file);
+		},
+		
+		readRemoteFile: function(URL, query) {
+			// placeholder to read remote URL
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
+		},
+
 		// ****** customized methods below ******
+		
+		prepareCustomQuery: function() {
+			// provide data to custom track query
+			// for most of the tracks, this is only window (does not need to stringify)
+			var windows = [];
+			for(var i = 0; i < this.numOfSubs; i++) {
+				windows.push(this.subSvgs[i].viewWindow);
+			}
+			return windows;
+		},			
 		
 		prepareRemoteQuery: function() {
 			// provide data to mainAjax
@@ -128,6 +182,53 @@
 			}, this);
 		},
 		
+		readLocalFile: function(file, query) {
+			// placeholder to read local file content
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
+			
+			// Interaction file implementation:
+			//		brutal force going through the file to find regions that intersect the query region
+			//		return the lines filtered
+			//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
+			//			like in http://matthewmeye.rs/blog/post/html5-line-reader/
+			//			or		http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
+			
+			var reader = new FileReader();
+			var result = {};
+			reader.onload = (function(e) {
+				var lines = e.target.result.split(/\r\n|\r|\n/g);
+				var linkID = 0;
+				lines.forEach(function(line, line_index) {
+					linkID++;
+					var tokens = line.split(/\s+/g);
+					var regions = [new ChrRegionToShow(tokens[0] + ':' + tokens[1] + '-' + tokens[2] + '(' + tokens[3] + ')'),
+						new ChrRegionToShow(tokens[4] + ':' + tokens[5] + '-' + tokens[6] + '(' + tokens[7] + ')')];
+					if(regions.some(function(region, index) {
+						return region.overlaps(query[index]);
+					}, this)) {
+						// needs to push this line to result
+						regions.forEach(function(region, index) {
+							if(!result.hasOwnProperty(region.chr)) {
+								result[region.chr] = [];
+							}
+							result[region.chr].push({regionString: region.toString(), linkID: linkID, dirFlag: index});
+						}, this);
+					}
+				}, this);
+				this.fire('response', {response: result});
+			}).bind(this);
+			reader.readAsText(file);
+		},
+		
+		readRemoteFile: function(URL, query) {
+			// placeholder to read remote URL
+			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+			// data will be passed via firing a 'response' event with {detail: data}
+			// and the response will be handled by this.responseHandler(e, detail)
+		},
+
 		dataHandler: function(e, detail) {
 			// this is to handle data within response
 			var res = detail.response;
@@ -144,9 +245,11 @@
 					this.data[chrom] = [];
 					// TODO: use some better method to organize data
 					// for now: enum all res.data, add them to this.data[chrom]
+					// notice that dirFlag can be undefined, 
+					//		however, if it's defined, then it will be the window index (for now)
 					res[chrom].forEach(function(region) {
 						this.data[chrom].push(new ChrRegionToShow(region.regionString, null, null, null, 
-										{linkID: region.linkID, regionID: region.ID, value: region.value}, this.track.species));
+										{linkID: region.linkID, regionID: region.ID, value: region.value, dirFlag: region.dirFlag}, this.track.species));
 					}, this);
 				}
 			}
@@ -169,9 +272,9 @@
 			
 			this.linkMap = {};
 			// draw box track for each child svg
-			this.subSvgs.forEach(function(subSvg) {
+			this.subSvgs.forEach(function(subSvg, index) {
 				this.drawBoxTrack(this.data[subSvg.viewWindow.chr], this.linkMap, 0.5, 
-								  this.textSize * this.fullHeight - 1, subSvg);
+								  this.textSize * this.fullHeight - 1, subSvg, index);
 			}, this);
 
 			// draw interaction track for main svg
@@ -263,7 +366,7 @@
 			}
 		},
 		
-		drawBoxTrack: function(regions, linkMap, y, height, svgToDraw) {
+		drawBoxTrack: function(regions, linkMap, y, height, svgToDraw, index) {
 			// regions is an array of all connections
 			// regions with the same ID is connected and needs to be colored accordingly
 			// linkMap is an object with regionID as key and value as following:
@@ -280,17 +383,23 @@
 			var windowToDraw = svgToDraw.viewWindow;
 			
 			if(regions && regions.forEach) {
-				regions.forEach(function(value, index) {
+				regions.forEach(function(value) {
 					// value is a window-ish
-					if(!this.isAboveThreshold(value.data.value)) {
-						return;
+					if(!this.isAboveThreshold(value.data.value) ||
+						(typeof(value.data.dirFlag) === 'number' && value.data.dirFlag !== index)) {
+							return;
 					}
 					var linkID = value.data.linkID;
 					if(linkMap.hasOwnProperty(linkID)) {
 						// color is already there
 						colorIndex = linkMap[linkID].color;
-						if(!linkMap[linkID].regions.some(function(region, index){
-							return region.data.regionID === value.data.regionID;
+						if(!linkMap[linkID].regions.some(function(region){
+							if(typeof(region.data.regionID) !== 'undefined' && typeof(value.data.regionID) !== 'undefined')
+							{
+								return region.data.regionID === value.data.regionID;
+							} else {
+								return !compareChrRegion(region, value);
+							}
 							})) {
 								linkMap[linkID].regions.push(value);
 						}
@@ -365,28 +474,38 @@
 					
 					perm.forEach(function(permIndex, index) {
 						if(permIndex.some(function(currentPerm, svgIndex) {
-							return this.regionInWindow(linkMap[regionID].regions[currentPerm], svgChildren[svgIndex]);
+							return (typeof(linkMap[regionID].regions[currentPerm].data.dirFlag) !== 'number' 
+								|| linkMap[regionID].regions[currentPerm].data.dirFlag === svgIndex) &&
+								this.regionInWindow(linkMap[regionID].regions[currentPerm], svgChildren[svgIndex]);
 						}, this)) {
 						
 							// prepare the points
 							var startPoints = [];
 							var endPoints = [];
+							
+							var partialOutside = false;
 
 							svgChildren.forEach(function(svgChild, index) {
 								var x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getStart(),
 																  true, svgChild);
+								if(x > this.windowWidth) {
+									partialOutside = true;
+								}
 								
 								var y = (parseInt(svgChild.getAttributeNS(null, "y")) || 0);
 								
-								startPoints.push(x + "," + y);
-								startPoints.push(x + "," + (y + svgChild.height.animVal.value));
+								startPoints.push((x - this.bandBorder / 2)  + "," + y);
+								startPoints.push((x - this.bandBorder / 2) + "," + (y + svgChild.height.animVal.value));
 								
 								x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getEnd(),
 															  true, svgChild);
-								x += (parseInt(svgChild.getAttributeNS(null, "x")) || 0);
+								if(x < 0) {
+									partialOutside = true;
+								}
 								
-								endPoints.push(x + "," + y);
-								endPoints.push(x + "," + (y + svgChild.height.animVal.value));
+								x += (parseInt(svgChild.getAttributeNS(null, "x")) || 0);
+								endPoints.push((x + this.bandBorder / 2) + "," + y);
+								endPoints.push((x + this.bandBorder / 2) + "," + (y + svgChild.height.animVal.value));
 							}, this);
 
 							var points = startPoints.concat(endPoints.reverse());
@@ -397,14 +516,24 @@
 //									stroke: this.colorSet[5],
 //									'stroke-width': 3,
 //									}, svgMain);
-								this.createRawPolygon(points, {id: regionID,
-									class: 'linkedRegion',
-									fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID].regions[0].data.value))),
-									stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
-									'stroke-width': 2,
-									'fill-opacity': this.valueToPercentile(linkMap[regionID].regions[0].data.value) 
-										* this.MAX_FILL_OPACITY,
-									}, svgMain);
+								if(this.percentiles) {
+									this.createRawPolygon(points, {id: regionID,
+										class: 'linkedRegion',
+										fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID].regions[0].data.value))),
+										stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
+										'stroke-width': 2,
+										'fill-opacity': this.valueToPercentile(linkMap[regionID].regions[0].data.value)	* this.MAX_FILL_OPACITY,
+										}, svgMain);
+								} else {
+									this.createRawPolygon(points, {id: regionID,
+										class: 'linkedRegion ' + (partialOutside? 'partialOutside': 'fullyInside'),
+										fill: this.rgbToHex(this.colorSet[0]),
+										stroke: this.rgbToHex(this.colorSet[0]),
+										//'stroke-width': 0.5,
+										//'fill-opacity': partialOutside? 0.01: 0.2,
+										//'stroke-opacity': 1,
+										}, svgMain);
+								}
 								regionMap[points] = true;
 							}
 						}
@@ -417,7 +546,15 @@
 		
 		isAboveThreshold: function(value, threshold) {
 			threshold = threshold || this.threshold;
-			return this.valueToPercentile(value) >= threshold / 100;
+			if(typeof(value) === 'number') {
+				if(this.percentiles) {
+					return this.valueToPercentile(value) >= threshold / 100;
+				} else {
+					return value >= threshold;
+				}
+			} else {
+				return true;
+			}
 		},
 		
 		valueToPercentile: function(value, considerThreshold) {

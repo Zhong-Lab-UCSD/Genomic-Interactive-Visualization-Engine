@@ -3,7 +3,6 @@
 <link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
-<link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-card-content-behavior/genemo-card-content-behavior.html">
@@ -22,6 +21,10 @@
 		paper-material > div.header {
 			color: #3F51B5;
 			margin-bottom: 0.5em;
+		}
+		paper-material > div.scroller {
+			max-height: 300px;
+			overflow-y: auto;
 		}
 		paper-material > paper-checkbox {
 			margin: 0.5em;
@@ -115,20 +118,15 @@
 			label.textContent = this.species.groups[groupID].label;
 			label.setAttribute('class', 'header');
 			Polymer.dom(newMaterial).appendChild(label);
-			var scroller = document.createElement('paper-dialog-scrollable');
+			var scroller = document.createElement('div');
+			scroller.setAttribute('class', 'scroller');
 			Polymer.dom(newMaterial).appendChild(scroller);
 			var container = scroller;
 			if(this.species.groups[groupID].singleOnly) {
 				container = document.createElement('paper-radio-group');
+				container.allowEmptySelection = true;
 				container.groupRef = this.species.groups[groupID];
 				
-				var expander = document.createElement('paper-icon-button');
-                expander.setAttribute('class','leftFloat');
-                expander.setAttribute('id','expandButton')
-                expander.setAttribute('on-click','toggleCollapse')
-                expander.setAttribute('color','#cc00cc')
-                container.groupRef = this.species.groups[groupID];
-                
 				Polymer.dom(scroller).appendChild(container);
 						//Polymer.dom(expander).appendChild(scroller);
 				

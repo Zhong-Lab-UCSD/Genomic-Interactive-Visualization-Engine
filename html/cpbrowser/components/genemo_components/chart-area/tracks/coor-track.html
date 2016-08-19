@@ -242,7 +242,7 @@
 			this.fire('update-window', { 
 						windowIndex: this.windowIndex,
 						newWindow: this.mainSvg.viewWindow.getExtension(
-									diff, this.revTransXCoordinate(e.screenX - e.target.getBoundingClientRect().left).coor, 
+									diff, this.revTransXCoordinate(e.pageX - e.target.getBoundingClientRect().left).coor, 
 									true, this.track.species).regionToString(false),
 			});
 			//this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(

@@ -148,8 +148,6 @@
 			// clear text Margin svg
 			this.clear();
 			
-			this.activeVisibility = this.track.getSetting('visibility');
-			
 			var lines;
 			while(!(lines = this.prepareLines(this.data[this.mainSvg.viewWindow.chr])) && this.activeVisibility > Track.StatusEnum.VIS_NONE);
 			var y = 0;
@@ -215,7 +213,7 @@
 						}, this)) {
 							// no empty lines, create a new line
 							if(this.isAdaptive && lines.length >= this.ADAPTIVE_MAXLINES) {
-								this.activeVisibility--;
+								this.changeVisibility(-1, true);
 								lines = null;
 								return false;
 							}
