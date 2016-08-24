@@ -50,6 +50,8 @@ The following custom properties and mixins are available for styling:
 | `--paper-checkbox-label-color` | Label color | `--primary-text-color` |
 | `--paper-checkbox-label-checked-color` | Label color when the input is checked | `--paper-checkbox-label-color` |
 | `--paper-checkbox-label-spacing` | Spacing between the label and the checkbox | `8px` |
+| `--paper-checkbox-label` | Mixin applied to the label | `{}` |
+| `--paper-checkbox-label-checked` | Mixin applied to the label when the input is checked | `{}` |
 | `--paper-checkbox-error-color` | Checkbox color when invalid | `--error-color` |
 | `--paper-checkbox-size` | Size of the checkbox | `18px` |
 | `--paper-checkbox-margin` | Margin around the checkbox container | `initial` |

@@ -102,6 +102,10 @@ To style it:
         outline: none;
       }
 
+      :host {
+        width: 200px;  /* Default size of an <input> */
+      }
+
       /**
        * All of these styles below are for styling the fake-input display
        */
@@ -124,10 +128,10 @@ To style it:
       #input {
         @apply(--paper-font-subhead);
         @apply(--paper-font-common-nowrap);
+        line-height: 1.5;
         border-bottom: 1px solid var(--paper-dropdown-menu-color, --secondary-text-color);
         color: var(--paper-dropdown-menu-color, --primary-text-color);
-        width: 200px;  /* Default size of an <input> */
-        min-height: 24px;
+        width: 100%;
         box-sizing: border-box;
         padding: 12px 20px 0 0;   /* Right padding so that text doesn't overlap the icon */
         outline: none;
@@ -171,6 +175,7 @@ To style it:
         transition-duration: .2s;
         transition-timing-function: cubic-bezier(.4,0,.2,1);
         color: var(--paper-dropdown-menu-color, --secondary-text-color);
+        cursor: pointer;
         @apply(--paper-dropdown-menu-label);
       }
 
@@ -181,6 +186,9 @@ To style it:
 
       :host([no-label-float]) label {
         top: 8px;
+        /* Since the label doesn't need to float, remove the animation duration
+        which slows down visibility changes (i.e. when a selection is made) */
+        transition-duration: 0s;
       }
 
       label.label-is-floating {
@@ -189,7 +197,7 @@ To style it:
       }
 
       label.label-is-hidden {
-        display: none;
+        visibility: hidden;
       }
 
       :host([focused]) label.label-is-floating {
@@ -237,7 +245,6 @@ To style it:
         right: 0px;
         bottom: 8px;    /* The container has an 8px bottom padding */
         @apply(--paper-font-subhead);
-        margin-top: 12px;
         color: var(--disabled-text-color);
         @apply(--paper-dropdown-menu-icon);
       }
@@ -282,8 +289,9 @@ To style it:
       close-on-activate
       allow-outside-scroll="[[allowOutsideScroll]]">
       <div class="dropdown-trigger">
-        <label hidden$="[[!label]]"
-            class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">[[label]]</label>
+        <label class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">
+          [[label]]
+        </label>
         <div id="input" tabindex="-1">&nbsp;</div>
         <iron-icon icon="paper-dropdown-menu:arrow-drop-down"></iron-icon>
         <span class="error">[[errorMessage]]</span>
@@ -378,7 +386,7 @@ To style it:
             type: Boolean,
             value: false
           },
-          
+
           /**
            * Set to true to disable the floating label. Bind this to the
            * `<paper-input-container>`'s `noLabelFloat` property.
@@ -523,7 +531,7 @@ To style it:
           if (!selectedItem) {
             value = '';
           } else {
-            value = selectedItem.label || selectedItem.textContent.trim();
+            value = selectedItem.label || selectedItem.getAttribute('label') || selectedItem.textContent.trim();
           }
 
           this._setValue(value);

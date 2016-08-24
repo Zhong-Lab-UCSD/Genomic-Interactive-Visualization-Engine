@@ -115,14 +115,16 @@ Custom property | Description | Default
       opened="{{opened}}"
       horizontal-align="[[horizontalAlign]]"
       vertical-align="[[verticalAlign]]"
+      dynamic-align="[[dynamicAlign]]"
       horizontal-offset="[[horizontalOffset]]"
       vertical-offset="[[verticalOffset]]"
+      no-overlap="[[noOverlap]]"
       open-animation-config="[[openAnimationConfig]]"
       close-animation-config="[[closeAnimationConfig]]"
       no-animations="[[noAnimations]]"
       focus-target="[[_dropdownContent]]"
       allow-outside-scroll="[[allowOutsideScroll]]"
-      restore-focus-on-close
+      restore-focus-on-close="[[restoreFocusOnClose]]"
       on-iron-overlay-canceled="__onIronOverlayCanceled">
       <div class="dropdown-content">
         <content id="content" select=".dropdown-content"></content>
@@ -191,6 +193,16 @@ Custom property | Description | Default
           },
 
           /**
+           * If true, the `horizontalAlign` and `verticalAlign` properties will
+           * be considered preferences instead of strict requirements when
+           * positioning the dropdown and may be changed if doing so reduces
+           * the area of the dropdown falling outside of `fitInto`.
+           */
+          dynamicAlign: {
+            type: Boolean
+          },
+
+          /**
            * A pixel value that will be added to the position calculated for the
            * given `horizontalAlign`. Use a negative value to offset to the
            * left, or a positive value to offset to the right.
@@ -210,6 +222,14 @@ Custom property | Description | Default
             type: Number,
             value: 0,
             notify: true
+          },
+
+          /**
+           * If true, the dropdown will be positioned so that it doesn't overlap
+           * the button.
+           */
+          noOverlap: {
+            type: Boolean
           },
 
           /**
@@ -300,6 +320,25 @@ Custom property | Description | Default
           },
 
           /**
+           * By default, the dropdown will constrain scrolling on the page
+           * to itself when opened.
+           * Set to true in order to prevent scroll from being constrained
+           * to the dropdown when it opens.
+           */
+          allowOutsideScroll: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * Whether focus should be restored to the button when the menu closes.
+           */
+          restoreFocusOnClose: {
+            type: Boolean,
+            value: true
+          },
+
+          /**
            * This is the element intended to be bound as the focus target
            * for the `iron-dropdown` contained by `paper-menu-button`.
            */
@@ -346,17 +385,6 @@ Custom property | Description | Default
           }
 
           this.$.dropdown.open();
-        },
-
-        /**
-         * By default, the dropdown will constrain scrolling on the page
-         * to itself when opened.
-         * Set to true in order to prevent scroll from being constrained
-         * to the dropdown when it opens.
-         */
-        allowOutsideScroll: {
-          type: Boolean,
-          value: false
         },
 
         /**

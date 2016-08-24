@@ -86,7 +86,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             MockInteractions.tap(trigger);
           });
         });
-        
+
         MockInteractions.tap(trigger);
       });
 
@@ -122,6 +122,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         MockInteractions.tap(trigger);
+      });
+
+      test('allowOutsideScroll propagates to <iron-dropdown>', function() {
+        menuButton.allowOutsideScroll = false;
+        expect(menuButton.$.dropdown.allowOutsideScroll).to.be.equal(false);
+        menuButton.allowOutsideScroll = true;
+        expect(menuButton.$.dropdown.allowOutsideScroll).to.be.equal(true);
+      });
+
+      test('restoreFocusOnClose propagates to <iron-dropdown>', function() {
+        menuButton.restoreFocusOnClose = false;
+        expect(menuButton.$.dropdown.restoreFocusOnClose).to.be.equal(false);
+        menuButton.restoreFocusOnClose = true;
+        expect(menuButton.$.dropdown.restoreFocusOnClose).to.be.equal(true);
       });
 
     });
@@ -167,7 +181,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Polymer.Base.async(function() {
             MockInteractions.tap(otherTrigger);
           });
-          
+
 
           Polymer.Base.async(function() {
             expect(firstClosed).to.be.equal(true);
