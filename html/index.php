@@ -732,7 +732,7 @@ $(document).ready( function () {
 
 window.addEventListener("WebComponentsReady", function(e) {
 	isEncodeOn = !isEncodeOn;		// because doing toggleEncode() will reverse isEncodeOn as well
-	fireCoreSignal('content-ready', null);
+	fireCoreSignal('content-dom-ready', null);
 	var searchCard = document.querySelector('#searchCard');
 	if(searchCard) {
 		searchCard.addEventListener('submit-form', validateUploadFileOrURL);

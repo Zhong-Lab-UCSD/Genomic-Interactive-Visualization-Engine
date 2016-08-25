@@ -54,7 +54,8 @@
     <iron-signals on-iron-signal-toggle="signalToggle" 
       on-iron-signal-disable="signalDisabled"
       on-iron-signal-encodecheck="signalEncodeCheck"
-      on-iron-signal-updatecontent="signalUpdateContent"> </iron-signals>
+      on-iron-signal-updatecontent="signalUpdateContent"
+      on-iron-signal-allspeciesready="signalCardReady"> </iron-signals>
     <div class="vertMargined">
       <div class="vertTextBottomContainer clearFix">
         <div><span id = "Reference" class="text">Reference: </span></div>
@@ -297,6 +298,10 @@
 			this.updateCurrentInfo(collapseObj);
 		},
 		
+		signalCardReady: function(e, detail) {
+			this.setReady(true);
+		},
+		
 		fileSelectionHandler: function() {
 			this.$.uploadFileInput.click();
 		},
@@ -364,10 +369,6 @@
 		
         ready: function() {
             
-//			for(var i=0; i<spcArray.length; i++) {
-//				this.push('species', spcArray[i]);
-//			}
-            
 			this._setIcon('search');
 			this._setIconAlt('search');
 			this._setHeaderText('Input file');
@@ -376,9 +377,12 @@
 			this.species = spcArray;
 			
             this.uploadButtonText = "Upload local file";
+			
+			this.setDOMReady(true);
+			this.setReady(false);
 
-        }
-        
+        },
+		
     });
   </script>
 </dom-module>

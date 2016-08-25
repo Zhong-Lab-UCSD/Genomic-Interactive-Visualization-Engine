@@ -784,8 +784,9 @@
 				}
 				return textArray.every(function(text, index_t) {
 					var rect = text.getBBox();
-					return (rect.x >= right || rect.x + rect.width <= left ||
-							rect.y > currY + this.fullHeight * this.textSize || rect.y + rect.height < currY);
+					return (rect.x >= right || (rect.x + rect.width) <= left ||
+							rect.y > (currY + (this.textLineGap + this.fullHeight) * this.textSize) ||
+							(rect.y + rect.height) < currY);
 				}, this);
 			}, this)) {
 				currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;

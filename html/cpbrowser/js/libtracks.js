@@ -1427,6 +1427,7 @@ function allSpeciesDoneCheck(speciesArray, cmnTracksBundle, cmnTracksEncodeBundl
 	}
 	
 	markTrackInitialized(true);
+	fireCoreSignal('allspeciesready');
 	trackUpdatedCallback.callback();
 }
 

@@ -36,9 +36,34 @@
 			padding: 0;
 		}
 		
+		#loadingBlock.unReady {
+			display: block;
+			position: absolute;
+			left: 0px;
+			right: 0px;
+			top: 0px;
+			bottom: 0px;
+			opacity: 0.8;
+			z-index: 1;
+		}
+		
+		#loadingBlock {
+			display: none;
+		}
+		
+		paper-spinner {
+			position: absolute;
+			top: 50%;
+			margin-top: -12px;
+			height: 24px;
+		}
+
 	</style>
     <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
     <paper-material elevation="1">
+      <div id="loadingBlock" class="unReady">
+        <paper-spinner id="loadingSpinner" alt="Loading card content"></paper-spinner>
+      </div>
       <div class="hidden">
         <content id="tabHeader" select=".tabHeader"></content>
       </div>
@@ -90,6 +115,18 @@
 				value: 'expand-less'
 			},
 			
+			domReady: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
+			ready: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
 			// ************* Tab-cards unique components *************		
 			selectedTab: {
 				type: Number,
@@ -110,8 +147,9 @@
 				}
 			}
 		},
-        
+		
 		listeners: {
+			'content-dom-ready': 'contentDOMReady',
 			'content-ready': 'contentReady',
 		},
 		
@@ -167,7 +205,7 @@
 			return null;
 		},
 		
-		contentReady: function() {
+		populateDOM: function() {
 			// populate tabs and animated pages
 			
 			this.pages = Polymer.dom(this.$.tabContent).getDistributedNodes();
@@ -194,17 +232,75 @@
 				Polymer.dom(this.$.mainTab).appendChild(newTab);
 			}
 			
-			/*for(var i = 0; i < this.pages.length; i++) {
-				var divPage = document.createElement('div');
-				divPage.setAttribute('slide-from-right', 'true');
-				Polymer.dom(this.$.mainPage).appendChild(divPage);
-				Polymer.dom(this.$.mainPage).childNodes[i].appendChild(this.pages[i]);
-			}*/
-			
+		},
+		
+		contentDOMReady: function(e) {
+			if(this.domReady !== e.detail.flag) {
+				if(e.detail.flag) {
+					// this will only happen if this.domReady !== true
+					var contentNode = Polymer.dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
+					if(contentNode) {
+						nodeArray = Array.prototype.slice.call(contentNode);
+					}
+					if(nodeArray.every(function(node, index) {
+						if(node.isDOMReady) {
+							return node.isDOMReady();
+						}
+						return true;
+					}, this)) {
+						this.populateDOM();
+						this._setDomReady(true);
+						this.fire('content-dom-ready', {flag: this.domReady});
+					}
+				} else {
+					this._setDomReady(false);
+					this.fire('content-dom-ready', {flag: this.domReady});
+				}
+			}
+			return this.domReady;
+		},
+		
+		setCardReady: function(readyness) {
+			if(readyness) {
+				// if card is not ready, use paper-spinner and add "unReady" class to cardContent
+				this.$.loadingSpinner.active = false;
+				this.$.loadingBlock.classList.remove('unReady');
+			} else {
+				// otherwise, deactivate paper-spinner and remove "unReady" class
+				this.$.loadingBlock.classList.add('unReady');
+				this.$.loadingSpinner.active = true;
+			}
+			this._setReady(readyness);
+			this.fire('content-ready', {flag: readyness});
+		},
+		
+		contentReady: function(e) {
+			if(this.ready !== e.detail.flag) {
+				if(e.detail.flag) {
+					// set Ready = true, this will only happen if this.domReady !== true
+					var contentNode = Polymer.dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
+					if(contentNode) {
+						nodeArray = Array.prototype.slice.call(contentNode);
+					}
+					if(nodeArray.every(function(node, index) {
+						if(node.isReady) {
+							return node.isReady();
+						}
+						return true;
+					}, this)) {
+						this.setCardReady(true);
+					}
+				} else {
+					this.setCardReady(false);
+				}
+			}
+			return this.ready;
 		},
 		
 		attached: function() {
-			this.async(this.contentReady);
+			this.async(function() {
+				this.contentDOMReady({detail: {flag: true}}) && this.contentReady({detail: {flag: true}});
+			});
 		},
 		
     });

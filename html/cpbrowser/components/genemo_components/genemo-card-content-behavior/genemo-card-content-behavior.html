@@ -1,4 +1,5 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <script>
  	window.GIVeBehaviors = window.GIVeBehaviors || {};
 	GIVeBehaviors.GenemoCardContentBehavior = {
@@ -28,7 +29,48 @@
 				readOnly: true,
 			},
 			
+			contentReady: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
+			domReady: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
 		},
+		
+		isReady: function() {
+			return this.contentReady;		// default behavior is that whenever it's loaded, the contents are ready.
+		},
+		
+		setReady: function(readyness) {
+			// set this.ready as ready and fire 'content-ready' event
+			this._setContentReady(readyness);
+			this.fire('content-ready', {flag: this.contentReady});
+		},
+		
+		isDOMReady: function() {
+			return this.domReady;		// default behavior is that whenever it's loaded, the contents are ready.
+		},
+		
+		setDOMReady: function(readyness) {
+			// set this.domReady as ready and fire 'content-dom-ready' event
+			this._setDomReady(readyness);
+			this.fire('content-dom-ready', {flag: this.domReady});
+		},
+		
+		checkReadiness: function() {
+			if(this.domReady) {
+				this.fire('content-dom-ready', {flag: this.domReady});
+				if(this.contentReady) {
+					this.fire('content-ready', {flag: this.contentReady});
+				}
+			}
+		},	
 		
 		getExpandedHeader: function() {
 			var res = document.createElement('div');
@@ -120,12 +162,6 @@
 			
 			return res;
 			
-		},
-		
-		attached: function() {
-			this.async(function() {
-				this.fire('content-ready');
-			});
 		},
 		
 	};
