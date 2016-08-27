@@ -142,6 +142,7 @@
 		
 		changeMainChartSpecies: function() {
 			var correctedVWindows;
+			this.$.trackSelectHolder.setAllReadiness(false);
 			if(this.mainChart) {
 				// species is changed
 				correctedVWindows = this.mainChart.changeSpecies(this.getCurrentSpecies());

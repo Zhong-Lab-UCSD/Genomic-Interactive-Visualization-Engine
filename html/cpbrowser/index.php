@@ -78,9 +78,7 @@ window.addEventListener("WebComponentsReady", function(e) {
       <paper-icon-button icon="menu" id="drawerToggle"></paper-icon-button>
       <div class="title">GIVe (Genomic Interaction Visualizer)</div>
     </paper-toolbar>
-    <paper-dialog-scrollable><section id="mainCard"></section>
-    </paper-dialog-scrollable>
-	
+    <div id="mainCard"></div>
   </paper-scroll-header-panel>
 </body>
 </html>

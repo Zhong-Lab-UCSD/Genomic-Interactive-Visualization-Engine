@@ -250,18 +250,19 @@
 					}, this)) {
 						this.populateDOM();
 						this._setDomReady(true);
-						this.fire('content-dom-ready', {flag: this.domReady});
+					} else {
+						// stop event from bubbling if status not the same as the one in the event
+						e.preventDefault();
 					}
 				} else {
 					this._setDomReady(false);
-					this.fire('content-dom-ready', {flag: this.domReady});
 				}
 			}
 			return this.domReady;
 		},
 		
-		setCardReady: function(readyness) {
-			if(readyness) {
+		setCardReady: function(readiness) {
+			if(readiness) {
 				// if card is not ready, use paper-spinner and add "unReady" class to cardContent
 				this.$.loadingSpinner.active = false;
 				this.$.loadingBlock.classList.remove('unReady');
@@ -270,8 +271,7 @@
 				this.$.loadingBlock.classList.add('unReady');
 				this.$.loadingSpinner.active = true;
 			}
-			this._setReady(readyness);
-			this.fire('content-ready', {flag: readyness});
+			this._setReady(readiness);
 		},
 		
 		contentReady: function(e) {
@@ -289,6 +289,9 @@
 						return true;
 					}, this)) {
 						this.setCardReady(true);
+					} else {
+						// stop event from bubbling if status not the same as the one in the event
+						e.preventDefault();
 					}
 				} else {
 					this.setCardReady(false);

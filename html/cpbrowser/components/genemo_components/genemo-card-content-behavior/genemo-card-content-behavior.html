@@ -47,27 +47,27 @@
 			return this.contentReady;		// default behavior is that whenever it's loaded, the contents are ready.
 		},
 		
-		setReady: function(readyness) {
+		setReady: function(readiness) {
 			// set this.ready as ready and fire 'content-ready' event
-			this._setContentReady(readyness);
-			this.fire('content-ready', {flag: this.contentReady});
+			this._setContentReady(readiness);
+			this.fire('content-ready', {flag: this.contentReady}, {cancelable: true});
 		},
 		
 		isDOMReady: function() {
 			return this.domReady;		// default behavior is that whenever it's loaded, the contents are ready.
 		},
 		
-		setDOMReady: function(readyness) {
+		setDOMReady: function(readiness) {
 			// set this.domReady as ready and fire 'content-dom-ready' event
-			this._setDomReady(readyness);
-			this.fire('content-dom-ready', {flag: this.domReady});
+			this._setDomReady(readiness);
+			this.fire('content-dom-ready', {flag: this.domReady}, {cancelable: true});
 		},
 		
 		checkReadiness: function() {
 			if(this.domReady) {
-				this.fire('content-dom-ready', {flag: this.domReady});
+				this.fire('content-dom-ready', {flag: this.domReady}, {cancelable: true});
 				if(this.contentReady) {
-					this.fire('content-ready', {flag: this.contentReady});
+					this.fire('content-ready', {flag: this.contentReady}, {cancelable: true});
 				}
 			}
 		},	
@@ -162,6 +162,10 @@
 			
 			return res;
 			
+		},
+		
+		attached: function() {
+			this.checkReadiness();
 		},
 		
 	};

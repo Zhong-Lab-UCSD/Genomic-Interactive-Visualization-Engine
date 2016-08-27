@@ -13,6 +13,7 @@
 	$encodeOn = $res['encodeOn'];
 	$in_debug = $res['in_debug'];
 	$genemoOn = $res['genemoOn'];
+	$experimentalFeatures = false;
 	
 	if($res['experimental']) {
 		$experimentalFeatures = true;
@@ -25,7 +26,7 @@
 		// went to database to make sure this is a correct sessionID
 		
 		// if testing flag is set, go to the new server to check
-		if(isset($_REQUEST['XCGenemoTest'])) {
+		//if(isset($_REQUEST['XCGenemoTest'])) {
 			$ch = curl_init((isset($_SERVER["HTTPS"])? "https": "http") +
 				"://comp.genemo.org/cpbrowser/loadSession.php?sessionID=" + $_REQUEST['sessionID']);
 			try {
@@ -33,13 +34,13 @@
 			} catch(Exception $e) {
 				$sessionError = "Invalid address or address expired.";
 			}
-		} else {
-			try {
-				$sessionInfo = loadGenemoSession($_REQUEST['sessionID']);
-			} catch(Exception $e) {
-				$sessionError = $e->getMessage();
-			}
-		}
+//		} else {
+//			try {
+//				$sessionInfo = loadGenemoSession($_REQUEST['sessionID']);
+//			} catch(Exception $e) {
+//				$sessionError = $e->getMessage();
+//			}
+//		}
 	}
 ?>
 <!DOCTYPE html>

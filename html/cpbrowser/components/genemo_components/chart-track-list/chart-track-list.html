@@ -81,6 +81,7 @@
 			}
 			this.species = newSpecies;
 			this.updateAllGroupDOM();
+			this.setReady(true);
 		},
 		
 		updateAllGroupDOM: function(keepOld) {
@@ -96,6 +97,7 @@
 						this.updateGroupDOM(groupID);
 				}
 			}
+			this.setDOMReady(true);
 			this.trackToDOM();
 		},
 		

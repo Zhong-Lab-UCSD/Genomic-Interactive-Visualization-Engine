@@ -43,7 +43,8 @@ function saveSession(dataObj, callback) {
 	if(dataObj.searchRange) {
 		IDPrepQuery.append('searchRange', dataObj.searchRange);
 	}
-	var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
+	// var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
+	var compDomain = window.location.protocol + '//comp.genemo.org/cpbrowser/';
 	$.ajax({
 		url: compDomain + 'uploadPrepare.php',
 		type: 'POST',
