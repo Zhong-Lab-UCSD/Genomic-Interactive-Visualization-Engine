@@ -17,7 +17,720 @@ WiggleTrack = Polymer({
 			this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
 			this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
 			this.FORECOLOR_INDEX = 0;			// the color index for fore color
+			this.HEIGHT = 100;					//height for display?<link rel="import" href="./track-behavior.html">
+<dom-module id="wiggle-track">
+ <template>
+  </template>
+ <script>
+WiggleTrack = Polymer({
+	is: "wiggle-track",
+	behaviors: [
+			GIVeBehaviors.TrackBehavior
+		],
+	properties: {
+	},
+	created: function(){
+	
+			this.GENE_MARGIN = 10;
+			this.GENE_NOTEXT_MARGIN = 2;
+			this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
+			this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
+			this.FORECOLOR_INDEX = 0;			// the color index for fore color
 			this.HEIGHT = 100;					//height for display?
+			this.SCALE = 2;
+			this.trackHeight = 200;
+			this.windowMax = 0;
+			this.windowMin = 0;
+			this.windowRange = 0;
+			this.autoScale = true;
+	},
+	readLocalFile: function(file, query) {
+			
+			
+			var reader = new FileReader();
+			//if the file is bigWig
+			{reader.onload = (function(e) {
+				var bigWig=new bigWigFile(reader.result);
+				bigWig.readSection(query);//not sure how this works yet
+				//give the datapoints to the datahandler
+			}).bind(this);
+			reader.readAsArrayBuffer(file);}
+			//else if the file is wiggle
+			{
+			reader.datapoints = [];
+
+        reader.onload = function() {
+
+            var text = reader.result;
+            var lines = text.split(/[\r\n]+/g);
+
+            for (var i = 0; i < lines.length; i++) {
+                if (lines[i].substring(0, 8) == 'browser') {} else if (lines[i].substring(0, 5) == 'track') {
+
+                    var dataInfo = lines[i + 1].split(' ');
+                    var chrom = parseInt(dataInfo[1].substring(9));
+                    if (!this.datapoints.hasOwnProperty(chrom)) this.datapoints[chrom] = [];
+                    var newI = i + 2;
+
+
+                    switch (dataInfo[0]) {
+                        case 'variableStep':
+                            {	
+								var span = parseInt(dataInfo[2].substring(5));
+                                for (newI; firstCharIsNumber(lines[newI]); newI++) {
+                                    var point = lines[newI].split(' ');
+                                    this.datapoints[chrom].push([parseInt(point[0]), parseInt(point[0]) + span,parseFloat(point[1])]);
+                                }
+                                break;
+                            }
+                        case 'fixedStep':
+                            {
+                                var start = parseInt(dataInfo[2].substring(6));
+                                var step = parseInt(dataInfo[3].substring(5));
+								var span = parseInt(dataInfo[4].substring(5));
+                                for (newI; firstCharIsNumber(lines[newI]); newI++) {
+                                    var point = lines[newI].trim().split(' ');
+                                    var strength = parseFloat(point[0]);
+                                    var basePair = parseInt(start + ((newI - i - 2) * step));
+                                    this.datapoints[chrom].push([basePair, basePair + span, strength]);
+                                }
+                                break;
+                            }
+                        default:
+                            {
+
+                                console.log("No organization type specified.")
+
+                            }
+                    }
+
+                } else if (lines[i].charAt(0) == '#') {
+                    lines.splice(i, 1);
+                    i -= 1;
+                }
+            }
+            console.log(this.datapoints);
+            for (chrom in this.datapoints) {
+                var table = document.createElement('table');
+                table.setAttribute('border', '2px');
+                var caption = document.createElement('caption');
+                caption.innerHTML = 'Chromosome ' + chrom;
+                table.appendChild(caption);
+                var position = document.createElement('th');
+                position.innerHTML = 'Base Pair';
+                var signal = document.createElement('th');
+                signal.innerHTML = 'Signal Strength';
+                var tableRow = document.createElement('tr');
+                tableRow.appendChild(position);
+                tableRow.appendChild(signal);
+                table.appendChild(tableRow);
+
+                for (var i = 0; i < this.datapoints[chrom].length; i++) {
+
+                    var basePair = document.createElement('td');
+                    basePair.innerHTML = this.datapoints[chrom][i][0] + '-' + this.datapoints[chrom][i][1];
+                    var strength = document.createElement('td');
+                    strength.innerHTML = this.datapoints[chrom][i][2];
+                    var row = document.createElement('tr');
+                    console.log("row done");
+                    row.appendChild(basePair);
+                    row.appendChild(strength);
+                    table.appendChild(row);
+
+                }
+                document.getElementById("test").appendChild(table);
+            }
+
+
+
+        };
+        reader.readAsText(input.files[0]);
+		function firstCharIsNumber(s) {
+        if (s == undefined) return false;
+        return !isNaN(parseInt(s.trim().charAt(0)));
+    }
+			
+			
+			}
+		},
+	dataHandler: function(datapoints){
+		/*read file will turn in an object with data for at least one chromosome.
+		datapoints[chromosome#][base pair #] will be the signal strength.
+		datapoints is the object given to this class.
+		datapoints is an array with objects that are chromosomes. For example, datapoints[12] holds all the info for chromosome 12.
+		each chromosome object isn an array, containing point values. These point values are arrays containing two numbers: the base pair and the strength value.
+		For example, the object datapoints[12][2] is an array with two numbers in it. It is also the third point stored in chromosome 12. Since the wiggle tracks are in the 
+		format of 
+		Base Strength
+		xxxx xxxx
+		xxxx xxxx
+		the points will be added to the chromosome object just in the order they are written in the wiggle file, when being read.
+		
+		*/
+		var res=datapoints;
+		for(var chrom in this.data) {
+				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
+					delete this.data[chrom];
+				}
+			}
+		
+		this.points = []; 
+		for (var chrom in this.data){
+			for (var pair in chrom){
+			var point=[pair[0],pair[2]];
+			points[chrom].push(point);
+			}
+		}
+
+		
+			this.bufferWindow = this.mainSvg.viewWindow.clone();
+	},
+	drawData: function(chromosome){
+	//draw the given point with height determined by signal strength
+		this.clear();
+		this.activeVisibility = this.track.getSetting('visibility');
+		var shape=[];
+		shape.push([0,0]);
+		var y=0;
+		
+		for(var i=0;i<this.points[chromosome].length;i++){
+			
+			drawPeak[this.points[i], this.points[i][0], this.points[i][1], y];
+		}
+		//shape.push([0,this.windowWidth]);
+		//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
+		
+	},
+	convertPoint: function(chr, base, strength){
+		
+		var x = this.transformXCoordinate({chr: chr, coor: base}, false);
+		var y = this.trackHeight-strength*this.SCALE;
+		var result=[x, y];
+		return result;
+	},
+	findExtremes: function(chr){
+		var max = Number.MIN_SAFE_INTEGER
+		var min = Number.MAX_SAFE_INTEGER
+		for (var i = 0; i < this.points[chr].length; i++ ){
+			if (this.points[chr][1] > max) max = this.points[chr][1];
+			if (this.points[chr][1] < min) min = this.points[chr][1];
+		}
+		return [min, max, (min+max)/2, max-min];
+	},
+	scaleLine: function(strength, extremes){
+		if (extremes[0] < 0 && extremes [1] > 0){//if range is from - to +
+			var zero = ((0 - extremes[0]) / extremes[3] * this.height);
+			var value = ((value - extremes[0]) / extremes[3] * this.height);
+		}
+		else{ //if range is only + or only -
+			if (extremes[0] > 0 && extremes [1] > 0){//if range is only +
+				var zero = 0;
+				var value = (value/extremes[1]*this.height)
+			}
+			else if (extremes[0] > 0 && extremes [1] > 0){//if range is only -
+				var zero = this.height;
+				var value = this.height - (value/extremes[1]*this.height)
+			}
+			else {
+					//there is something wrong
+			}
+		}
+		return [this.height - zero, this.height - value];
+	},
+	scaleLineCustom: function(strength){
+		var zero = 0;
+		var value = 0;
+		var cutOff = 0;
+		zero = this.windowMax / this.windowRange * this.trackHeight;
+		value = (this.windowMax - strength) / this.windowRange * this.trackHeight;
+		if (0 > this.windowMax ){
+			zero = 0;
+			cutOff += 1;
+			}
+		if (0 < this.windowMin ){
+			zero = this.trackHeight;
+			cutOff -= 1;
+			}
+		if (strength > this.windowMax ){
+			value = 0;
+			cutOff += 1;
+			}
+		if (strength < this.windowMin ){
+			value = this.trackHeight;
+			cutOff -= 1;
+			}
+		if ((0 < this.windowMin && strength > this.windowMax) || (0 > this.windowMax && strength < this.windowMin)){
+			cutOff += 3;
+		}	
+		return [zero, value, cutOff];
+	},
+	drawPeak: function (chromosome, base, strength, y){ 
+		var svgToDraw = this.mainSvg;
+		var windowToDraw = svgToDraw.viewWindow;
+		
+		var x = this.transformXCoordinate({chr: chromosome, coor: base}, false);
+		
+		if (this.autoScale){
+			var extremes = findExtremes(chromosome);//inefficient as of now
+			var scaledPoint = scaleLine(strength, extremes);
+			if(windowToDraw.overlaps(region) > 0) {	//still needs fix
+			this.drawLine(x, y + scaledPoint[0], x, y + scaledPoint[1], this.colorSet[colorIndex]);
+			
+			}
+		}
+		else{
+			var customLine = scaleLineCustom(strength);
+			this.drawLine(x, y + customLine[0], x, y + customLine[1]);
+			switch (customLine[2]){//drawing color dots for cut-off signals
+				case 1:
+				case 2: 
+					this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
+					break;
+				case -1:
+				case -2:
+					this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
+					break;
+				case 3:
+					this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
+					this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
+					break;
+				default:
+						
+			}
+			if(customLine[2] == 3){}
+			else if(customLine[2] == 1 || this){
+				this.drawLine()
+			}
+			else if(customLine[2] == -1){
+			
+			}//use switch
+			el
+			
+		}
+		
+	},
+	setExtremes: function(min, max){
+		if (max > min){
+			this.windowMin = min;
+			this.windowMax = max;
+			this.windowRange = max - min;
+			this.autoScale = false;
+			}
+		else {}//there is an error
+	},
+	autoWindow: function(){
+		this.autoScale = true;
+	},
+	function viewHandler(dataView, isLittleEndian){
+	this.dataView=dataView;
+	this.isLittleEndian=isLittleEndian;
+	this.index=0;
+	
+	this.getInt8 = function(){
+	this.index+=1;
+	return this.dataView.getUint8(this.index-1,this.isLittleEndian);
+	};
+	this.getInt16 = function(){
+	this.index+=2;
+	return this.dataView.getUint16(this.index-2,this.isLittleEndian);
+	};
+	this.getInt32 = function(){
+	this.index+=4;
+	return this.dataView.getUint32(this.index-4,this.isLittleEndian);
+	}
+	this.getInt64 = function(){
+	this.index+=8;
+	return this.dataView.getUint32(this.index-(this.isLittleEndian? 8:4),this.isLittleEndian);
+	}
+	this.getFloat = function(){
+	this.index+=4;
+	return this.dataView.getFloat32(this.index-4,this.isLittleEndian);
+	}
+	this.getDouble= function(){
+	this.index+=8;
+	return this.dataView.getFloat64(this.index-8,this.isLittleEndian);
+	}
+	this.getString=function(bytes){
+	var result='';
+	for (var i = 0; i < bytes; i++) {
+	var value=this.getInt8(this.index)
+	if(value!==0){
+                var letter = String.fromCharCode(value);
+				//if(letter.charCodeAt)
+                result += letter;}
+            }
+            return result;
+	;}
+	this.setIndex = function (offset){
+	this.index=offset;
+	}
+	this.moveIndex = function(relative){
+	this.index+=relative;
+	}
+
+}
+    function bigWigFile(arrayBuffer) {this.pointCount=0;
+        this.text = new DataView(arrayBuffer);
+		this.masterView = new viewHandler(this.text,false);
+        console.log(this.text.byteLength);
+        this.bigWigHeader = {};
+        this.summaryHeader = {};
+        this.chromTreeHeader = {};
+        this.unzoomedIndexHeader = {};
+        this.zoomedSummaryData = [];
+        this.isLittleEndian = false;
+        //this.index = 0;
+        this.dataPoints = [];
+        this.zoomLevelHeaders = [];
+		this.zoomedIndexHeaders=[];
+		this.zoomedIndexHeaders.size=0;
+		//this.zoom
+        this.chromTreeNodeChildren = [];
+
+        this.readSection = function(chromNumber, startBase, endBase) {
+            var readSection = true;
+            this.readBigWigHeader();
+            this.chromNumber = chromNumber;
+            this.startBase = startBase;
+            this.endBase = endBase;
+            for (var i = 0; i < this.bigWigHeader.zoomLevel; i++) {
+                this.readZoomLevelHeader(readSection);
+				
+            }
+			this.masterView.setIndex(this.bigWigHeader.totalSummaryOffset);
+            this.readSummaryHeader();
+            this.masterView.setIndex(this.bigWigHeader.chromTreeOffset);
+            this.readChromTreeHeader();
+            this.readChromTreeNode();
+			for (var k=0;k<this.zoomedIndexHeaders.size;k++){
+			this.masterView.setIndex(this.zoomLevelHeaders[k].indexOffset);
+			var reduction = this.zoomLevelHeaders[k].reductionLevel;
+			this.readZoomedIndexHeader(reduction);
+			//for(var j=0;j<this.zoomedIndexHeaders[reduction].itemCount;j++){
+			this.readZoomedIndexNode(readSection, reduction);//}
+			}
+			
+            
+
+            this.masterView.setIndex(this.bigWigHeader.unzoomedIndexOffset);
+            this.readUnzoomedIndexHeader();
+            this.readUnzoomedIndexNode(readSection);//also, remove readSection if everytime is a read section anyways
+        }
+
+       
+        this.readBigWigHeader = function() {
+            var magicNumber = this.masterView.getInt32();
+			this.masterView.isLittleEndian = (magicNumber!==0x888FFC26)? true : false;
+            this.bigWigHeader.version = this.masterView.getInt16();
+            this.bigWigHeader.zoomLevel = this.masterView.getInt16();
+            this.bigWigHeader.chromTreeOffset = this.masterView.getInt64();
+            this.bigWigHeader.unzoomedDataOffset = this.masterView.getInt64();
+            this.bigWigHeader.unzoomedIndexOffset = this.masterView.getInt64();
+            this.bigWigHeader.fieldCount = this.masterView.getInt16();
+
+            this.bigWigHeader.definedFieldCount = this.masterView.getInt16();
+            this.bigWigHeader.asOffset = this.masterView.getInt64();
+            this.bigWigHeader.totalSummaryOffset = this.masterView.getInt64();
+            this.bigWigHeader.uncompressBufferSize = this.masterView.getInt32();
+            //this.bigWigHeader.reserved = this.masterView.getInt64();
+			this.masterView.moveIndex(8);
+
+        };
+
+        this.readZoomLevelHeader = function(readSection) {
+            var reductionLevel = this.masterView.getInt32();
+            var reserved = this.masterView.getInt32();
+            var dataOffset = this.masterView.getInt64();
+            var indexOffset = this.masterView.getInt64();
+            this.zoomLevelHeaders.push(new zoomLevelHeader(reductionLevel, reserved, dataOffset, indexOffset));
+			this.zoomedIndexHeaders[reductionLevel]={};
+			this.zoomedSummaryData[reductionLevel]=[];
+			this.zoomedIndexHeaders.size+=1;//there must be a better wat
+			
+        };
+        this.readSummaryHeader = function() {
+            this.summaryHeader.validCount = this.masterView.getInt64();
+            this.summaryHeader.minimumValue = this.masterView.getDouble();
+            this.summaryHeader.maximumValue = this.masterView.getDouble();
+            this.summaryHeader.sumOfData = this.masterView.getDouble();
+            this.summaryHeader.sumOfSquareOfData = this.masterView.getDouble();
+        };
+        this.readChromTreeHeader = function() {
+            this.chromTreeHeader.magicNumber = this.masterView.getInt32();
+            this.chromTreeHeader.blockSize = this.masterView.getInt32();
+            this.chromTreeHeader.keySize = this.masterView.getInt32();
+            this.chromTreeHeader.valueSize = this.masterView.getInt32();
+            this.chromTreeHeader.itemCount = this.masterView.getInt64();//amounts of nodes after header
+            this.chromTreeHeader.reserved = this.masterView.getInt64();
+        };
+        this.readChromTreeNode = function() {
+            var isLeaf = this.masterView.getInt8();
+            var reserved = this.masterView.getInt8();
+            var childCount = this.masterView.getInt16();
+            for (var i = 0; i < childCount; i++) {
+                if (isLeaf) this.readChromeTreeNodeChild();
+                else this.readChromTreeNode();
+            }
+        };
+        this.readChromeTreeNodeChild = function() {
+            var chromKey = this.masterView.getString(this.chromTreeHeader.keySize);
+            var chromID = this.masterView.getInt32();
+            var chromSize = this.masterView.getInt32();
+			var chromNumber = this.chromKeyToNumber(chromKey);
+            this.chromTreeNodeChildren.push(new chromTreeNodeChild(chromKey, chromID, chromSize,chromNumber));
+			
+			for(var i=0;i<this.zoomedIndexHeaders.size;i++){this.zoomedSummaryData[this.zoomLevelHeaders[i].reductionLevel][chromNumber]=[];
+			this.dataPoints[chromNumber]=[];console.log(this.zoomLevelHeaders[i].reductionLevel+' '+chromNumber);}
+        };
+        this.readUnzoomedIndexHeader = function() {
+            this.unzoomedIndexHeader.magicNumber = this.masterView.getInt32();
+            this.unzoomedIndexHeader.blockSize = this.masterView.getInt32();
+            this.unzoomedIndexHeader.itemCount = this.masterView.getInt64();
+            this.unzoomedIndexHeader.startChromID = this.masterView.getInt32();
+            this.unzoomedIndexHeader.startBase = this.masterView.getInt32();
+            this.unzoomedIndexHeader.endChromID = this.masterView.getInt32();
+            this.unzoomedIndexHeader.endBase = this.masterView.getInt32();
+            this.unzoomedIndexHeader.fileSize = this.masterView.getInt64();
+            this.unzoomedIndexHeader.itemsPerSlot = this.masterView.getInt32();
+            this.unzoomedIndexHeader.reserved = this.masterView.getInt32();
+        };
+		this.readZoomedIndexHeader = function(reductionLevel) {
+            this.zoomedIndexHeaders[reductionLevel].magicNumber = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].blockSize = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].itemCount = this.masterView.getInt64();
+            this.zoomedIndexHeaders[reductionLevel].startChromID = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].startBase = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].endChromID = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].endBase = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].fileSize = this.masterView.getInt64();
+            this.zoomedIndexHeaders[reductionLevel].itemsPerSlot = this.masterView.getInt32();
+            this.zoomedIndexHeaders[reductionLevel].reserved = this.masterView.getInt32();
+        };
+        this.readUnzoomedIndexNode = function(readSection) {
+            var isLeaf = this.masterView.getInt8();
+            var reserved = this.masterView.getInt8();
+            var childCount = this.masterView.getInt16();
+            //var oldIndex = this.index;
+            for (var i = 0; i < childCount; i++) {
+                this.readUnzoomedIndexNodeChild(isLeaf, readSection);
+
+
+                //index=oldIndex;
+            }
+
+        };
+		 this.readZoomedIndexNode = function(readSection, reductionLevel) {
+            var isLeaf = this.masterView.getInt8();
+            var reserved = this.masterView.getInt8();
+            var childCount = this.masterView.getInt16();
+            //var oldIndex = this.index;
+            for (var i = 0; i < childCount; i++) {
+                this.readZoomedIndexNodeChild(isLeaf, readSection, reductionLevel);
+
+
+                //index=oldIndex;
+            }
+
+        };
+        this.readUnzoomedIndexNodeChild = function(isLeaf, readSection) {
+            var startChromID = this.masterView.getInt32();
+            var startBase = this.masterView.getInt32();
+            var endChromID = this.masterView.getInt32();
+            var endBase = this.masterView.getInt32();
+            
+            if (!readSection || (readSection && this.withinSection(startChromID, endChromID, startBase, endBase))) {
+				var offset = this.masterView.getInt64();
+
+				var oldIndex = this.masterView.index;
+                if (isLeaf) {
+                    var size = this.masterView.getInt64();
+                    this.masterView.setIndex(offset);
+                    this.readDataBlockHeader(size);
+                    this.masterView.setIndex(oldIndex + 8);
+                } else {
+                    this.masterView.setIndex(offset);
+                    this.readUnzoomedIndexNode(readSection);
+                    this.masterView.setIndex(oldIndex);
+                }
+            } else if (isLeaf) {
+                this.masterView.moveIndex(16);
+            }	
+			else this.masterView.moveIndex(8);
+        };
+		this.readZoomedIndexNodeChild = function(isLeaf, readSection, reductionLevel) {
+            var startChromID = this.masterView.getInt32();
+            var startBase = this.masterView.getInt32();
+            var endChromID = this.masterView.getInt32();
+            var endBase = this.masterView.getInt32();
+            
+            if (!readSection || (readSection && this.withinSection(startChromID, endChromID, startBase, endBase))) {
+var offset = this.masterView.getInt64();
+
+            var oldIndex = this.masterView.index;
+                if (isLeaf) {
+                    var size = this.masterView.getInt64();
+                    this.masterView.setIndex(offset);
+                    this.readZoomedSummaryData(size, reductionLevel,endChromID);
+                    this.masterView.setIndex(oldIndex + 8);
+                } else {
+                    this.masterView.setIndex(offset);
+                    this.readZoomedIndexNode(readSection, reductionLevel);
+                    this.masterView.setIndex(oldIndex);
+                }
+            } else if (isLeaf) {
+                this.masterView.moveIndex(16);
+            }	
+			else this.masterView.moveIndex(8);
+        };
+        this.readDataBlockHeader = function(length) {
+            var charData = [];
+            for (var i = 0; i < length; i++) {
+                charData.push(this.masterView.getInt8());
+            }
+            //var subIndex = 0;
+            var unPacked = pako.inflate(charData);
+			var dataView = new DataView(unPacked.buffer);
+            //var arrayView = new DataView(unPacked.buffer);
+			var arrayView = new viewHandler(dataView,this.masterView.isLittleEndian);
+
+
+            var chromID = arrayView.getInt32();
+            var chromNumber = this.chromIDToNumber(chromID);
+            //console.log(chromNumber);
+            if (!this.dataPoints.hasOwnProperty(chromNumber))
+
+                this.dataPoints[chromNumber] = [];
+            var startBase = arrayView.getInt32();
+            var endBase = arrayView.getInt32();
+            var itemStep = arrayView.getInt32();
+            var itemSpan = arrayView.getInt32();
+            var type = arrayView.getInt8();
+            //var reserved = arrayView.getInt8();
+            arrayView.moveIndex(1);
+            var itemCount = arrayView.getInt16();
+            for (var i = 0; i < itemCount; i++) {
+                var start = 0;
+                var end = 0;
+                var value = 0;
+                switch (type) {
+                    case 1:
+                        start = arrayView.getInt32();
+                        end = arrayView.getInt32();
+                        value = arrayView.getFloat();
+                        break;
+                    case 2:
+                        start = arrayView.getInt32();
+                        end = start + itemSpan;
+                        value = arrayView.getFloat();
+                        break;
+                    case 3:
+                        start = startBase + i * itemStep;
+                        end = start + itemSpan;
+                        value = arrayView.getFloat();
+                        break;
+                    default:
+                        console.log('error with data type.');
+                }
+				this.pointCount+=1;
+				//console.log(value);
+                this.dataPoints[chromNumber].push([start, end, value]);
+            }
+        };
+        this.readZoomedSummaryData = function(length,reductionLevel,endChromID) {//zlib compressed, there are multiplt ones
+			var charData = [];
+            for (var i = 0; i < length; i++) {//length=?
+                charData.push(this.masterView.getInt8());
+            }
+            //var subIndex = 0;
+            var unPacked = pako.inflate(charData);
+			var dataView = new DataView(unPacked.buffer);
+            //var arrayView = new DataView(unPacked.buffer);
+			var arrayView = new viewHandler(dataView,this.masterView.isLittleEndian);
+            var chromID = arrayView.getInt32();
+			var chromNumber = this.chromIDToNumber(chromID);//
+            var start = arrayView.getInt32();
+            var end = arrayView.getInt32();
+            var validCount = arrayView.getInt32();
+            var minimumValue = arrayView.getFloat();
+            var maximumValue = arrayView.getFloat();
+            var sumOfData = arrayView.getFloat();
+            var sumOfSquareOfData = arrayView.getFloat();
+			this.zoomedSummaryData[reductionLevel][chromNumber].push(new zoomedSummaryData(chromID,endChromID, start, end, validCount, minimumValue,maximumValue,sumOfData,sumOfSquareOfData));
+        };
+
+
+        function zoomLevelHeader(reductionLevel, reserved, dataOffset, indexOffset) {
+            this.reductionLevel = reductionLevel;
+            this.reserved = reserved;
+            this.dataOffset = dataOffset;
+            this.indexOffset = indexOffset;
+        };
+
+        function chromTreeNodeChild(chromKey, chromID, chromSize,chromNumber) {
+            this.chromKey = chromKey;
+            this.chromID = chromID;
+            this.chromSize = chromSize;
+			this.chromNumber=chromNumber;
+        }
+
+        function unzoomedIndexNodeChild(startChromID, startBase, endChromID, endBase, offset, size) {
+            this.startChromID = startChromID;
+            this.startBase = startBase;
+            this.endChromID = endChromID;
+            this.endBase = endBase;
+            this.offset = offset;
+            this.size = size;
+        }
+		function zoomedSummaryData(chromID, endChromID,start, end, validCount, minimumValue,maximumValue,sumOfData,sumOfSquareOfData){
+		this.endChromID=endChromID;
+		this.chromID=chromID;
+		this.start=start;
+		this.end=end;
+		this.validCount=validCount;
+		this.minimumValue=minimumValue;
+		this.maximumValue=maximumValue;
+		this.sumOfData=sumOfData;
+		this.sumOfSquareOfData=sumOfSquareOfData;
+		
+		}
+        this.chromIDToNumber = function(chromID) {
+            for (var i = 0; i < this.chromTreeNodeChildren.length; i++) {
+                if (this.chromTreeNodeChildren[i].chromID == chromID) {
+                    return this.chromKeyToNumber(this.chromTreeNodeChildren[i].chromKey);
+                }
+            }
+           // console.log(chromID);
+            return null;
+        };
+        this.chromKeyToNumber = function(chromKey) {//build dictionary when reading chrom tree node
+            var chrom = chromKey.trim().substring(3);
+            if (chrom == 'X') return 24;
+            else if (chrom == 'Y') return 25;
+            else return parseInt(chrom);
+
+        };
+        this.withinSection = function(chrom1, chrom2, base1, base2) { //no support for datablocks with data for multiple chromosomes yet
+
+
+            var chr1 = this.chromIDToNumber(chrom1);
+            var chr2 = this.chromIDToNumber(chrom2);
+			if (chr1!=chr2)console.log('multichrom data');
+            if ((chr1 <= this.chromNumber) && (chr2 >= this.chromNumber)) {
+			if((base2>this.startBase) && (this.endBase>base1))
+                
+                    return true;
+            }
+
+            return false;
+        }
+
+      
+      
+    }
+			
+ })
+ </script>
+ </dom-module>
 			this.SCALE = 2;
 			this.trackHeight = 200;
 			this.windowMax = 0;
