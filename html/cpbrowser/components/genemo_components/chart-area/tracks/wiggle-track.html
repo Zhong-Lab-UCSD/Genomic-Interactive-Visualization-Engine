@@ -188,7 +188,7 @@ WiggleTrack = Polymer({
 		var y = this.trackHeight-strength*this.SCALE;
 		var result=[x, y];
 		return result;
-	}
+	},
 	findExtremes: function(chr){
 		var max = Number.MIN_SAFE_INTEGER
 		var min = Number.MAX_SAFE_INTEGER
@@ -244,7 +244,7 @@ WiggleTrack = Polymer({
 			cutOff += 3;
 		}	
 		return [zero, value, cutOff];
-	}
+	},
 	drawPeak: function (chromosome, base, strength, y){ 
 		var svgToDraw = this.mainSvg;
 		var windowToDraw = svgToDraw.viewWindow;
@@ -310,11 +310,11 @@ WiggleTrack = Polymer({
 	this.getInt8 = function(){
 	this.index+=1;
 	return this.dataView.getUint8(this.index-1,this.isLittleEndian);
-	}
+	};
 	this.getInt16 = function(){
 	this.index+=2;
 	return this.dataView.getUint16(this.index-2,this.isLittleEndian);
-	}
+	};
 	this.getInt32 = function(){
 	this.index+=4;
 	return this.dataView.getUint32(this.index-4,this.isLittleEndian);
