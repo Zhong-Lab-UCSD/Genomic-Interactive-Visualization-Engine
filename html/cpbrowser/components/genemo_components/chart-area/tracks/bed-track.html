@@ -72,7 +72,7 @@
 						result[transcript.chr].push({geneBed: line});
 					}
 				}, this);
-				this.fire('response', {response: result});
+				this.fire('response', {response: result}, {bubbles: false, cancelable: true});
 			}).bind(this);
 			reader.readAsText(file);
 		},

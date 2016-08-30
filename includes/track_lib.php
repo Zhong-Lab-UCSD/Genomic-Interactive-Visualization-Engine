@@ -3,7 +3,7 @@ require_once(realpath(dirname(__FILE__) . "/common_func.php"));
 
 define('LINK_ID', 'kgID');		// this is the ID UCSC used to link knownGene to kgXref
 
-function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL) {
+function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
 	// if chrRegion is provided (as a ChromRegion class object)
 	// then filtering will be carried out
 	// otherwise (unlikely situation) no filtering will be done
@@ -72,7 +72,7 @@ function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL) {
 	return $result;
 }
 
-function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL) {
+function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
 	// notice that for interaction tracks, $chrRegion may be an array
 	$mysqli = connectCPB($db);
 	$result = array();
@@ -129,7 +129,7 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 	return $result;
 }
 
-function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTable = NULL) {
+function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTable = NULL, $params = NULL) {
 	
 	// this is the map mapping different track types 
 	//		to their corresponding loading function
@@ -161,5 +161,5 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
 	}
 	
 	// otherwise, directly use the corresponding function
-	return $trackLoadMap[$type]($db, $tableName, $chrRegion, $linkedTable);
+	return $trackLoadMap[$type]($db, $tableName, $chrRegion, $linkedTable, $params);
 }

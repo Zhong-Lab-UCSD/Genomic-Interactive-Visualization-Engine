@@ -434,11 +434,20 @@
 		prepareRemoteQuery: function() {
 			// provide data to mainAjax
 			// for most of the tracks, this is only trackID and window
-			return {
-				db: this.track.species.db, 
-				trackID: this.track.getID(), 
-				window: this.mainSvg.viewWindow.regionToString(false)
-			};			
+			if(this.isCustom) {
+				return {
+					db: this.track.species.db, 
+					remoteURL: this.remoteFile, 
+					window: this.mainSvg.viewWindow.regionToString(false),
+					isCustom: true, 
+				};		
+			} else {
+				return {
+					db: this.track.species.db, 
+					trackID: this.track.getID(), 
+					window: this.mainSvg.viewWindow.regionToString(false),
+				};		
+			}
 		},
 		
 		prepareCustomQuery: function() {
@@ -815,9 +824,9 @@
 			// customized components are used in data preparation and data handler
 			// use dataHandler(e, detail) as return handler
 			// callback is in case update is needed
-			if(this.isCustom) {
+			if(this.isCustom && this.localFile) {
 				// if track has its own getLocalData function, then get local data instead of getting remote data
-				this.getCustomData();
+				this.readLocalFile(this.localFile, this.prepareCustomQuery());
 				// afterwards it's this.dataHandler()'s job.
 			} else if(this.mainAjax) {
 				var requestData = this.prepareRemoteQuery();		// this is data object
@@ -834,16 +843,6 @@
 			}
 		},
 		
-		getCustomData: function() {
-			// this is to get the raw custom data file(s)
-			// format conversion is handled by customDataHandler
-			if(this.localFile) {
-				this.readLocalFile(this.localFile, this.prepareCustomQuery());
-			} else if(this.remoteFile) {
-				this.readRemoteFile(this.remoteFile, this.prepareCustomQuery());
-			}
-		},
-		
 		readLocalFile: function(file, query, callback) {
 			// placeholder to read local file content
 			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
@@ -856,6 +855,10 @@
 			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
 			// data will be passed via firing a 'response' event with {detail: data}
 			// and the response will be handled by this.responseHandler(e, detail)
+			// 
+			// Notice that to achieve this, CORS needs to be enabled on target server
+			// The fallback method is going through GeNemo server as a proxy
+			return false;
 		},
 		
 		responseHandler: function(e, detail) {

@@ -32,6 +32,7 @@ Track.StatusEnum = {
 
 Track.DEFAULT_PRIORITY = 100.0;
 Track.fetchDataTarget = '/cpbrowser/getTrackData.php';
+Track.fetchCustomTarget = '/cpbrowser/getTrackData.php';
 
 Track.prototype.setVisFromStr = function(strStatus) {
 	switch(strStatus) {
