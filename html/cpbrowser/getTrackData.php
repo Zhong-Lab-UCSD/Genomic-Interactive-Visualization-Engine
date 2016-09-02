@@ -7,6 +7,9 @@ require_once(realpath(dirname(__FILE__) . "/../../includes/track_custom_lib.php"
 
 $result = array();
 $req = json_decode(file_get_contents('php://input'), true);
+
+ini_set('memory_limit', '30G');
+
 try {
 	if(isset($req['db'])) {
 		if(!isset($req['isCustom']) || !$req['isCustom']) {

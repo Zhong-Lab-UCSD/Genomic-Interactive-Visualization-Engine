@@ -282,20 +282,24 @@
 				// no blocks
 				blockStart = transcript.start;
 				blockEnd = transcript.end;
-				if(transcript.thickStart && transcript.thickStart > blockStart) {
-					// CDS start is in this block
-					coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
-					this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
-					blockStart = transcript.thickStart;
+				if(typeof(transcript.thickStart) === 'number' || typeof(transcript.thickEnd) === 'number') {
+					if(transcript.thickStart && transcript.thickStart > blockStart) {
+						// CDS start is in this block
+						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
+						this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
+						blockStart = transcript.thickStart;
+					}
+					if(transcript.thickEnd && transcript.thickEnd > blockStart) {
+						// CDS end is in this block
+						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
+						this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
+						blockStart = transcript.thickEnd;
+					}
+					
+					isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
+				} else {
+					isThick = true;
 				}
-				if(transcript.thickEnd && transcript.thickEnd > blockStart) {
-					// CDS end is in this block
-					coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
-					this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
-					blockStart = transcript.thickEnd;
-				}
-				
-				isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
 				coor = new ChrRegion(null, null, transcript.chr, blockStart, blockEnd, transcript.strand);
 				this.drawRectangle(coor, colorRGB, y + (isThick? 0: height * 0.5 * (1 - halfHeight)), 
 									height * (isThick? 1: halfHeight), null, colorRGB);

@@ -26,7 +26,7 @@
 		// went to database to make sure this is a correct sessionID
 		
 		// if testing flag is set, go to the new server to check
-		//if(isset($_REQUEST['XCGenemoTest'])) {
+		//if(!defined('USE_OLD_SERVER')) {
 			$ch = curl_init((isset($_SERVER["HTTPS"])? "https": "http") +
 				"://comp.genemo.org/cpbrowser/loadSession.php?sessionID=" + $_REQUEST['sessionID']);
 			try {

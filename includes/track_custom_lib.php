@@ -8,20 +8,35 @@ function loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 	// so just break all the lines and return as JSON
 	
 	$result = array();
-	$fin = fopen($remoteUrl);
+	$fin = fopen($remoteUrl, 'r');
 	// TODO: enable buffering locally
 	
 	if(!$fin) {
-		throw new Exception('File \"' . htmlspecialchars($remoteUrl) . '\" cannot be opened!');
+		throw new Exception('File "' . $remoteUrl . '" cannot be opened!');
+	}
+	if($chrRegion) {
+		// filter out bed entries not inside the region
+		$chrRegionObj = new ChromRegion($chrRegion);
+	} else {
+		$chrRegionObj = false;
 	}
 	while(($line = fgets($fin)) !== false) {
 		$tokens = preg_split("/\s+/", trim($line));
-		$chr = $tokens[0];
+		if($chrRegionObj) {
+			$chr = trim($tokens[0], " \t\n\r\0\x0B,");
+			$start = intval(trim($tokens[1], " \t\n\r\0\x0B,"));
+			$end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
+			if(strtolower($chr) !== strtolower($chrRegionObj->chr) ||
+				$end < $chrRegionObj->start ||
+				$start > $chrRegionObj->end) {
+					continue;
+			}
+		}
 		if(!isset($result[$chr])) {
 			$result[$chr] = array();
 		}
 		$newGene = array();
-		$newGene['genebed'] = trim($line);
+		$newGene['geneBed'] = trim($line);
 		$result[$chr] []= $newGene;
 	}
 	return $result;
@@ -43,10 +58,10 @@ function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $para
 	// this is the map mapping different track types 
 	//		to their corresponding loading function
 	$trackLoadMap = array(
-		'bed' => 'loadBed',
-		'genebed' => 'loadBed',
-		'genepred' => 'loadBed',
-		'interaction' => 'loadInteraction',
+		'bed' => 'loadCustomBed',
+		'genebed' => 'loadCustomBed',
+		'genepred' => 'loadCustomBed',
+		'interaction' => 'loadCustomInteraction',
 		'wig' => 'loadCustomWig',
 		'bigWig' => 'loadCustomBigWig',
 	);
