@@ -7,7 +7,7 @@
 		is: "interaction-track",
 		
 		behaviors: [
-			GIVeBehaviors.TrackBehavior
+			_GIVe.TrackBehavior
 		],
 		
 		properties: {
@@ -249,7 +249,10 @@
 					//		however, if it's defined, then it will be the window index (for now)
 					res[chrom].forEach(function(region) {
 						this.data[chrom].push(new ChrRegionToShow(region.regionString, null, null, null, 
-										{linkID: region.linkID, regionID: region.ID, value: region.value, dirFlag: region.dirFlag}, this.track.species));
+										{linkID: parseInt(region.linkID), 
+										 regionID: parseInt(region.ID), 
+										 value: parseFloat(region.value), 
+										 dirFlag: parseInt(region.dirFlag)}, this.track.species));
 					}, this);
 				}
 			}
@@ -485,8 +488,8 @@
 							
 							var partialOutside = false;
 
-							svgChildren.forEach(function(svgChild, index) {
-								var x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getStart(),
+							svgChildren.forEach(function(svgChild, svgIndex) {
+								var x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[svgIndex]].getStart(),
 																  true, svgChild);
 								if(x > this.windowWidth) {
 									partialOutside = true;
@@ -497,7 +500,7 @@
 								startPoints.push((x - this.bandBorder / 2)  + "," + y);
 								startPoints.push((x - this.bandBorder / 2) + "," + (y + svgChild.height.animVal.value));
 								
-								x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[index]].getEnd(),
+								x = this.transformXCoordinate(linkMap[regionID].regions[permIndex[svgIndex]].getEnd(),
 															  true, svgChild);
 								if(x < 0) {
 									partialOutside = true;

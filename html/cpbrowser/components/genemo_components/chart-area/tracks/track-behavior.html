@@ -6,8 +6,8 @@
 <script type="text/javascript" src="../../../../js/regionlistui.js"></script>
 <script type="text/javascript" src="../../../../js/tracksSpecies.js"></script>
 <script>
- 	window.GIVeBehaviors = window.GIVeBehaviors || {};
-	GIVeBehaviors.TrackBehaviorImpl = {
+ 	window._GIVe = window._GIVe || {};
+	_GIVe.TrackBehaviorImpl = {
 
 		properties: {
 			species: Object, // this is the species defined in libtracks.js
@@ -427,6 +427,17 @@
 				}
 				this.activeVisibility = this.allowedVisibilities[newIndex];
 			}
+		},
+		
+		updateAnno: function(annoMap, forceUpdate) {
+			if(forceUpdate === true || !this.annoUpdated) {
+				for(var key in annoMap) {
+					if(key !== 'track' && annoMap.hasOwnProperty(key)) {
+						this.track.setSetting(key, annoMap[key]);
+					}
+				}
+			}
+			this.annoUpdated = true;
 		},
 		
 		// ****** customized methods ******
@@ -962,12 +973,52 @@
 		
 		rgbToHex: function(colorRGB) {
 			return '#' + ((1 << 24) + colorRGB).toString(16).slice(1);
-		}
+		},
+		
+		tokensToDict: function(line) {
+			// this function is used to 'dictionarize' the track settings line
+			// it will convert lines such as 'track type=wiggle_0 name="fixedStep" description="fixedStep format"'
+			// into JavaScript Objects such as 
+			// { 'track': null, 'type': 'wiggle_0', 'name': 'fixedStep', 'description': 'fixedStep format' }
+			var result = {}, tokens = line.split(/\s+/g);
+			tokens.every(function(token, index) {
+				// notice that there should be no '=' in keys, but '=' should be fine in values
+				// also '#' will not be treated as comment if appearing within value and quoted
+				var components = token.trim().split('=');
+				var key = components.shift(), value = components.join('=');
+				// detect # in key
+				if(key.split('#').length > 1) {
+					key = key.split('#', 1);
+					if(key.length > 0) {
+						// there is still key before '#'
+						result[key] = '';
+					}
+					// whatever follows will be comment
+					return false;
+				}
+				if((value.charAt(0) === "'" && value.charAt(value.length - 1) === "'") ||
+					(value.charAt(0) === '"' && value.charAt(value.length - 1) === '"')) {
+						// remove outside quotes, also ignore '#'
+						value = value.substr(1, value.length - 2);
+				} else {
+					// detect '#'
+					if(value.split('#').length > 1) {
+						value = value.split('#', 1);
+						result[key] = value;
+						// whatever follows will be comment
+						return false;
+					}
+				}
+				result[key] = value;
+				return true;				
+			}, this);	
+			return result;						
+		},
 		
 	};
 	
-	GIVeBehaviors.TrackBehavior = [
+	_GIVe.TrackBehavior = [
 		Polymer.IronResizableBehavior, 
-		GIVeBehaviors.TrackBehaviorImpl,
+		_GIVe.TrackBehaviorImpl,
 	];
 </script>

@@ -7,7 +7,7 @@
 		is: "bed-track",
 		
 		behaviors: [
-			GIVeBehaviors.TrackBehavior
+			_GIVe.TrackBehavior
 		],
 		
 		properties: {
@@ -148,6 +148,7 @@
 			// clear text Margin svg
 			this.clear();
 			
+			this.changeVisibility(this.track.getSetting('visibility'), false);
 			var lines;
 			while(!(lines = this.prepareLines(this.data[this.mainSvg.viewWindow.chr])) && this.activeVisibility > Track.StatusEnum.VIS_NONE);
 			var y = 0;

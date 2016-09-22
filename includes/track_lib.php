@@ -120,6 +120,9 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			$newRegion['ID'] = $itor['ID'];
 			$newRegion['linkID'] = $itor['linkID'];
 			$newRegion['value'] = $itor['value'];
+			if(isset($itor['dirFlag'])) {
+				$newRegion['dirFlag'] = $itor['dirFlag'];
+			}
 			$result[$itor['chrom']] []= $newRegion;
 		}	
 		$regions->free();

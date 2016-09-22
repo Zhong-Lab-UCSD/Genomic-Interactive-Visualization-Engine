@@ -56,9 +56,11 @@
     <!-- TODO: add paper-dropmenu for species -->
     <paper-drawer-panel>
       <div main>
-        <div id='chartHolder'></div>
-        <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
-        <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
+        <div id="chartHolder"></div>
+        <div id="genomeGitarDataLink">
+          <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
+          <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
+        </div>
       </div>
 	 
       <div drawer>
@@ -121,6 +123,7 @@
 			this.spcIndex = index || this.spcIndex;
 			if(window.location.search.indexOf('hg38') >= 0) {
 				this.spcIndex = 1;
+				Polymer.dom(this.root).querySelector('div[main]').removeChild(this.$.genomeGitarDataLink);
 			}
 			this.spcChanged();
 		},

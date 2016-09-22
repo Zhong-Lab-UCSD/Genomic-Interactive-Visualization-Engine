@@ -8,7 +8,7 @@
 	
 		is: "wiggle-track",
 		behaviors: [
-			GIVeBehaviors.TrackBehavior
+			_GIVe.TrackBehavior
 		],
 		properties: {},
 		created: function() {
@@ -18,16 +18,18 @@
 			this.ADAPTIVE_MAXLINES = 12; // limit to downgrade visibility
 			this.TRIANGLE_FILL = 0xFFFFFF; // the fill color for the triangles (indicating clipped content)
 			this.FORECOLOR_INDEX = 0; // the color index for fore color
-			this.HEIGHT = 100; //height for display?
 			this.SCALE = 2;
-			this.trackHeight = 200;
-			this.windowMax = 0;
+		},
+		
+		trackImpl: function(track, prop) {
+			this.windowMax = 1;
 			this.windowMin = 0;
+			this.drawingBoundary = {top: 0, bottom: this.trackHeight};
 			this.windowRange = 0;
 			this.autoScale = true;
 		},
 
-		dataHandler: function(e, bigWig) {
+		dataHandler: function(e, detail) {
 			/*read file will turn in an object with data for at least one chromosome.
 			datapoints[chromosome#][base pair #] will be the signal strength.
 			datapoints is the object given to this class.
@@ -41,56 +43,94 @@
 			the points will be added to the chromosome object just in the order they are written in the wiggle file, when being read.
 			
 			*/
-			var res = bigWig.dataPoints;
+			var res = detail.response;
 			for (var chrom in this.data) {
 				if (this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
 					delete this.data[chrom];
 				}
 			}
 	
-			this.points = [];
+			this.data = [];
 			for (var chrom in res) {
-				for (var pair in chrom) {
-					var point = [pair[0], pair[2]];
-					points[chrom].push(point);
+				if(!this.data.hasOwnProperty(chrom)) {
+					this.data[chrom] = res[chrom];
 				}
 			}
 	
 	
 			this.bufferWindow = this.mainSvg.viewWindow.clone();
 		},
-		drawData: function(chromosome) {
+		
+		drawData: function() {
 			//draw the given point with height determined by signal strength
 			this.clear();
-			this.activeVisibility = this.track.getSetting('visibility');
-			var shape = [];
-			shape.push([0, 0]);
-			var y = 0;
 	
-			for (var i = 0; i < this.points[chromosome].length; i++) {
-	
-				drawPeak[this.points[i], this.points[i][0], this.points[i][1], y];
+			if(this.data.hasOwnProperty(this.mainSvg.viewWindow.chr)) {
+				var start = -1, end = 0;
+				// find overlapping regions
+				do {
+					start++;
+					if(start >= this.data[this.mainSvg.viewWindow.chr].length) {
+						start = this.data[this.mainSvg.viewWindow.chr].length;
+						break;
+					}
+					var dataArr = this.data[this.mainSvg.viewWindow.chr][start];
+				} while(!(new ChrRegion(null, null, this.mainSvg.viewWindow.chr, dataArr[0], dataArr[1]).overlaps(this.mainSvg.viewWindow)));
+				end = start;
+				do {
+					end++;
+					if(end >= this.data[this.mainSvg.viewWindow.chr].length) {
+						end = this.data[this.mainSvg.viewWindow.chr].length;
+						break;
+					}
+					var dataArr = this.data[this.mainSvg.viewWindow.chr][end];
+				} while((new ChrRegion(null, null, this.mainSvg.viewWindow.chr, dataArr[0], dataArr[1]).overlaps(this.mainSvg.viewWindow)));
+				
+				if(this.autoScale) {
+					this.findExtremes(this.mainSvg.viewWindow.chr, start, end, true);
+				}
+				this.drawPeak(this.mainSvg.viewWindow.chr, start, end);
 			}
 			//shape.push([0,this.windowWidth]);
 			//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
 	
 		},
-		convertPoint: function(chr, base, strength) {
-	
-			var x = this.transformXCoordinate({
-				chr: chr,
-				coor: base
-			}, false);
-			var y = this.trackHeight - strength * this.SCALE;
-			var result = [x, y];
-			return result;
+		
+		transformYCoordinate: function(signal, flags) {
+			// transform Y coordinate from signal with this.windowMin and this.windowMax
+			// notice that if the value exceeds either boundary, 
+			// it will return the Y value at the boundary, but will mark flags.EXCEED_MAX or flags.EXCEED_MIN as true
+			// (flags needs to be an object from the caller to receive such values)
+			flags = flags || {};
+			delete flags.EXCEED_MIN;
+			delete flags.EXCEED_MAX;	// clear flags first
+			if(signal > this.windowMax) {
+				flags.EXCEED_MAX = true;
+				return this.drawingBoundary.top;
+			} else if(signal < this.windowMin) {
+				flags.EXCEED_MIN = true;
+				return this.drawingBoundary.bottom;
+			}
+			return (signal - this.windowMax) / (this.windowMin - this.windowMax) * 
+				(this.drawingBoundary.bottom - this.drawingBoundary.top) + this.drawingBoundary.top;
 		},
-		findExtremes: function(chr) {
-			var max = Number.MIN_SAFE_INTEGER
-			var min = Number.MAX_SAFE_INTEGER
-			for (var i = 0; i < this.points[chr].length; i++) {
-				if (this.points[chr][1] > max) max = this.points[chr][1];
-				if (this.points[chr][1] < min) min = this.points[chr][1];
+		
+		findExtremes: function(chr, start, end, setExtremes) {
+			// need to implement this if 0 is not included in the final graph
+			var max = 0;
+			var min = 0;
+			for (var i = start; i < end; i++) {
+				if(new ChrRegion(null, null, chr, this.data[chr][i][0], this.data[chr][i][1]).overlaps(this.mainSvg.viewWindow)) {
+					if (this.data[chr][i][2] > max) max = this.data[chr][i][2];
+					if (this.data[chr][i][2] < min) min = this.data[chr][i][2];
+				}
+			}
+			if(setExtremes) {
+				this.windowMax = max;
+				this.windowMin = min;
+				if(this.windowMax === this.windowMin) {
+					this.windowMin += 1;
+				}
 			}
 			return [min, max, (min + max) / 2, max - min];
 		},
@@ -138,49 +178,64 @@
 			}
 			return [zero, value, cutOff];
 		},
-		drawPeak: function(chromosome, base, strength, y) {
+		
+		drawOverflowLines: function(overflows) {
+			// overflows is an object containing overflowing ChrRegions
+			// { 'exceedMax': Array(), 'exceedMin': Array() }
+		},
+		
+		drawPeak: function(chromosome, startIndex, endIndex) {
 			var svgToDraw = this.mainSvg;
 			var windowToDraw = svgToDraw.viewWindow;
-	
-			var x = this.transformXCoordinate({
-				chr: chromosome,
-				coor: base
-			}, false);
-	
-			if (this.autoScale) {
-				var extremes = findExtremes(chromosome); //inefficient as of now
-				var scaledPoint = scaleLine(strength, extremes);
-				if (windowToDraw.overlaps(region) > 0) { //still needs fix
-					this.drawLine(x, y + scaledPoint[0], x, y + scaledPoint[1], this.colorSet[colorIndex]);
-	
+			
+			var currIndex = startIndex, currCoor = -1, points = [], overflows = {exceedMax: [], exceedMin: []}, flags = {};
+			while(currIndex < endIndex) {
+				// draw polygons from the data
+				if(this.data[chromosome][currIndex][0] > currCoor) {
+					// new segment, needs to draw the previous polygon 
+					if(points.length > 0) {
+						points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
+							',' + this.transformYCoordinate(0));
+						this.createRawPolygon(points, {class: 'wiggleShapes',
+							fill: this.rgbToHex(this.colorSet[0]),
+							stroke: this.rgbToHex(this.colorSet[0]),
+							}, svgToDraw);
+					}
+					
+					// and start a new polygon
+					points = [];
+					currCoor = this.data[chromosome][currIndex][0];
+					points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
+						',' + this.transformYCoordinate(0));
 				}
-			} else {
-				var customLine = scaleLineCustom(strength);
-				this.drawLine(x, y + customLine[0], x, y + customLine[1]);
-				switch (customLine[2]) { //drawing color dots for cut-off signals
-					case 1:
-					case 2:
-						this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
-						break;
-					case -1:
-					case -2:
-						this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
-						break;
-					case 3:
-						this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
-						this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
-						break;
-					default:
-	
+				points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
+					',' + this.transformYCoordinate(this.data[chromosome][currIndex][2], flags));
+				currCoor = this.data[chromosome][currIndex][1];
+				points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
+					',' + this.transformYCoordinate(this.data[chromosome][currIndex][2]));
+				
+				// process overflows
+				if(flags.EXCEED_MIN) {
+					overflows.exceedMin.push(new ChrRegion(null, null, chromosome, this.data[chromosome][currIndex][0], this.data[chromosome][currIndex][1]));
+				} else if(flags.EXCEED_MAX) {
+					overflows.exceedMax.push(new ChrRegion(null, null, chromosome, this.data[chromosome][currIndex][0], this.data[chromosome][currIndex][1]));
 				}
-				if (customLine[2] == 3) {} else if (customLine[2] == 1 || this) {
-					this.drawLine()
-				} else if (customLine[2] == -1) {
-	
-				} //use switch
-				el
-	
+				
+				currIndex++;
 			}
+			
+			// finish last polygon
+			if(points.length > 0) {
+				points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
+					',' + this.transformYCoordinate(0));
+				this.createRawPolygon(points, {class: 'wiggleShapes',
+					fill: this.rgbToHex(this.colorSet[0]),
+					stroke: this.rgbToHex(this.colorSet[0]),
+					}, svgToDraw);
+			}
+			
+			// draw overflow lines
+			this.drawOverflowLines(overflows);
 	
 		},
 		setExtremes: function(min, max) {
@@ -194,245 +249,72 @@
 		autoWindow: function() {
 			this.autoScale = true;
 		},
-	
-	
-	
 	
 		readLocalFile: function(file, query) {
 	
 	
 			var reader = new FileReader();
-			reader.datapoints = [];
+			var datapoints = {};
 
-			reader.onload = function() {
+			reader.onload = (function() {
 
 				var text = reader.result;
 				var lines = text.split(/[\r\n]+/g);
+				var annoMap = {}, currChrom = '', currSpan = 1, currStart = 0, currStep = 1, isVariable = null;
 
 				for (var i = 0; i < lines.length; i++) {
-					if (lines[i].substring(0, 8) == 'browser') {} else if (lines[i].substring(0, 5) == 'track') {
-
-						var dataInfo = lines[i + 1].split(' ');
-						var chrom = parseInt(dataInfo[1].substring(9));
-						if (!this.datapoints.hasOwnProperty(chrom)) this.datapoints[chrom] = [];
-						var newI = i + 2;
-
-
-						switch (dataInfo[0]) {
-							case 'variableStep':
-								{
-									var span = parseInt(dataInfo[2].substring(5));
-									for (newI; firstCharIsNumber(lines[newI]); newI++) {
-										var point = lines[newI].split(' ');
-										this.datapoints[chrom].push([parseInt(point[0]), parseInt(point[0]) + span, parseFloat(point[1])]);
-									}
-									break;
-								}
+					if(lines[i].trim().length > 0 && lines[i].trim().charAt(0) !== '#') {
+						var tokens = lines[i].split(/\s+/g);
+						switch(tokens[0]) {
+							case 'track':
+								// this is a "track" annotation line
+								annoMap = this.tokensToDict(lines[i]);
+								this.updateAnno(annoMap, false);		// update if needed
+								break;
 							case 'fixedStep':
-								{
-									var start = parseInt(dataInfo[2].substring(6));
-									var step = parseInt(dataInfo[3].substring(5));
-									var span = parseInt(dataInfo[4].substring(5));
-									for (newI; firstCharIsNumber(lines[newI]); newI++) {
-										var point = lines[newI].trim().split(' ');
-										var strength = parseFloat(point[0]);
-										var basePair = parseInt(start + ((newI - i - 2) * step));
-										this.datapoints[chrom].push([basePair, basePair + span, strength]);
-									}
-									break;
+								var sectionMap = this.tokensToDict(lines[i]);
+								currSpan = sectionMap.hasOwnProperty('span')? parseInt(sectionMap.span): 1;
+								currChrom = sectionMap.chrom;
+								currStart = parseInt(sectionMap.start);
+								currStep = parseInt(sectionMap.step);
+								isVariable = false;
+								if(!datapoints.hasOwnProperty(currChrom)) {
+									datapoints[currChrom] = [];
 								}
+								break;
+							case 'variableStep':
+								var sectionMap = this.tokensToDict(lines[i]);
+								currSpan = sectionMap.hasOwnProperty('span')? parseInt(sectionMap.span): 1;
+								currChrom = sectionMap.chrom;
+								isVariable = true;
+								if(!datapoints.hasOwnProperty(currChrom)) {
+									datapoints[currChrom] = [];
+								}
+								break;
 							default:
-								{
-
+								if(!isNaN(tokens[0])) {
+									// it's a number, process according to current sections
+									if(isVariable === true) {
+										datapoints[currChrom].push([parseInt(tokens[0]), parseInt(tokens[0]) + currSpan, parseFloat(tokens[1])]);
+									} else if(isVariable === false) {
+										datapoints[currChrom].push([currStart, currStart + currSpan, parseFloat(tokens[0])]);
+										currStart += currStep;
+									} else {
+										// not belong to any section (should not happen)
+										console.log('Line not belonging to any section detected at #' + i + ': ' + lines[i]);
+									}
+								} else {
 									console.log("No organization type specified.")
-
 								}
 						}
-
-					} else if (lines[i].charAt(0) == '#') {
-						lines.splice(i, 1);
-						i -= 1;
 					}
 				}
-				console.log(this.datapoints);
+				console.log(datapoints);
+				this.fire('response', {response: datapoints}, {bubbles: false, cancelable: true});
 
-
-
-			};
+			}).bind(this);
 			reader.readAsText(file);
-
-			function firstCharIsNumber(s) {
-				if (s == undefined) return false;
-				return !isNaN(parseInt(s.trim().charAt(0)));
-			}
 	
-		},
-		dataHandler: function(datapoints) {
-			/*read file will turn in an object with data for at least one chromosome.
-			datapoints[chromosome#][base pair #] will be the signal strength.
-			datapoints is the object given to this class.
-			datapoints is an array with objects that are chromosomes. For example, datapoints[12] holds all the info for chromosome 12.
-			each chromosome object isn an array, containing point values. These point values are arrays containing two numbers: the base pair and the strength value.
-			For example, the object datapoints[12][2] is an array with two numbers in it. It is also the third point stored in chromosome 12. Since the wiggle tracks are in the 
-			format of 
-			Base Strength
-			xxxx xxxx
-			xxxx xxxx
-			the points will be added to the chromosome object just in the order they are written in the wiggle file, when being read.
-			
-			*/
-			var res = datapoints;
-			for (var chrom in this.data) {
-				if (this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
-					delete this.data[chrom];
-				}
-			}
-	
-			this.points = [];
-			for (var chrom in this.data) {
-				for (var pair in chrom) {
-					var point = [pair[0], pair[2]];
-					points[chrom].push(point);
-				}
-			}
-	
-	
-			this.bufferWindow = this.mainSvg.viewWindow.clone();
-		},
-		drawData: function(chromosome) {
-			//draw the given point with height determined by signal strength
-			this.clear();
-			this.activeVisibility = this.track.getSetting('visibility');
-			var shape = [];
-			shape.push([0, 0]);
-			var y = 0;
-	
-			for (var i = 0; i < this.points[chromosome].length; i++) {
-	
-				drawPeak[this.points[i], this.points[i][0], this.points[i][1], y];
-			}
-			//shape.push([0,this.windowWidth]);
-			//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
-	
-		},
-		convertPoint: function(chr, base, strength) {
-	
-			var x = this.transformXCoordinate({
-				chr: chr,
-				coor: base
-			}, false);
-			var y = this.trackHeight - strength * this.SCALE;
-			var result = [x, y];
-			return result;
-		},
-		findExtremes: function(chr) {
-			var max = Number.MIN_SAFE_INTEGER
-			var min = Number.MAX_SAFE_INTEGER
-			for (var i = 0; i < this.points[chr].length; i++) {
-				if (this.points[chr][1] > max) max = this.points[chr][1];
-				if (this.points[chr][1] < min) min = this.points[chr][1];
-			}
-			return [min, max, (min + max) / 2, max - min];
-		},
-		scaleLine: function(strength, extremes) {
-			if (extremes[0] < 0 && extremes[1] > 0) { //if range is from - to +
-				var zero = ((0 - extremes[0]) / extremes[3] * this.height);
-				var value = ((value - extremes[0]) / extremes[3] * this.height);
-			} else { //if range is only + or only -
-				if (extremes[0] > 0 && extremes[1] > 0) { //if range is only +
-					var zero = 0;
-					var value = (value / extremes[1] * this.height)
-				} else if (extremes[0] > 0 && extremes[1] > 0) { //if range is only -
-					var zero = this.height;
-					var value = this.height - (value / extremes[1] * this.height)
-				} else {
-					//there is something wrong
-				}
-			}
-			return [this.height - zero, this.height - value];
-		},
-		scaleLineCustom: function(strength) {
-			var zero = 0;
-			var value = 0;
-			var cutOff = 0;
-			zero = this.windowMax / this.windowRange * this.trackHeight;
-			value = (this.windowMax - strength) / this.windowRange * this.trackHeight;
-			if (0 > this.windowMax) {
-				zero = 0;
-				cutOff += 1;
-			}
-			if (0 < this.windowMin) {
-				zero = this.trackHeight;
-				cutOff -= 1;
-			}
-			if (strength > this.windowMax) {
-				value = 0;
-				cutOff += 1;
-			}
-			if (strength < this.windowMin) {
-				value = this.trackHeight;
-				cutOff -= 1;
-			}
-			if ((0 < this.windowMin && strength > this.windowMax) || (0 > this.windowMax && strength < this.windowMin)) {
-				cutOff += 3;
-			}
-			return [zero, value, cutOff];
-		},
-		drawPeak: function(chromosome, base, strength, y) {
-			var svgToDraw = this.mainSvg;
-			var windowToDraw = svgToDraw.viewWindow;
-	
-			var x = this.transformXCoordinate({
-				chr: chromosome,
-				coor: base
-			}, false);
-	
-			if (this.autoScale) {
-				var extremes = findExtremes(chromosome); //inefficient as of now
-				var scaledPoint = scaleLine(strength, extremes);
-				if (windowToDraw.overlaps(region) > 0) { //still needs fix
-					this.drawLine(x, y + scaledPoint[0], x, y + scaledPoint[1], this.colorSet[colorIndex]);
-	
-				}
-			} else {
-				var customLine = scaleLineCustom(strength);
-				this.drawLine(x, y + customLine[0], x, y + customLine[1]);
-				switch (customLine[2]) { //drawing color dots for cut-off signals
-					case 1:
-					case 2:
-						this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
-						break;
-					case -1:
-					case -2:
-						this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
-						break;
-					case 3:
-						this.drawLine(x, y, x, y, this.TRIANGLE_FILL);
-						this.drawLine(x, y + this.trackHeight, x, y + this.trackHeight, this.TRIANGLE_FILL);
-						break;
-					default:
-	
-				}
-				if (customLine[2] == 3) {} else if (customLine[2] == 1 || this) {
-					this.drawLine()
-				} else if (customLine[2] == -1) {
-	
-				} //use switch
-				el
-	
-			}
-	
-		},
-		setExtremes: function(min, max) {
-			if (max > min) {
-				this.windowMin = min;
-				this.windowMax = max;
-				this.windowRange = max - min;
-				this.autoScale = false;
-			} else {} //there is an error
-		},
-		autoWindow: function() {
-			this.autoScale = true;
 		},
 	
 	});
