@@ -1,36 +1,4 @@
-<html>
-<input type='file' accept='text/plain' onchange='openFile(event)'><br>
-<p id='test'>Sample Table</p>
-<script src="../../../js/pako/dist/pako.js"></script>
-<script>
-    var openFile = function(event) {
-        var input = event.target;
-
-        var reader = new FileReader();
-        reader.onload = function() {
-            var bigWig = new bigWigFile(reader.result);
-            //var ten = bigWig.getInt8();
-
-
-            //bigWig.readAllStuff();
-            bigWig.readSection(3, 1, 200000000);
-            console.log(bigWig.dataPoints);
-			console.log(bigWig.pointCount);
-			console.log(bigWig);
-            var stuff = document.getElementById('test');
-            //stuff.innerHTML = ten;
-        };
-        reader.readAsArrayBuffer(input.files[0]);
-    };
-/*
-ToDo:
-
-take out the reserved things for efficiency
-fix efficiency for filtering(read less data before filter)
-fix similar function efficiency 
-
-*/	
-	function viewHandler(dataView, isLittleEndian){
+function viewHandler(dataView, isLittleEndian){
 	this.dataView=dataView;
 	this.isLittleEndian=isLittleEndian;
 	this.index=0;
@@ -436,10 +404,3 @@ var offset = this.masterView.getInt64();
       
       
     }
-
-
-
-
-</script>
-
-</html>
