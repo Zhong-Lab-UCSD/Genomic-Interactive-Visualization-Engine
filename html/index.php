@@ -15,7 +15,7 @@
 	$genemoOn = $res['genemoOn'];
 	$experimentalFeatures = false;
 	
-	if($res['experimental']) {
+	if(isset($res['experimental']) && $res['experimental']) {
 		$experimentalFeatures = true;
 	}
 	unset($res);

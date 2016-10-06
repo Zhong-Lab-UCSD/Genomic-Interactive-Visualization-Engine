@@ -320,7 +320,7 @@
 			return result;
 		},
 		
-		changeSpecies: function(newSpecies, numOfSubs, viewWindow) {
+		changeSpecies: function(newSpecies, numOfSubs, viewWindowIn) {
 			// this will reset all tracks and redo the species
 			// note that the tracks should already be initialized before switching here
 			if(!newSpecies) {
@@ -329,19 +329,19 @@
 			this.species = newSpecies;
 			numOfSubs = numOfSubs || this.viewWindows.length;
 			
-			if(!viewWindow) {
-				// viewWindow is not specified, then use the old viewWindows
+			if(!viewWindowIn) {
+				// viewWindowIn is not specified, then use the old viewWindows
 				this.viewWindows = new Array(numOfSubs);
 				this.viewWindows.fill(null);
-				var defaultElem = this.species.defaultWindow || ['chr10:30000000-55000000', 'chr10:34900000-65000000'];
+				var defaultElem = this.species.settings.defaultWindow || ['chr10:30000000-55000000', 'chr10:34900000-65000000'];
 				this.viewWindows.forEach(function(vwindow, index) {
 					var windowStr;
-					if(typeof(viewWindow) === 'string') {
+					if(typeof(viewWindowIn) === 'string') {
 						// that's a single view window
-						windowStr = viewWindow;
-					} else if(Array.isArray(viewWindow) && viewWindow.length > 0) {
+						windowStr = viewWindowIn;
+					} else if(Array.isArray(viewWindowIn) && viewWindowIn.length > 0) {
 						// more than one viewWindows are specified
-						windowStr = viewWindow[index];
+						windowStr = viewWindowIn[index % viewWindowIn.length];
 					} else {
 						// use default
 						windowStr = defaultElem[index % defaultElem.length];

@@ -350,7 +350,7 @@ TrackGroup.CUSTOM_GROUP_PRIORITY = 90000;
 
 
 
-function Species(DB, Name, CommonName, IsEncode, Ref, ChromInfo) {
+function Species(DB, Name, CommonName, IsEncode, Ref, ChromInfo, settings) {
 	
 	// notice that ChromInfo is the JSON encoded object 
 	//		for chromosome information from chromInfo.php
@@ -369,6 +369,7 @@ function Species(DB, Name, CommonName, IsEncode, Ref, ChromInfo) {
 	this.isEncode = IsEncode;
 	this.ref = Ref;
 	this.groups = {};				// this is used to get all the groups
+	this.settings = {};				// object for all settings
 	
 	// read Object for species chrom info (if there)
 	if(ChromInfo) {
@@ -395,6 +396,14 @@ function Species(DB, Name, CommonName, IsEncode, Ref, ChromInfo) {
 	// this.hgsID = null;		// this is to match the hgsid from UCSC
 	
 	// this.orderedUniTracksEncode = new Array();
+	
+	if(settings) {
+		for(var key in settings) {
+			if(settings.hasOwnProperty(key)) {
+				this.settings[key] = settings[key];
+			}
+		}
+	}
 	
 }
 
