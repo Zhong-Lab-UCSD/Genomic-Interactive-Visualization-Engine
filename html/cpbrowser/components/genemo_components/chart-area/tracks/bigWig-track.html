@@ -268,7 +268,7 @@
 				this.fire('response', {response: datapoints}, {bubbles: false, cancelable: true});
 
 			}).bind(this);
-			reader.readAsText(file);
+			reader.readAsArrayBuffer(file);
 	
 		},
 	
