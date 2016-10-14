@@ -64,6 +64,33 @@ function viewHandler(dataView, isLittleEndian){
 		//this.zoom
         this.chromTreeNodeChildren = [];
 
+	this.readAll = function() {
+            var readSection = false;
+            
+            for (var i = 0; i < this.bigWigHeader.zoomLevel; i++) {
+                this.readZoomLevelHeader(readSection);
+				
+            }
+			this.masterView.setIndex(this.bigWigHeader.totalSummaryOffset);
+            this.readSummaryHeader();
+            this.masterView.setIndex(this.bigWigHeader.chromTreeOffset);
+            this.readChromTreeHeader();
+            this.readChromTreeNode();
+			for (var k=0;k<this.zoomedIndexHeaders.size;k++){
+			this.masterView.setIndex(this.zoomLevelHeaders[k].indexOffset);
+			var reduction = this.zoomLevelHeaders[k].reductionLevel;
+			this.readZoomedIndexHeader(reduction);
+			//for(var j=0;j<this.zoomedIndexHeaders[reduction].itemCount;j++){
+			this.readZoomedIndexNode(readSection, reduction);//}
+			}
+			
+            
+
+            this.masterView.setIndex(this.bigWigHeader.unzoomedIndexOffset);
+            this.readUnzoomedIndexHeader();
+            this.readUnzoomedIndexNode(readSection);//also, remove readSection if everytime is a read section anyways
+        }
+	
         this.readSection = function(chromNumber, startBase, endBase) {
             var readSection = true;
             this.readBigWigHeader();
