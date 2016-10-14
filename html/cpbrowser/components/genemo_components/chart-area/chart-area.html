@@ -90,7 +90,11 @@
 					prop: this.createWigTrackProp.bind(this),
 					ctor: WiggleTrack,
 					addDom: this.addOrdinaryTrackDOM.bind(this),
-					
+				},
+				'bigwig':{
+					prop: this.createWigTrackProp.bind(this),
+					ctor: BigWigTrack,
+					addDom: this.addOrdinaryTrackDOM.bind(this),
 				},
 				'genebed': {
 					prop: this.createBedTrackProp.bind(this),
