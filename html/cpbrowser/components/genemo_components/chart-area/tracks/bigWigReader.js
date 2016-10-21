@@ -66,7 +66,7 @@ function viewHandler(dataView, isLittleEndian){
 
 	this.readAll = function() {
             var readSection = false;
-            
+            this.readBigWigHeader();
             for (var i = 0; i < this.bigWigHeader.zoomLevel; i++) {
                 this.readZoomLevelHeader(readSection);
 				
