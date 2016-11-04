@@ -338,7 +338,7 @@ var offset = this.masterView.getInt64();
 				this.pointCount+=1;
 				//console.log(value);
                // this.dataPoints[chromNumber].push([start, end, value]);
-			   this.dataPoints.push([start, end, value]);
+			   this.dataPoints.push([chromNumber,start, end, value]);
             }
         };
         this.readZoomedSummaryData = function(length,reductionLevel,endChromID) {//zlib compressed, there are multiplt ones
