@@ -46,18 +46,18 @@
 			
 			*/
 			var res = detail.response;
-			for (var chrom in this.data) {
+			/*for (var chrom in this.data) {
 				if (this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
 					delete this.data[chrom];
 				}
 			}
-	
+	*/
 			this.data = [];
-			for (var chrom in res) {
+			/*for (var chrom in res) {
 				if(!this.data.hasOwnProperty(chrom)) {
 					this.data[chrom] = res[chrom];
 				}
-			}
+			}*/
 	
 	
 			this.bufferWindow = this.mainSvg.viewWindow.clone();
