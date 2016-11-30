@@ -1,0 +1,204 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-card-content-behavior/genemo-card-content-behavior.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="chart-track-list">
+  <template>
+    <style include="genemo-shared-styles">
+		:host {
+			padding: 0.5em;
+			display: block;
+		}
+		paper-material {
+			margin: 0.5em 0;
+			padding: 1em;
+		}
+		paper-material > div.header {
+			color: #3F51B5;
+			margin-bottom: 0.5em;
+		}
+		paper-material > div.scroller {
+			max-height: 300px;
+			overflow-y: auto;
+		}
+		paper-material > paper-checkbox {
+			margin: 0.5em;
+		}
+		paper-radio-group > paper-radio-button {
+			padding: 0.5em;
+		
+		}
+		paper-dialog-scrollable{
+			height: 300px;
+		}
+    </style>
+  </template>
+  <script>
+  	var GIVe = (function(give) {
+		'use strict';
+		
+		give.ChartTrackList = Polymer({
+			is: "chart-track-list",
+
+			behaviors: [
+				give.GenemoCardContentBehavior
+			],
+
+			properties: {
+				species: Object, // this is the species defined in libtracks.js
+				// notice that species should have chromSizes and location of centromeres included
+				// tracks is also within species
+				// may need to provide additional API to get track data
+
+				textSize: {
+					type: Number,
+					value: 12,		// unit is px
+				},
+
+			},
+
+			created: function() {
+				this.trackCtrlDOMs = [];
+			},
+
+			ready: function() {
+				this._setIcon('view-list');
+				this._setIconAlt('Track list');
+				this._setHeaderText('Track list');
+			},
+
+			factoryImpl: function(species) {
+				this.changeSpecies(species);
+			},
+
+			changeSpecies: function(newSpecies) {
+				// this will reset all tracks and redo the species
+				// note that the tracks should already be initialized before switching here
+				if(!newSpecies) {
+					throw("No new species specified!");
+				}
+				this.species = newSpecies;
+				this.updateAllGroupDOM();
+				this.setReady(true);
+			},
+
+			updateAllGroupDOM: function(keepOld) {
+				if(!keepOld) {
+					while(Polymer.dom(this.root).firstChild) {
+						Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
+					}
+				}
+				this.trackCtrlDOMs = [];
+				for(var groupID in this.species.groups) {
+					if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID) 
+						&& this.species.groups[groupID].getLength() > 0) {
+							this.updateGroupDOM(groupID);
+					}
+				}
+				this.setDOMReady(true);
+				this.trackToDOM();
+			},
+
+			updateGroupDOM: function(groupID) {
+				// create paper-material for the group
+				var newMaterial;
+				if(Polymer.dom(this.root).querySelector('#' + groupID + '_material')) {
+					newMaterial = Polymer.dom(this.root).querySelector('#' + groupID + '_material');
+					while(Polymer.dom(newMaterial).firstChild) {
+						Polymer.dom(newMaterial).removeChild(Polymer.dom(newMaterial).firstChild);
+					}
+				} else {				
+					newMaterial = document.createElement('paper-material');
+					newMaterial.setAttribute('id', groupID + '_material');
+					Polymer.dom(this.root).appendChild(newMaterial);
+					newMaterial.setAttribute('z', '1');
+				}
+
+				var label = document.createElement('div');
+				label.textContent = this.species.groups[groupID].label;
+				label.setAttribute('class', 'header');
+				Polymer.dom(newMaterial).appendChild(label);
+				var scroller = document.createElement('div');
+				scroller.setAttribute('class', 'scroller');
+				Polymer.dom(newMaterial).appendChild(scroller);
+				var container = scroller;
+				if(this.species.groups[groupID].singleOnly) {
+					container = document.createElement('paper-radio-group');
+					container.allowEmptySelection = true;
+					container.groupRef = this.species.groups[groupID];
+
+					Polymer.dom(scroller).appendChild(container);
+							//Polymer.dom(expander).appendChild(scroller);
+
+				}
+				this.species.groups[groupID].forEach(function(track, index) {
+					var newTrackSelectionDOM = document.createElement(
+						this.species.groups[groupID].singleOnly? 'paper-radio-button': 'paper-checkbox');
+					newTrackSelectionDOM.trackRef = track;
+					var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
+					newTrackSelectionDOM.name = track.id;
+					Polymer.dom(newTrackSelectionDOM).appendChild(newTrackLabel);
+					Polymer.dom(container).appendChild(newTrackSelectionDOM);
+					if(!this.species.groups[groupID].singleOnly) {
+						this.trackCtrlDOMs.push(newTrackSelectionDOM);
+					}
+				}, this);
+				if(this.species.groups[groupID].singleOnly) {
+					this.trackCtrlDOMs.push(container);
+				}
+			},
+
+			trackToDOM: function() {
+				// this is used when resetting selection
+				this.trackCtrlDOMs.forEach(function(trackCtrlDOM, index) {
+					if(trackCtrlDOM.trackRef) {
+						trackCtrlDOM.checked = (trackCtrlDOM.trackRef.getSetting('visibility') !== give.TrackObject.StatusEnum.VIS_NONE);
+					} else {
+						// is group
+						var selectedID = "";
+						trackCtrlDOM.groupRef.some(function(track, index) {
+							if(track.getSetting('visibility') !== give.TrackObject.StatusEnum.VIS_NONE) {
+								selectedID = track.id;
+								return true;
+							}
+							return false;
+						});
+						trackCtrlDOM.select(selectedID);
+					}
+				});
+			},
+
+			DOMToTrack: function() {
+				// this is used when submitting the results
+				this.trackCtrlDOMs.forEach(function(trackCtrlDOM, index) {
+					if(trackCtrlDOM.trackRef) {
+						this.singleDOMToTrack(trackCtrlDOM);
+					} else {
+						trackCtrlDOM.items.forEach(this.singleDOMToTrack.bind(this), this);						
+					}
+				}, this);
+			},
+
+			singleDOMToTrack: function(trackCtrlDOM) {
+				if(!trackCtrlDOM.checked) {
+					trackCtrlDOM.trackRef._visBackup = trackCtrlDOM.trackRef.getSetting('visibility');
+					trackCtrlDOM.trackRef.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE);
+				} else {
+					trackCtrlDOM.trackRef.setSetting('visibility', trackCtrlDOM.trackRef._visBackup || give.TrackObject.StatusEnum.VIS_PACK);
+				}
+			},
+
+
+		});
+		
+		return give;
+
+	})(GIVe || {});
+  </script>
+</dom-module>
+

@@ -1,0 +1,169 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../chrom-region/chrom-region-behavior.html">
+<script>
+  	var GIVe = (function(give) {
+		
+		give.TranscriptBehaviorImpl = {
+
+			properties: {
+				geneName: {
+					type: String,
+					readOnly: true,
+				},
+			},
+			
+			factoryImpl: function(mainParam, species, additionalParam) {
+				// check whether thickStart and thickEnd are valid
+				if(this.thickStart && this.thickStart < this.start) {
+					this.thickStart = this.start;
+				}
+				if(this.thickEnd && this.thickEnd > this.end) {
+					this.thickEnd = this.end;
+				}
+				if(this.numOfBlocks) {
+					// check blockStarts and blockLengths
+					for(var i = 0; i < this.numOfBlocks; i++) {
+						if(this.blockStarts[i] < 0) {
+							this.blockStarts[i] = 0;
+						} else if(this.blockStarts[i] >= this.getLength()) {
+							throw({value: this.chr + ':' + this.start + '-' + this.end,
+								message: 'Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' + 
+									this.blockStarts[i] + ' is greater than length.'});
+						} else if(this.blockSizes[i] < 0) {
+							throw({value: this.chr + ':' + this.start + '-' + this.end,
+								message: 'Block #' + i + ' size is invalid: ' + this.chr + ':' + this.start + '-' + this.end + '!'});
+						} else if(this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
+							this.blockSizes[i] = this.getLength() - this.blockStarts[i];
+						}
+					}
+				}
+				if(mainParam.geneName) {
+					// this is used when geneName (ID) differs from display Name
+					this._setGeneName(mainParam.geneName);
+				} else {
+					this._setGeneName(this.name);
+				}
+			},
+			
+			getThickStart: function() {
+				return (typeof this.thickStart === 'number'? this.thickStart: null);
+			},
+			
+			getThickEnd: function() {
+				return (typeof this.thickEnd === 'number'? this.thickEnd: null);
+			},
+			
+			getNumOfBlocks: function() {
+				return (typeof this.numOfBlocks === 'number'? this.numOfBlocks: null);
+			},
+			
+			getBlockStarts: function() {
+				return (Array.isArray(this.blockStarts)? this.blockStarts: null);
+			},
+			
+			getBlockSizes: function() {
+				return (Array.isArray(this.blockSizes)? this.blockSizes: null);
+			},
+			
+			regionFromString: function(regionString) {
+				var elements = bed12String.split(/\s+/);
+				give.ChromRegionBehavior.regionFromObject.call(this, 
+															   {regionname: elements[3], 
+																chr: elements[0],
+																start: elements[1], 
+																end: elements[2], 
+																strand: elements[5],});
+				if(elements[6]) {
+					this.thickStart = parseInt(elements[6]);
+					this.thickEnd = parseInt(elements[7]);
+				}
+				if(elements[8]) {
+					this.setRGB(elements[8]);
+				}
+				if(elements[9]) {
+					this.setBlocks(elements[9], elements[10], elements[11]);
+				}
+			},
+			
+			regionFromObject: function(regionObject) {
+				give.ChromRegionBehavior.regionFromObject.call(this, regionObject);
+				if(regionObject.thickStart) {
+					this.thickStart = parseInt(regionObject.thickStart);
+					this.thickEnd = parseInt(regionObject.thickEnd);
+				}
+				if(regionObject.itemRGB) {
+					this.setRGB(regionObject.itemRGB);
+				}
+				if(regionObject.numOfBlocks) {
+					this.setBlocks(regionObject.numOfBlocks, regionObject.blockSizes, regionObject.blockStarts);
+				}
+			},
+
+			regionToString: function(includeStrand) {
+				// default is including strand
+				return this.chr + ':' + this.start + '-' + this.end
+					+ ((includeStrand === false || this.strand === null)? '': (' ('
+					+ (this.strand? '+': '-') + ')'));
+			},
+
+			regionToBED: function(includeStrand) {
+				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') + 
+						(includeStrand !== false? '\t0\t' + (!this.strand? '-': '+'): '');
+			},
+
+			setBlocks: function(numOfExons, exonLengths, exonStarts) {
+				try {
+					this.numOfBlocks = parseInt(numOfExons);
+					var startArray = exonStarts.split(',');
+					var lengthArray = exonLengths.split(',');
+					this.blockSizes = [];
+					this.blockStarts = [];
+					for(var i = 0; i < this.numOfBlocks; i++) {
+						this.blockSizes.push(parseInt(lengthArray[i]));
+						this.blockStarts.push(parseInt(startArray[i]));
+					}
+				} catch(e) {
+					if(parseInt(numOfExons) > 0) {
+						// there are number of exons, but exon sizes and starts are not correct
+						e.message = (e.message || '') + '(Block processing)';
+						throw(e);
+					}
+					this.numOfBlocks = 1;
+					this.blockSizes = [this.getLength()];
+					this.blockStarts = [this.start];
+				}
+			},
+
+			setRGB: function(strRGB) {
+				// note that itemRGB is a string per UCSC BED format "r,g,b"
+				if(strRGB) {
+					var rgbArr = strRGB.split(/,\s*/);
+					this.itemRGB = 0;
+					rgbArr.forEach(function(color) {
+						this.itemRGB <<= 8;
+						this.itemRGB += parseInt(color);
+					});
+					return true;
+				} else {
+					delete this.itemRGB;
+				}
+				return false;
+			},
+
+			getRGB: function() {
+				return this.itemRGB;
+			},
+
+			getGeneName: function(withTransNums) {
+				return this.geneName;
+			},
+
+		};
+	
+		give.TranscriptBehavior = [ give.ChromRegionBehavior, give.TranscriptBehaviorImpl ]
+		
+		return give;
+
+	})(GIVe || {});
+	
+</script>

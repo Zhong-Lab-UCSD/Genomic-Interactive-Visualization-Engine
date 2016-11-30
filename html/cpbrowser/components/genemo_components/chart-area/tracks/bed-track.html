@@ -3,366 +3,376 @@
   <template>
   </template>
   <script>
-  	BedTrack = Polymer({
-		is: "bed-track",
-		
-		behaviors: [
-			_GIVe.TrackBehavior
-		],
-		
-		properties: {
-		
-			// data structure for bed tracks:
-			// data has one key (chrom), all other keys will be deleted upon changing chromosome
-			// data[chrom] is an array of Genes (for now)
-			//		Future plan: arrays
-			//		outside indices are start coordinates of every gene 
-			//		inside indices are used if multiple genes start at the same location
-			//		NOTICE: start is always smaller than end, if the strand is negative, start is TTS, end is TSS
-			// 		values in the inner array are Gene objects 
-			
-			honorItemRGB: {
-				// whether this track honors itemRGB values
-				type: Boolean,
-				value: false,
+  	var GIVe = (function(give) {
+		'use strict';
+		BedTrack = Polymer({
+			is: "bed-track",
+
+			behaviors: [
+				give.TrackBehavior
+			],
+
+			properties: {
+
+				// data structure for bed tracks:
+				// data has one key (chrom), all other keys will be deleted upon changing chromosome
+				// data[chrom] is an array of Genes (for now)
+				//		Future plan: arrays
+				//		outside indices are start coordinates of every gene 
+				//		inside indices are used if multiple genes start at the same location
+				//		NOTICE: start is always smaller than end, if the strand is negative, start is TTS, end is TSS
+				// 		values in the inner array are Gene objects 
+
+				honorItemRGB: {
+					// whether this track honors itemRGB values
+					type: Boolean,
+					value: false,
+				},
+
 			},
-			
-		},
-		
-		created: function() {
-			this.GENE_MARGIN = 10;
-			this.GENE_NOTEXT_MARGIN = 2;
-			this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
-			this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
-			this.FORECOLOR_INDEX = 0;			// the color index for fore color
-		},
-		
-		// ****** customized methods below ******
-		
-		trackImpl: function(track, prop) {
-			if(prop.hasOwnProperty('honorItemRGB')) {
-				this.honorItemRGB = prop.honorItemRGB;
-			}
-		},
-		
-		readLocalFile: function(file, query) {
-			// placeholder to read local file content
-			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-			// data will be passed via firing a 'response' event with {detail: data}
-			// and the response will be handled by this.responseHandler(e, detail)
-			
-			// BED file implementation:
-			//		brutal force going through the file to find regions that intersect the query region
-			//		return the lines filtered
-			//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
-			//			like in http://matthewmeye.rs/blog/post/html5-line-reader/
-			//			or		http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
-			
-			var reader = new FileReader();
-			var result = {};
-			reader.onload = (function(e) {
-				var lines = e.target.result.split(/\r\n|\r|\n/g);
-				lines.forEach(function(line, index) {
-					var transcript = new Transcript(line);
-					if(transcript.overlaps(query)) {
-						// needs to push this line to result
-						if(!result.hasOwnProperty(transcript.chr)) {
-							result[transcript.chr] = [];
-						}
-						result[transcript.chr].push({geneBed: line});
-					}
-				}, this);
-				this.fire('response', {response: result}, {bubbles: false, cancelable: true});
-			}).bind(this);
-			reader.readAsText(file);
-		},
-		
-		readRemoteFile: function(URL, query) {
-			// placeholder to read remote URL
-			// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-			// data will be passed via firing a 'response' event with {detail: data}
-			// and the response will be handled by this.responseHandler(e, detail)
-		},
-		
-		dataHandler: function(e, detail) {
-			// this is to handle data within response
-			var res = detail.response;
-			// first, purge buffer if different chromosome
-			for(var chrom in this.data) {
-				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
-					// not the same chromosome
-					delete this.data[chrom];
+
+			created: function() {
+				this.GENE_MARGIN = 10;
+				this.GENE_NOTEXT_MARGIN = 2;
+				this.ADAPTIVE_MAXLINES = 12;		// limit to downgrade visibility
+				this.TRIANGLE_FILL = 0xFFFFFF;		// the fill color for the triangles (indicating clipped content)
+				this.FORECOLOR_INDEX = 0;			// the color index for fore color
+			},
+
+			// ****** customized methods below ******
+
+			trackImpl: function(track, prop) {
+				if(prop.hasOwnProperty('honorItemRGB')) {
+					this.honorItemRGB = prop.honorItemRGB;
 				}
-			}
-			for(var chrom in res) {
-				if(res.hasOwnProperty(chrom)) {
-					this.data[chrom] = [];
-					this.data[chrom].map = {};
-					// TODO: use some better method to organize data
-					// for now: enum all res.data, add them to this.data[chrom].map, then generate this.data[chrom]
-					
-					res[chrom].forEach(function(transcript) {
-						var newGene = new Gene(new Transcript(transcript.geneBed, null, null, null, null, null, 
-																	this.track.species, transcript.geneSymbol));
-						if(this.trackType.indexOf('gene') > -1) {
-							// is some gene oriented type
-							if(this.data[chrom].map.hasOwnProperty(newGene.name)) {
-								// check if it overlaps with existing gene(s)
-								this.data[chrom].map[newGene.name] = this.data[chrom].map[newGene.name].filter(function(oldGene) {
-									// remove the existing genes that overlaps with the new transcript
-									if(newGene.overlaps(oldGene)) {
-										newGene.merge(oldGene);
-										return false;
-									}
-									return true;
-								});
-								this.data[chrom].map[newGene.name].push(newGene);
-							} else {
-								this.data[chrom].map[newGene.name] = [newGene];
+			},
+
+			readLocalFile: function(file, query) {
+				// placeholder to read local file content
+				// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+				// data will be passed via firing a 'response' event with {detail: data}
+				// and the response will be handled by this.responseHandler(e, detail)
+
+				// BED file implementation:
+				//		brutal force going through the file to find regions that intersect the query region
+				//		return the lines filtered
+				//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
+				//			like in http://matthewmeye.rs/blog/post/html5-line-reader/
+				//			or		http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
+
+				var reader = new FileReader();
+				var result = {};
+				reader.onload = (function(e) {
+					var lines = e.target.result.split(/\r\n|\r|\n/g);
+					lines.forEach(function(line, index) {
+						var transcript = new Transcript(line);
+						if(transcript.overlaps(query)) {
+							// needs to push this line to result
+							if(!result.hasOwnProperty(transcript.chr)) {
+								result[transcript.chr] = [];
 							}
-						} else {
-							this.data[chrom].push(newGene);
+							result[transcript.chr].push({geneBed: line});
 						}
 					}, this);
-					
-					// then generate this.data[chrom] (array) from this.data[chrom].map
-					for(var name in this.data[chrom].map) {
-						if(this.data[chrom].map.hasOwnProperty(name)) {
-							this.data[chrom].map[name].forEach(function(gene) {
-								this.data[chrom].push(gene);
-							}, this);
-						}
-					}
-				}
-			}
-			
-			this.bufferWindow = this.mainSvg.viewWindow.clone();
-		},
-		
-		drawData: function() {
-			// this is to draw everything from this.data to the svg
-			// Steps:
-			// 		put genes into lines (pack display)
-			//		draw genes out line by line
-			
-			// clear text Margin svg
-			this.clear();
-			
-			this.changeVisibility(this.track.getSetting('visibility'), false);
-			var lines;
-			while(!(lines = this.prepareLines(this.data[this.mainSvg.viewWindow.chr])) && this.activeVisibility > Track.StatusEnum.VIS_NONE);
-			var y = 0;
-			lines.forEach(function(line) {
-				line.genes.forEach(function(gene) {
-					this.drawSingleGene(gene, y, (this.honorItemRGB && gene.itemRGB !== undefined)? gene.itemRGB: null);
-				}, this);
-				y += (this.fullHeight + this.textLineGap) * this.textSize;
-			}, this);
+					this.fire('response', {response: result}, {bubbles: false, cancelable: true});
+				}).bind(this);
+				reader.readAsText(file);
+			},
 
-			// resize the heights
-			this.updateLocationSize(null, null, null, y - this.textLineGap * this.textSize);
+			readRemoteFile: function(URL, query) {
+				// placeholder to read remote URL
+				// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+				// data will be passed via firing a 'response' event with {detail: data}
+				// and the response will be handled by this.responseHandler(e, detail)
+			},
 
-			// add labels
-			if(this.activeVisibility > Track.StatusEnum.VIS_NONE) {
-				this.drawShortLabel();
-			}
-		},
-		
-		// prepare genes
-		
-		prepareLines: function(genes) {
-			// calculate the x0 and x1 for every gene, (taking text width into consideration)
-			var lines = [{end: 0, genes: []}];		// arrays of objects {end: Number, genes: []}
-			if(genes) {
-				genes.every(function(gene) {
-					
-					var transcripts;
-					if(this.activeVisibility > Track.StatusEnum.VIS_COLLAPSED && gene.transcripts) {
-						// then transcripts needs to be drawn
-						transcripts = gene.transcripts;
-					} else {
-						transcripts = [gene];
-					}
-					return transcripts.every(function(transcript, index) {
-						// calculate x0 and x1 for the gene
-						if(!this.regionInWindow(transcript)) {
-							return true;
-						}
-						var x0 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, true),
-							x1 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, true);
-						if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT && transcript.getGeneName(true)) {
-							var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP, this.Y_HIDDEN, 
-														 transcript.getGeneName(true), "end");
-							// move text to textMargin if out of bounds
-							if(this.textMargin && newLabel.getBBox().x < 0) {
-								x0 = 0;
-							} else {
-								x0 = newLabel.getBBox().x;
-							}
-							
-							this.removeElement(newLabel);
+			dataHandler: function(e, detail, queryRegion) {
+				// this is to handle data within response
+				// return data should be already sorted by chrom and start
+				var res = detail.response;
+				// first, purge buffer if different chromosome
+	//			for(var chrom in this.data) {
+	//				if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
+	//					// not the same chromosome
+	//					delete this.data[chrom];
+	//				}
+	//			}
+				for(var chrom in res) {
+					if(!res.hasOwnProperty(chrom)) {
+						if(this.species.chromInfo.hasOwnProperty(chrom)) {
+							this.data[chrom] = new give.ChromBPlusTree(null, this.track.species.chromInfo[chrom].chrRegion.start,
+																	   this.track.species.chromInfo[chrom].chrRegion.end, null, null, 0, true);
 						}
 						
-						if(!lines.some(function(line) {
-							if(line.end <= x0 || this.activeVisibility <= Track.StatusEnum.VIS_DENSE) {
-								// this gene can be fit into this line
-								line.genes.push(transcript);
-								line.end = x1 + (this.activeVisibility > Track.StatusEnum.VIS_NOTEXT? this.GENE_MARGIN: this.GENE_NOTEXT_MARGIN);
+						var geneNameMap = {}, geneArray = [];
+
+						for(var i = 0; i < res[chrom].length; i++) {
+							var newGene = new Gene(new Transcript(res[chrom][i].geneBed, null, null, null, null, null, 
+																		this.track.species, res[chrom][i].geneSymbol));
+							if(this.trackType.indexOf('gene') > -1) {
+								// is some gene oriented type
+								if(geneNameMap.hasOwnProperty(newGene.name) && geneNameMap[newGene.name].overlaps(newGene)) {
+									// check if it overlaps with existing gene(s)
+									// because the gene list is sorted by start, 
+									//		whenever it doesn't overlap with the current gene
+									//		it will become a new gene entry.
+									geneNameMap[newGene.name].merge(newGene);
+								} else {
+									geneArray.push(newGene);
+									geneNameMap[newGene.name] = newGene;
+								}
+							} else {
+								geneArray.push(newGene);
+							}
+						}
+
+						// then populate the B+ Tree with geneArray
+						this.data[chrom].insert(geneArray, queryRegion);
+					}
+				}
+
+				this.bufferWindow = this.mainSvg.viewWindow.clone();
+			},
+
+			drawData: function() {
+				// this is to draw everything from this.data to the svg
+				// Steps:
+				// 		put genes into lines (pack display)
+				//		draw genes out line by line
+
+				// clear text Margin svg
+				this.clear();
+
+				this.changeVisibility(this.track.getSetting('visibility'), false);
+				
+				while(!this.prepareLines() &&
+					  this.activeVisibility > Track.StatusEnum.VIS_NONE);
+				
+				if(this.data[this.mainSvg.viewWindow.chr]) {
+					this.data[this.mainSvg.viewWindow.chr].traverse(this.mainSvg.viewWindow, function(gene) {
+						if(this.activeVisibility > Track.StatusEnum.VIS_COLLAPSED && gene.transcripts) {
+							gene.transcripts.forEach(function(transcript) {
+								this.drawSingleGene(transcript, null, (this.honorItemRGB && gene.itemRGB !== undefined)? gene.itemRGB: null);
+							}, this);
+						} else {
+							this.drawSingleGene(gene, null, (this.honorItemRGB && gene.itemRGB !== undefined)? gene.itemRGB: null);
+						}
+					}, null, null, this, false);
+				}
+
+				// resize the heights
+				this.updateLocationSize(null, null, null, y - this.textLineGap * this.textSize);
+
+				// add labels
+				if(this.activeVisibility > Track.StatusEnum.VIS_NONE) {
+					this.drawShortLabel();
+				}
+			},
+
+			// prepare genes
+
+			prepareLines: function() {
+				// calculate the x0 and x1 for every gene, (taking text width into consideration)
+				// then update gene.y or transcript.y as needed
+				var lineEnds = [];		// arrays of line end coordinates
+				if(this.data[this.mainSvg.viewWindow.chr]) {
+					return this.data[this.mainSvg.viewWindow.chr].traverse(this.mainSvg.viewWindow, function(gene) {
+						var transcripts;
+						if(this.activeVisibility > Track.StatusEnum.VIS_COLLAPSED && gene.transcripts) {
+							// then transcripts needs to be drawn
+							transcripts = gene.transcripts;
+						} else {
+							transcripts = [gene];
+						}
+						return transcripts.every(function(transcript) {
+							// calculate x0 and x1 for the gene
+							if(!this.regionInWindow(transcript)) {
 								return true;
 							}
-							return false;
-						}, this)) {
-							// no empty lines, create a new line
-							if(this.isAdaptive && lines.length >= this.ADAPTIVE_MAXLINES) {
-								this.changeVisibility(-1, true);
-								lines = null;
-								return false;
-							}
-							lines.push({end: x1 + this.GENE_MARGIN, genes: [transcript]});
-						}
-						return true;
-					}, this);
-				}, this);
-			}
-			
-			return lines;
-		},
-		
-		drawSingleGene: function(transcript, y, colorRGB, height, halfHeight) {
-			// transcript: the transcript to be drawn
-			// y: the y coordinate of the gene (line location)
-			// height: the height of gene (notice that thin regions will have this.halfHeight * height)
-			
-			height = height || this.fullHeight * this.textSize * 0.8;
-			halfHeight = halfHeight || this.halfHeight;
-			if(typeof(colorRGB) !== 'number') {
-				colorRGB = this.colorSet[this.FORECOLOR_INDEX];
-			}
-			
-			var coor, isThick = false, blockStart, blockEnd;
-//			// draw thin segments (if any)
-//			if(gene.thickStart > gene.start) {
-//				coor = new ChrRegion(null, null, gene.chr, gene.start, gene.thickStart, gene.strand);
-//				this.drawRectangle(coor, 0, y + height * 0.5 * halfHeight, height * halfHeight);
-//			}
-//			if(gene.thickEnd < gene.end) {
-//				coor = new ChrRegion(null, null, gene.chr, gene.thickEnd, gene.end, gene.strand);
-//			}
+							var x0 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, true),
+								x1 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, true);
+							if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT && transcript.getGeneName(true)) {
+								var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP, this.Y_HIDDEN, 
+															 transcript.getGeneName(true), "end");
+								// move text to textMargin if out of bounds
+								if(this.textMargin && newLabel.getBBox().x < 0) {
+									x0 = 0;
+								} else {
+									x0 = newLabel.getBBox().x;
+								}
 
-			if(transcript.numOfBlocks) {
-				blockEnd = transcript.start + transcript.blockStarts[0];
-				// draw thick blocks and connecting lines
-				for(var i = 0; i < transcript.numOfBlocks; i++) {
-					blockStart = transcript.start + transcript.blockStarts[i];
-					// first draw connecting lines (intron, if any)
-					if(blockEnd < blockStart) {
-						coor = new ChrRegion(null, null, transcript.chr, blockEnd, blockStart, transcript.strand);
-						this.drawSpanningLine(coor, colorRGB, y, height);
+								this.removeElement(newLabel);
+							}
+
+							if(!lineEnds.some(function(lineEnd, index) {
+								if(lineEnd <= x0 || this.activeVisibility <= Track.StatusEnum.VIS_DENSE) {
+									// this gene can be fit into this line
+									transcript.y = index;
+									lineEnd = x1 + (this.activeVisibility > Track.StatusEnum.VIS_NOTEXT? this.GENE_MARGIN: this.GENE_NOTEXT_MARGIN);
+									return true;
+								}
+								return false;
+							}, this)) {
+								// no empty lines, create a new line
+								if(this.isAdaptive && lines.length >= this.ADAPTIVE_MAXLINES) {
+									this.changeVisibility(-1, true);
+									return false;
+								}
+								transcript.y = lineEnds.length;
+								lineEnds.push(x1 + (this.activeVisibility > Track.StatusEnum.VIS_NOTEXT? this.GENE_MARGIN: this.GENE_NOTEXT_MARGIN));
+							}
+							return true;
+						}, this);
+					}, null, null, this, true);
+				}
+				return true;
+			},
+
+			drawSingleGene: function(transcript, y, colorRGB, height, halfHeight, lineHeight) {
+				// transcript: the transcript to be drawn
+				// y: the y coordinate of the gene (line location)
+				// if y is not a number then transcript.y will be used
+				// height: the height of gene (notice that thin regions will have this.halfHeight * height)
+
+				height = height || this.fullHeight * this.textSize * 0.8;
+				halfHeight = halfHeight || this.halfHeight;
+				lineHeight = lineHeight || (this.fullHeight + this.textLineGap) * this.textSize
+				if(typeof(colorRGB) !== 'number') {
+					colorRGB = this.colorSet[this.FORECOLOR_INDEX];
+				}
+				
+				if(typeof(y) !== 'number' || isNaN(y)) {
+					y = parseInt(transcript.y) * lineHeight || 0;
+				}
+
+				var coor, isThick = false, blockStart, blockEnd;
+	//			// draw thin segments (if any)
+	//			if(gene.thickStart > gene.start) {
+	//				coor = new ChrRegion(null, null, gene.chr, gene.start, gene.thickStart, gene.strand);
+	//				this.drawRectangle(coor, 0, y + height * 0.5 * halfHeight, height * halfHeight);
+	//			}
+	//			if(gene.thickEnd < gene.end) {
+	//				coor = new ChrRegion(null, null, gene.chr, gene.thickEnd, gene.end, gene.strand);
+	//			}
+
+				if(transcript.numOfBlocks) {
+					blockEnd = transcript.start + transcript.blockStarts[0];
+					// draw thick blocks and connecting lines
+					for(var i = 0; i < transcript.numOfBlocks; i++) {
+						blockStart = transcript.start + transcript.blockStarts[i];
+						// first draw connecting lines (intron, if any)
+						if(blockEnd < blockStart) {
+							coor = new ChrRegion(null, null, transcript.chr, blockEnd, blockStart, transcript.strand);
+							this.drawSpanningLine(coor, colorRGB, y, height);
+						}
+						blockEnd = blockStart + transcript.blockSizes[i];
+						if(transcript.thickStart < blockEnd && transcript.thickStart > blockStart) {
+							// CDS start is in this block
+							coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
+							this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
+							blockStart = transcript.thickStart;
+						}
+						if(transcript.thickEnd < blockEnd && transcript.thickEnd > blockStart) {
+							// CDS end is in this block
+							coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
+							this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
+							blockStart = transcript.thickEnd;
+						}
+
+						isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
+						coor = new ChrRegion(null, null, transcript.chr, blockStart, blockEnd, transcript.strand);
+						this.drawRectangle(coor, colorRGB, y + (isThick? 0: height * 0.5 * (1 - halfHeight)), 
+											height * (isThick? 1: halfHeight), null, colorRGB);
+
 					}
-					blockEnd = blockStart + transcript.blockSizes[i];
-					if(transcript.thickStart < blockEnd && transcript.thickStart > blockStart) {
-						// CDS start is in this block
-						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
-						this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
-						blockStart = transcript.thickStart;
+				} else {
+					// no blocks
+					blockStart = transcript.start;
+					blockEnd = transcript.end;
+					if(typeof(transcript.thickStart) === 'number' || typeof(transcript.thickEnd) === 'number') {
+						if(transcript.thickStart && transcript.thickStart > blockStart) {
+							// CDS start is in this block
+							coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
+							this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
+							blockStart = transcript.thickStart;
+						}
+						if(transcript.thickEnd && transcript.thickEnd > blockStart) {
+							// CDS end is in this block
+							coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
+							this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
+							blockStart = transcript.thickEnd;
+						}
+
+						isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
+					} else {
+						isThick = true;
 					}
-					if(transcript.thickEnd < blockEnd && transcript.thickEnd > blockStart) {
-						// CDS end is in this block
-						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
-						this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
-						blockStart = transcript.thickEnd;
-					}
-					
-					isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
 					coor = new ChrRegion(null, null, transcript.chr, blockStart, blockEnd, transcript.strand);
 					this.drawRectangle(coor, colorRGB, y + (isThick? 0: height * 0.5 * (1 - halfHeight)), 
 										height * (isThick? 1: halfHeight), null, colorRGB);
-					
 				}
-			} else {
-				// no blocks
-				blockStart = transcript.start;
-				blockEnd = transcript.end;
-				if(typeof(transcript.thickStart) === 'number' || typeof(transcript.thickEnd) === 'number') {
-					if(transcript.thickStart && transcript.thickStart > blockStart) {
-						// CDS start is in this block
-						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickStart, transcript.strand);
-						this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB);
-						blockStart = transcript.thickStart;
-					}
-					if(transcript.thickEnd && transcript.thickEnd > blockStart) {
-						// CDS end is in this block
-						coor = new ChrRegion(null, null, transcript.chr, blockStart, transcript.thickEnd, transcript.strand, null, 0);
-						this.drawRectangle(coor, colorRGB, y, height, null, colorRGB);
-						blockStart = transcript.thickEnd;
-					}
-					
-					isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart);
-				} else {
-					isThick = true;
-				}
-				coor = new ChrRegion(null, null, transcript.chr, blockStart, blockEnd, transcript.strand);
-				this.drawRectangle(coor, colorRGB, y + (isThick? 0: height * 0.5 * (1 - halfHeight)), 
-									height * (isThick? 1: halfHeight), null, colorRGB);
-			}
-				
-			// draw text
-			if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT) {
-				var newLabel = this.drawText(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}) - this.TEXT_MARGIN_GAP,
-											 y + 0.5 * height, transcript.getGeneName(true), "end",
-											 {style: "fill: " + this.rgbToHex(colorRGB)});
-				
-				// move text to textMargin if out of bounds
-				if(this.textMargin && newLabel.getBBox().x < 0) {
-					newLabel.setAttributeNS(null, "x", this.textMargin);
-					this.addElement(newLabel, this.textSvg);
-				}
-			}
-			
-			// draw triangle(s) indicating that the gene is not completely within the view
-			if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, false) < 0) {
-				// left triangle
-				this.createRawPolygon(['0,' + (y + height * 0.5),
-										height * 0.5 + ',' + y,
-										height * 0.5 + ',' + (y + height * 0.5),
-										height + ',' + y,
-										height + ',' + (y + height), 
-										height * 0.5 + ',' + (y + height * 0.5),
-										height * 0.5 + ',' + (y + height), ], 
-										{fill: this.TRIANGLE_FILL,
-										stroke: colorRGB});
-			}
-			
-			if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, false) > this.windowWidth) {
-				// right triangle
-				this.createRawPolygon([this.windowWidth + ',' + (y + height * 0.5),
-										(this.windowWidth - height * 0.5) + ',' + y,
-										(this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
-										(this.windowWidth - height) + ',' + y,
-										(this.windowWidth - height) + ',' + (y + height), 
-										(this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
-										(this.windowWidth - height * 0.5) + ',' + (y + height), ], 
-										{fill: this.TRIANGLE_FILL,
-										stroke: colorRGB});
-			}
 
-		},
+				// draw text
+				if(this.activeVisibility > Track.StatusEnum.VIS_NOTEXT) {
+					var newLabel = this.drawText(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}) - this.TEXT_MARGIN_GAP,
+												 y + 0.5 * height, transcript.getGeneName(true), "end",
+												 {style: "fill: " + this.rgbToHex(colorRGB)});
+
+					// move text to textMargin if out of bounds
+					if(this.textMargin && newLabel.getBBox().x < 0) {
+						newLabel.setAttributeNS(null, "x", this.textMargin);
+						this.addElement(newLabel, this.textSvg);
+					}
+				}
+
+				// draw triangle(s) indicating that the gene is not completely within the view
+				if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, false) < 0) {
+					// left triangle
+					this.createRawPolygon(['0,' + (y + height * 0.5),
+											height * 0.5 + ',' + y,
+											height * 0.5 + ',' + (y + height * 0.5),
+											height + ',' + y,
+											height + ',' + (y + height), 
+											height * 0.5 + ',' + (y + height * 0.5),
+											height * 0.5 + ',' + (y + height), ], 
+											{fill: this.TRIANGLE_FILL,
+											stroke: colorRGB});
+				}
+
+				if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, false) > this.windowWidth) {
+					// right triangle
+					this.createRawPolygon([this.windowWidth + ',' + (y + height * 0.5),
+											(this.windowWidth - height * 0.5) + ',' + y,
+											(this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
+											(this.windowWidth - height) + ',' + y,
+											(this.windowWidth - height) + ',' + (y + height), 
+											(this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
+											(this.windowWidth - height * 0.5) + ',' + (y + height), ], 
+											{fill: this.TRIANGLE_FILL,
+											stroke: colorRGB});
+				}
+
+			},
+
+			drawSpanningLine: function(region, colorRGB, y, height) {
+				height = height || 1;
+				y = y || 0;
+
+				var svgToDraw = this.mainSvg;
+				var windowToDraw = svgToDraw.viewWindow;
+
+				if(windowToDraw.overlaps(region) > 0) {
+					var x0 = this.transformXCoordinate(region.getStart(), true),
+						x1 = this.transformXCoordinate(region.getEnd(), true);
+					this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, colorRGB);
+					this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), colorRGB);
+				}
+			},
+
+		});
 		
-		drawSpanningLine: function(region, colorRGB, y, height) {
-			height = height || 1;
-			y = y || 0;
-			
-			var svgToDraw = this.mainSvg;
-			var windowToDraw = svgToDraw.viewWindow;
-			
-			if(windowToDraw.overlaps(region) > 0) {
-				var x0 = this.transformXCoordinate(region.getStart(), true),
-					x1 = this.transformXCoordinate(region.getEnd(), true);
-				this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, colorRGB);
-				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), colorRGB);
-			}
-		},
-		
-	});
+		return give;
+
+	})(GIVe || {});
   </script>
 </dom-module>

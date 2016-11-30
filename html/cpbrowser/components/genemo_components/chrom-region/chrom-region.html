@@ -1,0 +1,22 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="chrom-region-behavior.html">
+<dom-module id="chrom-region">
+  <script>
+  	var GIVe = (function(give) {
+		
+		give.ChromRegion = Polymer({
+			
+			is: 'chrom-region',
+
+			behavior: [
+				give.ChromRegionBehavior,
+			],
+			
+		});
+	
+		return give;
+
+	})(GIVe || {});
+	
+  </script>
+</dom-module>

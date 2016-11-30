@@ -4,8 +4,8 @@ require_once(realpath(dirname(__FILE__) . "/common_func.php"));
 define('LINK_ID', 'kgID');		// this is the ID UCSC used to link knownGene to kgXref
 
 function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
-	// if chrRegion is provided (as a ChromRegion class object)
-	// then filtering will be carried out
+	// if chrRegion is provided (as an array of ChromRegion class object)
+	// then filtering will be carried out (results needs to be overlapping with at least one region)
 	// otherwise (unlikely situation) no filtering will be done
 	// tableName is trackID
 	// NOTICE that UCSC data format is exon *START* and exon *ENDS*
@@ -25,10 +25,20 @@ function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $param
 		if(!is_null($chrRegion)) {
 			// add filtering part
 			// convert $chrRegion string to ChrRegion class
-			$chrRegionObj = new ChromRegion($chrRegion);
-			$sqlstmt .= " WHERE chrom = ? AND txStart < ? AND txEnd > ? ORDER BY txStart";
+			$sqlstmt .= "WHERE " . implode(' OR ', array_fill(0, count($chrRegion), '(chrom = ? AND start < ? AND end > ?)')) . " ORDER BY txStart";
 			$stmt = $mysqli->prepare($sqlstmt);
-			$stmt->bind_param('sii', $chrRegionObj->chr, $chrRegionObj->end, $chrRegionObj->start);
+			$a_params = array();
+			$ref_params = array();
+			$a_params []= str_repeat('sii', count($chrRegion));
+			foreach($chrRegion as $region) {
+				$chrRegionObj = new ChromRegion($region);
+				array_push($a_params, $chrRegionObj->chr, $chrRegionObj->end, $chrRegionObj->start);
+			}
+			for($i = 0; $i < count($a_params); $i++) {
+				$ref_params []= & $a_params[$i];
+			}
+			call_user_func_array(array($stmt, 'bind_param'), $ref_params);
+
 			$stmt->execute();
 			$genes = $stmt->get_result();
 		} else {

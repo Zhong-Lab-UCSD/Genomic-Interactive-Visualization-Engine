@@ -207,6 +207,9 @@ ChrRegion.prototype.getShift = function(distance, isProportion, species) {
 
 ChrRegion.prototype.extend = function(sizediff, center, isProportion, species) {
 	// isProportion means whether extend by proportion
+	if(!sizediff) {
+		return this;
+	}
 	if(isProportion) {
 		sizediff *= this.getLength();
 	}

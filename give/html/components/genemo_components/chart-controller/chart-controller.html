@@ -1,0 +1,226 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../chart-area/chart-area.html">
+<link rel="import" href="../chart-track-list/chart-track-list.html">
+<link rel="import" href="../custom-track-controller/custom-track-controller.html">
+<link rel="import" href="../genemo-card/genemo-card.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="chart-controller">
+  <template>
+	<style include="genemo-shared-styles">
+	  :host {
+		  font-size: 12px;
+	  }
+      chart-area {
+          width: 100%;
+          margin: 1em 0;
+      }
+      paper-input {
+          margin: 0.5em;
+      }
+      div.smallText {
+          font-size: smaller;
+          display: block;
+		  margin-left: 0.5em
+      }
+	  paper-drawer-panel div[drawer] {
+		  overflow-y: auto;
+		  padding: 1em;
+	  }
+	  paper-drawer-panel div[main] {
+		  overflow-y: auto;
+		  padding: 1em;
+	  }
+	  paper-slider {
+		  --paper-slider-input: {
+			  width: 8em;
+		  };
+		  width: 100%;
+	  }
+	  paper-card{
+		
+	  }
+	  paper-dropdown-menu{
+		noink;
+		no-animations;
+	  }
+    </style>
+    <!-- TODO: add paper-dropmenu for species -->
+    <paper-drawer-panel>
+      <div main>
+        <div id="chartHolder"></div>
+        <div id="genomeGitarDataLink">
+          <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
+          <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
+        </div>
+      </div>
+	 
+      <div drawer>
+        <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
+        <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
+        <div>
+          <div class="smallText"><span id="Threshold" class="text">Threshold (percentile)</span></div>
+          <paper-slider value="{{threshold}}" max="100" step="5" editable></paper-slider>
+        </div>
+        <div>
+          <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
+          <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
+        </div>
+		
+        <genemo-card id="trackSelectHolder">
+        </genemo-card>
+        <div id="customTrackCtrlHolder">
+        </div>
+      </div>
+    </paper-drawer-panel>
+  </template>
+  <script>
+  	var GIVe = (function(give) {
+		'use strict';
+		
+		give.ChartController = Polymer({
+			is: "chart-controller",
+
+			behaviors: [
+				Polymer.NeonAnimatableBehavior
+			],
+
+			properties: {
+				spcIndex: {
+					type: Number,
+					value: 0,
+					observer: 'spcChanged',
+				},
+				mainCoor: {
+					type: String,
+					value: "chr10:30000000-50000000"
+				},
+				subCoor: {
+					type: String,
+					value: "chr10:30000000-50000000"
+				},
+				threshold: {
+					type: Number,
+					value: 0.1
+				},
+				species: {
+					type: Object
+				},
+			},
+
+			listeners: {
+				'update-window': 'updateWindowHandler',
+				'update-track-structure': 'updateTrackStructureHandler',
+			},
+
+			factoryImpl: function(spcArray, index) {
+				this.spcArray = spcArray;
+				this.spcIndex = index || this.spcIndex;
+				if(window.location.search.indexOf('hg38') >= 0) {
+					Polymer.dom(this.root).querySelector('div[main]').removeChild(this.$.genomeGitarDataLink);
+					this.spcIndex = 1;
+				} else {
+					this.spcChanged();
+				}
+			},
+
+			getCurrentSpecies: function() {
+				return this.getSpecies(this.spcIndex);
+			},
+
+			getSpecies: function(index) {
+				return this.spcArray[index];
+			},
+
+			spcChanged: function() {
+				// initialize the tracks of the species
+				if(this.spcArray && this.spcArray.ready) {
+					this.getCurrentSpecies().initTracksFromServer(null, this.changeMainChartSpecies.bind(this));
+				}
+			},
+
+			changeMainChartSpecies: function() {
+				var correctedVWindows;
+				this.$.trackSelectHolder.setAllReadiness(false);
+				if(this.mainChart) {
+					// species is changed
+					correctedVWindows = this.mainChart.changeSpecies(this.getCurrentSpecies());
+					this.trackSelect.changeSpecies(this.getCurrentSpecies());
+					this.customTrackController.changeSpecies(this.getCurrentSpecies());
+				} else {
+					this.mainChart = new give.ChartArea(this.getCurrentSpecies(), 2, null, this.threshold);
+					this.trackSelect = new give.ChartTrackList(this.getCurrentSpecies());
+					this.customTrackController = new give.CustomTrackController(this.getCurrentSpecies());
+					this.trackSelect.setAttribute('class', 'GenemoBody');
+					Polymer.dom(this.$.chartHolder).appendChild(this.mainChart);
+					Polymer.dom(this.$.trackSelectHolder).appendChild(this.trackSelect);
+					Polymer.dom(this.$.customTrackCtrlHolder).appendChild(this.customTrackController);
+					Polymer.dom.flush();
+					correctedVWindows = this.mainChart.getViewWindowStrings();
+				}
+				this.mainCoor = correctedVWindows[0];
+				this.subCoor = correctedVWindows[1];
+			},
+
+			updateSvg: function() {
+				if(this.mainChart) {
+					var correctedVWindows = this.mainChart.refreshAll([this.mainCoor, this.subCoor], this.threshold);
+					this.mainCoor = correctedVWindows[0];
+					this.subCoor = correctedVWindows[1];
+				}
+			},
+
+			updateTracks: function() {
+				if(this.trackSelect) {
+					this.trackSelect.DOMToTrack();
+					this.mainChart.updateDOM(true);
+					this.updateSvg();
+				}
+			},
+
+			updateTrackStructure: function() {
+				// almost same thing as updateTracks, only needs to update trackSelect
+				if(this.trackSelect) {
+					this.trackSelect.updateAllGroupDOM();
+					this.mainChart.updateDOM(true);
+					this.updateSvg();
+				}
+			},
+
+			resetTracks: function() {
+				if(this.trackSelect) {
+					this.trackSelect.trackToDOM();
+					var correctedVWindows = this.mainChart.getViewWindowStrings();
+					this.mainCoor = correctedVWindows[0];
+					this.subCoor = correctedVWindows[1];
+					this.threshold = this.mainChart.threshold;
+				}
+			},
+
+			updateWindowHandler: function(e) {
+				if(e.detail.windowIndex === 0) {
+					this.mainCoor = e.detail.newWindow;
+				} else if(e.detail.windowIndex === 1) {
+					this.subCoor = e.detail.newWindow;
+				}
+			},
+
+			updateTrackStructureHandler: function(e) {
+				this.updateTrackStructure();
+			},
+
+		});
+		
+		return give;
+
+	})(GIVe || {});
+  </script>
+</dom-module>

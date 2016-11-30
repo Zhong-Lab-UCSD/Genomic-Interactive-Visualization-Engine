@@ -56,9 +56,12 @@
         
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../chrom-region/chrom-region.html">
 <dom-module id="chrom-b-plus-tree">
   <script>
   	var GIVe = (function(give) {
+		
+		'use strict';
 		
 		// all private methods and static data for a single chrom B+ tree
 		
@@ -111,8 +114,8 @@
 			truncateChrRange: function(chrRange, truncStart, truncEnd, doNotThrow) {
 				var rangeStart = chrRange.start, rangeEnd = chrRange.end;
 				if(truncStart && rangeStart < this.start) {
-					console.log('Start truncated, get ' + rangeStart + ', truncated to ' + this.start + '.');
-					rangeStart = this.start;
+					console.log('Start truncated, get ' + rangeStart + ', truncated to ' + this.keys[0] + '.');
+					rangeStart = this.keys[0];
 				}
 				if(truncEnd && rangeEnd < this.keys[this.keys.length - 1]) {
 					console.log('End truncated, get ' + rangeEnd + ', truncated to ' + this.keys[this.keys.length - 1] + '.');
@@ -123,7 +126,7 @@
 					|| this.keys[this.keys.length - 1] <= rangeStart) && !doNotThrow) {
 						throw(chrRange + ' is not a valid chrRegion or not overlapping with the current node. \nRange start: ' 
 							+ rangeStart + ', end: ' + rangeEnd + '\nCurrent node start: ' 
-							+ this.start + ', end: ' + this.keys[this.keys.length - 1]);
+							+ this.keys[0] + ', end: ' + this.keys[this.keys.length - 1]);
 				}
 				return {start: rangeStart, end: rangeEnd};
 					
@@ -400,7 +403,7 @@
 							}
 							if(this.values[i].startList.length <= 0) {
 								// All data removed in the record, needs to merge with the previous record
-								if(i > 0 || this.prev) {
+								if(i > 0 || (this.prev && this.prev.values[this.prev.values.length - 1] !== null)) {
 									// there is a previous node at the same revDepth level
 									this.keys.splice(i, 1);
 									this.values.splice(i, 1);
@@ -409,7 +412,8 @@
 										// Upper nodes will change their keys by themselves
 										this.prev.keys[this.prev.keys.length - 1] = this.keys[0];
 									}
-								} else { // i === 0 and !this.prev, which means this is exactly the first node at this level
+								} else { // i === 0 and !(this.prev && this.prev.values[this.prev.values.length - 1] !== null),
+									// which means this is exactly the first node at this level
 									this.values[i] = false;
 								}
 								while(i < this.value.length && i > 0 && this.values[i] === false) {
@@ -492,7 +496,7 @@
 //				// if data is not provided, every region whose start is within chrRange (probably not used very much)
 //			},
 //			
-			traverse: function(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse) {
+			traverse: function(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse, notFirstCall) {
 				// Will apply callbacks to all data overlapping with chrRegion;
 				//		callback should take the node (or record) as its sole parameter:
 				//		callback(record/node)
@@ -511,6 +515,11 @@
 				// Find the starting node first, then call child.traverse on child
 				// However, this is not a recursive call because children can get to their next sibling by themselves
 				
+				// notFirstCall is a flag marking internal calls, 
+				// 		calls from outside should always have notFirstCall === undefined, null or false
+				//		when traverse calls children that are not the first one overlapping chrRegion
+				//		notFirstCall will be set as true
+				
 				if(chrRange) {
 					// clip chrRegion first (should never happen, also the end is not truncated)
 					chrRange = this.truncateChrRange(chrRange, true, false);
@@ -524,8 +533,33 @@
 					if(revDepth === 0 || (typeof resolutionFunc === "function" && resolutionFunc(this))) { 
 						// Either this is already leaf node, or has enough resolution for children
 						while(this.keys[currIndex] < chrRange.end && currIndex < this.values.length) {
-							if(!(typeof filter === "function" && !filter(this.value[currIndex]))) {
-								if(!callback.call(thisVar, this.value[currIndex]) && breakOnFalse) {
+							if(!notFirstCall) {
+								// This is the first call, should call on all continuedList as well
+								if(this.values[currIndex].continuedList && 
+								   this.values[currIndex].continuedList.every) {
+									if(!this.values[currIndex].continuedList.every(function(dataEntry) {
+										if(!(typeof filter === "function" && !filter(dataEntry))) {
+											if(!callback.call(this, dataEntry) && breakOnFalse) {
+												return false;
+											}
+										}
+										return true;
+									}, thisVar)) {
+										return false;
+									}
+								}
+								notFirstCall = true;
+							}
+							if(this.values[currIndex].startList && 
+							   this.values[currIndex].startList.every) {
+								if(!this.values[currIndex].startList.every(function(dataEntry) {
+									if(!(typeof filter === "function" && !filter(dataEntry))) {
+										if(!callback.call(this, dataEntry) && breakOnFalse) {
+											return false;
+										}
+									}
+									return true;
+								}, thisVar)) {
 									return false;
 								}
 							}
@@ -534,7 +568,7 @@
 						
 						if(this.keys[currIndex] < chrRange.end && this.next) {
 							// chrRange exceeds this.end, continue to the next node
-							return this.next.traverse(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse);
+							return this.next.traverse(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse, notFirstCall);
 						} else {
 							return true;
 						}
@@ -542,10 +576,10 @@
 					} else {
 						// not enough resolution, descend into children
 						// then just need to call traverse on the first children, and it will handle all the rest
-						return this.value[currIndex].traverse(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse);
+						return this.value[currIndex].traverse(chrRegion, callback, filter, resolutionFunc, thisVar, breakOnFalse, notFirstCall);
 					}
 					
-				} else { // chrRange
+				} else { // !chrRange
 					throw(chrRange + ' is not a valid chrRegion.');
 				} // end if(chrRange)
 					
@@ -553,27 +587,54 @@
 			},
 			
 			// TODO: allow summary and leveled traverse (leveled traverse done)
-			// TODO: allow sectional loading (will return an array of chrRegions that does not have data loaded)
-			// TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 			
-			getUncachedRange: function(chrRange) {
+			// allow sectional loading (will return an array of chrRegions that does not have data loaded)
+			getUncachedRange: function(chrRange, resolutionFunc) {
 				// return the range list with range(s) without any data 
 				// 	(either not loaded, or purges for memory usage issue (to be implemented))
 				// if no non-data ranges are found, return []
+				
+				// resolutionFunc is used to determine if the summary of this is already enough (to be implemented)
 				
 				if(chrRange) {
 					// clip chrRegion first (should never happen)
 					chrRange = this.truncateChrRange(chrRange, true, true);
 					var result = [], rangeStart = chrRange.start, rangeEnd = chrRange.end;
-					while(rangeStart < rangeEnd) {
-						
+					if(resolutionFunc && resolutionFunc(this)) {
+						// resolution for this is already enough for the task
+						// check if summary data are there already, if so, just return []
+						// to be implemented
+						// return if match, otherwise go through the following steps
+					} // end if(resolutionFunc && resolutionFunc(this))
+					
+					var currIndex = 0;
+					while(this.keys[currIndex + 1] < rangeStart) {
+						currIndex++;
 					}
+					while(rangeStart < rangeEnd) {
+						if(this.revDepth > 0) {
+							result.concat(this.values[currIndex].getUncachedRange({chr: chrRange.chr, start: rangeStart, end: rangeEnd}, resolutionFunc));
+							// rangeEnd will be truncated in the sub-functional call so it should be OK.
+						} else { // this.revDepth === 0
+							if(this.values[currIndex] === null) {
+								result.push(new give.ChromRegion({
+									chr: chrRange.chr, 
+									start: parseInt(Math.max(this.key[currIndex], rangeStart)), 
+									end: parseInt(Math.min(rangeEnd, this.key[currIndex + 1])), }));
+							}
+						} // end if (this.revDepth > 0)
+						currIndex++;
+						rangeStart = this.key[currIndex];
+					}
+					return result;
 					
 				} else { // chrRange
 					throw(chrRange + ' is not a valid chrRegion.');
 				}
 				
 			},
+			
+			// TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 			
 		});
 	  

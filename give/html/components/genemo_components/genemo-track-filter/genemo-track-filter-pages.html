@@ -1,0 +1,205 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../genemo-styles.html">
+
+<dom-module id="genemo-track-filter-pages">
+  <template>
+    <style include="genemo-shared-styles">
+		:host {
+			display: block;
+			position: relative;
+			height: 350px;
+			font-family: 'Roboto', Arial, Helvetica, sans-serif;
+			font-size: 12px;
+		}
+		iron-pages > div {
+			height: 300px;
+			overflow-y: auto;
+			margin: 5px 0;
+		}
+		paper-checkbox {
+			width: 150px;
+			margin: 0.3em;
+			overflow: hidden;
+			vertical-align: middle;
+			--paper-checkbox-label: {
+				width: 124px;
+			};
+		}
+		paper-tabs {
+			--paper-tabs: {
+				background: var(--light-primary-color);
+			};
+		}
+	</style>
+    <paper-tabs id="mainTabs" selected="{{selectedTab}}">
+      <paper-tab>Experiment</paper-tab>
+      <paper-tab>Tissue</paper-tab>
+      <paper-tab>Cell Line</paper-tab>
+      <paper-tab>Lab</paper-tab>
+    </paper-tabs>
+    
+    <iron-pages id="listPages" selected="[[selectedTab]]">
+      <div id="expPage">
+        <template is="dom-repeat" items="[[expList]]">
+          <paper-checkbox noink value="[[index]]">
+            <span>[[item.name]]</span>
+          </paper-checkbox>
+        </template>
+      </div>
+      <div id="tissuePage">
+        <template is="dom-repeat" items="[[tissueList]]">
+          <paper-checkbox noink value="[[index]]">
+            <span>[[item.name]]</span>
+          </paper-checkbox>
+        </template>
+      </div>
+      <div id="cellPage">
+        <template is="dom-repeat" items="[[cellTypeList]]">
+          <paper-checkbox noink value="[[index]]">
+            <span>[[item.name]]</span>
+          </paper-checkbox>
+        </template>
+      </div>
+      <div id="labPage">
+        <template is="dom-repeat" items="[[labList]]">
+          <paper-checkbox noink value="[[index]]">
+            <span>[[item.name]]</span>
+          </paper-checkbox>
+        </template>
+      </div>
+    </iron-pages>
+  </template>
+  <script>
+    Polymer({
+		
+		is: "genemo-track-filter-pages",
+		
+		properties: {
+			
+			selectedTab: {
+				type: Number,
+				value: 0,
+			},
+			
+			initialized: {
+				type: Boolean,
+				value: false,
+				readOnly: true,
+			},
+			
+			expList: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
+			cellTypeList: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
+			tissueList: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
+			labList: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
+			listOfLists: {
+				type: Array,
+				value: function() {
+					return [];
+				},
+			},
+			
+		},
+		
+		initialize: function(ref, expMap, cellTypeMap, tissueMap, labMap) {
+			
+			this.listOfLists.splice(0, this.listOfLists.length);
+			
+			this.splice('expList', 0, this.expList.length);
+			if(expMap.hasOwnProperty(ref)) {
+				for(key in expMap[ref]) {
+					if(expMap[ref].hasOwnProperty(key)) {
+						this.push('expList', { name: expMap[ref][key].name, ids: expMap[ref][key] });
+					}
+				}
+				this.listOfLists.push(this.expList);
+			}
+			
+			if(tissueMap.hasOwnProperty(ref)) {
+				this.splice('tissueList', 0, this.tissueList.length);
+				for(key in tissueMap[ref]) {
+					if(tissueMap[ref].hasOwnProperty(key)) {
+						this.push('tissueList', { name: key, ids: tissueMap[ref][key] });
+					}
+				}
+				this.listOfLists.push(this.tissueList);
+			}
+			
+			if(cellTypeMap.hasOwnProperty(ref)) {
+				this.splice('cellTypeList', 0, this.cellTypeList.length);
+				for(key in cellTypeMap[ref]) {
+					if(cellTypeMap[ref].hasOwnProperty(key)) {
+						this.push('cellTypeList', { name: key, ids: cellTypeMap[ref][key] });
+					}
+				}
+				this.listOfLists.push(this.cellTypeList);
+			}
+			
+			if(labMap.hasOwnProperty(ref)) {
+				this.splice('labList', 0, this.labList.length);
+				for(key in labMap[ref]) {
+					if(labMap[ref].hasOwnProperty(key)) {
+						this.push('labList', { name: key, ids: labMap[ref][key] });
+					}
+				}
+				this.listOfLists.push(this.labList);
+			}
+			
+			this._setInitialized(true);
+		},
+		
+		getCurrentListMap: function() {
+			// get the ids that corresponding to the current selection
+			var result = [], resultMap = {},
+				checkboxList = Polymer.dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox');
+			for(var i = 0; i < checkboxList.length; i++) {
+				if(checkboxList[i].checked) {
+					result = result.concat(this.listOfLists[this.selectedTab][i].ids);
+				}
+			}
+			
+			// convert id to map
+			result.forEach(function(id) {
+				resultMap[id] = true;
+			});
+			
+			return resultMap;
+		},
+		
+		setAllCheckboxes: function(flag) {
+			// set all checkboxes to one value (flag)
+			var checkboxList = Polymer.dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox');
+			for(var i = 0; i < checkboxList.length; i++) {
+				checkboxList[i].checked = flag;
+			}
+		},
+		
+    });
+  </script>
+</dom-module>

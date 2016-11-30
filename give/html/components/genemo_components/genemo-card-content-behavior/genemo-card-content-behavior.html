@@ -1,0 +1,178 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<script>
+  	var GIVe = (function(give) {
+		'use strict';
+		
+		give.GenemoCardContentBehavior = {
+
+			properties: {
+
+				collapseObject: {
+					type: Object,
+					value: null
+				},
+
+				icon: {
+					type: String,
+					value: "",
+					readOnly: true,
+				},
+
+				iconAlt: {
+					type: String,
+					value: "",
+					readOnly: true,
+				},
+
+				headerText: {
+					type: String,
+					value: "",
+					readOnly: true,
+				},
+
+				contentReady: {
+					type: Boolean,
+					value: false,
+					readOnly: true,
+				},
+
+				domReady: {
+					type: Boolean,
+					value: false,
+					readOnly: true,
+				},
+
+			},
+
+			isReady: function() {
+				return this.contentReady;		// default behavior is that whenever it's loaded, the contents are ready.
+			},
+
+			setReady: function(readiness) {
+				// set this.ready as ready and fire 'content-ready' event
+				this._setContentReady(readiness);
+				this.fire('content-ready', {flag: this.contentReady}, {cancelable: true});
+			},
+
+			isDOMReady: function() {
+				return this.domReady;		// default behavior is that whenever it's loaded, the contents are ready.
+			},
+
+			setDOMReady: function(readiness) {
+				// set this.domReady as ready and fire 'content-dom-ready' event
+				this._setDomReady(readiness);
+				this.fire('content-dom-ready', {flag: this.domReady}, {cancelable: true});
+			},
+
+			checkReadiness: function() {
+				if(this.domReady) {
+					this.fire('content-dom-ready', {flag: this.domReady}, {cancelable: true});
+					if(this.contentReady) {
+						this.fire('content-ready', {flag: this.contentReady}, {cancelable: true});
+					}
+				}
+			},	
+
+			getExpandedHeader: function() {
+				var res = document.createElement('div');
+				var coreIcon = this.getIcon();
+				coreIcon.classList.add('smallInline');
+
+				var textSpan = document.createElement('span');
+				textSpan.textContent = this.headerText;
+
+				res.classList.add('headerText');
+				res.appendChild(coreIcon);
+				res.appendChild(textSpan);
+
+				return res;
+			},
+
+			updateCurrentInfo: function(props) {
+				if(Object.keys(props).length > 0) {
+					this.collapseObject = props;				
+				} else {
+					this.collapseObject = null;
+				}
+			},
+
+			getCollapse: function() {
+
+				if(this.collapseObject) {
+
+					// prepare for shrinking and return the shrunk element
+					var result = document.createElement('div');
+					// add shrunk icon, species, input file and display file
+					// icon and species in one line
+					var resHeader = document.createElement('div');
+					var resIcon = this.getIcon();
+					resIcon.classList.add('smallInline');
+
+					var resHeaderText = document.createElement('span');
+					resHeaderText.textContent = this.headerText;
+
+					resHeader.classList.add('headerText');
+					resHeader.classList.add('clearFix');
+					resHeader.appendChild(resIcon);
+					resHeader.appendChild(resHeaderText);
+					result.appendChild(resHeader);
+
+					var resContent = document.createElement('div');
+					resContent.classList.add('collapseContent');
+					for(key in this.collapseObject) {
+						if(this.collapseObject.hasOwnProperty(key)) {
+							resContent.appendChild(this.createResElement(key, this.collapseObject[key]));
+						}
+					}
+					result.appendChild(resContent);
+					return result;
+				}
+				return null;
+			},
+
+			getIcon: function() {
+				var resIcon = document.createElement('iron-icon');
+				resIcon.setAttribute('icon', this.icon);
+				resIcon.setAttribute('alt', this.iconAlt);
+				return resIcon;
+			},
+
+			createResElement: function(anno, text, beforeNode, afterNode) {
+				var res = document.createElement('div');
+				res.classList.add('clearFix');
+				res.classList.add('fullWidth');
+				res.classList.add('collapseDb');
+
+				if(beforeNode) {
+					res.appendChild(beforeNode);
+				}
+
+				var resAnno = document.createElement('span');
+				resAnno.classList.add('anno');
+				resAnno.classList.add('leftFloat');
+				resAnno.textContent = anno + ': ';
+				var resContent = document.createElement('span');
+				resContent.textContent = text;
+
+				res.appendChild(resAnno);
+				res.appendChild(resContent);
+
+				if(afterNode) {
+					res.appendChild(afterNode);
+				}
+
+				return res;
+
+			},
+
+			attached: function() {
+				this.checkReadiness();
+			},
+
+		};
+		
+		return give;
+
+	})(GIVe || {});
+</script>
