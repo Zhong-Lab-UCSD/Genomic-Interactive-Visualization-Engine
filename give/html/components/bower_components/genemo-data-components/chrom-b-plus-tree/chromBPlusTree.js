@@ -1,6 +1,6 @@
 // JavaScript Document
 var GIVe = (function(give) {
-
+	'use strict';
 	// all private methods and static data for a single chrom B+ tree
 
 	// data structure:

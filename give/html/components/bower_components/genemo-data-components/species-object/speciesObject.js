@@ -158,7 +158,8 @@ var GIVe = (function(give) {
 			for(var spcDb in data) {
 				if(data.hasOwnProperty(spcDb) && data[spcDb].browserActive) {
 					spcArray.dbMap[spcDb] = new give.SpeciesObject(spcDb, data[spcDb].name, data[spcDb].commonname, 
-														data[spcDb].encode, data[spcDb].dbname, data[spcDb].chromInfo);
+																   data[spcDb].encode, data[spcDb].dbname, data[spcDb].chromInfo,
+																   data[spcDb].settings);
 					spcArray.push(spcArray.dbMap[spcDb]);
 				}
 			}

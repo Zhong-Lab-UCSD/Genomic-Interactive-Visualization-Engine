@@ -16,7 +16,7 @@ function loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 	}
 	if($chrRegion) {
 		// filter out bed entries not inside the region
-		$chrRegionObj = new ChromRegion($chrRegion);
+		$chrRegionObj = ChromRegion::newFromRegionText($chrRegion);
 	} else {
 		$chrRegionObj = false;
 	}
@@ -69,7 +69,7 @@ function loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 			$chrRegion = [$chrRegion];
 		}
 		$strToChrRegion = function($regionStr) {
-			return new ChromRegion($regionStr);
+			return ChromRegion::newFromRegionText($regionStr);
 		};
 
 		$result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));

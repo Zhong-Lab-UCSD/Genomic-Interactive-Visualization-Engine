@@ -56,6 +56,7 @@
 //
 
 var GIVe = (function(give) {
+	'use strict';
 
 	// all private methods and static data for a single chrom B+ tree
 
@@ -83,7 +84,7 @@ var GIVe = (function(give) {
 			revdepth = 0;
 		}
 		if(start >= end) {
-			throw('Range error. Start: ' + start + ', end: ' + end);
+			throw(new Error('Range error. Start: ' + start + ', end: ' + end));
 		}
 		this.isRoot = isroot? true: false;
 		this.branchingFactor = bFactor;
@@ -114,10 +115,10 @@ var GIVe = (function(give) {
 
 		if((rangeStart >= rangeEnd || this.keys[0] >= rangeEnd ||
 			this.keys[this.keys.length - 1] <= rangeStart) && !doNotThrow) {
-				throw(chrRange +
+				throw(new Error(chrRange +
 					  ' is not a valid chrRegion or not overlapping with the current node. \nRange start: ' +
 					  rangeStart + ', end: ' + rangeEnd + '\nCurrent node start: ' +
-					  this.keys[0] + ', end: ' + this.keys[this.keys.length - 1]);
+					  this.keys[0] + ', end: ' + this.keys[this.keys.length - 1]));
 		}
 		return {start: rangeStart, end: rangeEnd};
 
@@ -154,7 +155,7 @@ var GIVe = (function(give) {
 		}
 
 		if(data && !Array.isArray(data)) {
-			throw('Data is not an array! This will cause problems in continuedList.');
+			throw(new Error('Data is not an array! This will cause problems in continuedList.'));
 		}
 
 		if(chrRange) {
@@ -230,7 +231,7 @@ var GIVe = (function(give) {
 			}
 
 		} else { // chrRange
-			throw(chrRange + ' is not a valid chrRegion.');
+			throw(new Error(chrRange + ' is not a valid chrRegion.'));
 		} // end if(chrRange)
 
 	};
@@ -243,7 +244,7 @@ var GIVe = (function(give) {
 		// just to keep the loaded status correct.
 
 		// Find the range of child that rangeStart is in
-		var currIndex = 0;
+		var currIndex = 0, currDataIndex = 0, prevDataIndex = 0;
 
 		while(rangeStart < rangeEnd) {
 
@@ -262,19 +263,19 @@ var GIVe = (function(give) {
 			}
 
 			// First get data that should belong to continuedList done.
-			while(data.length > 0 && data[0].start < this.keys[currIndex]) {
+			while(currDataIndex < data.length && data[currDataIndex].start < this.keys[currIndex]) {
 				// This entry belongs to continuedList from now on.
-				if(data[0].end > this.keys[currIndex]) {
-					continuedList.push(data[0]);
+				if(data[currDataIndex].end > this.keys[currIndex]) {
+					continuedList.push(data[currDataIndex]);
 					if(callback) {
-						callback(data[0]);
+						callback(data[currDataIndex]);
 					}
 				}
-				data.splice(0, 1);
+				currDataIndex++;
 			}
 
 			// Compile all entries that should appear at this point.
-			var currDataIndex = 0, startList = [];
+			var startList = [];
 			while(currDataIndex < data.length && data[currDataIndex].start === this.keys[currIndex]) {
 				startList.push(data[currDataIndex]);
 				if(callback) {
@@ -336,17 +337,19 @@ var GIVe = (function(give) {
 
 			// Go through data from 0 to currDataIndex - 1 to see
 			// If anything needs to be put onto continuedList
-			for(var i = 0; i < currDataIndex; i++) {
+			for(i = prevDataIndex; i < currDataIndex; i++) {
 				if(data[i].end > rangeStart) {
 					// needs to be put onto continuedList
 					continuedList.push(data[i]);
 				}
 			}
-
-			// then remove everything up to currDataIndex
-			data.splice(0, currDataIndex);
+			
+			prevDataIndex = currDataIndex;
 
 		} // end while(rangeStart < rangeEnd)
+		// then remove everything up to currDataIndex
+		data.splice(0, currDataIndex);
+
 	};
 
 	give.ChromBPlusTreeNode.prototype.addRecordAsNonLeaf = 
@@ -592,7 +595,7 @@ var GIVe = (function(give) {
 			}
 
 		} else { // !chrRange
-			throw(chrRange + ' is not a valid chrRegion.');
+			throw(new Error(chrRange + ' is not a valid chrRegion.'));
 		} // end if(chrRange)
 
 
@@ -620,7 +623,7 @@ var GIVe = (function(give) {
 			} // end if(resolutionFunc && resolutionFunc(this))
 
 			var currIndex = 0;
-			while(this.keys[currIndex + 1] < rangeStart) {
+			while(this.keys[currIndex + 1] <= rangeStart) {
 				currIndex++;
 			}
 			while(rangeStart < rangeEnd) {
@@ -642,7 +645,7 @@ var GIVe = (function(give) {
 			return result;
 
 		} else { // chrRange
-			throw(chrRange + ' is not a valid chrRegion.');
+			throw(new Error(chrRange + ' is not a valid chrRegion.'));
 		}
 
 	};

@@ -15,14 +15,21 @@ class ChromRegion {
 	
     function __construct() 
     { 
-        $a = func_get_args(); 
-        $i = func_num_args(); 
-        if (method_exists($this,$f='__construct'.$i)) { 
-            call_user_func_array(array($this,$f),$a); 
-        } 
     } 
+	
+	public static function newFromRegionText($region) {
+		$inst = new self();
+		$inst->loadFromRegionText($region);
+		return $inst;
+	}
     
-    function __construct1($region) 
+	public static function newFromCoordinates($chr, $start, $end) {
+		$inst = new self();
+		$inst->loadFromCoordinates($chr, $start, $end);
+		return $inst;
+	}
+    
+    function loadFromRegionText($region) 
     { 
 		$tokens = preg_split("/\s*(:|-|\s)\s*/i", $region);
 		$this->chr = trim($tokens[0]);
@@ -30,7 +37,7 @@ class ChromRegion {
 		$this->end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
     } 
     
-    function __construct2($chr, $start, $end) 
+    function loadFromCoordinates($chr, $start, $end) 
     { 
 		$this->chr = $chr;
 		$this->start = $start;
@@ -51,7 +58,7 @@ class ChromRegion {
 			if($newend > $this->end) {
 				$newend = $this->end;
 			}
-			$result []= new ChromRegion($this->chr, $newstart, $newend);
+			$result []= ChromRegion::newFromCoordinates($this->chr, $newstart, $newend);
 		}
 		return $result;
 	}

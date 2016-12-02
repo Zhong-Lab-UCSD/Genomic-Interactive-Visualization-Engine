@@ -22,6 +22,7 @@ class SummaryElement {
 	}
 	
 	function addSummaryData($summary, $overlap = 1) {
+		// $overlap is the number of base pairs $this overlaps with $summary
 		$overlapFactor = $overlap / ($summary->chromRegion->end - $summary->chromRegion->start);
 		$this->validCount += $summary->validCount * $overlapFactor;
 		$this->sumData += $summary->sumData * $overlapFactor;

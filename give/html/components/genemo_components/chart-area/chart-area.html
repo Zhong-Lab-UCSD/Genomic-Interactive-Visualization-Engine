@@ -3,6 +3,7 @@
 <link rel="import" href="../../bower_components/paper-card/paper-card.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../bower_components/genemo-data-components/track-object/track-object.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
 <link rel="import" href="tracks-header.html">
@@ -20,8 +21,38 @@
 			width: 100%;
 			padding: 0.5em;
 		}
+		#loadingBlock.unReady {
+			display: block;
+			position: absolute;
+			pointer-events: none;
+			left: 0px;
+			right: 0px;
+			top: 0px;
+			bottom: 0px;
+			z-index: 1;
+			opacity: 0.8;
+			background: var(--card-background-color);
+		}
+		
+		#loadingBlock {
+			display: none;
+		}
+		
+		paper-spinner {
+			position: absolute;
+			top: 50%;
+			margin-top: -12px;
+			left: 50%;
+			margin-left: -12px;
+			height: 24px;
+			width: 24px;
+			opacity: 1;
+		}
     </style>
     <style include="genemo-track-styles"></style>
+  <div id="loadingBlock" class="unReady">
+	<paper-spinner id="loadingSpinner" alt="Loading card content" active></paper-spinner>
+  </div>
 	<paper-card>
     <svg id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
 	</svg>
@@ -122,6 +153,8 @@
 						addDom: this.addOrdinaryTrackDOM.bind(this),
 					},
 				};
+				this.resizeDebounceInt = 100;
+				this.resizeJobName = 'RESIZE';
 			},
 
 			factoryImpl: function(species, numOfSubs, viewWindow, threshold) {
@@ -270,6 +303,7 @@
 			updateTracksInWindow: function(index) {
 				// index is the window index
 				// only need to update tracks involved with that index
+				this.setCardReady(false);
 				this.trackDOMsByWindow[index].forEach(function(trackDOM, tindex) {
 					trackDOM.updateTracks(this.viewWindows[index], index, this.threshold);
 				}, this);
@@ -281,6 +315,7 @@
 					return trackDOM.isReady;
 				}, this)) {
 					this.updateHeightLocation();
+					this.setCardReady(true);
 				}
 			},
 
@@ -333,7 +368,7 @@
 				// this will reset all tracks and redo the species
 				// note that the tracks should already be initialized before switching here
 				if(!newSpecies) {
-					throw("No new species specified!");
+					throw(new Error("No new species specified!"));
 				}
 				this.species = newSpecies;
 				numOfSubs = numOfSubs || this.viewWindows.length;
@@ -342,7 +377,7 @@
 					// viewWindowIn is not specified, then use the old viewWindows
 					this.viewWindows = new Array(numOfSubs);
 					this.viewWindows.fill(null);
-					var defaultElem = this.species.settings.defaultWindow || ['chr10:30000000-55000000', 'chr10:34900000-65000000'];
+					var defaultElem = this.species.settings.defaultWindow || ['chr10:54000000-55000000', 'chr10:64000000-65000000'];
 					this.viewWindows.forEach(function(vwindow, index) {
 						var windowStr;
 						if(typeof(viewWindowIn) === 'string') {
@@ -375,6 +410,7 @@
 
 			resetDOM: function() {
 				if(this.initialized) {
+					this.setCardReady(false);
 					this.trackDOMs = [];		// this is the array for visible tracks (DOMs with corresponding stuff)
 												// every track is included
 					this.trackDOMsByWindow = [];
@@ -463,10 +499,22 @@
 					this.changeViewWindow(e.detail.newWindow, e.detail.windowIndex);
 				}
 			},
+			
+			setCardReady: function(readiness) {
+				if(readiness) {
+					// if card is not ready, use paper-spinner and add "unReady" class to cardContent
+					this.$.loadingSpinner.active = false;
+					this.$.loadingBlock.classList.remove('unReady');
+				} else {
+					// otherwise, deactivate paper-spinner and remove "unReady" class
+					this.$.loadingBlock.classList.add('unReady');
+					this.$.loadingSpinner.active = true;
+				}
+			},
 
 			_onIronResize: function(e, detail) {
 				if(this.trackDOMs) {
-					this.updateHeightLocation();
+					this.debounce(this.resizeJobName, this.updateHeightLocation.bind(this), this.resizeDebounceInt);
 				}
 			}
 

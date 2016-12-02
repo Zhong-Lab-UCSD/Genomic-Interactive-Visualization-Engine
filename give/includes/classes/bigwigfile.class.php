@@ -446,7 +446,7 @@ class BigWigFile  {
 		foreach($regions as $region) {
 			try {
 				$this->getHistSingleRegion($region, $histElement);
-				error_log($histElement);
+				//error_log($histElement);
 			} catch (Exception $e) {
 				if($logChrException) {
 					error_log($e->getMessage());
@@ -462,7 +462,7 @@ class BigWigFile  {
 	function getAllRegions() {
 		$regions = array();
 		foreach($this->chromNameID as $name => $idsize) {
-			$regions []= new ChromRegion($name, ChromRegion::BEGINNING, $idsize[ChromBPT::SIZE]); 
+			$regions []= ChromRegion::newFromCoordinates($name, ChromRegion::BEGINNING, $idsize[ChromBPT::SIZE]); 
 		}
 		return $regions;
 	}
@@ -470,16 +470,8 @@ class BigWigFile  {
 	function getRawDataInRegions($regions) {
 		// get raw bigWig data (in bedGraph format) within all regions
 		$result = [];
-		$convertBWGToDataEntry = function($bwg, $chr) {
-			return array(
-				'regionString' => strval(new ChromRegion($chr, $bwg[BWGSection::START], $bwg[BWGSection::END])),
-				'data' => array(
-					'value' => $bwg[BWGSection::VALUE]
-				)
-			);
-		};
-		
 		foreach($regions as $region) {
+			
 			if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
 				throw new Exception("Chromosome " . $region->chr . " is invalid.");
 			}
@@ -488,7 +480,18 @@ class BigWigFile  {
 				$result[$region->chr]= [];
 			}
 			$regionResult = $this->intervalQuery($chromIx, $region->start, $region->end);
-			array_merge($result[$region->chr], array_map($convertBWGToDataEntry, $regionResult, $region->chr));
+			foreach($regionResult as $resultEntry) {
+				error_log(strval(ChromRegion::newFromCoordinates($region->chr, $resultEntry[BWGSection::START], 
+																 $resultEntry[BWGSection::END])));
+				$result[$region->chr] []= array(
+					'regionString' => strval(ChromRegion::newFromCoordinates($region->chr,
+																			 $resultEntry[BWGSection::START], 
+																			 $resultEntry[BWGSection::END])),
+					'data' => array(
+						'value' => $resultEntry[BWGSection::VALUE]
+					)
+				);
+			}
 		}
 		return $result;
 	}

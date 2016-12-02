@@ -16,13 +16,13 @@ function connectCPB($db = 'compbrowser') {
 	return $mysqli;
 }
 
-function connectGB($db) {
-	$mysqli = new mysqli(GB_HOST, GB_USER, GB_PASS);
+function connectCPBWriter($db) {
+	$mysqli = new mysqli(CPB_EDIT_HOST, CPB_EDIT_USER, CPB_EDIT_PASS);
 	if($mysqli->connect_errno) {
 		die("Connect failed:" . $mysqli->connect_error);
 	}
 	if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-		error_log("(ConnectGB) DB does not exist: " . $db);
+		error_log("(ConnectCPBWriter) DB does not exist: " . $db);
 		die();
 	}
 	return $mysqli;

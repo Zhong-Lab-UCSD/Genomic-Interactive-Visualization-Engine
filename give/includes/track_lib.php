@@ -26,13 +26,12 @@ function loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $param
 			// add filtering part
 			// convert $chrRegion string to give.ChromRegion class
 			$sqlstmt .= " WHERE " . implode(' OR ', array_fill(0, count($chrRegion), '(chrom = ? AND txStart < ? AND txEnd > ?)')) . " ORDER BY txStart";
-			error_log($sqlstmt);
 			$stmt = $mysqli->prepare($sqlstmt);
 			$a_params = array();
 			$ref_params = array();
 			$a_params []= str_repeat('sii', count($chrRegion));
 			foreach($chrRegion as $region) {
-				$chrRegionObj = new ChromRegion($region);
+				$chrRegionObj = ChromRegion::newFromRegionText($region);
 				array_push($a_params, $chrRegionObj->chr, $chrRegionObj->end, $chrRegionObj->start);
 			}
 			for($i = 0; $i < count($a_params); $i++) {
@@ -106,7 +105,7 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			$ref_params = array();
 			$a_params []= str_repeat('sii', count($chrRegion));
 			foreach($chrRegion as $region) {
-				$chrRegionObj = new ChromRegion($region);
+				$chrRegionObj = ChromRegion::newFromRegionText($region);
 				array_push($a_params, $chrRegionObj->chr, $chrRegionObj->end, $chrRegionObj->start);
 			}
 			for($i = 0; $i < count($a_params); $i++) {
@@ -125,7 +124,7 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
 			$ref_params = array();
 			$a_params []= str_repeat('s', count($chrRegion));
 			foreach($chrRegion as $region) {
-				$chrRegionObj = new ChromRegion($region);
+				$chrRegionObj = ChromRegion::newFromRegionText($region);
 				array_push($a_params, $chrRegionObj->chr);
 			}
 			for($i = 0; $i < count($a_params); $i++) {
@@ -170,13 +169,14 @@ function loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $pa
 	
 	if($mysqli && isset($tableName)) {
 		$sqlstmt = "SELECT fileName FROM `" . $mysqli->real_escape_string($tableName) . "`";
-		$fName = $mysqli->query($sqlstmt)->fetch_assoc();
+		$res = $mysqli->query($sqlstmt);
+		$fName = $res->fetch_assoc();
 		try {
 			$bwFile = new BigWigFile($fName['fileName']);
 		} catch (Exception $e) {
 			error_log($e->getMessage());
 		}
-		$fName->free();
+		$res->free();
 		$mysqli->close();
 		
 		if(!is_null($chrRegion)) {
@@ -186,7 +186,7 @@ function loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $pa
 				$chrRegion = [$chrRegion];
 			}
 			$strToChrRegion = function($regionStr) {
-				return new ChromRegion($regionStr);
+				return ChromRegion::newFromRegionText($regionStr);
 			};
 			
 			$result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
@@ -211,8 +211,6 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
 		'bigwig' => 'loadBigwig'
 	);
 	
-	error_log(count($chrRegion));
-
 	// if type is not specified, read it from trackDb table
 	if(is_null($type) || is_null($linkedTable)) {
 		$mysqli = connectCPB($db);

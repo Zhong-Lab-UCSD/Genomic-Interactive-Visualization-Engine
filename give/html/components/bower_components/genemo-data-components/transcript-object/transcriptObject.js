@@ -19,12 +19,10 @@ var GIVe = (function(give) {
 				if(this.blockStarts[i] < 0) {
 					this.blockStarts[i] = 0;
 				} else if(this.blockStarts[i] >= this.getLength()) {
-					throw({value: this.chr + ':' + this.start + '-' + this.end,
-						message: 'Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' + 
-							this.blockStarts[i] + ' is greater than length.'});
+					throw(new Error('Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' + 
+							this.blockStarts[i] + ' is greater than length.'));
 				} else if(this.blockSizes[i] < 0) {
-					throw({value: this.chr + ':' + this.start + '-' + this.end,
-						message: 'Block #' + i + ' size is invalid: ' + this.chr + ':' + this.start + '-' + this.end + '!'});
+					throw(new Error('Block #' + i + ' size is invalid: ' + this.chr + ':' + this.start + '-' + this.end + '!'));
 				} else if(this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
 					this.blockSizes[i] = this.getLength() - this.blockStarts[i];
 				}

@@ -1,14 +1,19 @@
 <?php
-require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+require_once(realpath(dirname(__FILE__) . "/../includes/common_func.php"));
 // this is the script used to convert UCSC track settings to GIVe track settings format (json_encode)
-if($_REQUEST['track'] && $_REQUEST['db']) {
+if($_REQUEST['db']) {
 	// load the track to see if it's json format
-	$mysqli = connectCPB($_REQUEST['db']);
-	$sqlstmt = "SELECT * FROM trackDb WHERE tableName = ?";
-	$stmt = $mysqli->prepare($sqlstmt);
-	$stmt->bind_param('s', $_REQUEST['track']);
-	$stmt->execute();
-	$tracks = $stmt->get_result();
+	$mysqli = connectCPBWriter($_REQUEST['db']);
+	$sqlstmt = "SELECT * FROM trackDb";
+	if($_REQUEST['track']) {
+		$sqlstmt .= " WHERE tableName = ?";
+		$stmt = $mysqli->prepare($sqlstmt);
+		$stmt->bind_param('s', $_REQUEST['track']);
+		$stmt->execute();
+		$tracks = $stmt->get_result();
+	} else {
+		$tracks = $mysqli->query($sqlstmt);
+	}
 	// check whether settings is json
 	while($itor = $tracks->fetch_assoc()) {
 		json_decode($itor['settings']);
@@ -28,7 +33,7 @@ if($_REQUEST['track'] && $_REQUEST['db']) {
 			$updateStmt = $mysqli->prepare($updateSqlStmt);
 			$updateStmt->bind_param('ss', $settingsJSON, $itor['tableName']);
 			$updateStmt->execute();
-			echo '\n\nCONVERTED:\n';
+			echo "\n\nCONVERTED:\n";
 			echo $settingsJSON;
 		}
 	}

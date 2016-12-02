@@ -96,19 +96,37 @@
 				for(var i = 0; i < this.numOfSubs; i++) {
 					var newSubSvg = document.createElementNS(this.svgNS, 'svg');
 					newSubSvg.setAttribute('id', this.track.getCleanID() + '_subSvg' + i);
-					newSubSvg.setAttributeNS(null, 'x', 0);
-					newSubSvg.setAttributeNS(null, 'y', (this.fullHeight + this.subTrackGap) * i * this.textSize);
-					newSubSvg.setAttributeNS(null, 'width', this.windowWidth);
-
-					newSubSvg.setAttributeNS(null, 'height', this.fullHeight * this.textSize);
-					newSubSvg.setAttribute("viewBox", "0 0 " 
-						+ this.windowWidth + " " + this.fullHeight * this.textSize);
 					Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg);
 					this.subSvgs.push(newSubSvg);
 				}
 				this.initSubSvgHolders();
 			},
+			
+			setSvgComponentsSizeLocation: function() {
+				this.subSvgs.forEach(function(subSvg, index) {
+					subSvg.setAttributeNS(null, 'x', 0);
+					subSvg.setAttributeNS(null, 'y', (this.fullHeight + this.subTrackGap) * index * this.textSize);
+					subSvg.setAttributeNS(null, 'width', this.windowWidth);
 
+					subSvg.setAttributeNS(null, 'height', this.fullHeight * this.textSize);
+					subSvg.setAttribute("viewBox", "0 0 " 
+						+ this.windowWidth + " " + this.fullHeight * this.textSize);
+				}, this);
+			},
+
+			changeViewWindowAfterResize: function(newWindowWidth, newViewWindow) {
+				// this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
+				if(!newViewWindow || !Array.isArray(newViewWindow)) {
+					// no new window (or new window is not an array), need to calculate
+					this.subSvgs.forEach(function(subSvg, index) {
+						this.updateTracks(subSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
+																		 null, true, this.track.species),
+										  index);
+						
+					}, this);
+				}
+			},
+			
 			readRemoteFile: function(URL, query) {
 				// placeholder to read remote URL
 				// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
@@ -127,43 +145,6 @@
 			},
 
 			readLocalFile: function(file, query) {
-				// placeholder to read local file content
-				// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-				// data will be passed via firing a 'response' event with {detail: data}
-				// and the response will be handled by this.responseHandler(e, detail)
-
-				// Interaction file implementation:
-				//		brutal force going through the file to find regions that intersect the query region
-				//		return the lines filtered
-				//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
-				//			like in http://matthewmeye.rs/blog/post/html5-line-reader/
-				//			or		http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
-
-				var reader = new FileReader();
-				var result = {};
-				reader.onload = (function(e) {
-					var lines = e.target.result.split(/\r\n|\r|\n/g);
-					var linkID = 0;
-					lines.forEach(function(line, line_index) {
-						linkID++;
-						var tokens = line.split(/\s+/g);
-						var regions = [new ChrRegionToShow(tokens[0] + ':' + tokens[1] + '-' + tokens[2] + '(' + tokens[3] + ')'),
-							new ChrRegionToShow(tokens[4] + ':' + tokens[5] + '-' + tokens[6] + '(' + tokens[7] + ')')];
-						if(regions.some(function(region, index) {
-							return region.overlaps(query[index]);
-						}, this)) {
-							// needs to push this line to result
-							regions.forEach(function(region, index) {
-								if(!result.hasOwnProperty(region.chr)) {
-									result[region.chr] = [];
-								}
-								result[region.chr].push({regionString: region.toString(), linkID: linkID, dirFlag: index});
-							}, this);
-						}
-					}, this);
-					this.fire('response', {response: result});
-				}).bind(this);
-				reader.readAsText(file);
 			},
 
 			readRemoteFile: function(URL, query) {
@@ -470,7 +451,7 @@
 					return considerThreshold? (this.threshold < 100? (result - this.threshold / 100) / (1 - this.threshold / 100): 0.5): result;
 				}
 				// otherwise, throw exception
-				throw("Percentile data missing!");
+				throw(new Error("Percentile data missing!"));
 			},
 
 			percentileToGradient: function(percentile) {

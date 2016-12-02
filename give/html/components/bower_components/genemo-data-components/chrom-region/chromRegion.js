@@ -65,12 +65,11 @@ var GIVe = (function(give) {
 					this.end = species.chromInfo[this.chr].chrRegion.end;
 			} else if(!species.chromInfo[this.chr]) {
 				// this is not a valid chromosome
-				throw({value: this.chr, message: this.chr + ' is not a valid chromosome for ' + species.db + '!'});
+				throw(new Error(this.chr + ' is not a valid chromosome for ' + species.db + '!'));
 			}
 		}
 		if(this.start > this.end) {
-			throw({value: this.chr + ':' + this.start + '-' + this.end,
-				message: 'Coordinates out of bounds: ' + this.chr + ':' + this.start + '-' + this.end + '!'});
+			throw(new Error('Coordinates out of bounds: ' + this.chr + ':' + this.start + '-' + this.end + '!'));
 		}
 		return this;
 	};		

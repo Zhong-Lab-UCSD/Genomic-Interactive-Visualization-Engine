@@ -149,7 +149,7 @@
 				// this will reset all tracks and redo the species
 				// note that the tracks should already be initialized before switching here
 				if(!newSpecies) {
-					throw("No new species specified!");
+					throw(new Error("No new species specified!"));
 				}
 				this.species = newSpecies;
 				if(!this.species.hasOwnProperty(this.customTrackGroupID)) {

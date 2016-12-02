@@ -4,22 +4,14 @@ var GIVe = (function(give) {
 	'use strict';
 
 	give.TrackObjectImpl._BigwigDataHandler = function(res, data, chrRegions) {
-		/*read file will turn in an object with data for at least one chromosome.
-		datapoints[chromosome#][base pair #] will be the signal strength.
-		datapoints is the object given to this class.
-		datapoints is an array with objects that are chromosomes. For example, datapoints[12] holds all the info for chromosome 12.
-		each chromosome object isn an array, containing point values. These point values are arrays containing two numbers: the base pair and the strength value.
-		For example, the object datapoints[12][2] is an array with two numbers in it. It is also the third point stored in chromosome 12. Since the wiggle tracks are in the 
-		format of 
-		Base Strength
-		xxxx xxxx
-		xxxx xxxx
-		the points will be added to the chromosome object just in the order they are written in the wiggle file, when being read.
-
+		/*
+			Returned data will be made up of different entries
+			Each entry will be a flat part of the bigWig file, 
+			the format will be a ChromRegion object with {data: {value: <actual value>} }
 		*/
 		var resToRegion = function(resEntry) {
 			return new give.ChromRegion(resEntry.regionString, 
-										this.species, resEntry.data);
+										this.species, {data: resEntry.data});
 		}.bind(this);
 		
 		for(var chrom in res) {
@@ -37,14 +29,14 @@ var GIVe = (function(give) {
 		var datapoints = {};
 
 		reader.onload = (function() {
-			var bigWig = new bigWigFile(reader.result);
+			var bigWig = new give.bigWigFile(reader.result);
 			bigWig.readAll();
 			datapoints=bigWig.datapoints;
 			console.log(datapoints);
 			this.fire('response', {response: datapoints}, {bubbles: false, cancelable: true});
 
 		}).bind(this);
-		reader.readAsArrayBuffer(file);
+		reader.readAsArrayBuffer(localFile);
 
 	};
 

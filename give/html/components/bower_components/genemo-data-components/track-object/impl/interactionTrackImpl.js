@@ -26,7 +26,7 @@ var GIVe = (function(give) {
 												linkID: parseInt(resEntry.linkID), 
 												regionID: parseInt(resEntry.ID), 
 												value: parseFloat(resEntry.value), 
-												dirFlag: parseInt(resEntry.dirFlag)
+												dirFlag: isNaN(parseInt(resEntry.dirFlag))? null: parseInt(resEntry.dirFlag),
 											},
 										});
 		}.bind(this), linkRegion = function(linkMap, region) {
@@ -50,13 +50,13 @@ var GIVe = (function(give) {
 
 	};
 
-	give.TrackObjectImpl._InteractionLocalFileHandler = function(localFile, regions) {
+	give.TrackObjectImpl._InteractionLocalFileHandler = function(localFile, queryRegions) {
 		// placeholder to read local file content
 		// query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
 		// data will be passed via firing a 'response' event with {detail: data}
 		// and the response will be handled by this.responseHandler(e, detail)
 
-		// BED file implementation:
+		// Interaction file implementation:
 		//		brutal force going through the file to find regions that intersect the query region
 		//		return the lines filtered
 		//		currently using FileReader.readAsText(), may change into better adaptations for bigger files
@@ -67,19 +67,25 @@ var GIVe = (function(give) {
 		var result = {};
 		reader.onload = (function(e) {
 			var lines = e.target.result.split(/\r\n|\r|\n/g);
+			var linkID = 0;
 			lines.forEach(function(line) {
-				var transcript = new give.TranscriptObject(line);
-				if(regions.some(function(region) {
-					return transcript.overlaps(region);
+				linkID++;
+				var tokens = line.split(/\s+/g);
+				var regions = [new give.ChromRegion(tokens[0] + ':' + tokens[1] + '-' + tokens[2] + '(' + tokens[3] + ')'),
+					new give.ChromRegion(tokens[4] + ':' + tokens[5] + '-' + tokens[6] + '(' + tokens[7] + ')')];
+				if(regions.some(function(region, index) {
+					return region.overlaps(queryRegions[index]);
 				}, this)) {
 					// needs to push this line to result
-					if(!result.hasOwnProperty(transcript.chr)) {
-						result[transcript.chr] = [];
-					}
-					result[transcript.chr].push({geneBed: line});
+					regions.forEach(function(region, index) {
+						if(!result.hasOwnProperty(region.chr)) {
+							result[region.chr] = [];
+						}
+						result[region.chr].push({regionString: region.toString(), linkID: linkID, dirFlag: index});
+					}, this);
 				}
 			}, this);
-			give.TrackObjectImpl._BedDataHandler.call(this, result, regions);
+			give.TrackObjectImpl._InteractionDataHandler.call(this, result, queryRegions);
 		}).bind(this);
 		reader.readAsText(localFile);
 	};

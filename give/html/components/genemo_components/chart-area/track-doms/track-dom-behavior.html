@@ -224,18 +224,6 @@
 					this.trackSvg.setAttribute('id', this.track.getCleanID() + '_trackSvg');
 					this.trackSvg.setAttribute('class', 'trackSvg');
 						
-					// attach ajax to tracks with a Url for requests
-					if(this.requestUrl) {
-						this.mainAjax = document.createElement('iron-ajax');
-						this.mainAjax.setAttribute('id', this.track.getCleanID() + '_mainAjax');
-						this.mainAjax.setAttribute('url', this.requestUrl);
-						this.mainAjax.setAttribute('handle-as', 'json');
-						this.mainAjax.setAttribute('on-response', 'responseHandler');
-						this.mainAjax.setAttribute('method', 'POST');
-						this.mainAjax.setAttribute('content-type', 'application/json');
-						//this.mainAjax.setAttribute('debounce-duration', this.getDataDebounceInt);
-						Polymer.dom(this.root).appendChild(this.mainAjax);
-					}
 					// if textMargin is specified, create a svg element for text labels
 					
 					if(this.textMargin) {
@@ -254,7 +242,7 @@
 		//			this.fire('track-initialized', {ID: this.track.getID()});
 					this.initSvgHolder();
 					
-					if(this.initSvgComponents) {
+					if(typeof this.initSvgComponents === 'function') {
 						this.initSvgComponents();
 					}
 					
@@ -290,6 +278,9 @@
 					this.mainSvg.setAttributeNS(null, 'height', this.trackHeight);
 					this.mainSvg.setAttribute("viewBox", "0 0 " 
 						+ this.windowWidth + " " + this.trackHeight);
+					if(typeof this.setSvgComponentsSizeLocation === 'function') {
+						this.setSvgComponentsSizeLocation();
+					}
 				}
 			},
 			
@@ -346,7 +337,6 @@
 						null, true, this.track.species);
 				}
 				this.updateTracks(newViewWindow);
-				return this.mainSvg.viewWindow;
 			},
 			
 			setWideModeWidthParameters: function(newWidth, newTxtMargin, newViewWindow) {
@@ -372,9 +362,9 @@
 				if(newWidth !== this.totalWidth || widthChanged) {
 					// needs to change totalWidth as well
 					this.totalWidth = newWidth;
-					this.changeViewWindowAfterResize(newWidth - (newTxtMargin? newTxtMargin + this.TEXT_MARGIN_GAP: 0), newViewWindow);
+					this.windowWidth = this.totalWidth - (newTxtMargin? newTxtMargin  + this.TEXT_MARGIN_GAP: 0);
+					this.changeViewWindowAfterResize(this.windowWidth, newViewWindow);
 				}
-				return this.mainSvg.viewWindow;
 				
 			},
 			
@@ -778,9 +768,10 @@
 	
 			},
 			
-			drawShortLabel: function(label) {
-				this.drawWordWrappedText(this.textMargin, this.trackHeight * 0.5, label || this.track.getSetting('shortLabel'), 
-										'end', 'both', null, this.textSvg, this.textMargin, this.trackHeight, true);
+			drawShortLabel: function(label, maxX) {
+				maxX = maxX || this.textMargin;
+				this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.track.getSetting('shortLabel'), 
+										'end', 'both', null, this.textSvg, maxX, this.trackHeight, true);
 			},
 			
 			// ** Track event handling and functions **
