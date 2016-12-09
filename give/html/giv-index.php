@@ -16,7 +16,7 @@
 <meta charset="utf-8">
 <title>GIVe (Genomic Interaction Visualizer)</title>
 <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-<link rel="import" href="components/genemo_components/chart-controller/chart-controller.html">
+<link rel="import" href="components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 <link rel="import" href="components/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="components/genemo_components/genemo-styles.html">
 <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">

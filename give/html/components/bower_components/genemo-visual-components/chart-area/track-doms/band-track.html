@@ -326,8 +326,8 @@
 			var windowToDraw = svgToDraw.viewWindow;
 			
 			if(windowToDraw.overlaps(region) > 0) {
-				var x0 = this.transformXCoordinate(region.getStart(), true),
-					x1 = this.transformXCoordinate(region.getEnd(), true);
+				var x0 = this.transformXCoordinate(region.getStartCoor(), true),
+					x1 = this.transformXCoordinate(region.getEndCoor(), true);
 				this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, colorRGB);
 				this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), colorRGB);
 			}

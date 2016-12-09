@@ -188,8 +188,11 @@ function loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $pa
 			$strToChrRegion = function($regionStr) {
 				return ChromRegion::newFromRegionText($regionStr);
 			};
-			
-			$result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
+			if(isset($params) && isset($params['resolutions'])) {
+				$result = $bwFile->getSummaryOrRaw(array_map($strToChrRegion, $chrRegion), $params['resolutions'], TRUE);
+			} else {
+				$result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
+			}
 		} else {
 			// load everything from the bigWig file (should be extremely rare)
 			$result = $bwFile->getAllRawData();

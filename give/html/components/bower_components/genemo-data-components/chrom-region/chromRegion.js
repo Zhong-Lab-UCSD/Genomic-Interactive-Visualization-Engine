@@ -60,9 +60,11 @@ var GIVe = (function(give) {
 			this.start = give.ChromRegion.CHROM_BASE;
 		}
 		if(species && species.chromInfo) {
-			if(species.chromInfo[this.chr] && 
-				species.chromInfo[this.chr].chrRegion.end < this.end) {
+			if(species.chromInfo[this.chr.toLowerCase()]) {
+				this.chr = species.chromInfo[this.chr.toLowerCase()].chrRegion.chr;
+				if(species.chromInfo[this.chr].chrRegion.end < this.end) {
 					this.end = species.chromInfo[this.chr].chrRegion.end;
+				}
 			} else if(!species.chromInfo[this.chr]) {
 				// this is not a valid chromosome
 				throw(new Error(this.chr + ' is not a valid chromosome for ' + species.db + '!'));
@@ -78,12 +80,20 @@ var GIVe = (function(give) {
 		return this.end - this.start;
 	};
 
-	give.ChromRegion.prototype.getStart = function() {
+	give.ChromRegion.prototype.getStartCoor = function() {
 		return {chr: this.chr, coor: this.start};
 	};
 
-	give.ChromRegion.prototype.getEnd = function() {
+	give.ChromRegion.prototype.getEndCoor = function() {
 		return {chr: this.chr, coor: this.end};
+	};
+
+	give.ChromRegion.prototype.getStart = function() {
+		return this.start;
+	};
+
+	give.ChromRegion.prototype.getEnd = function() {
+		return this.end;
 	};
 
 	give.ChromRegion.prototype.regionFromString = function(regionString) {
@@ -167,7 +177,7 @@ var GIVe = (function(give) {
 			this.strand !== region.strand)) {
 			return 0;
 		}
-		if(this.start > region.end || this.end < region.start) {
+		if(this.start >= region.end || this.end <= region.start) {
 			return 0;
 		}
 		return Math.min(this.end, region.end) - Math.max(this.start, region.start);
@@ -235,6 +245,7 @@ var GIVe = (function(give) {
 		}
 		if(newsize <= 0) {
 			newsize = 1;
+			sizediff = newsize - this.getLength();
 		} else if(species && species.chromInfo && species.chromInfo[this.chr] &&
 				 species.chromInfo[this.chr].chrRegion.getLength() < newsize) {
 					 newsize = species.chromInfo[this.chr].chrRegion.getLength();
@@ -280,9 +291,9 @@ var GIVe = (function(give) {
 
 	give.ChromRegion.compareChrRegion = function(region1, region2) {
 		return ((region1.chr === region2.chr)? 
-					((region1.start === region2.start)?
-						((region1.end === region2.end)? 0: ((region1.end > region2.end)? 1: -1)
-					): ((region1.start > region2.start)? 1: -1)
+					((region1.getStart() === region2.getStart())?
+						((region1.getEnd() === region2.getEnd())? 0: ((region1.getEnd() > region2.getEnd())? 1: -1)
+					): ((region1.getStart() > region2.getStart())? 1: -1)
 				): ((region1.chr > region2.chr)? 1: -1)); // region1.chr !== region2.chr
 	};
 

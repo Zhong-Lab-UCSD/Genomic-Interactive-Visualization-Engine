@@ -19,6 +19,8 @@
 				this.FORECOLOR_INDEX = 0; // the color index for fore color
 				this.TEXT_COLOR_RGB = 0; // the color index for text
 				this.SCALE_TEXT_SIZE = 9;
+				
+				this.MIN_RESOLUTION_PER_PIXEL = 2;
 
 			},
 
@@ -31,6 +33,10 @@
 				this.windowRange = 0;
 				this.autoScale = true;
 			},
+			
+			getCurrentResolutions: function() {
+				return Math.floor(this.mainSvg.viewWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth);
+			},
 
 			drawData: function() {
 				//draw the given point with height determined by signal strength
@@ -40,11 +46,17 @@
 				if(this.track.data.hasOwnProperty(vwindow.chr)) {
 					
 					var updateExtreme = function(dataSegment) {
-						if(Math.ceil(dataSegment.data.value) > this.windowMax) {
-							this.windowMax = Math.ceil(dataSegment.data.value);
+						var yvalue;
+						if(dataSegment.data instanceof give.TrackObjectImpl._BigwigSummaryCtor) {
+							yvalue = dataSegment.data.sumData / dataSegment.getLength();
+						} else {
+							yvalue = dataSegment.data.value;
 						}
-						if(Math.floor(dataSegment.data.value) < this.windowMin) {
-							this.windowMin = Math.floor(dataSegment.data.value);
+						if(Math.ceil(yvalue) > this.windowMax) {
+							this.windowMax = Math.ceil(yvalue);
+						}
+						if(Math.floor(yvalue) < this.windowMin) {
+							this.windowMin = Math.floor(yvalue);
 						}
 					}.bind(this);
 					
@@ -153,8 +165,8 @@
 					currPolygon.points = [];
 				}
 				
-				var start = dataEntry? Math.max(dataEntry.start, windowToDraw.start): windowToDraw.end + 1, 
-					end = dataEntry? Math.min(dataEntry.end, windowToDraw.end): windowToDraw.end + 2;
+				var start = dataEntry? Math.max(dataEntry.getStart(), windowToDraw.getStart()): windowToDraw.getEnd() + 1, 
+					end = dataEntry? Math.min(dataEntry.getEnd(), windowToDraw.getEnd()): windowToDraw.getEnd() + 2;
 				if(start < end) {
 					if(currPolygon.points.length > 0) {
 						// old polygon is there
@@ -166,12 +178,14 @@
 							this.createRawPolygon(currPolygon.points, {class: 'wiggleShapes',
 								fill: this.rgbToHex(this.colorSet[0]),
 								stroke: this.rgbToHex(this.colorSet[0]),
-								}, svgToDraw);
+							}, svgToDraw);
 							this.drawOverflowLines(currPolygon.overflows);
 							currPolygon.points = [];
 						}
 					}
 					if(dataEntry && dataEntry.chr === windowToDraw.chr) {
+						var yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor? 
+							dataEntry.data.sumData / dataEntry.getLength(): dataEntry.data.value;
 						if(currPolygon.points.length <= 0) {
 							// start a new polygon, push the (x, 0) point of this segment
 							currPolygon.points.push(
@@ -182,10 +196,10 @@
 						// then push the top two points
 						currPolygon.points.push(
 							this.transformXCoordinate({chr: windowToDraw.chr, coor: start}, false) +
-							',' + this.transformYCoordinate(dataEntry.data.value, flags));
+							',' + this.transformYCoordinate(yvalue, flags));
 						currPolygon.points.push(
 							this.transformXCoordinate({chr: windowToDraw.chr, coor: end}, false) +
-							',' + this.transformYCoordinate(dataEntry.data.value, flags));
+							',' + this.transformYCoordinate(yvalue, flags));
 						currPolygon.lastX = end;
 					} 
 					

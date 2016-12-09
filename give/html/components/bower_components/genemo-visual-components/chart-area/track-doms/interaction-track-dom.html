@@ -304,13 +304,13 @@
 					this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw);
 				} else {
 					// has centromere, draw p part first
-					var pX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getStart(), false, svgToDraw);
+					var pX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw);
 					if(pX > 0 && pX < this.windowWidth) {
 						this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw);
 						this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw);
 					}
 					// then centromere
-					var qX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getEnd(), false, svgToDraw);
+					var qX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw);
 					this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw);
 					this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw);
 					// then q part
@@ -369,7 +369,7 @@
 								var partialOutside = false;
 
 								svgChildren.forEach(function(svgChild, svgIndex) {
-									var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStart(),
+									var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStartCoor(),
 																	  true, svgChild);
 									if(x > this.windowWidth) {
 										partialOutside = true;
@@ -380,7 +380,7 @@
 									startPoints.push((x - this.bandBorder / 2)  + "," + y);
 									startPoints.push((x - this.bandBorder / 2) + "," + (y + svgChild.height.animVal.value));
 
-									x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEnd(),
+									x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEndCoor(),
 																  true, svgChild);
 									if(x < 0) {
 										partialOutside = true;

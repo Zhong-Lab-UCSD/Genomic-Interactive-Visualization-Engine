@@ -1,5 +1,5 @@
 <?php
-require_once(realpath(dirname(__FILE__) . "/../includes/common_func.php"));
+require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
 // this is the script used to convert UCSC track settings to GIVe track settings format (json_encode)
 if($_REQUEST['db']) {
 	// load the track to see if it's json format

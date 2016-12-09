@@ -1,5 +1,5 @@
 <link rel="import" href="track-dom-behavior.html">
-<link rel="import" href="../../../bower_components/genemo-data-components/gene-object/gene-object.html">
+<link rel="import" href="../../../genemo-data-components/gene-object/gene-object.html">
 <dom-module id="bed-track-dom">
   <template>
   </template>
@@ -111,8 +111,8 @@
 							if(!this.regionInWindow(transcript)) {
 								return true;
 							}
-							var x0 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, true),
-								x1 = this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, true),
+							var x0 = this.transformXCoordinate(transcript.getStartCoor(), true),
+								x1 = this.transformXCoordinate(transcript.getEndCoor(), true),
 								textAtLeft = false;
 							if(this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT && transcript.getGeneName(true)) {
 								var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP, this.Y_HIDDEN, 
@@ -180,8 +180,8 @@
 
 				var coor, isThick = false, blockStart, blockEnd;
 	//			// draw thin segments (if any)
-	//			if(gene.thickStart > gene.start) {
-	//				coor = new give.ChromRegion(null, null, gene.chr, gene.start, gene.thickStart, gene.strand);
+	//			if(gene.thickStart > gene.getStart()) {
+	//				coor = new give.ChromRegion(null, null, gene.chr, gene.getStart(), gene.thickStart, gene.strand);
 	//				this.drawRectangle(coor, 0, y + height * 0.5 * halfHeight, height * halfHeight);
 	//			}
 	//			if(gene.thickEnd < gene.end) {
@@ -189,10 +189,10 @@
 	//			}
 
 				if(transcript.numOfBlocks) {
-					blockEnd = transcript.start + transcript.blockStarts[0];
+					blockEnd = transcript.getStart() + transcript.blockStarts[0];
 					// draw thick blocks and connecting lines
 					for(var i = 0; i < transcript.numOfBlocks; i++) {
-						blockStart = transcript.start + transcript.blockStarts[i];
+						blockStart = transcript.getStart() + transcript.blockStarts[i];
 						// first draw connecting lines (intron, if any)
 						if(blockEnd < blockStart) {
 							coor = new give.ChromRegion({chr: transcript.chr, 
@@ -232,8 +232,8 @@
 					}
 				} else {
 					// no blocks
-					blockStart = transcript.start;
-					blockEnd = transcript.end;
+					blockStart = transcript.getStart();
+					blockEnd = transcript.getEnd();
 					if(typeof(transcript.thickStart) === 'number' || typeof(transcript.thickEnd) === 'number') {
 						if(transcript.thickStart && transcript.thickStart > blockStart) {
 							// CDS start is in this block
@@ -268,7 +268,7 @@
 
 				// draw text
 				if(this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT) {
-					var newLabel = this.drawText(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, true) - this.TEXT_MARGIN_GAP,
+					var newLabel = this.drawText(this.transformXCoordinate(transcript.getStartCoor(), true) - this.TEXT_MARGIN_GAP,
 												 y + 0.5 * height, transcript.getGeneName(true), "end",
 												 {style: "fill: " + this.rgbToHex(colorRGB)});
 
@@ -280,7 +280,7 @@
 				}
 
 				// draw triangle(s) indicating that the gene is not completely within the view
-				if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.start}, false) < 0) {
+				if(this.transformXCoordinate(transcript.getStartCoor(), false) < 0) {
 					// left triangle
 					this.createRawPolygon(['0,' + (y + height * 0.5),
 											height * 0.5 + ',' + y,
@@ -293,7 +293,7 @@
 											stroke: colorRGB});
 				}
 
-				if(this.transformXCoordinate({chr: transcript.chr, coor: transcript.end}, false) > this.windowWidth) {
+				if(this.transformXCoordinate(transcript.getEndCoor(), false) > this.windowWidth) {
 					// right triangle
 					this.createRawPolygon([this.windowWidth + ',' + (y + height * 0.5),
 											(this.windowWidth - height * 0.5) + ',' + y,
@@ -316,8 +316,8 @@
 				var windowToDraw = svgToDraw.viewWindow;
 
 				if(windowToDraw.overlaps(region) > 0) {
-					var x0 = this.transformXCoordinate(region.getStart(), true),
-						x1 = this.transformXCoordinate(region.getEnd(), true);
+					var x0 = this.transformXCoordinate(region.getStartCoor(), true),
+						x1 = this.transformXCoordinate(region.getEndCoor(), true);
 					this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, colorRGB);
 					this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), colorRGB);
 				}

@@ -193,21 +193,25 @@ class BufferedFile {
 		return $this->curr_offset;
 	}
 	
-	function readString($length, $offset = NULL) {
+	function readRawBuffer($length, $offset = NULL) {
 		if(!is_null($offset)) {
 			$this->seek($offset);
 		}			
 		return $this->readFromBuffer($length);
 	}
 	
+	function readString($length, $offset = NULL) {
+		return explode("\0", $this->readRawBuffer($length, $offset), 2)[0];
+	}
+	
 	function readBits8() {
-		$arr = unpack("C", $this->readString(1));
+		$arr = unpack("C", $this->readRawBuffer(1));
 		return $arr[1];
 	}
 	
 	function readBits16() {
 		// if not swapped
-		$str = $this->readString(2);
+		$str = $this->readRawBuffer(2);
 		if($this->is_swapped) {
 			// Different Endian
 			$str = strrev($str);
@@ -218,7 +222,7 @@ class BufferedFile {
 	
 	function readBits32() {
 		// if not swapped
-		$str = $this->readString(4);
+		$str = $this->readRawBuffer(4);
 		if($this->is_swapped) {
 			// Different Endian
 			$str = strrev($str);
@@ -234,13 +238,13 @@ class BufferedFile {
 			// Different Endian
 			$format = "Va/Vb";
 		}
-		$arr = unpack($format, $this->readString(8));
+		$arr = unpack($format, $this->readRawBuffer(8));
         return $arr['a'] + ($arr['b'] << 32);
 	}
 	
 	function readFloat() {
 		// read a 4B float
-		$str = $this->readString(4);
+		$str = $this->readRawBuffer(4);
 		if($this->is_swapped) {
 			// Different Endian
 			$str = strrev($str);

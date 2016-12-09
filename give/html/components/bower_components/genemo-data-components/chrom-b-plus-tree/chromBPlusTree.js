@@ -17,12 +17,12 @@ var GIVe = (function(give) {
 
 
 	// public API
-	give.ChromBPlusTree = function(start, end, bFactor) {
+	give.ChromBPlusTree = function(start, end, summaryCtor, bFactor) {
 		// start and length is for the corresponding region 
-		this.root = new give.ChromBPlusTreeNode(0, start, end, null, null, bFactor, true);
+		this.root = new give.ChromBPlusTreeNode(0, start, end, summaryCtor, null, null, bFactor, true);
 	};
 
-	give.ChromBPlusTree.prototype.insert = function(data, chrRange, continuedList, callback) {
+	give.ChromBPlusTree.prototype.insert = function(data, chrRange, continuedList, callback, resolution) {
 		// This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
 		// Root will always encompass the whole chromosome (from species definition)
 		// before calling children, the chrRegion will be split into the bins of children.
@@ -46,11 +46,12 @@ var GIVe = (function(give) {
 		
 		continuedList = continuedList || [];
 		if(Array.isArray(chrRange)) {
-			chrRange.forEach(function(range) {
-				this.root = this.root.insert(data, range, continuedList, callback);
+			chrRange.forEach(function(range, index) {
+				this.root = this.root.insert(data, range, continuedList, callback, 
+											 Array.isArray(resolution)? resolution[index]: resolution);
 			}, this);
 		} else {
-			this.root = this.root.insert(data, chrRange, continuedList, callback);
+			this.root = this.root.insert(data, chrRange, continuedList, callback, resolution);
 		}
 
 	};
@@ -74,15 +75,12 @@ var GIVe = (function(give) {
 //			// if data is not provided, every region whose start is within chrRange (probably not used very much)
 //		},
 //			
-	give.ChromBPlusTree.prototype.traverse = function(chrRange, callback, filter, resolutionFunc, thisVar, breakOnFalse) {
+	give.ChromBPlusTree.prototype.traverse = function(chrRange, callback, filter, resolution, thisVar, breakOnFalse) {
 		// Will apply callbacks to all data overlapping with chrRegion;
 		//		callback should take the node (or record) as its sole parameter:
 		//		callback(record/node)
 		// If filter is applied, callbacks will only apply when filter(data) === true
-		// resolutionFunc is the function (taking node as parameter) 
-		//		to return whether children of this has the correct resolution.
-		//		Notice that if resolutionFunc returns true for a certain level, 
-		//		it will definitely return true for its children
+		// resolution is the maximum resolution needed for traversing
 
 		// Notice that if chrRegion does not overlap with this node,
 		//		then an exception will be thrown.
@@ -99,21 +97,21 @@ var GIVe = (function(give) {
 		//		notFirstCall will be set as true
 
 		return this.root.traverse(chrRange, callback, filter, 
-								  resolutionFunc, thisVar, breakOnFalse, false);
+								  resolution, thisVar, breakOnFalse, false);
 
 	};
 
 	// TODO: allow summary and leveled traverse (leveled traverse done)
 
 	// allow sectional loading (will return an array of chrRegions that does not have data loaded)
-	give.ChromBPlusTree.prototype.getUncachedRange = function(chrRange, resolutionFunc) {
+	give.ChromBPlusTree.prototype.getUncachedRange = function(chrRange, resolution) {
 		// return the range list with range(s) without any data 
 		// 	(either not loaded, or purges for memory usage issue (to be implemented))
 		// if no non-data ranges are found, return []
 
-		// resolutionFunc is used to determine if the summary of this is already enough (to be implemented)
+		// resolution is used to determine if the summary of this is already enough (to be implemented)
 
-		return this.root.getUncachedRange(chrRange, resolutionFunc);
+		return this.root.getUncachedRange(chrRange, resolution);
 	};
 
 	// TODO: allow caching (nodes not used for a while will be cleared to preserve memory)

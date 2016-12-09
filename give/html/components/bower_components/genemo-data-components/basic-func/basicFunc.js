@@ -5,8 +5,9 @@ var GIVe = (function(give) {
 	give.VERBOSE_MIN_ERROR = 2;
 	give.VERBOSE_WARNING = 3;
 	give.VERBOSE_DEBUG = 4;
+	give.VERBOSE_DEBUG_MORE = 5;
 	
-	give.verboseLvl = give.VERBOSE_WARNING;
+	give.verboseLvl = give.VERBOSE_DEBUG;
 	
 	give.extend = function(base, sub) {
 		sub.prototype = Object.create(base.prototype);
@@ -99,6 +100,27 @@ var GIVe = (function(give) {
 		xhr.open(method, target);
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(JSON.stringify(params));
+	};
+	
+	give.fireCoreSignal = function(signame, sigdata) {
+		// fire iron-signals
+		give.fireSignal('iron-signal', {bubbles: true, cancelable: true, detail: {name: signame, data: sigdata}}, document.body);
+	};
+	
+	give.fireSignal = function(evName, sigParams, elem) {
+		var newEvent;
+		if(navigator.appName === 'Microsoft Internet Explorer' ||
+				!!(navigator.userAgent.match(/Trident/) ||
+				   navigator.userAgent.match(/rv 11/))) {
+			newEvent = document.createEvent('CustomEvent');
+			newEvent.initCustomEvent(evName, 
+									 sigParams && sigParams.bubbles, 
+									 sigParams && sigParams.cancelable, 
+									 (sigParams && sigParams.detail)? sigParams.detail: null);
+		} else {
+			newEvent = new CustomEvent(evName, sigParams);
+		}
+		((elem && elem.dispatchEvent)? elem: document.body).dispatchEvent(newEvent);
 	};
 	
 	return give;

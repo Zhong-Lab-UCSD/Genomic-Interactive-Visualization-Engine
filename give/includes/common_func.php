@@ -78,3 +78,10 @@ function getRequest() {
 		return $_REQUEST;
 	}
 }
+
+function var_error_log( $object = NULL ){
+    ob_start();                    // start buffer capture
+    var_dump( $object );           // dump the values
+    error_log(ob_get_contents());// end capture and put stuff to error_log
+	ob_end_clean();
+}

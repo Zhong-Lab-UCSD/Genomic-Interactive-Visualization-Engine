@@ -1,7 +1,7 @@
 <?php
-require_once(realpath(dirname(__FILE__) . "/../includes/species_func.php"));
-require_once(realpath(dirname(__FILE__) . "/../includes/track_lib.php"));
-require_once(realpath(dirname(__FILE__) . "/../includes/track_custom_lib.php"));
+require_once(realpath(dirname(__FILE__) . "/../../includes/species_func.php"));
+require_once(realpath(dirname(__FILE__) . "/../../includes/track_lib.php"));
+require_once(realpath(dirname(__FILE__) . "/../../includes/track_custom_lib.php"));
 // if there is no db as input, get all species and get all ChromInfo for each species
 // otherwise, just return the ChromInfo for the species given
 
@@ -31,4 +31,5 @@ try {
 	http_response_code(400);
 	$result['error'] = $e->getMessage();
 }
+header('Content-Type: application/json');
 echo json_encode($result);

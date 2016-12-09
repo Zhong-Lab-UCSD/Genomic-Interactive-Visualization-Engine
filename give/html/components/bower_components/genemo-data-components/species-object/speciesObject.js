@@ -64,9 +64,14 @@ var GIVe = (function(give) {
 			for(var chrom in ChromInfo) {
 				if(ChromInfo.hasOwnProperty(chrom)) {
 					this.chromInfo[chrom] = {};
-					this.chromInfo[chrom].chrRegion = new give.ChromRegion(ChromInfo[chrom].chrRegion);
+					this.chromInfo[chrom].chrRegion = 
+						new give.ChromRegion(ChromInfo[chrom].chrRegion);
 					if(ChromInfo[chrom].cent) {
-						this.chromInfo[chrom].cent = new give.ChromRegion(ChromInfo[chrom].cent);
+						this.chromInfo[chrom].cent = 
+							new give.ChromRegion(ChromInfo[chrom].cent);
+					}
+					if(chrom.toLowerCase() !== chrom) {
+						this.chromInfo[chrom.toLowerCase()] = this.chromInfo[chrom];
 					}
 				}
 			}
@@ -142,9 +147,9 @@ var GIVe = (function(give) {
 		}
 	};
 
-	give.SpeciesObject.initAllTarget = '/initSpecies.php';
-	give.SpeciesObject.initChromTarget = '/initSpecies.php';
-	give.SpeciesObject.initTrackTarget = '/initTracks.php';
+	give.SpeciesObject.initAllTarget = '/givdata/initSpecies.php';
+	give.SpeciesObject.initChromTarget = '/givdata/initSpecies.php';
+	give.SpeciesObject.initTrackTarget = '/givdata/initTracks.php';
 
 	give.SpeciesObject.initAllSpecies = function(target, spcArray, callback) {
 		// initialize all species from db

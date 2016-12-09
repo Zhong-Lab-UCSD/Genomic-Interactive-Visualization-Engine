@@ -2,13 +2,6 @@
 	require_once (realpath(dirname(__FILE__) . '/../includes/common_func.php'));	
 	require_once (realpath(dirname(__FILE__) . "/../includes/session.php"));
 	
-	if(strpos(getenv('SERVER_NAME'), 'singlecell') !== false) {
-		// is single cell, redirect to singlecell.php
-		header("HTTP/1.1 301 Moved Permanently"); 
-		header("Location: ./singlecell.php"); 
-		exit();
-	}
-	
 	$res = initialize_session();
 	$encodeOn = $res['encodeOn'];
 	$in_debug = $res['in_debug'];
@@ -52,35 +45,35 @@
 <meta name="keywords" content="Comparative study,Epigenomics,Epigenetics,Visualization,Epigenome browser" />
 <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs." />
 <title>GENEMO Search</title>
-<script src="cpbrowser/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-<link href="cpbrowser/mainstyles.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="cpbrowser/js/jquery-1.7.js"></script>
-<script type="text/javascript" src="cpbrowser/js/uicomponent.js"></script>
-<script type="text/javascript" src="cpbrowser/js/generegion.js"></script>
-<script type="text/javascript" src="cpbrowser/js/regionlistui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/sessionControl.js"></script>
-<script type="text/javascript" src="cpbrowser/js/navui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/uploadui.js"></script>
-<script type="text/javascript" src="cpbrowser/js/libtracks.js"></script>
-<script type="text/javascript" src="cpbrowser/js/languagechange.js"></script>
-<link rel="import" href="cpbrowser/components/genemo_components/manual-icon/manual-icon.html">
-<link rel="import" href="cpbrowser/components/genemo_components/meta-entries/meta-entries.html">
-<link rel="import" href="cpbrowser/components/genemo_components/cell-line-info-card/cell-line-info-card.html">
-<link rel="import" href="cpbrowser/components/genemo_components/search-card-content/search-card-content.html">
-<link rel="import" href="cpbrowser/components/genemo_components/query-card-content/query-card-content.html">
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-track-filter/genemo-track-filter.html">
+<script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<link href="genemo/mainstyles.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/jquery-1.7.js"></script>
+<script type="text/javascript" src="js/uicomponent.js"></script>
+<script type="text/javascript" src="js/generegion.js"></script>
+<script type="text/javascript" src="js/regionlistui.js"></script>
+<script type="text/javascript" src="js/sessionControl.js"></script>
+<script type="text/javascript" src="js/navui.js"></script>
+<script type="text/javascript" src="js/uploadui.js"></script>
+<script type="text/javascript" src="js/libtracks.js"></script>
+<script type="text/javascript" src="js/languagechange.js"></script>
+<link rel="import" href="components/genemo_components/manual-icon/manual-icon.html">
+<link rel="import" href="components/genemo_components/meta-entries/meta-entries.html">
+<link rel="import" href="components/genemo_components/cell-line-info-card/cell-line-info-card.html">
+<link rel="import" href="components/genemo_components/search-card-content/search-card-content.html">
+<link rel="import" href="components/genemo_components/query-card-content/query-card-content.html">
+<link rel="import" href="components/genemo_components/genemo-track-filter/genemo-track-filter.html">
 <?php if(isset($experimentalFeatures)) { ?>
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
+<link rel="import" href="components/genemo_components/genemo-tab-cards/genemo-tab-cards.html">
 <?php } ?>
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-card/genemo-card.html">
-<link rel="import" href="cpbrowser/components/genemo_components/genemo-styles.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-button/paper-button.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="cpbrowser/components/bower_components/google-youtube/google-youtube.html">
-<link rel="import" href="cpbrowser/components/bower_components/paper-tooltip/paper-tooltip.html">
-<link rel="import" href="cpbrowser/components/bower_components/iron-signals/iron-signals.html">
-<link rel="import" href="cpbrowser/components/bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="cpbrowser/components/bower_components/iron-icons/notification-icons.html">
+<link rel="import" href="components/genemo_components/genemo-card/genemo-card.html">
+<link rel="import" href="components/genemo_components/genemo-styles.html">
+<link rel="import" href="components/bower_components/paper-button/paper-button.html">
+<link rel="import" href="components/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="components/bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="components/bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="components/bower_components/iron-signals/iron-signals.html">
+<link rel="import" href="components/bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="components/bower_components/iron-icons/notification-icons.html">
 <style is="custom-style" include="genemo-shared-styles">
 <!--
 html {
@@ -845,7 +838,7 @@ window.addEventListener("WebComponentsReady", function(e) {
 <?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
 <div id="genemo-container">
   <div id="sidebar1">
-    <div id="logoholder"> <a href="index.php" target="_self"><img src="cpbrowser/images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
+    <div id="logoholder"> <a href="genemo/index.php" target="_self"><img src="images/genemologo.png" alt="GENEMO Logo" border="0" /></a> </div>
       <?php if(!isset($experimentalFeatures)) { ?>
     <genemo-card collapse-group='query-search'>
       <?php } else { ?>
@@ -885,17 +878,17 @@ window.addEventListener("WebComponentsReady", function(e) {
         <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
           <tr>
             <td rowspan="2" scope="col" class="speciesHeader"><span><span class="text" id="Master Control Box">MASTER CONTROL</span></span></td>
-            <td align="center" valign="middle" scope="col" style="padding-top: 2px;"><div onmouseover="showHover('L3');" onmouseout="hideHover('L3');" class="toolButtonImage" style="float: left;" title="Move 95% to upstream" onclick="callMasterViewChange('left3', false);"><img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /></div>
-              <div onmouseover="showHover('L2');" onmouseout="hideHover('L2');" class="toolButtonImage" style="float: left;" title="Move 47.5% to upstream" onclick="callMasterViewChange('left2', false);"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
-              <div onmouseover="showHover('L1');" onmouseout="hideHover('L1');" class="toolButtonImage" style="float: left;" title="Move 10% to upstream" onclick="callMasterViewChange('left1', false);"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
-              <div onmouseover="showHover('R3');" onmouseout="hideHover('R3');" class="toolButtonImage" style="float: right;" title="Move 95% to downstream" onclick="callMasterViewChange('right3', false);"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
-              <div onmouseover="showHover('R2');" onmouseout="hideHover('R2');" class="toolButtonImage" style="float: right;" title="Move 47.5% to downstream" onclick="callMasterViewChange('right2', false);"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
-              <div onmouseover="showHover('R1');" onmouseout="hideHover('R1');" class="toolButtonImage" style="float: right;" title="Move 10% to downstream" onclick="callMasterViewChange('right1', false);"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
+            <td align="center" valign="middle" scope="col" style="padding-top: 2px;"><div onmouseover="showHover('L3');" onmouseout="hideHover('L3');" class="toolButtonImage" style="float: left;" title="Move 95% to upstream" onclick="callMasterViewChange('left3', false);"><img src="images/arrowsl3.gif" width="17" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('L2');" onmouseout="hideHover('L2');" class="toolButtonImage" style="float: left;" title="Move 47.5% to upstream" onclick="callMasterViewChange('left2', false);"><img src="images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('L1');" onmouseout="hideHover('L1');" class="toolButtonImage" style="float: left;" title="Move 10% to upstream" onclick="callMasterViewChange('left1', false);"><img src="images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R3');" onmouseout="hideHover('R3');" class="toolButtonImage" style="float: right;" title="Move 95% to downstream" onclick="callMasterViewChange('right3', false);"><img src="images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R2');" onmouseout="hideHover('R2');" class="toolButtonImage" style="float: right;" title="Move 47.5% to downstream" onclick="callMasterViewChange('right2', false);"><img src="images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
+              <div onmouseover="showHover('R1');" onmouseout="hideHover('R1');" class="toolButtonImage" style="float: right;" title="Move 10% to downstream" onclick="callMasterViewChange('right1', false);"><img src="images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
               <span id="overallGeneName"><span class="text" id="Gene Name">Gene name</span></span>
               <!--<div style="clear: both"></div>--></td>
           </tr>
           <tr>
-            <td align="center" valign="middle" style="padding-bottom: 2px;"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
+            <td align="center" valign="middle" style="padding-bottom: 2px;"><img src="images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
               <div onmouseover="showZoomHover('I1');" onmouseout="hideZoomHover('I1');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in1', true);">1.5x</div>
               <div onmouseover="showZoomHover('I2');" onmouseout="hideZoomHover('I2');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in2', true);">3x</div>
               <div onmouseover="showZoomHover('I3');" onmouseout="hideZoomHover('I3');" class="toolButton" style="float: left;" onclick="callMasterViewChange('in3', true);">10x</div>
@@ -903,7 +896,7 @@ window.addEventListener("WebComponentsReady", function(e) {
               <div onmouseover="showZoomHover('O1');" onmouseout="hideZoomHover('O1');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out3', true);">10x</div>
               <div onmouseover="showZoomHover('O2');" onmouseout="hideZoomHover('O2');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out2', true);">3x</div>
               <div onmouseover="showZoomHover('O3');" onmouseout="hideZoomHover('O3');" class="toolButton" style="float: right;" onclick="callMasterViewChange('out1', true);">1.5x</div>
-              <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
+              <img src="images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
               <!--<div style="clear: both;"></div>--></td>
           </tr>
         </table>
@@ -939,17 +932,17 @@ window.addEventListener("WebComponentsReady", function(e) {
         <td align="center" valign="middle" scope="col" style="padding: 2px;"><span id="spcDbNameCoor">spcCoor</span></td>
       </tr>
       <tr>
-        <td align="center" valign="middle"><div id="spcDbNameleft3" class="toolButtonImage" style="float: left;" title="Move 95% to the left" onclick="callViewChange('spcDbName', 'left3');"> <img src="cpbrowser/images/arrowsl3.gif" width="17" height="8" class="toolImage" /> </div>
-          <div id="spcDbNameleft2" class="toolButtonImage" style="float: left;" title="Move 47.5% to the left" onclick="callViewChange('spcDbName', 'left2');"><img src="cpbrowser/images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
-          <div id="spcDbNameleft1" class="toolButtonImage" style="float: left;" title="Move 10% to the left" onclick="callViewChange('spcDbName', 'left1');"><img src="cpbrowser/images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
-          <div id="spcDbNameright3" class="toolButtonImage" style="float: right;" title="Move 95% to the right" onclick="callViewChange('spcDbName', 'right3');"><img src="cpbrowser/images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
-          <div id="spcDbNameright2" class="toolButtonImage" style="float: right;" title="Move 47.5% to the right" onclick="callViewChange('spcDbName', 'right2');"><img src="cpbrowser/images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
-          <div id="spcDbNameright1" class="toolButtonImage" style="float: right;" title="Move 10% to the right" onclick="callViewChange('spcDbName', 'right1');"><img src="cpbrowser/images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
+        <td align="center" valign="middle"><div id="spcDbNameleft3" class="toolButtonImage" style="float: left;" title="Move 95% to the left" onclick="callViewChange('spcDbName', 'left3');"> <img src="images/arrowsl3.gif" width="17" height="8" class="toolImage" /> </div>
+          <div id="spcDbNameleft2" class="toolButtonImage" style="float: left;" title="Move 47.5% to the left" onclick="callViewChange('spcDbName', 'left2');"><img src="images/arrowsl2.gif" width="12" height="8" class="toolImage" /></div>
+          <div id="spcDbNameleft1" class="toolButtonImage" style="float: left;" title="Move 10% to the left" onclick="callViewChange('spcDbName', 'left1');"><img src="images/arrowsl1.gif" width="7" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright3" class="toolButtonImage" style="float: right;" title="Move 95% to the right" onclick="callViewChange('spcDbName', 'right3');"><img src="images/arrowsr3.gif" width="17" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright2" class="toolButtonImage" style="float: right;" title="Move 47.5% to the right" onclick="callViewChange('spcDbName', 'right2');"><img src="images/arrowsr2.gif" width="12" height="8" class="toolImage" /></div>
+          <div id="spcDbNameright1" class="toolButtonImage" style="float: right;" title="Move 10% to the right" onclick="callViewChange('spcDbName', 'right1');"><img src="images/arrowsr1.gif" width="7" height="8" class="toolImage" /></div>
           <span class="text" id="Species Gene Name">spcGeneName </span>
           <!--<div style="clear: both"></div>--></td>
       </tr>
       <tr>
-        <td align="center" valign="middle" scope="col"><img src="cpbrowser/images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
+        <td align="center" valign="middle" scope="col"><img src="images/zoomin.gif" alt="ZoomIn" width="12" height="12" class="iconImage" style="float: left;" />
           <div id="spcDbNameI1" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in1');">1.5x</div>
           <div id="spcDbNameI2" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in2');">3x</div>
           <div id="spcDbNameI3" class="toolButton" style="float: left;" onclick="callViewChange('spcDbName', 'in3');">10x</div>
@@ -957,7 +950,7 @@ window.addEventListener("WebComponentsReady", function(e) {
           <div id="spcDbNameO1" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out3');">10x</div>
           <div id="spcDbNameO2" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out2');">3x</div>
           <div id="spcDbNameO3" class="toolButton" style="float: right;" onclick="callViewChange('spcDbName', 'out1');">1.5x</div>
-          <img src="cpbrowser/images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
+          <img src="images/zoomout.gif" alt="ZoomOut" width="12" height="12" class="iconImage" style="float: right;" /> 
           <!--<div style="clear: both;"></div>--></td>
       </tr>
     </table>
@@ -1041,7 +1034,7 @@ window.addEventListener("WebComponentsReady", function(e) {
 ?>
         <iframe onload="setTrackReady(<?php echo $i; ?>);" id="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" 
          name="<?php echo $spcinfo[$i]["dbname"] . "_controls"; ?>" src="<?php 
-	  echo "/cgi-bin/hgTracks?clade=mammal&org=" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . requestSpeciesHgsID($spcinfo[$i]["dbname"]) . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on" . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
+	  echo "../../cgi-bin/hgTracks" . $spcinfo[$i]["commonname"] . "&db=" . $spcinfo[$i]["dbname"] . "&Submit=submit&hgsid=" . requestSpeciesHgsID($spcinfo[$i]["dbname"]) . '&showEncode=' . ($encodeOn? 'on': 'off') . "&hgControlOnly=on" . ((isset($_SESSION['resetView']) && $_SESSION['resetView'])? "&hgt.reset=TRUE&hgt.defaultImgOrder=TRUE": ""); 
 	  ?>"><span class="text" id="Browser support">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</span></iframe>
         <?php
 	}
@@ -1143,7 +1136,7 @@ font-size: 12px; line-height: 17px; background: #FFFFCC;" class="trackSelectClas
     <div id="leftbutton" onclick="UI.switchLeft();"></div>
   </div>
   <div id="mainContent">
-    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser/cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
+    <iframe id="cpbrowser" name="cpbrowser" src="cpbrowser.php" width="100%" marginwidth="0" height="100%" marginheight="0" scrolling="auto" frameborder="0">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
     <!-- end #mainContent --> 
   </div>
   <!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats --> 

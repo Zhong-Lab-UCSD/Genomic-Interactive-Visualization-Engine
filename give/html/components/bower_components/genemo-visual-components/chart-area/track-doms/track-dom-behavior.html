@@ -1,10 +1,10 @@
-<link rel="import" href="../../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
-<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../../../bower_components/genemo-data-components/chrom-b-plus-tree/chrom-b-plus-tree.html">
-<link rel="import" href="../../../bower_components/genemo-data-components/chrom-region/chrom-region.html">
-<link rel="import" href="../../../bower_components/genemo-data-components/track-object/track-object.html">
-<link rel="import" href="../../../bower_components/genemo-data-components/species-object/species-object.html">
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-ajax/iron-ajax.html">
+<link rel="import" href="../../../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../../genemo-data-components/chrom-b-plus-tree/chrom-b-plus-tree.html">
+<link rel="import" href="../../../genemo-data-components/chrom-region/chrom-region.html">
+<link rel="import" href="../../../genemo-data-components/track-object/track-object.html">
+<link rel="import" href="../../../genemo-data-components/species-object/species-object.html">
 <script>
   	var GIVe = (function(give) {
 		give._trackCounter = 0;
@@ -427,6 +427,10 @@
 				// placeholder for data drawing
 			},
 			
+			getCurrentResolutions: function() {
+				return null;
+			},
+			
 			getCurrentViewWindowExt: function(extension) {
 				return this.mainSvg.viewWindow.getExtension(extension, null, true, this.track.species);
 			},
@@ -616,8 +620,8 @@
 				var windowToDraw = svgToDraw.viewWindow;
 				
 				if(windowToDraw.overlaps(region) > 0) {
-					var x0 = this.transformXCoordinate(region.getStart(), true),
-						x1 = this.transformXCoordinate(region.getEnd(), true);
+					var x0 = this.transformXCoordinate(region.getStartCoor(), true),
+						x1 = this.transformXCoordinate(region.getEndCoor(), true);
 					var newRegion = this.createRawRectangle(x0, y, x1, y + height, 
 								{fill: colorRGB, 
 								stroke: (typeof strokeColorRGB === 'number')? strokeColorRGB: 'none',
@@ -804,10 +808,14 @@
 				
 				// this is to set up cache loading functions as call back after draw
 				this.callbackAfterDraw = 
-					this.debounce.bind(this, this.cacheUpdateJobName, this.track.getData.bind(this.track, 
-						this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.CacheRangeSpanProportion),
-						null), this.cacheDebounceInt);
+					this.debounce.bind(this, this.cacheUpdateJobName, 
+									   this.track.getData.bind(this.track, 
+															   this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.CacheRangeSpanProportion),
+															   this.getCurrentResolutions(), 
+															   null, this.id), 
+									   this.cacheDebounceInt);
 				this.track.getData(this.getCurrentViewWindowExt(), 
+								   this.getCurrentResolutions(),
 								   this.drawDataDebounceWrapper.bind(this),
 								   this.id);
 				

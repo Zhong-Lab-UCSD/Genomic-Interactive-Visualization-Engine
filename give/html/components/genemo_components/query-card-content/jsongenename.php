@@ -1,6 +1,6 @@
 <?php
 	// First get an array of posts, showing the database and trackDb name
-	require_once(realpath(dirname(__FILE__) . "/../../../../../includes/common_func.php"));
+	require_once(realpath(dirname(__FILE__) . "/../../../../includes/common_func.php"));
 	// notice that this needs to be commented out after debug to improve performance
 	
 	define('MAX_JSON_NAME_ITEMS', 100);

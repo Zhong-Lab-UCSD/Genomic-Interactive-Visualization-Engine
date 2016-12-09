@@ -42,9 +42,20 @@ class ChromRegion {
 		$this->chr = $chr;
 		$this->start = $start;
 		$this->end = $end;
-    } 
+    }
+	
+	function overlap($chrRegion) {
+		if($this->chr !== $chrRegion->chr) {
+			return 0;
+		}
+		return rangeIntersection($this->start, $this->end, $chrRegion->start, $chrRegion->end);
+	}
 	
 	function __toString() {
+		return $this->regionToString();
+	}
+	
+	function regionToString() {
 		return($this->chr . ":" . $this->start . "-" . $this->end);
 	}
 	

@@ -6,11 +6,15 @@ var GIVe = (function(give) {
 		
 		LocalFileHandlers: {},
 		
+		SummaryCtors: {},
+		
 		DefaultDataHandler: function(response, chromBPTree, queryRegions) {
 		},
 		
 		DefaultLocalFileHandler: function(localFile, queryRegions) {
 		},
+		
+		DefaultSummaryCtor: null,
 		
 	};
 

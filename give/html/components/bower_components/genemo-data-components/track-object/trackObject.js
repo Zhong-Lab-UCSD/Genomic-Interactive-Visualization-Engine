@@ -30,7 +30,8 @@ var GIVe = (function(give) {
 
 		this.getDataJobName = this.getID() + '_GETDATA';
 		this.getDataDebounceInt = 200;
-		this.pendingGUIRanges = [];
+		this.pendingGUIRangesFromID = {};
+		this.pendingQueryRegions = {regions: [], resolutions: []};
 		this.data = {};
 		
 		this.callbackArray = [];
@@ -133,21 +134,128 @@ var GIVe = (function(give) {
 		// 	2. implement customized temporary priority
 		return this.priority;
 	};
+	
+	give.TrackObject.prototype.mergeGUIRegionsByResolution = function() {
+		// this is to generate a single array of ChromRegions, separated by resolution
+		var mergedGUIRanges = [];
+		mergedGUIRanges.resolutions = [];
+		for(var callerID in this.pendingGUIRangesFromID) {
+			if(this.pendingGUIRangesFromID.hasOwnProperty(callerID)) {
+				for(var i = 0; i < this.pendingGUIRangesFromID[callerID].length; i++) {
+					var GUIRange = this.pendingGUIRangesFromID[callerID][i], 
+						GUIResolution = this.pendingGUIRangesFromID[callerID].resolutions[i],
+						j = 0;
+					
+					while(j < mergedGUIRanges.length &&
+						 (mergedGUIRanges[j].chr < GUIRange.chr ||
+						  (mergedGUIRanges[j].chr === GUIRange.chr &&
+						   mergedGUIRanges[j].getEnd() <= GUIRange.getStart()))) {
+						j++;
+					}
+					
+					while(j < mergedGUIRanges.length && GUIRange &&
+						  GUIRange.overlaps(mergedGUIRanges[j])) {
+						// needs to determine which one should take the resolution
+						var queryRange = mergedGUIRanges[j],
+							queryResolution = mergedGUIRanges.resolutions[j];
+						if(typeof GUIResolution !== 'number' || 
+						   (typeof queryResolution === 'number' && 
+							GUIResolution < queryResolution)) {
+							// GUI has smaller resolution
+							if(queryRange.getStart() < GUIRange.getStart()) {
+								if(queryRange.getEnd() > GUIRange.getEnd()) {
+									// queryRange is split into two
+									var newQueryRange = queryRange.clone();
+									newQueryRange.start = GUIRange.getEnd();
+									mergedGUIRanges.splice(j + 1, 0, newQueryRange);
+									mergedGUIRanges.resolutions.splice(j + 1, 0, queryResolution);
+								}
+								queryRange.end = GUIRange.getStart();
+							} else {
+								if(queryRange.getEnd() <= GUIRange.getEnd()) {
+									// queryRange is completely covered by GUIRange, 
+									//		remove queryRange
+									mergedGUIRanges.splice(j, 1);
+									mergedGUIRanges.resolutions.splice(j, 1);
+								} else {
+									// queryRange has something at the end
+									queryRange.start = GUIRange.getEnd();
+								}
+								j--;
+							}
+						} else if(typeof GUIResolution !== 'number' || 
+						   (typeof queryResolution === 'number' && 
+							GUIResolution < queryResolution)) {
+							// query has smaller resolution
+							if(queryRange.getStart() <= GUIRange.getStart()) {
+								if(queryRange.getEnd() >= GUIRange.getEnd()) {
+									// queryRange completely covers GUIRange
+									// remove GUIRange
+									GUIRange = null;
+								} else {
+									// GUIRange still has something at the end
+									GUIRange.start = queryRange.getEnd();
+								}
+							} else {
+								if(queryRange.getEnd() < GUIRange.getEnd()) {
+									// GUIRange will be split into two 
+									// push the earlier GUIRange into mergedGUIRanges
+									var newGUIRange = GUIRange.clone();
+									newGUIRange.end = queryRange.getStart();
+									mergedGUIRanges.splice(j, 0, newGUIRange);
+									mergedGUIRanges.resolutions.splice(j, 0, GUIResolution);
+								} else {
+									// queryRange has something at the end
+									GUIRange.end = queryRange.getStart();
+									j--;
+								}
+							}
+						} else {
+							// same resolution, merge the region
+							GUIRange.assimilate(queryRange);
+							mergedGUIRanges.splice(j, 1);
+							mergedGUIRanges.resolutions.splice(j, 1);
+						}
+						j++;
+					}
+					
+					mergedGUIRanges.splice(j, 0, GUIRange);
+					mergedGUIRanges.resolutions.splice(j, 0, GUIResolution);
+
+				}
+			}
+		}
+		
+		if(give.verboseLvl >= give.VERBOSE_DEBUG) {
+			console.log(mergedGUIRanges);
+		}
+		
+		return mergedGUIRanges;
+	};
 
 	give.TrackObject.prototype.getTrackUncachedRange = function() {
 		// check whether buffer needs to be updated
 		// notice that chrRanges should be an ordered, non-overlapping array of ChromRegionObject
-		this.pendingQueryRegions = [];
-		if(!this.isPureLocal && this.pendingGUIRanges && Array.isArray(this.pendingGUIRanges)) {
-			this.pendingGUIRanges.forEach(function(chrRange) {
+		this.pendingQueryRegions = {regions: [], resolutions: []};
+		var mergedGUIRanges = this.mergeGUIRegionsByResolution();
+		if(!this.isPureLocal && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
+			mergedGUIRanges.forEach(function(chrRange, index) {
 				if(this.data[chrRange.chr] && this.data[chrRange.chr].getUncachedRange) {
-					var resolutionFunc = (typeof this.resolutionFunc === 'function'?
-										  this.resolutionFunc.bind(this): null);
-					this.pendingQueryRegions = this.pendingQueryRegions.concat(
-						this.data[chrRange.chr].getUncachedRange(chrRange, resolutionFunc));
-					// will add this.resolutionFunc.bind(this) if implemented
+					var uncachedRanges = 
+						this.data[chrRange.chr].getUncachedRange(chrRange,
+																 mergedGUIRanges.resolutions[index]);
+					this.pendingQueryRegions.regions = this.pendingQueryRegions.regions.concat(uncachedRanges);
+					this.pendingQueryRegions.resolutions = this.pendingQueryRegions.resolutions.concat(
+						(new Array(uncachedRanges.length)).fill(
+							typeof mergedGUIRanges.resolutions[index] === 'number'? 
+							mergedGUIRanges.resolutions[index] / give.TrackObject.RESOLUTION_BUFFER_RATIO:
+							mergedGUIRanges.resolutions[index]));
 				} else {
-					this.pendingQueryRegions.push(chrRange);
+					this.pendingQueryRegions.regions.push(chrRange);
+					this.pendingQueryRegions.resolutions.push(
+						typeof mergedGUIRanges.resolutions[index] === 'number'? 
+						mergedGUIRanges.resolutions[index] / give.TrackObject.RESOLUTION_BUFFER_RATIO:
+						mergedGUIRanges.resolutions[index]);
 				}
 			}, this);
 		}
@@ -155,7 +263,7 @@ var GIVe = (function(give) {
 		return this.pendingQueryRegions;
 	};
 
-	give.TrackObject.prototype.prepareRemoteQuery = function(regions) {
+	give.TrackObject.prototype.prepareRemoteQuery = function(regions, resolutions) {
 		// provide data to mainAjax
 		// for most of the tracks, this is only trackID and window
 		if(this.isCustom) {
@@ -165,6 +273,9 @@ var GIVe = (function(give) {
 				window: regions.map(function(region) {
 							return region.regionToString(false);
 						}, this),
+				resolutions: Array.isArray(resolutions)? { 
+					resolutions: resolutions, 
+				}: null,
 				isCustom: true, 
 			};		
 		} else {
@@ -174,6 +285,9 @@ var GIVe = (function(give) {
 				window: regions.map(function(region) {
 							return region.regionToString(false);
 						}, this),
+				params: Array.isArray(resolutions)? { 
+					resolutions: resolutions, 
+				}: null,
 			};		
 		}
 	};
@@ -184,7 +298,7 @@ var GIVe = (function(give) {
 		return this.pendingQueryRegions;
 	};
 
-	give.TrackObject.prototype.getData = function(ranges, callback, callbackID) {
+	give.TrackObject.prototype.getData = function(ranges, resolutions, callback, callerID) {
 		// this is the interface exposed to the DOM object
 		// DOM will call getData to see if data needs to be retrieved
 		// callback will be the function from DOM object
@@ -194,48 +308,40 @@ var GIVe = (function(give) {
 		// first merge ranges currently being debounced
 		
 		if(this.isRetrivingData) {
-			this._addCallback(this.getData.bind(this, ranges, callback, callbackID));
+			this._addCallback(this.getData.bind(this, ranges, resolutions, callback, callerID));
 			return true;
 		}
 		
-		var assimilateRanges = function(rangeMain, rangeToBeAssimilated) {
-			if(rangeMain.overlaps(rangeToBeAssimilated)) {
-				rangeMain.assimilate(rangeToBeAssimilated);
-				return false;
-			}
-			return true;
-		};
+		callerID = callerID || give.TrackObject.NO_CALLERID_KEY;
 		
 		if(!Array.isArray(ranges)) {
 			ranges = [ranges];
 		}
-		// merge the query
-		ranges.forEach(function(range) {
-			this.pendingGUIRanges = this.pendingGUIRanges.filter(assimilateRanges.bind(this, range), this);
-			this.pendingGUIRanges.splice(
-				give.locationOf(range, this.pendingGUIRanges, 
-								null, null, give.ChromRegion.compareChrRegion) + 1,
-				0, range);
-		}, this);
+		if(!Array.isArray(resolutions)) {
+			resolutions = (new Array(ranges.length)).fill(resolutions);
+		}
+		
+		this.pendingGUIRangesFromID[callerID] = ranges;
+		this.pendingGUIRangesFromID[callerID].resolutions = resolutions;
 
 		this.getTrackUncachedRange();
 		if(callback) {
-			this._addCallback(callback, callbackID);
+			this._addCallback(callback, callerID);
 		}
-		if(typeof this.pendingQueryRegions !== 'undefined' && 
-		   this.pendingQueryRegions.length > 0) {
+		if(this.pendingQueryRegions.regions.length > 0) {
 			give.debounce(this.getDataJobName, 
-						  this._retrieveData.bind(this, this.pendingQueryRegions),
+						  this._retrieveData.bind(this, this.pendingQueryRegions.regions,
+												 this.pendingQueryRegions.resolutions),
 						  this.getDataDebounceInt);
 		} else {
 			if(give.isDebouncerActive(this.getDataJobName)) {
 				give.cancelDebouncer(this.getDataJobName);
 			}					
-			this.pendingGUIRanges = [];
+			this.pendingGUIRangesFromID = {};
 			this._clearCallback(true);
 		}
 		// return whether data is actually being retrieved (maybe unnecessary?)
-		return (this.pendingQueryRegions && this.pendingQueryRegions.length > 0);
+		return (this.pendingQueryRegions.regions.length > 0);
 	};
 	
 	give.TrackObject.prototype._clearCallback = function(execute) {
@@ -256,7 +362,7 @@ var GIVe = (function(give) {
 		this.callbackFuncs[callbackID] = callback;
 	};
 
-	give.TrackObject.prototype._retrieveData = function(regions) {
+	give.TrackObject.prototype._retrieveData = function(regions, resolutions) {
 		// directly from request URL
 		// use iron-ajax to submit request directly
 		// customized components are used in data preparation and data handler
@@ -267,11 +373,12 @@ var GIVe = (function(give) {
 		if(regions && regions.length > 0) {
 			if(this.isCustom && this.localFile) {
 				// if track has its own getLocalData function, then get local data instead of getting remote data
-				this.getReadLocalFile().call(this, this.localFile, this.prepareCustomQuery(regions));
+				this.getReadLocalFile().call(this, this.localFile, 
+											 this.prepareCustomQuery(regions, resolutions));
 				// afterwards it's this.dataHandler()'s job.
 			} else if(this.requestUrl) {
 				this.isRetrivingData = true;
-				give.postAjax(this.requestUrl, this.prepareRemoteQuery(regions), 
+				give.postAjax(this.requestUrl, this.prepareRemoteQuery(regions, resolutions), 
 							  this.responseHandler, 'json', null, null, this);
 			}
 		} else {
@@ -285,6 +392,14 @@ var GIVe = (function(give) {
 			return give.TrackObjectImpl.DataHandlers[this.getTypeTrunk()].bind(this);
 		} else {
 			return give.TrackObjectImpl.DefaultDataHandler.bind(this);
+		}
+	};
+
+	give.TrackObject.prototype.getSummaryCtor = function() {
+		if(give.TrackObjectImpl.SummaryCtors.hasOwnProperty(this.getTypeTrunk())) {
+			return give.TrackObjectImpl.SummaryCtors[this.getTypeTrunk()];
+		} else {
+			return give.TrackObjectImpl.DefaultSummaryCtor;
 		}
 	};
 
@@ -319,16 +434,21 @@ var GIVe = (function(give) {
 		//	2. Enumerate all res.chrom to run this.getDataHandler()
 		//	3. TODO: Add cache purging stuff in the future
 		for(var chrom in response) {
-			if(response.hasOwnProperty(chrom) && Array.isArray(response[chrom])) {
+			if(response.hasOwnProperty(chrom) && 
+			   this.species.chromInfo.hasOwnProperty(chrom) &&
+			   Array.isArray(response[chrom])) {
 				if(!this.data.hasOwnProperty(chrom)) {
 					this.data[chrom] = new give.ChromBPlusTree(this.species.chromInfo[chrom].chrRegion.start,
-															   this.species.chromInfo[chrom].chrRegion.end);
+															   this.species.chromInfo[chrom].chrRegion.end,
+															   this.getSummaryCtor());
 				}
 			}
 		}
-		this.getDataHandler()(response, this.data, this.pendingQueryRegions);
-		delete this.pendingQueryRegions;
-		this.pendingGUIRanges = [];
+		this.getDataHandler()(response, this.data,
+							  this.pendingQueryRegions.regions, 
+							  this.pendingQueryRegions.resolutions);
+		this.pendingQueryRegions = {regions: [], resolutions: []};
+		this.pendingGUIRangesFromID = {};
 		this.isRetrivingData = false;
 		this._clearCallback(true);
 	};
@@ -343,10 +463,13 @@ var GIVe = (function(give) {
 	};
 
 	give.TrackObject.DEFAULT_PRIORITY = 100.0;
-	give.TrackObject.fetchDataTarget = '/getTrackData.php';
-	give.TrackObject.fetchCustomTarget = '/getTrackData.php';
+	give.TrackObject.NO_CALLERID_KEY = '_giveNoCallerID';
+	give.TrackObject.fetchDataTarget = '/givdata/getTrackData.php';
+	give.TrackObject.fetchCustomTarget = '/givdata/getTrackData.php';
 	give.TrackObject.getDataQueueCallbackID = 'GETDATA_QUEUE_';
-
+	
+	give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0;
+	
 	give.TrackObject.createCoorTrack = function(species, id) {
 		var newTrack = new give.TrackObject(id || 'coor_' + species.db, null, species);
 		newTrack.setSetting('type', 'coordinate');
