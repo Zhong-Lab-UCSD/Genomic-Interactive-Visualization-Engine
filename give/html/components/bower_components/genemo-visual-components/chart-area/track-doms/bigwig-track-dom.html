@@ -155,6 +155,24 @@
 			drawOverflowLines: function(overflows) {
 				// overflows is an object containing overflowing ChrRegions
 				// { 'exceedMax': Array(), 'exceedMin': Array() }
+				//purple
+				var points=[];
+			for (var i=;i<overflows.exceedMax.length;i++){
+				points.push([overflows.exceedMax[i].start,this.windowMax]);
+				points.push([overflows.exceedMax[i].end,this.windowMax]);
+				this.createRawPolygon(points, {class: 'wiggleShapes',
+					fill: this.rgbToHex(this.colorSet[8]),
+					stroke: this.rgbToHex(this.colorSet[8]),
+					}, svgToDraw);
+			}
+			for (var i=;i<overflows.exceedMin.length;i++){
+				points.push([overflows.exceedMin[i].start,this.windowMin]);
+				points.push([overflows.exceedMin[i].end,this.windowMin]);
+				this.createRawPolygon(points, {class: 'wiggleShapes',
+					fill: this.rgbToHex(this.colorSet[8]),
+					stroke: this.rgbToHex(this.colorSet[8]),
+					}, svgToDraw);
+			}
 			},
 
 			drawPeak: function(currPolygon, dataEntry) {
