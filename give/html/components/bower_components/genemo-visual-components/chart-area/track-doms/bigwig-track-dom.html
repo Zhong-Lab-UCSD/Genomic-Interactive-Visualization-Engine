@@ -156,26 +156,28 @@
 				// overflows is an object containing overflowing ChrRegions
 				// { 'exceedMax': Array(), 'exceedMin': Array() }
 				//purple
+
 				var points=[];
 				var svgToDraw = this.mainSvg, windowToDraw = svgToDraw.viewWindow, flags = {};
 			for (var i=0;i<overflows.exceedMax.length;i++){
 				points.push([overflows.exceedMax[i].start,this.windowMax]);
 				points.push([overflows.exceedMax[i].end,this.windowMax]);
-				points.push([overflows.exceedMax[i].start,this.windowMax-5]);
 				points.push([overflows.exceedMax[i].end,this.windowMax-5]);
+				points.push([overflows.exceedMax[i].start,this.windowMax-5]);
 				this.createRawPolygon(points, {class: 'wiggleShapes',
 					fill: this.rgbToHex(this.colorSet[8]),
 					stroke: this.rgbToHex(this.colorSet[8]),
 					}, svgToDraw);
+                console.log('drawn');
 			}
-			for (var i=0;i<overflows.exceedMin.length;i++){
+		/*	for (var i=0;i<overflows.exceedMin.length;i++){
 				points.push([overflows.exceedMin[i].start,this.windowMin]);
 				points.push([overflows.exceedMin[i].end,this.windowMin]);
 				this.createRawPolygon(points, {class: 'wiggleShapes',
 					fill: this.rgbToHex(this.colorSet[8]),
 					stroke: this.rgbToHex(this.colorSet[8]),
 					}, svgToDraw);
-			}
+			}*/
 			},
 
 			drawPeak: function(currPolygon, dataEntry) {
