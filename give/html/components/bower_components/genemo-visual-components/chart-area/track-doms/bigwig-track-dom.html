@@ -160,24 +160,27 @@
 				var points=[];
 				var svgToDraw = this.mainSvg, windowToDraw = svgToDraw.viewWindow, flags = {};
 			for (var i=0;i<overflows.exceedMax.length;i++){
-				points.push([overflows.exceedMax[i].start,this.windowMax]);
-				points.push([overflows.exceedMax[i].end,this.windowMax]);
-				points.push([overflows.exceedMax[i].end,this.windowMax-5]);
-				points.push([overflows.exceedMax[i].start,this.windowMax-5]);
+				points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].start},svgToDraw),this.drawingBoundary.top]);
+				points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].end},svgToDraw),this.drawingBoundary.top]);
+                points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].end},svgToDraw),this.drawingBoundary.top-5]);
+                points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].start},svgToDraw),this.drawingBoundary.top-5]);
 				this.createRawPolygon(points, {class: 'wiggleShapes',
 					fill: this.rgbToHex(this.colorSet[8]),
 					stroke: this.rgbToHex(this.colorSet[8]),
 					}, svgToDraw);
-                console.log('drawn');
+              //  console.log(points);
 			}
-		/*	for (var i=0;i<overflows.exceedMin.length;i++){
-				points.push([overflows.exceedMin[i].start,this.windowMin]);
-				points.push([overflows.exceedMin[i].end,this.windowMin]);
+            for (var i=0;i<overflows.exceedMin.length;i++){
+				points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].start},svgToDraw),this.drawingBoundary.bottom]);
+				points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].end},svgToDraw),this.drawingBoundary.bottom]);
+                points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].end},svgToDraw),this.drawingBoundary.bottom+5]);
+                points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].start},svgToDraw),this.drawingBoundary.bottom+5]);
 				this.createRawPolygon(points, {class: 'wiggleShapes',
 					fill: this.rgbToHex(this.colorSet[8]),
 					stroke: this.rgbToHex(this.colorSet[8]),
 					}, svgToDraw);
-			}*/
+              //  console.log(points);
+			}
 			},
 
 			drawPeak: function(currPolygon, dataEntry) {
