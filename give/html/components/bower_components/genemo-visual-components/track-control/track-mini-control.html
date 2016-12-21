@@ -1,0 +1,129 @@
+<!-- Minimal track control "band" component
+  This is used to show minimal information of tracks and
+  do the very basic control to adjust display settings
+
+  Currently the implementation is extreme simplistic (a paper-checkbox or paper-radio-button)
+  TODO: call track-control element from here
+-->
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../genemo-data-components/basic-func/basic-func.html">
+<link rel="import" href="../../genemo-data-components/track-object/track-object.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../chart-area/genemo-track-styles.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="track-mini-control">
+  <template>
+    <style include="genemo-shared-styles">
+    </style>
+    <template is="dom-if" if="[[_groupSingleChoice(group)]]" restamp>
+      <paper-radio-button id="choiceElem" name="[[track.id]]">
+        [[_getTrackShortLabel(track)]]
+      </paper-radio-button>
+    </template>
+    <template is="dom-if" if="[[!_groupSingleChoice(group)]]" restamp>
+      <paper-checkbox id="choiceElem" name="[[track.id]]" checked>
+        [[_getTrackShortLabel(track)]]
+      </paper-checkbox>
+    </template>
+  </template>
+  <script type="text/javascript">
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.TrackMiniControl = Polymer({
+        is: 'track-mini-control',
+
+        created: function () {
+          this.TRACK_LABEL_LIMIT = 25
+          this.TRACK_LABEL_PREFIX = 21
+          this.TRACK_LABEL_SUFFIX = 3
+        },
+
+        properties: {
+          id: {
+            type: String,
+            readOnly: true
+          },
+
+          track: {
+            type: Object
+          },
+
+          group: {
+            type: Object
+          },
+
+          settingKey: {
+            type: String
+          }
+        },
+
+        _groupSingleChoice: function (group) {
+          return group && group.singleChoice && group.singleChoice !== '0'
+        },
+
+        _getTrackShortLabel: function (track) {
+          return give.shortenString(track.getSetting('shortLabel'),
+            this.TRACK_LABEL_LIMIT,
+            this.TRACK_LABEL_PREFIX,
+            this.TRACK_LABEL_SUFFIX)
+        },
+
+        ready: function () {
+          this._setId(this.track.getCleanID())
+          if (!this.settingKey) {
+            this.settingKey = 'visibility'
+          }
+        },
+
+        isChecked: function () {
+          return Polymer.dom(this.root).querySelector('#choiceElem').checked
+        },
+
+        setChecked: function (checked) {
+          Polymer.dom(this.root).querySelector('#choiceElem').checked = checked
+          return checked
+        },
+
+        trackToDOM: function (isDryRun) {
+          var newFlag
+          if (this.settingKey === 'visibility') {
+            newFlag = (this.track.getSetting('visibility') !==
+                  give.TrackObject.StatusEnum.VIS_NONE)
+          } else {
+            newFlag = !!this.track.getSetting(this.settingKey)
+          }
+          if (!isDryRun) {
+            return this.setChecked(newFlag)
+          } else {
+            return newFlag
+          }
+        },
+
+        DOMToTrack: function () {
+          if (this.settingKey === 'visibility') {
+            if (!this.isChecked()) {
+              this._visBackup = this.track.getSetting('visibility')
+              this.track.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
+            } else {
+              this.track.setSetting('visibility', this._visBackup ||
+                        give.TrackObject.StatusEnum.VIS_PACK)
+            }
+          } else {
+            this.track.setSetting(this.settingKey, this.isChecked())
+          }
+        },
+
+        getChoiceElemName: function () {
+          return Polymer.dom(this.root).querySelector('#choiceElem').name
+        }
+
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>

@@ -32,7 +32,7 @@
     "tag": "v1.0.6",
     "commit": "0888fcae201558c70dc5027774b772aed3ca1d0e"
   },
-  "_source": "git://github.com/PolymerElements/iron-localstorage.git",
+  "_source": "https://github.com/PolymerElements/iron-localstorage.git",
   "_target": "^1.0.0",
   "_originalSource": "PolymerElements/iron-localstorage"
 }

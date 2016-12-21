@@ -32,7 +32,7 @@
     "tag": "v1.0.3",
     "commit": "95dbcefcc0fcb5c7c639d7bae35774269ac7081a"
   },
-  "_source": "git://github.com/PolymerElements/iron-signals.git",
+  "_source": "https://github.com/PolymerElements/iron-signals.git",
   "_target": "^1.0.0",
   "_originalSource": "PolymerElements/iron-signals"
 }

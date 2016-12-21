@@ -228,6 +228,7 @@ mm9_grpinfo
 mm9_labtracks
 susScr2_grpinfo
 susScr2_labtracks
+samples/
 
 testData/
 */includes/constants.php

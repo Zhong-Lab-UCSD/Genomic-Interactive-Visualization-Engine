@@ -18,7 +18,7 @@
 <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link rel="import" href="components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 <link rel="import" href="components/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="components/genemo_components/genemo-styles.html">
+<link rel="import" href="components/bower_components/genemo-visual-components/genemo-styles.html">
 <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="components/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="components/bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">

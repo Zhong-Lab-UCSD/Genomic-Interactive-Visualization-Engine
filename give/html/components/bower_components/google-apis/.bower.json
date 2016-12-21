@@ -33,7 +33,7 @@
     "tag": "v1.1.7",
     "commit": "f49556ed82feab560202c9d13c1a7f0a77c80171"
   },
-  "_source": "git://github.com/GoogleWebComponents/google-apis.git",
+  "_source": "https://github.com/GoogleWebComponents/google-apis.git",
   "_target": "^1.0.0",
   "_originalSource": "GoogleWebComponents/google-apis"
 }

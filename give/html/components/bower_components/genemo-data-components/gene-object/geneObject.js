@@ -94,7 +94,7 @@ var GIVe = (function(give) {
 	};
 
 	give.GeneObject.prototype.getGeneName = function(withTransNums) {
-		return this.name + ((withTransNums && this.transcripts.length > 1)?
+		return this.getShortName() + ((withTransNums && this.transcripts.length > 1)?
 				' (' + this.transcripts.length + ')': '');
 	};
 

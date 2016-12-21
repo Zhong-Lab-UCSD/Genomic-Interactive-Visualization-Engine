@@ -1,65 +1,64 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-card/paper-card.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../genemo-data-components/basic-func/basic-func.html">
 <link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
 <link rel="import" href="../../paper-spinner/paper-spinner.html">
-<link rel="import" href="../../../genemo_components/genemo-styles.html">
+<link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
 <link rel="import" href="tracks-header.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-area">
-  <template>
-    <style include="genemo-shared-styles">
-        #trackDOMHolder {
-            display: none;
-        }
+<template>
+<style include="genemo-shared-styles">
+#trackDOMHolder {
+	display: none;
+}
 		:host {
-			margin: 0;
-		}
-		paper-card {
-			width: 100%;
-			padding: 0.5em;
-		}
-		#loadingBlock.unReady {
-			display: block;
-			position: absolute;
-			pointer-events: none;
-			left: 0px;
-			right: 0px;
-			top: 0px;
-			bottom: 0px;
-			z-index: 1;
-			opacity: 0.8;
-			background: var(--card-background-color);
-		}
-		
-		#loadingBlock {
-			display: none;
-		}
-		
-		paper-spinner {
-			position: absolute;
-			top: 50%;
-			margin-top: -12px;
-			left: 50%;
-			margin-left: -12px;
-			height: 24px;
-			width: 24px;
-			opacity: 1;
-		}
-    </style>
-    <style include="genemo-track-styles"></style>
-  <div id="loadingBlock" class="unReady">
-	<paper-spinner id="loadingSpinner" alt="Loading card content" active></paper-spinner>
-  </div>
-	<paper-card>
-    <svg id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-	</svg>
-    <div id="trackDOMHolder"></div></paper-card>
-  </template>
-  <script src="../../genemo-data-components/basic-func/basicFunc.js"></script>
-  <script>
+ margin: 0;
+}
+paper-card {
+	width: 100%;
+	padding: 0.5em;
+}
+#loadingBlock.unReady {
+	display: block;
+	position: absolute;
+	pointer-events: none;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	bottom: 0px;
+	z-index: 1;
+	opacity: 0.8;
+	background: var(--card-background-color);
+}
+#loadingBlock {
+	display: none;
+}
+paper-spinner {
+	position: absolute;
+	top: 50%;
+	margin-top: -12px;
+	left: 50%;
+	margin-left: -12px;
+	height: 24px;
+	width: 24px;
+	opacity: 1;
+}
+</style>
+<style include="genemo-track-styles"></style>
+<div id="loadingBlock" class="unReady">
+  <paper-spinner id="loadingSpinner" alt="Loading card content" active></paper-spinner>
+</div>
+<paper-card>
+  <svg id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"> </svg>
+  <div id="trackDOMHolder"></div>
+</paper-card>
+</template>
+<script src="../../genemo-data-components/basic-func/basicFunc.js"></script> 
+<script>
    	var GIVe = (function(give) {
 		'use strict';
 		
@@ -442,7 +441,7 @@
 
 			addAllTrackDOMs: function(noRefreshContent) {
 				this.viewWindows.forEach(function(vwindow, windowIndex) {
-					this.species.uniTracks.forEach(function(track, index) {
+					this.species.getTracks().forEach(function(track, index) {
 						// notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
 						if(track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
 							this.addVisibleTrack(track, windowIndex);

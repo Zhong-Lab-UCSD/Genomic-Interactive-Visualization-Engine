@@ -41,7 +41,7 @@
     "tag": "v1.3.1",
     "commit": "3a961e367e3d25d7e192fca0c1496af0f3feab44"
   },
-  "_source": "git://github.com/PolymerElements/paper-radio-button.git",
+  "_source": "https://github.com/PolymerElements/paper-radio-button.git",
   "_target": "^1.0.0",
   "_originalSource": "PolymerElements/paper-radio-button"
 }

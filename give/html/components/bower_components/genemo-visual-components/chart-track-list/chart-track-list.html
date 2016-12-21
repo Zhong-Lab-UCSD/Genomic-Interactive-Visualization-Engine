@@ -4,201 +4,246 @@
 <link rel="import" href="../../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../paper-material/paper-material.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../../../genemo_components/genemo-styles.html">
-<link rel="import" href="../../../genemo_components/genemo-card-content-behavior/genemo-card-content-behavior.html">
+<link rel="import" href="../track-control/track-mini-control.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
+<link rel="import" href="../track-control/track-mini-control.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
     <style include="genemo-shared-styles">
-		:host {
-			padding: 0.5em;
-			display: block;
-		}
-		paper-material {
-			margin: 0.5em 0;
-			padding: 1em;
-		}
-		paper-material > div.header {
-			color: #3F51B5;
-			margin-bottom: 0.5em;
-		}
-		paper-material > div.scroller {
-			max-height: 300px;
-			overflow-y: auto;
-		}
-		paper-material > paper-checkbox {
-			margin: 0.5em;
-		}
-		paper-radio-group > paper-radio-button {
-			padding: 0.5em;
-		
-		}
-		paper-dialog-scrollable{
-			height: 300px;
-		}
+    :host {
+      padding: 0.5em;
+      display: block;
+    }
+    paper-material {
+      margin: 0.5em 0;
+      padding: 1em;
+    }
+    paper-material > div.header {
+      color: #3F51B5;
+      margin-bottom: 0.5em;
+    }
+    paper-material > div.scroller {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    paper-material > paper-checkbox {
+      margin: 0.5em;
+    }
+    paper-radio-group > paper-radio-button {
+      padding: 0.5em;
+
+    }
+    paper-dialog-scrollable{
+      height: 300px;
+    }
     </style>
+    <template is="dom-repeat" id="trackGroupBlock" sort="_prioritySort"
+      observe="priority" items="[[groupArray]]" as="group">
+      <!-- this is the track group DOM -->
+      <paper-material elevation="1">
+        <div class="header">[[group.label]]</div>
+        <template is="dom-if" if="[[group.singleChoice]]">
+          <paper-radio-group allow-empty-selection class="selectionElement">
+            <template is="dom-repeat" sort="_prioritySort" observe="priority"
+              items="[[group.array]]" as="track">
+              <track-mini-control track="[[track]]" group="[[group]]"
+                setting-key="[[settingKey]]">
+              </track-mini-control>
+            </template>
+          </paper-radio-group>
+        </template>
+        <template is="dom-if" if="[[!group.singleChoice]]">
+          <template is="dom-repeat" sort="_prioritySort" observe="priority"
+            items="[[group.array]]" as="track">
+            <track-mini-control class="selectionElement" track="[[track]]"
+              group="[[group]]" setting-key="[[settingKey]]">
+            </track-mini-control>
+          </template>
+        </template>
+      </paper-material>
+    </template>
+    <paper-button>
+      <iron-icon icon="filter-list"></iron-icon>
+      Filter
+    </paper-button>
+    <paper-button on-tap="resetAllTrack">
+      <iron-icon icon="refresh"></iron-icon>
+      Reset to default
+    </paper-button>
+    <paper-button on-tap="cancelChanges">
+      <iron-icon icon="close"></iron-icon>
+      Cancel
+    </paper-button>
+    <paper-button on-tap="submitChanges">
+      <iron-icon icon="check"></iron-icon>
+      OK
+    </paper-button>
+
+
   </template>
   <script>
-  	var GIVe = (function(give) {
-		'use strict';
-		
-		give.ChartTrackList = Polymer({
-			is: "chart-track-list",
+    var GIVe = (function (give) {
+      'use strict'
 
-			behaviors: [
-				give.GenemoCardContentBehavior
-			],
+      give.ChartTrackList = Polymer({
+        is: 'chart-track-list',
 
-			properties: {
-				species: Object, // this is the species defined in libtracks.js
-				// notice that species should have chromSizes and location of centromeres included
-				// tracks is also within species
-				// may need to provide additional API to get track data
+        behaviors: [
+          give.GenemoTabCardContentBehavior
+        ],
 
-				textSize: {
-					type: Number,
-					value: 12,		// unit is px
-				},
+        properties: {
+          species: {
+            type: Object,
+            readOnly: true
+          },
+          // this is the species defined in libtracks.js
+          // notice that species should have chromSizes and location of centromeres included
+          // tracks is also within species
+          // may need to provide additional API to get track data
 
-			},
+          textSize: {
+            type: Number,
+            value: 12    // unit is px
+          },
 
-			created: function() {
-				this.trackCtrlDOMs = [];
-			},
+          settingKey: {
+            type: String,
+            value: give.GENEMO_SELECTED_KEY
+          },
 
-			ready: function() {
-				this._setIcon('view-list');
-				this._setIconAlt('Track list');
-				this._setHeaderText('Track list');
-			},
+          groupArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
 
-			factoryImpl: function(species) {
-				this.changeSpecies(species);
-			},
+          groupIdList: {
+            type: Array
+          }
 
-			changeSpecies: function(newSpecies) {
-				// this will reset all tracks and redo the species
-				// note that the tracks should already be initialized before switching here
-				if(!newSpecies) {
-					throw(new Error("No new species specified!"));
-				}
-				this.species = newSpecies;
-				this.updateAllGroupDOM();
-				this.setReady(true);
-			},
+        },
 
-			updateAllGroupDOM: function(keepOld) {
-				if(!keepOld) {
-					while(Polymer.dom(this.root).firstChild) {
-						Polymer.dom(this.root).removeChild(Polymer.dom(this.root).firstChild);
-					}
-				}
-				this.trackCtrlDOMs = [];
-				for(var groupID in this.species.groups) {
-					if(groupID !== '_ungrouped' && this.species.groups.hasOwnProperty(groupID) 
-						&& this.species.groups[groupID].getLength() > 0) {
-							this.updateGroupDOM(groupID);
-					}
-				}
-				this.setDOMReady(true);
-				this.trackToDOM();
-			},
+        ready: function () {
+          this._setIcon('view-list')
+          this._setIconAlt('Track list')
+          this._setHeaderText('Track list')
+          this._setTabText('Tracks')
 
-			updateGroupDOM: function(groupID) {
-				// create paper-material for the group
-				var newMaterial;
-				if(Polymer.dom(this.root).querySelector('#' + groupID + '_material')) {
-					newMaterial = Polymer.dom(this.root).querySelector('#' + groupID + '_material');
-					while(Polymer.dom(newMaterial).firstChild) {
-						Polymer.dom(newMaterial).removeChild(Polymer.dom(newMaterial).firstChild);
-					}
-				} else {				
-					newMaterial = document.createElement('paper-material');
-					newMaterial.setAttribute('id', groupID + '_material');
-					Polymer.dom(this.root).appendChild(newMaterial);
-					newMaterial.setAttribute('z', '1');
-				}
+          this.setDOMReady(true)
+          this.setReady(false)
+          this.changeSpecies(null, true)
+        },
 
-				var label = document.createElement('div');
-				label.textContent = this.species.groups[groupID].label;
-				label.setAttribute('class', 'header');
-				Polymer.dom(newMaterial).appendChild(label);
-				var scroller = document.createElement('div');
-				scroller.setAttribute('class', 'scroller');
-				Polymer.dom(newMaterial).appendChild(scroller);
-				var container = scroller;
-				if(this.species.groups[groupID].singleOnly) {
-					container = document.createElement('paper-radio-group');
-					container.allowEmptySelection = true;
-					container.groupRef = this.species.groups[groupID];
+        _refreshSpecies: function () {
+          // this is called after this._changeSpecies
+          this.splice('groupArray', 0, this.groupArray.length)
+          try {
+            if (this.groupIdList && this.groupIdList.length > 0) {
+              this.groupIdList.forEach(function (groupID) {
+                if (this.species.getGroups(this._refreshSpecies.bind(this)).hasOwnProperty(groupID)) {
+                  this.push('groupArray', this.species.getGroups()[groupID])
+                }
+              }, this)
+            } else {
+              for (var key in this.species.getGroups(this._refreshSpecies.bind(this))) {
+                if (this.species.getGroups().hasOwnProperty(key)) {
+                  this.push('groupArray', this.species.getGroups()[key])
+                }
+              }
+            }
+            this.trackToDOM()
+            this.setReady(true)
+          } catch (e) {
+            if (give.verboseLvl >= give.VERBOSE_DEBUG) {
+              console.log(e.message)
+              console.log(e.stack)
+            }
+          }
+        },
 
-					Polymer.dom(scroller).appendChild(container);
-							//Polymer.dom(expander).appendChild(scroller);
+        _prioritySort: function (itemA, itemB) {
+          return itemA.priority < itemB.priority
+            ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
+        },
 
-				}
-				this.species.groups[groupID].forEach(function(track, index) {
-					var newTrackSelectionDOM = document.createElement(
-						this.species.groups[groupID].singleOnly? 'paper-radio-button': 'paper-checkbox');
-					newTrackSelectionDOM.trackRef = track;
-					var newTrackLabel = document.createTextNode(track.getSetting('shortLabel'));
-					newTrackSelectionDOM.name = track.id;
-					Polymer.dom(newTrackSelectionDOM).appendChild(newTrackLabel);
-					Polymer.dom(container).appendChild(newTrackSelectionDOM);
-					if(!this.species.groups[groupID].singleOnly) {
-						this.trackCtrlDOMs.push(newTrackSelectionDOM);
-					}
-				}, this);
-				if(this.species.groups[groupID].singleOnly) {
-					this.trackCtrlDOMs.push(container);
-				}
-			},
+        changeSpecies: function (newSpecies, forceUpdate) {
+        // this will reset all tracks and redo the species
+        // note that the tracks should already be initialized before switching here
+          if (!newSpecies) {
+            if (!forceUpdate) {
+              throw (new Error('No new species specified!'))
+            }
+          } else {
+            this._setSpecies(newSpecies)
+          }
+          this.setReady(false)
+          if (this.species) {
+            this._refreshSpecies()
+          }
+        },
 
-			trackToDOM: function() {
-				// this is used when resetting selection
-				this.trackCtrlDOMs.forEach(function(trackCtrlDOM, index) {
-					if(trackCtrlDOM.trackRef) {
-						trackCtrlDOM.checked = (trackCtrlDOM.trackRef.getSetting('visibility') !== give.TrackObject.StatusEnum.VIS_NONE);
-					} else {
-						// is group
-						var selectedID = "";
-						trackCtrlDOM.groupRef.some(function(track, index) {
-							if(track.getSetting('visibility') !== give.TrackObject.StatusEnum.VIS_NONE) {
-								selectedID = track.id;
-								return true;
-							}
-							return false;
-						});
-						trackCtrlDOM.select(selectedID);
-					}
-				});
-			},
+        trackToDOM: function () {
+          // this is used when resetting selection
+          var domList = Polymer.dom(this.root).querySelectorAll('.selectionElement')
+          give.forEach(domList, function (selElem) {
+            if (selElem.tagName.toLowerCase() === 'track-mini-control') {
+              // this is the component directly responsible for a track
+              selElem.trackToDOM()
+            } else {
+              // it's a singleChoice group
+              var itemList = Polymer.dom(selElem).querySelectorAll('track-mini-control')
+              var selectedID = null
+              give.forEach(itemList, function (miniCtrl) {
+                if (!selectedID) {
+                  if (miniCtrl.trackToDOM(true)) {
+                    selectedID = miniCtrl.getChoiceElemName()
+                  }
+                } else {
+                  miniCtrl.setChecked(false)
+                  miniCtrl.DOMToTrack()
+                }
+              }, this)
+              selElem.select(selectedID)
+            }
+          }, this)
+        },
 
-			DOMToTrack: function() {
-				// this is used when submitting the results
-				this.trackCtrlDOMs.forEach(function(trackCtrlDOM, index) {
-					if(trackCtrlDOM.trackRef) {
-						this.singleDOMToTrack(trackCtrlDOM);
-					} else {
-						trackCtrlDOM.items.forEach(this.singleDOMToTrack.bind(this), this);						
-					}
-				}, this);
-			},
+        DOMToTrack: function () {
+          // this is used when submitting the results
+          var domList = Polymer.dom(this.root).querySelectorAll('track-mini-control')
+          give.forEach(domList, function (elem) {
+            elem.DOMToTrack()
+          }, this)
+        },
 
-			singleDOMToTrack: function(trackCtrlDOM) {
-				if(!trackCtrlDOM.checked) {
-					trackCtrlDOM.trackRef._visBackup = trackCtrlDOM.trackRef.getSetting('visibility');
-					trackCtrlDOM.trackRef.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE);
-				} else {
-					trackCtrlDOM.trackRef.setSetting('visibility', trackCtrlDOM.trackRef._visBackup || give.TrackObject.StatusEnum.VIS_PACK);
-				}
-			},
+        resetAllTrack: function () {
+          var domList = Polymer.dom(this.root).querySelectorAll('track-mini-control')
+          give.forEach(domList, function (elem) {
+            elem.resetTrack()
+          }, this)
+        },
 
+        backToSearch: function () {
+          this.fire('switch-track-selection', {selectedItem: give.SEARCH_PANEL_DOM_ID})
+        },
 
-		});
-		
-		return give;
+        submitChanges: function () {
+          this.DOMToTrack()
+          this.backToSearch()
+        },
 
-	})(GIVe || {});
+        cancelChanges: function () {
+          this.trackToDOM()
+          this.backToSearch()
+        }
+
+      })
+
+      return give
+    })(GIVe || {})
   </script>
 </dom-module>
-

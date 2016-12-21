@@ -51,6 +51,7 @@
     "paper-dialog": "PolymerElements/paper-dialog#^1.0.0",
     "paper-dialog-scrollable": "PolymerElements/paper-dialog-scrollable#^1.0.0",
     "google-youtube": "GoogleWebComponents/google-youtube#^1.1.0",
-    "paper-spinner": "PolymerElements/paper-spinner#^1.2.0"
+    "paper-spinner": "PolymerElements/paper-spinner#^1.2.0",
+    "paper-header-panel": "PolymerElements/paper-header-panel#^1.0.0"
   }
 }
