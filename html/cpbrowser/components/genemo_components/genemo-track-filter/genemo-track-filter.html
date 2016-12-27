@@ -1,9 +1,9 @@
 <link rel="import" href="genemo-track-filter-pages.html">
-<link rel="import" href="../../paper-button/paper-button.html">
-<link rel="import" href="../../paper-card/paper-card.html">
-<link rel="import" href="../../paper-tooltip/paper-tooltip.html">
-<link rel="import" href="../../neon-animation/neon-animations.html">
-<link rel="import" href="../../neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animation-runner-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 
 <dom-module id="genemo-track-filter">
@@ -22,7 +22,7 @@
 			vertical-align: middle;
 			padding: 1em;
 		}
-		
+
 		paper-card {
 			height: 100%;
 			padding-bottom: 1em;
@@ -45,30 +45,30 @@
   </template>
   <script>
     Polymer({
-		
+
 		is: "genemo-track-filter",
-		
+
 		behaviors: [
 			Polymer.NeonAnimationRunnerBehavior,
 		],
-		
+
 		properties: {
-			
+
 			opened: {
 				type: Boolean,
 				value: false,
 			},
-			
+
 			entryAnimation: {
 				value: 'fade-in-animation'
 			},
-			
+
 			exitAnimation: {
 				value: 'fade-out-animation'
 			},
-		  
+
 		},
-		
+
 		listeners: {
 			'neon-animation-finish': '_onNeonAnimationFinish',
 		},
@@ -78,7 +78,7 @@
 			  this.style.display = 'none';
 			}
 		},
-		
+
 		show: function() {
 			if(this.$.mainPage.initialized) {
 				this.opened = true;
@@ -89,39 +89,39 @@
 				this.fire('alert', { msg: 'Filter has not been initialized yet.' });
 			}
 		},
-		
+
 		hide: function() {
 			this.opened = false;
 			this.playAnimation('exit');
 		},
-		
+
 		initialize: function(species, expMap, cellTypeMap, tissueMap, labMap) {
 			this.$.mainPage.initialize(species, expMap, cellTypeMap, tissueMap, labMap);
 		},
-		
+
 		selectAll: function() {
 			this.$.mainPage.setAllCheckboxes(true);
 		},
-		
+
 		selectNone: function() {
 			this.$.mainPage.setAllCheckboxes(false);
 		},
-		
+
 		addToSelection: function() {
 			this.fire('filter-tracks', {map: this.$.mainPage.getCurrentListMap(), flags: { matched: true, } });
 			this.hide();
 		},
-		
+
 		filterSelection: function() {
 			this.fire('filter-tracks', {map: this.$.mainPage.getCurrentListMap(), flags: { unmatched: false, } });
 			this.hide();
 		},
-		
+
 		excludeFromSelection: function() {
 			this.fire('filter-tracks', {map: this.$.mainPage.getCurrentListMap(), flags: { matched: false, } });
 			this.hide();
 		},
-		
+
 	});
   </script>
 </dom-module>

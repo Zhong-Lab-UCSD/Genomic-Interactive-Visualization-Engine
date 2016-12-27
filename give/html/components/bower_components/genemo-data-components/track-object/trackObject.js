@@ -50,7 +50,10 @@ var GIVe = (function (give) {
 
   give.TrackObject.prototype.getTitle = function () {
     // generate this.title (previously done by UCSC Browser core)
-    if (this.getSetting('trackDataType')) {
+    if (this.getSetting('groupDataType')) {
+      return this.getSetting('groupDataType') +
+        (this.getSetting('groupFeature') ? ' (' + this.getSetting('groupFeature') + ')' : '')
+    } else if (this.getSetting('trackDataType')) {
       return this.getSetting('trackDataType') +
         (this.getSetting('trackFeature') ? ' (' + this.getSetting('trackFeature') + ')' : '')
     }
@@ -294,6 +297,7 @@ var GIVe = (function (give) {
     if (this.isCustom) {
       return {
         db: this.species.db,
+        type: this.getTypeTrunk(),
         remoteURL: this.remoteFile,
         window: regions.map(function (region) {
           return region.regionToString(false)
@@ -306,6 +310,7 @@ var GIVe = (function (give) {
     } else {
       return {
         db: this.species.db,
+        type: this.getTypeTrunk(),
         trackID: this.getID(),
         window: regions.map(function (region) {
           return region.regionToString(false)

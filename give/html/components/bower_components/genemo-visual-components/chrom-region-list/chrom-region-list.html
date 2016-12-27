@@ -1,36 +1,35 @@
 <link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-card/paper-card.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link rel="import" href="../chrom-region-selector/chrom-region-selector.html">
+<link rel="import" href="../genemo-styles.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chrom-region-list">
   <template>
     <style include="genemo-shared-styles">
     :host {
-      padding: 0.5em;
       display: block;
     }
     </style>
-    <template is="dom-if" if="[[!_regionListEmpty]]">
-      <<paper-card>
-        <div class="card-content" id='listContainer'>
-          <template is="dom-repeat" id="regionListDom" items="[[regionList]]">
-            <chrom-region-selector id="[[item.name]]" region="[[item]]"></chrom-region-selector>
-          </template>
-        </div>
-        <div class="card-actions">
-          <a href$="[[bedFileLink]]" download$="[[bedFileName]]" id="bedLink" tabindex="-1">
-            <paper-button id="downloadBed">
-              <iron-icon icon="file-download"></iron-icon>Download BED File
-            </paper-button>
-          </a>
-        </div>
-      </paper-card>
-    </template>
-    <template is="dom-if" if="[[_regionListEmpty]]">
-      <div id='noResultContainer'>
-        No result to display. <span>[[_getNoResultInfo()]]</span>
+    <paper-card hidden$="[[regionListEmpty]]">
+      <div class="card-content" id='listContainer'>
+        <template is="dom-repeat" id="regionListDom" items="[[regionList]]">
+          <chrom-region-selector id="[[item.name]]" region="[[item]]"></chrom-region-selector>
+        </template>
       </div>
-    </template>
+      <div class="card-actions">
+        <a href$="[[bedFileLink]]" download$="[[bedFileName]]" id="bedLink" tabindex="-1">
+          <paper-button id="downloadBed">
+            <iron-icon icon="file-download"></iron-icon>Download BED File
+          </paper-button>
+        </a>
+      </div>
+    </paper-card>
+    <div id='noResultContainer' hidden$="[[!regionListEmpty]]">
+      No result to display. <span>[[_getNoResultInfo(firstRun)]]</span>
+    </div>
   </template>
   <script>
   var GIVe = (function (give) {
@@ -65,6 +64,12 @@
         bedFileName: {
           type: String,
           value: ''
+        },
+
+        regionListEmpty: {
+          type: Boolean,
+          readOnly: true,
+          value: false
         }
 
       },
@@ -80,15 +85,12 @@
 
         this.firstRun = true
 
+        this.setDOMReady(true)
         this.setReady(false)
       },
 
-      _regionListEmpty: function () {
-        return this.regionList.length <= 0
-      },
-
-      _getNoResultInfo: function () {
-        return this.firstRun
+      _getNoResultInfo: function (firstRun) {
+        return firstRun
           ? 'Please use the query panel to get results.'
           : 'Please change your query to get results.'
       },
@@ -102,7 +104,11 @@
         if (this.regionList.length > 0) {
           this.setBEDFileLink(annotationLine, inputFileName)
           this.firstRun = false
+          this._setRegionListEmpty(false)
+        } else {
+          this._setRegionListEmpty(true)
         }
+        this.setReady(true)
       },
 
       getListBED: function (includeStrand) {

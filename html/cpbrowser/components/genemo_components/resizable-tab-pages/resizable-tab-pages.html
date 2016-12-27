@@ -6,11 +6,11 @@ The complete set of contributors may be found at http://polymer.github.io/CONTRI
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../../iron-selector/iron-selectable.html">
-<link rel="import" href="../../neon-animation/neon-animation-runner-behavior.html">
-<link rel="import" href="../../neon-animation/animations/opaque-animation.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../bower_components/iron-selector/iron-selectable.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/opaque-animation.html">
 
 <!--
 `resizable-tab-pages` is changed from Polymer neon-animated-pages to fit paper-tabs better.
@@ -100,7 +100,7 @@ animations to be run when switching to or switching out of the page.
       lesserExitAnimation: {
         type: String
       },
-	  
+
       horizontal: {
         type: Boolean,
         value: false,
@@ -192,10 +192,10 @@ animations to be run when switching to or switching out of the page.
 
       // display the selectedPage during the transition.
       selectedPage.classList.add('neon-animating');
-	  
+
 	  this.updateSize((this.horizontal? selectedPage.getBoundingClientRect().width: selectedPage.getBoundingClientRect().height) +
 		'px', true);
-	  
+
       // actually run the animations.
       if (this.animationConfig.length > 1) {
 
@@ -261,7 +261,7 @@ animations to be run when switching to or switching out of the page.
       }
       this.notifyResize();
     },
-	
+
     ready: function() {
       // Avoid transition at the beginning e.g. page loads and enable
       // transitions only after the element is rendered and ready.

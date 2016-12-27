@@ -3,10 +3,10 @@
 // note that Polymer.iron-ajax needs to be included before calling
 // 		because iron-ajax elements is needed to get the meta file
 // also note that all cell lines (human and mouse) are used here
-// 
+//
 -->
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <dom-module id="meta-entries">
   <template>
     <iron-ajax id="metaAjax" url="{{url}}" handle-as="text" on-response="responseHandler" method="GET"></iron-ajax>
@@ -14,7 +14,7 @@
   <script>
   	MetaEntries = Polymer({
 		is: "meta-entries",
-		
+
 		properties: {
 			entries: {
 				type: Object,
@@ -22,33 +22,33 @@
 					return {};
 				},
 			},
-			
+
 			isReady: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-			
+
 			url: {
 				type: String,
 				value: '/goldenPath/encodeDCC/cv.ra',
 			},
 		},
-		
+
 		factoryImpl: function(url) {
 			// url is the metadata file
 			// create iron-ajax first
-			
+
 			this.url = url || this.url;
-			
+
 		},
-		
+
 		attached: function() {
-			
+
 			this.$.metaAjax.generateRequest();
-			
+
 		},
-		
+
 		responseHandler: function(e, detail) {
 			var metaTxt = detail.response;
 			if(metaTxt) {
@@ -67,14 +67,14 @@
 			this._setIsReady(true);
 			this.fire('species-ready');
 		},
-		
+
 		findMeta: function(organism, term, key) {
 			if(this.entries[organism] && this.entries[organism][term]) {
 				return this.entries[organism][term][key];
 			}
 			return null;
 		},
-		
+
 		getMetaEntry: function(strArray) {
 			var isReady = false;
 			var result = {};			// all meta properties
@@ -90,7 +90,7 @@
 						// this is because 'type Cell Line' is required per ENCODE cell line standard
 					}
 				} else if (!line) {
-					// empty line, 
+					// empty line,
 					// if this.isReady = true, then this entry is done
 					if (isReady) {
 						break;
@@ -99,8 +99,8 @@
 			}
 			return isReady? result: null;
 		},
-		
-		
+
+
 	});
   </script>
 </dom-module>

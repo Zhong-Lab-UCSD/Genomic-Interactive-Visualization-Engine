@@ -1,11 +1,11 @@
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../../iron-icons/iron-icons.html">
-<link rel="import" href="../../iron-signals/iron-signals.html">
-<link rel="import" href="../../iron-collapse/iron-collapse.html">
-<link rel="import" href="../../paper-material/paper-material.html">
-<link rel="import" href="../../paper-spinner/paper-spinner.html">
-<link rel="import" href="../../neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="genemo-card" attributes="isOpened collapseGroup">
@@ -20,14 +20,14 @@
 		/*	border: #757575 solid 1px;
 			border: rgba(0, 0, 0, .54) solid 1px;
 		*/}
-		
+
 		/************************** Polymer and Material Design components below *********************/
-		
+
 		/************************** Polymer and Material Design size and others below *********************/
 		#cardHeadHolder {
 			display: none;
 		}
-		
+
 		#loadingBlock.unReady {
 			display: block;
 			position: absolute;
@@ -39,11 +39,11 @@
 			opacity: 0.8;
 			background: var(--card-background-color);
 		}
-		
+
 		#loadingBlock {
 			display: none;
 		}
-		
+
 		paper-spinner {
 			position: absolute;
 			top: 50%;
@@ -54,7 +54,7 @@
 			width: 24px;
 			opacity: 1;
 		}
-		
+
 	</style>
     <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
     <paper-material elevation="1">
@@ -77,67 +77,67 @@
   </template>
   <script>
     Polymer({
-        
+
 		is: "genemo-card",
-		
+
 		behaviors: [
 			Polymer.NeonAnimatableBehavior
 		],
-		
+
 		properties: {
-			
+
 			isOpened: {
 				type: Boolean,
 				value: true,
 				reflectToAttribute: true,
 				observer: 'isOpenedChanged'
 			},
-			
+
 			collapseGroup: {
 				type: String,
 				value: ''
 			},
-			
+
 			collapseHeaderEl: {
 				type: Object,
 				value: null
 			},
-			
+
 			enableSignal: {
 				type: Boolean,
 				value: true
 			},
-			
+
 			expandIcon: {
 				type: String,
 				value: 'expand-more'
 			},
-			
+
 			domReady: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-			
+
 			ready: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-			
+
 		},
-		
+
 		listeners: {
 			'content-dom-ready': 'contentDOMReady',
 			'content-ready': 'contentReady',
 		},
-		
+
 		toggleCollapseHeader: function(flag) {
 			// the top node with GenemoBody should have a member function getCollapse()
 			// then use the returned DOM to replace collapseHeaderEl
 			// if nothing, then collapseHeaderEl is simply GenemoHead
 			// flag is the target status
-			
+
 			if(flag && this.collapseHeaderEl) {
 				// there is old collapseHeader, needs to be removed
 				Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl);
@@ -156,7 +156,7 @@
 				}
 			}
 		},
-		
+
 		isOpenedChanged: function(newValue, oldValue) {
 			this.enableSignal = false;
 			if(newValue) {
@@ -167,20 +167,20 @@
 			this.toggleCollapseHeader(newValue);
 			this.enableSignal = true;
 		},
-		
+
 		collapseSignal: function(e, detail) {
 			if(this.enableSignal && this.collapseGroup == detail.group && this.isOpened != detail.flag) {
 				this.isOpened = detail.flag;
 			}
 		},
-		
+
 		toggleCollapse: function() {
 			// hide GenemoBody and convert GenemoHead to GenemoCollapse (if any)
 			this.isOpened = !this.isOpened;
 		},
-		
+
 		populateDOM: function() {
-			// if the content has a .getExpandedHeader member, 
+			// if the content has a .getExpandedHeader member,
 			//		it will be used to generate the node to replace the node
 			//		given in .GenemoHead
 			var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes();
@@ -202,7 +202,7 @@
 				}
 			}
 		},
-		
+
 		contentDOMReady: function(e) {
 			if(this.domReady !== e.detail.flag) {
 				if(e.detail.flag) {
@@ -229,7 +229,7 @@
 			}
 			return this.domReady;
 		},
-		
+
 		setCardReady: function(readiness) {
 			if(readiness) {
 				// if card is not ready, use paper-spinner and add "unReady" class to cardContent
@@ -242,7 +242,7 @@
 			}
 			this._setReady(readiness);
 		},
-		
+
 		contentReady: function(e) {
 			if(this.ready !== e.detail.flag) {
 				if(e.detail.flag) {
@@ -268,19 +268,19 @@
 			}
 			return this.ready;
 		},
-		
+
 		setAllReadiness: function(readiness) {
 			// set both DOM and content flags
 			this.contentDOMReady({detail: {flag: readiness}});
 			this.contentReady({detail: {flag: readiness}});
 		},
-		
+
 		attached: function() {
 			this.async(function() {
 				this.contentDOMReady({detail: {flag: true}}) && this.contentReady({detail: {flag: true}});
 			});
 		},
-		
+
     });
   </script>
 </dom-module>

@@ -1,13 +1,13 @@
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
-<link rel="import" href="../../paper-radio-group/paper-radio-group.html">
-<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
-<link rel="import" href="../../paper-dialog/paper-dialog.html">
-<link rel="import" href="../../paper-button/paper-button.html">
-<link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-item/paper-item.html">
-<link rel="import" href="../../paper-menu/paper-menu.html">
-<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="../../../js/tracksSpecies.js"></script>
@@ -25,7 +25,7 @@
 			padding: 20px;
 			margin: 0;
 		}
-		
+
     </style>
     <paper-button raised on-tap="openAddTrackDialog">Add custom track</paper-button>
     <paper-dialog id="mainDialog">
@@ -56,61 +56,61 @@
   <script>
   	CustomTrackController = Polymer({
 		is: "custom-track-controller",
-		
+
 		properties: {
 			MAX_FILENAME_LEN: {
 				type: Number,
 				readOnly: true,
 				value: 25
 			},
-			
+
 			species: Object, // this is the species defined in libtracks.js
 			// notice that species should have chromSizes and location of centromeres included
 			// tracks is also within species
 			// may need to provide additional API to get track data
-			
+
 			textSize: {
 				type: Number,
 				value: 12,		// unit is px
 			},
-			
+
 			InputUrl: {
 				type: String,
 				value: "",
 				observer: "InputUrlChanged"
 			},
-			
+
 			uploadButtonText: {
 				type: String,
 				value: 'Upload local file'
 			},
-			
+
 			customGroupLabel: {
 				type: String,
 				value: ''
 			},
-			
+
 			trackShortLabel: {
 				type: String,
 				value: ''
 			},
-			
+
 			trackTypes: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 		},
-		
+
 		created: function() {
 			this.trackCtrlDOMs = [];
 			this.customTrackGroupID = 'customTracks';
 		},
-		
+
 		ready: function() {
-			this.push('trackTypes', 
+			this.push('trackTypes',
 				{
 					typeName: 'BED',
 					trackType: 'bed',
@@ -129,18 +129,18 @@
 				}
 				);
 		},
-		
+
 		factoryImpl: function(species, prop) {
 			if(prop && prop.hasOwnProperty('customTrackGroupID')) {
 				this.customTrackGroupID = prop.customTrackGroupID;
 			}
 			this.changeSpecies(species);
 		},
-		
+
 		openAddTrackDialog: function() {
 			this.$.mainDialog.open();
 		},
-		
+
 		changeSpecies: function(newSpecies, trackCtrlDOMs) {
 			// this will reset all tracks and redo the species
 			// note that the tracks should already be initialized before switching here
@@ -154,11 +154,11 @@
 			}
 			this.species.groups[this.customTrackGroupID] = this.customGroup;
 		},
-		
+
 		fileSelectionHandler: function() {
 			this.$.uploadFileInput.click();
 		},
-		
+
 		inputFileChangedFunc: function() {
 			var shortFileName = this.$.uploadFileInput.files.length > 0? this.$.uploadFileInput.files[0].name: "";
 			if(shortFileName == "") {
@@ -174,14 +174,14 @@
 				this.InputUrl = '';
 			}
 		},
-		
+
 		InputUrlChanged: function(newValue, oldValue) {
 			if(newValue.length > 0) {
 				this.$.fileSelectButton.classList.remove("noTextTransformButton");
 				this.uploadButtonText = "Upload local file";
 			}
 		},
-		
+
 		// TODO: add/remove/rearrange tracks
 		addTrack: function(e, detail) {
 			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
@@ -205,8 +205,7 @@
 			this.species.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'));
 			this.$.mainDialog.close();
 		},
-		
+
 	});
   </script>
 </dom-module>
-

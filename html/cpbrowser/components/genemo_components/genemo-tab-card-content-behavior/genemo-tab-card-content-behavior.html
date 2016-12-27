@@ -1,5 +1,5 @@
 <link rel="import" href="../genemo-card-content-behavior/genemo-card-content-behavior.html">
-<link rel="import" href="../../neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
 <script>
  	window._GIVe = window._GIVe || {};
 	_GIVe.GenemoTabCardContentBehaviorImpl = {
@@ -11,24 +11,24 @@
 				value: "",
 				readOnly: true,
 			},
-			
+
 		},
-		
+
 		getTabHeader: function() {
 			var res = document.createElement('div');
 			var coreIcon = this.getIcon();
 			coreIcon.classList.add('smallInline');
-			
+
 			var textSpan = document.createElement('span');
 			textSpan.textContent = this.tabText;
 			res.appendChild(coreIcon);
 			res.appendChild(textSpan);
-			
+
 			return res;
 		},
-		
+
 	};
-	
+
 	_GIVe.GenemoTabCardContentBehavior = [
 		_GIVe.GenemoCardContentBehavior,
 		Polymer.NeonAnimatableBehavior,

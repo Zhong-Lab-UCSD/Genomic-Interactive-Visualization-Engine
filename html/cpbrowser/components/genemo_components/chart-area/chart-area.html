@@ -1,7 +1,7 @@
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-card/paper-card.html">
-<link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
 <link rel="import" href="tracks-header.html">
@@ -28,7 +28,7 @@
   </template>
   <script>
   	var GIVe = (function(give) {
-		
+
 		'use strict';
 		give.ChartArea = Polymer({
 			is: "chart-area",
@@ -145,7 +145,7 @@
 			},
 
 			createBedTrackProp: function(viewWindowIndex, properties) {
-				// notice that 
+				// notice that
 				return this.mergeProperty({x: 0, y: 0, width: this.offsetWidth,
 						textMargin: 100, requestUrl: Track.fetchDataTarget,
 						windowIndex: viewWindowIndex,
@@ -185,14 +185,14 @@
 			},
 
 			createTrackDOM: function(track, viewWindowIndex, props) {
-				return new this.trackDOMMap[track.getTypeTrunk()].ctor(track, 
+				return new this.trackDOMMap[track.getTypeTrunk()].ctor(track,
 
 									this.createTrackProp(track, viewWindowIndex, props));
 			},
 
 			addOrdinaryTrackDOM: function(trackDOM, viewWindowIndex) {
 				this.trackDOMsByWindow[viewWindowIndex].splice(
-						locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex], 
+						locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex],
 							null, null, (function(trackDOM1, trackDOM2) {
 								return Track.comparePriorities(trackDOM1.track, trackDOM2.track, this.species.groups);
 							}).bind(this)) + 1,
@@ -233,7 +233,7 @@
 				}, this);
 				this.trackDOMs.forEach(function(track) {
 					delete track._domMergeFlag;
-				}, this);			
+				}, this);
 			},
 
 			updateHeightLocation: function(width) {
@@ -249,7 +249,7 @@
 				}, this);
 				currY -= this.trackGap * this.textSize;
 				this.$.mainSvg.setAttribute("height", currY);
-				this.$.mainSvg.setAttribute("viewBox", "0 0 " + this.offsetWidth 
+				this.$.mainSvg.setAttribute("viewBox", "0 0 " + this.offsetWidth
 					+ " " + currY);
 			},
 
@@ -473,6 +473,6 @@
 		});
 
 	})(GIVe || {});
-	
+
   </script>
 </dom-module>

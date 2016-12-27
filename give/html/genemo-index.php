@@ -34,11 +34,13 @@ if(isset($_REQUEST['sessionID'])) {
   <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="components/bower_components/genemo-visual-components/manual-icon/manual-icon.html">
   <link rel="import" href="components/bower_components/genemo-data-components/meta-entries/meta-entries.html">
+  <link rel="import" href="components/bower_components/genemo-data-components/chrom-region-display/chrom-region-disp.html">
   <link rel="import" href="components/bower_components/genemo-data-components/species-object/species-object.html">
   <link rel="import" href="components/bower_components/genemo-data-components/task-scheduler/task-scheduler.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/ui-component/ui-component.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/cell-line-info-card/cell-line-info-card.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chart-track-list/chart-track-list.html">
+  <link rel="import" href="components/bower_components/genemo-visual-components/chart-area/chart-area.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/track-control/track-control.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/search-card-content/search-card-content.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-track-filter/genemo-track-filter.html">
@@ -53,6 +55,8 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/iron-signals/iron-signals.html">
   <link rel="import" href="components/bower_components/iron-icons/iron-icons.html">
   <link rel="import" href="components/bower_components/iron-icons/notification-icons.html">
+  <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout.html">
+  <link rel="import" href="components/bower_components/paper-drawer-panel/paper-drawer-panel.html">
   <style is="custom-style" include="genemo-shared-styles"></style>
   <script type="text/javascript" src="js/genemoMain.js"></script>
   <script type="text/javascript">
@@ -90,33 +94,31 @@ if(isset($_REQUEST['sessionID'])) {
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
       attr-for-selected='id'>
       <genemo-card disable-folding id="genemoSearchPanel">
-        <search-card-content class='GenemoBody' id='searchCard'></search-card-content>
+        <search-card-content genemo-body id='searchCard'></search-card-content>
       </genemo-card>
       <genemo-card disable-folding id="trackSelectionPanel">
-        <chart-track-list class="GenemoBody" id="mainChartTrackList"
+        <chart-track-list genemo-body id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected">
         </chart-track-list>
       </genemo-card>
     </iron-pages>
   </div>
-  <paper-drawer-panel id='mainPanel' hidden>
+  <paper-drawer-panel id='mainPanel' hidden force-narrow>
     <div main>
       <paper-toolbar>
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
-        <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0" />
+        <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
       </paper-toolbar>
-      <paper-drawer-panel id='chartDrawer'>
-        <div main>
-          <div id="chartHolder"></div>
-        </div>
-        <div drawer>
-          <genemo-card id='resultPanel' disable-folding>
-            <chrom-region-list id='mainRegionList'></chrom-region-list>
-          </genemo-card>
-        </div>
-      </paper-drawer-panel>
+      <div class="leftSideBar">
+        <genemo-card id='resultPanel' disable-folding>
+          <chrom-region-list genemo-body id='mainRegionList'></chrom-region-list>
+        </genemo-card>
+      </div>
+      <div class="mainContent">
+        <chart-area id="mainChartArea" num-of-subs="1" group-id-list='["genes", "encode", "queryGroup"]'></chart-area>
+      </div>
     </div>
-    <div drawer>
+    <div drawer id="mainPanelDrawer">
       <!-- searchAndTrackTabs go here afterwards -->
     </div>
   </paper-drawer-panel>

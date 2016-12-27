@@ -8,27 +8,32 @@ var GIVe = (function (give) {
 
   // this is used in trackObject.settings to indicate that this track is selected
   give.GENEMO_SELECTED_KEY = 'isGenemoSelected'
+  give.CUSTOM_GROUP_ID = 'queryGroup'
 
   // these are DOM element IDs
   give.REGION_LIST_DOM_ID = 'mainRegionList'
   give.SEARCH_AND_TRACKS_DOM_ID = 'searchAndTrackTabs'
   give.MAIN_PANEL_DOM_ID = 'mainPanel'
+  give.MAIN_PANEL_TARGET_DRAWER_DOM_ID = 'mainPanelDrawer'
   give.FIRST_CONTAINER_DOM_ID = 'genemoFirstContainer'
 
   give.SEARCH_PANEL_DOM_ID = 'genemoSearchPanel'
   give.TRACK_LIST_DOM_ID = 'mainChartTrackList'
   give.TRACK_LIST_PANEL_DOM_ID = 'trackSelectionPanel'
   give.TRACK_FILTER_DOM_ID = 'trackFilter'
+  give.MAIN_CHART_DOM_ID = 'mainChartArea'
 
   give.firstRun = true
 
   give.switchFromFirstRun = function () {
     if (give.firstRun) {
-      Polymer.dom(document).querySelector('#' +
-        give.MAIN_PANEL_DOM_ID + ' > div[drawer]').appendChild(
+      Polymer.dom(document).querySelector('div[drawer]#' +
+        give.MAIN_PANEL_TARGET_DRAWER_DOM_ID).appendChild(
           Polymer.dom(document).querySelector('#' + give.SEARCH_AND_TRACKS_DOM_ID)
         )
+      Polymer.dom(document).querySelector('#' + give.FIRST_CONTAINER_DOM_ID).hidden = true
       Polymer.dom(document).querySelector('#' + give.MAIN_PANEL_DOM_ID).hidden = false
+      Polymer.dom(document).querySelector('#' + give.MAIN_PANEL_DOM_ID).closeDrawer()
       give.firstRun = false
     }
   }
@@ -86,7 +91,8 @@ var GIVe = (function (give) {
         }
         tableNameQuery.append('id', saveSessionResp.id)
         // add custom track (here on the browser) then send to compute
-        give.setCustomTrack(saveSessionResp.urlToShow)
+        give.setCustomTrack(sessionDataObj.db, saveSessionResp.urlToShow, saveSessionResp.bwFlag
+          ? 'bigWig' : 'bed')
         give.sendRegionsToCompute(saveSessionResp.bwFlag,
           tableNameQuery, give.uploadUiHandler.bind(this, sessionDataObj))
       } catch (e) {
@@ -155,7 +161,20 @@ var GIVe = (function (give) {
       tableNameQuery, callback, 'json')
   }
 
-  give.setCustomTrack = function (url) {
+  give.setCustomTrack = function (db, url, type) {
+    var track = {
+      settings: {
+        isCustom: true,
+        type: type,
+        visibility: give.TrackObject.StatusEnum.VIS_FULL,
+        adaptive: 'on'
+      }
+    }
+    track.settings.remoteUrl = url
+    track.settings.requestUrl = give.TrackObject.fetchCustomTarget
+    track.settings.shortLabel = 'Query input'
+    track.tableName = 'queryInput'
+    give.spcArray.dbMap[db].addCustomTrack(track, { id: give.CUSTOM_GROUP_ID })
   }
 
   give.uploadUiHandler = function (query, data) {
@@ -164,11 +183,12 @@ var GIVe = (function (give) {
     var inputFileName = query.inputFileName
     var regionListDOM = Polymer.dom(document).querySelector('#' + give.REGION_LIST_DOM_ID)
 
-    if (data.hasOwnProperty('error')) {
+    if (!data || data.hasOwnProperty('error')) {
       // write blank or error message on gene list component
       give.fireSignal('alert', {msg: 'No results returned.'})
     } else {
-      var geneList = give.mergeGeneList(give.populateRegionList(data))
+      var geneList = give.mergeGeneList(give.populateRegionList(data,
+        give.spcArray.dbMap[query.db]))
 
       give.fireCoreSignal('collapse', {group: 'query-search', flag: false})
 
@@ -215,7 +235,7 @@ var GIVe = (function (give) {
     return newRegionList
   }
 
-  give.populateRegionList = function (rawObj) {
+  give.populateRegionList = function (rawObj, species) {
       // this function will convert raw Object (from JSON input) into an array of Region class
       // and also, if the rawObj don't have name for each genes, "Region X" will be used
     var regionList = []
@@ -231,7 +251,7 @@ var GIVe = (function (give) {
         chrRegionRaw.start = parseInt(chrRegionRaw.start || chrRegionRaw.genestart)
         chrRegionRaw.end = parseInt(chrRegionRaw.end || chrRegionRaw.geneend)
         chrRegionRaw.name = (chrRegionRaw.name || regionName).replace(/[\s()+/]/g, '')
-        var newChrRegion = new give.ChromRegionDisp(chrRegionRaw)
+        var newChrRegion = new give.ChromRegionDisp(chrRegionRaw, species)
         regionList.push(newChrRegion)
         regionList.map[regionName] = newChrRegion
       }
@@ -253,8 +273,10 @@ var GIVe = (function (give) {
       give.spcArray.selected = ref
       Polymer.dom(document).querySelector('#' + give.TRACK_FILTER_DOM_ID).initialize(give.spcArray.currSpecies())
       Polymer.dom(document).querySelector('#' + give.TRACK_LIST_DOM_ID).changeSpecies(give.spcArray.currSpecies())
-      // TODO: reset chromRegionList
-      // TODO: reset mainChart
+      // reset chromRegionList
+      Polymer.dom(document).querySelector('#' + give.REGION_LIST_DOM_ID).setList()
+      // reset mainChart
+      Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID).changeSpecies(give.spcArray.currSpecies())
     }
   }
 
@@ -323,16 +345,17 @@ var GIVe = (function (give) {
 
     document.addEventListener('species-changed', give.speciesChangedHandler)
     document.addEventListener('switch-track-selection', give.switchTrackHandler)
-    document.addEventListener('filter-tracks', function (e) {
-      filterTracksFromList(e.detail.map, e.detail.flags)
-    })
+    document.addEventListener('filter-tracks', give.filterTracksFromList)
+
+    var mainChartArea = Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID)
+    document.addEventListener('change-window', mainChartArea.updateWindowHandler.bind(mainChartArea))
 
     if (give.sessionObj && searchCard) {
       searchCard.loadSessionObj(give.sessionObj)
     }
 
     if (give.sessionError) {
-      give.UI.alert(give.sessionError)
+      UI.alert(give.sessionError)
     }
   })
 

@@ -64,6 +64,8 @@ var GIVe = (function (give) {
         ['meta-data-ready', this.getCleanID() + '-tracks-ready']
       ))
     }
+
+    this.reverseLookupTable = {}
   }
 
   give.SpeciesObject.prototype.getCleanID = function () {
@@ -102,6 +104,7 @@ var GIVe = (function (give) {
     if (!keepOld) {
       this.tracks.clear()
       this.groups = {}
+      this.reverseLookupTable = {}
     }
     var loadTrackFromRemoteData = function (groupID, track) {
       var newTrack = new give.TrackObject(track.tableName, track, this)
@@ -110,6 +113,17 @@ var GIVe = (function (give) {
         newTrack.requestUrl = requestUrl
       }
       this.tracks.addTrack(newTrack)
+
+      // reverse lookup table related, might be rewritten if table structure is changed later
+      if (Array.isArray(newTrack.getTableNames())) {
+        newTrack.getTableNames().forEach(function (tableName) {
+          this.reverseLookupTable[tableName] = newTrack
+        }, this)
+      } else {
+        this.reverseLookupTable[newTrack.getTableNames()] = newTrack
+      }
+      // end reverse lookup related
+
       this.groups[groupID].addTrack(newTrack)
     }
     for (var groupID in groupInfo) {

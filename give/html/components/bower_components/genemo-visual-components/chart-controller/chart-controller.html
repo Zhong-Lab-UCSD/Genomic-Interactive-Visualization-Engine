@@ -46,7 +46,7 @@
 		  width: 100%;
 	  }
 	  paper-card{
-		
+
 	  }
 	  paper-dropdown-menu{
 		noink;
@@ -62,7 +62,7 @@
           <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
         </div>
       </div>
-	 
+
       <div drawer>
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
@@ -74,7 +74,7 @@
           <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
-		
+
         <genemo-card id="trackSelectHolder">
         </genemo-card>
         <div id="customTrackCtrlHolder">
@@ -85,7 +85,7 @@
   <script>
   	var GIVe = (function(give) {
 		'use strict';
-		
+
 		give.ChartController = Polymer({
 			is: "chart-controller",
 
@@ -159,7 +159,7 @@
 					this.mainChart = new give.ChartArea(this.getCurrentSpecies(), 2, null, this.threshold);
 					this.trackSelect = new give.ChartTrackList(this.getCurrentSpecies());
 					this.customTrackController = new give.CustomTrackController(this.getCurrentSpecies());
-					this.trackSelect.setAttribute('class', 'GenemoBody');
+					this.trackSelect.setAttribute('genemo-body', true);
 					Polymer.dom(this.$.chartHolder).appendChild(this.mainChart);
 					Polymer.dom(this.$.trackSelectHolder).appendChild(this.trackSelect);
 					Polymer.dom(this.$.customTrackCtrlHolder).appendChild(this.customTrackController);
@@ -218,7 +218,7 @@
 			},
 
 		});
-		
+
 		return give;
 
 	})(GIVe || {});

@@ -1,12 +1,12 @@
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../neon-animation/neon-animatable-behavior.html">
-<link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-button/paper-button.html">
-<link rel="import" href="../../paper-material/paper-material.html">
-<link rel="import" href="../../paper-slider/paper-slider.html">
-<link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../../paper-drawer-panel/paper-drawer-panel.html">
-<link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-list.html">
@@ -46,7 +46,7 @@
 		  width: 100%;
 	  }
 	  paper-card{
-		
+
 	  }
 	  paper-dropdown-menu{
 		noink;
@@ -62,7 +62,7 @@
           <p><span id="Geonomegitar" class="text">Please refer to <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a> for description and download of all data sets used here.</span></p>
         </div>
       </div>
-	 
+
       <div drawer>
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
         <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
@@ -74,7 +74,7 @@
           <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
-		
+
         <genemo-card id="trackSelectHolder">
         </genemo-card>
         <div id="customTrackCtrlHolder">
@@ -85,11 +85,11 @@
   <script>
   	ChartController = Polymer({
 		is: "chart-controller",
-		
+
 		behaviors: [
 			Polymer.NeonAnimatableBehavior
 		],
-		
+
 		properties: {
 			spcIndex: {
 				type: Number,
@@ -112,12 +112,12 @@
 				type: Object
 			},
 		},
-		
+
 		listeners: {
 			'update-window': 'updateWindowHandler',
 			'update-track-structure': 'updateTrackStructureHandler',
 		},
-		
+
 		factoryImpl: function(spcArray, index) {
 			this.spcArray = spcArray;
 			this.spcIndex = index || this.spcIndex;
@@ -127,22 +127,22 @@
 			}
 			this.spcChanged();
 		},
-		
+
 		getCurrentSpecies: function() {
 			return this.getSpecies(this.spcIndex);
 		},
-		
+
 		getSpecies: function(index) {
 			return this.spcArray[index];
 		},
-		
+
 		spcChanged: function() {
 			// initialize the tracks of the species
 			if(this.spcArray) {
 				this.getCurrentSpecies().initTracksFromServer(null, this.changeMainChartSpecies.bind(this));
 			}
 		},
-		
+
 		changeMainChartSpecies: function() {
 			var correctedVWindows;
 			this.$.trackSelectHolder.setAllReadiness(false);
@@ -165,7 +165,7 @@
 			this.mainCoor = correctedVWindows[0];
 			this.subCoor = correctedVWindows[1];
 		},
-		
+
 		updateSvg: function() {
 			if(this.mainChart) {
 				var correctedVWindows = this.mainChart.refreshAll([this.mainCoor, this.subCoor], this.threshold);
@@ -173,7 +173,7 @@
 				this.subCoor = correctedVWindows[1];
 			}
 		},
-		
+
 		updateTracks: function() {
 			if(this.trackSelect) {
 				this.trackSelect.DOMToTrack();
@@ -181,7 +181,7 @@
 				this.updateSvg();
 			}
 		},
-		
+
 		updateTrackStructure: function() {
 			// almost same thing as updateTracks, only needs to update trackSelect
 			if(this.trackSelect) {
@@ -190,7 +190,7 @@
 				this.updateSvg();
 			}
 		},
-		
+
 		resetTracks: function() {
 			if(this.trackSelect) {
 				this.trackSelect.trackToDOM();
@@ -200,7 +200,7 @@
 				this.threshold = this.mainChart.threshold;
 			}
 		},
-		
+
 		updateWindowHandler: function(e) {
 			if(e.detail.windowIndex === 0) {
 				this.mainCoor = e.detail.newWindow;
@@ -208,11 +208,11 @@
 				this.subCoor = e.detail.newWindow;
 			}
 		},
-		
+
 		updateTrackStructureHandler: function(e) {
 			this.updateTrackStructure();
 		},
-		
+
 	});
   </script>
 </dom-module>

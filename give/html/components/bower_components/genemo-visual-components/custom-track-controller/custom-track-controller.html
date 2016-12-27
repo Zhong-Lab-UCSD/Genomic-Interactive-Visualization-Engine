@@ -11,22 +11,22 @@
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
 <link rel="import" href="../../genemo-data-components/species-object/species-object.html">
 <link rel="import" href="../genemo-styles.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="http:  //fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="custom-track-controller">
   <template>
     <style include="genemo-shared-styles">
-		:host {
-			padding: 0.5em;
-			display: block;
-		}
-		paper-dialog {
-			width: 300px;
-		}
-		paper-dialog > div.body {
-			padding: 20px;
-			margin: 0;
-		}
-		
+    :host {
+      padding: 0.5em;
+      display: block;
+    }
+    paper-dialog {
+      width: 300px;
+    }
+    paper-dialog > div.body {
+      padding: 20px;
+      margin: 0;
+    }
+
     </style>
     <paper-button raised on-tap="openAddTrackDialog">Add custom track</paper-button>
     <paper-dialog id="mainDialog">
@@ -55,172 +55,171 @@
     </paper-dialog>
   </template>
   <script>
-  	var GIVe = (function(give) {
-		'use strict';
-		
-		give.CustomTrackController = Polymer({
-			is: "custom-track-controller",
+    var GIVe = (function (give) {
+      'use strict'
 
-			properties: {
-				MAX_FILENAME_LEN: {
-					type: Number,
-					readOnly: true,
-					value: 25
-				},
+      give.CustomTrackController = Polymer({
+        is: 'custom-track-controller',
 
-				species: Object, // this is the species defined in libtracks.js
-				// notice that species should have chromSizes and location of centromeres included
-				// tracks is also within species
-				// may need to provide additional API to get track data
+        properties: {
+          MAX_FILENAME_LEN: {
+            type: Number,
+            readOnly: true,
+            value: 25
+          },
 
-				textSize: {
-					type: Number,
-					value: 12,		// unit is px
-				},
+          species: Object,   // this is the species defined in libtracks.js
+          // notice that species should have chromSizes and location of centromeres included
+          // tracks is also within species
+          // may need to provide additional API to get track data
 
-				InputUrl: {
-					type: String,
-					value: "",
-					observer: "InputUrlChanged"
-				},
+          textSize: {
+            type: Number,
+            value: 12      // unit is px
+          },
 
-				uploadButtonText: {
-					type: String,
-					value: 'Upload local file'
-				},
+          InputUrl: {
+            type: String,
+            value: '',
+            observer: 'InputUrlChanged'
+          },
 
-				customGroupLabel: {
-					type: String,
-					value: ''
-				},
+          uploadButtonText: {
+            type: String,
+            value: 'Upload local file'
+          },
 
-				trackShortLabel: {
-					type: String,
-					value: ''
-				},
+          customGroupLabel: {
+            type: String,
+            value: ''
+          },
 
-				trackTypes: {
-					type: Array,
-					value: function() {
-						return [];
-					},
-				},
+          trackShortLabel: {
+            type: String,
+            value: ''
+          },
 
-			},
+          trackTypes: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          }
 
-			created: function() {
-				this.trackCtrlDOMs = [];
-				this.customTrackGroupID = 'customTracks';
-			},
+        },
 
-			ready: function() {
-				this.push('trackTypes', 
-					{
-						typeName: 'BED',
-						trackType: 'bed',
-					},
-					{
-						typeName: 'Interaction',
-						trackType: 'interaction',
-					},
-					{
-						typeName: 'Wig',
-						trackType: 'wig',
-					},
-					{
-						typeName: 'BigWig',
-						trackType: 'bigwig',
-					}
-					);
-			},
+        created: function () {
+          this.trackCtrlDOMs = []
+          this.customTrackGroupID = 'customTracks'
+        },
 
-			factoryImpl: function(species, prop) {
-				if(prop && prop.hasOwnProperty('customTrackGroupID')) {
-					this.customTrackGroupID = prop.customTrackGroupID;
-				}
-				this.changeSpecies(species);
-			},
+        ready: function () {
+          this.push('trackTypes',
+            {
+              typeName: 'BED',
+              trackType: 'bed'
+            },
+            {
+              typeName: 'Interaction',
+              trackType: 'interaction'
+            },
+            {
+              typeName: 'Wig',
+              trackType: 'wig'
+            },
+            {
+              typeName: 'BigWig',
+              trackType: 'bigwig'
+            }
+          )
+        },
 
-			openAddTrackDialog: function() {
-				this.$.mainDialog.open();
-			},
+        factoryImpl: function (species, prop) {
+          if (prop && prop.hasOwnProperty('customTrackGroupID')) {
+            this.customTrackGroupID = prop.customTrackGroupID
+          }
+          this.changeSpecies(species)
+        },
 
-			changeSpecies: function(newSpecies, trackCtrlDOMs) {
-				// this will reset all tracks and redo the species
-				// note that the tracks should already be initialized before switching here
-				if(!newSpecies) {
-					throw(new Error("No new species specified!"));
-				}
-				this.species = newSpecies;
-				if(!this.species.hasOwnProperty(this.customTrackGroupID)) {
-					// no custom track group, add one
-					this.customGroup = give.SpeciesObject.createCustomGroup({ID: this.customTrackGroupID});
-				}
-				this.species.groups[this.customTrackGroupID] = this.customGroup;
-			},
+        openAddTrackDialog: function () {
+          this.$.mainDialog.open()
+        },
 
-			fileSelectionHandler: function() {
-				this.$.uploadFileInput.click();
-			},
+        changeSpecies: function (newSpecies, trackCtrlDOMs) {
+          // this will reset all tracks and redo the species
+          // note that the tracks should already be initialized before switching here
+          if (!newSpecies) {
+            throw (new Error('No new species specified!'))
+          }
+          this.species = newSpecies
+          if (!this.species.hasOwnProperty(this.customTrackGroupID)) {
+            // no custom track group, add one
+            this.customGroup = give.SpeciesObject.createCustomGroup({ID: this.customTrackGroupID})
+          }
+          this.species.groups[this.customTrackGroupID] = this.customGroup
+        },
 
-			inputFileChangedFunc: function() {
-				var shortFileName = this.$.uploadFileInput.files.length > 0? this.$.uploadFileInput.files[0].name: "";
-				if(shortFileName == "") {
-					this.$.fileSelectButton.classList.remove("noTextTransformButton");
-					this.uploadButtonText = "Upload local file";
-				} else {
-					shortFileName = shortFileName.replace(/^C:\\fakepath\\/, "");
-					if(shortFileName.length > this.MAX_FILENAME_LEN) {
-						shortFileName = "..." + shortFileName.substring(shortFileName.length - this.MAX_FILENAME_LEN);
-					}
-					this.$.fileSelectButton.classList.add("noTextTransformButton");
-					this.uploadButtonText = shortFileName;
-					this.InputUrl = '';
-				}
-			},
+        fileSelectionHandler: function () {
+          this.$.uploadFileInput.click()
+        },
 
-			InputUrlChanged: function(newValue, oldValue) {
-				if(newValue.length > 0) {
-					this.$.fileSelectButton.classList.remove("noTextTransformButton");
-					this.uploadButtonText = "Upload local file";
-				}
-			},
+        inputFileChangedFunc: function () {
+          var shortFileName = this.$.uploadFileInput.files.length > 0 ? this.$.uploadFileInput.files[0].name : ''
+          if (shortFileName === '') {
+            this.$.fileSelectButton.classList.remove('noTextTransformButton')
+            this.uploadButtonText = 'Upload local file'
+          } else {
+            shortFileName = shortFileName.replace(/^C:\\fakepath\\/, '')
+            if (shortFileName.length > this.MAX_FILENAME_LEN) {
+              shortFileName = '...' + shortFileName.substring(shortFileName.length - this.MAX_FILENAME_LEN)
+            }
+            this.$.fileSelectButton.classList.add('noTextTransformButton')
+            this.uploadButtonText = shortFileName
+            this.InputUrl = ''
+          }
+        },
 
-			// TODO: add/remove/rearrange tracks
-			addTrack: function(e, detail) {
-				if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
-					this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
-					return false;
-				} else if(!this.currentType) {
-					this.fire("alert", {msg: 'You need to select the type of the track!'});
-					return false;
-				}
-				var track = {
-					settings: {
-						isCustom: true, 
-						type: this.currentType, 
-						visibility: give.TrackObject.StatusEnum.VIS_FULL, 
-						adaptive: 'on',
-					}
-				};
-				if(this.$.uploadFileInput.files.length > 0) {
-					track.settings.localFile = this.$.uploadFileInput.files[0];
-				} else {
-					track.settings.remoteUrl = this.InputUrl;
-					track.settings.requestUrl = give.TrackObject.fetchCustomTarget;
-				}
-				track.settings.shortLabel = this.trackShortLabel.length > 0? this.trackShortLabel:
-					'Custom track #' + (this.customGroup.getLength() + 1);
-				track.tableName = 'custom' + this.customGroup.getLength();
-				this.species.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'));
-				this.$.mainDialog.close();
-			},
+        InputUrlChanged: function (newValue, oldValue) {
+          if (newValue.length > 0) {
+            this.$.fileSelectButton.classList.remove('noTextTransformButton')
+            this.uploadButtonText = 'Upload local file'
+          }
+        },
 
-		});
-		
-		return give;
+        // TODO: add/remove/rearrange tracks
+        addTrack: function (e, detail) {
+          if (this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
+            this.fire('alert', {msg: 'You need to provide the URL for your input file or select a file to upload!'})
+            return false
+          } else if (!this.currentType) {
+            this.fire('alert', {msg: 'You need to select the type of the track!'})
+            return false
+          }
+          var track = {
+            settings: {
+              isCustom: true,
+              type: this.currentType,
+              visibility: give.TrackObject.StatusEnum.VIS_FULL,
+              adaptive: 'on'
+            }
+          }
+          if (this.$.uploadFileInput.files.length > 0) {
+            track.settings.localFile = this.$.uploadFileInput.files[0]
+          } else {
+            track.settings.remoteUrl = this.InputUrl
+            track.settings.requestUrl = give.TrackObject.fetchCustomTarget
+          }
+          track.settings.shortLabel = this.trackShortLabel.length > 0
+            ? this.trackShortLabel
+            : 'Custom track #' + (this.customGroup.getLength() + 1)
+          track.tableName = 'custom' + this.customGroup.getLength()
+          this.species.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
+          this.$.mainDialog.close()
+        }
 
-	})(GIVe || {});
+      })
+
+      return give
+    })(GIVe || {})
   </script>
 </dom-module>
-

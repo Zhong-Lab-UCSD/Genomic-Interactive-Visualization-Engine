@@ -1,8 +1,8 @@
-<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../chrom-region/chrom-region-behavior.html">
 <script>
   	var GIVe = (function(give) {
-		
+
 		give.TranscriptBehaviorImpl = {
 
 			properties: {
@@ -11,7 +11,7 @@
 					readOnly: true,
 				},
 			},
-			
+
 			factoryImpl: function(mainParam, species, additionalParam) {
 				// check whether thickStart and thickEnd are valid
 				if(this.thickStart && this.thickStart < this.start) {
@@ -27,7 +27,7 @@
 							this.blockStarts[i] = 0;
 						} else if(this.blockStarts[i] >= this.getLength()) {
 							throw({value: this.chr + ':' + this.start + '-' + this.end,
-								message: 'Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' + 
+								message: 'Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' +
 									this.blockStarts[i] + ' is greater than length.'});
 						} else if(this.blockSizes[i] < 0) {
 							throw({value: this.chr + ':' + this.start + '-' + this.end,
@@ -44,34 +44,34 @@
 					this._setGeneName(this.name);
 				}
 			},
-			
+
 			getThickStart: function() {
 				return (typeof this.thickStart === 'number'? this.thickStart: null);
 			},
-			
+
 			getThickEnd: function() {
 				return (typeof this.thickEnd === 'number'? this.thickEnd: null);
 			},
-			
+
 			getNumOfBlocks: function() {
 				return (typeof this.numOfBlocks === 'number'? this.numOfBlocks: null);
 			},
-			
+
 			getBlockStarts: function() {
 				return (Array.isArray(this.blockStarts)? this.blockStarts: null);
 			},
-			
+
 			getBlockSizes: function() {
 				return (Array.isArray(this.blockSizes)? this.blockSizes: null);
 			},
-			
+
 			regionFromString: function(regionString) {
 				var elements = bed12String.split(/\s+/);
-				give.ChromRegionBehavior.regionFromObject.call(this, 
-															   {regionname: elements[3], 
+				give.ChromRegionBehavior.regionFromObject.call(this,
+															   {regionname: elements[3],
 																chr: elements[0],
-																start: elements[1], 
-																end: elements[2], 
+																start: elements[1],
+																end: elements[2],
 																strand: elements[5],});
 				if(elements[6]) {
 					this.thickStart = parseInt(elements[6]);
@@ -84,7 +84,7 @@
 					this.setBlocks(elements[9], elements[10], elements[11]);
 				}
 			},
-			
+
 			regionFromObject: function(regionObject) {
 				give.ChromRegionBehavior.regionFromObject.call(this, regionObject);
 				if(regionObject.thickStart) {
@@ -107,7 +107,7 @@
 			},
 
 			regionToBED: function(includeStrand) {
-				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') + 
+				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') +
 						(includeStrand !== false? '\t0\t' + (!this.strand? '-': '+'): '');
 			},
 
@@ -159,11 +159,11 @@
 			},
 
 		};
-	
+
 		give.TranscriptBehavior = [ give.ChromRegionBehavior, give.TranscriptBehaviorImpl ]
-		
+
 		return give;
 
 	})(GIVe || {});
-	
+
 </script>

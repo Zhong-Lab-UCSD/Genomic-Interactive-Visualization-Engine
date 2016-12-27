@@ -1,14 +1,14 @@
 <?php
-	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));	
+	require_once (realpath(dirname(__FILE__) . '/../../includes/common_func.php'));
 	require_once (realpath(dirname(__FILE__) . "/../../includes/session.php"));
-	
+
 	$res = initialize_session();
 	$encodeOn = $res['encodeOn'];
 	$in_debug = $res['in_debug'];
 	$genemoOn = $res['genemoOn'];
 
 	unset($res);
-	
+
 ?>
 <!doctype html>
 <html>
@@ -17,7 +17,6 @@
 <title>GIVe (Genomic Interaction Visualizer)</title>
 <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link rel="import" href="components/genemo_components/chart-controller/chart-controller.html">
-<link rel="import" href="components/bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="components/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="components/genemo_components/genemo-styles.html">
 <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
@@ -57,7 +56,7 @@ function initTrackComponent(spcArray) {
 }
 
 var spcArray = Species.initAllSpecies(null, null, initTrackComponent.bind(document));
-	
+
 window.addEventListener("WebComponentsReady", function(e) {
 	var mainCard = document.querySelector('#mainCard');
 	mainCard.initTracks = function(spcArray) {

@@ -1,7 +1,7 @@
 <?php
-	// this file is to generate an ID and store corresponding 
+	// this file is to generate an ID and store corresponding
 	require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
-	
+
 	$hgsid = substr(trim($_REQUEST['hgsid']), 0, 6);
 	$idbase = bin2hex(openssl_random_pseudo_bytes(12));
 	$generatedID = $hgsid . '_' . $idbase;
@@ -9,7 +9,7 @@
 	$result['id'] = $generatedID;
 	$filename = '../upload/file_' . $idbase;
 	$orifilename = '';
-	
+
 	if(!isset($_REQUEST['bwData'])) {
 		if(isset($_REQUEST['url'])) {
 			// use url, not file
@@ -50,8 +50,8 @@
 			$orifilename = basename($_FILES['file']['name']);
 		}
 	}
-	
-	
+
+
 	if(isset($_REQUEST['urlToShow']) || isset($_REQUEST['bwData'])) {
 		$urlToShow = isset($_REQUEST['bwData'])? $_REQUEST['url']: $_REQUEST['urlToShow'];
 		$filename = isset($_REQUEST['bwData'])? $_REQUEST['url']: $filename;
@@ -60,7 +60,7 @@
 		}
 		if(strpos(trim($urlToShow), 'track') !== 0) {
 			$ch = curl_init($urlToShow);
-		
+
 			curl_setopt($ch, CURLOPT_NOBODY, true);
 			curl_exec($ch);
 			$retcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -71,12 +71,12 @@
 				echo json_encode($result);
 				exit();
 			}
-			
+
 			if((strlen($urlToShow) >= 6 && strpos(strtolower($urlToShow), 'bigwig', strlen($urlToShow) - 6) >= 0)
 				|| (strlen($urlToShow) >= 2 && strpos(strtolower($urlToShow), 'bw', strlen($urlToShow) - 2) >= 0)) {
 				// the file ends with 'bigwig' or 'bw', add annotation line
 				$orifilename = basename($urlToShow);
-				$urlToShow = "track type=bigWig name=\"" . basename($urlToShow). "\" description=\"Tracks to show as input\" bigDataUrl=" . $urlToShow;
+				// $urlToShow = "track type=bigWig name=\"" . basename($urlToShow). "\" description=\"Tracks to show as input\" bigDataUrl=" . $urlToShow;
 			}
 			$customTrackURL = $urlToShow;
 		} else {
@@ -86,16 +86,16 @@
 		}
 
 	}
-	
+
 	$result['urlToShow'] = $customTrackURL;
-	
+
 	// return id and urlToShow, save others to database
-	
+
 	$db = trim($_REQUEST['db']);
 	$selected = trim($_REQUEST['selected']);
 	$email = trim($_REQUEST['email']);
 	$searchRange = (isset($_REQUEST['searchRange'])? trim($_REQUEST['searchRange']): '');
-	
+
 	$mysqli = connectCPB();
 	$stmt = $mysqli->prepare("INSERT INTO `userInput` (`id`, `db`, `email`, `selected_tracks`, `fileName`, `display_file_url`, `original_file_name`, `search_range`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 	$stmt->bind_param('ssssssss', $generatedID, $db, $email, $selected, $filename, $customTrackURL, $orifilename, $searchRange);
@@ -103,6 +103,6 @@
 	echo json_encode($result);
 	$stmt->close();
 	$mysqli->close();
-	
-	
+
+
 ?>

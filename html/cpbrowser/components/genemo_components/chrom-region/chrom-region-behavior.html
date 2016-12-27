@@ -1,8 +1,8 @@
-<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
 <script type="text/javascript" src="../../../../js/regionlistui.js"></script>
 <script>
   	var GIVe = (function(give) {
-		
+
 		give.ChromRegionBehavior = {
 
 			// Orthologous region class and gene class
@@ -11,28 +11,28 @@
 					type: String,
 					readOnly: true,
 				},
-				
+
 				chr: {
 					type: String,
 					readOnly: true,
 				},
-				
+
 				start: {
 					type: Number,
 					readOnly: true,
 				},
-				
+
 				end: {
 					type: Number,
 					readOnly: true,
 				},
-				
+
 				strand: {
 					type: Boolean,
 					readOnly: true,
 				},
 			},
-			
+
 			factoryImpl: function(mainParam, species, additionalParam) {
 				// usage: new ChromRegionObject(mainParam, species, additionalParam)
 				//		mainParam:
@@ -42,7 +42,7 @@
 				//			used for clipping the region, null if no-clipping needed
 				//		additionalParam:
 				//			some other parameters that may slip into the object
-				
+
 				try{
 					if(typeof mainParam === 'string') {
 						this.regionFromString(mainParam);
@@ -61,13 +61,13 @@
 					throw(e);
 				}
 			},
-			
+
 			clipRegion: function(species) {
 				if(this.start < give.ChromRegionBehavior.CHROM_BASE) {
 					this._setStart(give.ChromRegionBehavior.CHROM_BASE);
 				}
 				if(species && species.chromInfo) {
-					if(species.chromInfo[this.chr] && 
+					if(species.chromInfo[this.chr] &&
 						species.chromInfo[this.chr].chrRegion.end < this.end) {
 							this._setEnd(species.chromInfo[this.chr].chrRegion.end);
 					} else if(!species.chromInfo[this.chr]) {
@@ -80,7 +80,7 @@
 						message: 'Coordinates out of bounds: ' + this.chr + ':' + this.start + '-' + this.end + '!'});
 				}
 				return this;
-			},		
+			},
 
 			getLength: function() {
 				return this.end - this.start;
@@ -103,7 +103,7 @@
 				this._setEnd(parseInt(elements[2]));
 				this.setStrand((elements.length < 4)? this.strand: ((elements[3] === 'NEGSTR')? false: true));
 			},
-			
+
 			regionFromObject: function(regionObject) {
 				this._setChr(regionObject.chr);
 				this._setStart(parseInt(regionObject.start));
@@ -120,7 +120,7 @@
 			},
 
 			regionToBED: function(includeStrand) {
-				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') + 
+				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') +
 						(includeStrand !== false? '\t0\t' + (!this.strand? '-': '+'): '');
 			},
 
@@ -152,14 +152,14 @@
 			getStrand: function(flankbefore, flankafter) {
 				return (typeof(this.strand) === 'boolean')?
 					(((typeof(flankbefore) === "string")? flankbefore: '') +
-					(this.strand? '+': '-')	+ 
+					(this.strand? '+': '-')	+
 					((typeof(flankafter) === "string")? flankafter: '')): null;
 			},
 
 			getShortName: function() {
 				if(this.name && this.name.length > give.ChromRegionBehavior.REGION_SHORTNAME_LIMIT) {
-					return this.name.substr(0, give.ChromRegionBehavior.REGION_SHORTNAME_PREFIX_LENGTH) 
-						+ "..." 
+					return this.name.substr(0, give.ChromRegionBehavior.REGION_SHORTNAME_PREFIX_LENGTH)
+						+ "..."
 						+ this.name.substr(this.name.length - give.ChromRegionBehavior.REGION_SHORTNAME_SUFFIX_LENGTH);
 				} else {
 					return this.name;
@@ -169,8 +169,8 @@
 			overlaps: function(region) {
 				// this will return the length of overlaps, if not overlapping, return 0
 				// if strandSpecific is specified, then overlap will be 0 if both strands exist and do not match
-				if(this.chr != region.chr || 
-				   (strandSpecific && 
+				if(this.chr != region.chr ||
+				   (strandSpecific &&
 					(this.strand !== null && region.strand !== null) &&
 					this.strand !== region.strand)) {
 					return 0;
@@ -271,12 +271,12 @@
 			},
 
 		};
-		
+
 		give.ChromRegionBehavior.REGION_SHORTNAME_LIMIT = 11;
 		give.ChromRegionBehavior.REGION_SHORTNAME_PREFIX_LENGTH = 6;
 		give.ChromRegionBehavior.REGION_SHORTNAME_SUFFIX_LENGTH = 4;
 		give.ChromRegionBehavior.CHROM_BASE = 1;			// may be 0 for UCSC
-			
+
 		give.ChromRegionBehavior.clipCoordinate: function(coor, species) {
 			// this is to clip single coordinate
 			if(coor.coor < ChrRegion.CHROM_BASE) {
@@ -289,7 +289,7 @@
 		};
 
 		give.ChromRegionBehavior.compareChrRegion: function(region1, region2) {
-			return ((region1.chr === region2.chr)? 
+			return ((region1.chr === region2.chr)?
 						((region1.start === region2.start)?
 							((region1.end === region2.end)? 0: ((region1.end > region2.end)? 1: -1)
 						): ((region1.start > region2.start)? 1: -1)
@@ -299,5 +299,5 @@
 		return give;
 
 	})(GIVe || {});
-	
+
 </script>

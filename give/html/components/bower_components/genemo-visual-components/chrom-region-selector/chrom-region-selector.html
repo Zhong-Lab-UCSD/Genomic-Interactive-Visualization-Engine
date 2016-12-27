@@ -1,65 +1,81 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../genemo-data-components/chrom-region/chrom-region.html">
+<link rel="import" href="../../genemo-data-components/chrom-region-display/chrom-region-disp.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../paper-material/paper-material.html">
+<link rel="import" href="../genemo-styles.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chrom-region-selector">
   <template>
-  <style include="genemo-shared-styles">
-  :host {
-    padding: 0.5em;
-    display: block;
-  }
-  </style>
-  <paper-material elevation="1">
-    <div class="regionTitle">[[region.name]]</div>
-    <div class="regionCoordinates">[[_getRegionString(region)]]</div>
-    <div class="anno">Tracks</div>
-    <template is="dom-repeat" id="trackList" items="{{region.trackList}}">
-      <div class="trackNames">[[_getTrackTitle(item)]]</div>
-    </template>
-  </paper-material>
-</template>
-<script>
-var GIVe = (function(give) {
-  'use strict';
+    <style include="genemo-shared-styles">
+    :host {
+      padding: 0.5em;
+      display: block;
+    }
+    </style>
+    <paper-material elevation="1">
+      <div class="regionTitle">[[region.name]]</div>
+      <div class="regionCoordinates">[[_getRegionString(region)]]</div>
+      <template is="dom-if" if="[[regionHasTracks]]">
+        <div class="anno">Tracks</div>
+        <template is="dom-repeat" id="trackList" items="[[region.track]]">
+          <div class="trackNames">[[_getTrackTitle(item)]]</div>
+        </template>
+      </template>
+      <paper-button on-tap="openRegionInBrowser">
+        <iron-icon icon="forward"></iron-icon>
+        Open in Browser
+      </paper-button>
+    </paper-material>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
 
-  give.ChromRegionList = Polymer({
-    is: "chrom-region-selector",
+      give.ChromRegionSelector = Polymer({
+        is: 'chrom-region-selector',
 
-    properties: {
+        properties: {
 
-      region: {
-        type: Object,
-      },
+          region: {
+            type: Object
+          },
 
-    },
+          regionHasTracks: {
+            type: Boolean,
+            readOnly: true,
+            value: false
+          }
 
-    created: function() {
-    },
+        },
 
-    ready: function() {
-      this._setIcon('list');
-      this._setIconAlt('Results');
-      this._setHeaderText('Results');
-      this._setTabText('Results');
+        ready: function () {
+          if (Array.isArray(this.region.track) && this.region.track.length > 0) {
+            this._setRegionHasTracks(true)
+          } else {
+            this._setRegionHasTracks(false)
+          }
+        },
 
-      this.setReady(false);
-    },
+        _getRegionString: function (region) {
+          return region.toString()
+        },
 
-    _getRegionString: function(region) {
-      return region.toString();
-    },
+        _getTrackTitle: function (track) {
+          return track.getTitle()
+        },
 
-    _getTrackTitle: function(track) {
-      return track.getTitle();
-    },
+        openRegionInBrowser: function () {
+          this.fire('change-window', {
+            newWindow: this.region.getExtendedRegions
+              ? this.region.getExtendedRegions().regionToString(false)
+              : this.region.regionToString(false)
+          })
+        }
 
-  });
+      })
 
-  return give;
-
-})(GIVe || {});
-</script>
+      return give
+    })(GIVe || {})
+  </script>
 </dom-module>

@@ -6,11 +6,11 @@ require_once(realpath(dirname(__FILE__) . "/common_func.php"));
 function loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 	// remote file should be in BED format
 	// so just break all the lines and return as JSON
-	
+
 	$result = array();
 	$fin = fopen($remoteUrl, 'r');
 	// TODO: enable buffering locally
-	
+
 	if(!$fin) {
 		throw new Exception('File "' . $remoteUrl . '" cannot be opened!');
 	}
@@ -40,7 +40,7 @@ function loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 		$result[$chr] []= $newGene;
 	}
 	return $result;
-	
+
 }
 
 function loadCustomInteraction($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
@@ -81,8 +81,8 @@ function loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 }
 
 function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $params = NULL) {
-	
-	// this is the map mapping different track types 
+
+	// this is the map mapping different track types
 	//		to their corresponding loading function
 	$trackLoadMap = array(
 		'bed' => 'loadCustomBed',
@@ -90,15 +90,17 @@ function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $para
 		'genepred' => 'loadCustomBed',
 		'interaction' => 'loadCustomInteraction',
 		'wig' => 'loadCustomWig',
-		'bigWig' => 'loadCustomBigWig',
+		'bigwig' => 'loadCustomBigWig',
 		'bw' => 'loadCustomBigWig',
 	);
 
 	// if type is not specified, try to determine from file extension (not recommended)
 	if(is_null($type)) {
 		$type = strtolower(end(explode('.', $remoteUrl)));
-	}
-	
+	} else {
+    $type = strtolower($type);
+  }
+
 	// otherwise, directly use the corresponding function
 	return $trackLoadMap[$type]($db, $remoteUrl, $chrRegion, $params);
 }

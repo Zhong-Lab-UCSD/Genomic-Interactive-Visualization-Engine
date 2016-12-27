@@ -1,7 +1,7 @@
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
-<link rel="import" href="../../paper-tabs/paper-tabs.html">
-<link rel="import" href="../../iron-pages/iron-pages.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../genemo-styles.html">
 
 <dom-module id="genemo-track-filter-pages">
@@ -40,7 +40,7 @@
       <paper-tab>Cell Line</paper-tab>
       <paper-tab>Lab</paper-tab>
     </paper-tabs>
-    
+
     <iron-pages id="listPages" selected="[[selectedTab]]">
       <div id="expPage">
         <template is="dom-repeat" items="[[expList]]">
@@ -74,63 +74,63 @@
   </template>
   <script>
     Polymer({
-		
+
 		is: "genemo-track-filter-pages",
-		
+
 		properties: {
-			
+
 			selectedTab: {
 				type: Number,
 				value: 0,
 			},
-			
+
 			initialized: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-			
+
 			expList: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 			cellTypeList: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 			tissueList: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 			labList: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 			listOfLists: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 		},
-		
+
 		initialize: function(ref, expMap, cellTypeMap, tissueMap, labMap) {
-			
+
 			this.listOfLists.splice(0, this.listOfLists.length);
-			
+
 			this.splice('expList', 0, this.expList.length);
 			if(expMap.hasOwnProperty(ref)) {
 				for(key in expMap[ref]) {
@@ -140,7 +140,7 @@
 				}
 				this.listOfLists.push(this.expList);
 			}
-			
+
 			if(tissueMap.hasOwnProperty(ref)) {
 				this.splice('tissueList', 0, this.tissueList.length);
 				for(key in tissueMap[ref]) {
@@ -150,7 +150,7 @@
 				}
 				this.listOfLists.push(this.tissueList);
 			}
-			
+
 			if(cellTypeMap.hasOwnProperty(ref)) {
 				this.splice('cellTypeList', 0, this.cellTypeList.length);
 				for(key in cellTypeMap[ref]) {
@@ -160,7 +160,7 @@
 				}
 				this.listOfLists.push(this.cellTypeList);
 			}
-			
+
 			if(labMap.hasOwnProperty(ref)) {
 				this.splice('labList', 0, this.labList.length);
 				for(key in labMap[ref]) {
@@ -170,10 +170,10 @@
 				}
 				this.listOfLists.push(this.labList);
 			}
-			
+
 			this._setInitialized(true);
 		},
-		
+
 		getCurrentListMap: function() {
 			// get the ids that corresponding to the current selection
 			var result = [], resultMap = {},
@@ -183,15 +183,15 @@
 					result = result.concat(this.listOfLists[this.selectedTab][i].ids);
 				}
 			}
-			
+
 			// convert id to map
 			result.forEach(function(id) {
 				resultMap[id] = true;
 			});
-			
+
 			return resultMap;
 		},
-		
+
 		setAllCheckboxes: function(flag) {
 			// set all checkboxes to one value (flag)
 			var checkboxList = Polymer.dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox');
@@ -199,7 +199,7 @@
 				checkboxList[i].checked = flag;
 			}
 		},
-		
+
     });
   </script>
 </dom-module>
