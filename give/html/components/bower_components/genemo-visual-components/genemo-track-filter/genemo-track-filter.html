@@ -68,6 +68,11 @@
 
         exitAnimation: {
           value: 'fade-out-animation'
+        },
+
+        trackListId: {
+          type: String,
+          value: ''
         }
 
       },
@@ -111,17 +116,29 @@
       },
 
       addToSelection: function () {
-        this.fire('filter-tracks', { map: this.$.mainPage.getCurrentListMap(), flags: { matched: true } })
+        this.fire('filter-tracks', {
+          trackListId: this.trackListId,
+          map: this.$.mainPage.getCurrentListMap(),
+          flags: { matched: true }
+        })
         this.hide()
       },
 
       filterSelection: function () {
-        this.fire('filter-tracks', { map: this.$.mainPage.getCurrentListMap(), flags: { unmatched: false } })
+        this.fire('filter-tracks', {
+          trackListId: this.trackListId,
+          map: this.$.mainPage.getCurrentListMap(),
+          flags: { unmatched: false }
+        })
         this.hide()
       },
 
       excludeFromSelection: function () {
-        this.fire('filter-tracks', { map: this.$.mainPage.getCurrentListMap(), flags: { matched: false } })
+        this.fire('filter-tracks', {
+          trackListId: this.trackListId,
+          map: this.$.mainPage.getCurrentListMap(),
+          flags: { matched: false }
+        })
         this.hide()
       }
 

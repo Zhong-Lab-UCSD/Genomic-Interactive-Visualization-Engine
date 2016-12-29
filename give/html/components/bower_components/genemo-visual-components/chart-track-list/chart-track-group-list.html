@@ -1,0 +1,206 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="chart-track-list.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
+<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="chart-track-group-list">
+  <template>
+    <style include="genemo-shared-styles" is="custom-style">
+    :host {
+      padding: 0.5em;
+      display: block;
+      height: 100%;
+      @apply(--layout-vertical);
+    }
+    chart-track-list {
+      @apply(--layout-flex);
+    }
+    </style>
+    <template is="dom-repeat" id="trackGroupBlock"
+      items="[[groupArray]]" as="group">
+      <!-- this is the track group DOM -->
+      <chart-track-list text-size="[[textSize]]" group="[[group]]"
+        setting-key="[[settingKey]]">
+      </chart-track-list>
+    </template>
+    <div card-actions>
+      <paper-button on-tap="launchFilter">
+        <iron-icon icon="filter-list"></iron-icon>
+        Filter
+      </paper-button>
+      <paper-button on-tap="resetAllTracks">
+        <iron-icon icon="refresh"></iron-icon>
+        Reset to default
+      </paper-button>
+      <paper-button on-tap="cancelChanges">
+        <iron-icon icon="close"></iron-icon>
+        Cancel
+      </paper-button>
+      <paper-button on-tap="submitChanges">
+        <iron-icon icon="check"></iron-icon>
+        OK
+      </paper-button>
+    </div>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.ChartTrackList = Polymer({
+        is: 'chart-track-list',
+
+        behaviors: [
+          give.GenemoTabCardContentBehavior
+        ],
+
+        properties: {
+          species: {
+            type: Object,
+            readOnly: true
+          },
+          // this is the species defined in libtracks.js
+          // notice that species should have chromSizes and location of centromeres included
+          // tracks is also within species
+          // may need to provide additional API to get track data
+
+          textSize: {
+            type: Number,
+            value: 12    // unit is px
+          },
+
+          settingKey: {
+            type: String,
+            value: give.GENEMO_SELECTED_KEY
+          },
+
+          groupArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          groupIdList: {
+            // this is the array of allowed group IDs in the list
+            type: Array
+          }
+
+        },
+
+        listeners: {
+          'repeat-dom-completed': '_repeatDomCompletedHandler'
+        },
+
+        ready: function () {
+          this._setIcon('view-list')
+          this._setIconAlt('Track list')
+          this._setHeaderText('Track list')
+          this._setTabText('Tracks')
+
+          this.setDOMReady(true)
+          this.setReady(false)
+          this.changeSpecies(null, true)
+
+          this.completedRepeatDOMs = 0
+        },
+
+        _refreshSpecies: function () {
+          // this is called after this._changeSpecies
+          this.splice('groupArray', 0, this.groupArray.length)
+          try {
+            if (this.groupIdList && this.groupIdList.length > 0) {
+              this.groupIdList.forEach(function (groupID) {
+                if (this.species.getGroups(this._refreshSpecies.bind(this)).hasOwnProperty(groupID)) {
+                  this.push('groupArray', this.species.getGroups()[groupID])
+                }
+              }, this)
+            } else {
+              for (var key in this.species.getGroups(this._refreshSpecies.bind(this))) {
+                if (this.species.getGroups().hasOwnProperty(key)) {
+                  this.push('groupArray', this.species.getGroups()[key])
+                }
+              }
+            }
+          } catch (e) {
+            if (give.verboseLvl >= give.VERBOSE_DEBUG) {
+              console.log(e.message)
+              console.log(e.stack)
+            }
+          }
+        },
+
+        _prioritySort: function (itemA, itemB) {
+          return itemA.priority < itemB.priority
+            ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
+        },
+
+        changeSpecies: function (newSpecies, forceUpdate) {
+        // this will reset all tracks and redo the species
+        // note that the tracks should already be initialized before switching here
+          if (!newSpecies) {
+            if (!forceUpdate) {
+              throw (new Error('No new species specified!'))
+            }
+          } else {
+            this._setSpecies(newSpecies)
+          }
+          this.setReady(false)
+          if (this.species) {
+            this._refreshSpecies()
+          }
+        },
+
+        trackToDOM: function () {
+          // this is used when resetting selection
+          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
+          give.forEach(domList, function (elem) {
+            elem.trackToDOM()
+          }, this)
+        },
+
+        DOMToTrack: function () {
+          // this is used when submitting the results
+          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
+          give.forEach(domList, function (elem) {
+            elem.DOMToTrack()
+          }, this)
+        },
+
+        resetAllTracks: function () {
+          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
+          give.forEach(domList, function (elem) {
+            elem.resetAllTrack()
+          }, this)
+        },
+
+        backToSearch: function () {
+          this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
+        },
+
+        launchFilter: function () {
+          this.fire('show-track-filter')
+        },
+
+        submitChanges: function () {
+          this.DOMToTrack()
+          this.backToSearch()
+        },
+
+        cancelChanges: function () {
+          this.trackToDOM()
+          this.backToSearch()
+        },
+
+        applyFilter: function (map, flags) {
+          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
+          give.forEach(domList, function (elem) {
+            elem.applyFilter(map, flags)
+          }, this)
+        }
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>

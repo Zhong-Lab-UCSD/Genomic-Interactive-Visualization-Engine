@@ -1,92 +1,51 @@
+<!--
+  List for tracks within one track group
+  This DOM element must be placed in a flex container,
+  otherwise the iron-list will not work
+-->
+
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../paper-radio-group/paper-radio-group.html">
-<link rel="import" href="../../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../paper-material/paper-material.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../iron-list/iron-list.html">
+<link rel="import" href="../../iron-collapse/iron-collapse.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../track-control/track-mini-control.html">
 <link rel="import" href="../genemo-styles.html">
-<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
     <style include="genemo-shared-styles" is="custom-style">
-    :host {
-      padding: 0.5em;
-      display: block;
-      height: 100%;
-      @apply(--layout-vertical);
-    }
-    paper-material {
-      margin: 0.5em 0;
-      padding: 1em;
-      @apply(--layout-flex);
-      overflow: auto;
-      max-height: 100%;
-    }
-    paper-material > div.header {
-      color: #3F51B5;
-      margin-bottom: 0.5em;
-    }
-    paper-material > div.scroller {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    paper-material > paper-checkbox {
-      margin: 0.5em;
-    }
-    paper-radio-group > paper-radio-button {
-      padding: 0.5em;
-
-    }
-    paper-dialog-scrollable{
-      height: 300px;
-    }
+      :host {
+        padding: 0;
+        display: block;
+        height: 100%;
+        @apply(--layout-flex);
+      }
+      paper-material {
+        margin: 0.5em 0;
+        padding: 1em;
+        overflow-y: auto;
+        height: 100%;
+      }
+      paper-material > div.header {
+        color: #3F51B5;
+        margin-bottom: 0.5em;
+      }
     </style>
-    <template is="dom-repeat" id="trackGroupBlock" sort="_prioritySort"
-      observe="priority" items="[[groupArray]]" on-dom-change="_repeatDomChangeHandler" as="group">
-      <!-- this is the track group DOM -->
-      <paper-material elevation="1">
-        <div class="header">[[group.label]]</div>
-        <template is="dom-if" if="[[group.singleChoice]]">
-          <paper-radio-group allow-empty-selection class="selectionElement">
-            <template is="dom-repeat" items="[[group.array]]" as="track"
-              initial-count="20" target-framerate="3">
-              <track-mini-control track="[[track]]" group="[[group]]"
-                setting-key="[[settingKey]]">
-              </track-mini-control>
-            </template>
-          </paper-radio-group>
+    <paper-material elevation="1">
+      <div class="header">[[group.label]]</div>
+      <iron-list id="groupList" items="[[group.array]]" as="track"
+        selection-enabled multi-selection$="[[!group.singleChoice]]">
+        <template>
+          <track-mini-control track="[[track]]" group="[[group]]"
+            setting-key="[[settingKey]]" selected="[[selected]]">
+          </track-mini-control>
         </template>
-        <template is="dom-if" if="[[!group.singleChoice]]">
-          <template is="dom-repeat" items="[[group.array]]" as="track"
-            initial-count="20" target-framerate="3">
-            <track-mini-control class="selectionElement" track="[[track]]"
-              group="[[group]]" setting-key="[[settingKey]]">
-            </track-mini-control>
-          </template>
-        </template>
-      </paper-material>
-    </template>
-    <div card-actions>
-      <paper-button>
-        <iron-icon icon="filter-list"></iron-icon>
-        Filter
-      </paper-button>
-      <paper-button on-tap="resetAllTrack">
-        <iron-icon icon="refresh"></iron-icon>
-        Reset to default
-      </paper-button>
-      <paper-button on-tap="cancelChanges">
-        <iron-icon icon="close"></iron-icon>
-        Cancel
-      </paper-button>
-      <paper-button on-tap="submitChanges">
-        <iron-icon icon="check"></iron-icon>
-        OK
-      </paper-button>
-    </div>
+      </iron-list>
+    </paper-material>
   </template>
   <script>
     var GIVe = (function (give) {
@@ -100,15 +59,6 @@
         ],
 
         properties: {
-          species: {
-            type: Object,
-            readOnly: true
-          },
-          // this is the species defined in libtracks.js
-          // notice that species should have chromSizes and location of centromeres included
-          // tracks is also within species
-          // may need to provide additional API to get track data
-
           textSize: {
             type: Number,
             value: 12    // unit is px
@@ -119,18 +69,9 @@
             value: give.GENEMO_SELECTED_KEY
           },
 
-          groupArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          groupIdList: {
-            // this is the array of allowed group IDs in the list
-            type: Array
+          group: {
+            type: Object
           }
-
         },
 
         listeners: {
@@ -138,135 +79,65 @@
         },
 
         ready: function () {
-          this._setIcon('view-list')
-          this._setIconAlt('Track list')
-          this._setHeaderText('Track list')
-          this._setTabText('Tracks')
-
           this.setDOMReady(true)
           this.setReady(false)
-          this.changeSpecies(null, true)
-
-          this.completedRepeatDOMs = 0
-        },
-
-        _repeatDomChangeHandler: function (e) {
-          e.stopPropagation()
-          if (e.target.renderedItemCount >= e.target.items.length) {
-            // completed, fire a completed event
-            this.fire('repeat-dom-completed')
-          }
-        },
-
-        _repeatDomCompletedHandler: function (e) {
-          this.completedRepeatDOMs++
-          if (this.completedRepeatDOMs >= this.groupArray.length) {
-            this.setReady(true)
-          }
-        },
-
-        _refreshSpecies: function () {
-          // this is called after this._changeSpecies
-          this.splice('groupArray', 0, this.groupArray.length)
-          this.completedRepeatDOMs = 0
-          try {
-            if (this.groupIdList && this.groupIdList.length > 0) {
-              this.groupIdList.forEach(function (groupID) {
-                if (this.species.getGroups(this._refreshSpecies.bind(this)).hasOwnProperty(groupID)) {
-                  this.push('groupArray', this.species.getGroups()[groupID])
-                }
-              }, this)
-            } else {
-              for (var key in this.species.getGroups(this._refreshSpecies.bind(this))) {
-                if (this.species.getGroups().hasOwnProperty(key)) {
-                  this.push('groupArray', this.species.getGroups()[key])
-                }
-              }
-            }
-          } catch (e) {
-            if (give.verboseLvl >= give.VERBOSE_DEBUG) {
-              console.log(e.message)
-              console.log(e.stack)
-            }
-          }
-        },
-
-        _prioritySort: function (itemA, itemB) {
-          return itemA.priority < itemB.priority
-            ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
-        },
-
-        changeSpecies: function (newSpecies, forceUpdate) {
-        // this will reset all tracks and redo the species
-        // note that the tracks should already be initialized before switching here
-          if (!newSpecies) {
-            if (!forceUpdate) {
-              throw (new Error('No new species specified!'))
-            }
-          } else {
-            this._setSpecies(newSpecies)
-          }
-          this.setReady(false)
-          if (this.species) {
-            this._refreshSpecies()
-          }
         },
 
         trackToDOM: function () {
           // this is used when resetting selection
-          var domList = Polymer.dom(this.root).querySelectorAll('.selectionElement')
-          give.forEach(domList, function (selElem) {
-            if (selElem.tagName.toLowerCase() === 'track-mini-control') {
-              // this is the component directly responsible for a track
-              selElem.trackToDOM()
-            } else {
-              // it's a singleChoice group
-              var itemList = Polymer.dom(selElem).querySelectorAll('track-mini-control')
-              var selectedID = null
-              give.forEach(itemList, function (miniCtrl) {
-                if (!selectedID) {
-                  if (miniCtrl.trackToDOM(true)) {
-                    selectedID = miniCtrl.getChoiceElemName()
-                  }
-                } else {
-                  miniCtrl.setChecked(false)
-                  miniCtrl.DOMToTrack()
-                }
-              }, this)
-              selElem.select(selectedID)
-            }
-          }, this)
+          // DOM means this.$.groupList.selectedItems
+          if (this.group && this.group.every) {
+            this.$.groupList.clearSelection()
+            this.group.every(function (track, index) {
+              if (track.getSettings(this.settingKey)) {
+                this.$.groupList.selectItem(index)
+                return this.$.groupList.multiSelection
+              }
+              return true
+            }, this)
+          }
         },
 
         DOMToTrack: function () {
           // this is used when submitting the results
-          var domList = Polymer.dom(this.root).querySelectorAll('track-mini-control')
-          give.forEach(domList, function (elem) {
-            elem.DOMToTrack()
-          }, this)
+          if (this.group && this.group.forEach) {
+            this.group.forEach(function (track, index) {
+              track.setSetting(this.settingKey, false)
+            }, this)
+            if (this.$.groupList.selectedItems) {
+              this.$.groupList.selectedItems.forEach(function (track) {
+                track.setSetting(this.settingKey, true)
+              }, this)
+            }
+          }
         },
 
-        resetAllTrack: function () {
-          var domList = Polymer.dom(this.root).querySelectorAll('track-mini-control')
-          give.forEach(domList, function (elem) {
-            elem.resetTrack()
-          }, this)
+        resetAllTracks: function () {
+          if (this.group && this.group.every) {
+            this.group.every(function (track) {
+              track.resetSetting(this.settingKey)
+            }, this)
+            this.trackToDOM()
+          }
         },
 
-        backToSearch: function () {
-          this.fire('switch-track-selection', {selectedItem: give.SEARCH_PANEL_DOM_ID})
-        },
-
-        submitChanges: function () {
-          this.DOMToTrack()
-          this.backToSearch()
-        },
-
-        cancelChanges: function () {
-          this.trackToDOM()
-          this.backToSearch()
+        applyFilter: function (map, flags) {
+          this.group.forEach(function (track, index) {
+            if (flags.hasOwnProperty('matched') && map.hasOwnProperty(track.id)) {
+              if (flags.matched) {
+                this.$.groupList.selectItem(index)
+              } else {
+                this.$.groupList.deselectItem(index)
+              }
+            } else if (flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(track.id)) {
+              if (flags.unmatched) {
+                this.$.groupList.selectItem(index)
+              } else {
+                this.$.groupList.deselectItem(index)
+              }
+            }
+          })
         }
-
       })
 
       return give

@@ -39,7 +39,7 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/genemo-data-components/task-scheduler/task-scheduler.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/ui-component/ui-component.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/cell-line-info-card/cell-line-info-card.html">
-  <link rel="import" href="components/bower_components/genemo-visual-components/chart-track-list/chart-track-list.html">
+  <link rel="import" href="components/bower_components/genemo-visual-components/chart-track-list/chart-track-group-list.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chart-area/chart-area.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/track-control/track-control.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/search-card-content/search-card-content.html">
@@ -98,9 +98,9 @@ if(isset($_REQUEST['sessionID'])) {
         <search-card-content genemo-body id='searchCard'></search-card-content>
       </genemo-card>
       <genemo-card disable-folding id="trackSelectionPanel">
-        <chart-track-list genemo-body id="mainChartTrackList"
+        <chart-track-group-list genemo-body id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected">
-        </chart-track-list>
+        </chart-track-group-list>
       </genemo-card>
     </iron-pages>
   </div>
@@ -122,7 +122,7 @@ if(isset($_REQUEST['sessionID'])) {
     </div>
   </paper-drawer-panel>
   <cell-line-info-card></cell-line-info-card>
-  <genemo-track-filter id="trackFilter"></genemo-track-filter>
+  <genemo-track-filter id="trackFilter" track-list-id="mainChartTrackList"></genemo-track-filter>
 </body>
 
 </html>

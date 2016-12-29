@@ -280,14 +280,14 @@ var GIVe = (function (give) {
     }
   }
 
-  give.switchTrack = function (selectedItem) {
-    if (selectedItem === give.TRACK_LIST_PANEL_DOM_ID) {
+  give.switchPage = function (selectedPageID) {
+    if (selectedPageID === give.TRACK_LIST_PANEL_DOM_ID) {
       // needs to show track list, prepare track list then
       Polymer.dom(document).querySelector('#' + give.TRACK_LIST_DOM_ID).trackToDOM()
     }
     var pages = Polymer.dom(document).querySelector('#' + give.SEARCH_AND_TRACKS_DOM_ID)
     if (pages && pages.select) {
-      pages.select(selectedItem)
+      pages.select(selectedPageID)
     }
   }
 
@@ -295,8 +295,19 @@ var GIVe = (function (give) {
     give.changeSpecies(e.detail.newRef)
   }
 
-  give.switchTrackHandler = function (e) {
-    give.switchTrack(e.detail.selectedItem)
+  give.switchPageHandler = function (e) {
+    give.switchPage(e.detail.selectedPageID)
+  }
+
+  give.filterTracksFromList = function (trackListId, map, flags) {
+    // first apply settings to species.tracks (data object)
+    // then call trackToDOM to
+    Polymer.dom(document).querySelector('#' + trackListId).applyFilter(map, flags)
+  }
+
+  give.filterTracksHandler = function (e) {
+    give.filterTracksFromList(e.detail.trackListId,
+      e.detail.map, e.detail.flags)
   }
 
   window.addEventListener('WebComponentsReady', function () {
@@ -344,8 +355,11 @@ var GIVe = (function (give) {
     })
 
     document.addEventListener('species-changed', give.speciesChangedHandler)
-    document.addEventListener('switch-track-selection', give.switchTrackHandler)
-    document.addEventListener('filter-tracks', give.filterTracksFromList)
+    document.addEventListener('switch-page', give.switchPageHandler)
+
+    var mainFilter = Polymer.dom(document).querySelector('#' + give.TRACK_FILTER_DOM_ID)
+    document.addEventListener('show-track-filter', mainFilter.show.bind())
+    document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     var mainChartArea = Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID)
     document.addEventListener('change-window', function (e) {

@@ -4,19 +4,34 @@ var GIVe = (function (give) {
 
   give.TrackObject = function (ID, Settings, species) {
     this.id = ID
-    this.Settings = {}
-    if (Settings && Settings.settings) {
-      this.Settings = Settings.settings
+
+    // collapse settings object first
+    //  (properties in Settings.settings takes precedence)
+    if (Settings.settings) {
+      Settings = Object.assign(Settings, Settings.settings)
       delete Settings.settings
     }
-    for (var key in Settings) {
-      if (Settings.hasOwnProperty(key) && !this.Settings.hasOwnProperty(key)) {
-        this.Settings[key] = Settings[key]
-      }
-    }
+
+    this.Settings = Object.assign({}, Settings)
+    this.defaultSettings = Settings
+    this.initSettings()
+
     this.species = species
+
+    this.getDataJobName = this.getID() + '_GETDATA'
+    this.getDataDebounceInt = 200
+    this.pendingGUIRangesFromID = {}
+    this.pendingQueryRegions = {regions: [], resolutions: []}
+    this.data = {}
+
+    this.callbackArray = []
+    this.callbackFuncs = {}
+
+    this.isRetrivingData = false
+  }
+
+  give.TrackObject.prototype.initSettings = function () {
     this.priority = this.getSetting('priority') || give.TrackObject.DEFAULT_PRIORITY
-    this.info = ''        // reserved for "children"
     if (this.getSetting('visibility')) {
       this.setVisibility(this.getSetting('visibility'))
     } // otherwise leave it to DOM
@@ -35,17 +50,6 @@ var GIVe = (function (give) {
         this.remoteFile = this.getSetting('remoteUrl')
       }
     }
-
-    this.getDataJobName = this.getID() + '_GETDATA'
-    this.getDataDebounceInt = 200
-    this.pendingGUIRangesFromID = {}
-    this.pendingQueryRegions = {regions: [], resolutions: []}
-    this.data = {}
-
-    this.callbackArray = []
-    this.callbackFuncs = {}
-
-    this.isRetrivingData = false
   }
 
   give.TrackObject.prototype.getTitle = function () {
@@ -91,7 +95,24 @@ var GIVe = (function (give) {
 //    if(this.Settings.hasOwnProperty(key)) {
 //      delete this.Settings[key];
 //    }
-    this.Settings[key] = value
+    if (key === 'visibility') {
+      this.setVisibility(value)
+    } else {
+      this.Settings[key] = value
+    }
+  }
+
+  give.TrackObject.prototype.resetSetting = function (key) {
+    if (this.defaultSettings.hasOwnProperty(key)) {
+      this.setSetting(key, this.defaultSettings[key])
+    } else {
+      delete this.Settings[key]
+    }
+  }
+
+  give.TrackObject.prototype.resetAllSettings = function () {
+    this.Settings = Object.assign({}, this.defaultSettings)
+    this.initSettings()
   }
 
   give.TrackObject.prototype.getSetting = function (key) {
@@ -110,9 +131,10 @@ var GIVe = (function (give) {
       if (!vis) {
         // needs to save current visibility
         this.oldVisibility = this.oldVisibility || this.getSetting('visibility')
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
+        this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_NONE
       } else {
-        this.setSetting('visibility', this.oldVisibility || give.TrackObject.StatusEnum.VIS_FULL)
+        this.Settings['visibility'] = this.oldVisibility ||
+          give.TrackObject.StatusEnum.VIS_FULL
         delete this.oldVisibility
       }
     } else if (typeof vis === 'number') {
@@ -123,26 +145,26 @@ var GIVe = (function (give) {
       } else {
         delete this.oldVisibility
       }
-      this.setSetting('visibility', vis)
+      this.Settings['visibility'] = vis
     } else if (typeof vis === 'string') {
       switch (vis.toLowerCase()) {
         case 'dense':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_DENSE)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_DENSE
           break
         case 'full':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_FULL)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_FULL
           break
         case 'hide':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_NONE
           break
         case 'pack':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_PACK)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_PACK
           break
         case 'collapsed':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_COLLAPSED)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_COLLAPSED
           break
         case 'notext':
-          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NOTEXT)
+          this.Settings['visibility'] = give.TrackObject.StatusEnum.VIS_NOTEXT
           break
         default:
       }

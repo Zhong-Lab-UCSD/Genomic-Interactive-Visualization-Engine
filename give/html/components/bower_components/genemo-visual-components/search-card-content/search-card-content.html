@@ -283,7 +283,7 @@
           if (!this.currentRef) {
             this.fire('alert', {msg: 'Please select a reference genome before selecting data.'})
           } else {
-            this.fire('switch-track-selection', {selectedItem: give.TRACK_LIST_PANEL_DOM_ID})
+            this.fire('switch-page', {selectedPageID: give.TRACK_LIST_PANEL_DOM_ID})
           }
         },
 
