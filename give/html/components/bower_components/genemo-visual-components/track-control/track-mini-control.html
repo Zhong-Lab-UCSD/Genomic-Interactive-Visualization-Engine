@@ -24,7 +24,7 @@
       </paper-radio-button>
     </template>
     <template is="dom-if" if="[[!_groupSingleChoice(group)]]" restamp>
-      <paper-checkbox id="choiceElem" name="[[track.id]]" checked>
+      <paper-checkbox id="choiceElem" name="[[track.id]]" checked="{{elemChecked}}">
         [[_getTrackShortLabel(track)]]
       </paper-checkbox>
     </template>
@@ -58,6 +58,10 @@
 
           settingKey: {
             type: String
+          },
+
+          elemChecked: {
+            type: Boolean
           }
         },
 
@@ -77,14 +81,15 @@
           if (!this.settingKey) {
             this.settingKey = 'visibility'
           }
+          this.trackToDOM()
         },
 
         isChecked: function () {
-          return Polymer.dom(this.root).querySelector('#choiceElem').checked
+          return this.elemChecked
         },
 
         setChecked: function (checked) {
-          Polymer.dom(this.root).querySelector('#choiceElem').checked = checked
+          this.elemChecked = checked
           return checked
         },
 

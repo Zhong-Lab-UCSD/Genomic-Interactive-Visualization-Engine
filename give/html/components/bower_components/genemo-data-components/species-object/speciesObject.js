@@ -210,7 +210,7 @@ var GIVe = (function (give) {
     this.tracks.forEach(function (track) {
       var cellType = track.getSetting('cellType')
       var labName = track.getSetting('labName')
-      var tissueType = metaEntries.findMeta(this.db, cellType, 'tissue')
+      var tissueType = metaEntries.findMeta(this.commonName, cellType, 'tissue')
       if (!this.metaFilter.expMap.hasOwnProperty(track.getCleanLowerTitle())) {
         this.metaFilter.expMap[track.getCleanLowerTitle()] = []
         this.metaFilter.expMap[track.getCleanLowerTitle()].name = track.getTitle()

@@ -69,7 +69,8 @@
           this.fire('change-window', {
             newWindow: this.region.getExtendedRegions
               ? this.region.getExtendedRegions().regionToString(false)
-              : this.region.regionToString(false)
+              : this.region.regionToString(false),
+            tracks: this.region.track
           })
         }
 

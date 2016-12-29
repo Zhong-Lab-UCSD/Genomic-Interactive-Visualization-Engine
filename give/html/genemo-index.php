@@ -56,8 +56,9 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/iron-icons/iron-icons.html">
   <link rel="import" href="components/bower_components/iron-icons/notification-icons.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout.html">
+  <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
   <link rel="import" href="components/bower_components/paper-drawer-panel/paper-drawer-panel.html">
-  <style is="custom-style" include="genemo-shared-styles"></style>
+  <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment"></style>
   <script type="text/javascript" src="js/genemoMain.js"></script>
   <script type="text/javascript">
   <?php
@@ -89,10 +90,10 @@ if(isset($_REQUEST['sessionID'])) {
 
 <body unresolved class="fullbleed layout vertical">
   <?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
-  <div id="genemoFirstContainer">
+  <div id="genemoFirstContainer" class="layout vertical center">
     <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0" />
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
-      attr-for-selected='id'>
+      attr-for-selected='id' class="flex layout vertical">
       <genemo-card disable-folding id="genemoSearchPanel">
         <search-card-content genemo-body id='searchCard'></search-card-content>
       </genemo-card>
@@ -109,16 +110,14 @@ if(isset($_REQUEST['sessionID'])) {
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
       </paper-toolbar>
-      <div class="leftSideBar">
+      <div class="layout horizontal">
         <genemo-card id='resultPanel' disable-folding>
           <chrom-region-list genemo-body id='mainRegionList'></chrom-region-list>
         </genemo-card>
-      </div>
-      <div class="mainContent">
         <chart-area id="mainChartArea" num-of-subs="1" group-id-list='["genes", "encode", "queryGroup"]'></chart-area>
       </div>
     </div>
-    <div drawer id="mainPanelDrawer">
+    <div drawer id="mainPanelDrawer" class="layout vertical">
       <!-- searchAndTrackTabs go here afterwards -->
     </div>
   </paper-drawer-panel>

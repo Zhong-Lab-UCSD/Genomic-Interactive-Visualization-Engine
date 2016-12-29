@@ -236,8 +236,8 @@ var GIVe = (function (give) {
   }
 
   give.populateRegionList = function (rawObj, species) {
-      // this function will convert raw Object (from JSON input) into an array of Region class
-      // and also, if the rawObj don't have name for each genes, "Region X" will be used
+    // this function will convert raw Object (from JSON input) into an array of Region class
+    // and also, if the rawObj don't have name for each genes, "Region X" will be used
     var regionList = []
     regionList.map = {}
     for (var regionName in rawObj) {
@@ -348,7 +348,15 @@ var GIVe = (function (give) {
     document.addEventListener('filter-tracks', give.filterTracksFromList)
 
     var mainChartArea = Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID)
-    document.addEventListener('change-window', mainChartArea.updateWindowHandler.bind(mainChartArea))
+    document.addEventListener('change-window', function (e) {
+      this.spcArray.getGroups()['encode'].forEach(function (track) {
+        track.setVisibility(false)
+      }, this)
+      e.detail.tracks.forEach(function (track) {
+        track.setVisibility(true)
+      }, this)
+      mainChartArea.updateWindowHandler(e)
+    })
 
     if (give.sessionObj && searchCard) {
       searchCard.loadSessionObj(give.sessionObj)

@@ -4,21 +4,26 @@
 <link rel="import" href="../../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../paper-material/paper-material.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../track-control/track-mini-control.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
-<link rel="import" href="../track-control/track-mini-control.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="genemo-shared-styles" is="custom-style">
     :host {
       padding: 0.5em;
       display: block;
+      height: 100%;
+      @apply(--layout-vertical);
     }
     paper-material {
       margin: 0.5em 0;
       padding: 1em;
+      @apply(--layout-flex);
+      overflow: auto;
+      max-height: 100%;
     }
     paper-material > div.header {
       color: #3F51B5;
@@ -40,14 +45,14 @@
     }
     </style>
     <template is="dom-repeat" id="trackGroupBlock" sort="_prioritySort"
-      observe="priority" items="[[groupArray]]" as="group">
+      observe="priority" items="[[groupArray]]" on-dom-change="_repeatDomChangeHandler" as="group">
       <!-- this is the track group DOM -->
       <paper-material elevation="1">
         <div class="header">[[group.label]]</div>
         <template is="dom-if" if="[[group.singleChoice]]">
           <paper-radio-group allow-empty-selection class="selectionElement">
-            <template is="dom-repeat" sort="_prioritySort" observe="priority"
-              items="[[group.array]]" as="track">
+            <template is="dom-repeat" items="[[group.array]]" as="track"
+              initial-count="20" target-framerate="3">
               <track-mini-control track="[[track]]" group="[[group]]"
                 setting-key="[[settingKey]]">
               </track-mini-control>
@@ -55,8 +60,8 @@
           </paper-radio-group>
         </template>
         <template is="dom-if" if="[[!group.singleChoice]]">
-          <template is="dom-repeat" sort="_prioritySort" observe="priority"
-            items="[[group.array]]" as="track">
+          <template is="dom-repeat" items="[[group.array]]" as="track"
+            initial-count="20" target-framerate="3">
             <track-mini-control class="selectionElement" track="[[track]]"
               group="[[group]]" setting-key="[[settingKey]]">
             </track-mini-control>
@@ -64,24 +69,24 @@
         </template>
       </paper-material>
     </template>
-    <paper-button>
-      <iron-icon icon="filter-list"></iron-icon>
-      Filter
-    </paper-button>
-    <paper-button on-tap="resetAllTrack">
-      <iron-icon icon="refresh"></iron-icon>
-      Reset to default
-    </paper-button>
-    <paper-button on-tap="cancelChanges">
-      <iron-icon icon="close"></iron-icon>
-      Cancel
-    </paper-button>
-    <paper-button on-tap="submitChanges">
-      <iron-icon icon="check"></iron-icon>
-      OK
-    </paper-button>
-
-
+    <div card-actions>
+      <paper-button>
+        <iron-icon icon="filter-list"></iron-icon>
+        Filter
+      </paper-button>
+      <paper-button on-tap="resetAllTrack">
+        <iron-icon icon="refresh"></iron-icon>
+        Reset to default
+      </paper-button>
+      <paper-button on-tap="cancelChanges">
+        <iron-icon icon="close"></iron-icon>
+        Cancel
+      </paper-button>
+      <paper-button on-tap="submitChanges">
+        <iron-icon icon="check"></iron-icon>
+        OK
+      </paper-button>
+    </div>
   </template>
   <script>
     var GIVe = (function (give) {
@@ -128,6 +133,10 @@
 
         },
 
+        listeners: {
+          'repeat-dom-completed': '_repeatDomCompletedHandler'
+        },
+
         ready: function () {
           this._setIcon('view-list')
           this._setIconAlt('Track list')
@@ -137,11 +146,29 @@
           this.setDOMReady(true)
           this.setReady(false)
           this.changeSpecies(null, true)
+
+          this.completedRepeatDOMs = 0
+        },
+
+        _repeatDomChangeHandler: function (e) {
+          e.stopPropagation()
+          if (e.target.renderedItemCount >= e.target.items.length) {
+            // completed, fire a completed event
+            this.fire('repeat-dom-completed')
+          }
+        },
+
+        _repeatDomCompletedHandler: function (e) {
+          this.completedRepeatDOMs++
+          if (this.completedRepeatDOMs >= this.groupArray.length) {
+            this.setReady(true)
+          }
         },
 
         _refreshSpecies: function () {
           // this is called after this._changeSpecies
           this.splice('groupArray', 0, this.groupArray.length)
+          this.completedRepeatDOMs = 0
           try {
             if (this.groupIdList && this.groupIdList.length > 0) {
               this.groupIdList.forEach(function (groupID) {
@@ -156,8 +183,6 @@
                 }
               }
             }
-            this.trackToDOM()
-            this.setReady(true)
           } catch (e) {
             if (give.verboseLvl >= give.VERBOSE_DEBUG) {
               console.log(e.message)

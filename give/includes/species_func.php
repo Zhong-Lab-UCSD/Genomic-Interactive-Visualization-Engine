@@ -42,12 +42,12 @@ function getChromInfo($db) {
 						$chromCentEnd = PHP_INT_MIN;
 
 					}
-					
+
 					if($chromRow["gieStain"] === "acen") {
 						// it's centromere
 						$chromCentStart = min($chromCentStart, $chromRow["chromStart"]);
 						$chromCentEnd = max($chromCentEnd, $chromRow["chromEnd"]);
-					} 
+					}
 					$chromStart = min($chromStart, $chromRow["chromStart"]);
 					$chromEnd = max($chromEnd, $chromRow["chromEnd"]);
 				}
@@ -88,19 +88,20 @@ function getTracks($db, $grp = NULL) {
 			$result[$itor['name']] = $itor;
 			$result[$itor['name']]['tracks'] = [];
 		}
-		$result['_ungrouped'] = [];	
+		$result['_ungrouped'] = [];
 		$result['_ungrouped']['tracks'] = [];	// this is to hold ungrouped tracks
 		$groups->free();
-		
+
 		// then get track information
 		$sqlstmt = "SELECT * FROM trackDb";
 		if(!is_null($grp)) {		// whether grp is specified
-			$sqlstmt .= " WHERE grp = ?";
+			$sqlstmt .= " WHERE grp = ? ORDER BY priority";
 			$stmt = $mysqli->prepare($sqlstmt);
 			$stmt->bind_param('s', $grp);
 			$stmt->execute();
 			$tracks = $stmt->get_result();
 		} else {
+      $sqlstmt .= " ORDER BY priority";
 			$tracks = $mysqli->query($sqlstmt);
 		}
 		while($itor = $tracks->fetch_assoc()) {
@@ -112,13 +113,13 @@ function getTracks($db, $grp = NULL) {
 			} else {
 				$result['_ungrouped']['tracks'] []= $itor;
 			}
-		}	
+		}
 		$tracks->free();
 		$mysqli->close();
 	}
 	return $result;
 }
-	
+
 function getSpeciesDbNames() {
 	// return a full list of species db names
 	$mysqli = connectCPB();
@@ -154,7 +155,7 @@ function getSpeciesInfoFromArray($spcDbNameList = NULL) {
 	}
 	while($spcitor = $species->fetch_assoc()) {
 		$spcinfo[] = $spcitor;
-	}	
+	}
 	$species->free();
 	$mysqli->close();
 	return $spcinfo;

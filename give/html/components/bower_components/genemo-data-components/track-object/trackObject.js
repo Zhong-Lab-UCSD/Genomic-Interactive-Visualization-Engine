@@ -18,7 +18,7 @@ var GIVe = (function (give) {
     this.priority = this.getSetting('priority') || give.TrackObject.DEFAULT_PRIORITY
     this.info = ''        // reserved for "children"
     if (this.getSetting('visibility')) {
-      this.setVisFromStr(this.getSetting('visibility'))
+      this.setVisibility(this.getSetting('visibility'))
     } // otherwise leave it to DOM
 
     if (this.getSetting('requestUrl')) {
@@ -70,30 +70,6 @@ var GIVe = (function (give) {
     return this.getTitle().replace(/[\s-]+/g, '').toLowerCase()
   }
 
-  give.TrackObject.prototype.setVisFromStr = function (strStatus) {
-    switch (strStatus) {
-      case 'dense':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_DENSE)
-        break
-      case 'full':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_FULL)
-        break
-      case 'hide':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
-        break
-      case 'pack':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_PACK)
-        break
-      case 'collapsed':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_COLLAPSED)
-        break
-      case 'notext':
-        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NOTEXT)
-        break
-      default:
-    }
-  }
-
   give.TrackObject.prototype.getUcscVis = function () {
     switch (this.getSetting('visibility')) {
       case give.TrackObject.StatusEnum.VIS_FULL:
@@ -126,6 +102,54 @@ var GIVe = (function (give) {
 //    }
 //    delete this.Settings[key];
     return this.Settings[key]
+  }
+
+  give.TrackObject.prototype.setVisibility = function (vis) {
+    // if vis === false, then save old visibility
+    if (typeof vis === 'boolean') {
+      if (!vis) {
+        // needs to save current visibility
+        this.oldVisibility = this.oldVisibility || this.getSetting('visibility')
+        this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
+      } else {
+        this.setSetting('visibility', this.oldVisibility || give.TrackObject.StatusEnum.VIS_FULL)
+        delete this.oldVisibility
+      }
+    } else if (typeof vis === 'number') {
+      // is visibility value
+      if (vis === give.TrackObject.StatusEnum.VIS_NONE) {
+        // needs to save current visibility
+        this.oldVisibility = this.oldVisibility || this.getSetting('visibility')
+      } else {
+        delete this.oldVisibility
+      }
+      this.setSetting('visibility', vis)
+    } else if (typeof vis === 'string') {
+      switch (vis.toLowerCase()) {
+        case 'dense':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_DENSE)
+          break
+        case 'full':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_FULL)
+          break
+        case 'hide':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NONE)
+          break
+        case 'pack':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_PACK)
+          break
+        case 'collapsed':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_COLLAPSED)
+          break
+        case 'notext':
+          this.setSetting('visibility', give.TrackObject.StatusEnum.VIS_NOTEXT)
+          break
+        default:
+      }
+    } else if (typeof vis === 'undefined' || vis === null) {
+      // use as toggle switch
+      this.setVisibility(!this.getSetting('visibility'))
+    }
   }
 
   // getInfo: function() {

@@ -128,9 +128,12 @@
     /************************** Genemo shared classes below *********************/
 
     div#genemoFirstContainer {
-      margin: 0px auto;
-      width: auto;
-      text-align: center;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.8em;
     }
 
     search-card-content {
@@ -139,6 +142,14 @@
 
     .genemoLogo {
       width: 240px;
+    }
+
+    genemo-card#genemoSearchPanel {
+      max-height: 100%;
+    }
+
+    genemo-card#trackSelectionPanel {
+      height: 100%;
     }
 
     .fullWidth {
