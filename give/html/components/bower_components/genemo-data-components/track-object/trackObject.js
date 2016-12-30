@@ -4,7 +4,7 @@ var GIVe = (function (give) {
 
   give.TrackObject = function (ID, Settings, species) {
     this.id = ID
-
+    Settings = Settings || {}
     // collapse settings object first
     //  (properties in Settings.settings takes precedence)
     if (Settings.settings) {
@@ -547,7 +547,8 @@ var GIVe = (function (give) {
   give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0
 
   give.TrackObject.createCoorTrack = function (species, id) {
-    var newTrack = new give.TrackObject(id || 'coor_' + species.db, null, species)
+    var newTrack = new give.TrackObject(id || 'coor_' + species.db,
+      { type: 'coordinate', priority: 0, isPureLocal: true }, species)
     newTrack.setSetting('type', 'coordinate')
     newTrack.priority = 0
     newTrack.isPureLocal = true

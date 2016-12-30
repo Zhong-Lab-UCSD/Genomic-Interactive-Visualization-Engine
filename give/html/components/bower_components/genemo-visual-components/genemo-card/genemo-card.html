@@ -3,7 +3,7 @@
 <link rel="import" href="../../iron-icons/iron-icons.html">
 <link rel="import" href="../../iron-signals/iron-signals.html">
 <link rel="import" href="../../iron-collapse/iron-collapse.html">
-<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../paper-material/paper-material.html">
 <link rel="import" href="../../paper-spinner/paper-spinner.html">
 <link rel="import" href="../../neon-animation/neon-animatable-behavior.html">
@@ -18,6 +18,8 @@
       margin: 0.6em 0;
       z-index: 0;
       text-align: left;
+      position: relative;
+      @apply(--genemo-card-mixin);
     /*  border: #757575 solid 1px;
       border: rgba(0, 0, 0, .54) solid 1px;
     */}
@@ -31,11 +33,7 @@
 
     #loadingBlock.unReady {
       display: block;
-      position: absolute;
-      left: 0px;
-      right: 0px;
-      top: 0px;
-      bottom: 0px;
+      @apply(--layout-fit);
       z-index: 1;
       opacity: 0.8;
       background: var(--card-background-color);
@@ -57,50 +55,33 @@
     }
 
     paper-material {
-      height: 100%;
       background: var(--card-background-color);
-      position: relative;
-      display: table;
+      @apply(--genemo-card-material-mixin);
     }
 
-    paper-material > div.tableRows {
-      display: table-row;
-    }
-
-    paper-material > div.fillRows {
-      height: 100%;
-    }
-
-    paper-material > div.tableRows > .tableCells {
-      display: table-cell;
+    #cardFixedContent {
+      @apply(--genemo-card-fixed-content-mixin)
     }
 
   </style>
     <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
-    <paper-material elevation="1" class="layout vertical">
+    <paper-material elevation="1">
       <div id="loadingBlock" class="unReady">
         <paper-spinner id="loadingSpinner" alt="Loading card content" active></paper-spinner>
       </div>
-      <div class="tableRows">
-        <div class="tableCells">
-          <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
-            <paper-icon-button icon="[[expandIcon]]" class="leftFloat" id="expandButton"
-              on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
-            <div id="cardHeadContent" class="vertCenterElement"></div>
-            <div id="cardHeadHolder">
-              <content id="cardhead" select="[genemo-head]"></content>
-            </div>
-          </div>
+      <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
+        <paper-icon-button icon="[[expandIcon]]" class="leftFloat" id="expandButton"
+          on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
+        <div id="cardHeadContent" class="vertCenterElement"></div>
+        <div id="cardHeadHolder">
+          <content id="cardhead" select="[genemo-head]"></content>
         </div>
       </div>
-      <div class="tableRows fillRows">
-        <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
-          hidden$="[[disableFolding]]" class="tableCells">
-          <content id="cardbody" select="[genemo-body]"></content>
-        </iron-collapse>
-        <div id="cardFixedContent" hidden$="[[!disableFolding]]"
-          class="tableCells"></div>
-      </div>
+      <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
+        hidden$="[[disableFolding]]">
+        <content id="cardbody" select="[genemo-body]"></content>
+      </iron-collapse>
+      <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
     </paper-material>
   </template>
   <script>

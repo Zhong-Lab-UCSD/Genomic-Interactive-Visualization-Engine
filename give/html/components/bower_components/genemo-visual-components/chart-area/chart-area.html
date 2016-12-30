@@ -5,6 +5,7 @@
 <link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
 <link rel="import" href="../../paper-spinner/paper-spinner.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
 <link rel="import" href="tracks-header.html">
@@ -12,24 +13,24 @@
 <dom-module id="chart-area">
   <template>
     <style include="genemo-shared-styles">
+      :host {
+        position: relative;
+        overflow-y: auto;
+      }
       #trackDOMHolder {
         display: none;
       }
           :host {
        margin: 0;
       }
-      paper-card {
-        width: 100%;
-        padding: 0.5em;
+      paper-material {
+        @apply(--layout-fit);
+        padding: 0.8em;
       }
       #loadingBlock {
         display: block;
-        position: absolute;
         pointer-events: none;
-        left: 0px;
-        right: 0px;
-        top: 0px;
-        bottom: 0px;
+        @apply(--layout-fit);
         z-index: 1;
         opacity: 0.8;
         background: var(--card-background-color);
@@ -359,11 +360,12 @@
           }
         },
 
-        changeViewWindow: function (viewWindow, index) {
+        changeViewWindow: function (viewWindow, index, forceDomReset) {
           this.viewWindows[index] = new give.ChromRegion(viewWindow, this.species)
-          if (this.initialized) {
+          if (this.initialized && !forceDomReset) {
             this.updateTracksInWindow(index)
           } else {
+            this._setInitialized(false)
             this.checkVWindowsInit()
           }
           return this.viewWindows[index].regionToString(false)
@@ -535,7 +537,7 @@
               this.changeViewWindow(e.detail.newWindow,
                 (!isNaN(parseInt(e.detail.windowIndex)) && parseInt(e.detail.windowIndex) >= 0)
                   ? parseInt(e.detail.windowIndex)
-                  : 0
+                  : 0, !!(e.detail.tracks)
               )
             }
           } catch (err) {

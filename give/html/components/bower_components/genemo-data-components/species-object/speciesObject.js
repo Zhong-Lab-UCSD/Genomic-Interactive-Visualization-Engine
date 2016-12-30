@@ -235,6 +235,9 @@ var GIVe = (function (give) {
         }
       }
     }, this)
+    this.metaFilterInitialized = true
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
+      {flag: this.getCleanID() + '-meta-filter-ready'})
   }
 
   give.SpeciesObject.prototype.getFilteredTrackList = function (filter) {

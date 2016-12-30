@@ -17,22 +17,24 @@
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
-    <style include="genemo-shared-styles" is="custom-style">
+    <style include="genemo-shared-styles iron-flex" is="custom-style">
       :host {
         padding: 0;
-        display: block;
-        height: 100%;
         @apply(--layout-flex);
+        @apply(--layout-vertical);
+        position: relative;
       }
       paper-material {
-        margin: 0.5em 0;
+        @apply(--layout-fit);
+        @apply(--layout-vertical);
         padding: 1em;
-        overflow-y: auto;
-        height: 100%;
       }
       paper-material > div.header {
         color: #3F51B5;
         margin-bottom: 0.5em;
+      }
+      iron-list {
+        @apply(--layout-flex);
       }
     </style>
     <paper-material elevation="1">
@@ -41,7 +43,7 @@
         selection-enabled multi-selection$="[[!group.singleChoice]]">
         <template>
           <track-mini-control track="[[track]]" group="[[group]]"
-            setting-key="[[settingKey]]" selected="[[selected]]">
+            selected="[[selected]]">
           </track-mini-control>
         </template>
       </iron-list>
@@ -53,10 +55,6 @@
 
       give.ChartTrackList = Polymer({
         is: 'chart-track-list',
-
-        behaviors: [
-          give.GenemoTabCardContentBehavior
-        ],
 
         properties: {
           textSize: {
@@ -74,22 +72,13 @@
           }
         },
 
-        listeners: {
-          'repeat-dom-completed': '_repeatDomCompletedHandler'
-        },
-
-        ready: function () {
-          this.setDOMReady(true)
-          this.setReady(false)
-        },
-
         trackToDOM: function () {
           // this is used when resetting selection
           // DOM means this.$.groupList.selectedItems
           if (this.group && this.group.every) {
             this.$.groupList.clearSelection()
             this.group.every(function (track, index) {
-              if (track.getSettings(this.settingKey)) {
+              if (track.getSetting(this.settingKey)) {
                 this.$.groupList.selectItem(index)
                 return this.$.groupList.multiSelection
               }
@@ -136,7 +125,7 @@
                 this.$.groupList.deselectItem(index)
               }
             }
-          })
+          }, this)
         }
       })
 

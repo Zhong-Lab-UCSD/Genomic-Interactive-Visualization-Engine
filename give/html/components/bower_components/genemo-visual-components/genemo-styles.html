@@ -1,3 +1,4 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <dom-module id="genemo-shared-styles">
   <template>
     <style>
@@ -128,11 +129,7 @@
     /************************** Genemo shared classes below *********************/
 
     div#genemoFirstContainer {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      @apply(--layout-fit);
       padding: 0.8em;
     }
 
@@ -144,12 +141,24 @@
       width: 240px;
     }
 
-    genemo-card#genemoSearchPanel {
-      max-height: 100%;
+    genemo-card#trackSelectionPanel {
+      width: 500px;
     }
 
-    genemo-card#trackSelectionPanel {
-      height: 100%;
+    genemo-card#resultPanel {
+      width: 300px;
+      margin: 0px;
+    }
+
+    genemo-card.flexFillGenemoCard {
+      --genemo-card-material-mixin: {
+        @apply(--layout-fit);
+        @apply(--layout-vertical);
+      };
+      --genemo-card-fixed-content-mixin: {
+        @apply(--layout-flex);
+        position: relative;
+      };
     }
 
     .fullWidth {
@@ -296,6 +305,8 @@
     }
 
     .genemoHeader {
+      -webkit-flex: 0 0 40px;
+      flex: 0 0 40px;
       background: #E0E0E0;
       font-size: 14px;
       margin: 0;

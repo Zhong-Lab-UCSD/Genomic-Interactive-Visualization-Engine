@@ -154,11 +154,11 @@
           this.listOfLists.push(this.tissueList)
         }
 
-        if (species.metaFilter.cellTypeMap) {
+        if (species.metaFilter.cellLineMap) {
           this.splice('cellTypeList', 0, this.cellTypeList.length)
-          for (key in species.metaFilter.cellTypeMap) {
-            if (species.metaFilter.cellTypeMap.hasOwnProperty(key)) {
-              this.push('cellTypeList', { name: key, ids: species.metaFilter.cellTypeMap[key] })
+          for (key in species.metaFilter.cellLineMap) {
+            if (species.metaFilter.cellLineMap.hasOwnProperty(key)) {
+              this.push('cellTypeList', { name: key, ids: species.metaFilter.cellLineMap[key] })
             }
           }
           this.listOfLists.push(this.cellTypeList)

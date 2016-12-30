@@ -104,7 +104,14 @@
       },
 
       initialize: function (species) {
-        this.$.mainPage.initialize(species)
+        if (species.metaFilterInitialized) {
+          this.$.mainPage.initialize(species)
+        } else {
+          give.mainTaskScheduler.addTask(new give.TaskEntry(
+            this.$.mainPage.initialize.bind(this.$.mainPage, species),
+            [species.getCleanID() + '-meta-filter-ready']
+          ))
+        }
       },
 
       selectAll: function () {

@@ -1,20 +1,18 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-group-list">
   <template>
-    <style include="genemo-shared-styles" is="custom-style">
+    <style include="genemo-shared-styles iron-flex" is="custom-style">
     :host {
-      padding: 0.5em;
+      padding: 0.5em 0.5em 0 0.5em;
       display: block;
-      height: 100%;
+      @apply(--layout-fit);
       @apply(--layout-vertical);
-    }
-    chart-track-list {
-      @apply(--layout-flex);
     }
     </style>
     <template is="dom-repeat" id="trackGroupBlock"
@@ -47,8 +45,8 @@
     var GIVe = (function (give) {
       'use strict'
 
-      give.ChartTrackList = Polymer({
-        is: 'chart-track-list',
+      give.ChartTrackGroupList = Polymer({
+        is: 'chart-track-group-list',
 
         behaviors: [
           give.GenemoTabCardContentBehavior
@@ -122,6 +120,7 @@
                 }
               }
             }
+            this.setReady(true)
           } catch (e) {
             if (give.verboseLvl >= give.VERBOSE_DEBUG) {
               console.log(e.message)
@@ -170,7 +169,7 @@
         resetAllTracks: function () {
           var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
           give.forEach(domList, function (elem) {
-            elem.resetAllTrack()
+            elem.resetAllTracks()
           }, this)
         },
 

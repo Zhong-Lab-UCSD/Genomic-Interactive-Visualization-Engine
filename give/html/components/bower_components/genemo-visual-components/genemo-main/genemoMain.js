@@ -358,12 +358,12 @@ var GIVe = (function (give) {
     document.addEventListener('switch-page', give.switchPageHandler)
 
     var mainFilter = Polymer.dom(document).querySelector('#' + give.TRACK_FILTER_DOM_ID)
-    document.addEventListener('show-track-filter', mainFilter.show.bind())
+    document.addEventListener('show-track-filter', mainFilter.show.bind(mainFilter))
     document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     var mainChartArea = Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID)
     document.addEventListener('change-window', function (e) {
-      this.spcArray.getGroups()['encode'].forEach(function (track) {
+      give.spcArray.currSpecies().getGroups()['encode'].forEach(function (track) {
         track.setVisibility(false)
       }, this)
       e.detail.tracks.forEach(function (track) {

@@ -32,6 +32,7 @@ if(isset($_REQUEST['sessionID'])) {
   <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs."/>
   <title>GENEMO Search</title>
   <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="components/bower_components/polymer/polymer.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/manual-icon/manual-icon.html">
   <link rel="import" href="components/bower_components/genemo-data-components/meta-entries/meta-entries.html">
   <link rel="import" href="components/bower_components/genemo-data-components/chrom-region-display/chrom-region-disp.html">
@@ -46,6 +47,7 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-track-filter/genemo-track-filter.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chrom-region-list/chrom-region-list.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-card/genemo-card.html">
+  <link rel="import" href="components/bower_components/genemo-visual-components/genemo-main/genemo-main.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-styles.html">
   <link rel="import" href="components/bower_components/paper-button/paper-button.html">
   <link rel="import" href="components/bower_components/paper-dialog/paper-dialog.html">
@@ -59,7 +61,6 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
   <link rel="import" href="components/bower_components/paper-drawer-panel/paper-drawer-panel.html">
   <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment"></style>
-  <script type="text/javascript" src="js/genemoMain.js"></script>
   <script type="text/javascript">
   <?php
   // this is loading part
@@ -93,11 +94,11 @@ if(isset($_REQUEST['sessionID'])) {
   <div id="genemoFirstContainer" class="layout vertical center">
     <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0" />
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
-      attr-for-selected='id' class="flex layout vertical">
+      attr-for-selected='id' class="flex layout vertical center self-stretch">
       <genemo-card disable-folding id="genemoSearchPanel">
         <search-card-content genemo-body id='searchCard'></search-card-content>
       </genemo-card>
-      <genemo-card disable-folding id="trackSelectionPanel">
+      <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
         <chart-track-group-list genemo-body id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected">
         </chart-track-group-list>
@@ -105,16 +106,17 @@ if(isset($_REQUEST['sessionID'])) {
     </iron-pages>
   </div>
   <paper-drawer-panel id='mainPanel' hidden force-narrow>
-    <div main>
+    <div main class="layout vertical">
       <paper-toolbar>
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
       </paper-toolbar>
-      <div class="layout horizontal">
-        <genemo-card id='resultPanel' disable-folding>
+      <div class="flex layout horizontal">
+        <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
           <chrom-region-list genemo-body id='mainRegionList'></chrom-region-list>
         </genemo-card>
-        <chart-area id="mainChartArea" num-of-subs="1" group-id-list='["genes", "encode", "queryGroup"]'></chart-area>
+        <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"
+          group-id-list='["genes", "encode", "queryGroup"]'></chart-area>
       </div>
     </div>
     <div drawer id="mainPanelDrawer" class="layout vertical">
