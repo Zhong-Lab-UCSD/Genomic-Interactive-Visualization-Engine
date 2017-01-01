@@ -152,23 +152,20 @@
 
         trackToDOM: function () {
           // this is used when resetting selection
-          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
-          give.forEach(domList, function (elem) {
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
             elem.trackToDOM()
           }, this)
         },
 
         DOMToTrack: function () {
           // this is used when submitting the results
-          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
-          give.forEach(domList, function (elem) {
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
             elem.DOMToTrack()
           }, this)
         },
 
         resetAllTracks: function () {
-          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
-          give.forEach(domList, function (elem) {
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
             elem.resetAllTracks()
           }, this)
         },

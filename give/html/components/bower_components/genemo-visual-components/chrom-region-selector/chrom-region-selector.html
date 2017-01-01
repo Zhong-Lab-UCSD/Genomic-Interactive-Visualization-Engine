@@ -19,7 +19,7 @@
       <template is="dom-if" if="[[regionHasTracks]]">
         <div class="anno">Tracks</div>
         <template is="dom-repeat" id="trackList" items="[[region.track]]">
-          <div class="trackNames">[[_getTrackTitle(item)]]</div>
+          <div class="trackNames">[[_getTrackLabel(item)]]</div>
         </template>
       </template>
       <paper-button on-tap="openRegionInBrowser">
@@ -61,8 +61,8 @@
           return region.toString()
         },
 
-        _getTrackTitle: function (track) {
-          return track.getTitle()
+        _getTrackLabel: function (track) {
+          return track.getSetting('shortLabel')
         },
 
         openRegionInBrowser: function () {

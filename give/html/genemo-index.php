@@ -56,6 +56,7 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
   <link rel="import" href="components/bower_components/iron-signals/iron-signals.html">
   <link rel="import" href="components/bower_components/iron-icons/iron-icons.html">
+  <link rel="import" href="components/bower_components/iron-pages/iron-pages.html">
   <link rel="import" href="components/bower_components/iron-icons/notification-icons.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
@@ -96,10 +97,10 @@ if(isset($_REQUEST['sessionID'])) {
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
       attr-for-selected='id' class="flex layout vertical center self-stretch">
       <genemo-card disable-folding id="genemoSearchPanel">
-        <search-card-content genemo-body id='searchCard'></search-card-content>
+        <search-card-content class="genemoBody" id='searchCard'></search-card-content>
       </genemo-card>
       <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
-        <chart-track-group-list genemo-body id="mainChartTrackList"
+        <chart-track-group-list class="genemoBody" id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected">
         </chart-track-group-list>
       </genemo-card>
@@ -113,7 +114,7 @@ if(isset($_REQUEST['sessionID'])) {
       </paper-toolbar>
       <div class="flex layout horizontal">
         <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
-          <chrom-region-list genemo-body id='mainRegionList'></chrom-region-list>
+          <chrom-region-list class="genemoBody" id='mainRegionList'></chrom-region-list>
         </genemo-card>
         <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"
           group-id-list='["genes", "encode", "queryGroup"]'></chart-area>

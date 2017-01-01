@@ -211,19 +211,25 @@ var GIVe = (function (give) {
       var cellType = track.getSetting('cellType')
       var labName = track.getSetting('labName')
       var tissueType = metaEntries.findMeta(this.commonName, cellType, 'tissue')
-      if (!this.metaFilter.expMap.hasOwnProperty(track.getCleanLowerTitle())) {
-        this.metaFilter.expMap[track.getCleanLowerTitle()] = []
-        this.metaFilter.expMap[track.getCleanLowerTitle()].name = track.getTitle()
+      if (track.getCleanLowerTitle()) {
+        if (!this.metaFilter.expMap.hasOwnProperty(track.getCleanLowerTitle())) {
+          this.metaFilter.expMap[track.getCleanLowerTitle()] = []
+          this.metaFilter.expMap[track.getCleanLowerTitle()].name = track.getTitle()
+        }
+        this.metaFilter.expMap[track.getCleanLowerTitle()].push(track.id)
       }
-      this.metaFilter.expMap[track.getCleanLowerTitle()].push(track.id)
-      if (!this.metaFilter.cellLineMap.hasOwnProperty(cellType)) {
-        this.metaFilter.cellLineMap[cellType] = []
+      if (cellType) {
+        if (!this.metaFilter.cellLineMap.hasOwnProperty(cellType)) {
+          this.metaFilter.cellLineMap[cellType] = []
+        }
+        this.metaFilter.cellLineMap[cellType].push(track.id)
       }
-      this.metaFilter.cellLineMap[cellType].push(track.id)
-      if (!this.metaFilter.labMap[labName]) {
-        this.metaFilter.labMap[labName] = []
+      if (labName) {
+        if (!this.metaFilter.labMap[labName]) {
+          this.metaFilter.labMap[labName] = []
+        }
+        this.metaFilter.labMap[labName].push(track.id)
       }
-      this.metaFilter.labMap[labName].push(track.id)
       if (tissueType) {
         if (!this.metaFilter.tissueMap[tissueType]) {
           this.metaFilter.tissueMap[tissueType] = []
