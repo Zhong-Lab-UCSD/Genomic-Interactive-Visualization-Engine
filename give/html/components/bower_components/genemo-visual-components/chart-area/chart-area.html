@@ -4,6 +4,7 @@
 <link rel="import" href="../../genemo-data-components/basic-func/basic-func.html">
 <link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
+<link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../paper-spinner/paper-spinner.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
@@ -16,12 +17,12 @@
       :host {
         position: relative;
         overflow-y: auto;
+        font-family: 'Roboto', Arial, Helvetica, sans-serif;
+        display: block;
+        margin: 0;
       }
       #trackDOMHolder {
         display: none;
-      }
-          :host {
-       margin: 0;
       }
       paper-material {
         @apply(--layout-fit);
@@ -45,15 +46,26 @@
         width: 24px;
         opacity: 1;
       }
+      .uninitialized {
+        font-size: 16px;
+      }
+
     </style>
     <style include="genemo-track-styles"></style>
     <div id="loadingBlock" hidden$="[[readiness]]">
       <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!readiness]]"></paper-spinner>
     </div>
     <paper-material>
-      <svg hidden$="[[!initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"> </svg>
+      <svg hidden$="[[!initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+      </svg>
+      <div id="coorLocationHolder" hidden$="[[!initialized]]"></div>
+      <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
+        <div>
+          You may use coordinate track to navigate the genome: drag to move around and use mouse wheel to zoom in/out.
+        </div>
+      </tutorial-highlight>
       <div class="uninitialized" hidden$="[[initialized]]">
-        Please select a species and region to display first.
+        Please select a region to display first.
       </div>
     </paper-material>
     <div id="trackDOMHolder"></div>
@@ -119,8 +131,13 @@
           groupIdList: {
             // this is the array of allowed group IDs in the list
             type: Array
-          }
+          },
 
+          firstRun: {
+            type: Boolean,
+            value: true,
+            readOnly: true
+          }
         },
 
         listeners: {
@@ -291,6 +308,7 @@
             if (newTrackDOM) {
               this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
             }
+            return newTrackDOM
           }
         },
 
@@ -356,6 +374,11 @@
             return trackDOM.isReady
           }, this)) {
             this.updateHeightLocation()
+            if (this.firstRun) {
+              this._setFirstRun(false)
+              this.$.coorTrackTutorial.domTargetId = 'coor_' + this.species.db + '_0_mainSvg'
+              this.$.coorTrackTutorial.showTutorial()
+            }
             this._setReadiness(true)
           }
         },
@@ -447,7 +470,11 @@
 
             this.viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
-              this.addVisibleTrack(give.TrackObject.createCoorTrack(this.species, 'coor_' + this.species.db + '_' + windowIndex), windowIndex)
+              var coorTrackDOM = this.addVisibleTrack(give.TrackObject.createCoorTrack(this.species,
+                'coor_' + this.species.db + '_' + windowIndex), windowIndex)
+              if (!windowIndex) {
+                this.coorTrackZeroDOM = coorTrackDOM
+              }
             }, this)
 
             this.addAllTrackDOMs()

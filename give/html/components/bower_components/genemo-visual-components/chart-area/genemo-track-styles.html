@@ -1,69 +1,66 @@
+<link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="genemo-track-styles">
   <template>
     <style>
-		:host {
-			display: block;
-		}
-		
-    	svg {
-			width: 100%;
-			min-width: 400px;
-			min-height: 250px;
-		}
-		
-		svg text {
-			font-size: 12px;
-			pointer-events: none;
-			dominant-baseline: central;
-		}
-		
-		svg text::selection {
-			background: none;
-		}
+    svg {
+      width: 100%;
+      min-width: 400px;
+      min-height: 250px;
+    }
 
-		svg polygon.linkedRegion {
-			mix-blend-mode: multiply;
-			stroke-opacity: 0;
-		}
-		
-		svg polygon.linkedRegion.partialOutside {
-			fill-opacity: 0.01;
-		}
-		
-		svg polygon.linkedRegion.fullyInside {
-			fill-opacity: 0.2;
-		}
-		
-		svg polygon.linkedRegion.partialOutside:hover {
-			stroke-opacity: 1;
-			fill-opacity: 0.2;
-		}
-		
-		svg polygon.linkedRegion.fullyInside:hover {
-			stroke-opacity: 1;
-			fill-opacity: 0.7;
-		}
-		
-    	svg rect.pointerHandler {
-			fill: none;
-			pointer-events: fill;
-		}
-		
-    	svg rect.pointerHandler.grab {
-			cursor: grab;
-			cursor: -webkit-grab;
-		}
-		
-    	svg rect.pointerHandler.grabbing {
-			cursor: grabbing;
-			cursor: -webkit-grabbing;
-		}
-		
-		svg polygon.wiggleShapes {
-			fill-opacity: 0.2;
-			stroke-width: 2;
-		}
-		
+    svg text {
+      font-size: 12px;
+      pointer-events: none;
+      dominant-baseline: central;
+    }
+
+    svg text::selection {
+      background: none;
+    }
+
+    svg polygon.linkedRegion {
+      mix-blend-mode: multiply;
+      stroke-opacity: 0;
+    }
+
+    svg polygon.linkedRegion.partialOutside {
+      fill-opacity: 0.01;
+    }
+
+    svg polygon.linkedRegion.fullyInside {
+      fill-opacity: 0.2;
+    }
+
+    svg polygon.linkedRegion.partialOutside:hover {
+      stroke-opacity: 1;
+      fill-opacity: 0.2;
+    }
+
+    svg polygon.linkedRegion.fullyInside:hover {
+      stroke-opacity: 1;
+      fill-opacity: 0.7;
+    }
+
+      svg rect.pointerHandler {
+      fill: none;
+      pointer-events: fill;
+    }
+
+      svg rect.pointerHandler.grab {
+      cursor: grab;
+      cursor: -webkit-grab;
+    }
+
+      svg rect.pointerHandler.grabbing {
+      cursor: grabbing;
+      cursor: -webkit-grabbing;
+    }
+
+    svg polygon.wiggleShapes {
+      fill-opacity: 0.2;
+      stroke-width: 2;
+    }
+
     </style>
   </template>
 </dom-module>
