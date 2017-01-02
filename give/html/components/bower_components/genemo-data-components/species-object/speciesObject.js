@@ -51,7 +51,7 @@ var GIVe = (function (give) {
 
     if (settings) {
       for (var key in settings) {
-        if (settings.hasOwnProperty(key)) {
+        if (settings.hasOwnProperty(key) && !this.hasOwnProperty(key)) {
           this.settings[key] = settings[key]
         }
       }

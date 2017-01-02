@@ -3,7 +3,7 @@ var GIVe = (function (give) {
 
   var UI = new give.UIObject(window)
   give.spcArray = give.SpeciesObject.initAllSpecies(null, null, function (species) {
-    return species.encode
+    return !!parseInt(species.encode)
   }, null)
 
   // this is used in trackObject.settings to indicate that this track is selected
