@@ -111,16 +111,16 @@
         this.setReady(false)
       },
 
-      _pageNumChanged: function () {
+      _pageNumChanged: function (notReady) {
         if (this.currentPage * this.pageSize > this.regionList.length) {
           this.currentPage = 0
           return
         }
         this.setReady(false)
-        this.async(this._updateContent)
+        this.async(this._updateContent.bind(this, notReady))
       },
 
-      _updateContent: function () {
+      _updateContent: function (notReady) {
         this.splice('regionDispList', 0, this.regionDispList.length)
         if (this.regionList.length > 0) {
           for (var i = this.currentPage * this.pageSize;
@@ -130,7 +130,7 @@
             this.push('regionDispList', this.regionList[i])
           }
         }
-        if (!this.firstRun) {
+        if (!this.firstRun && !notReady) {
           this.setReady(true)
         }
       },
@@ -141,7 +141,7 @@
           : 'Please change your query to get results.'
       },
 
-      setList: function (newList, annotationLine, inputFileName) {
+      setList: function (newList, annotationLine, inputFileName, notReady) {
         newList = newList || []
         this.regionList = newList
         this.splice('regionDispList', 0, this.regionDispList.length)
@@ -152,7 +152,7 @@
         } else {
           this._setRegionListEmpty(true)
         }
-        this._pageNumChanged()
+        this._pageNumChanged(notReady)
       },
 
       getListBED: function (includeStrand) {

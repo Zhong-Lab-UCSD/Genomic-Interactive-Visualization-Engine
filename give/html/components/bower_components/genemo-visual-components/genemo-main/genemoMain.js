@@ -10,31 +10,25 @@ var GIVe = (function (give) {
   give.GENEMO_SELECTED_KEY = 'isGenemoSelected'
   give.CUSTOM_GROUP_ID = 'queryGroup'
 
-  // these are DOM element IDs
-  give.REGION_LIST_DOM_ID = 'mainRegionList'
-  give.SEARCH_AND_TRACKS_DOM_ID = 'searchAndTrackTabs'
-  give.MAIN_PANEL_DOM_ID = 'mainPanel'
-  give.MAIN_PANEL_TARGET_DRAWER_DOM_ID = 'mainPanelDrawer'
-  give.FIRST_CONTAINER_DOM_ID = 'genemoFirstContainer'
-
+  // these are DOM element IDs and DOM element Objects
   give.SEARCH_PANEL_DOM_ID = 'genemoSearchPanel'
-  give.TRACK_LIST_DOM_ID = 'mainChartTrackList'
   give.TRACK_LIST_PANEL_DOM_ID = 'trackSelectionPanel'
-  give.TRACK_FILTER_DOM_ID = 'trackFilter'
-  give.MAIN_CHART_DOM_ID = 'mainChartArea'
 
-  give.firstRun = true
+  var mainPanelDom, mainPanelDrawerDom,
+    mainRegionListDom,
+    searchTracksDom,
+    trackListDom, trackFilterDom,
+    mainChartDom, firstContainerDom
+
+  var firstRun = true
 
   give.switchFromFirstRun = function () {
-    if (give.firstRun) {
-      Polymer.dom(document).querySelector('div[drawer]#' +
-        give.MAIN_PANEL_TARGET_DRAWER_DOM_ID).appendChild(
-          Polymer.dom(document).querySelector('#' + give.SEARCH_AND_TRACKS_DOM_ID)
-        )
-      Polymer.dom(document).querySelector('#' + give.FIRST_CONTAINER_DOM_ID).hidden = true
-      Polymer.dom(document).querySelector('#' + give.MAIN_PANEL_DOM_ID).hidden = false
-      Polymer.dom(document).querySelector('#' + give.MAIN_PANEL_DOM_ID).closeDrawer()
-      give.firstRun = false
+    if (firstRun) {
+      mainPanelDrawerDom.appendChild(searchTracksDom)
+      firstContainerDom.hidden = true
+      mainPanelDom.hidden = false
+      mainPanelDom.closeDrawer()
+      firstRun = false
     }
   }
 
@@ -101,6 +95,7 @@ var GIVe = (function (give) {
       }
     })
     give.switchFromFirstRun()
+    mainPanelDom.closeDrawer()
 
     give.fireCoreSignal('collapse', {group: 'query-search', flag: false})
 
@@ -181,7 +176,6 @@ var GIVe = (function (give) {
     var annotationLine = '#sourceFile=' + (query.urlFileInput || query.inputFileName) +
       (query.searchRange ? (' searchRange=' + query.searchRange) : '') + '\n'
     var inputFileName = query.inputFileName
-    var regionListDOM = Polymer.dom(document).querySelector('#' + give.REGION_LIST_DOM_ID)
 
     if (!data || data.hasOwnProperty('error')) {
       // write blank or error message on gene list component
@@ -193,18 +187,16 @@ var GIVe = (function (give) {
       give.fireCoreSignal('collapse', {group: 'query-search', flag: false})
 
       // write stuff for gene list component
-      regionListDOM.setList(geneList, annotationLine, inputFileName)
+      mainRegionListDom.setList(geneList, annotationLine, inputFileName)
       // $("#genelistContentHolder").append(writeGeneListTable(geneList, spcArray, cmnTracksEncode, updateNavFunc, changeGeneNameFunc));
     }
     give.toggleUpload(true)
     return 0
   }
 
-  give.setRegionListUnready = function (domID) {
-    domID = domID || give.REGION_LIST_DOM_ID
-    var regionListDOM = Polymer.dom(document).querySelector('#' + domID)
-    regionListDOM.setList()
-    regionListDOM.setReady(false)
+  give.setRegionListUnready = function (regionListDom) {
+    regionListDom = regionListDom || mainRegionListDom
+    regionListDom.setList(null, null, null, true)
   }
 
   give.mergeGeneList = function (glist) {
@@ -271,23 +263,22 @@ var GIVe = (function (give) {
     if (give.spcArray.dbMap[ref] && give.spcArray.dbMap[ref] !== give.spcArray.currSpecies()) {
       // species changed, needs to update lots of stuff
       give.spcArray.selected = ref
-      Polymer.dom(document).querySelector('#' + give.TRACK_FILTER_DOM_ID).initialize(give.spcArray.currSpecies())
-      Polymer.dom(document).querySelector('#' + give.TRACK_LIST_DOM_ID).changeSpecies(give.spcArray.currSpecies())
+      trackFilterDom.initialize(give.spcArray.currSpecies())
+      trackListDom.changeSpecies(give.spcArray.currSpecies())
       // reset chromRegionList
-      Polymer.dom(document).querySelector('#' + give.REGION_LIST_DOM_ID).setList()
+      mainRegionListDom.setList()
       // reset mainChart
-      Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID).changeSpecies(give.spcArray.currSpecies())
+      mainChartDom.changeSpecies(give.spcArray.currSpecies())
     }
   }
 
   give.switchPage = function (selectedPageID) {
     if (selectedPageID === give.TRACK_LIST_PANEL_DOM_ID) {
       // needs to show track list, prepare track list then
-      Polymer.dom(document).querySelector('#' + give.TRACK_LIST_DOM_ID).trackToDOM()
+      trackListDom.trackToDOM()
     }
-    var pages = Polymer.dom(document).querySelector('#' + give.SEARCH_AND_TRACKS_DOM_ID)
-    if (pages && pages.select) {
-      pages.select(selectedPageID)
+    if (searchTracksDom && searchTracksDom.select) {
+      searchTracksDom.select(selectedPageID)
     }
   }
 
@@ -354,14 +345,23 @@ var GIVe = (function (give) {
       UI.alert(e.detail.msg)
     })
 
+    mainPanelDom = Polymer.dom(document).querySelector('#mainPanel')
+    mainPanelDrawerDom = Polymer.dom(document).querySelector('#mainPanelDrawer')
+    mainRegionListDom = Polymer.dom(document).querySelector('#mainRegionList')
+    searchTracksDom = Polymer.dom(document).querySelector('#searchAndTrackTabs')
+    trackListDom = Polymer.dom(document).querySelector('#mainChartTrackList')
+
+    firstContainerDom = Polymer.dom(document).querySelector('#genemoFirstContainer')
+
+    trackFilterDom = Polymer.dom(document).querySelector('#trackFilter')
+    mainChartDom = Polymer.dom(document).querySelector('#mainChartArea')
+
     document.addEventListener('species-changed', give.speciesChangedHandler)
     document.addEventListener('switch-page', give.switchPageHandler)
 
-    var mainFilter = Polymer.dom(document).querySelector('#' + give.TRACK_FILTER_DOM_ID)
-    document.addEventListener('show-track-filter', mainFilter.show.bind(mainFilter))
+    document.addEventListener('show-track-filter', trackFilterDom.show.bind(trackFilterDom))
     document.addEventListener('filter-tracks', give.filterTracksHandler)
 
-    var mainChartArea = Polymer.dom(document).querySelector('#' + give.MAIN_CHART_DOM_ID)
     document.addEventListener('change-window', function (e) {
       give.spcArray.currSpecies().getGroups()['encode'].forEach(function (track) {
         track.setVisibility(false)
@@ -369,7 +369,7 @@ var GIVe = (function (give) {
       e.detail.tracks.forEach(function (track) {
         track.setVisibility(true)
       }, this)
-      mainChartArea.updateWindowHandler(e)
+      mainChartDom.updateWindowHandler(e)
     })
 
     if (give.sessionObj && searchCard) {
