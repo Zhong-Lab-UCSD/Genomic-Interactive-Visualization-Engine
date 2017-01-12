@@ -14,6 +14,9 @@ var GIVe = (function (give) {
   give.SEARCH_PANEL_DOM_ID = 'genemoSearchPanel'
   give.TRACK_LIST_PANEL_DOM_ID = 'trackSelectionPanel'
 
+  // mainPanel drawerWidth values
+  give.MAINPANEL_DRAWER_MARGIN = 7         // px
+
   var mainPanelDom, mainPanelDrawerDom,
     mainRegionListDom,
     searchTracksDom,
@@ -36,6 +39,8 @@ var GIVe = (function (give) {
       firstContainerDom.hidden = true
       mainPanelDom.hidden = false
       mainPanelDom.closeDrawer()
+      mainPanelDom.drawerWidth = Polymer.dom(document).querySelector('#' + give.SEARCH_PANEL_DOM_ID).offsetWidth +
+        give.MAINPANEL_DRAWER_MARGIN * 2 + 'px'
       firstRun = false
     }
   }
@@ -287,6 +292,8 @@ var GIVe = (function (give) {
     }
     if (searchTracksDom && searchTracksDom.select) {
       searchTracksDom.select(selectedPageID)
+      mainPanelDom.drawerWidth = Polymer.dom(document).querySelector('#' + selectedPageID).offsetWidth +
+        give.MAINPANEL_DRAWER_MARGIN * 2 + 'px'
     }
   }
 
