@@ -223,8 +223,10 @@ var GIVe = (function (give) {
     return this.clone().move(distance, isProportion, species)
   }
 
-  give.ChromRegion.prototype.extend = function (sizediff, center, isProportion, species) {
+  give.ChromRegion.prototype.extend = function (sizediff, center, isProportion, species,
+    minimumSize) {
     // isProportion means whether extend by proportion
+    minimumSize = minimumSize || 1
     if (!sizediff) {
       return this
     }
@@ -239,8 +241,8 @@ var GIVe = (function (give) {
     } else if (center > this.end) {
       center = this.end
     }
-    if (newsize <= 0) {
-      newsize = 1
+    if (newsize < minimumSize) {
+      newsize = minimumSize
       sizediff = newsize - this.getLength()
     } else if (species && species.chromInfo && species.chromInfo[this.chr] &&
       species.chromInfo[this.chr].chrRegion.getLength() < newsize) {
@@ -264,8 +266,8 @@ var GIVe = (function (give) {
     return this
   }
 
-  give.ChromRegion.prototype.getExtension = function (sizediff, center, isProportion, species) {
-    return this.clone().extend(sizediff, center, isProportion, species)
+  give.ChromRegion.prototype.getExtension = function (sizediff, center, isProportion, species, minimumSize) {
+    return this.clone().extend(sizediff, center, isProportion, species, minimumSize)
   }
 
   give.ChromRegion.REGION_SHORTNAME_LIMIT = 11

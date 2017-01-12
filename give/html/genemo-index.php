@@ -96,9 +96,21 @@ if(isset($_REQUEST['sessionID'])) {
     <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0" />
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
       attr-for-selected='id' class="flex layout vertical center self-stretch">
-      <genemo-card disable-folding id="genemoSearchPanel">
-        <search-card-content class="genemoBody" id='searchCard'></search-card-content>
-      </genemo-card>
+      <div id="genemoSearchPanel" class="layout vertical">
+        <genemo-card disable-folding>
+          <search-card-content class="genemoBody" id='searchCard'></search-card-content>
+        </genemo-card>
+        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink">
+          <paper-button raised noink>
+            <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
+            GENEMO Manual
+          </paper-button>
+        </a>
+        <paper-button raised noink class="videoBtn">
+          <iron-icon icon="notification:ondemand-video"></iron-icon>
+          Introduction Video
+        </paper-button>
+      </div>
       <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
         <chart-track-group-list class="genemoBody" id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected">
@@ -108,9 +120,28 @@ if(isset($_REQUEST['sessionID'])) {
   </div>
   <paper-drawer-panel id='mainPanel' hidden force-narrow>
     <div main class="layout vertical">
-      <paper-toolbar>
+      <paper-toolbar id='mainToolbar'>
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
+        <paper-button colored noink id="navigationHelp">
+          <iron-icon icon="icons:help"></iron-icon>
+          How to navigate
+        </paper-button>
+        <paper-tooltip for="navigationHelp">
+          To navigate, drag horizontally on any tracks or the coordinates
+          to move left / right and use mouse wheel
+          <b>on the coordinate track</b> to zoom in / out.
+        </paper-tooltip>
+        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink">
+          <paper-button raised noink>
+            <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
+            GENEMO Manual
+          </paper-button>
+        </a>
+        <paper-button raised noink class="videoBtn">
+          <iron-icon icon="notification:ondemand-video"></iron-icon>
+          Introduction Video
+        </paper-button>
       </paper-toolbar>
       <div class="flex layout horizontal">
         <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
@@ -125,6 +156,10 @@ if(isset($_REQUEST['sessionID'])) {
     </div>
   </paper-drawer-panel>
   <cell-line-info-card></cell-line-info-card>
+  <paper-dialog with-backdrop id="videoDialog">
+    <google-youtube id="videoPlayer" video-id="JG-aFKBS5Sw" height="540px" width="960px" rel="0">
+    </google-youtube>
+  </paper-dialog>
   <genemo-track-filter id="trackFilter" track-list-id="mainChartTrackList"></genemo-track-filter>
 </body>
 

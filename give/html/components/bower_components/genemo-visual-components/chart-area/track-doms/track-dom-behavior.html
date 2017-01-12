@@ -147,6 +147,9 @@
 
         this.Y_HIDDEN = -30      // value to hide stuff in svg (to calculate size)
 
+        this.MAX_SPACE_PER_BASE = 1.5
+        // maximum space for every base (unit in textSize, cannot zoom further)
+
         this.svgNS = 'http://www.w3.org/2000/svg'
 
         // the following names are used in debouncing
@@ -284,6 +287,14 @@
 
       getHeight: function () {
         return this.trackHeight
+      },
+
+      getMainSvg: function () {
+        return this.mainSvg
+      },
+
+      getTextSvg: function () {
+        return this.textSvg
       },
 
       initTextSvgAndHolder: function () {
@@ -795,6 +806,16 @@
       drawDataFireWrapper: function () {
         // fire track-ready event to its container (to calculate size and do other stuff)
         this.drawData()
+        // draw a rectangle over the coordinate track to handle mouse events
+
+        if (!Polymer.dom(this.getMainSvg()).querySelector('.pointerHandler')) {
+          var newRegion = this.createRawRectangle(0, 0, this.windowWidth,
+            this.trackHeight, {fill: 'none', class: 'pointerHandler'})
+          Polymer.dom(this.getMainSvg()).appendChild(newRegion)
+          Polymer.dom.flush()
+          this.listen(this.getMainSvg(), 'track', 'dragHandler')
+          this.listen(this.getMainSvg(), 'wheel', 'wheelHandler')
+        }
         this._setIsReady(true)
         this.fire('track-ready', {ID: this.track.getID()})
         if (this.callbackAfterDraw) {
@@ -938,8 +959,53 @@
           return true
         }, this)
         return result
-      }
+      },
 
+      // ** Event handlers **
+
+      dragHandler: function (e, detail) {
+      // this is used to handle all 'track' events
+        switch (detail.state) {
+          case 'start':
+          // register initial window
+            try {
+              e.target.classList.add('grabbing')
+              this.dragData = {}
+              this.dragData.svgNode = this.getMainSvg()
+              this.dragData.oldWindow = this.dragData.svgNode.viewWindow.clone()
+              this.dragData.ratio = -1 / parseFloat(this.windowWidth)
+              window.getSelection().removeAllRanges()
+            } catch (err) {
+              console.log(err)
+            }
+            break
+          case 'track':
+          // update track coordinates on the fly
+          // also update window text
+            if (this.dragData) {
+              this.fire('update-window', {
+                windowIndex: this.windowIndex,
+                newWindow: this.dragData.oldWindow.getShift(
+                        detail.dx * this.dragData.ratio, true,
+                        this.track.species).regionToString(false)
+              })
+            // this.setViewWindowString(this.dragData.oldWindow.getShift(
+            //  detail.dx * this.dragData.ratio, true, this.track.species).regionToString(false));
+            }
+            break
+          case 'end':
+          // update window content
+            e.target.classList.remove('grabbing')
+            Polymer.dom.flush()
+            delete (this.dragData)
+            window.getSelection().removeAllRanges()
+            break
+        }
+      },
+
+      wheelHandler: function (e, detail) {
+        // do nothing here, will do stuff in coor-track
+      }
     }
 
     give.TrackDOMBehaviorImpl.CacheRangeSpanProportion = 0.5

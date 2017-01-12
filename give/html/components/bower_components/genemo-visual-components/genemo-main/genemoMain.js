@@ -18,13 +18,21 @@ var GIVe = (function (give) {
     mainRegionListDom,
     searchTracksDom,
     trackListDom, trackFilterDom,
-    mainChartDom, firstContainerDom
+    mainChartDom, firstContainerDom,
+    videoButtonDom, searchPanelDom
 
   var firstRun = true
 
   give.switchFromFirstRun = function () {
     if (firstRun) {
       mainPanelDrawerDom.appendChild(searchTracksDom)
+      // then move all the buttons to the toolbar
+      Polymer.dom(searchPanelDom).querySelectorAll('a, paper-button').forEach(function (elem) {
+        try {
+          Polymer.dom(searchPanelDom).removeChild(elem)
+        } catch (e) {
+        }
+      }, this)
       firstContainerDom.hidden = true
       mainPanelDom.hidden = false
       mainPanelDom.closeDrawer()
@@ -309,28 +317,6 @@ var GIVe = (function (give) {
       searchCard.addEventListener('submit-form', give.validateUploadFileOrURL)
     }
 
-    var manualBtn = document.querySelector('#manualBtn')
-    if (manualBtn) {
-      manualBtn.addEventListener('click', window.open.bind(window, 'genemo-assets/manual_genemo.php', '_blank'))
-    }
-    var videoBtn = document.querySelector('#videoBtn')
-    if (videoBtn) {
-      var videoDialog = document.querySelector('#videoDialog')
-      var videoPlayer = document.querySelector('#videoPlayer')
-      if (videoDialog) {
-        videoDialog.addEventListener('iron-overlay-opened', function () {
-          if (videoPlayer && videoPlayer.playsupported) {
-            videoPlayer.play()
-          }
-        })
-        videoDialog.addEventListener('iron-overlay-closed', function () {
-          if (videoPlayer && videoPlayer.playsupported) {
-            videoPlayer.pause()
-          }
-        })
-        videoBtn.addEventListener('click', videoDialog.open.bind(videoDialog))
-      }
-    }
     var engBtn = document.querySelector('#engBtn')
     if (engBtn) {
       engBtn.addEventListener('click', give.setTexts.bind(window, 'en'))
@@ -355,6 +341,29 @@ var GIVe = (function (give) {
 
     trackFilterDom = Polymer.dom(document).querySelector('#trackFilter')
     mainChartDom = Polymer.dom(document).querySelector('#mainChartArea')
+
+    searchPanelDom = Polymer.dom(document).querySelector('#' + give.SEARCH_PANEL_DOM_ID)
+
+    videoButtonDom = Polymer.dom(document).querySelectorAll('.videoBtn')
+    if (videoButtonDom.length > 0) {
+      var videoDialog = document.querySelector('#videoDialog')
+      var videoPlayer = document.querySelector('#videoPlayer')
+      if (videoDialog) {
+        videoDialog.addEventListener('iron-overlay-opened', function () {
+          if (videoPlayer && videoPlayer.playsupported) {
+            videoPlayer.play()
+          }
+        })
+        videoDialog.addEventListener('iron-overlay-closed', function () {
+          if (videoPlayer && videoPlayer.playsupported) {
+            videoPlayer.pause()
+          }
+        })
+        videoButtonDom.forEach(function (elem) {
+          elem.addEventListener('click', videoDialog.open.bind(videoDialog))
+        })
+      }
+    }
 
     document.addEventListener('species-changed', give.speciesChangedHandler)
     document.addEventListener('switch-page', give.switchPageHandler)

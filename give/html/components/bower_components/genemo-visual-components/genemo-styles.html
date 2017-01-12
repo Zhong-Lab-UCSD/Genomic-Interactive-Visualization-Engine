@@ -10,7 +10,7 @@
       --dark-primary-color: #303F9F;
       --default-primary-color: #3F51B5;
       --light-primary-color: #C5CAE9;
-      --text-primary-color: #ffffff; /*text/icons*/
+      --dark-theme-text-color: #ffffff; /*text/icons*/
       --accent-color: #FFAB40;
       --primary-background-color: #eaeaea;
       --primary-text-color: #212121;
@@ -18,6 +18,7 @@
       --disabled-text-color: #bdbdbd;
       --divider-color: #B6B6B6;
       --card-background-color: #F5F5F5;
+      --diabled-text-color: #a8a8a8;
     }
 
     paper-button {
@@ -26,21 +27,21 @@
       line-height: 1.2em;
     }
 
-    paper-button[raised].colored {
-      background: #3f51B5;
-      color: #FFF;
+    paper-button.colored {
+      background: var(--default-primary-color);
+      color: var(--dark-theme-text-color);
     }
 
     paper-button[disabled] {
-      background: #eaeaea;
-      color: #a8a8a8;
+      background: var(--card-background-color);
+      color: var(--diabled-text-color);
       cursor: auto;
       pointer-events: none;
     }
 
-    paper-button[raised][disabled].colored {
-      background: #eaeaea;
-      color: #a8a8a8;
+    paper-button[disabled].colored {
+      background: var(--primary-background-color);
+      color: var(--diabled-text-color);
       cursor: auto;
       pointer-events: none;
     }
@@ -54,7 +55,7 @@
     }
 
     paper-tabs {
-      --paper-tabs-selection-bar-color: #3F51B5;
+      --paper-tabs-selection-bar-color: var(--default-primary-color);
     }
 
     neon-animated-pages > * {
@@ -162,6 +163,10 @@
       };
     }
 
+    .layout > * > paper-button {
+      width: 100%;
+    }
+
     .fullWidth {
       width: 100%;
       margin-left: 0;
@@ -197,7 +202,6 @@
       line-height: 20px;
     }
 
-
     .paper-button-text {
       display: inline-block;
       text-transform: uppercase;
@@ -231,17 +235,22 @@
       margin: 0.1em 0.25em;
     }
 
-    a:link {
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    a:not(.buttonLink):link {
       color: #FF9800;
       text-decoration: none;
     }
-    a:hover {
+    a:not(.buttonLink):hover {
       text-decoration: underline;
     }
-    a:active {
+    a:not(.buttonLink):active {
       text-decoration: underline;
     }
-    a:visited {
+    a:not(.buttonLink):visited {
       color: #3F51B5;
     }
 
