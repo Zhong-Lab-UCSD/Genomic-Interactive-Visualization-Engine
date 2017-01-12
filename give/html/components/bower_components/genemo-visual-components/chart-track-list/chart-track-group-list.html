@@ -106,30 +106,23 @@
         _refreshSpecies: function () {
           // this is called after this._changeSpecies
           this.splice('groupArray', 0, this.groupArray.length)
-          try {
-            if (this.groupIdList && this.groupIdList.length > 0) {
-              this.groupIdList.forEach(function (groupID) {
-                if (this.species.getGroups(this._refreshSpecies.bind(this)).hasOwnProperty(groupID)) {
-                  this.push('groupArray', this.species.getGroups()[groupID])
-                }
-              }, this)
-            } else {
-              for (var key in this.species.getGroups(this._refreshSpecies.bind(this))) {
-                if (this.species.getGroups().hasOwnProperty(key)) {
-                  this.push('groupArray', this.species.getGroups()[key])
-                }
+          if (this.groupIdList && this.groupIdList.length > 0) {
+            this.groupIdList.forEach(function (groupID) {
+              if (this.species.getGroups().hasOwnProperty(groupID)) {
+                this.push('groupArray', this.species.getGroups()[groupID])
+              }
+            }, this)
+          } else {
+            for (var key in this.species.getGroups()) {
+              if (this.species.getGroups().hasOwnProperty(key)) {
+                this.push('groupArray', this.species.getGroups()[key])
               }
             }
-            this.async(function () {
-              this.trackToDOM()
-              this.setReady(true)
-            })
-          } catch (e) {
-            if (give.verboseLvl >= give.VERBOSE_DEBUG) {
-              console.log(e.message)
-              console.log(e.stack)
-            }
           }
+          this.async(function () {
+            this.trackToDOM()
+            this.setReady(true)
+          })
         },
 
         _prioritySort: function (itemA, itemB) {
@@ -149,7 +142,7 @@
           }
           this.setReady(false)
           if (this.species) {
-            this._refreshSpecies()
+            this.species.callOnTracksReady(this._refreshSpecies.bind(this))
           }
         },
 

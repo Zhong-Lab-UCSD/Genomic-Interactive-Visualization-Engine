@@ -22,7 +22,8 @@ var GIVe = (function (give) {
     searchTracksDom,
     trackListDom, trackFilterDom,
     mainChartDom, firstContainerDom,
-    videoButtonDom, searchPanelDom
+    videoButtonDom, searchPanelDom,
+    searchCardDom
 
   var firstRun = true
 
@@ -319,9 +320,9 @@ var GIVe = (function (give) {
   window.addEventListener('WebComponentsReady', function () {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
-    var searchCard = document.querySelector('#searchCard')
-    if (searchCard) {
-      searchCard.addEventListener('submit-form', give.validateUploadFileOrURL)
+    searchCardDom = document.querySelector('#searchCard')
+    if (searchCardDom) {
+      searchCardDom.addEventListener('submit-form', give.validateUploadFileOrURL)
     }
 
     var engBtn = document.querySelector('#engBtn')
@@ -379,7 +380,7 @@ var GIVe = (function (give) {
     document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     document.addEventListener('change-window', function (e) {
-      give.spcArray.currSpecies().getGroups()['encode'].forEach(function (track) {
+      give.spcArray.currSpecies().getGroups().encode.forEach(function (track) {
         track.setVisibility(false)
       }, this)
       e.detail.tracks.forEach(function (track) {
@@ -388,8 +389,8 @@ var GIVe = (function (give) {
       mainChartDom.updateWindowHandler(e)
     })
 
-    if (give.sessionObj && searchCard) {
-      searchCard.loadSessionObj(give.sessionObj)
+    if (give.sessionObj && searchCardDom) {
+      searchCardDom.loadSessionObj(give.sessionObj)
     }
 
     if (give.sessionError) {

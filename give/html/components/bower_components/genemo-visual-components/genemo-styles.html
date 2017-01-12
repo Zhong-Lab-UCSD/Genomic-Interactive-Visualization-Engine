@@ -26,6 +26,7 @@
       background: var(--card-background-color);
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
       line-height: 1.2em;
+      margin: 0.3em 0;
     }
 
     paper-button.colored {
@@ -58,6 +59,20 @@
     paper-toolbar paper-button {
       margin: 0 0.5em;
       background: var(--default-primary-color-lighten);
+    }
+
+    div {
+      font-family: 'Roboto', Arial, Helvetica, sans-serif;
+      line-height: 1.2em;
+    }
+
+    paper-toolbar div {
+      margin: 0 0.5em;
+      cursor: pointer;
+    }
+
+    paper-toolbar div.tooltipMouseOver:hover {
+      color: var(--accent-color);
     }
 
     paper-tabs {
@@ -114,9 +129,27 @@
         min-width: 250px;
         width: auto;
         padding: 1em;
-        font-size: 14px;
+        font-size: 1.2em;
         white-space: normal;
-        line-height: 20px;
+        line-height: 1.4em;
+        margin-top: 1px;
+        margin-bottom: 3px;
+        z-index: 20;
+      };
+    }
+
+    paper-toolbar paper-tooltip {
+      --paper-tooltip: {
+        max-width: 400px;
+        min-width: 250px;
+        width: auto;
+        padding: 1em;
+        font-size: 1.2em;
+        white-space: normal;
+        line-height: 1.4em;
+        margin-top: 1px;
+        margin-bottom: 3px;
+        z-index: 20;
       };
     }
 
@@ -179,13 +212,6 @@
       margin-right: 0;
     }
 
-    paper-button {
-      font-family: 'Roboto', Arial, Helvetica, sans-serif;
-      font-size: 12px;
-      background: #F5F5F5;
-      margin: 0.6em 0;
-    }
-
     iron-icon.smallInline {
       width: 1.25em;
       height: 1.25em;
@@ -196,16 +222,6 @@
     }
     iron-icon.transparent:hover {
       opacity: 0.87;
-    }
-
-    paper-tooltip::shadow #tooltip {
-      max-width: 400px;
-      min-width: 250px;
-      width: auto;
-      margin-top: 1px;
-      margin-bottom: 3px;
-      white-space: normal;
-      line-height: 20px;
     }
 
     .paper-button-text {

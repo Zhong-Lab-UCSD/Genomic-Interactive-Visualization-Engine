@@ -124,15 +124,15 @@ if(isset($_REQUEST['sessionID'])) {
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
         <div class="title"></div>
-        <paper-button colored noink id="navigationHelp">
+        <div class="tooltipMouseOver" id="navigationHelp">
           <iron-icon icon="icons:help"></iron-icon>
           How to navigate
-        </paper-button>
+        </div>
         <paper-tooltip for="navigationHelp">
           To navigate GeNemo Browser:
           <ul>
             <li><em>Drag horizontally</em> on any tracks or the coordinates to move left / right</li>
-            <li><em>Use mouse wheel</em> <strong>on the coordinate track</strong> to zoom in / out.</li>
+            <li>Move mouse cursor <strong>onto the coordinates</strong> and <em>use mouse wheel</em> to zoom in / out.</li>
           </ul>
         </paper-tooltip>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">

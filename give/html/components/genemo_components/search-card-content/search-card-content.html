@@ -35,23 +35,23 @@
 		a:visited {
 			color: #3F51B5;
 		}
-		
+
 		/************************** Polymer and Material Design components below *********************/
-		
+
 		.vertTextBottomContainer > paper-dropdown-menu {
 			padding: 0 0.4em 0 0.15em;
 		}
-		
+
 		.vertMargined {
 			margin: 0.2em 0;
 		}
-		
+
 		.sampleButton {
 			min-width: 7.5em;
 		}
-		
+
 	</style>
-    <iron-signals on-iron-signal-toggle="signalToggle" 
+    <iron-signals on-iron-signal-toggle="signalToggle"
       on-iron-signal-disable="signalDisabled"
       on-iron-signal-encodecheck="signalEncodeCheck"
       on-iron-signal-updatecontent="signalUpdateContent"
@@ -94,28 +94,28 @@
       </paper-tooltip>
     </div>
     <paper-button id="Data selection" class="fullWidth vertMargined trackSelection text" toggles raised noink active="{{trackSelActive}}" on-tap="trackSelectionHandler"> Data selection </paper-button>
-    <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="{{isDisabled}}" on-tap="submitForm">
+    <paper-button class="colored fullWidth vertMargined" raised id="fileSubmit" disabled$="[[isDisabled]]" on-tap="submitForm">
       <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
       <span id = "Search" class="text">Search</span>
     </paper-button>
-    <!-- end upload new file part --> 
+    <!-- end upload new file part -->
   </template>
   <script>
     Polymer({
-		
+
 		is: "search-card-content",
-		
+
 		behaviors: [
 			_GIVe.GenemoTabCardContentBehavior
 		],
-		
+
 		properties: {
 			MAX_FILENAME_LEN: {
 				type: Number,
 				readOnly: true,
 				value: 25,
 			},
-			
+
 			sampleFile: {
 				type: Object,
 				value: {
@@ -129,77 +129,77 @@
 				},
 				readOnly: true,
 			},
-			
+
 			sampleRef: {
 				type: String,
 				value: "mm9",
 				readOnly: true,
 			},
-			
+
 			isEncodeOn: {
 				type: Boolean,
 				value: true,
 			},
-			
+
 			InputUrl: {
 				type: String,
 				value: "",
 				observer: "InputUrlChanged"
 			},
-			
+
 			currentRef: {
 				type: String,
 				value: "",
 				observer: "currentRefChanged",
 			},
-			
+
 			DisplayUrl: {
 				type: String,
 				value: "",
 			},
-			
+
 			UserEmail: {
 				type: String,
 				value: "",
 			},
-			
+
 			SearchRange: {
 				type: String,
 				value: "",
 			},
-			
+
 			SearchRangeArr: {
 				type: Array,
 				value: function() {
 					return [];
 				},
 			},
-			
+
 			trackSelActive: {
 				type: Boolean,
 				value: false
 			},
-			
+
 			toggleGroup: {
 				type: String,
 				value: 'trackSelect',
 			},
-			
+
 			isDisabled: {
 				type: Boolean,
 				value: false,
 			},
-			
+
 			disableGroup: {
 				type: String,
 				value: 'query-search',
 			},
-			
+
 			uploadButtonText: {
 				type: String,
 				value: '',
 			},
-			
+
 			species: {
 				type: Array,
 				value: function() {
@@ -207,15 +207,15 @@
 				},
 			},
 		},
-        
+
         created: function() {
             this.InputFile = new Blob();
         },
-		
+
         encodeFilter: function(value) {
 			return (value.isEncode || !this.isEncodeOn);
         },
-        
+
         checkEncodeSpecies: function (flag) {
 			if(typeof(flag) == 'boolean') {
 				this.isEncodeOn = flag;
@@ -225,13 +225,13 @@
                 this.updateAllSpcActive();
             }
         },
-        
+
         updateAllSpcActive: function () {
             // numbersOnly means no update of checkboxes to species.isActive
             // otherwise species.isActive will be updated first to reflect choice
             this.species.updateAllSpcActiveNum();
         },
-        
+
 		inputFileChangedFunc: function() {
 			var shortFileName = this.$.uploadFileInput.files[0].name;
 			if(shortFileName == "") {
@@ -247,18 +247,18 @@
 				this.InputUrl = '';
 			}
 		},
-		
+
 		InputUrlChanged: function(newValue, oldValue) {
 			if(newValue.length > 0) {
 				this.$.fileSelectButton.classList.remove("noTextTransformButton");
 				this.uploadButtonText = "Upload local file";
 			}
 		},
-		
+
 		currentRefChanged: function(newValue, oldValue) {
 			this.fire("species-changed", {newRef: newValue});
 		},
-		
+
 		signalToggle: function(e, detail) {
 			if(detail.group == this.toggleGroup) {
 				if(detail.flag || (detail.flag == false)) {
@@ -268,7 +268,7 @@
 				}
 			}
 		},
-		
+
 		signalDisabled: function(e, detail) {
 			if(detail.group == this.disableGroup) {
 				if(detail.flag || (detail.flag == false)) {
@@ -278,15 +278,15 @@
 				}
 			}
 		},
-                    
+
 		signalEncodeCheck: function(e, detail) {
 			this.checkEncodeSpecies(detail.flag);
 		},
-		
+
 		signalUpdateContent: function(e, detail) {
 			this.currentRef = detail.sessionObj.db;
 			var inputFileName = detail.sessionObj.originalFile;
-			var DisplayFileName = detail.sessionObj.hasDisplay? 
+			var DisplayFileName = detail.sessionObj.hasDisplay?
 				(detail.sessionObj.urlToShow.substring(detail.sessionObj.urlToShow.lastIndexOf('/') + 1)) : null;
 			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
 			if(DisplayFileName) {
@@ -297,15 +297,15 @@
 			}
 			this.updateCurrentInfo(collapseObj);
 		},
-		
+
 		signalCardReady: function(e, detail) {
 			this.setReady(true);
 		},
-		
+
 		fileSelectionHandler: function() {
 			this.$.uploadFileInput.click();
 		},
-		
+
 		trackSelectionHandler: function() {
 			if(genemoIsOn && !this.currentRef) {
 				this.fire("alert", {msg: 'Please select a reference genome before selecting data.'});
@@ -315,7 +315,7 @@
 				this.fire("toggle-window");
 			}
 		},
-                    
+
 		fillSampleHandler: function() {
 			if(!this.currentRef) {
 				this.fire("alert", {msg: 'No reference is selected. Please select a reference before using the provided sample.'});
@@ -330,7 +330,7 @@
 				this.SearchRange = this.sampleFile[this.currentRef].range;
 			}
 		},
-		
+
 		submitForm: function() {
 			if(this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
 				this.fire("alert", {msg: 'You need to provide the URL for your input file or select a file to upload!'});
@@ -338,24 +338,24 @@
 			} else if(!this.currentRef) {
 				this.fire("alert", {msg: 'You need to select the reference genome for your file!'});
 				return false;
-			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0 
+			} else if(this.UserEmail.length > 0 && (this.UserEmail.indexOf('@') <= 0
 				|| (this.UserEmail.indexOf('@') >= this.UserEmail.lastIndexOf('.') - 1))) {
 					this.fire("alert", {msg: 'Please provide a valid email address!'});
 					return false;
 			}
-			
+
 			this.InputFile = this.$.uploadFileInput.files[0];
-			
+
 			var inputFileName = (this.InputUrl.length > 0? (this.InputUrl.substring(this.InputUrl.lastIndexOf('/') + 1))
 				: (this.InputFile.name.substring(this.InputFile.name.lastIndexOf('/') + 1)));
-			var DisplayFileName = this.DisplayUrl.length > 0? 
+			var DisplayFileName = this.DisplayUrl.length > 0?
 				(this.DisplayUrl.substring(this.DisplayUrl.lastIndexOf('/') + 1)) : null;
-				
+
 			var collapseObj = { Ref: this.currentRef, Input: inputFileName };
 			if(DisplayFileName) {
 				collapseObj.display = DisplayFileName;
 			}
-			
+
 			if(this.SearchRange) {
 				this.SearchRangeArr = this.SearchRange.split(/[\s:\-]+/g);
 				this.SearchRange = this.SearchRangeArr[0] + ':' + this.SearchRangeArr[1] + '-' + this.SearchRangeArr[2];
@@ -363,26 +363,26 @@
 			}
 
 			this.updateCurrentInfo(collapseObj);
-			
+
 			this.fire("submit-form", {card: this});
 		},
-		
+
         ready: function() {
-            
+
 			this._setIcon('search');
 			this._setIconAlt('search');
 			this._setHeaderText('Input file');
 			this._setTabText('Search');
 
 			this.species = spcArray;
-			
+
             this.uploadButtonText = "Upload local file";
-			
+
 			this.setDOMReady(true);
 			this.setReady(false);
 
         },
-		
+
     });
   </script>
 </dom-module>

@@ -34,7 +34,8 @@ var GIVe = (function (give) {
     }
 
     this.tracksUpdated = false    // regardless of whether user has selected
-    this.tracksInitialized = false    // regardless of whether user has selected
+    this._tracksInitialized = false    // regardless of whether user has selected
+    this._tracksInitializing = false
     this.tracks = new give.TrackGroup()
 
     // this.initTracksFromServer()
@@ -133,48 +134,54 @@ var GIVe = (function (give) {
                           this)
       }
     }
-    this.tracksInitialized = true
+    this._tracksInitialized = true
+    this._tracksInitializing = false
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-tracks-ready'})
   }
 
+  give.SpeciesObject.prototype.callOnTracksReady = function (callback) {
+    // notice that callback needs to be a bound function if 'this' is important
+    return this.initTracksFromServer(null, callback)
+  }
+
   give.SpeciesObject.prototype.getTracks = function (callback) {
-    if (this.tracksInitialized) {
+    if (this._tracksInitialized) {
       return this.tracks
     } else {
-      if (callback) {
-        give.mainTaskScheduler.addTask(new give.TaskEntry(callback,
-          [this.getCleanID() + '-tracks-ready']))
-      }
-      this.initTracksFromServer(null)
-      throw (new Error('Tracks not initialized for species ' + this.name + '.'))
+      this.initTracksFromServer(null, callback)
+      return null
     }
   }
 
   give.SpeciesObject.prototype.getGroups = function (callback) {
-    if (this.tracksInitialized) {
+    if (this._tracksInitialized) {
       return this.groups
     } else {
-      if (callback) {
-        give.mainTaskScheduler.addTask(new give.TaskEntry(callback,
-          [this.getCleanID() + '-tracks-ready']))
-      }
-      this.initTracksFromServer(null)
-      throw (new Error('Tracks not initialized for species ' + this.name + '.'))
+      this.initTracksFromServer(null, callback)
+      return null
     }
   }
 
   give.SpeciesObject.prototype.initTracksFromServer = function (target, callback) {
-    // callback is the callback function taking this species as argument
-    if (!this.tracksInitialized) {
-      give.postAjax(target || give.SpeciesObject.initTrackTarget, {db: this.db}, function (data) {
-        this.initTracks(data, false, give.TrackObject.fetchDataTarget)
-        if (callback) {
-          callback(this)
+    // callback is the callback function taking no argument (already bound)
+    if (!this._tracksInitialized) {
+      if (callback) {
+        give.mainTaskScheduler.addTask(new give.TaskEntry(callback,
+          [this.getCleanID() + '-tracks-ready']))
+      }
+      if (!this._tracksInitializing) {
+        give.postAjax(target || give.SpeciesObject.initTrackTarget, {db: this.db}, function (data) {
+          this.initTracks(data, false, give.TrackObject.fetchDataTarget)
+        }, 'json', null, null, this)
+        this._tracksInitializing = true
+        if (give.verboseLvl >= give.VERBOSE_DEBUG) {
+          console.log('Tracks not initialized for species ' + this.name + '.')
         }
-      }, 'json', null, null, this)
+      }
+      return false
     } else {
       if (callback) {
-        callback(this)
+        return callback()
       }
     }
   }

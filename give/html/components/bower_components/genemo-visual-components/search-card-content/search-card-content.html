@@ -191,8 +191,10 @@
         setSpecies: function (spcArray) {
           if (Array.isArray(spcArray)) {
             this.splice('species', 0, this.species.length)
+            this.species.map = {}
             spcArray.forEach(function (species) {
               this.push('species', species)
+              this.species.map[species.db] = species
             }, this)
           }
           this.setReady(true)
@@ -333,16 +335,18 @@
             var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i
             if (!chromRegex.test(this.SearchRange)) {
               this.fire('alert', {msg: 'Please specify search range in "chrXX:XXXXX-XXXXX" "chrXX XXXXX XXXXX".'})
+              return false
             }
             this.SearchRangeArr = this.SearchRange.split(/[\s:-]+/g)
             this.SearchRange = this.SearchRangeArr[0] + ':' +
-          this.SearchRangeArr[1] + '-' + this.SearchRangeArr[2]
+              this.SearchRangeArr[1] + '-' + this.SearchRangeArr[2]
             collapseObj.range = this.SearchRange
           }
 
+          this.isDisabled = true
           this.updateCurrentInfo(collapseObj)
 
-          this.fire('submit-form', {sessionDataObj: {
+          this.species.map[this.currentRef].callOnTracksReady(this.fire.bind(this, 'submit-form', {sessionDataObj: {
             hasEmail: this.UserEmail.length > 0,
             email: this.UserEmail,
             file: this.InputFile,
@@ -352,7 +356,7 @@
             db: this.currentRef,
             searchRange: this.SearchRange,
             searchRangeArr: this.SearchRangeArr
-          }})
+          }}))
         },
 
         ready: function () {
