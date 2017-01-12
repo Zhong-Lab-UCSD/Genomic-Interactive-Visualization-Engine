@@ -100,7 +100,7 @@ if(isset($_REQUEST['sessionID'])) {
         <genemo-card disable-folding>
           <search-card-content class="genemoBody" id='searchCard'></search-card-content>
         </genemo-card>
-        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink">
+        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
           <paper-button raised noink>
             <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
             GENEMO Manual
@@ -123,22 +123,25 @@ if(isset($_REQUEST['sessionID'])) {
       <paper-toolbar id='mainToolbar'>
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
+        <div class="title"></div>
         <paper-button colored noink id="navigationHelp">
           <iron-icon icon="icons:help"></iron-icon>
           How to navigate
         </paper-button>
         <paper-tooltip for="navigationHelp">
-          To navigate, drag horizontally on any tracks or the coordinates
-          to move left / right and use mouse wheel
-          <b>on the coordinate track</b> to zoom in / out.
+          To navigate GeNemo Browser:
+          <ul>
+            <li><em>Drag horizontally</em> on any tracks or the coordinates to move left / right</li>
+            <li><em>Use mouse wheel</em> <strong>on the coordinate track</strong> to zoom in / out.</li>
+          </ul>
         </paper-tooltip>
-        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink">
-          <paper-button raised noink>
+        <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
+          <paper-button noink>
             <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
             GENEMO Manual
           </paper-button>
         </a>
-        <paper-button raised noink class="videoBtn">
+        <paper-button noink class="videoBtn">
           <iron-icon icon="notification:ondemand-video"></iron-icon>
           Introduction Video
         </paper-button>

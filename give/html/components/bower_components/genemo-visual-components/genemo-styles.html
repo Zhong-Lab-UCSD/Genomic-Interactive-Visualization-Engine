@@ -9,6 +9,7 @@
     :root {
       --dark-primary-color: #303F9F;
       --default-primary-color: #3F51B5;
+      --default-primary-color-lighten: #5C6BC0;
       --light-primary-color: #C5CAE9;
       --dark-theme-text-color: #ffffff; /*text/icons*/
       --accent-color: #FFAB40;
@@ -52,6 +53,11 @@
 
     paper-button[toggles][active] {
       background-color: rgba(0, 0, 0, 0.25);
+    }
+
+    paper-toolbar paper-button {
+      margin: 0 0.5em;
+      background: var(--default-primary-color-lighten);
     }
 
     paper-tabs {
