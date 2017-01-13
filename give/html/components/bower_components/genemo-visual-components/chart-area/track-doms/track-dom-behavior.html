@@ -610,7 +610,7 @@
 
       setElementParams: function (elem, params) {
         for (var key in params) {
-          if (params.hasOwnProperty(key)) {
+          if (params.hasOwnProperty(key) && params[key] !== undefined && params[key] !== null) {
             if ((key === 'fill' || key === 'stroke') && (typeof params[key] === 'number')) {
               // need to convert integer color to string
               params[key] = this.rgbToHex(params[key])

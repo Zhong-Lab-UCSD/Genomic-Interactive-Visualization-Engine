@@ -17,6 +17,8 @@
           this.MARGIN = 2
           this.FORECOLOR_INDEX = 0 // the color index for fore color
           this.TEXT_COLOR_RGB = 0 // the color index for text
+          this.OVERFLOW_COLOR_INDEX = 7 // the color index for overflow (red)
+          this.OVERFLOW_STROKE_WIDTH = 4
           this.SCALE_TEXT_SIZE = 9
 
           this.MIN_RESOLUTION_PER_PIXEL = 2
@@ -153,31 +155,12 @@
         // { 'exceedMax': Array(), 'exceedMin': Array() }
         // purple
 
-          var points = []
-          var svgToDraw = this.mainSvg
-          var windowToDraw = svgToDraw.viewWindow
-          for (var i = 0; i < overflows.exceedMax.length; i++) {
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].start}, svgToDraw), this.drawingBoundary.top])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].end}, svgToDraw), this.drawingBoundary.top])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].end}, svgToDraw), this.drawingBoundary.top - 5])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMax[i].start}, svgToDraw), this.drawingBoundary.top - 5])
-            this.createRawPolygon(points, {class: 'wiggleShapes',
-              fill: this.rgbToHex(this.colorSet[8]),
-              stroke: this.rgbToHex(this.colorSet[8])
-            }, svgToDraw)
-              //  console.log(points);
-          }
-          for (i = 0; i < overflows.exceedMin.length; i++) {
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].start}, svgToDraw), this.drawingBoundary.bottom])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].end}, svgToDraw), this.drawingBoundary.bottom])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].end}, svgToDraw), this.drawingBoundary.bottom + 5])
-            points.push([this.transformXCoordinate({chr: windowToDraw.chr, coor: overflows.exceedMin[i].start}, svgToDraw), this.drawingBoundary.bottom + 5])
-            this.createRawPolygon(points, {class: 'wiggleShapes',
-              fill: this.rgbToHex(this.colorSet[8]),
-              stroke: this.rgbToHex(this.colorSet[8])
-            }, svgToDraw)
-              //  console.log(points);
-          }
+          var drawOverflowRect = function (y, region) {
+            this.drawRectangle(region, this.rgbToHex(this.colorSet[this.OVERFLOW_COLOR_INDEX]),
+              y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
+          }.bind(this)
+          overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
+          overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
         },
 
         drawPeak: function (currPolygon, dataEntry) {
@@ -230,9 +213,15 @@
           }
         // process overflows
           if (flags.EXCEED_MIN) {
-            currPolygon.overflows.exceedMin.push(dataEntry.clone())
+            var lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
+            if (!lastExceed || !lastExceed.concat(dataEntry)) {
+              currPolygon.overflows.exceedMin.push(dataEntry.clone())
+            }
           } else if (flags.EXCEED_MAX) {
-            currPolygon.overflows.exceedMax.push(dataEntry.clone())
+            lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
+            if (!lastExceed || !lastExceed.concat(dataEntry)) {
+              currPolygon.overflows.exceedMax.push(dataEntry.clone())
+            }
           }
 
           return true

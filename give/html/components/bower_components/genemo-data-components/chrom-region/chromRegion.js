@@ -188,6 +188,17 @@ var GIVe = (function (give) {
     return this
   }
 
+  give.ChromRegion.prototype.concat = function (region, strandSpecific) {
+    if (this.end === region.start) {
+      this.end = region.end
+    } else if (this.start === region.end) {
+      this.start = region.start
+    } else {
+      return null
+    }
+    return this
+  }
+
   give.ChromRegion.prototype.intersect = function (region, strandSpecific) {
     if (!this.overlaps(region, strandSpecific)) {
       return null
