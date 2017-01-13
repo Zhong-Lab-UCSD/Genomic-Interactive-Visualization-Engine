@@ -15,10 +15,17 @@
       display: block;
     }
     iron-list {
-      padding: 0.8em;
+      padding: 0.5em;
+      --iron-list-items-container: {
+        margin: auto;
+      };
     }
     #noResultContainer {
       padding: 0.8em;
+    }
+    paper-button {
+      font-size: 0.9em;
+      margin: 0
     }
     </style>
     <paper-card hidden$="[[regionListEmpty]]" class="layout vertical fit">
