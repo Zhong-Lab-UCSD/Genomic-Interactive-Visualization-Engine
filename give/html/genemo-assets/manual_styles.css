@@ -18,6 +18,39 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 	color: inherit;
 }
 
+.paper-button-text {
+	display: inline-block;
+	text-transform: uppercase;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	padding: 0.1em 1em;
+	margin: 0 0.25em 0.1em 0.25em;
+	border-radius: 3px;
+	box-shadow: 0 1px 4px 1px #9E9E9E;
+}
+
+.paper-button-text.colored {
+	background: #3F51B5;
+	color: #FFF;
+}
+
+.paper-input-text {
+	display: inline-block;
+	border-bottom: 1px #3F51B5 solid;
+	padding-right: 1em;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	color: #3F51B5;
+}
+
+.genemo-card-title {
+	display: inline-block;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	font-weight: 700;
+	background: #E0E0E0;
+	text-transform: capitalize;
+	padding: 0.1em 0.25em;
+	margin: 0.1em 0.25em;
+}
+
 .clearFix:after {
     content: "";
     display: table;
@@ -91,6 +124,12 @@ body,div,pre,form,fieldset,input,textarea,blockquote {
 
 .normaltext input[type="button"] {
 	padding: 0 5px;
+}
+
+.panel {
+	font-weight: 700;
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	text-transform: capitalize;
 }
 
 .embededImage {

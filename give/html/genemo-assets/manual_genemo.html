@@ -7,7 +7,7 @@
   <title>GeNemo Manual</title>
   <script src="../components/bower_components/webcomponentsjs/webcomponents.min.js"></script>
   <link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
-  <link href="mainstyles.css" rel="stylesheet" type="text/css" />
+  <link href="manual_styles.css" rel="stylesheet" type="text/css" />
   <link rel="import" href="../components/bower_components/iron-icons/iron-icons.html">
   <link rel="import" href="../components/bower_components/paper-icon-button/paper-icon-button.html">
   <style type="text/css">
@@ -115,9 +115,9 @@
   <li>ENCODE Data Matrix (<a href="http://genome.ucsc.edu/encode/dataMatrix/encodeDataMatrixHuman.html">human</a> and <a href="http://genome.ucsc.edu/encode/dataMatrix/encodeDataMatrixMouse.html">mouse</a>)</li>
 </ul>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a><a name="usage" id="intro3"></a>Using GENOMO Search</div>
-<p class="normaltext">The GeNemo Search user interface contains four panels: <span class="panel">Input file</span> panel, <span class="panel">gene / region selection</span> panel, <span class="panel">navigation</span> panel and <span class="panel">visualization</span> panel. The left panels can be folded so that all the panels are accessible under a smaller screen resolution. The entire left panel group can also be hidden to further provide space for the data displayed by the <span class="panel">visualization</span> panel.</p>
+<p class="normaltext">The GeNemo Search user interface contains several components: the <span class="panel">Input file</span> panel, the <span class="panel">Results</span> panel, and the GeNemo Browser. The <span class="panel">Input file</span> panel will be folded after data submission and can be called out with the <iron-icon icon="menu"></iron-icon> button.</p>
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a><a name="input" id="intro4"></a>Select Input Data</div>
-<div class="embededImage" id="GeneLookUp"><img src="images/Figure_2_SearchPanel.png" width="259" height="367" alt=""/><br />
+<div class="embededImage" id="GeneLookUp"><img src="images/Figure_2_SearchPanel.png" width="265" height="400" alt=""/><br />
 <span class="panel"><strong>Figure 2</strong></span> <span class="genemo-card-title">Input file</span> panel in GeNemo Search.</div>
 <p class="normaltext">You need to use  <span class="genemo-card-title">Input file</span> panel to provide input data in GeNemo Search (see Figure 2 to the right). By specifying the following information, you can search the epigenetic data sets for regions similar to your experiment results:</p>
 <ul class="normalnotes">
@@ -134,27 +134,26 @@
   <li>(Optional) If you would like to limit the scope of your search to one specific genomic region instead of the full genome, you can specify the region in <span class="paper-input-text">Search range</span>. You can provide the region in several formats, such as <span class="codes">chr1:1234567-4567890</span>, <span class="codes">chr1 1234567-4567890</span> or <span class="codes">chr1 1234567 4567890</span>.</li>
   <li>(Optional) Choose tracks/data you want to compare by clicking <span class="paper-button-text">Data selection</span>. (Please refer to the <span class="panel">Choose epigenetic data sets to search </span>section below.)</li>
 </ul>
-<p class="normaltext">The <paper-icon-button icon="expand-more" class="genemoHeader"></paper-icon-button>
-button at the top-left corner can be used to expand/shrink this panel.</p>
 <p class="normaltext">After provided the required information, click <span class="paper-button-text colored">
   <iron-icon class="smallInline" icon="search" alt="search"></iron-icon>
 Search</span> to initialize your search.</p>
 <div style="clear: both;"></div>
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div>
 </a><a name="dataSelect" id="dataSelect"></a>Choose Epigenetic Data Sets to Search</div>
-<p class="normaltext">GeNemo Search incorporated all data sets from ENCODE project as potential search targets. To choose the specific data sets you would like to search, you can click <span class="paper-button-text">Data selection</span> to open the <span class="panel">data selection</span> panel.</p>
-<p class="inlineImage"><img src="images/Figure_3_DataSelection.png" width="606" height="364" alt=""/><br />
-<span class="panel">Figure 3</span> Data selection panel.</p>
-<p class="normaltext">By clicking on underlined sample name, meta data from ENCODE will be summarized in the popup window, by clicking the sample name again or click <span class="paper-button-text">More Info...</span> to show detailed meta data.</p>
+<p class="normaltext">GeNemo Search incorporated all data sets from ENCODE project as potential search targets. To choose the specific data sets you would like to search, you can click <span class="paper-button-text">Data selection</span> to open the <span class="panel">Track list</span> panel.</p>
+<p class="inlineImage"><img src="images/Figure_3_DataSelection.png" width="508" height="438" alt=""/><br />
+<span class="panel">Figure 3</span> <span class="panel">Track list</span> panel.</p>
+<p class="normaltext"><strong><em>(Currently unavailable due to site upgrade)</em></strong> By clicking on underlined sample name, meta data from ENCODE will be summarized in the popup window, by clicking the sample name again or click <span class="paper-button-text">More Info...</span> to show detailed meta data.</p>
 <p class="inlineImage"><img src="images/Figure_MetaData.png" width="417" height="359" alt=""/><br />
-<span class="panel">Figure 4</span> Meta data popup window. Meta data can be downloaded as text file with <span class="paper-button-text">Download meta data</span> button.</p>
+<span class="panel">Figure 4</span> Meta data popup window. Meta data can be downloaded as text file with <span class="paper-button-text">Download meta data</span> button.<strong><em>(Currently unavailable due to site upgrade)</em></strong></p>
 <p class="normaltext">To select the specific data sets for comparison, you can use a combination of two methods:</p>
 <ul class="normalnotes">
   <li>Select ENCODE data sets individually with the checkboxes in the list;</li>
   <li>Use the built-in filter (explained below).</li>
 </ul>
 <p class="normaltext">Epigenetic signals in ES cells (H1 in human, E14 in mouse) are selected by default.</p>
-<p class="normaltext">To filter data sets by specific criteria, click <span class="panel">use filters</span> to bring out the filter panel, in this panel you can specify what type of information to use (by experiment, by tissue type, by cell line, or by lab) through clicking on corresponding tab. After a tab is selected, you can perform one of the three operations on currently selected items:</p>
+<p class="normaltext">To filter data sets by specific criteria, click <span class="paper-button-text"><iron-icon icon="filter-list"></iron-icon>
+filter</span> to bring out the filter panel, in this panel you can specify what type of information to use (by experiment, by tissue type, by cell line, or by lab) through clicking on corresponding tab. After a tab is selected, you can perform one of the three operations on currently selected items:</p>
 <ul class="normalnotes">
   <li><span class="panel">Add</span> to current selection: tracks matching given criteria will be added to the current selection (tracks already selected will not be affected);</li>
   <li><span class="panel">Filter</span> current selection: currently selected tracks will be deselected (filtered) if they do not match given criteria (unselected tracks  will not be affected);</li>
@@ -164,16 +163,22 @@ Search</span> to initialize your search.</p>
 <p class="inlineImage"><img src="images/Figure_4_Filter_1.png" width="409" height="367" alt=""/> <img src="images/Figure_4_Filter_2.png" width="409" height="367" alt=""/><br />
   <span class="panel">Figure 5</span> Filter panel. Two different types of criteria are shown (Experiment and Tissue).</p>
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a><a name="output" id="output"></a>Visualizing Output</div>
-<p class="normaltext">The output includes the <span class="panel">Gene / Region Selection</span>, <span class="panel">Navigation</span> and <span class="panel">Visualization</span> panels (see Figure 6 below). After the calculation is complete, the resulting gene regions will be shown in the <span class="panel">Gene / Region Selection</span> panel. The results will be ordered according to  scores obtained by the algorithm. Users can also click on the sample in the results to show a popup window for its corresponding meta data. Select the Visualize button for any one result to visualize it in the <span class="panel">Visualization</span> panel.</p>
-<p class="normaltext">The&nbsp;<span class="panel">Navigation</span>&nbsp;panel  is provided to navigate through the selected gene region. There are  two types of controls in the navigation panel: sliding controls that enable the user to  slide to the upstream/downstream regions of the current view, and zooming controls that allow the user to zoom in/out a certain part of the genome.</p>
-<p class="inlineImage"><img src="images/Figure_4_UI.png" alt="GeNemo Search Goals" width="600" height="293" /><br />
-<span class="panel">Figure 6</span> This example of the output  shows the result from the input file. The <span class="panel">Input file </span>Panel (collapsed), <span class="panel">Gene / Region Selection</span> Panel, <span class="panel">Navigation</span> Panel and <span class="panel">Visualization</span> Panel are shown.</p>
+<p class="normaltext">The output includes the <span class="panel">Results</span> panel, and the GeNemo Browser (see Figure 6 below). After the calculation is complete, the resulting gene regions will be shown in the <span class="panel">Results</span> panel. The results will be ordered according to scores obtained by the algorithm. Users can also click on the sample in the results to show a popup window for its corresponding meta data. Select the <span class="paper-button-text">
+	<iron-icon class="smallInline" icon="forward" alt="show in browser"></iron-icon>Show</span> button for any one result to visualize it in the GeNemo Browser.</p>
+<p class="normaltext">To navigate the GeNemo Browser, please use mouse to drag any track horizontally to move left/right. Move the mouse cursor onto the coordinates then use the mouse wheel to zoom in/out.</p>
+<p class="normaltext">To start a new query, use the <iron-icon class="smallInline" icon="menu" alt="menu"></iron-icon> button in upper-left to call out the sidebar with <span class="panel">input file</span> panel and start over.</p>
+<p class="inlineImage"><img src="images/Figure_5_UI.png" alt="GeNemo Search Goals" width="650" height="335" /><br />
+<span class="panel">Figure 6</span> This example of the output shows the result from the input file. The <span class="panel">Results</span> Panel and the GeNemo Browser are shown.</p>
 <div style="clear: both;"></div>
 <div class="Header2 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div>
 </a><a name="export" id="export"></a>Exporting Results for Other Tools</div>
-<p class="normaltext">By clicking [Export BED file] in the Results panel, the output regions can be exported into a BED file to be used as input for other tools, such as GREAT (<a href="http://bejerano.stanford.edu/great/public/html/">http://bejerano.stanford.edu/great/public/html/</a>). The similarity score and the track(s) matching the corresponding region is included in the BED file for references.</p>
-<p class="inlineImage"><img src="images/Figure_6_export.png" alt="GeNemo Search Goals" width="275" height="129" /><br />
-<span class="panel">Figure 7</span> The [Export BED file] link</p>
+<p class="normaltext">By clicking <span class="paper-button-text">
+  <iron-icon class="smallInline" icon="file-download" alt="file-download"></iron-icon>
+download BED File</span> at the bottom of the Results panel, the output regions can be exported into a BED file to be used as input for other tools, such as GREAT (<a href="http://bejerano.stanford.edu/great/public/html/">http://bejerano.stanford.edu/great/public/html/</a>). The similarity score and the track(s) matching the corresponding region is included in the BED file for references.</p>
+<p class="inlineImage"><img src="images/Figure_6_export.png" alt="GeNemo Search Goals" width="304" height="131" /><br />
+<span class="panel">Figure 7</span> The <span class="paper-button-text">
+  <iron-icon class="smallInline" icon="file-download" alt="file-download"></iron-icon>
+download BED File</span> button</p>
 <p class="normaltext">This result file in BED format contains:</p>
 <ul class="normalnotes">
   <li>A header line indicating the original data file;</li>
