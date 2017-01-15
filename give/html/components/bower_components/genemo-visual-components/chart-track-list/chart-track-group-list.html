@@ -9,21 +9,28 @@
   <template>
     <style include="genemo-shared-styles iron-flex" is="custom-style">
     :host {
-      padding: 0.5em 0.5em 0 0.5em;
+      padding: 0.5em;
       display: block;
       @apply(--layout-fit);
       @apply(--layout-vertical);
+    }
+    chart-track-list {
+      @apply(--chart-track-list-items-mixin);
+    }
+    .cardActions {
+      padding: 0;
+      margin-bottom: -0.5em;
     }
     </style>
     <template is="dom-repeat" id="trackGroupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <chart-track-list text-size="[[textSize]]" group="[[group]]"
-        setting-key="[[settingKey]]">
+        setting-key="[[settingKey]]" class="flex">
       </chart-track-list>
     </template>
     <template is="dom-if" if="[[!noControls]]" restamp="true">
-      <div card-actions>
+      <div class="cardActions">
         <paper-button on-tap="launchFilter">
           <iron-icon icon="filter-list"></iron-icon>
           Filter
@@ -87,7 +94,8 @@
           },
 
           noControls: {
-            type: Boolean
+            type: Boolean,
+            value: false
           }
         },
 

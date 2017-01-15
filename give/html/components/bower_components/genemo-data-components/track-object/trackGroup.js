@@ -17,7 +17,6 @@ var GIVe = (function (give) {
     this.label = this.label || ''
     this.priority = this.priority || give.TrackGroup.MAX_GROUP_PRIORITY
     this.visibility = !!(this.visibility)    // force into boolean
-    this.singleChoice = !!parseInt(this.singleChoice)
   }
 
   give.TrackGroup.prototype.addTrack = function (track) {

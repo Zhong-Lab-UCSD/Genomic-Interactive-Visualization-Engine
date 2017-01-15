@@ -19,5 +19,5 @@ if(isset($req['db'])) {
 	}
 }
 header('Content-Type: application/json');
-echo json_encode($result, JSON_FORCE_OBJECT);
+echo empty($result)? json_encode($result, JSON_FORCE_OBJECT): json_encode($result);
 ?>

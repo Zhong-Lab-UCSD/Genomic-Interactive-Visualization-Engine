@@ -112,19 +112,13 @@
           type: Boolean,
           value: false,
           readOnly: true
-        },
+        }
 
   //      initialized: {
   //        type: Boolean,
   //        value: false,
   //        readOnly: true,
   //      },
-
-        isAdaptive: {
-          type: Boolean,
-          value: false
-        }
-
       },
 
       listeners: {
@@ -188,10 +182,6 @@
         this.defaultVisibility = give.TrackObject.StatusEnum.VIS_FULL
 
         this.activeVisibility = this.track.getSetting('visibility') || this.defaultVisibility
-
-        if (this.track.getSetting('adaptive') === 'on') {
-          this.isAdaptive = true
-        }
 
         if (properties.hasOwnProperty('textMargin')) {
           this.textMargin = properties.textMargin

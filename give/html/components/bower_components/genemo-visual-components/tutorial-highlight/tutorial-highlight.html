@@ -13,6 +13,7 @@
 <link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../paper-dialog-behavior/paper-dialog-behavior.html">
+<link rel="import" href="../../iron-localstorage/iron-localstorage.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="tutorial-highlight">
@@ -24,6 +25,7 @@
     #highlighter {
       position: fixed;
       color: var(--highlighter-text-color, var(--dark-theme-text-color));
+      z-index: 1000;
     }
     #highlighter > div {
       /* This is the div implementing --highlighter-margin */

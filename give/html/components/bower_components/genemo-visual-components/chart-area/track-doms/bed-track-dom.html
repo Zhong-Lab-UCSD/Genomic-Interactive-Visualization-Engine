@@ -141,7 +141,7 @@
                   return false
                 }, this)) {
                 // no empty lines, create a new line
-                  if (this.isAdaptive && lineEnds.length >= this.ADAPTIVE_MAXLINES) {
+                  if (this.track.getSetting('adaptive') && lineEnds.length >= this.ADAPTIVE_MAXLINES) {
                     this.changeVisibility(-1, true)
                     return false
                   }

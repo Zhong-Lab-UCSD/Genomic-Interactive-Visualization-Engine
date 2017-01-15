@@ -128,7 +128,7 @@ if(isset($_REQUEST['sessionID'])) {
           <iron-icon icon="icons:help"></iron-icon>
           How to navigate
         </div>
-        <paper-tooltip for="navigationHelp">
+        <paper-tooltip fit-to-visible-bounds for="navigationHelp">
           To navigate GeNemo Browser:
           <ul>
             <li><em>Drag horizontally</em> on any tracks or the coordinates to move left / right</li>

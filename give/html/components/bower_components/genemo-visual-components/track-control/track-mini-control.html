@@ -17,6 +17,9 @@
 <dom-module id="track-mini-control">
   <template>
     <style include="genemo-shared-styles">
+    :host {
+      padding: 0.1em 0;
+    }
     </style>
     <template is="dom-if" if="[[_groupSingleChoice(group)]]" restamp>
       <paper-radio-button id="choiceElem" name="[[track.id]]" checked="{{selected}}">

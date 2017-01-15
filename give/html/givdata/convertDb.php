@@ -38,7 +38,9 @@ if($_REQUEST['db']) {
           }
         }
       }
-      $settingsJSON = json_encode($settingsObj, JSON_FORCE_OBJECT);
+      $settingsJSON = empty($settingsObj)
+        ? json_encode($settingsObj, JSON_FORCE_OBJECT)
+        : json_encode($settingsObj);
       $updateSqlStmt = "UPDATE trackDb SET settings = ? WHERE tableName = ?";
       $updateStmt = $mysqli->prepare($updateSqlStmt);
       $updateStmt->bind_param('ss', $settingsJSON, $itor['tableName']);
