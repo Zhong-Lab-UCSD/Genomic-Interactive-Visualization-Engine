@@ -70,10 +70,10 @@
 		},
 
 		factoryImpl: function(species) {
-			this.changeSpecies(species);
+			this.setSpecies(species);
 		},
 
-		changeSpecies: function(newSpecies) {
+		setSpecies: function(newSpecies) {
 			// this will reset all tracks and redo the species
 			// note that the tracks should already be initialized before switching here
 			if(!newSpecies) {

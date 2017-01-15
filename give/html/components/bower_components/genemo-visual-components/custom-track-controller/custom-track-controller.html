@@ -46,7 +46,7 @@
       </div>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
-        <paper-button raised id="fileSubmit" on-tap="addTrack">
+        <paper-button raised id="fileSubmit" on-tap="addTrack" disabled="[[isDisabled]]">
           <iron-icon class="smallInline" icon="add" alt="Add track"></iron-icon>
           <span id = "Search" class="text">Add Track</span>
         </paper-button>
@@ -103,13 +103,22 @@
             value: function () {
               return []
             }
+          },
+
+          customTrackGroupID: {
+            type: String,
+            value: 'customTracks'
+          },
+
+          isDisabled: {
+            type: Boolean,
+            value: true
           }
 
         },
 
         created: function () {
           this.trackCtrlDOMs = []
-          this.customTrackGroupID = 'customTracks'
         },
 
         ready: function () {
@@ -134,17 +143,14 @@
         },
 
         factoryImpl: function (species, prop) {
-          if (prop && prop.hasOwnProperty('customTrackGroupID')) {
-            this.customTrackGroupID = prop.customTrackGroupID
-          }
-          this.changeSpecies(species)
+          this.setSpecies(species)
         },
 
         openAddTrackDialog: function () {
           this.$.mainDialog.open()
         },
 
-        changeSpecies: function (newSpecies, trackCtrlDOMs) {
+        setSpecies: function (newSpecies, trackCtrlDOMs) {
           // this will reset all tracks and redo the species
           // note that the tracks should already be initialized before switching here
           if (!newSpecies) {
@@ -156,6 +162,7 @@
             this.customGroup = give.SpeciesObject.createCustomGroup({ID: this.customTrackGroupID})
           }
           this.species.groups[this.customTrackGroupID] = this.customGroup
+          this.isDisabled = false
         },
 
         fileSelectionHandler: function () {

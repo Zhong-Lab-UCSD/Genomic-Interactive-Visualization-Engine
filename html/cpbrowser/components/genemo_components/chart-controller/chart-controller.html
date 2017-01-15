@@ -148,9 +148,9 @@
 			this.$.trackSelectHolder.setAllReadiness(false);
 			if(this.mainChart) {
 				// species is changed
-				correctedVWindows = this.mainChart.changeSpecies(this.getCurrentSpecies());
-				this.trackSelect.changeSpecies(this.getCurrentSpecies());
-				this.customTrackController.changeSpecies(this.getCurrentSpecies());
+				correctedVWindows = this.mainChart.setSpecies(this.getCurrentSpecies());
+				this.trackSelect.setSpecies(this.getCurrentSpecies());
+				this.customTrackController.setSpecies(this.getCurrentSpecies());
 			} else {
 				this.mainChart = new ChartArea(this.getCurrentSpecies(), 2, null, this.threshold);
 				this.trackSelect = new ChartTrackList(this.getCurrentSpecies());

@@ -47,7 +47,7 @@ var GIVe = (function (give) {
   }
 
   give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    document.querySelector('#searchCard').setSpecies(give.spcArray)
+    Polymer.dom(document).querySelector('#searchCard').setSpecies(give.spcArray)
   }, ['web-component-ready', 'species-ready']))
 
   give.loadSessionInfo = function (sessionID, db, selectedTracks, urlToShow, originalFile, hasDisplay, searchRange) {
@@ -278,11 +278,11 @@ var GIVe = (function (give) {
       // species changed, needs to update lots of stuff
       give.spcArray.selected = ref
       trackFilterDom.initialize(give.spcArray.currSpecies())
-      trackListDom.changeSpecies(give.spcArray.currSpecies())
+      trackListDom.setSpecies(give.spcArray.currSpecies())
       // reset chromRegionList
       mainRegionListDom.setList()
       // reset mainChart
-      mainChartDom.changeSpecies(give.spcArray.currSpecies())
+      mainChartDom.setSpecies(give.spcArray.currSpecies())
     }
   }
 

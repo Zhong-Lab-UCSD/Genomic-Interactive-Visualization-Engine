@@ -134,14 +134,14 @@
 			if(prop && prop.hasOwnProperty('customTrackGroupID')) {
 				this.customTrackGroupID = prop.customTrackGroupID;
 			}
-			this.changeSpecies(species);
+			this.setSpecies(species);
 		},
 
 		openAddTrackDialog: function() {
 			this.$.mainDialog.open();
 		},
 
-		changeSpecies: function(newSpecies, trackCtrlDOMs) {
+		setSpecies: function(newSpecies, trackCtrlDOMs) {
 			// this will reset all tracks and redo the species
 			// note that the tracks should already be initialized before switching here
 			if(!newSpecies) {

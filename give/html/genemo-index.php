@@ -61,7 +61,7 @@ if(isset($_REQUEST['sessionID'])) {
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
   <link rel="import" href="components/bower_components/paper-drawer-panel/paper-drawer-panel.html">
-  <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment"></style>
+  <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning"></style>
   <script type="text/javascript">
   <?php
   // this is loading part

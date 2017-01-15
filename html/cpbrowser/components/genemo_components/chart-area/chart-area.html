@@ -124,7 +124,7 @@
 
 			factoryImpl: function(species, numOfSubs, viewWindow, threshold) {
 				this.threshold = threshold || 0.0;
-				this.changeSpecies(species, numOfSubs, viewWindow);
+				this.setSpecies(species, numOfSubs, viewWindow);
 			},
 
 			attached: function() {
@@ -327,7 +327,7 @@
 				return result;
 			},
 
-			changeSpecies: function(newSpecies, numOfSubs, viewWindowIn) {
+			setSpecies: function(newSpecies, numOfSubs, viewWindowIn) {
 				// this will reset all tracks and redo the species
 				// note that the tracks should already be initialized before switching here
 				if(!newSpecies) {

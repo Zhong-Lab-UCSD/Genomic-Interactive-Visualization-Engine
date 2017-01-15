@@ -583,7 +583,7 @@
         newLabel.setAttributeNS(null, 'y', y)
         // TODO: when Edge supports SVG 1.1 dominant-baseline feature, remove this
         if (document.documentMode || navigator.userAgent.match(/Edge/)) {
-          newLabel.setAttributeNS(null, 'dy', this.textSize * 0.3)
+          newLabel.setAttributeNS(null, 'dy', this.textSize * 0.2)
         }
         // End MSIE & Edge only hack
 

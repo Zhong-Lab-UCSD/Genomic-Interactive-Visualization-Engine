@@ -154,6 +154,7 @@ function getSpeciesInfoFromArray($spcDbNameList = NULL) {
 		$species = $mysqli->query($sqlstmt);
 	}
 	while($spcitor = $species->fetch_assoc()) {
+    $spcitor['settings'] = json_decode($spcitor['settings']);
 		$spcinfo[] = $spcitor;
 	}
 	$species->free();

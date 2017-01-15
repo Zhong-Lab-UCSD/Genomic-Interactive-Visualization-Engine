@@ -22,24 +22,26 @@
         setting-key="[[settingKey]]">
       </chart-track-list>
     </template>
-    <div card-actions>
-      <paper-button on-tap="launchFilter">
-        <iron-icon icon="filter-list"></iron-icon>
-        Filter
-      </paper-button>
-      <paper-button on-tap="resetAllTracks">
-        <iron-icon icon="refresh"></iron-icon>
-        Reset to default
-      </paper-button>
-      <paper-button on-tap="cancelChanges">
-        <iron-icon icon="close"></iron-icon>
-        Cancel
-      </paper-button>
-      <paper-button on-tap="submitChanges">
-        <iron-icon icon="check"></iron-icon>
-        OK
-      </paper-button>
-    </div>
+    <template is="dom-if" if="[[!noControls]]" restamp="true">
+      <div card-actions>
+        <paper-button on-tap="launchFilter">
+          <iron-icon icon="filter-list"></iron-icon>
+          Filter
+        </paper-button>
+        <paper-button on-tap="resetAllTracks">
+          <iron-icon icon="refresh"></iron-icon>
+          Reset to default
+        </paper-button>
+        <paper-button on-tap="cancelChanges">
+          <iron-icon icon="close"></iron-icon>
+          Cancel
+        </paper-button>
+        <paper-button on-tap="submitChanges">
+          <iron-icon icon="check"></iron-icon>
+          OK
+        </paper-button>
+      </div>
+    </template>
   </template>
   <script>
     var GIVe = (function (give) {
@@ -82,12 +84,11 @@
           groupIdList: {
             // this is the array of allowed group IDs in the list
             type: Array
+          },
+
+          noControls: {
+            type: Boolean
           }
-
-        },
-
-        listeners: {
-          'repeat-dom-completed': '_repeatDomCompletedHandler'
         },
 
         ready: function () {
@@ -98,13 +99,13 @@
 
           this.setDOMReady(true)
           this.setReady(false)
-          this.changeSpecies(null, true)
+          this.setSpecies(null, true)
 
           this.completedRepeatDOMs = 0
         },
 
-        _refreshSpecies: function () {
-          // this is called after this._changeSpecies
+        _refreshSpeciesTrackReady: function () {
+          // this is called after track is ready for trackSpecies
           this.splice('groupArray', 0, this.groupArray.length)
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
@@ -125,12 +126,21 @@
           })
         },
 
+        _refreshSpecies: function () {
+          this.species.callOnTracksReady(this._refreshSpeciesTrackReady.bind(this))
+        },
+
+        updateAllGroupDOM: function () {
+          this.setReady(false)
+          this._refreshSpecies()
+        },
+
         _prioritySort: function (itemA, itemB) {
           return itemA.priority < itemB.priority
             ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
         },
 
-        changeSpecies: function (newSpecies, forceUpdate) {
+        setSpecies: function (newSpecies, forceUpdate) {
         // this will reset all tracks and redo the species
         // note that the tracks should already be initialized before switching here
           if (!newSpecies) {
@@ -142,7 +152,7 @@
           }
           this.setReady(false)
           if (this.species) {
-            this.species.callOnTracksReady(this._refreshSpecies.bind(this))
+            this._refreshSpecies()
           }
         },
 

@@ -413,7 +413,7 @@
 
         refreshAll: function (viewWindows, threshold) {
           if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
-          // only update threshold only
+            // only update threshold only
             this.changeThreshold(threshold)
             return this.getViewWindowStrings()
           } else {
@@ -435,7 +435,7 @@
           return result
         },
 
-        changeSpecies: function (newSpecies, numOfSubs) {
+        setSpecies: function (newSpecies, numOfSubs) {
           // this will reset all tracks and redo the species
           // note that the tracks should already be initialized before switching here
           // After this, this.changeAllViewWindows should be called
@@ -492,7 +492,8 @@
           }
         },
 
-        addAllTrackDOMs: function (noRefreshContent) {
+        _addAllTrackDOMsTracksReady: function (noRefreshContent) {
+          // function called when tracks are ready for this.species
           var showTrack = function (wIndex, track, index) {
             // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
             if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
@@ -514,6 +515,10 @@
           }, this)
           this.mergeTrackDOMsByWindow()
           this.populateDOM(noRefreshContent)
+        },
+
+        addAllTrackDOMs: function (noRefreshContent) {
+          this.species.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
         },
 
         removeInvisibleTrackDOMs: function () {

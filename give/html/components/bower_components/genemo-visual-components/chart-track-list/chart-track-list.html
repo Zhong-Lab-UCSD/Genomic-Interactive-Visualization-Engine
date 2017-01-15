@@ -94,9 +94,13 @@
               track.setSetting(this.settingKey, false)
             }, this)
             if (this.$.groupList.selectedItems) {
-              this.$.groupList.selectedItems.forEach(function (track) {
-                track.setSetting(this.settingKey, true)
-              }, this)
+              if (Array.isArray(this.$.groupList.selectedItems)) {
+                this.$.groupList.selectedItems.forEach(function (track) {
+                  track.setSetting(this.settingKey, true)
+                }, this)
+              } else {
+                this.$.groupList.selectedItems.setSetting(this.settingKey, true)
+              }
             }
           }
         },
