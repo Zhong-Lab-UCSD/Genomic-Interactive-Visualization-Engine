@@ -31,6 +31,9 @@
         display: block;
         margin-left: 0.5em;
       }
+      div.dataReference {
+        padding: 1em;
+      }
       paper-drawer-panel div.content {
         overflow-y: auto;
       }
@@ -93,7 +96,7 @@
           <chart-area class="flex" id="mainChartArea" num-of-subs="2"
             group-id-list='["genes", "interaction", "customTracks"]'>
           </chart-area>
-          <div hidden$="[[!species.settings.isGITARRelated]]">
+          <div class="dataReference" hidden$="[[!species.settings.isGITARRelated]]">
             <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
             <p><span id="Geonomegitar" class="text">Please refer to
               <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a>
