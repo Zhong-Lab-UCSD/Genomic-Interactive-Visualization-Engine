@@ -232,3 +232,7 @@ samples/
 
 testData/
 */includes/constants.php
+
+#Genome Browser data files
+*.bigWig
+*.bw
