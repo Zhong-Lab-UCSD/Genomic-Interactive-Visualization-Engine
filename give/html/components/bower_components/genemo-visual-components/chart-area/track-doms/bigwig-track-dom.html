@@ -62,7 +62,8 @@
             if (this.autoScale) {
               this.windowMax = Number.NEGATIVE_INFINITY
               this.windowMin = Number.POSITIVE_INFINITY
-              this.track.data[vwindow.chr].traverse(vwindow, updateExtreme, null, null, this, false)
+              this.track.data[vwindow.chr].traverse(vwindow, updateExtreme, null,
+                this.getCurrentResolutions(), this, false)
               if (this.windowMax === Number.NEGATIVE_INFINITY) {
                 this.windowMax = 1
                 this.windowMin = 0
@@ -71,7 +72,7 @@
 
             var polygon = {}
             this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
-                          null, null, this, false)
+                          null, this.getCurrentResolutions(), this, false)
             this.drawPeak(polygon)  // finish up the last polygon
           }
 
