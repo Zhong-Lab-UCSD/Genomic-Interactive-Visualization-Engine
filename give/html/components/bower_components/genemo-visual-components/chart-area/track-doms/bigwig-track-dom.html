@@ -32,6 +32,7 @@
           this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
           this.windowRange = 0
           this.autoScale = false
+		  this.dataPoints=[]
         },
 
         getCurrentResolutions: function () {
@@ -75,7 +76,7 @@
                           null, this.getCurrentResolutions(), this, false)
             this.drawPeak(polygon)  // finish up the last polygon
           }
-
+		  this.drawPoints()
           this.drawScale()
 
           if (this.textSvg) {
@@ -165,7 +166,12 @@
         },
 
         drawPeak: function (currPolygon, dataEntry) {
-          var svgToDraw = this.mainSvg
+		var x = dataEntry.getStart()
+		var y = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor
+                ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value
+		this.dataPoints.push((x,y))
+		
+          /*var svgToDraw = this.mainSvg
           var windowToDraw = svgToDraw.viewWindow
           var flags = {}
 
@@ -173,9 +179,12 @@
           if (!currPolygon.hasOwnProperty('points')) {
             currPolygon.points = []
           }
-
+		
+		
+		
           var start = dataEntry ? Math.max(dataEntry.getStart(), windowToDraw.getStart()) : windowToDraw.getEnd() + 1
           var end = dataEntry ? Math.min(dataEntry.getEnd(), windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
+		  //var p1=0, p2=0, p3=0, p4=0, p5=0
           if (start < end) {
             if (currPolygon.points.length > 0) {
             // old polygon is there
@@ -225,9 +234,25 @@
             }
           }
 
-          return true
+          return true*/
         },
+		drawPoints: function () {
+			
 
+            var currPolygon = currPolygon || {}
+            if (!currPolygon.hasOwnProperty('points')) {
+				currPolygon.points = []
+            }
+			for (var i=0 i<this.dataPoints.length() i++){
+				addPoint()
+			}
+		}
+		addPoint: function(currPolygon, point) {
+			var windowToDraw = svgToDraw.viewWindow
+            var flags = {}
+		
+		
+		}
         drawScale: function () {
           if (this.textSvg) {
           // first draw the lines
