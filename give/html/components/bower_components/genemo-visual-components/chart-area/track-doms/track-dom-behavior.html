@@ -837,7 +837,7 @@
                                  this.getCurrentResolutions(),
                                  null, this.id),
                      this.cacheDebounceInt)
-        this.track.getData(this.getCurrentViewWindowExt(),
+        this.track.getData(this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion),
                    this.getCurrentResolutions(),
                    this.drawDataDebounceWrapper.bind(this),
                    this.id)
@@ -999,6 +999,7 @@
     }
 
     give.TrackDOMBehaviorImpl.CacheRangeSpanProportion = 0.5
+    give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion = 0.1  // this is used for smoothing purposes
 
     give.TrackDOMBehavior = [
       Polymer.IronResizableBehavior,
