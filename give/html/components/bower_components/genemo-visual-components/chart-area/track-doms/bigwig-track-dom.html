@@ -32,7 +32,7 @@
           this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
           this.windowRange = 0
           this.autoScale = false
-		  this.dataPoints=[]
+		 // this.dataPoints=[]
         },
 
         getCurrentResolutions: function () {
@@ -72,9 +72,17 @@
             }
 
             var polygon = {}
-            this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
+			this.track.data[vwindow.chr].dataPoints=[]
+			this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1,null,true,/*species*/,vwindow.getLength), this.addPoint.bind(this),
                           null, this.getCurrentResolutions(), this, false)
-            this.drawPeak(polygon)  // finish up the last polygon
+			this.averagePoints()
+            /*this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
+                          null, this.getCurrentResolutions(), this, false)
+            this.drawPeak(polygon)  // finish up the last polygon*/
+			for (var i=0 i<this.track.data[vwindow.chr].averageDataPoints.length() i++){
+			if (this.track.data[vwindow.chr].averageDataPoints[i].getStart()>=vwindow.start&&this.track.data[vwindow.chr].averageDataPoints.getEnd()<vwindow.end)
+			this.drawPeak(polygon,this.track.data[vwindow.chr].averageDataPoints[i])
+			}
           }
 		  this.drawPoints()
           this.drawScale()
@@ -164,14 +172,26 @@
           overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
           overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
         },
-
+		addPoint: function(dataEntry) {
+			/*var x = dataEntry.getStart()
+			var y = dataEntry.getEnd()
+			var z = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor
+					? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value*/
+			this.track.data[vwindow.chr].dataPoints.push(dataEntry)
+		}
+		averagePoints: function(){
+			this.track.data[vwindow.chr].averageDataPoints=[]
+			for (var i=2 i<this.track.data[vwindow.chr].dataPoints.length()-2 i++){
+			var temp=this.track.data[vwindow.chr].dataPoints[i]
+			temp.data.value=parseInt((this.track.data[vwindow.chr].dataPoints[i-2].data.value+
+			this.track.data[vwindow.chr].dataPoints[i-1].data.value+this.track.data[vwindow.chr].dataPoints[i].data.value
+			+this.track.data[vwindow.chr].dataPoints[i+1].data.value+this.track.data[vwindow.chr].dataPoints[i+2].data.value)/5+0.5)
+			}
+		}
         drawPeak: function (currPolygon, dataEntry) {
-		var x = dataEntry.getStart()
-		var y = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor
-                ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value
-		this.dataPoints.push((x,y))
 		
-          /*var svgToDraw = this.mainSvg
+		
+          var svgToDraw = this.mainSvg
           var windowToDraw = svgToDraw.viewWindow
           var flags = {}
 
@@ -182,9 +202,8 @@
 		
 		
 		
-          var start = dataEntry ? Math.max(dataEntry.getStart(), windowToDraw.getStart()) : windowToDraw.getEnd() + 1
-          var end = dataEntry ? Math.min(dataEntry.getEnd(), windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
-		  //var p1=0, p2=0, p3=0, p4=0, p5=0
+          var start = dataEntry ? Math.max(dataEntry[0], windowToDraw.getStart()) : windowToDraw.getEnd() + 1
+          var end = dataEntry ? Math.min(dataEntry.getEnd[1], windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
           if (start < end) {
             if (currPolygon.points.length > 0) {
             // old polygon is there
@@ -234,25 +253,10 @@
             }
           }
 
-          return true*/
+          return true
         },
-		drawPoints: function () {
-			
-
-            var currPolygon = currPolygon || {}
-            if (!currPolygon.hasOwnProperty('points')) {
-				currPolygon.points = []
-            }
-			for (var i=0 i<this.dataPoints.length() i++){
-				addPoint()
-			}
-		}
-		addPoint: function(currPolygon, point) {
-			var windowToDraw = svgToDraw.viewWindow
-            var flags = {}
 		
 		
-		}
         drawScale: function () {
           if (this.textSvg) {
           // first draw the lines
