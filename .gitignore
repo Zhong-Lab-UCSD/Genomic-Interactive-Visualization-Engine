@@ -221,7 +221,7 @@ icons/
 
 #Other
 includes/db/
-includes/constants.php
+includes/constants.*
 hg19_grpinfo
 hg19_labtracks
 mm9_grpinfo
@@ -231,7 +231,7 @@ susScr2_labtracks
 samples/
 
 testData/
-*/includes/constants.php
+*/includes/constants.*
 
 #Genome Browser data files
 *.bigWig
