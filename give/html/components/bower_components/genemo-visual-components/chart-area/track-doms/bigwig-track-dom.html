@@ -32,6 +32,7 @@
           this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
           this.windowRange = 0
           this.autoScale = false
+		  this.averagePointAmount = 5
 		 // this.dataPoints=[]
         },
 
@@ -73,18 +74,17 @@
 
             var polygon = {}
 			this.track.data[vwindow.chr].dataPoints=[]
-			this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1,null,true,/*species*/,vwindow.getLength), this.addPoint.bind(this),
+			this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1,null,true), this.addPoint.bind(this),
                           null, this.getCurrentResolutions(), this, false)
 			this.averagePoints()
             /*this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
                           null, this.getCurrentResolutions(), this, false)
             this.drawPeak(polygon)  // finish up the last polygon*/
-			for (var i=0 i<this.track.data[vwindow.chr].averageDataPoints.length() i++){
-			if (this.track.data[vwindow.chr].averageDataPoints[i].getStart()>=vwindow.start&&this.track.data[vwindow.chr].averageDataPoints.getEnd()<vwindow.end)
+			for (var i=0; i<this.track.data[vwindow.chr].averageDataPoints.length; i++){
+			if (this.track.data[vwindow.chr].averageDataPoints[i].getStart()>=vwindow.start&&this.track.data[vwindow.chr].averageDataPoints[i].getEnd()<vwindow.end)
 			this.drawPeak(polygon,this.track.data[vwindow.chr].averageDataPoints[i])
 			}
           }
-		  this.drawPoints()
           this.drawScale()
 
           if (this.textSvg) {
@@ -177,17 +177,24 @@
 			var y = dataEntry.getEnd()
 			var z = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor
 					? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value*/
+			var vwindow = this.mainSvg.viewWindow
 			this.track.data[vwindow.chr].dataPoints.push(dataEntry)
-		}
+		},
 		averagePoints: function(){
+			var splitAmount = (this.averagePointAmount-1)/2
+			var vwindow = this.mainSvg.viewWindow
 			this.track.data[vwindow.chr].averageDataPoints=[]
-			for (var i=2 i<this.track.data[vwindow.chr].dataPoints.length()-2 i++){
+			for (var i=splitAmount; i<this.track.data[vwindow.chr].dataPoints.length-splitAmount; i++){
 			var temp=this.track.data[vwindow.chr].dataPoints[i]
-			temp.data.value=parseInt((this.track.data[vwindow.chr].dataPoints[i-2].data.value+
-			this.track.data[vwindow.chr].dataPoints[i-1].data.value+this.track.data[vwindow.chr].dataPoints[i].data.value
-			+this.track.data[vwindow.chr].dataPoints[i+1].data.value+this.track.data[vwindow.chr].dataPoints[i+2].data.value)/5+0.5)
+			var sum = 0
+			for (var j = 0; j<this.averagePointAmount; j++){
+				sum+=this.track.data[vwindow.chr].dataPoints[i-splitAmount+j].data.value
 			}
-		}
+			temp.data.value=parseInt(sum/this.averagePointAmount+0.5)
+			this.track.data[vwindow.chr].averageDataPoints.push(temp)
+			}
+			
+		},
         drawPeak: function (currPolygon, dataEntry) {
 		
 		
@@ -202,8 +209,8 @@
 		
 		
 		
-          var start = dataEntry ? Math.max(dataEntry[0], windowToDraw.getStart()) : windowToDraw.getEnd() + 1
-          var end = dataEntry ? Math.min(dataEntry.getEnd[1], windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
+          var start = dataEntry ? Math.max(dataEntry.getStart(), windowToDraw.getStart()) : windowToDraw.getEnd() + 1
+          var end = dataEntry ? Math.min(dataEntry.getEnd(), windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
           if (start < end) {
             if (currPolygon.points.length > 0) {
             // old polygon is there
