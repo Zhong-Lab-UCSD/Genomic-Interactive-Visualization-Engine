@@ -34,6 +34,7 @@ for anno in annoFiles:
     method = 'GET'
 
     h = http.Http(disable_ssl_certificate_validation=True)
+    # It seems that there is a problem with SSL certificate configuration of NCBI server
 
     (response, content) = h.request(target.geturl(), method)
 
@@ -64,6 +65,7 @@ for anno in annoFiles:
         cur.execute('CREATE TABLE IF NOT EXISTS `_AliasTable` ' +
             '(`alias` TINYTEXT NOT NULL, ' +
             '`Symbol` TINYTEXT NOT NULL, ' +
+            '`isSymbol` TINYINT(1) DEFAULT 0, ' +
             'INDEX `aliasIndex` (`alias`(20)) ' +
             ')')
         cur.execute('LOCK TABLES `_NcbiGeneInfo` WRITE, `_AliasTable` WRITE')
@@ -93,7 +95,7 @@ for anno in annoFiles:
                     # then insert all the aliases into <db>._AliasTable
                     for alias in synArray:
                         cur.execute("INSERT INTO `_AliasTable` VALUES " +
-                            "(%s, %s)", (alias, Symbol))
+                            "(%s, %s, %s)", (alias, Symbol, 1 if alias == Symbol else 0))
 
         conn.commit()
         conn.close()
