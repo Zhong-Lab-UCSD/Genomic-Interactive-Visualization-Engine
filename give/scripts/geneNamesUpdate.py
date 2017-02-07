@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import httplib2 as http
-import json, sys, os
+import json, sys, os, gzip, StringIO
 
 import MySQLdb as mariadb
 
@@ -16,8 +16,8 @@ try:
 except ImportError:
  from urllib.parse import urlparse
 
-uri = 'https://ftp.ncbi.nih.gov'
-path = '/gene/DATA/GENE_INFO/Mammalia/'
+uri = constants.URI
+path = constants.PATH
 
 annoFiles = [{
     'db': 'hg19',
@@ -30,22 +30,22 @@ annoFiles = [{
 # get everything from NCBI
 
 for anno in annoFiles:
-    target = urlparse(uri + path + anno.name + '.gene_info.gz')
+    target = urlparse(uri + path + anno['name'] + '.gene_info.gz')
     method = 'GET'
 
-    h = http.Http()
+    h = http.Http(disable_ssl_certificate_validation=True)
 
     (response, content) = h.request(target.geturl(), method)
 
     if response['status'] == '200':
-        # content is gene_info file
         # open database first, then lock the corresponding tables
-        conn = mariadb.connect(host=CPB_EDIT_HOST, user=CPB_EDIT_USER,
-            password=CPB_EDIT_PASS, database=anno.db)
+        conn = mariadb.connect(host=constants.CPB_EDIT_HOST,
+            user=constants.CPB_EDIT_USER,
+            passwd=constants.CPB_EDIT_PASS, db=anno['db'])
         cur = conn.cursor()
-        cur.execute('CREATE TABLES IF NOT EXISTS `_NcbiGeneInfo` ' +
+        cur.execute('CREATE TABLE IF NOT EXISTS `_NcbiGeneInfo` ' +
             '(`tax_id` MEDIUMINT UNSIGNED NOT NULL, ' +
-            '`GeneID` MEDIUMINT UNSIGNED PRIMARY KEY NOT NULL, ' +
+            '`GeneID` INT UNSIGNED PRIMARY KEY NOT NULL, ' +
             '`Symbol` TINYTEXT NOT NULL, ' +
             '`LocusTag` TINYTEXT NOT NULL, ' +
             '`Synonyms` TEXT NOT NULL, ' +
@@ -59,38 +59,41 @@ for anno in annoFiles:
             '`Nomenclature status` TINYTEXT NOT NULL, ' +
             '`Other designations` TEXT NOT NULL, ' +
             '`Modification date` DATE NOT NULL, ' +
-            'INDEX `SymbolIndex` (`Symbol`)' +
+            'INDEX `SymbolIndex` (`Symbol`(20))' +
             ')')
-        cur.execute('CREATE TABLES IF NOT EXISTS `_AliasTable` ' +
+        cur.execute('CREATE TABLE IF NOT EXISTS `_AliasTable` ' +
             '(`alias` TINYTEXT NOT NULL, ' +
             '`Symbol` TINYTEXT NOT NULL, ' +
-            'INDEX `aliasIndex` (`alias`) ' +
+            'INDEX `aliasIndex` (`alias`(20)) ' +
             ')')
         cur.execute('LOCK TABLES `_NcbiGeneInfo` WRITE, `_AliasTable` WRITE')
         cur.execute('DELETE FROM `_NcbiGeneInfo`')
         cur.execute('DELETE FROM `_AliasTable`')
 
-        # then put the stuff into local database for querying
-        for line in str(content).splitlines():
-            if not line.startswith('#'):
-                # not comment
-                tokens = line.split('\t')
-                tokens[0] = int(tokens[0])      # tax_id
-                tokens[1] = int(tokens[1])      # GeneID
-                Symbol = tokens[2]
-                Synonyms = tokens[4]
-                synArray = [Symbol] + Synonyms.split('|')
-                # include official symbol into list of aliases
+        # content is gene_info file
+        # unzip file first
+        with gzip.GzipFile(fileobj=StringIO.StringIO(content)) as gzFile:
+            # then put the stuff into local database for querying
+            for line in gzFile:
+                if not line.startswith('#'):
+                    # not comment
+                    tokens = line.strip().split('\t')
+                    tokens[0] = int(tokens[0])      # tax_id
+                    tokens[1] = int(tokens[1])      # GeneID
+                    Symbol = tokens[2]
+                    Synonyms = tokens[4]
+                    synArray = [Symbol] + Synonyms.split('|')
+                    # include official symbol into list of aliases
 
-                # insert into <db>._NcbiGeneInfo table
-                cur.execute("INSERT INTO `_NcbiGeneInfo` VALUES " +
-                    "(%d, %d, %s, %s, %s, %s, %s, %s, " +
-                    "%s, %s, %s, %s, %s, %s, %s)", tuple(tokens))
+                    # insert into <db>._NcbiGeneInfo table
+                    cur.execute("INSERT INTO `_NcbiGeneInfo` VALUES " +
+                        "(%s, %s, %s, %s, %s, %s, %s, %s, " +
+                        "%s, %s, %s, %s, %s, %s, %s)", tuple(tokens))
 
-                # then insert all the aliases into <db>._AliasTable
-                for alias in synArray:
-                    cur.execute("INSERT INTO `_AliasTable` VALUES " +
-                        "(%s, %s)", (alias, Symbol))
+                    # then insert all the aliases into <db>._AliasTable
+                    for alias in synArray:
+                        cur.execute("INSERT INTO `_AliasTable` VALUES " +
+                            "(%s, %s)", (alias, Symbol))
 
         conn.commit()
         conn.close()
