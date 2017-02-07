@@ -79,6 +79,7 @@ var GIVe = (function (give) {
       for (var chrom in ChromInfo) {
         if (ChromInfo.hasOwnProperty(chrom)) {
           this.chromInfo[chrom] = {}
+          this.chromInfo[chrom].name = chrom
           this.chromInfo[chrom].chrRegion =
             new give.ChromRegion(ChromInfo[chrom].chrRegion)
           if (ChromInfo[chrom].cent) {

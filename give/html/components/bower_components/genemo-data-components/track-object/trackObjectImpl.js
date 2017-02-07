@@ -1,23 +1,17 @@
-var GIVe = (function(give) {
-	'use strict';
+var GIVe = (function (give) {
+  'use strict'
 
-	give.TrackObjectImpl = {
-		DataHandlers: {},
-		
-		LocalFileHandlers: {},
-		
-		SummaryCtors: {},
-		
-		DefaultDataHandler: function(response, chromBPTree, queryRegions) {
-		},
-		
-		DefaultLocalFileHandler: function(localFile, queryRegions) {
-		},
-		
-		DefaultSummaryCtor: null,
-		
-	};
+  give.TrackObjectImpl = {
 
-	return give;
+    _default: {
+      DataHandler: function (response, chromBPTree, queryRegions) {
+      },
+      LocalFileHandler: function (localFile, queryRegions) {
+      },
+      SummaryCtor: null
+    }
 
-})(GIVe || {});
+  }
+
+  return give
+})(GIVe || {})
