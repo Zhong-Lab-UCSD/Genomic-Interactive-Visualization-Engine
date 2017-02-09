@@ -1,6 +1,8 @@
 var GIVe = (function (give) {
   'use strict'
 
+  give.TASKSCHEDULER_EVENT_NAME = '_give-check-scheduled-task'
+
   give.TaskScheduler = function (tasks) {
     this.flags = {}
     this.tasks = []

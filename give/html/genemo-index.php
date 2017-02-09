@@ -33,34 +33,31 @@ if(isset($_REQUEST['sessionID'])) {
   <title>GENEMO Search</title>
   <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="components/bower_components/polymer/polymer.html">
+
   <link rel="import" href="components/bower_components/genemo-visual-components/manual-icon/manual-icon.html">
-  <link rel="import" href="components/bower_components/genemo-data-components/meta-entries/meta-entries.html">
-  <link rel="import" href="components/bower_components/genemo-data-components/chrom-region-display/chrom-region-disp.html">
-  <link rel="import" href="components/bower_components/genemo-data-components/species-object/species-object.html">
-  <link rel="import" href="components/bower_components/genemo-data-components/task-scheduler/task-scheduler.html">
-  <link rel="import" href="components/bower_components/genemo-visual-components/ui-component/ui-component.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/cell-line-info-card/cell-line-info-card.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chart-track-list/chart-track-group-list.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chart-area/chart-area.html">
-  <link rel="import" href="components/bower_components/genemo-visual-components/track-control/track-control.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/search-card-content/search-card-content.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-track-filter/genemo-track-filter.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/chrom-region-list/chrom-region-list.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-card/genemo-card.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-main/genemo-main.html">
   <link rel="import" href="components/bower_components/genemo-visual-components/genemo-styles.html">
-  <link rel="import" href="components/bower_components/paper-button/paper-button.html">
-  <link rel="import" href="components/bower_components/paper-dialog/paper-dialog.html">
-  <link rel="import" href="components/bower_components/google-youtube/google-youtube.html">
-  <link rel="import" href="components/bower_components/paper-tooltip/paper-tooltip.html">
-  <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
-  <link rel="import" href="components/bower_components/iron-signals/iron-signals.html">
+
   <link rel="import" href="components/bower_components/iron-icons/iron-icons.html">
   <link rel="import" href="components/bower_components/iron-pages/iron-pages.html">
   <link rel="import" href="components/bower_components/iron-icons/notification-icons.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout.html">
   <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
   <link rel="import" href="components/bower_components/paper-drawer-panel/paper-drawer-panel.html">
+  <link rel="import" href="components/bower_components/paper-button/paper-button.html">
+  <link rel="import" href="components/bower_components/paper-dialog/paper-dialog.html">
+  <link rel="import" href="components/bower_components/paper-tooltip/paper-tooltip.html">
+  <link rel="import" href="components/bower_components/paper-toolbar/paper-toolbar.html">
+
+  <link rel="import" href="components/bower_components/google-youtube/google-youtube.html">
   <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning"></style>
   <script type="text/javascript">
   <?php
