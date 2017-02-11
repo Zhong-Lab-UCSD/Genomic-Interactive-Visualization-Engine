@@ -40,60 +40,11 @@
     ga('send', 'pageview');
     /* eslint-enable */
   </script>
-  <paper-drawer-panel>
-    <div drawer class="layout vertical">
-      <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
-      <div>
-        <div class="smallText"><span id="Threshold" class="text">Threshold (percentile)</span></div>
-        <paper-slider value="{{threshold}}" max="100" step="5" editable></paper-slider>
-      </div>
-      <div class="layout horizontal">
-        <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
-        <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
-      </div>
-      <genemo-card disable-folding class="flex flexFillGenemoCard">
-        <chart-track-group-list class="genemoBody" id="mainTrackList"
-          group-id-list='["genes", "interaction", "customTracks"]' setting-key="visibility"
-          no-controls>
-        </chart-track-group-list>
-      </genemo-card>
-      <custom-track-controller id="mainCTController"></custom-track-controller>
-    </div>
-    <div main class="layout vertical">
-      <paper-toolbar id='mainToolbar'>
-        <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
-        <div class="title">GIVe (Genomic Interaction Visualizer)
-        </div>
-        <div class="tooltipMouseOver" id="navigationHelp">
-          <iron-icon icon="icons:help"></iron-icon>
-          How to navigate
-        </div>
-        <paper-tooltip fit-to-visible-bounds for="navigationHelp">
-          To navigate GIVe:
-          <ul>
-            <li><em>Drag horizontally</em> on any tracks or the coordinates to move left / right</li>
-            <li>Move mouse cursor <strong>onto the coordinates</strong> and <em>use mouse wheel</em> to zoom in / out.</li>
-          </ul>
-        </paper-tooltip>
-      </paper-toolbar>
-      <div class="content flex layout vertical">
-        <chart-area class="flex" id="mainChartArea" num-of-subs="2"
-          group-id-list='["genes", "interaction", "customTracks"]'>
-        </chart-area>
-        <div class="dataReference" hidden$="[[!species.settings.isGITARRelated]]">
-          <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
-          <p><span id="Geonomegitar" class="text">Please refer to
-            <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a>
-            for description and download of all data sets used here.</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  </paper-drawer-panel>
-
-  <div class="header" style="height: 200px; float: right; display: none;" onclick="togglePanel('trackSettings');"> <span id="trackSettingsIndicator">≪</span>
-    <div class="rotated">Track Info &amp; Settings</div>
-  </div>
+  <chart-controller title="Single-cell RNA-Seq Genome Browser (powered by GIVe)"
+    id="mainChartController" group-id-list='["genes", "singleCell", "customTracks"]'
+    num-of-subs="1" class="flex">
+  </chart-controller>
+  <!--
   <div id="singleCellTitle" style="z-index: 5; width: 100%; left: 0px; top: 0px; position: fixed; height: auto;">
     <div id="singleCellDescHolder" style="width: 100%; height: auto; padding: 1px; background: #FFF; z-index: 5; display: none;">
       <p class="Header2">Single-cell RNA-Seq Genome Browser <span class="normaltext"><strong>(powered by <a href="http://genome.ucsc.edu/" target="_parent">UCSC Genome Browser</a>)</strong></span></p>
@@ -108,13 +59,6 @@
     </div>
     <div id="singleCellButton" class="floatingindex" style="width: 100%; overflow: hidden;" onClick="togglePanelUpdown();"><span id="indextext"><span class="trianglearrow">&#x25BC;</span> Single-cell RNA-Seq Genome Browser on Mouse Dec. 2011 (GRCm38/mm10) Assembly</span></div>
   </div>
-  <div id="trackSettings" class="trackSettingsClass" style="display: none;">
-    <div id="trackSettingsHeader" class="headerNoHover2">Track information &amp; settings</div>
-    <div style="position: absolute; top: 45px; left: 0px;">
-      <iframe onload="trackSettingsOnLoad();" id="trackSettingFrame" name="trackSettingFrame" class="trackSettingFrame" src="about:blank">Your browser doesn't support &lt;iframe&gt; tag. You need a browser supporting &lt;iframe&gt; tag to use Comparison Browser. (Latest versions of mainstream browsers should all support this tag.)</iframe>
-      <div class="header buttons" style="float: right; width: 150px;" onclick="hidePanel('trackSettings');">Close</div>
-      <div style="clear: both"></div>
-    </div>
-  </div>
+  -->
 </body>
 </html>

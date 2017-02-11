@@ -11,12 +11,14 @@
     $req['maxCandidates'] = MAX_JSON_NAME_ITEMS;
   }
   $req['name'] = trim($req['name']) + '%';
+  $db = trim($req['db']);
 
   define('MIN_JSON_QUERY_LENGTH', 2);
 
-  $mysqli = connectCPB();
+  $mysqli = connectCPB($db);
   $result = array();
   // open the genome browser database
+  // TODO: try to implement codes for multi-species lookup
   if(strlen($mysqli->real_escape_string(trim($req['name']))) >= MIN_JSON_QUERY_LENGTH) {
     $queryStmt = $mysqli->prepare("SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
       . "`_NcbiGeneInfo`.`description` AS `description`, "

@@ -1,5 +1,4 @@
 <link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../paper-button/paper-button.html">
 <link rel="import" href="../../paper-slider/paper-slider.html">
@@ -8,18 +7,19 @@
 <link rel="import" href="../../paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-group-list.html">
 <link rel="import" href="../custom-track-controller/custom-track-controller.html">
 <link rel="import" href="../genemo-card/genemo-card.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<dom-module id="chart-controller-interaction">
+<dom-module id="chart-controller">
   <template>
     <style include="genemo-shared-styles iron-flex iron-flex-alignment">
       :host {
         font-size: 12px;
       }
-      paper-input {
+      gene-coor-input {
         margin: 0.5em;
       }
       div.smallText {
@@ -57,19 +57,16 @@
     <!-- TODO: add paper-dropmenu for species -->
     <paper-drawer-panel>
       <div drawer class="layout vertical">
-        <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
-        <paper-input id="subWindowCoor" label="Lower window coordinates" floatingLabel="true" value="{{subCoor}}"></paper-input>
-        <div>
-          <div class="smallText"><span id="Threshold" class="text">Threshold (percentile)</span></div>
-          <paper-slider value="{{threshold}}" max="100" step="5" editable></paper-slider>
-        </div>
+        <gene-coor-input id="mainWindowCoor" label="Coordinate or gene name"
+          floatingLabel="true" value="{{mainCoor}}">
+        </gene-coor-input>
         <div class="layout horizontal">
           <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
         <genemo-card disable-folding class="flex flexFillGenemoCard">
           <chart-track-group-list class="genemoBody" id="mainTrackList"
-            group-id-list='["genes", "interaction", "customTracks"]' setting-key="visibility"
+            group-id-list='[[groupIdList]]' setting-key="visibility"
             no-controls>
           </chart-track-group-list>
         </genemo-card>
@@ -93,15 +90,11 @@
           </paper-tooltip>
         </paper-toolbar>
         <div class="content flex layout vertical">
-          <chart-area class="flex" id="mainChartArea" num-of-subs="2"
-            group-id-list='["genes", "interaction", "customTracks"]'>
+          <chart-area class="flex" id="mainChartArea" num-of-subs="[[numOfSubs]]"
+            group-id-list='[[groupIdList]]'>
           </chart-area>
-          <div class="dataReference" hidden$="[[!species.settings.isGITARRelated]]">
-            <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
-            <p><span id="Geonomegitar" class="text">Please refer to
-              <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a>
-              for description and download of all data sets used here.</span>
-            </p>
+          <div class="dataReference">
+            <content id="reference" select=".chartReference"></content>
           </div>
         </div>
       </div>
@@ -115,11 +108,18 @@
         is: 'chart-controller',
 
         properties: {
-          mainCoor: {
-            type: String,
-            value: 'chr10:30000000-50000000'
+          numOfSubs: {
+            type: Number,
+            value: 1
           },
-          subCoor: {
+          groupIdList: {
+            // this is for the track groups that will be included in this display
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+          mainCoor: {
             type: String,
             value: 'chr10:30000000-50000000'
           },
@@ -145,7 +145,7 @@
         },
 
         created: function () {
-          this.NUM_OF_SUBS = 2
+          this.NUM_OF_SUBS = 1
         },
 
         getSpecies: function () {
@@ -158,6 +158,7 @@
             this.$.mainTrackList.setSpecies(species)
             this.$.mainCTController.setSpecies(species)
             this.$.mainChartArea.setSpecies(species)
+            this.$.mainWindowCoor.setSpecies(species)
 
             // set viewWindows as default if the species has it
             var defaultViewWindows = species.settings.defaultWindow ||
@@ -172,7 +173,6 @@
               viewWindows[i] = defaultViewWindows[i % defaultViewWindows.length]
             }
             this.mainCoor = viewWindows[0]
-            this.subCoor = viewWindows[1]
 
             this.updateSvg()
           }
@@ -180,9 +180,8 @@
 
         updateSvg: function () {
           if (this.$.mainChartArea) {
-            var correctedVWindows = this.$.mainChartArea.refreshAll([this.mainCoor, this.subCoor], this.threshold)
+            var correctedVWindows = this.$.mainChartArea.refreshAll([this.mainCoor], this.threshold)
             this.mainCoor = correctedVWindows[0]
-            this.subCoor = correctedVWindows[1]
           }
         },
 
@@ -208,7 +207,6 @@
             this.$.mainTrackList.trackToDOM()
             var correctedVWindows = this.$.mainChartArea.getViewWindowStrings()
             this.mainCoor = correctedVWindows[0]
-            this.subCoor = correctedVWindows[1]
             this.threshold = this.$.mainChartArea.threshold
           }
         },

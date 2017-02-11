@@ -243,10 +243,15 @@
           if (queryText.length > 1 && queryText !== this.querySent) {
             // send Ajax
             this.querySent = queryText
-            this.$.partialNameAjax.params = {
+            var params = {
               'name': this.querySent,
               'maxCandidates': this.MAX_CANDIDATES
             }
+            if (this.species) {
+              params.db = this.species.db
+              params.spcName = this.species.name
+            }
+            this.$.partialNameAjax.params = params
           }
         },
 
