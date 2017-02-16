@@ -85,277 +85,278 @@
     </iron-dropdown>
     <iron-ajax id="partialNameAjax" auto url="[[geneNameUrl]]"
       handle-as="json" on-response="_updatePartialQuery"></iron-ajax>
-    <script>
-      var GIVe = (function (give) {
-        'use strict'
+  </template>
 
-        give.GeneCoorInput = Polymer({
-          is: 'gene-coor-input',
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
 
-          properties: {
+      give.GeneCoorInput = Polymer({
+        is: 'gene-coor-input',
 
-            value: {
-              type: String,
-              value: '',
-              observer: '_valueObserver'
-            },
+        properties: {
 
-            alwaysFloatLabel: {
-              type: Boolean,
-              value: false
-            },
+          value: {
+            type: String,
+            value: '',
+            observer: '_valueObserver'
+          },
 
-            noLabelFloat: {
-              type: Boolean,
-              value: false
-            },
+          alwaysFloatLabel: {
+            type: Boolean,
+            value: false
+          },
 
-            geneNameUrl: {
-              type: String,
-              value: '../../../../givdata/partialNames.php'
-            },
+          noLabelFloat: {
+            type: Boolean,
+            value: false
+          },
 
-            inputValue: {
-              type: String,
-              value: ''
-            },
+          geneNameUrl: {
+            type: String,
+            value: '../../../../givdata/partialNames.php'
+          },
 
-            label: {
-              type: String,
-              value: 'Coordinate or gene name'
-            },
+          inputValue: {
+            type: String,
+            value: ''
+          },
 
-            candidates: {
-              type: Array,
-              value: function () {
-                return []
+          label: {
+            type: String,
+            value: 'Coordinate or gene name'
+          },
+
+          candidates: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          coorSuffix: {
+            type: String,
+            value: ''
+          },
+
+          emptyCandidatesString: {
+            type: String,
+            value: '(No results)'
+          },
+
+          selectedCandidate: {
+            type: Object,
+            observer: '_partialSelectionChanged'
+          },
+
+          mouseOutTimeOut: {
+            // this is the number of ms before hiding the menu
+            type: Number,
+            value: 1000
+          }
+        },
+
+        listeners: {
+          'mouseover': '_mouseOverHandler',
+          'mouseout': '_mouseOutHandler'
+        },
+
+        ready: function () {
+          this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
+          this.species = null
+          this.querySent = ''
+
+          this._decoupleInput = false
+          // set this to true to decouple input values with actual values
+
+          this.MOUSEOUT_JOBNAME = 'MouseOutJob'
+          this.mouseOutTimeOut = 1000
+
+          this.$.geneNameDropDown.positionTarget = this.$.geneName
+          this.$.geneNameDropDown.focusTarget = this.$.geneName
+        },
+
+        getSpecies: function () {
+          return this.species
+        },
+
+        setSpecies: function (species) {
+          if (species) {
+            this.species = species
+          }
+        },
+
+        _candidatesEmpty: function () {
+          return this.candidates.length <= 0
+        },
+
+        _partialInputHandler: function () {
+          // $("#waiting").html($("#geneName").val());
+          this._decoupleInput = false
+          this.value = this.inputValue
+        },
+
+        _valueIsCoordinate: function () {
+          // use regex to test if this.value is a coordinate
+          return /^chr\w+\s*(:|\s)/i.test(this.value)
+        },
+
+        _valueObserver: function (newValue, oldValue) {
+          if (!this._decoupleInput) {
+            // value is coupled with input field
+            this.coorSuffix = ''
+            this.inputValue = newValue
+            if (newValue !== this.querySent) {
+              if (newValue.length > 1 && !this._valueIsCoordinate()) {
+                // length is enough for ajax and also not already updated
+                // start the timer to prepare for ajax
+                this._sendPartialQuery(newValue)
+              } else {
+                this.toggleGList(false)
               }
-            },
-
-            coorSuffix: {
-              type: String,
-              value: ''
-            },
-
-            emptyCandidatesString: {
-              type: String,
-              value: '(No results)'
-            },
-
-            selectedCandidate: {
-              type: Object,
-              observer: '_partialSelectionChanged'
-            },
-
-            mouseOutTimeOut: {
-              // this is the number of ms before hiding the menu
-              type: Number,
-              value: 1000
             }
-          },
-
-          listeners: {
-            'mouseover': '_mouseOverHandler',
-            'mouseout': '_mouseOutHandler'
-          },
-
-          ready: function () {
-            this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
-            this.species = null
-            this.querySent = ''
-
+          } else {
             this._decoupleInput = false
-            // set this to true to decouple input values with actual values
+          }
+        },
 
-            this.MOUSEOUT_JOBNAME = 'MouseOutJob'
-            this.mouseOutTimeOut = 1000
+        _setValueDecoupled: function (newValue) {
+          this._decoupleInput = true
+          this.value = newValue
+        },
 
-            this.$.geneNameDropDown.positionTarget = this.$.geneName
-            this.$.geneNameDropDown.focusTarget = this.$.geneName
-          },
+        _textFocus: function () {
+          this._setTextFocus(true)
+        },
 
-          getSpecies: function () {
-            return this.species
-          },
+        _textUnFocus: function () {
+          this._setTextFocus(false)
+        },
 
-          setSpecies: function (species) {
-            if (species) {
-              this.species = species
+        _mouseOverHandler: function () {
+          this._setMouseGList(true)
+        },
+
+        _mouseOutHandler: function () {
+          this._setMouseGList(false)
+        },
+
+        _sendPartialQuery: function (queryText) {
+            // $("#waiting").html($.trim($("#geneName").val()).length);
+          if (queryText.length > 1 && queryText !== this.querySent) {
+            // send Ajax
+            this.querySent = queryText
+            var params = {
+              'name': this.querySent,
+              'maxCandidates': this.MAX_CANDIDATES
             }
-          },
+            if (this.species) {
+              params.db = this.species.db
+              params.spcName = this.species.name
+            }
+            this.$.partialNameAjax.params = params
+          }
+        },
 
-          _candidatesEmpty: function () {
-            return this.candidates.length <= 0
-          },
-
-          _partialInputHandler: function () {
-            // $("#waiting").html($("#geneName").val());
-            this._decoupleInput = false
-            this.value = this.inputValue
-          },
-
-          _valueIsCoordinate: function () {
-            // use regex to test if this.value is a coordinate
-            return /^chr\w+\s*(:|\s)/i.test(this.value)
-          },
-
-          _valueObserver: function (newValue, oldValue) {
-            if (!this._decoupleInput) {
-              // value is coupled with input field
-              this.coorSuffix = ''
-              this.inputValue = newValue
-              if (newValue !== this.querySent) {
-                if (newValue.length > 1 && !this._valueIsCoordinate()) {
-                  // length is enough for ajax and also not already updated
-                  // start the timer to prepare for ajax
-                  this._sendPartialQuery(newValue)
-                } else {
-                  this.toggleGList(false)
+        _updatePartialQuery: function (e, detail) {
+          // $('#geneName').removeClass('searchFieldBusy');
+          this.splice('candidates', 0, this.candidates.length)
+          var data = detail.response
+          if (data['max_exceeded']) {
+            // max number of candidates has been reached
+            this.EmptyCandidatesString = '(Type more for candidates)'
+          } else {
+            this.EmptyCandidatesString = '(No results)'
+            for (var key in data) {
+              if (data.hasOwnProperty(key)) {
+                var val = data[key]
+                var entry = {
+                  name: key,
+                  coor: val.coor,
+                  description: val.description,
+                  contentBefore: '',
+                  contentBold: '',
+                  contentAfter: ''
                 }
-              }
-            } else {
-              this._decoupleInput = false
-            }
-          },
-
-          _setValueDecoupled: function (newValue) {
-            this._decoupleInput = true
-            this.value = newValue
-          },
-
-          _textFocus: function () {
-            this._setTextFocus(true)
-          },
-
-          _textUnFocus: function () {
-            this._setTextFocus(false)
-          },
-
-          _mouseOverHandler: function () {
-            this._setMouseGList(true)
-          },
-
-          _mouseOutHandler: function () {
-            this._setMouseGList(false)
-          },
-
-          _sendPartialQuery: function (queryText) {
-              // $("#waiting").html($.trim($("#geneName").val()).length);
-            if (queryText.length > 1 && queryText !== this.querySent) {
-              // send Ajax
-              this.querySent = queryText
-              var params = {
-                'name': this.querySent,
-                'maxCandidates': this.MAX_CANDIDATES
-              }
-              if (this.species) {
-                params.db = this.species.db
-                params.spcName = this.species.name
-              }
-              this.$.partialNameAjax.params = params
-            }
-          },
-
-          _updatePartialQuery: function (e, detail) {
-            // $('#geneName').removeClass('searchFieldBusy');
-            this.splice('candidates', 0, this.candidates.length)
-            var data = detail.response
-            if (data['max_exceeded']) {
-              // max number of candidates has been reached
-              this.EmptyCandidatesString = '(Type more for candidates)'
-            } else {
-              this.EmptyCandidatesString = '(No results)'
-              for (var key in data) {
-                if (data.hasOwnProperty(key)) {
-                  var val = data[key]
-                  var entry = {
-                    name: key,
-                    coor: val.coor,
-                    description: val.description,
-                    contentBefore: '',
-                    contentBold: '',
-                    contentAfter: ''
-                  }
-                  if (key.indexOf(this.querySent) !== 0) {
-                    // gene has an alias that is actually matching
-                    if (val.alias.indexOf(this.querySent) === 0) {
-                      // has a matching alias
-                      entry.contentBefore = entry.name + ' ('
-                      entry.contentBold = val.alias.substr(0, this.querySent.length)
-                      entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
-                    } else {
-                      // no matching alias (shouldn't happen)
-                      entry.contentBefore = entry.name
-                      console.log(this.querySent)
-                      console.log(entry)
-                    }
+                if (key.indexOf(this.querySent) !== 0) {
+                  // gene has an alias that is actually matching
+                  if (val.alias.indexOf(this.querySent) === 0) {
+                    // has a matching alias
+                    entry.contentBefore = entry.name + ' ('
+                    entry.contentBold = val.alias.substr(0, this.querySent.length)
+                    entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
                   } else {
-                    entry.contentBold = key.substr(0, this.querySent.length)
-                    entry.contentAfter = key.substr(this.querySent.length)
+                    // no matching alias (shouldn't happen)
+                    entry.contentBefore = entry.name
+                    console.log(this.querySent)
+                    console.log(entry)
                   }
-                  this.push('candidates', entry)
+                } else {
+                  entry.contentBold = key.substr(0, this.querySent.length)
+                  entry.contentAfter = key.substr(this.querySent.length)
                 }
-              }
-            }
-            this.toggleGList(true)
-          },
-
-          _partialSelectionChanged: function (newValue, oldValue) {
-            if (newValue && newValue.coor) {
-              this.coorSuffix = this.value
-              this.inputValue = newValue.name
-              this.querySent = newValue.name
-              this._setValueDecoupled(newValue.coor)
-              this.toggleGList(false)
-            }
-          },
-
-          _toggleGList: function (toggle) {
-            if (toggle) {
-              // turn on GList
-              this.$.candidatesList.clearSelection()
-              this.$.geneNameDropDown.open()
-              this.$.partialNameAjax.debounceDuration = 50
-            } else {
-              this.$.geneNameDropDown.close()
-              this.$.partialNameAjax.debounceDuration = 300
-            }
-          },
-
-          _setTextFocus: function (flag) {
-            this._inFocus = flag
-            this._checkGList()
-            if (!flag && this.species && this.species.chromInfo &&
-              this._valueIsCoordinate()) {
-              // blurred, correct cases for chromosomal coordinates
-              var chrom = this.value.split(/[:\s-]+/)[0]
-              if (this.species.chromInfo.hasOwnProperty(chrom) &&
-                this.species.chromInfo[chrom].name !== chrom) {
-                // case is wrong, fix it
-                this.value = this.value.replace(chrom, this.species.chromInfo[chrom].name)
-              }
-            }
-          },
-
-          _setMouseGList: function (flag) {
-            this._mouseInGList = flag
-            this._checkGList()
-          },
-
-          _checkGList: function () {
-            if (!this._inFocus && !this._mouseInGList) {
-              this.debounce(this.MOUSEOUT_JOBNAME, this.toggleGList.bind(this, false),
-                this.mouseOutTimeOut)
-            } else {
-              if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
-                this.cancelDebouncer(this.MOUSEOUT_JOBNAME)
+                this.push('candidates', entry)
               }
             }
           }
-        })
+          this.toggleGList(true)
+        },
 
-        return give
-      })(GIVe || {})
+        _partialSelectionChanged: function (newValue, oldValue) {
+          if (newValue && newValue.coor) {
+            this.coorSuffix = this.value
+            this.inputValue = newValue.name
+            this.querySent = newValue.name
+            this._setValueDecoupled(newValue.coor)
+            this.toggleGList(false)
+          }
+        },
+
+        _toggleGList: function (toggle) {
+          if (toggle) {
+            // turn on GList
+            this.$.candidatesList.clearSelection()
+            this.$.geneNameDropDown.open()
+            this.$.partialNameAjax.debounceDuration = 50
+          } else {
+            this.$.geneNameDropDown.close()
+            this.$.partialNameAjax.debounceDuration = 300
+          }
+        },
+
+        _setTextFocus: function (flag) {
+          this._inFocus = flag
+          this._checkGList()
+          if (!flag && this.species && this.species.chromInfo &&
+            this._valueIsCoordinate()) {
+            // blurred, correct cases for chromosomal coordinates
+            var chrom = this.value.split(/[:\s-]+/)[0]
+            if (this.species.chromInfo.hasOwnProperty(chrom) &&
+              this.species.chromInfo[chrom].name !== chrom) {
+              // case is wrong, fix it
+              this.value = this.value.replace(chrom, this.species.chromInfo[chrom].name)
+            }
+          }
+        },
+
+        _setMouseGList: function (flag) {
+          this._mouseInGList = flag
+          this._checkGList()
+        },
+
+        _checkGList: function () {
+          if (!this._inFocus && !this._mouseInGList) {
+            this.debounce(this.MOUSEOUT_JOBNAME, this.toggleGList.bind(this, false),
+              this.mouseOutTimeOut)
+          } else {
+            if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
+              this.cancelDebouncer(this.MOUSEOUT_JOBNAME)
+            }
+          }
+        }
+      })
+
+      return give
+    })(GIVe || {})
     </script>
-  </template>
 </dom-module>
