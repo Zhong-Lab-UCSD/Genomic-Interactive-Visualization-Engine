@@ -157,10 +157,8 @@ $trackMap['bed']['loadCustomTrack'] = '_loadCustomBed';
 
 if(!isset($trackMap['genebed'])) {
   $trackMap['genebed'] = &$trackMap['bed'];
-  error_log('genebed ' . $trackMap['genebed']['loadTrack']);
 }
 
 if(!isset($trackMap['genepred'])) {
   $trackMap['genepred'] = &$trackMap['bed'];
-  error_log('genepred ' . $trackMap['genepred']['loadTrack']);
 }
