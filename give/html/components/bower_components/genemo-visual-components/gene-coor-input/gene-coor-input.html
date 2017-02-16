@@ -187,7 +187,7 @@
         },
 
         _candidatesEmpty: function () {
-          return this.candidates.length <= 0
+          return !this.candidates || this.candidates.length <= 0
         },
 
         _partialInputHandler: function () {
@@ -212,7 +212,7 @@
                 // start the timer to prepare for ajax
                 this._sendPartialQuery(newValue)
               } else {
-                this.toggleGList(false)
+                this._toggleGList(false)
               }
             }
           } else {
@@ -262,44 +262,48 @@
           // $('#geneName').removeClass('searchFieldBusy');
           this.splice('candidates', 0, this.candidates.length)
           var data = detail.response
-          if (data['max_exceeded']) {
-            // max number of candidates has been reached
-            this.EmptyCandidatesString = '(Type more for candidates)'
-          } else {
-            this.EmptyCandidatesString = '(No results)'
-            for (var key in data) {
-              if (data.hasOwnProperty(key)) {
-                var val = data[key]
-                var entry = {
-                  name: key,
-                  coor: val.coor,
-                  description: val.description,
-                  contentBefore: '',
-                  contentBold: '',
-                  contentAfter: ''
-                }
-                if (key.indexOf(this.querySent) !== 0) {
-                  // gene has an alias that is actually matching
-                  if (val.alias.indexOf(this.querySent) === 0) {
-                    // has a matching alias
-                    entry.contentBefore = entry.name + ' ('
-                    entry.contentBold = val.alias.substr(0, this.querySent.length)
-                    entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
-                  } else {
-                    // no matching alias (shouldn't happen)
-                    entry.contentBefore = entry.name
-                    console.log(this.querySent)
-                    console.log(entry)
+          if (data) {
+            if (data['max_exceeded']) {
+              // max number of candidates has been reached
+              this.EmptyCandidatesString = '(Type more for candidates)'
+            } else {
+              this.EmptyCandidatesString = '(No results)'
+              for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                  var val = data[key]
+                  var entry = {
+                    name: key,
+                    coor: val.coor,
+                    description: val.description,
+                    contentBefore: '',
+                    contentBold: '',
+                    contentAfter: ''
                   }
-                } else {
-                  entry.contentBold = key.substr(0, this.querySent.length)
-                  entry.contentAfter = key.substr(this.querySent.length)
+                  if (key.indexOf(this.querySent) !== 0) {
+                    // gene has an alias that is actually matching
+                    if (val.alias.indexOf(this.querySent) === 0) {
+                      // has a matching alias
+                      entry.contentBefore = entry.name + ' ('
+                      entry.contentBold = val.alias.substr(0, this.querySent.length)
+                      entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
+                    } else {
+                      // no matching alias (shouldn't happen)
+                      entry.contentBefore = entry.name
+                      console.log(this.querySent)
+                      console.log(entry)
+                    }
+                  } else {
+                    entry.contentBold = key.substr(0, this.querySent.length)
+                    entry.contentAfter = key.substr(this.querySent.length)
+                  }
+                  this.push('candidates', entry)
                 }
-                this.push('candidates', entry)
               }
             }
+            this._toggleGList(true)
+          } else {
+            this._toggleGList(false)
           }
-          this.toggleGList(true)
         },
 
         _partialSelectionChanged: function (newValue, oldValue) {
@@ -308,7 +312,7 @@
             this.inputValue = newValue.name
             this.querySent = newValue.name
             this._setValueDecoupled(newValue.coor)
-            this.toggleGList(false)
+            this._toggleGList(false)
           }
         },
 
@@ -346,7 +350,7 @@
 
         _checkGList: function () {
           if (!this._inFocus && !this._mouseInGList) {
-            this.debounce(this.MOUSEOUT_JOBNAME, this.toggleGList.bind(this, false),
+            this.debounce(this.MOUSEOUT_JOBNAME, this._toggleGList.bind(this, false),
               this.mouseOutTimeOut)
           } else {
             if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
