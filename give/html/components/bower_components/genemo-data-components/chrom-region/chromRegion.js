@@ -114,6 +114,16 @@ var GIVe = (function (give) {
     this.name = regionObject.regionname || regionObject.name || ''
   }
 
+  give.ChromRegion.prototype.regionFromBed = function (bedString) {
+    // notice that this only handle chr, start, end, name, strand in BED 4+ format
+    var tokens = bedString.split(/\s+/)
+    this.chr = tokens[0]
+    this.start = parseInt(tokens[1])
+    this.end = parseInt(tokens[2])
+    this.setStrand((tokens.length < 6) ? this.strand : tokens[5])
+    this.name = tokens[3] || this.name || ''
+  }
+
   give.ChromRegion.prototype.regionToString = function (includeStrand) {
     // default is including strand
     return this.chr + ':' + this.start + '-' + this.end +

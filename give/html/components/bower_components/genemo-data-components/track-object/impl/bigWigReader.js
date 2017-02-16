@@ -11,32 +11,32 @@ var GIVe = (function (give) {
 		this.index += 1;
 		return this.dataView.getUint8(this.index - 1, this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getInt16 = function () {
 		this.index += 2;
 		return this.dataView.getUint16(this.index - 2, this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getInt32 = function () {
 		this.index += 4;
 		return this.dataView.getUint32(this.index - 4, this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getInt64 = function () {
 		this.index += 8;
 		return this.dataView.getUint32(this.index - (this.isLittleEndian ? 8 : 4), this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getFloat = function () {
 		this.index += 4;
 		return this.dataView.getFloat32(this.index - 4, this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getDouble = function () {
 		this.index += 8;
 		return this.dataView.getFloat64(this.index - 8, this.isLittleEndian);
 	};
-	
+
 	give.viewHandler.prototype.getString = function (bytes) {
 		var result = '';
 		for (var i = 0; i < bytes; i++) {
@@ -49,16 +49,16 @@ var GIVe = (function (give) {
 		}
 		return result;
 	};
-	
+
 	give.viewHandler.prototype.setIndex = function (offset) {
 		this.index = offset;
 	};
-	
+
 	give.viewHandler.prototype.moveIndex = function (relative) {
 		this.index += relative;
 	};
 
-	give.bigWigFile = function(arrayBuffer) {
+	give.BigWigFile = function(arrayBuffer) {
 		this.pointCount = 0;
 		this.text = new DataView(arrayBuffer);
 		this.masterView = new give.viewHandler(this.text, false);
@@ -78,7 +78,7 @@ var GIVe = (function (give) {
 		this.chromTreeNodeChildren = [];
 	};
 
-	give.bigWigFile.prototype.readAll = function () {
+	give.BigWigFile.prototype.readAll = function () {
 		var readSection = false;
 		this.readBigWigHeader();
 		for (var i = 0; i < this.bigWigHeader.zoomLevel; i++) {
@@ -105,7 +105,7 @@ var GIVe = (function (give) {
 		this.readUnzoomedIndexNode(readSection); //also, remove readSection if everytime is a read section anyways
 	};
 
-	give.bigWigFile.prototype.readSection = function (chromNumber, startBase, endBase) {
+	give.BigWigFile.prototype.readSection = function (chromNumber, startBase, endBase) {
 		var readSection = true;
 		this.readBigWigHeader();
 		this.chromNumber = chromNumber;
@@ -137,7 +137,7 @@ var GIVe = (function (give) {
 
 
 
-	give.bigWigFile.prototype.readBigWigHeader = function () {
+	give.BigWigFile.prototype.readBigWigHeader = function () {
 		var magicNumber = this.masterView.getInt32();
 		this.masterView.isLittleEndian = (magicNumber !== 0x888FFC26) ? true : false;
 		this.bigWigHeader.version = this.masterView.getInt16();
@@ -156,7 +156,7 @@ var GIVe = (function (give) {
 
 	};
 
-	give.bigWigFile.prototype.readZoomLevelHeader = function (readSection) {
+	give.BigWigFile.prototype.readZoomLevelHeader = function (readSection) {
 		var reductionLevel = this.masterView.getInt32();
 		var reserved = this.masterView.getInt32();
 		var dataOffset = this.masterView.getInt64();
@@ -167,14 +167,14 @@ var GIVe = (function (give) {
 		this.zoomedIndexHeaders.size += 1; //there must be a better wat
 
 	};
-	give.bigWigFile.prototype.readSummaryHeader = function () {
+	give.BigWigFile.prototype.readSummaryHeader = function () {
 		this.summaryHeader.validCount = this.masterView.getInt64();
 		this.summaryHeader.minimumValue = this.masterView.getDouble();
 		this.summaryHeader.maximumValue = this.masterView.getDouble();
 		this.summaryHeader.sumOfData = this.masterView.getDouble();
 		this.summaryHeader.sumOfSquareOfData = this.masterView.getDouble();
 	};
-	give.bigWigFile.prototype.readChromTreeHeader = function () {
+	give.BigWigFile.prototype.readChromTreeHeader = function () {
 		this.chromTreeHeader.magicNumber = this.masterView.getInt32();
 		this.chromTreeHeader.blockSize = this.masterView.getInt32();
 		this.chromTreeHeader.keySize = this.masterView.getInt32();
@@ -182,7 +182,7 @@ var GIVe = (function (give) {
 		this.chromTreeHeader.itemCount = this.masterView.getInt64(); //amounts of nodes after header
 		this.chromTreeHeader.reserved = this.masterView.getInt64();
 	};
-	give.bigWigFile.prototype.readChromTreeNode = function () {
+	give.BigWigFile.prototype.readChromTreeNode = function () {
 		var isLeaf = this.masterView.getInt8();
 		var reserved = this.masterView.getInt8();
 		var childCount = this.masterView.getInt16();
@@ -191,7 +191,7 @@ var GIVe = (function (give) {
 			else this.readChromTreeNode();
 		}
 	};
-	give.bigWigFile.prototype.readChromeTreeNodeChild = function () {
+	give.BigWigFile.prototype.readChromeTreeNodeChild = function () {
 		var chromKey = this.masterView.getString(this.chromTreeHeader.keySize);
 		var chromID = this.masterView.getInt32();
 		var chromSize = this.masterView.getInt32();
@@ -204,7 +204,7 @@ var GIVe = (function (give) {
 			console.log(this.zoomLevelHeaders[i].reductionLevel + ' ' + chromNumber);
 		}
 	};
-	give.bigWigFile.prototype.readUnzoomedIndexHeader = function () {
+	give.BigWigFile.prototype.readUnzoomedIndexHeader = function () {
 		this.unzoomedIndexHeader.magicNumber = this.masterView.getInt32();
 		this.unzoomedIndexHeader.blockSize = this.masterView.getInt32();
 		this.unzoomedIndexHeader.itemCount = this.masterView.getInt64();
@@ -216,7 +216,7 @@ var GIVe = (function (give) {
 		this.unzoomedIndexHeader.itemsPerSlot = this.masterView.getInt32();
 		this.unzoomedIndexHeader.reserved = this.masterView.getInt32();
 	};
-	give.bigWigFile.prototype.readZoomedIndexHeader = function (reductionLevel) {
+	give.BigWigFile.prototype.readZoomedIndexHeader = function (reductionLevel) {
 		this.zoomedIndexHeaders[reductionLevel].magicNumber = this.masterView.getInt32();
 		this.zoomedIndexHeaders[reductionLevel].blockSize = this.masterView.getInt32();
 		this.zoomedIndexHeaders[reductionLevel].itemCount = this.masterView.getInt64();
@@ -228,7 +228,7 @@ var GIVe = (function (give) {
 		this.zoomedIndexHeaders[reductionLevel].itemsPerSlot = this.masterView.getInt32();
 		this.zoomedIndexHeaders[reductionLevel].reserved = this.masterView.getInt32();
 	};
-	give.bigWigFile.prototype.readUnzoomedIndexNode = function (readSection) {
+	give.BigWigFile.prototype.readUnzoomedIndexNode = function (readSection) {
 		var isLeaf = this.masterView.getInt8();
 		var reserved = this.masterView.getInt8();
 		var childCount = this.masterView.getInt16();
@@ -241,7 +241,7 @@ var GIVe = (function (give) {
 		}
 
 	};
-	give.bigWigFile.prototype.readZoomedIndexNode = function (readSection, reductionLevel) {
+	give.BigWigFile.prototype.readZoomedIndexNode = function (readSection, reductionLevel) {
 		var isLeaf = this.masterView.getInt8();
 		var reserved = this.masterView.getInt8();
 		var childCount = this.masterView.getInt16();
@@ -254,8 +254,8 @@ var GIVe = (function (give) {
 		}
 
 	};
-	
-	give.bigWigFile.prototype.readUnzoomedIndexNodeChild = function (isLeaf, readSection) {
+
+	give.BigWigFile.prototype.readUnzoomedIndexNodeChild = function (isLeaf, readSection) {
 		var startChromID = this.masterView.getInt32();
 		var startBase = this.masterView.getInt32();
 		var endChromID = this.masterView.getInt32();
@@ -279,8 +279,8 @@ var GIVe = (function (give) {
 			this.masterView.moveIndex(16);
 		} else this.masterView.moveIndex(8);
 	};
-	
-	give.bigWigFile.prototype.readZoomedIndexNodeChild = function (isLeaf, readSection, reductionLevel) {
+
+	give.BigWigFile.prototype.readZoomedIndexNodeChild = function (isLeaf, readSection, reductionLevel) {
 		var startChromID = this.masterView.getInt32();
 		var startBase = this.masterView.getInt32();
 		var endChromID = this.masterView.getInt32();
@@ -304,8 +304,8 @@ var GIVe = (function (give) {
 			this.masterView.moveIndex(16);
 		} else this.masterView.moveIndex(8);
 	};
-	
-	give.bigWigFile.prototype.readDataBlockHeader = function (length) {
+
+	give.BigWigFile.prototype.readDataBlockHeader = function (length) {
 		var charData = [];
 		for (var i = 0; i < length; i++) {
 			charData.push(this.masterView.getInt8());
@@ -359,8 +359,8 @@ var GIVe = (function (give) {
 			this.dataPoints[chromNumber].push([start, end, value]);
 		}
 	};
-	
-	give.bigWigFile.prototype.readZoomedSummaryData = function (length, reductionLevel, endChromID) { //zlib compressed, there are multiplt ones
+
+	give.BigWigFile.prototype.readZoomedSummaryData = function (length, reductionLevel, endChromID) { //zlib compressed, there are multiplt ones
 		var charData = [];
 		for (var i = 0; i < length; i++) { //length=?
 			charData.push(this.masterView.getInt8());
@@ -417,7 +417,7 @@ var GIVe = (function (give) {
 		this.sumOfData = sumOfData;
 		this.sumOfSquareOfData = sumOfSquareOfData;
 	};
-	give.bigWigFile.prototype.chromIDToNumber = function (chromID) {
+	give.BigWigFile.prototype.chromIDToNumber = function (chromID) {
 		for (var i = 0; i < this.chromTreeNodeChildren.length; i++) {
 			if (this.chromTreeNodeChildren[i].chromID == chromID) {
 				return this.chromKeyToNumber(this.chromTreeNodeChildren[i].chromKey);
@@ -426,7 +426,7 @@ var GIVe = (function (give) {
 		// console.log(chromID);
 		return null;
 	};
-	give.bigWigFile.prototype.chromKeyToNumber = function (chromKey) { //build dictionary when reading chrom tree node
+	give.BigWigFile.prototype.chromKeyToNumber = function (chromKey) { //build dictionary when reading chrom tree node
 		var chrom = chromKey.trim().substring(3);
 		if (chrom === 'X') {
 			return 24;
@@ -437,7 +437,7 @@ var GIVe = (function (give) {
 		}
 
 	};
-	give.bigWigFile.prototype.withinSection = function (chrom1, chrom2, base1, base2) { //no support for datablocks with data for multiple chromosomes yet
+	give.BigWigFile.prototype.withinSection = function (chrom1, chrom2, base1, base2) { //no support for datablocks with data for multiple chromosomes yet
 
 
 		var chr1 = this.chromIDToNumber(chrom1);

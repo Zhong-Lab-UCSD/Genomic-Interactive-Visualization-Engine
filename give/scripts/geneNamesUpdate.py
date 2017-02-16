@@ -37,6 +37,7 @@ for anno in annoFiles:
     method = 'GET'
 
     h = http.Http(disable_ssl_certificate_validation=True)
+    # It seems that there is a problem with SSL certificate configuration of NCBI server
 
     (response, content) = h.request(target.geturl(), method)
 

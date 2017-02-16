@@ -464,30 +464,30 @@ var GIVe = (function (give) {
   }
 
   give.TrackObject.prototype.getDataHandler = function () {
-    if (give.TrackObjectImpl.DataHandlers.hasOwnProperty(this.getTypeTrunk())) {
-      return give.TrackObjectImpl.DataHandlers[this.getTypeTrunk()].bind(this)
+    if (give.TrackObjectImpl.hasOwnProperty(this.getTypeTrunk())) {
+      return give.TrackObjectImpl[this.getTypeTrunk()].DataHandler.bind(this)
     } else {
-      return give.TrackObjectImpl.DefaultDataHandler.bind(this)
+      return give.TrackObjectImpl._default.DataHandler.bind(this)
     }
   }
 
   give.TrackObject.prototype.getSummaryCtor = function () {
-    if (give.TrackObjectImpl.SummaryCtors.hasOwnProperty(this.getTypeTrunk())) {
-      return give.TrackObjectImpl.SummaryCtors[this.getTypeTrunk()]
+    if (give.TrackObjectImpl.hasOwnProperty(this.getTypeTrunk())) {
+      return give.TrackObjectImpl[this.getTypeTrunk()].SummaryCtor
     } else {
-      return give.TrackObjectImpl.DefaultSummaryCtor
+      return give.TrackObjectImpl._default.SummaryCtor
     }
   }
 
   give.TrackObject.prototype.getReadLocalFile = function () {
-    if (give.TrackObjectImpl.LocalFileHandlers.hasOwnProperty(this.getTypeTrunk())) {
+    if (give.TrackObjectImpl.hasOwnProperty(this.getTypeTrunk())) {
       return function (localFile, regions) {
-        give.TrackObjectImpl.LocalFileHandlers[this.getTypeTrunk()].call(this, localFile, regions)
+        give.TrackObjectImpl[this.getTypeTrunk()].LocalFileHandler.call(this, localFile, regions)
         this._clearCallback(true)
       }.bind(this)
     } else {
       return function (localFile, regions) {
-        give.TrackObjectImpl.DefaultLocalFileHandler.call(this, localFile, regions)
+        give.TrackObjectImpl._default.LocalFileHandler.call(this, localFile, regions)
         this._clearCallback(true)
       }.bind(this)
     }
