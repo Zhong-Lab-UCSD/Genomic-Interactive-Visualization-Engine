@@ -1,10 +1,11 @@
 <?php
-require_once(realpath(dirname(__FILE__) . "../common_func.php"));
+require_once(realpath(dirname(__FILE__) . "/../common_func.php"));
 
 $trackMap = array();
 
 function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTable = NULL, $params = NULL) {
 
+  global $trackMap;   // may need to be rewritten to use class instead
   // this is the map mapping different track types
   //    to their corresponding loading function
 
@@ -33,7 +34,7 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
 }
 
 function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $params = NULL) {
-
+  global $trackMap;   // may need to be rewritten to use class instead
   // if type is not specified, try to determine from file extension (not recommended)
   if(is_null($type)) {
     $type = strtolower(end(explode('.', $remoteUrl)));
@@ -51,6 +52,7 @@ function updateCustomTables($db, $fileName, $trackType) {
   //    a custom table created for that file
   // A MySQL event should be ready to clean up the database for uploaded tracks
   //    and temporary tables
+  global $trackMap;   // may need to be rewritten to use class instead
 
   $fileKey = md5_file($fileName);
   if($mysqli) {

@@ -143,7 +143,7 @@ function _buildBedCTTable ($tableName, $file) {
   $mysqli = connectCPB();
   if ($mysqli) {
     // create temporary table then fill with file contents
-    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) . "`"
+    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) . "`";
   }
 }
 
@@ -157,8 +157,10 @@ $trackMap['bed']['loadCustomTrack'] = '_loadCustomBed';
 
 if(!isset($trackMap['genebed'])) {
   $trackMap['genebed'] = &$trackMap['bed'];
+  error_log('genebed ' . $trackMap['genebed']['loadTrack']);
 }
 
 if(!isset($trackMap['genepred'])) {
   $trackMap['genepred'] = &$trackMap['bed'];
+  error_log('genepred ' . $trackMap['genepred']['loadTrack']);
 }
