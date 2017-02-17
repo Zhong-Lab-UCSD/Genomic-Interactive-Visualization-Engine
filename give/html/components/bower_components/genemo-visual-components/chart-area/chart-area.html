@@ -27,6 +27,11 @@
       paper-material {
         @apply(--layout-fit);
         padding: 0.8em;
+        overflow-y: auto;
+      }
+      paper-material > div {
+        padding: 0;
+        width: 100%;
       }
       #loadingBlock {
         display: block;
@@ -56,8 +61,10 @@
       <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!readiness]]"></paper-spinner>
     </div>
     <paper-material>
-      <svg hidden$="[[!initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-      </svg>
+      <div id="chartHoldingMaterial">
+        <svg hidden$="[[!initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+      </div>
       <div id="coorLocationHolder" hidden$="[[!initialized]]"></div>
       <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
         <div>
@@ -225,7 +232,7 @@
           return this.mergeProperty({
             x: 0,
             y: 0,
-            width: this.offsetWidth,
+            width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             windowIndex: viewWindowIndex
@@ -236,7 +243,7 @@
           return this.mergeProperty({
             x: 0,
             y: 0,
-            width: this.offsetWidth,
+            width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             windowIndex: viewWindowIndex
@@ -247,7 +254,7 @@
           return this.mergeProperty({
             x: 0,
             y: 0,
-            width: this.offsetWidth,
+            width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             labelLocation: ((viewWindowIndex === 0) ? 'up' : 'down'),
             windowIndex: viewWindowIndex
@@ -258,7 +265,7 @@
           return this.mergeProperty({
             x: 0,
             y: 0,
-            width: this.offsetWidth,
+            width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             numOfSubs: this.viewWindows.length,
@@ -270,7 +277,7 @@
           return this.mergeProperty({
             x: 0,
             y: 0,
-            width: this.offsetWidth,
+            width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget
           }, properties)
@@ -335,7 +342,7 @@
           // note that by the time this is called, all tracks should be ready
           // (this is handled in track-ready event handler)
           // this will also rearrange the y value for all tracks as well
-          width = width || this.offsetWidth
+          width = width || this.$.chartHoldingMaterial.clientWidth
           var currY = 0
           this.trackDOMs.forEach(function (trackDOM, index) {
             trackDOM.updateLocationSize(0, currY, width)
@@ -344,7 +351,7 @@
           currY -= this.trackGap * this.textSize
           this.$.mainSvg.setAttribute('height', currY)
           this.$.mainSvg.setAttribute('viewBox', '0 0 ' +
-            this.offsetWidth + ' ' + currY)
+            this.$.chartHoldingMaterial.clientWidth + ' ' + currY)
         },
 
         updateTracks: function (index) {

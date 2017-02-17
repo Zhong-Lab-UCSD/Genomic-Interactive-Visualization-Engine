@@ -14,7 +14,7 @@ var GIVe = (function (give) {
     var preConvertData = function (resEntry) {
       return new give.ChromRegion(resEntry.regionString, this.species, {
         data: (resEntry.data.hasOwnProperty('validCount')
-            ? new give.TrackObjectImpl._BigwigSummaryCtor(resEntry.data)
+            ? new give.TrackObjectImpl._BigWigImpl.SummaryCtor(resEntry.data)
             : resEntry.data),
         resolution: (resEntry.data.hasOwnProperty('validCount')
             ? undefined : 0)
@@ -78,7 +78,7 @@ var GIVe = (function (give) {
 
   give.TrackObjectImpl._BigWigImpl.SummaryCtor.prototype.addData = function (data, length) {
     // data can be either a summary or actual components
-    if (data instanceof give.TrackObjectImpl._BigwigSummaryCtor) {
+    if (data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor) {
       this.addSummary(data)
     } else {
       this.validCount += length

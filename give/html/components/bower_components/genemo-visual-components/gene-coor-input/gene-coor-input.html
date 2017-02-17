@@ -21,40 +21,37 @@
     <style include="genemo-shared-styles iron-flex iron-flex-alignment">
       :host {
         font-size: 12px;
+        overflow: visible;
       }
       paper-input {
         margin: 0.5em;
       }
-      div.smallText {
-        font-size: smaller;
+      paper-input div[suffix] {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+      }
+      iron-dropdown {
+        background: var(--primary-background-color);
+      }
+      iron-dropdown div em {
         display: block;
-        margin-left: 0.5em;
+        padding: 0.5em 2em;
+        min-height: 20px;
       }
-      div.dataReference {
-        padding: 1em;
+      iron-list {
+        font-size: 12px;
+        width: 500px;
       }
-      div#navigationHelp {
-        margin-right: 2em;
+      paper-item {
+        cursor: pointer;
+        font-size: 12px;
+        overflow-x: hidden;
       }
-      paper-drawer-panel div.content {
-        overflow-y: auto;
+      paper-item > * {
+        display: inline-block;
       }
-      paper-drawer-panel {
-        --paper-drawer-panel-drawer-container: {
-          padding: 1em;
-          background: var(--card-background-color);
-        };
-      }
-      paper-slider {
-        width: 100%;
-        --paper-slider-input: {
-          width: 8em;
-        };
-      }
-      chart-track-group-list {
-        --chart-track-list-items-mixin: {
-          margin: 0.2em;
-        };
+      paper-item > .geneNameClass {
+        margin-right: 1em;
       }
     </style>
     <paper-input class="fullWidth" id="geneName" label="[[label]]"
@@ -63,27 +60,29 @@
       no-label-float="[[noLabelFloat]]"
       always-float-label="[[alwaysFloatLabel]]">
       <div suffix>
-        [[corrSuffix]]
+        [[coorSuffix]]
       </div>
     </paper-input>
     <iron-dropdown id="geneNameDropDown" no-overlap>
-      <template is="dom-if" items="[[!_candidatesEmpty()]]">
-        <iron-list class="dropdown-content autoText" items="[[candidates]]"
-          as="gene" selection-enabled id="candidatesList"
-          selected-item="[[selectedCandidate]]">
-          <paper-item>
-            <span>[[gene.contentBefore]]</span>
-            <strong>[[gene.contentBold]]</strong>
-            <span>[[gene.contentAfter]]</span>
-            <span>[[gene.description]]</span>
-          </paper-item>
+      <div class="dropdown-content">
+        <em hidden$="[[!isCandidatesEmpty]]">[[emptyCandidatesString]]</em>
+        <iron-list class="autoText"
+          items="[[candidates]]" as="gene" selection-enabled id="candidatesList"
+          selected-item="{{selectedCandidate}}" hidden$="[[isCandidatesEmpty]]">
+          <template>
+            <paper-item>
+              <div class="geneNameClass">
+                <span>[[gene.contentBefore]]</span><strong>[[gene.contentBold]]</strong><span>[[gene.contentAfter]]</span>
+              </div>
+              <div class="geneDescClass">
+                [[gene.description]]
+              </div>
+            </paper-item>
+          </template>
         </iron-list>
-      </template>
-      <template is="dom-if" if="[[_candidatesEmpty()]]">
-        <em>[[emptyCandidatesString]]</em>
-      </template>
+      </div>
     </iron-dropdown>
-    <iron-ajax id="partialNameAjax" auto url="[[geneNameUrl]]"
+    <iron-ajax id="partialNameAjax" url="[[geneNameUrl]]"
       handle-as="json" on-response="_updatePartialQuery"></iron-ajax>
   </template>
 
@@ -99,6 +98,7 @@
           value: {
             type: String,
             value: '',
+            notify: true,
             observer: '_valueObserver'
           },
 
@@ -134,6 +134,11 @@
             }
           },
 
+          isCandidatesEmpty: {
+            type: Boolean,
+            value: true
+          },
+
           coorSuffix: {
             type: String,
             value: ''
@@ -163,6 +168,9 @@
 
         ready: function () {
           this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
+          this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
+          this.GENE_LIST_MAX_LINES = 7
+
           this.species = null
           this.querySent = ''
 
@@ -176,6 +184,10 @@
           this.$.geneNameDropDown.focusTarget = this.$.geneName
         },
 
+        attached: function () {
+          this.$.partialNameAjax.auto = true
+        },
+
         getSpecies: function () {
           return this.species
         },
@@ -184,10 +196,6 @@
           if (species) {
             this.species = species
           }
-        },
-
-        _candidatesEmpty: function () {
-          return !this.candidates || this.candidates.length <= 0
         },
 
         _partialInputHandler: function () {
@@ -263,11 +271,11 @@
           this.splice('candidates', 0, this.candidates.length)
           var data = detail.response
           if (data) {
-            if (data['max_exceeded']) {
+            if (data['(max_exceeded)']) {
               // max number of candidates has been reached
-              this.EmptyCandidatesString = '(Type more for candidates)'
+              this.emptyCandidatesString = '(Type more for candidates)'
             } else {
-              this.EmptyCandidatesString = '(No results)'
+              this.emptyCandidatesString = '(No results)'
               for (var key in data) {
                 if (data.hasOwnProperty(key)) {
                   var val = data[key]
@@ -279,9 +287,9 @@
                     contentBold: '',
                     contentAfter: ''
                   }
-                  if (key.indexOf(this.querySent) !== 0) {
+                  if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
                     // gene has an alias that is actually matching
-                    if (val.alias.indexOf(this.querySent) === 0) {
+                    if (val.alias.toLowerCase().indexOf(this.querySent.toLowerCase()) === 0) {
                       // has a matching alias
                       entry.contentBefore = entry.name + ' ('
                       entry.contentBold = val.alias.substr(0, this.querySent.length)
@@ -300,6 +308,7 @@
                 }
               }
             }
+            this.isCandidatesEmpty = (!this.candidates || this.candidates.length <= 0)
             this._toggleGList(true)
           } else {
             this._toggleGList(false)
@@ -308,7 +317,7 @@
 
         _partialSelectionChanged: function (newValue, oldValue) {
           if (newValue && newValue.coor) {
-            this.coorSuffix = this.value
+            this.coorSuffix = '(' + newValue.coor + ')'
             this.inputValue = newValue.name
             this.querySent = newValue.name
             this._setValueDecoupled(newValue.coor)
@@ -319,7 +328,12 @@
         _toggleGList: function (toggle) {
           if (toggle) {
             // turn on GList
+            this.$.candidatesList.style.height = Math.min(this.candidates.length,
+              this.GENE_LIST_MAX_LINES) *
+              this.GENE_LIST_PX_PER_LINE + 'px'
             this.$.candidatesList.clearSelection()
+            this.$.candidatesList.notifyResize()
+            this.$.geneNameDropDown.refit()
             this.$.geneNameDropDown.open()
             this.$.partialNameAjax.debounceDuration = 50
           } else {

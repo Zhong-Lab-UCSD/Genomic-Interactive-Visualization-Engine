@@ -5,12 +5,14 @@
 
   $req = getRequest();
 
+  var_error_log($req);
+
   define('MAX_JSON_NAME_ITEMS', 100);
 
   if (!isset($req['maxCandidates'])) {
     $req['maxCandidates'] = MAX_JSON_NAME_ITEMS;
   }
-  $req['name'] = trim($req['name']) + '%';
+  $req['name'] = trim($req['name']) . '%';
   $db = trim($req['db']);
 
   define('MIN_JSON_QUERY_LENGTH', 2);
@@ -31,16 +33,18 @@
       . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
       . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
       . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`");
+    error_log($queryStmt);
+    error_log($req['name']);
     $queryStmt->bind_param('s', $req['name']);
     $queryStmt->execute();
     $generesult = $queryStmt->get_result();
     if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
       while($row = $generesult->fetch_assoc()) {
-        $result[$row["alias"]] = $row;
+        $result[$row["name"]] = $row;
       }
     } else {
       // too many results
-      $result["(too_many)"] = "too_many";
+      $result["(max_exceeded)"] = TRUE;
     }
     $generesult->free();
   }

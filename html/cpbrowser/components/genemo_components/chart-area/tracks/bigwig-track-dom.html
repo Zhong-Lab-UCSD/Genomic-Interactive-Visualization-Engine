@@ -47,7 +47,7 @@
 					
 					var updateExtreme = function(dataSegment) {
 						var yvalue;
-						if(dataSegment.data instanceof give.TrackObjectImpl._BigwigSummaryCtor) {
+						if(dataSegment.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor) {
 							yvalue = dataSegment.data.sumData / dataSegment.getLength();
 						} else {
 							yvalue = dataSegment.data.value;
@@ -184,7 +184,7 @@
 						}
 					}
 					if(dataEntry && dataEntry.chr === windowToDraw.chr) {
-						var yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigwigSummaryCtor? 
+						var yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor? 
 							dataEntry.data.sumData / dataEntry.getLength(): dataEntry.data.value;
 						if(currPolygon.points.length <= 0) {
 							// start a new polygon, push the (x, 0) point of this segment
