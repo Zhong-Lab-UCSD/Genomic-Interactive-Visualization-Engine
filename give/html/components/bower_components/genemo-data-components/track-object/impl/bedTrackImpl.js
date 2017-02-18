@@ -82,7 +82,9 @@ var GIVe = (function (give) {
     reader.readAsText(localFile)
   }
 
-  give.TrackObjectImpl.bed = give.TrackObjectImpl.BedImpl
+  give.TrackObjectImpl.bed = give.TrackObjectImpl._BedImpl
+  give.TrackObjectImpl.genebed = give.TrackObjectImpl._BedImpl
+  give.TrackObjectImpl.genepred = give.TrackObjectImpl._BedImpl
 
   return give
 })(GIVe || {})

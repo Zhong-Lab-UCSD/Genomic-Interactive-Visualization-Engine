@@ -23,7 +23,7 @@ function ChrRegionToShow(chrString, regionname, extendedstart, extendedend, data
 }
 extend(ChrRegion, ChrRegionToShow);
 
-ChrRegionToShow.prototype.regionToBED = function(includeStrand) {
+ChrRegionToShow.prototype.regionToBed = function(includeStrand) {
 	return this.chr + '\t' + this.start + '\t' + this.end + '\t' +
 			(this.name? this.name: (this.trackString? this.trackString: '.')) + 
 			(includeStrand? '\t0\t' + (!this.strand? '-': '+'): '');
@@ -57,7 +57,7 @@ Region.prototype.writeBED = function(spcArray, includeStrand) {
     for(var i = 0; i < spcArray.length; i++) {
         if (spcArray[i].isActive && this.spcRegions.hasOwnProperty(spcArray[i].db) && this.getSpcRegionLength(spcArray[i].db) > 0) {
 			for(var iRegion = 0; iRegion < this.getSpcRegionLength(spcArray[i].db); iRegion++) {
-				result += this.getSpcRegion(spcArray[i].db, iRegion).regionToBED(includeStrand);
+				result += this.getSpcRegion(spcArray[i].db, iRegion).regionToBed(includeStrand);
 			}
 		}
 	}

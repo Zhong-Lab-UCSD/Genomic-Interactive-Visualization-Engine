@@ -105,7 +105,7 @@ ChrRegion.prototype.regionToString = function(includeStrand) {
 		+ (this.strand? '+': '-') + ')'));
 };
 
-ChrRegion.prototype.regionToBED = function(includeStrand) {
+ChrRegion.prototype.regionToBed = function(includeStrand) {
 	return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') + 
 			(includeStrand? '\t0\t' + (!this.strand? '-': '+'): '');
 };

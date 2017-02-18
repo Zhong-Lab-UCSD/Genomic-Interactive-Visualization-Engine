@@ -131,7 +131,7 @@ var GIVe = (function (give) {
       : (' (' + (this.strand ? '+' : '-') + ')'))
   }
 
-  give.ChromRegion.prototype.regionToBED = function (includeStrand) {
+  give.ChromRegion.prototype.regionToBed = function (includeStrand) {
     return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name ? this.name : '.') +
         ((includeStrand !== false && this.strand !== null) ? '\t0\t' + (!this.strand ? '-' : '+') : '')
   }

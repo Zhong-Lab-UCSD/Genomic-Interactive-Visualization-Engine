@@ -106,7 +106,7 @@
 					+ (this.strand? '+': '-') + ')'));
 			},
 
-			regionToBED: function(includeStrand) {
+			regionToBed: function(includeStrand) {
 				return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name? this.name: '.') +
 						(includeStrand !== false? '\t0\t' + (!this.strand? '-': '+'): '');
 			},

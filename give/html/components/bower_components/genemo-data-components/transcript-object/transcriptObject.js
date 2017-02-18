@@ -61,7 +61,7 @@ var GIVe = (function (give) {
 
   give.TranscriptObject.prototype.regionFromString = function (regionString) {
     var elements = regionString.split(/\s+/)
-    give.ChromRegion.prototype.regionFromBED.call(this, regionString)
+    give.ChromRegion.prototype.regionFromBed.call(this, regionString)
     if (elements[4]) {
       this.score = parseInt(elements[4])
     }
@@ -101,7 +101,7 @@ var GIVe = (function (give) {
        (this.strand ? '+' : '-') + ')'))
   }
 
-  give.TranscriptObject.prototype.regionToBED = function (includeStrand) {
+  give.TranscriptObject.prototype.regionToBed = function (includeStrand) {
     return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name ? this.name : '.') +
         (includeStrand !== false ? '\t0\t' + (!this.strand ? '-' : '+') : '')
   }
