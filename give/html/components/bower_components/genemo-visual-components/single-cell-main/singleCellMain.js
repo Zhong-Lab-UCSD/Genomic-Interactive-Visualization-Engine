@@ -28,6 +28,7 @@ var GIVe = (function (give) {
     scLocalStorage.reload()
     if (!scLocalStorage.value) {
       // Reference should be displayed for the first time
+      scDoNotShowBtn.setAttribute('hidden', false)
       scDialog.open()
     }
 
@@ -36,6 +37,7 @@ var GIVe = (function (give) {
       if (scLocalStorage && scLocalStorage.save) {
         scLocalStorage.value = true
         scLocalStorage.save()
+        scDoNotShowBtn.setAttribute('hidden', true)
       } else {
         console.log('Error: scLocalStorage is not available.')
       }
