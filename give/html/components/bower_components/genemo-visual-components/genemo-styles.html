@@ -19,7 +19,6 @@
       --disabled-text-color: #bdbdbd;
       --divider-color: #B6B6B6;
       --card-background-color: #F5F5F5;
-      --diabled-text-color: #a8a8a8;
     }
 
     paper-button {
@@ -36,14 +35,14 @@
 
     paper-button[disabled] {
       background: var(--card-background-color);
-      color: var(--diabled-text-color);
+      color: var(--disabled-text-color);
       cursor: auto;
       pointer-events: none;
     }
 
     paper-button[disabled].colored {
       background: var(--primary-background-color);
-      color: var(--diabled-text-color);
+      color: var(--disabled-text-color);
       cursor: auto;
       pointer-events: none;
     }
@@ -263,7 +262,7 @@
     }
 
     a:not(.buttonLink):link {
-      color: #FF9800;
+      color: var(--accent-color);
       text-decoration: none;
     }
     a:not(.buttonLink):hover {
@@ -273,7 +272,7 @@
       text-decoration: underline;
     }
     a:not(.buttonLink):visited {
-      color: #3F51B5;
+      color: var(--default-primary-color);
     }
 
     .fullWidth {

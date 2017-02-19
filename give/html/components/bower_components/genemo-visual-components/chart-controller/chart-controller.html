@@ -75,7 +75,7 @@
       <div main class="layout vertical">
         <paper-toolbar id='mainToolbar'>
           <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
-          <div class="title">[[title]]
+          <div class="title">[[titleText]]
           </div>
           <div class="tooltipMouseOver" id="navigationHelp">
             <iron-icon icon="icons:help"></iron-icon>
@@ -88,6 +88,7 @@
               <li>Move mouse cursor <strong>onto the coordinates</strong> and <em>use mouse wheel</em> to zoom in / out.</li>
             </ul>
           </paper-tooltip>
+          <content id="additionalCtrls" select=".toolBarCtrls"></content>
         </paper-toolbar>
         <div class="content flex layout vertical">
           <chart-area class="flex" id="mainChartArea" num-of-subs="[[numOfSubs]]"
@@ -133,7 +134,7 @@
               return { settings: {} }
             }
           },
-          title: {
+          titleText: {
             type: String,
             value: 'GIVe (Genomic Interaction Visualizer)'
           }

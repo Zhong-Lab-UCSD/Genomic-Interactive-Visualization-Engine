@@ -327,12 +327,12 @@ var GIVe = (function (give) {
 
     var engBtn = document.querySelector('#engBtn')
     if (engBtn) {
-      engBtn.addEventListener('click', give.setTexts.bind(window, 'en'))
+      engBtn.addEventListener('tap', give.setTexts.bind(window, 'en'))
     }
 
     var zhBtn = document.querySelector('#zhBtn')
     if (zhBtn) {
-      zhBtn.addEventListener('click', give.setTexts.bind(window, 'zh'))
+      zhBtn.addEventListener('tap', give.setTexts.bind(window, 'zh'))
     }
 
     document.addEventListener('alert', function (e) {
@@ -368,7 +368,7 @@ var GIVe = (function (give) {
           }
         })
         videoButtonDom.forEach(function (elem) {
-          elem.addEventListener('click', videoDialog.open.bind(videoDialog))
+          elem.addEventListener('tap', videoDialog.open.bind(videoDialog))
         })
       }
     }
