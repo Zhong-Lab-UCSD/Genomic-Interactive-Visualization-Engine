@@ -175,9 +175,8 @@ var GIVe = (function (give) {
           this.initTracks(data, false, give.TrackObject.fetchDataTarget)
         }, 'json', null, null, this)
         this._tracksInitializing = true
-        if (give.verboseLvl >= give.VERBOSE_DEBUG) {
-          console.log('Tracks not initialized for species ' + this.name + '.')
-        }
+        give._verboseConsole('Tracks not initialized for species ' +
+          this.name + '.', give.VERBOSE_DEBUG)
       }
       return false
     } else {
@@ -244,9 +243,8 @@ var GIVe = (function (give) {
         }
         this.metaFilter.tissueMap[tissueType].push(track.id)
       } else {
-        if (give.verboseLvl >= give.VERBOSE_DEBUG) {
-          console.log(cellType + ' does not have a tissue type.')
-        }
+        give._verboseConsole(cellType + ' does not have a tissue type.',
+          give.VERBOSE_DEBUG)
       }
     }, this)
     this.metaFilterInitialized = true

@@ -135,9 +135,8 @@ var GIVe = (function (give) {
         }
       default:  // eslint-disable-line no-fallthrough
         // this will also handle situations where track is not a give.TrackObject object
-        if (give.verboseLvl >= give.VERBOSE_WARNING) {
-          console.log('Track ' + track + ' is not a give.TrackObject Object.')
-        }
+        give._verboseConsole('Track ' + track +
+          ' is not a give.TrackObject Object.', give.VERBOSE_WARNING)
         return false
     }
   }

@@ -5,23 +5,39 @@ var GIVe = (function (give) {
 
   // data structure:
   // {
-  //    isRoot:           Boolean, showing whether this is root;
+  //    isRoot:        Boolean, showing whether this is root;
   //    branchingFactor:  Integer, showing the number of children a node can have;
-  //    revDepth:         Integer, showing the reverse depth of node (leaf = 0 and root = max);
-  //    start:            Integer, the starting coordinate;
-  //    keys:             [](Integer), the separating keys (coordinates for window);
-  //    values:           [](Records), the records;
-  //    next:             The next node with the same revDepth as this one;
-  //    prev:             The previous node with the same revDepth.
+  //    revDepth:      Integer, showing the reverse depth of node (leaf = 0 and root = max);
+  //    start:        Integer, the starting coordinate;
+  //    keys:        [](Integer), the separating keys (coordinates for window);
+  //    values:        [](Records), the records;
+  //    next:        The next node with the same revDepth as this one;
+  //    prev:        The previous node with the same revDepth.
   // }
 
   // public API
-  give.ChromBPlusTree = function (start, end, summaryCtor, bFactor) {
+  give.GiveTree = function (start, end, summaryCtor, bFactor, lifeSpan) {
     // start and length is for the corresponding region
-    this.root = new give.ChromBPlusTreeNode(0, start, end, summaryCtor, null, null, bFactor, true)
+    // lifeSpan is the lifeSpan a node will live, in terms of
+    //    number of traverses
+    // If any node is not called after this number of traverses being requested
+    //    for the tree, the node will be deleted (wither)
+    // If lifeSpan < 0, then no node will be deleted (no withering)
+
+    if (isNaN(bFactor) || parseInt(bFactor) !== bFactor || bFactor <= 2) {
+      console.log('Default branching factor is chosen instead of ' + bFactor)
+      bFactor = give.GiveTree.DEFAULTBFACTOR
+    }
+    if (isNaN(lifeSpan) || parseInt(lifeSpan) !== lifeSpan || lifeSpan < 0) {
+      console.log('Default life span is chosen instead of ' + bFactor)
+      lifeSpan = give.GiveTree.DEFAULTLIFESPAN
+    }
+    this.lifeSpan = lifeSpan
+    this.root = new give.GiveTreeNode(0, start, end, summaryCtor, null, null, bFactor, true, lifeSpan)
   }
 
-  give.ChromBPlusTree.prototype.insert = function (data, chrRange, continuedList, callback, resolution) {
+  give.GiveTree.prototype.insert = function (data, chrRange, continuedList,
+    callback, resolution) {
     // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
     // Root will always encompass the whole chromosome (from species definition)
     // before calling children, the chrRegion will be split into the bins of children.
@@ -47,14 +63,16 @@ var GIVe = (function (give) {
     if (Array.isArray(chrRange)) {
       chrRange.forEach(function (range, index) {
         this.root = this.root.insert(data, range, continuedList, callback,
-                       Array.isArray(resolution) ? resolution[index] : resolution)
+          Array.isArray(resolution) ? resolution[index] : resolution,
+          this.lifeSpan)
       }, this)
     } else {
-      this.root = this.root.insert(data, chrRange, continuedList, callback, resolution)
+      this.root = this.root.insert(data, chrRange, continuedList, callback,
+        resolution, this.lifeSpan)
     }
   }
 
-  give.ChromBPlusTree.prototype.remove = function (data, removeExactMatch, callback) {
+  give.GiveTree.prototype.remove = function (data, removeExactMatch, callback) {
     // Removing a single data entry.
     // Notice that if data is provided and duplicate keys (same start and end) exist,
     // it will behave as removeExactMatch indicated.
@@ -72,7 +90,8 @@ var GIVe = (function (give) {
 //      // if data is not provided, every region whose start is within chrRange (probably not used very much)
 //    },
 //
-  give.ChromBPlusTree.prototype.traverse = function (chrRange, callback, filter, resolution, thisVar, breakOnFalse) {
+  give.GiveTree.prototype.traverse = function (chrRange, callback, filter,
+    resolution, thisVar, breakOnFalse, wither) {
     // Will apply callbacks to all data overlapping with chrRegion;
     //    callback should take the node (or record) as its sole parameter:
     //    callback(record/node)
@@ -93,14 +112,30 @@ var GIVe = (function (give) {
     //    when traverse calls children that are not the first one overlapping chrRegion
     //    notFirstCall will be set as true
 
-    return this.root.traverse(chrRange, callback, filter,
-                  resolution, thisVar, breakOnFalse, false)
+    // wither is a flag whether to reduce life for nodes not traversed
+    var result = this.root.traverse(chrRange, callback, filter,
+                  resolution, thisVar, breakOnFalse, false,
+                  wither ? this.lifeSpan + 1 : 0)
+    if (wither) {
+      this.wither()
+    }
+    return result
+  }
+
+  give.GiveTree.prototype.wither = function () {
+    // this is the method called to wither all nodes
+    if (!this.root.wither()) {
+      // the whole tree will wither
+      delete this.root
+      return null
+    }
+    return this
   }
 
   // TODO: allow summary and leveled traverse (leveled traverse done)
 
   // allow sectional loading (will return an array of chrRegions that does not have data loaded)
-  give.ChromBPlusTree.prototype.getUncachedRange = function (chrRange, resolution) {
+  give.GiveTree.prototype.getUncachedRange = function (chrRange, resolution) {
     // return the range list with range(s) without any data
     //   (either not loaded, or purges for memory usage issue (to be implemented))
     // if no non-data ranges are found, return []
@@ -111,6 +146,9 @@ var GIVe = (function (give) {
   }
 
   // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
+
+  give.GiveTree.DEFAULTBFACTOR = 20        // this value may need to be tweaked
+  give.GiveTree.DEFAULTLIFESPAN = 10       // this value may need to be tweaked
 
   return give
 })(GIVe || {})

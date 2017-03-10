@@ -107,15 +107,13 @@ var GIVe = (function (give) {
     var rangeStart = chrRange.start
     var rangeEnd = chrRange.end
     if (truncStart && rangeStart < this.getStart()) {
-      if (give.verboseLvl >= give.VERBOSE_DEBUG_MORE) {
-        console.log('Start truncated, get ' + rangeStart + ', truncated to ' + this.getStart() + '.')
-      }
+      give._verboseConsole('Start truncated, get ' + rangeStart +
+        ', truncated to ' + this.getStart() + '.', give.VERBOSE_DEBUG_MORE)
       rangeStart = this.getStart()
     }
     if (truncEnd && rangeEnd > this.getEnd()) {
-      if (give.verboseLvl >= give.VERBOSE_DEBUG_MORE) {
-        console.log('End truncated, get ' + rangeEnd + ', truncated to ' + this.getEnd() + '.')
-      }
+      give._verboseConsole('End truncated, get ' + rangeEnd +
+        ', truncated to ' + this.getEnd() + '.', give.VERBOSE_DEBUG_MORE)
       rangeEnd = this.getEnd()
     }
 
@@ -429,7 +427,7 @@ var GIVe = (function (give) {
         rangeStart = nextRangeStart
 
       // Then go through continuedList to remove everything that won't continue
-        continuedList.forEach(filterContinuedList.bind(this, rangeStart), this)
+        continuedList = continuedList.filter(filterContinuedList.bind(this, rangeStart), this)
 
       // Go through data from 0 to currDataIndex - 1 to see
       // If anything needs to be put onto continuedList

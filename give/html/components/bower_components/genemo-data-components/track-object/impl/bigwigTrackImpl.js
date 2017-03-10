@@ -90,6 +90,8 @@ var GIVe = (function (give) {
     }
   }
 
+  give.TrackObjectImpl._BigWigImpl.DataStructure = give.GiveTree
+
   give.TrackObjectImpl.bigwig = give.TrackObjectImpl._BigWigImpl
 
   return give

@@ -300,9 +300,7 @@ var GIVe = (function (give) {
       }
     }
 
-    if (give.verboseLvl >= give.VERBOSE_DEBUG) {
-      console.log(mergedGUIRanges)
-    }
+    give._verboseConsole(mergedGUIRanges, give.VERBOSE_DEBUG)
 
     return mergedGUIRanges
   }
@@ -471,11 +469,20 @@ var GIVe = (function (give) {
     }
   }
 
-  give.TrackObject.prototype.getSummaryCtor = function () {
+  give.TrackObject.prototype.GetSummaryCtor = function () {
     if (give.TrackObjectImpl.hasOwnProperty(this.getTypeTrunk())) {
       return give.TrackObjectImpl[this.getTypeTrunk()].SummaryCtor
     } else {
       return give.TrackObjectImpl._default.SummaryCtor
+    }
+  }
+
+  give.TrackObject.prototype.GetDataStructure = function () {
+    if (give.TrackObjectImpl.hasOwnProperty(this.getTypeTrunk()) &&
+      give.TrackObjectImpl[this.getTypeTrunk()].DataStructure) {
+      return give.TrackObjectImpl[this.getTypeTrunk()].DataStructure
+    } else {
+      return give.TrackObjectImpl._default.DataStructure
     }
   }
 
@@ -514,9 +521,9 @@ var GIVe = (function (give) {
          this.species.chromInfo.hasOwnProperty(chrom) &&
          Array.isArray(response[chrom])) {
         if (!this.data.hasOwnProperty(chrom)) {
-          this.data[chrom] = new give.ChromBPlusTree(this.species.chromInfo[chrom].chrRegion.start,
+          this.data[chrom] = new this.GetDataStructure()(this.species.chromInfo[chrom].chrRegion.start,
                                  this.species.chromInfo[chrom].chrRegion.end,
-                                 this.getSummaryCtor())
+                                 this.GetSummaryCtor())
         }
       }
     }

@@ -155,5 +155,18 @@ var GIVe = (function (give) {
     }
   }
 
+  give.fitRes = function (value, resolution, roundingFunc) {
+    // use roundingFunc to fit value to the closest resolution
+    // roundingFunc can be Math.floor, Math.ceil or Math.round
+    roundingFunc = roundingFunc || Math.round
+    return roundingFunc(value / resolution) * resolution
+  }
+
+  give._verboseConsole = function (message, verboseLvl) {
+    if (give.verboseLvl >= verboseLvl) {
+      console.log(message)
+    }
+  }
+
   return give
 })(GIVe || {})

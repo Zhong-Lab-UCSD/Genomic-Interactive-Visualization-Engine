@@ -25,10 +25,8 @@ var GIVe = (function (give) {
             try {
               this[key] = mainParams[key]
             } catch (e) {
-              if (give.verboseLvl >= give.VERBOSE_WARNING) {
-                console.log(e.message)
-                console.log(e.stack)
-              }
+              give._verboseConsole(e.message + '\n' + e.stack,
+                give.VERBOSE_WARNING)
             }
           }
         }
@@ -39,10 +37,8 @@ var GIVe = (function (give) {
             try {
               this[key] = additionalParams[key]
             } catch (e) {
-              if (give.verboseLvl >= give.VERBOSE_WARNING) {
-                console.log(e.message)
-                console.log(e.stack)
-              }
+              give._verboseConsole(e.message + '\n' + e.stack,
+                give.VERBOSE_WARNING)
             }
           }
         }

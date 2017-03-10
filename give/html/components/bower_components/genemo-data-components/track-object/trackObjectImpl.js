@@ -8,7 +8,8 @@ var GIVe = (function (give) {
       },
       LocalFileHandler: function (localFile, queryRegions) {
       },
-      SummaryCtor: null
+      SummaryCtor: null,
+      DataStructure: give.ChromBPlusTree
     }
 
   }
