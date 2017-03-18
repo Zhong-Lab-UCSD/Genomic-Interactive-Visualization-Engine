@@ -32,7 +32,7 @@
           this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
           this.windowRange = 0
           this.autoScale = false
-          this.averagePointAmount = 5
+          this.averagePointAmount = 10
           // this.dataPoints=[]
         },
 
@@ -182,10 +182,10 @@
           this.track.data[vwindow.chr].dataPoints.push(dataEntry)
         },
         averagePoints: function () {
-          var splitAmount = (this.averagePointAmount - 1) / 2
+          var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
           var vwindow = this.mainSvg.viewWindow
           this.track.data[vwindow.chr].averageDataPoints = []
-          for (var i = splitAmount; i < this.track.data[vwindow.chr].dataPoints.length - splitAmount; i++) {
+          for (var i = splitAmount; i < this.track.data[vwindow.chr].dataPoints.length - splitAmount-1; i++) {
             var temp = this.track.data[vwindow.chr].dataPoints[i]
             var sum = 0
             for (var j = 0; j < this.averagePointAmount; j++) {
@@ -234,8 +234,8 @@
                 currPolygon.overflows = {exceedMax: [], exceedMin: []}
               }
             // then push the top two points
-              if (this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
-                this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1) {
+              if (/*this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
+                this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1*/true) {
                 // both are within one pixel
                 currPolygon.points.push(
                 this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false) +
