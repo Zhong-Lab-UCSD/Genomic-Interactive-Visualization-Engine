@@ -75,6 +75,14 @@ var GIVe = (function (give) {
     return 1
   }
 
+  DataEntry.prototype.resNotEnough = function (resolution) {
+    return false
+  }
+
+  DataEntry.prototype.hasData = function () {
+    return true
+  }
+
   give.extend(give.WitheringNode, DataEntry)
 
   // data structure:
@@ -174,7 +182,7 @@ var GIVe = (function (give) {
 
   give.GiveTreeNode.prototype.childHasData = function (index) {
     return this.values[index] === false ||
-      (this.values[index] !== null && this.values[index].hasData)
+      (this.values[index] !== null && this.values[index].hasData())
   }
 
   give.GiveTreeNode.prototype.getResolution = function () {
@@ -187,6 +195,8 @@ var GIVe = (function (give) {
     if (isNaN(index) || parseInt(index) !== index ||
       this.values[index] !== false) {
       return Math.floor(Math.pow(this.branchingFactor, this.revDepth - 1))
+    } else if (this.values[index] && this.values[index].getResolution) {
+      return this.values[index].getResolution()
     }
     // there is definitely no data in the node, so resolution is minimum
     return 1
@@ -769,7 +779,7 @@ var GIVe = (function (give) {
     // resolutionFunc is used to determine if the summary of this is already enough (to be implemented)
 
     if (chrRange) {
-      // clip chrRegion first (should never happen)
+      // clip chrRegion first
       var currRange = this.truncateChrRange(chrRange, true, true)
       var result = []
       var rangeStart = currRange.start
@@ -779,40 +789,48 @@ var GIVe = (function (give) {
         currIndex++
       }
       while (rangeStart < rangeEnd) {
-        if (this.resNotEnough(currIndex, resolution)) {
-          // resolution for this is already enough for the task
-          // check if summary data are there already, if so, just return []
-          // to be implemented
-          // return if match, otherwise go through the following steps
-          if (this.revDepth > 0) {
-            // may need to merge because now resolutions for each revDepth are fixed
-            var newResult
-            if (this.values[currIndex]) {
-              newResult = this.values[currIndex].getUncachedRange({
-                chr: chrRange.chr, start: rangeStart, end: rangeEnd}, resolution)
-            } else {
-              newResult = [new give.ChromRegion({
-                chr: chrRange.chr,
-                start: parseInt(Math.max(this.keys[currIndex], rangeStart)),
-                end: parseInt(Math.min(rangeEnd, this.keys[currIndex + 1])) })]
-            }
-            if (result[result.length - 1] && newResult[0] &&
-              result[result.length - 1].concat(newResult)) {
-              // newResult[0] has been assimilated
-              newResult.splice(0, 1)
-            }
-            result = result.concat(newResult)
-            // rangeEnd will be truncated in the sub-functional call so it should be OK.
-          } else { // this.revDepth === 0
+        var newResult = []
+        if (this.values[currIndex] === null) {
+          // current child is a placeholder
+          // calculate the closest range needed for the resolution
+          // first normalize resolution to branchingFactor
+          var retrieveStart, retrieveEnd, res
+          res = Math.floor(Math.pow(this.branchingFactor,
+            Math.floor(Math.log(resolution) / Math.log(this.branchingFactor))))
+
+          retrieveStart = parseInt(Math.max(this.getStart(),
+            give.fitRes(rangeStart, res, Math.floor)))
+          retrieveEnd = parseInt(Math.min(this.getEnd(),
+            give.fitRes(rangeEnd, res, Math.ceil)))
+
+          newResult.push(new give.ChromRegion({
+            chr: chrRange.chr,
+            start: retrieveStart,
+            end: retrieveEnd
+          }))
+        } else if (this.values[currIndex]) {
+          if (this.childResNotEnough(currIndex, resolution)) {
+            // child has not enough resolution
+            newResult = this.values[currIndex].getUncachedRange({
+              chr: chrRange.chr, start: rangeStart, end: rangeEnd}, resolution)
+          } else if (!this.childHasData(currIndex)) {
+            // child does not have summary data, but resolution is OK
             if (parseInt(Math.max(this.keys[currIndex], rangeStart)) <
-               parseInt(Math.min(rangeEnd, this.keys[currIndex + 1]))) {
-              result.push(new give.ChromRegion({
+              parseInt(Math.min(rangeEnd, this.keys[currIndex + 1]))) {
+              newResult.push(new give.ChromRegion({
                 chr: chrRange.chr,
                 start: parseInt(Math.max(this.keys[currIndex], rangeStart)),
                 end: parseInt(Math.min(rangeEnd, this.keys[currIndex + 1])) }))
             }
-          } // end if (this.revDepth > 0)
-        } // end if (resolutionFunc && resolutionFunc(this))
+          }
+        } // end if (this.values[currIndex] === null)
+
+        if (result[result.length - 1] && newResult[0] &&
+          result[result.length - 1].concat(newResult)) {
+          // newResult[0] has been assimilated
+          newResult.splice(0, 1)
+        }
+        result = result.concat(newResult)
         currIndex++
         rangeStart = this.keys[currIndex]
       }
