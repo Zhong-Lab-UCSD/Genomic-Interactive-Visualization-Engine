@@ -11,7 +11,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 <!-- Import GIVE component -->
 <link rel="import" href="/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 
-<!-- Embed the browser in your webpage -->
+<!-- Embed the browser in your web page -->
 <chart-controller title-text="My GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
@@ -40,7 +40,7 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 
 ### Installing GIVE Web Components
 
-Just put the whole `/give/html` folder under GIVE to your hosting environment and you are good to go. Use the path on your hosting environment for the HTML `import`s to import the components in your page.
+Just put the whole `/give/html` folder to your web server and you are good to go. Use the path on your hosting environment for the HTML `import`s to import the components in your page.
 
 ### Installing GIVE Server
 
@@ -79,10 +79,10 @@ All components, including Web Component polyfill, is available on our web site f
 
 #### With Installation
 
-Please use your own path if you already installed GIVE Web Components on your hosting environment.
+Please use your own path if you already installed GIVE Web Components on your server.
 ```html
-<script src="/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-<link rel="import" href="/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<script src="/give/html/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="/give/html/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 ```
 
 ### Implementing A Customized Genome Browser by Embedding GIVE Components
@@ -92,13 +92,13 @@ After you have imported the components in your HTML page, you can use them in se
 <chart-controller title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
-Or you can use `Document.createElement()` to create the element in your JavaScript code:
+Or to use `Document.createElement()` to create the element in your JavaScript code:
 ```JavaScript
 var myChart = document.createElement('chart-controller')
 myChart.titleText = "My First GIVE Browser"
 myChart.groupIdList = ["genes", "singleCell", "customTracks"]
 ```
-Or use the built-in JavaScript constructors:
+Or to use the built-in JavaScript constructors:
 ```JavaScript
 var myChart = new GIVE.ChartController({
   titleText: "My First GIVE Browser",
