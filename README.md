@@ -49,7 +49,7 @@ give.host = '/give-server'
 
 #### Installing GIVE Data Sources
 
-*Scripts to install GIVE databases are under development and this part will be updated whenever they are ready*
+*Scripts to install GIVE databases are under development and this part will be updated whenever they are ready.*
 
 ## Usage
 

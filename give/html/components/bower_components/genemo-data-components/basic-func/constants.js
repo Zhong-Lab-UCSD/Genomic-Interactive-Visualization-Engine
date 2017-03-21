@@ -10,5 +10,7 @@ var GIVe = (function (give) {
 
   give.verboseLvl = give.VERBOSE_DEBUG
 
+  give.host = 'https://give.genemo.org/'
+
   return give
 })(GIVe || {})
