@@ -16,9 +16,9 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
 
-##Table of Contents
+## Table of Contents
 
-##Installation
+## Installation
 
 *Installation of GIVE is optional and not required to use any of the Web Components of GIVE. By installing GIVE components, you can serve codes and/or data sources directly from your own server.*
 
@@ -28,23 +28,36 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 
 ### Installing GIVE Web Components
 
-Just put the whole /html folder under GIVE to your hosting environment and you are good to go. Use the path on your hosting environment for the HTML `import`s to import the components in your page.
+Just put the whole `/give/html` folder under GIVE to your hosting environment and you are good to go. Use the path on your hosting environment for the HTML `import`s to import the components in your page.
 
 ### Installing GIVE Server
 
+GIVE server consists of bare-bone server code, which serves as interfaces between GIVE Web Components and the data sources.
 
+#### Installing GIVE Bare-bone Server
 
-#### Installing GIVE Bare Server
+To install GIVE server, put `/give/html/givdata` and `/includes` under your hosting environment. PHP 7.0 or higher is required.
+
+After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the new bare-bone server location:
+```JavaScript
+give.host = '<bare-bone server path>'
+```
+Note that `bare-bone server path` is the path relative to the root path of your hosting environment. For example, if you host your web site at `/var/www/`, and bare-bone server is installed at `/var/www/give-server/`, then you'll need to edit `constants.js` as following:
+```JavaScript
+give.host = '/give-server'
+```
 
 #### Installing GIVE Data Sources
 
-##Usage
+*Scripts to install GIVE databases are under development and this part will be updated whenever they are ready*
 
-###Importing GIVE Components
+## Usage
+
+### Importing GIVE Components
 
 To use GIVE components, just use HTML `import` to import Web Components polyfill and the required Web Components.
 
-####Without Installation
+#### Without Installation
 
 All components, including Web Component polyfill, is available on our web site for direct HTML import.
 ```html
@@ -52,7 +65,7 @@ All components, including Web Component polyfill, is available on our web site f
 <link rel="import" href="https://give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 ```
 
-####With Installation
+#### With Installation
 
 Please use your own path if you already installed GIVE Web Components on your hosting environment.
 ```html
@@ -60,11 +73,10 @@ Please use your own path if you already installed GIVE Web Components on your ho
 <link rel="import" href="/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 ```
 
-###Implementing A Customized Genome Browser by Embedding GIVE Components
+### Implementing A Customized Genome Browser by Embedding GIVE Components
 
 After you have imported the components in your HTML page, you can use them in several ways. The most straightforward way is to use them as if you are using common HTML tags (like <div> or <video>):
 ```html
-<!-- Embed the browser in your webpage -->
 <chart-controller title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
@@ -82,11 +94,11 @@ var myChart = new GIVE.ChartController({
 })
 ```
 
-##Credits
+## Credits
 
 GIVE is developed by Xiaoyi Cao, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
 
-##License
+## License
 
 Copyright 2017 GIVe Authors
 
