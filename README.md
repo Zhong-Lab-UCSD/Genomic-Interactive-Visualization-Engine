@@ -75,7 +75,7 @@ Please use your own path if you already installed GIVE Web Components on your ho
 
 ### Implementing A Customized Genome Browser by Embedding GIVE Components
 
-After you have imported the components in your HTML page, you can use them in several ways. The most straightforward way is to use them as if you are using common HTML tags (like <div> or <video>):
+After you have imported the components in your HTML page, you can use them in several ways. The most straightforward way is to use them as if you are using common HTML tags (like `<div>` or `<video>`):
 ```html
 <chart-controller title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
