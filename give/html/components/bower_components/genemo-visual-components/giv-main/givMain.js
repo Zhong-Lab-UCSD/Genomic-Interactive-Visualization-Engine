@@ -1,17 +1,17 @@
-// initialize species and tracks
+// initialize ref and tracks
 
 var GIVe = (function (give) {
   'use strict'
 
-  var spcArray = give.SpeciesObject.initAllSpecies(null, null, function (species) {
-    return species.settings['isGIVeEnabled']
+  var spcArray = give.RefObject.initAllRef(null, null, function (ref) {
+    return ref.settings['isGIVeEnabled']
   }, null)
 
   give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    Polymer.dom(document).querySelector('#mainChartController').setSpecies(
+    Polymer.dom(document).querySelector('#mainChartController').setRef(
       window.location.search.indexOf('hg38') >= 0
         ? spcArray.dbMap['hg38'] : spcArray[0])
-  }, ['web-component-ready', 'species-ready']))
+  }, ['web-component-ready', 'ref-ready']))
 
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)

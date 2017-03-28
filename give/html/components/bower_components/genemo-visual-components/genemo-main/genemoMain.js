@@ -2,8 +2,8 @@ var GIVe = (function (give) {
   'use strict'
 
   var UI = new give.UIObject(window)
-  give.spcArray = give.SpeciesObject.initAllSpecies(null, null, function (species) {
-    return !!parseInt(species.encode)
+  give.spcArray = give.RefObject.initAllRef(null, null, function (ref) {
+    return !!parseInt(ref.encode)
   }, null)
 
   // this is used in trackObject.settings to indicate that this track is selected
@@ -47,8 +47,8 @@ var GIVe = (function (give) {
   }
 
   give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    Polymer.dom(document).querySelector('#searchCard').setSpecies(give.spcArray)
-  }, ['web-component-ready', 'species-ready']))
+    Polymer.dom(document).querySelector('#searchCard').setRef(give.spcArray)
+  }, ['web-component-ready', 'ref-ready']))
 
   give.loadSessionInfo = function (sessionID, db, selectedTracks, urlToShow, originalFile, hasDisplay, searchRange) {
     give.sessionObj = {}
@@ -68,7 +68,7 @@ var GIVe = (function (give) {
 
     var tableNameQuery = new window.FormData()
     tableNameQuery.append('Submit', 'Submit')
-    tableNameQuery.append('species', sessionDataObj.db)
+    tableNameQuery.append('ref', sessionDataObj.db)
     tableNameQuery.append('email', sessionDataObj.email)
 
     var selTrackNames = give.spcArray.dbMap[sessionDataObj.db].getTrackTableNameList(function (track) {
@@ -150,7 +150,7 @@ var GIVe = (function (give) {
 
   give.loadSession = function (sessionObj) {
     try {
-      // this is to change the selected setting for the species
+      // this is to change the selected setting for the ref
       give.spcArray[sessionObj.db].setTrackSettings(give.GENEMO_SELECTED_KEY, false)
       give.spcArray[sessionObj.db].getTracks().forEachByID(JSON.parse(sessionObj.list), function (track) {
         track.setSetting(give.GENEMO_SELECTED_KEY, true)
@@ -241,7 +241,7 @@ var GIVe = (function (give) {
     return newRegionList
   }
 
-  give.populateRegionList = function (rawObj, species) {
+  give.populateRegionList = function (rawObj, ref) {
     // this function will convert raw Object (from JSON input) into an array of Region class
     // and also, if the rawObj don't have name for each genes, "Region X" will be used
     var regionList = []
@@ -257,7 +257,7 @@ var GIVe = (function (give) {
         chrRegionRaw.start = parseInt(chrRegionRaw.start || chrRegionRaw.genestart)
         chrRegionRaw.end = parseInt(chrRegionRaw.end || chrRegionRaw.geneend)
         chrRegionRaw.name = (chrRegionRaw.name || regionName).replace(/[\s()+/]/g, '')
-        var newChrRegion = new give.ChromRegionDisp(chrRegionRaw, species)
+        var newChrRegion = new give.ChromRegionDisp(chrRegionRaw, ref)
         regionList.push(newChrRegion)
         regionList.map[regionName] = newChrRegion
       }
@@ -273,16 +273,16 @@ var GIVe = (function (give) {
     }
   }
 
-  give.changeSpecies = function (ref) {
-    if (give.spcArray.dbMap[ref] && give.spcArray.dbMap[ref] !== give.spcArray.currSpecies()) {
-      // species changed, needs to update lots of stuff
+  give.changeRef = function (ref) {
+    if (give.spcArray.dbMap[ref] && give.spcArray.dbMap[ref] !== give.spcArray.currRef()) {
+      // ref changed, needs to update lots of stuff
       give.spcArray.selected = ref
-      trackFilterDom.initialize(give.spcArray.currSpecies())
-      trackListDom.setSpecies(give.spcArray.currSpecies())
+      trackFilterDom.initialize(give.spcArray.currRef())
+      trackListDom.setRef(give.spcArray.currRef())
       // reset chromRegionList
       mainRegionListDom.setList()
       // reset mainChart
-      mainChartDom.setSpecies(give.spcArray.currSpecies())
+      mainChartDom.setRef(give.spcArray.currRef())
     }
   }
 
@@ -298,8 +298,8 @@ var GIVe = (function (give) {
     }
   }
 
-  give.speciesChangedHandler = function (e) {
-    give.changeSpecies(e.detail.newRef)
+  give.refChangedHandler = function (e) {
+    give.changeRef(e.detail.newRef)
   }
 
   give.switchPageHandler = function (e) {
@@ -307,7 +307,7 @@ var GIVe = (function (give) {
   }
 
   give.filterTracksFromList = function (trackListId, map, flags) {
-    // first apply settings to species.tracks (data object)
+    // first apply settings to ref.tracks (data object)
     // then call trackToDOM to
     Polymer.dom(document).querySelector('#' + trackListId).applyFilter(map, flags)
   }
@@ -373,14 +373,14 @@ var GIVe = (function (give) {
       }
     }
 
-    document.addEventListener('species-changed', give.speciesChangedHandler)
+    document.addEventListener('ref-changed', give.refChangedHandler)
     document.addEventListener('switch-page', give.switchPageHandler)
 
     document.addEventListener('show-track-filter', trackFilterDom.show.bind(trackFilterDom))
     document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     document.addEventListener('change-window', function (e) {
-      give.spcArray.currSpecies().getGroups().encode.forEach(function (track) {
+      give.spcArray.currRef().getGroups().encode.forEach(function (track) {
         track.setVisibility(false)
       }, this)
       e.detail.tracks.forEach(function (track) {

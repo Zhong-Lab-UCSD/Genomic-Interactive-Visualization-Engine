@@ -89,7 +89,7 @@
 			font-weight: 700;
 		}
 
-		#speciesTable > div {
+		#refTable > div {
 			margin-top: 0.3em;
 			margin-bottom: 0.3em;
 		}
@@ -118,7 +118,7 @@
     </paper-radio-group>
     <paper-dropdown-menu id="spcDropDownMenu" disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined" no-label-float noink>
       <paper-menu class="dropdown-content" selected="{{spcCoorSelection}}" attr-for-selected="value">
-        <template is="dom-repeat" items="[[currSelectedSpecies]]">
+        <template is="dom-repeat" items="[[currSelectedRef]]">
           <paper-item value="[[item.db]]">[[item.db]]</paper-item>
         </template>
       </paper-menu>
@@ -139,11 +139,11 @@
       </div>
     </div>
     <iron-ajax id="partialNameAjax" url="jsongenename.php" handle-as="json" on-response="updatePartialQuery" debounce-duration="300" method="POST"></iron-ajax>
-    <paper-material id="speciesTable" class="vertMargined" elevation="1">
-      <div class="anno fullWidth"><span id="Species to compare" class="text"> Species to compare: </span></div>
-      <template is="dom-repeat" items="[[species]]">
+    <paper-material id="refTable" class="vertMargined" elevation="1">
+      <div class="anno fullWidth"><span id="Ref to compare" class="text"> Ref to compare: </span></div>
+      <template is="dom-repeat" items="[[ref]]">
         <div id="[[computeCheckboxWrapper(item.db)]]">
-          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]" disabled$="[[item.checkDisabled]]" on-change="speciesCheckHandler">
+          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]" disabled$="[[item.checkDisabled]]" on-change="refCheckHandler">
             <span><em>[[item.name]]</em> (<span>[[item.commonName]]</span>) [<span>[[item.db]]</span>]</span>
           </paper-checkbox>
         </div>
@@ -201,7 +201,7 @@
 				value: ""
 			},
 
-			species: {
+			ref: {
 				type: Array,
 				value: function() {
 					return [];
@@ -215,7 +215,7 @@
 				}
 			},
 
-			currSelectedSpecies: {	// This is the current selected species (not submitted yet)
+			currSelectedRef: {	// This is the current selected ref (not submitted yet)
 				type: Array,
 				value: function() {
 					return [];
@@ -297,55 +297,55 @@
 			return textstem + '_checkboxwrapper';
 		},
 
-        checkEncodeSpecies: function (flag) {
+        checkEncodeRef: function (flag) {
             var spcAvailableCount = 0;
 			if(typeof(flag) == 'boolean') {
 				this.isEncodeOn = flag;
 			}
-            if(this.species) {
-                for(var i = 0; i < this.species.length; i++) {
-                    if(this.isEncodeOn && !this.species[i].isEncode) {
-                        Polymer.dom(this.root).querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'none';
-                        Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked = false;
+            if(this.ref) {
+                for(var i = 0; i < this.ref.length; i++) {
+                    if(this.isEncodeOn && !this.ref[i].isEncode) {
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db + '_checkboxwrapper').style.display = 'none';
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked = false;
                     } else if (!this.isEncodeOn) {
-                        Polymer.dom(this.root).querySelector('#' + this.species[i].db + '_checkboxwrapper').style.display = 'block';
-                        Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked = true;
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db + '_checkboxwrapper').style.display = 'block';
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked = true;
                         spcAvailableCount++;
                     }
                 }
                 this.updateAllSpcActive();
                 if(spcAvailableCount > 2) {
-                    this.$.speciesTable.style.display = 'block';
+                    this.$.refTable.style.display = 'block';
                 } else {
-                    this.$.speciesTable.style.display = 'none';
+                    this.$.refTable.style.display = 'none';
                 }
                 this.updateType();
             }
         },
 
         updateAllSpcActive: function () {
-            // numbersOnly means no update of checkboxes to species.isActive
-            // otherwise species.isActive will be updated first to reflect choice
+            // numbersOnly means no update of checkboxes to ref.isActive
+            // otherwise ref.isActive will be updated first to reflect choice
             this.updateAllSpcActiveUI();
-            this.species.updateAllSpcActiveNum();
+            this.ref.updateAllSpcActiveNum();
         },
 
         updateAllSpcActiveUI: function () {
-            for(var i = 0; i < this.species.length; i++) {
-                this.species[i].isActive = Polymer.dom(this.root).querySelector('#' + this.species[i].db).checked;
+            for(var i = 0; i < this.ref.length; i++) {
+                this.ref[i].isActive = Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked;
             }
         },
 
         updateType: function () {
             var typeSelected = this.spcCoorSelection;
-            this.splice('currSelectedSpecies', 0, this.currSelectedSpecies.length);
-			var lastActiveSpecies;
-            for(var i = 0; i < this.species.length; i++) {
-                if(this.species[i].isActive) {
-                    this.push('currSelectedSpecies', this.species[i]);
-					lastActiveSpecies = this.species[i].db;
-                } else if(i == this.species.map[typeSelected]) {
-					typeSelected = lastActiveSpecies;
+            this.splice('currSelectedRef', 0, this.currSelectedRef.length);
+			var lastActiveRef;
+            for(var i = 0; i < this.ref.length; i++) {
+                if(this.ref[i].isActive) {
+                    this.push('currSelectedRef', this.ref[i]);
+					lastActiveRef = this.ref[i].db;
+                } else if(i == this.ref.map[typeSelected]) {
+					typeSelected = lastActiveRef;
 					this.spcCoorSelection = typeSelected;
 					this.geneRegionSelection = 'gene';
 				}
@@ -525,42 +525,42 @@
 			var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
 			if(chromRegex.test(this.InputGeneName)) {
 				if(this.geneRegionSelection == "gene") {
-					// should choose a species
-					this.fire("alert", {msg: "Please specify the species of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field."});
+					// should choose a ref
+					this.fire("alert", {msg: "Please specify the ref of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field."});
 					return false;
 				}
 			} else if(this.geneRegionSelection != "gene") {
 				// should input coordinate
-				this.fire("alert", {msg: "Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all species."});
+				this.fire("alert", {msg: "Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all ref."});
 				return false;
 			}
 
 			this.updateAllSpcActive();
 
-			if(this.species.activeNumber < 2) {
-				this.fire("alert", {msg: "You need to choose at least TWO (2) species."});
+			if(this.ref.activeNumber < 2) {
+				this.fire("alert", {msg: "You need to choose at least TWO (2) ref."});
 				return false;
 			}
 			// Prepare post data
 			var postdata = {};
 
 			if(this.geneRegionSelection == "gene") {
-				postdata['species'] = "gene";
+				postdata['ref'] = "gene";
 			} else {
-				postdata['species'] = this.spcCoorSelection;
+				postdata['ref'] = this.spcCoorSelection;
 			}
 			postdata['geneName'] = this.InputGeneName;
 			postdata['direct'] = this.direct? 'true': 'false';
 
 			this.splice('selectedRefs', 0, this.selectedRefs.length);
-			for(var i = 0; i < this.species.length; i++) {
-				if(this.species[i].isActive) {
-					postdata[this.species[i].db] = this.species[i].db;
-					this.push('selectedRefs', this.species[i].db);
+			for(var i = 0; i < this.ref.length; i++) {
+				if(this.ref[i].isActive) {
+					postdata[this.ref[i].db] = this.ref[i].db;
+					this.push('selectedRefs', this.ref[i].db);
 				}
 			}
 
-			this.updateCurrentInfo({ Query: this.InputGeneName, Species: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
+			this.updateCurrentInfo({ Query: this.InputGeneName, Ref: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
 			this.fire("iron-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
 
 			this.fire("submit-genequery", {postdata: postdata});
@@ -587,10 +587,10 @@
 		},
 
 		signalEncodeCheck: function(e, detail) {
-			this.checkEncodeSpecies(detail.flag);
+			this.checkEncodeRef(detail.flag);
 		},
 
-		speciesCheckHandler: function() {
+		refCheckHandler: function() {
 			this.updateAllSpcActive();
 			this.updateType();
 		},
@@ -602,17 +602,17 @@
         ready: function() {
 
 //			for(var i=0; i<spcArray.length; i++) {
-//				this.push('species', spcArray[i]);
+//				this.push('ref', spcArray[i]);
 //			}
 //
-//			this.species.map = spcArray.map;
+//			this.ref.map = spcArray.map;
 
 			this._setIcon('view-list');
 			this._setIconAlt('query');
-			this._setHeaderText('Cross-species query');
+			this._setHeaderText('Cross-ref query');
 			this._setTabText('Query');
 
-			this.species = spcArray;
+			this.ref = spcArray;
 			spcArray[spcArray.map['hg19']].checkDisabled = true;
 
             this.$.geneName.addEventListener('input', this.queryTextChanged.bind(this));

@@ -15,7 +15,7 @@ var GIVe = (function (give) {
       }
     }
     this.label = this.label || ''
-    this.priority = this.priority || give.TrackGroup.MAX_GROUP_PRIORITY
+    this.priority = this.priority || give.TrackGroup._MAX_GROUP_PRIORITY
     this.visibility = !!(this.visibility)    // force into boolean
   }
 
@@ -141,7 +141,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.TrackGroup.MAX_GROUP_PRIORITY = 100000
+  give.TrackGroup._MAX_GROUP_PRIORITY = 100000
   give.TrackGroup.CUSTOM_GROUP_PRIORITY = 90000
 
   return give

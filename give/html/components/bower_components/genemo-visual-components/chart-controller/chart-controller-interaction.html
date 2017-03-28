@@ -54,7 +54,7 @@
         };
       }
     </style>
-    <!-- TODO: add paper-dropmenu for species -->
+    <!-- TODO: add paper-dropmenu for ref -->
     <paper-drawer-panel>
       <div drawer class="layout vertical">
         <paper-input id="mainWindowCoor" label="Upper window coordinates" floatingLabel="true" value="{{mainCoor}}"></paper-input>
@@ -96,7 +96,7 @@
           <chart-area class="flex" id="mainChartArea" num-of-subs="2"
             group-id-list='["genes", "interaction", "customTracks"]'>
           </chart-area>
-          <div class="dataReference" hidden$="[[!species.settings.isGITARRelated]]">
+          <div class="dataReference" hidden$="[[!ref.settings.isGITARRelated]]">
             <h2><strong><span id="Data References" class="text">Data References</span></strong></h2>
             <p><span id="Geonomegitar" class="text">Please refer to
               <a href="http://data.genomegitar.org/">http://data.genomegitar.org/</a>
@@ -127,7 +127,7 @@
             type: Number,
             value: 0.1
           },
-          species: {
+          ref: {
             type: Object,
             value: function () {
               return { settings: {} }
@@ -148,19 +148,19 @@
           this.NUM_OF_SUBS = 2
         },
 
-        getSpecies: function () {
-          return this.species
+        getRef: function () {
+          return this.ref
         },
 
-        setSpecies: function (species) {
-          if (species) {
-            this.set('species', species)
-            this.$.mainTrackList.setSpecies(species)
-            this.$.mainCTController.setSpecies(species)
-            this.$.mainChartArea.setSpecies(species)
+        setRef: function (ref) {
+          if (ref) {
+            this.set('ref', ref)
+            this.$.mainTrackList.setRef(ref)
+            this.$.mainCTController.setRef(ref)
+            this.$.mainChartArea.setRef(ref)
 
-            // set viewWindows as default if the species has it
-            var defaultViewWindows = species.settings.defaultWindow ||
+            // set viewWindows as default if the ref has it
+            var defaultViewWindows = ref.settings.defaultWindow ||
               ['chr10:30000000-55000000', 'chr10:34900000-65000000']
             if (typeof defaultViewWindows === 'string') {
               defaultViewWindows = [defaultViewWindows]

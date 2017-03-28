@@ -4,7 +4,7 @@
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
-<link rel="import" href="../../genemo-data-components/species-object/species-object.html">
+<link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -65,13 +65,13 @@
         ],
 
         properties: {
-          species: {
+          ref: {
             type: Object,
             readOnly: true
           },
-          // this is the species defined in libtracks.js
-          // notice that species should have chromSizes and location of centromeres included
-          // tracks is also within species
+          // this is the ref defined in libtracks.js
+          // notice that ref should have chromSizes and location of centromeres included
+          // tracks is also within ref
           // may need to provide additional API to get track data
 
           textSize: {
@@ -110,24 +110,24 @@
 
           this.setDOMReady(true)
           this.setReady(false)
-          this.setSpecies(null, true)
+          this.setRef(null, true)
 
           this.completedRepeatDOMs = 0
         },
 
-        _refreshSpeciesTrackReady: function () {
-          // this is called after track is ready for trackSpecies
+        _refreshRefTrackReady: function () {
+          // this is called after track is ready for trackRef
           this.splice('groupArray', 0, this.groupArray.length)
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
-              if (this.species.getGroups().hasOwnProperty(groupID)) {
-                this.push('groupArray', this.species.getGroups()[groupID])
+              if (this.ref.getGroups().hasOwnProperty(groupID)) {
+                this.push('groupArray', this.ref.getGroups()[groupID])
               }
             }, this)
           } else {
-            for (var key in this.species.getGroups()) {
-              if (this.species.getGroups().hasOwnProperty(key)) {
-                this.push('groupArray', this.species.getGroups()[key])
+            for (var key in this.ref.getGroups()) {
+              if (this.ref.getGroups().hasOwnProperty(key)) {
+                this.push('groupArray', this.ref.getGroups()[key])
               }
             }
           }
@@ -137,13 +137,13 @@
           })
         },
 
-        _refreshSpecies: function () {
-          this.species.callOnTracksReady(this._refreshSpeciesTrackReady.bind(this))
+        _refreshRef: function () {
+          this.ref.callOnTracksReady(this._refreshRefTrackReady.bind(this))
         },
 
         updateAllGroupDOM: function () {
           this.setReady(false)
-          this._refreshSpecies()
+          this._refreshRef()
         },
 
         _prioritySort: function (itemA, itemB) {
@@ -151,19 +151,19 @@
             ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
         },
 
-        setSpecies: function (newSpecies, forceUpdate) {
-        // this will reset all tracks and redo the species
+        setRef: function (newRef, forceUpdate) {
+        // this will reset all tracks and redo the ref
         // note that the tracks should already be initialized before switching here
-          if (!newSpecies) {
+          if (!newRef) {
             if (!forceUpdate) {
-              throw (new Error('No new species specified!'))
+              throw (new Error('No new ref specified!'))
             }
           } else {
-            this._setSpecies(newSpecies)
+            this._setRef(newRef)
           }
           this.setReady(false)
-          if (this.species) {
-            this._refreshSpecies()
+          if (this.ref) {
+            this._refreshRef()
           }
         },
 

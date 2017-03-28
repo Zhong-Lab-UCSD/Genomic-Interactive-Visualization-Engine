@@ -1,6 +1,6 @@
 <?php
 
-// this file is for updating all species information, including
+// this file is for updating all ref information, including
 // all chromosome lengths and centromeme locations
 // input will be database name ("mm9" or "hg19" or others)
 // currently the return format will be JSON chromosome information
@@ -125,24 +125,24 @@ function getTracks($db, $grp = NULL) {
   return $result;
 }
 
-function getSpeciesDbNames() {
-  // return a full list of species db names
+function getRefDbNames() {
+  // return a full list of ref db names
   $mysqli = connectCPB();
   $result = array();
-  $species = $mysqli->query("SELECT dbname FROM species");
-  while($spcitor = $species->fetch_assoc()) {
+  $ref = $mysqli->query("SELECT dbname FROM ref");
+  while($spcitor = $ref->fetch_assoc()) {
     $result[] = $spcitor["dbname"];
   }
-  $species->free();
+  $ref->free();
   $mysqli->close();
   return $result;
 }
 
-function getSpeciesInfoFromArray($spcDbNameList = NULL) {
-  // return everything about species from db indicated by spcDbNameList
+function getRefInfoFromArray($spcDbNameList = NULL) {
+  // return everything about ref from db indicated by spcDbNameList
   $mysqli = connectCPB();
   $spcinfo = array();
-  $sqlstmt = "SELECT * FROM species";
+  $sqlstmt = "SELECT * FROM ref";
   if(!empty($spcDbNameList)) {
     $sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
     $stmt = $mysqli->prepare($sqlstmt);
@@ -154,21 +154,21 @@ function getSpeciesInfoFromArray($spcDbNameList = NULL) {
     }
     call_user_func_array(array($stmt, 'bind_param'), $a_params);
     $stmt->execute();
-    $species = $stmt->get_result();
+    $ref = $stmt->get_result();
   } else {
-    $species = $mysqli->query($sqlstmt);
+    $ref = $mysqli->query($sqlstmt);
   }
-  while($spcitor = $species->fetch_assoc()) {
+  while($spcitor = $ref->fetch_assoc()) {
     $spcitor['settings'] = json_decode($spcitor['settings']);
     $spcinfo[] = $spcitor;
   }
-  $species->free();
+  $ref->free();
   $mysqli->close();
   return $spcinfo;
 }
 
-function getSpeciesDatabaseFromGapInfo($gap, $spcDbName) {
-  // return the database name according the gap value from each species
+function getRefDatabaseFromGapInfo($gap, $spcDbName) {
+  // return the database name according the gap value from each ref
   $mysqli = connectCPB();
   $spcinfo = array();
   $spcinfo = $mysqli->query("SELECT * FROM $spcDbName WHERE gap<=$gap ORDER BY gap DESC LIMIT 1");

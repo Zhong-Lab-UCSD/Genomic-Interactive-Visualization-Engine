@@ -18,7 +18,7 @@ var GIVe = (function (give) {
     var resChromEntryFunc = function (geneArray, geneNameMap, resChromEntry) {
       var newGene = new give.GeneObject(
         new give.TranscriptObject(resChromEntry.geneBed,
-                      this.species,
+                      this.ref,
                       { geneName: resChromEntry.geneSymbol }))
       if (this.getTypeTrunk().indexOf('gene') > -1) {
         // is some gene oriented type

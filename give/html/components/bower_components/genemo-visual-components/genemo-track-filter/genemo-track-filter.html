@@ -106,13 +106,13 @@
         this.playAnimation('exit')
       },
 
-      initialize: function (species) {
-        if (species.metaFilterInitialized) {
-          this.$.mainPage.initialize(species)
+      initialize: function (ref) {
+        if (ref.metaFilterInitialized) {
+          this.$.mainPage.initialize(ref)
         } else {
           give.mainTaskScheduler.addTask(new give.TaskEntry(
-            this.$.mainPage.initialize.bind(this.$.mainPage, species),
-            [species.getCleanID() + '-meta-filter-ready']
+            this.$.mainPage.initialize.bind(this.$.mainPage, ref),
+            [ref.getCleanID() + '-meta-filter-ready']
           ))
         }
       },

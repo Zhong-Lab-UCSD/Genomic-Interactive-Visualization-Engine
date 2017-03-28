@@ -12,7 +12,7 @@ var GIVe = (function (give) {
         the format will be a ChromRegion object with {data: {value: <actual value>} }
       */
     var preConvertData = function (resEntry) {
-      return new give.ChromRegion(resEntry.regionString, this.species, {
+      return new give.ChromRegion(resEntry.regionString, this.ref, {
         data: (resEntry.data.hasOwnProperty('validCount')
             ? new give.TrackObjectImpl._BigWigImpl.SummaryCtor(resEntry.data)
             : resEntry.data),

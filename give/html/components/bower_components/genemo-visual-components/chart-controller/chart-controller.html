@@ -61,7 +61,7 @@
           floatingLabel="true" value="{{mainCoor}}">
         </gene-coor-input>
         <div class="layout horizontal">
-          <paper-button class="colored" raised id="updateChart" on-tap="updateTracks">Update</paper-button>
+          <paper-button class="colored" raised id="updateChart" on-tap="_updateTracks">Update</paper-button>
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
         <genemo-card disable-folding class="flex flexFillGenemoCard">
@@ -141,8 +141,8 @@
         },
 
         listeners: {
-          'update-window': 'updateWindowHandler',
-          'update-track-structure': 'updateTrackStructureHandler'
+          'update-window': '_updateWindowHandler',
+          'update-track-structure': '_updateTrackStructureHandler'
         },
 
         created: function () {
@@ -186,7 +186,7 @@
           }
         },
 
-        updateTracks: function () {
+        _updateTracks: function () {
           if (this.$.mainTrackList) {
             this.$.mainTrackList.DOMToTrack()
             this.$.mainChartArea.updateDOM(true)
@@ -194,7 +194,7 @@
           }
         },
 
-        updateTrackStructure: function () {
+        _updateTrackStructure: function () {
         // almost same thing as updateTracks, only needs to update trackSelect
           if (this.$.mainTrackList) {
             this.$.mainTrackList.updateAllGroupDOM()
@@ -203,7 +203,7 @@
           }
         },
 
-        resetTracks: function () {
+        _resetTracks: function () {
           if (this.$.mainTrackList) {
             this.$.mainTrackList.trackToDOM()
             var correctedVWindows = this.$.mainChartArea.getViewWindowStrings()
@@ -212,7 +212,7 @@
           }
         },
 
-        updateWindowHandler: function (e) {
+        _updateWindowHandler: function (e) {
           if (e.detail.windowIndex === 0) {
             this.mainCoor = e.detail.newWindow
           } else if (e.detail.windowIndex === 1) {
@@ -220,8 +220,8 @@
           }
         },
 
-        updateTrackStructureHandler: function (e) {
-          this.updateTrackStructure()
+        _updateTrackStructureHandler: function (e) {
+          this._updateTrackStructure()
         }
 
       })

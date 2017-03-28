@@ -1,23 +1,38 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.ChromRegion = function (mainParams, species, additionalParams) {
-    // usage: new ChromRegionObject(mainParam, species, additionalParam)
+  /**
+   * @typedef ChromRegionLiteral
+   * @type {object}
+   * @property {string} chr - Chromosome name
+   * @property {number} start - Starting coordinate
+   * @property {number} end - Ending coordinate (not included in the region)
+   * @property {boolean|number|string|null} strand - The strand of the region
+   *
+   * @class give.ChromRegion
+   * Data structure for chromosomal region
+   *
+   * @param {(ChromRegionLiteral|give.ChromRegion|string)} mainParams - Main parameters used in the ChromRegion
+   * @param  {give.RefObject} [ref] - Reference genome of the region, use null to omit
+   * @param  {(object|null)} additionalParams - Additional parameters needed to be in the ChromRegion
+   */
+  give.ChromRegion = function (mainParams, ref, additionalParams) {
+    // usage: new ChromRegionObject(mainParam, ref, additionalParam)
     //    mainParam:
     //      either use a string like 'chr1:12345-56789'
     //      or an object with chr, start, end, and strand or other essential props
-    //    species:
+    //    ref:
     //      used for clipping the region, null if no-clipping needed
     //    additionalParam:
     //      some other parameters that may slip into the object
 
     try {
       if (typeof mainParams === 'string') {
-        this.regionFromString(mainParams)
+        this._regionFromString(mainParams)
       } else if (typeof mainParams === 'object') {
-        this.regionFromObject(mainParams)
+        this._regionFromObject(mainParams)
       }
-      this.clipRegion(species)
+      this.clipRegion(ref)
       var key
       if (typeof mainParams === 'object') {
         for (key in mainParams) {
@@ -51,19 +66,19 @@ var GIVe = (function (give) {
     }
   }
 
-  give.ChromRegion.prototype.clipRegion = function (species) {
+  give.ChromRegion.prototype.clipRegion = function (ref) {
     if (this.start < give.ChromRegion.CHROM_BASE) {
       this.start = give.ChromRegion.CHROM_BASE
     }
-    if (species && species.chromInfo) {
-      if (species.chromInfo[this.chr.toLowerCase()]) {
-        this.chr = species.chromInfo[this.chr.toLowerCase()].chrRegion.chr
-        if (species.chromInfo[this.chr].chrRegion.end < this.end) {
-          this.end = species.chromInfo[this.chr].chrRegion.end
+    if (ref && ref.chromInfo) {
+      if (ref.chromInfo[this.chr.toLowerCase()]) {
+        this.chr = ref.chromInfo[this.chr.toLowerCase()].chrRegion.chr
+        if (ref.chromInfo[this.chr].chrRegion.end < this.end) {
+          this.end = ref.chromInfo[this.chr].chrRegion.end
         }
-      } else if (!species.chromInfo[this.chr]) {
+      } else if (!ref.chromInfo[this.chr]) {
         // this is not a valid chromosome
-        throw (new Error(this.chr + ' is not a valid chromosome for ' + species.db + '!'))
+        throw (new Error(this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
       }
     }
     if (this.start > this.end) {
@@ -92,17 +107,21 @@ var GIVe = (function (give) {
     return this.end
   }
 
-  give.ChromRegion.prototype.regionFromString = function (regionString) {
+  give.ChromRegion.prototype._regionFromString = function (regionString) {
     var cleanedChrString = regionString.replace(/,/g, '')
       .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
     var elements = cleanedChrString.split(/[:\s-]+/)
+
+    /**
+     * @property
+     */
     this.chr = elements[0]
     this.start = parseInt(elements[1])
     this.end = parseInt(elements[2])
     this.setStrand((elements.length < 4) ? this.strand : !(elements[3] === 'NEGSTR'))
   }
 
-  give.ChromRegion.prototype.regionFromObject = function (regionObject) {
+  give.ChromRegion.prototype._regionFromObject = function (regionObject) {
     this.chr = regionObject.chr
     this.start = parseInt(regionObject.start)
     this.end = parseInt(regionObject.end)
@@ -110,7 +129,7 @@ var GIVe = (function (give) {
     this.name = regionObject.regionname || regionObject.name || ''
   }
 
-  give.ChromRegion.prototype.regionFromBed = function (bedString) {
+  give.ChromRegion.prototype._regionFromBed = function (bedString) {
     // notice that this only handle chr, start, end, name, strand in BED 4+ format
     var tokens = bedString.split(/\s+/)
     this.chr = tokens[0]
@@ -165,9 +184,9 @@ var GIVe = (function (give) {
   }
 
   give.ChromRegion.prototype.getShortName = function () {
-    return give.shortenString(this.name, give.ChromRegion.REGION_SHORTNAME_LIMIT,
-      give.ChromRegion.REGION_SHORTNAME_PREFIX_LENGTH,
-      give.ChromRegion.REGION_SHORTNAME_SUFFIX_LENGTH)
+    return give.shortenString(this.name, give.ChromRegion._REGION_SHORTNAME_LIMIT,
+      give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH,
+      give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH)
   }
 
   give.ChromRegion.prototype.overlaps = function (region, strandSpecific) {
@@ -214,7 +233,7 @@ var GIVe = (function (give) {
     return this
   }
 
-  give.ChromRegion.prototype.move = function (distance, isProportion, species) {
+  give.ChromRegion.prototype.move = function (distance, isProportion, ref) {
     // isProportion means whether move by proportion
     // may clip distance to what we have
     if (isProportion) {
@@ -223,9 +242,9 @@ var GIVe = (function (give) {
     distance = parseInt(distance + 0.5)
     if (distance + this.start < give.ChromRegion.CHROM_BASE) {
       distance = give.ChromRegion.CHROM_BASE - this.start
-    } else if (species && species.chromInfo && species.chromInfo[this.chr] &&
-      species.chromInfo[this.chr].chrRegion.end < this.end + distance) {
-      distance = species.chromInfo[this.chr].chrRegion.end - this.end
+    } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+      ref.chromInfo[this.chr].chrRegion.end < this.end + distance) {
+      distance = ref.chromInfo[this.chr].chrRegion.end - this.end
     }
     this.start = this.start + distance
     this.end = this.end + distance
@@ -236,11 +255,11 @@ var GIVe = (function (give) {
     return new this.constructor(this)
   }
 
-  give.ChromRegion.prototype.getShift = function (distance, isProportion, species) {
-    return this.clone().move(distance, isProportion, species)
+  give.ChromRegion.prototype.getShift = function (distance, isProportion, ref) {
+    return this.clone().move(distance, isProportion, ref)
   }
 
-  give.ChromRegion.prototype.extend = function (sizediff, center, isProportion, species,
+  give.ChromRegion.prototype.extend = function (sizediff, center, isProportion, ref,
     minimumSize) {
     // isProportion means whether extend by proportion
     minimumSize = minimumSize || 1
@@ -261,9 +280,9 @@ var GIVe = (function (give) {
     if (newsize < minimumSize) {
       newsize = minimumSize
       sizediff = newsize - this.getLength()
-    } else if (species && species.chromInfo && species.chromInfo[this.chr] &&
-      species.chromInfo[this.chr].chrRegion.getLength() < newsize) {
-      newsize = species.chromInfo[this.chr].chrRegion.getLength()
+    } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+      ref.chromInfo[this.chr].chrRegion.getLength() < newsize) {
+      newsize = ref.chromInfo[this.chr].chrRegion.getLength()
     }
     if (center > this.start) {
       // extend left
@@ -275,30 +294,30 @@ var GIVe = (function (give) {
     } else {
       this.end = this.end + sizediff
     }
-    if (species && species.chromInfo && species.chromInfo[this.chr] &&
-      species.chromInfo[this.chr].chrRegion.end < this.end) {
-      this.end = species.chromInfo[this.chr].chrRegion.end
+    if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+      ref.chromInfo[this.chr].chrRegion.end < this.end) {
+      this.end = ref.chromInfo[this.chr].chrRegion.end
       this.start = this.end - newsize
     }
     return this
   }
 
-  give.ChromRegion.prototype.getExtension = function (sizediff, center, isProportion, species, minimumSize) {
-    return this.clone().extend(sizediff, center, isProportion, species, minimumSize)
+  give.ChromRegion.prototype.getExtension = function (sizediff, center, isProportion, ref, minimumSize) {
+    return this.clone().extend(sizediff, center, isProportion, ref, minimumSize)
   }
 
-  give.ChromRegion.REGION_SHORTNAME_LIMIT = 11
-  give.ChromRegion.REGION_SHORTNAME_PREFIX_LENGTH = 6
-  give.ChromRegion.REGION_SHORTNAME_SUFFIX_LENGTH = 4
+  give.ChromRegion._REGION_SHORTNAME_LIMIT = 11
+  give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH = 6
+  give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH = 4
   give.ChromRegion.CHROM_BASE = 1      // may be 0 for UCSC
 
-  give.ChromRegion.clipCoordinate = function (coor, species) {
+  give.ChromRegion.clipCoordinate = function (coor, ref) {
     // this is to clip single coordinate
     if (coor.coor < give.ChromRegion.CHROM_BASE) {
       coor.coor = give.ChromRegion.CHROM_BASE
-    } else if (species && species.chromInfo && species.chromInfo[coor.chr] &&
-      species.chromInfo[coor.chr].chrRegion.end < coor.coor) {
-      coor.coor = species.chromInfo[coor.chr].chrRegion.end
+    } else if (ref && ref.chromInfo && ref.chromInfo[coor.chr] &&
+      ref.chromInfo[coor.chr].chrRegion.end < coor.coor) {
+      coor.coor = ref.chromInfo[coor.chr].chrRegion.end
     }
     return coor
   }

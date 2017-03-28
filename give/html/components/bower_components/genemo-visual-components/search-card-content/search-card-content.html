@@ -52,8 +52,8 @@
       <div class="vertTextBottomContainer clearFix">
         <div><span id = "Reference" class="text">Reference: </span></div>
         <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined text" no-label-float>
-          <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
-            <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
+          <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentRef}}">
+            <template is="dom-repeat" items="[[ref]]" filter="encodeFilter">
               <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
             </template>
           </paper-menu>
@@ -176,7 +176,7 @@
             value: ''
           },
 
-          species: {
+          ref: {
             type: Array,
             value: function () {
               return []
@@ -188,13 +188,13 @@
           this.InputFile = new window.Blob()
         },
 
-        setSpecies: function (spcArray) {
+        setRef: function (spcArray) {
           if (Array.isArray(spcArray)) {
-            this.splice('species', 0, this.species.length)
-            this.species.map = {}
-            spcArray.forEach(function (species) {
-              this.push('species', species)
-              this.species.map[species.db] = species
+            this.splice('ref', 0, this.ref.length)
+            this.ref.map = {}
+            spcArray.forEach(function (ref) {
+              this.push('ref', ref)
+              this.ref.map[ref.db] = ref
             }, this)
           }
           this.setReady(true)
@@ -204,19 +204,19 @@
           return (value.isEncode || !this.isEncodeOn)
         },
 
-        checkEncodeSpecies: function (flag) {
+        checkEncodeRef: function (flag) {
           if (typeof (flag) === 'boolean') {
             this.isEncodeOn = flag
           }
-          if (this.species.length > 0) {
+          if (this.ref.length > 0) {
             this.updateAllSpcActive()
           }
         },
 
         updateAllSpcActive: function () {
-      // numbersOnly means no update of checkboxes to species.isActive
-      // otherwise species.isActive will be updated first to reflect choice
-          this.species.updateAllSpcActiveNum()
+      // numbersOnly means no update of checkboxes to ref.isActive
+      // otherwise ref.isActive will be updated first to reflect choice
+          this.ref.updateAllSpcActiveNum()
         },
 
         inputFileChangedFunc: function () {
@@ -243,7 +243,7 @@
         },
 
         currentRefChanged: function (newValue, oldValue) {
-          this.fire('species-changed', {newRef: newValue})
+          this.fire('ref-changed', {newRef: newValue})
         },
 
         signalDisabled: function (e, detail) {
@@ -257,7 +257,7 @@
         },
 
         signalEncodeCheck: function (e, detail) {
-          this.checkEncodeSpecies(detail.flag)
+          this.checkEncodeRef(detail.flag)
         },
 
         loadSessionObj: function (sessionObj) {
@@ -346,7 +346,7 @@
           this.isDisabled = true
           this.updateCurrentInfo(collapseObj)
 
-          this.species.map[this.currentRef].callOnTracksReady(this.fire.bind(this, 'submit-form', {sessionDataObj: {
+          this.ref.map[this.currentRef].callOnTracksReady(this.fire.bind(this, 'submit-form', {sessionDataObj: {
             hasEmail: this.UserEmail.length > 0,
             email: this.UserEmail,
             file: this.InputFile,

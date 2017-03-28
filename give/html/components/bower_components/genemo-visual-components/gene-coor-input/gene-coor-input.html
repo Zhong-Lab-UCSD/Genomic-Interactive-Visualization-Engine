@@ -171,7 +171,7 @@
           this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
           this.GENE_LIST_MAX_LINES = 7
 
-          this.species = null
+          this.ref = null
           this.querySent = ''
 
           this._decoupleInput = false
@@ -188,13 +188,13 @@
           this.$.partialNameAjax.auto = true
         },
 
-        getSpecies: function () {
-          return this.species
+        getRef: function () {
+          return this.ref
         },
 
-        setSpecies: function (species) {
-          if (species) {
-            this.species = species
+        setRef: function (ref) {
+          if (ref) {
+            this.ref = ref
           }
         },
 
@@ -258,9 +258,9 @@
               'name': this.querySent,
               'maxCandidates': this.MAX_CANDIDATES
             }
-            if (this.species) {
-              params.db = this.species.db
-              params.spcName = this.species.name
+            if (this.ref) {
+              params.db = this.ref.db
+              params.spcName = this.ref.name
             }
             this.$.partialNameAjax.params = params
           }
@@ -345,14 +345,14 @@
         _setTextFocus: function (flag) {
           this._inFocus = flag
           this._checkGList()
-          if (!flag && this.species && this.species.chromInfo &&
+          if (!flag && this.ref && this.ref.chromInfo &&
             this._valueIsCoordinate()) {
             // blurred, correct cases for chromosomal coordinates
             var chrom = this.value.split(/[:\s-]+/)[0]
-            if (this.species.chromInfo.hasOwnProperty(chrom) &&
-              this.species.chromInfo[chrom].name !== chrom) {
+            if (this.ref.chromInfo.hasOwnProperty(chrom) &&
+              this.ref.chromInfo[chrom].name !== chrom) {
               // case is wrong, fix it
-              this.value = this.value.replace(chrom, this.species.chromInfo[chrom].name)
+              this.value = this.value.replace(chrom, this.ref.chromInfo[chrom].name)
             }
           }
         },

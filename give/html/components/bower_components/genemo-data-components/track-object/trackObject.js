@@ -2,7 +2,7 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.TrackObject = function (ID, Settings, species) {
+  give.TrackObject = function (ID, Settings, ref) {
     this.id = ID
     Settings = Settings || {}
     // collapse settings object first
@@ -14,9 +14,9 @@ var GIVe = (function (give) {
 
     this.Settings = Object.assign({}, Settings)
     this.defaultSettings = Settings
-    this.initSettings()
+    this._initSettings()
 
-    this.species = species
+    this.ref = ref
 
     this.getDataJobName = this.getID() + '_GETDATA'
     this.getDataDebounceInt = 200
@@ -24,13 +24,13 @@ var GIVe = (function (give) {
     this.pendingQueryRegions = {regions: [], resolutions: []}
     this.data = {}
 
-    this.callbackArray = []
-    this.callbackFuncs = {}
+    this._callbackArray = []
+    this._callbackFuncs = {}
 
     this.isRetrivingData = false
   }
 
-  give.TrackObject.prototype.initSettings = function () {
+  give.TrackObject.prototype._initSettings = function () {
     this.priority = this.getSetting('priority') || give.TrackObject.DEFAULT_PRIORITY
     if (this.getSetting('visibility')) {
       this.setVisibility(this.getSetting('visibility'))
@@ -112,7 +112,7 @@ var GIVe = (function (give) {
 
   give.TrackObject.prototype.resetAllSettings = function () {
     this.Settings = Object.assign({}, this.defaultSettings)
-    this.initSettings()
+    this._initSettings()
   }
 
   give.TrackObject.prototype.getSetting = function (key) {
@@ -335,12 +335,12 @@ var GIVe = (function (give) {
     return this.pendingQueryRegions
   }
 
-  give.TrackObject.prototype.prepareRemoteQuery = function (regions, resolutions) {
+  give.TrackObject.prototype._prepareRemoteQuery = function (regions, resolutions) {
     // provide data to mainAjax
     // for most of the tracks, this is only trackID and window
     if (this.isCustom) {
       return {
-        db: this.species.db,
+        db: this.ref.db,
         type: this.getTypeTrunk(),
         remoteURL: this.remoteFile,
         window: regions.map(function (region) {
@@ -353,7 +353,7 @@ var GIVe = (function (give) {
       }
     } else {
       return {
-        db: this.species.db,
+        db: this.ref.db,
         type: this.getTypeTrunk(),
         trackID: this.getID(),
         window: regions.map(function (region) {
@@ -366,7 +366,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.TrackObject.prototype.prepareCustomQuery = function () {
+  give.TrackObject.prototype._prepareCustomQuery = function () {
     // provide data to custom track query
     // for most of the tracks, this is only window (does not need to stringify)
     return this.pendingQueryRegions
@@ -419,21 +419,21 @@ var GIVe = (function (give) {
   }
 
   give.TrackObject.prototype._clearCallback = function (execute) {
-    while (this.callbackArray.length > 0) {
-      var callback = this.callbackFuncs[this.callbackArray.shift()]
+    while (this._callbackArray.length > 0) {
+      var callback = this._callbackFuncs[this._callbackArray.shift()]
       if (execute) {
         callback()
       }
     }
-    this.callbackFuncs = {}
+    this._callbackFuncs = {}
   }
 
   give.TrackObject.prototype._addCallback = function (callback, callbackID) {
-    callbackID = callbackID || give.TrackObject.getDataQueueCallbackID + this.callbackArray.length
-    if (!this.callbackFuncs.hasOwnProperty(callbackID)) {
-      this.callbackArray.push(callbackID)
+    callbackID = callbackID || give.TrackObject._getDataQueueCallbackID + this._callbackArray.length
+    if (!this._callbackFuncs.hasOwnProperty(callbackID)) {
+      this._callbackArray.push(callbackID)
     }
-    this.callbackFuncs[callbackID] = callback
+    this._callbackFuncs[callbackID] = callback
   }
 
   give.TrackObject.prototype._retrieveData = function (regions, resolutions) {
@@ -448,11 +448,11 @@ var GIVe = (function (give) {
       if (this.isCustom && this.localFile) {
         // if track has its own getLocalData function, then get local data instead of getting remote data
         this.getReadLocalFile().call(this, this.localFile,
-                       this.prepareCustomQuery(regions, resolutions))
+                       this._prepareCustomQuery(regions, resolutions))
         // afterwards it's this.dataHandler()'s job.
       } else if (this.requestUrl) {
         this.isRetrivingData = true
-        give.postAjax(this.requestUrl, this.prepareRemoteQuery(regions, resolutions),
+        give.postAjax(this.requestUrl, this._prepareRemoteQuery(regions, resolutions),
                 this.responseHandler, 'json', null, null, this)
       }
     } else {
@@ -502,7 +502,7 @@ var GIVe = (function (give) {
 
   give.TrackObject.prototype.readRemoteFile = function (URL, query, callback) {
     // placeholder to read remote URL
-    // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+    // query is the current window (may involve buffering, can be implemented in _prepareCustomQuery)
     // data will be passed via firing a 'response' event with {detail: data}
     // and the response will be handled by this.responseHandler(e, detail)
     //
@@ -518,11 +518,11 @@ var GIVe = (function (give) {
     //  3. TODO: Add cache purging stuff in the future
     for (var chrom in response) {
       if (response.hasOwnProperty(chrom) &&
-         this.species.chromInfo.hasOwnProperty(chrom) &&
+         this.ref.chromInfo.hasOwnProperty(chrom) &&
          Array.isArray(response[chrom])) {
         if (!this.data.hasOwnProperty(chrom)) {
-          this.data[chrom] = new this.GetDataStructure()(this.species.chromInfo[chrom].chrRegion.start,
-                                 this.species.chromInfo[chrom].chrRegion.end,
+          this.data[chrom] = new this.GetDataStructure()(this.ref.chromInfo[chrom].chrRegion.start,
+                                 this.ref.chromInfo[chrom].chrRegion.end,
                                  this.GetSummaryCtor())
         }
       }
@@ -549,13 +549,13 @@ var GIVe = (function (give) {
   give.TrackObject.NO_CALLERID_KEY = '_giveNoCallerID'
   give.TrackObject.fetchDataTarget = '/givdata/getTrackData.php'
   give.TrackObject.fetchCustomTarget = '/givdata/getTrackData.php'
-  give.TrackObject.getDataQueueCallbackID = 'GETDATA_QUEUE_'
+  give.TrackObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
   give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0
 
-  give.TrackObject.createCoorTrack = function (species, id) {
-    var newTrack = new give.TrackObject(id || 'coor_' + species.db,
-      { type: 'coordinate', priority: 0, isPureLocal: true }, species)
+  give.TrackObject.createCoorTrack = function (ref, id) {
+    var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
+      { type: 'coordinate', priority: 0, isPureLocal: true }, ref)
     newTrack.setSetting('type', 'coordinate')
     newTrack.priority = 0
     newTrack.isPureLocal = true

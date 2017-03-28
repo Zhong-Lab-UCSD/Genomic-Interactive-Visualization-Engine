@@ -256,7 +256,7 @@ var GIVe = (function (give) {
     //    an ordered array of (one or more) siblings so that the calling function can handle it.
 
     // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
-    // Root will always encompass the whole chromosome (from species definition)
+    // Root will always encompass the whole chromosome (from ref definition)
     // before calling children, the chrRegion will be split into the bins of children.
 
     this.life = this.life || lifeSpan

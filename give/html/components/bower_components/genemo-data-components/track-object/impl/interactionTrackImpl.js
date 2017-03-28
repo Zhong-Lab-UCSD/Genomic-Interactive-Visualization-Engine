@@ -24,7 +24,7 @@ var GIVe = (function (give) {
     var linkMap = {}
     var resToRegion = function (resEntry) {
       return new give.ChromRegion(resEntry.regionString,
-                    this.species, {
+                    this.ref, {
                       data: {
                         linkID: parseInt(resEntry.linkID),
                         regionID: parseInt(resEntry.ID),

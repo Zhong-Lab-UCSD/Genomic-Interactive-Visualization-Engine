@@ -120,7 +120,7 @@
 					// no new window (or new window is not an array), need to calculate
 					this.subSvgs.forEach(function(subSvg, index) {
 						this.updateTracks(subSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
-																		 null, true, this.track.species),
+																		 null, true, this.track.ref),
 										  index);
 						
 					}, this);
@@ -139,7 +139,7 @@
 			getCurrentViewWindowExt: function(extension) {
 				var result = [];
 				this.subSvgs.forEach(function(subSvg) {
-					result.push(subSvg.viewWindow.getExtension(extension, null, true, this.track.species));
+					result.push(subSvg.viewWindow.getExtension(extension, null, true, this.track.ref));
 				}, this);
 				return result;
 			},
@@ -217,7 +217,7 @@
 				try {
 					// Steps:
 					// Change view window by calling changeViewWindow() 
-					//		May clip viewwindow by species
+					//		May clip viewwindow by ref
 					if(viewWindow) {
 						if(Array.isArray(viewWindow)) {
 							// then it must have enough elements
@@ -254,9 +254,9 @@
 
 			changeViewWindow: function(viewWindow, index) {
 				if(typeof(viewWindow) === 'string') {
-					this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.track.species);
+					this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.track.ref);
 				} else {
-					this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.species).clone();
+					this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.ref).clone();
 				}
 			},
 
@@ -298,19 +298,19 @@
 				}
 
 				// then draw the two horizontal lines
-				if(!this.regionInWindow(this.track.species.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
+				if(!this.regionInWindow(this.track.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
 					// no centromere, just draw two lines
 					this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw);
 					this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw);
 				} else {
 					// has centromere, draw p part first
-					var pX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw);
+					var pX = this.transformXCoordinate(this.track.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw);
 					if(pX > 0 && pX < this.windowWidth) {
 						this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw);
 						this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw);
 					}
 					// then centromere
-					var qX = this.transformXCoordinate(this.track.species.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw);
+					var qX = this.transformXCoordinate(this.track.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw);
 					this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw);
 					this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw);
 					// then q part

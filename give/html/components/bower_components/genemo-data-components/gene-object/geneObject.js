@@ -2,39 +2,14 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.GeneObject = function (mainParams, species, additionalParams) {
-    give.ChromRegion.apply(this, arguments)
-  }
-
-  give.extend(give.ChromRegion, give.GeneObject)
-
-  give.GeneObject.prototype.regionFromString = function (regionString) {
-    this.regionFromObject(new give.TranscriptObject(regionString))
-  }
-
-  give.GeneObject.prototype.regionFromObject = function (regionObject) {
-    var transcript
-    if (regionObject instanceof give.TranscriptObject) {
-      // this gene is initialized from a transcript
-      transcript = regionObject
-    } else {
-      transcript = new give.TranscriptObject(regionObject)
-    }
-    for (var key in transcript) {
-      if (transcript.hasOwnProperty(key)) {
-        if (Array.isArray(transcript[key])) {
-          this[key] = transcript[key].slice()
-        } else {
-          this[key] = transcript[key]
-        }
-      }
-    }
-    // then change name
-    this.name = transcript.geneName
-    // then put the transcript into this.transcripts
+  give.GeneObject = function (mainParams, ref, additionalParams) {
+    give.TranscriptObject.apply(this, arguments)
     this.transcripts = []
-    this.transcripts.push(transcript)
+    this.transcripts.push(new give.TranscriptObject(mainParams, ref, additionalParams))
+    this.name = this.geneName
   }
+
+  give.extend(give.TranscriptObject, give.GeneObject)
 
   give.GeneObject.prototype.merge = function (newRegion) {
     // add new transcript/gene to the gene
@@ -46,17 +21,18 @@ var GIVe = (function (give) {
     // TODO: complete potential error handling code
 
     // first, put all the blocks into one ordered array
-    if (this.numOfBlocks) {
+    if (this.getNumOfBlocks()) {
       var newStart = Math.min(this.start, newRegion.start)
       var i
-      for (i = 0; i < this.numOfBlocks; i++) {
+      for (i = 0; i < this.getNumOfBlocks(); i++) {
         this.blockStarts[i] = this.blockStarts[i] + this.start - newStart
       }
       var loc = 0
-      for (i = 0; i < newRegion.numOfBlocks; i++) {
-        loc = give.locationOf(newRegion.blockStarts[i] + newRegion.start - newStart, this.blockStarts, loc, null, function (x1, x2) {
-          return x1 < x2 ? -1 : (x1 > x2 ? 1 : 0)
-        }) + 1
+      for (i = 0; i < newRegion.getNumOfBlocks(); i++) {
+        loc = give.locationOf(newRegion.blockStarts[i] + newRegion.start - newStart,
+          this.blockStarts, loc, null, function (x1, x2) {
+            return x1 < x2 ? -1 : (x1 > x2 ? 1 : 0)
+          }) + 1
         this.blockStarts.splice(loc, 0, newRegion.blockStarts[i] + newRegion.start - newStart)
         this.blockSizes.splice(loc, 0, newRegion.blockSizes[i])
       }
@@ -72,11 +48,9 @@ var GIVe = (function (give) {
           i--
         }
       }
-
-      this.numOfBlocks = this.blockStarts.length
     }
 
-    // then  extend length and thick length
+    // then extend length and thick length
     this.assimilate(newRegion)
     if (this.thickStart) {
       this.thickStart = Math.min(this.thickStart, newRegion.thickStart)

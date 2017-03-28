@@ -104,8 +104,8 @@
 
         openRegionInBrowser: function () {
           this.fire('change-window', {
-            newWindow: this.region.getExtendedRegions
-              ? this.region.getExtendedRegions().regionToString(false)
+            newWindow: this.region.getExtendedRegion
+              ? this.region.getExtendedRegion().regionToString(false)
               : this.region.regionToString(false),
             tracks: this.region.track
           })

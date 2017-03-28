@@ -55,13 +55,13 @@
       on-iron-signal-disable="signalDisabled"
       on-iron-signal-encodecheck="signalEncodeCheck"
       on-iron-signal-updatecontent="signalUpdateContent"
-      on-iron-signal-allspeciesready="signalCardReady"> </iron-signals>
+      on-iron-signal-allrefready="signalCardReady"> </iron-signals>
     <div class="vertMargined">
       <div class="vertTextBottomContainer clearFix">
         <div><span id = "Reference" class="text">Reference: </span></div>
         <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined text" no-label-float>
-          <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentRef}}">
-            <template is="dom-repeat" items="[[species]]" filter="encodeFilter">
+          <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentRef}}">
+            <template is="dom-repeat" items="[[ref]]" filter="encodeFilter">
               <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
             </template>
           </paper-menu>
@@ -200,7 +200,7 @@
 				value: '',
 			},
 
-			species: {
+			ref: {
 				type: Array,
 				value: function() {
 					return [];
@@ -216,20 +216,20 @@
 			return (value.isEncode || !this.isEncodeOn);
         },
 
-        checkEncodeSpecies: function (flag) {
+        checkEncodeRef: function (flag) {
 			if(typeof(flag) == 'boolean') {
 				this.isEncodeOn = flag;
 			}
             var spcAvailableCount = 0;
-            if(this.species.length > 0) {
+            if(this.ref.length > 0) {
                 this.updateAllSpcActive();
             }
         },
 
         updateAllSpcActive: function () {
-            // numbersOnly means no update of checkboxes to species.isActive
-            // otherwise species.isActive will be updated first to reflect choice
-            this.species.updateAllSpcActiveNum();
+            // numbersOnly means no update of checkboxes to ref.isActive
+            // otherwise ref.isActive will be updated first to reflect choice
+            this.ref.updateAllSpcActiveNum();
         },
 
 		inputFileChangedFunc: function() {
@@ -256,7 +256,7 @@
 		},
 
 		currentRefChanged: function(newValue, oldValue) {
-			this.fire("species-changed", {newRef: newValue});
+			this.fire("ref-changed", {newRef: newValue});
 		},
 
 		signalToggle: function(e, detail) {
@@ -280,7 +280,7 @@
 		},
 
 		signalEncodeCheck: function(e, detail) {
-			this.checkEncodeSpecies(detail.flag);
+			this.checkEncodeRef(detail.flag);
 		},
 
 		signalUpdateContent: function(e, detail) {
@@ -374,7 +374,7 @@
 			this._setHeaderText('Input file');
 			this._setTabText('Search');
 
-			this.species = spcArray;
+			this.ref = spcArray;
 
             this.uploadButtonText = "Upload local file";
 

@@ -1,4 +1,4 @@
-// initialize species and tracks
+// initialize ref and tracks
 
 var GIVe = (function (give) {
   'use strict'
@@ -6,14 +6,14 @@ var GIVe = (function (give) {
   var scDialog, scShowRefBtn, scDoNotShowBtn,
     scLocalStorage
 
-  var spcArray = give.SpeciesObject.initAllSpecies(null, null, function (species) {
-    return species.settings['isSingleCellEnabled']
+  var spcArray = give.RefObject.initAllRef(null, null, function (ref) {
+    return ref.settings['isSingleCellEnabled']
   }, null)
 
   give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    Polymer.dom(document).querySelector('#mainChartController').setSpecies(
+    Polymer.dom(document).querySelector('#mainChartController').setRef(
       spcArray.dbMap['mm10'])
-  }, ['web-component-ready', 'species-ready']))
+  }, ['web-component-ready', 'ref-ready']))
 
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)

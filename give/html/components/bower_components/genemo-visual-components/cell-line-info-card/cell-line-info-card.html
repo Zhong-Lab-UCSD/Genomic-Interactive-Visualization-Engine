@@ -88,18 +88,18 @@
 			this.metaLink = null;
 		},
 
-		generateDialog: function(metaEntries, term, species, isDetail) {
+		generateDialog: function(metaEntries, term, ref, isDetail) {
 			// notice that whether this is a detailed one depends on the current dialog state
 			if(metaEntries && metaEntries.entries &&
-				metaEntries.entries[species] && metaEntries.entries[species][term]) {
+				metaEntries.entries[ref] && metaEntries.entries[ref][term]) {
 					this.metaEntries = metaEntries;
 					this.isDetail = (typeof(isDetail) === 'boolean'? isDetail: (this.$.mainDialog.opened &&
-						this.metaEntry.species === species &&
+						this.metaEntry.ref === ref &&
 						this.metaEntry.term === term));	// display detailed version
 					this.set('metaEntry.term', term);
-					this.set('metaEntry.species', species);
+					this.set('metaEntry.ref', ref);
 					this.set('metaEntry.arr', []);		// initialize meta entries
-					var keyList = metaEntries.entries[species][term];
+					var keyList = metaEntries.entries[ref][term];
 					var metaText = '';
 					for(key in keyList) {
 						if(keyList.hasOwnProperty(key)) {
@@ -144,7 +144,7 @@
 				// download meta
 				window.open(this.metaLink);
 			} else {
-				this.generateDialog(this.metaEntries, this.metaEntry.term, this.metaEntry.species, true);
+				this.generateDialog(this.metaEntries, this.metaEntry.term, this.metaEntry.ref, true);
 			}
 		},
 

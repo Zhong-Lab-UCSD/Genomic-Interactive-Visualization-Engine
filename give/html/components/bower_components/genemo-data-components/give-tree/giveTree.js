@@ -26,11 +26,11 @@ var GIVe = (function (give) {
 
     if (isNaN(bFactor) || parseInt(bFactor) !== bFactor || bFactor <= 2) {
       console.log('Default branching factor is chosen instead of ' + bFactor)
-      bFactor = give.GiveTree.DEFAULTBFACTOR
+      bFactor = give.GiveTree._DEFAULT_B_FACTOR
     }
     if (isNaN(lifeSpan) || parseInt(lifeSpan) !== lifeSpan || lifeSpan < 0) {
       console.log('Default life span is chosen instead of ' + bFactor)
-      lifeSpan = give.GiveTree.DEFAULTLIFESPAN
+      lifeSpan = give.GiveTree._DEFAULT_LIFESPAN
     }
     this.lifeSpan = lifeSpan
     this.root = new give.GiveTreeNode(0, start, end, summaryCtor, null, null, bFactor, true, lifeSpan)
@@ -39,7 +39,7 @@ var GIVe = (function (give) {
   give.GiveTree.prototype.insert = function (data, chrRange, continuedList,
     callback, resolution) {
     // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
-    // Root will always encompass the whole chromosome (from species definition)
+    // Root will always encompass the whole chromosome (from ref definition)
     // before calling children, the chrRegion will be split into the bins of children.
 
     // data:      an array of data elements, sorted by their own chrRegion.
@@ -147,8 +147,8 @@ var GIVe = (function (give) {
 
   // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 
-  give.GiveTree.DEFAULTBFACTOR = 20        // this value may need to be tweaked
-  give.GiveTree.DEFAULTLIFESPAN = 10       // this value may need to be tweaked
+  give.GiveTree._DEFAULT_B_FACTOR = 20        // this value may need to be tweaked
+  give.GiveTree._DEFAULT_LIFESPAN = 10       // this value may need to be tweaked
 
   return give
 })(GIVe || {})

@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="keywords" content="CepBrowser Manual,Genome Browser,Visualization" />
-  <meta name="description" content="This is the manual for CEpBrowser (Comparative Epigenome Browser). In CEpBrowser, genomes from multiple species are be shown side by side to enhance the comparison of various features, such as transcript information, epigenomic modifications, SNP's, transcription factor binding sites and so on, aiding users in comparative genomic research." />
+  <meta name="description" content="This is the manual for CEpBrowser (Comparative Epigenome Browser). In CEpBrowser, genomes from multiple ref are be shown side by side to enhance the comparison of various features, such as transcript information, epigenomic modifications, SNP's, transcription factor binding sites and so on, aiding users in comparative genomic research." />
   <title>GeNemo Manual</title>
   <script src="../components/bower_components/webcomponentsjs/webcomponents.min.js"></script>
   <link href='http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400' rel='stylesheet' type='text/css'>
@@ -101,7 +101,7 @@
 <p class="normaltext">You can submit any peak or bigWig file from your experiment to search the ENCODE database for similar regions across the genome. This may help in finding genomic regions of interest, related epigenetic information or other insights for your research.</p>
 <p class="normaltext">The gene track displaying mechanism in GeNemo Search is powered by GeNemo Browser.</p>
 <div class="Header1 clearFix"><a href="#top"><div class="floatRight"><iron-icon class="smallInline" icon="arrow-drop-up" alt="up to index"></iron-icon> Index</div></a> <a name="datasets" id="datasets"></a>Available Datasets</div>
-<p class="normaltext">So far two species are supported in GeNemo Search:</p>
+<p class="normaltext">So far two ref are supported in GeNemo Search:</p>
 <ul class="normalnotes">
   <li>Homo sapiens (human), reference sequence <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse" target="_blank">GRCh37/hg19</a>.<sup><a name="cite4_ref" id="cite4_ref"></a><a href="#cite4">[1]</a></sup></li>
   <li>Mus musculus (mouse), reference sequence <a href="/cgi-bin/hgGateway?clade=mammal&amp;org=Mouse&amp;db=mm9" target="_blank">NCBI37/mm9</a>.<sup><a name="cite5_ref" id="cite5_ref"></a><a href="#cite5">[2]</a></sup></li>
@@ -121,7 +121,7 @@
 <span class="panel"><strong>Figure 2</strong></span> <span class="genemo-card-title">Input file</span> panel in GeNemo Search.</div>
 <p class="normaltext">You need to use  <span class="genemo-card-title">Input file</span> panel to provide input data in GeNemo Search (see Figure 2 to the right). By specifying the following information, you can search the epigenetic data sets for regions similar to your experiment results:</p>
 <ul class="normalnotes">
-  <li>Choose a reference genome you would like to search against (human or mouse). This should be the species used in your experiment.</li>
+  <li>Choose a reference genome you would like to search against (human or mouse). This should be the ref used in your experiment.</li>
   <li>Provide a custom peak file or a bigWig file from your experiment. The custom peak file should be in a tab delimited text file, BED format or any format that has at least three columns: chromosome name, start position and end position. You need to choose one of the following ways to provide the file:
     <ul>
       <li>Put your file on any online server and make it publicly accessible, providing the URL in <span class="paper-input-text">URL for data file</span></li>

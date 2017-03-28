@@ -3,7 +3,7 @@
 <link rel="import" href="../../../genemo-data-components/chrom-b-plus-tree/chrom-b-plus-tree.html">
 <link rel="import" href="../../../genemo-data-components/chrom-region/chrom-region.html">
 <link rel="import" href="../../../genemo-data-components/track-object/track-object.html">
-<link rel="import" href="../../../genemo-data-components/species-object/species-object.html">
+<link rel="import" href="../../../genemo-data-components/ref-object/ref-object.html">
 <script>
   var GIVe = (function (give) {
     give._trackCounter = 0
@@ -11,9 +11,9 @@
     give.TrackDOMBehaviorImpl = {
 
       properties: {
-        species: Object, // this is the species defined in libtracks.js
-        // notice that species should have chromSizes and location of centromeres included
-        // tracks is also within species
+        ref: Object, // this is the ref defined in libtracks.js
+        // notice that ref should have chromSizes and location of centromeres included
+        // tracks is also within ref
         // may need to provide additional API to get track data
 
         track: {
@@ -22,7 +22,7 @@
         },
         // this is the track object
         // including all meta information of the track, together with the settings
-        // species is a reference within the track object
+        // ref is a reference within the track object
 
         trackType: {
           type: String,
@@ -328,7 +328,7 @@
         if (!newViewWindow) {
           // no new window, need to calculate
           newViewWindow = this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
-            null, true, this.track.species)
+            null, true, this.track.ref)
         }
         this.updateTracks(newViewWindow)
       },
@@ -425,7 +425,7 @@
       },
 
       getCurrentViewWindowExt: function (extension) {
-        return this.mainSvg.viewWindow.getExtension(extension, null, true, this.track.species)
+        return this.mainSvg.viewWindow.getExtension(extension, null, true, this.track.ref)
       },
 
       // ****** common methods used by all tracks ******
@@ -464,7 +464,7 @@
         var windowToDraw = svgToDraw.viewWindow || Polymer.dom(svgToDraw).parentNode.viewWindow
         return give.ChromRegion.clipCoordinate({chr: windowToDraw.chr,
           coor: parseInt(x / this.windowWidth * windowToDraw.getLength() +
-            windowToDraw.start + 0.5)}, this.track.species)
+            windowToDraw.start + 0.5)}, this.track.ref)
       },
 
       // ** Simple SVG Drawing **
@@ -848,7 +848,7 @@
         try {
           // Steps:
           // Change view window by calling changeViewWindow()
-          //    May clip viewwindow by species
+          //    May clip viewwindow by ref
           this.changeViewWindow(viewWindow)
           this._setIsReady(false)
           // this.oldViewWindow = this.mainSvg.viewWindow;
@@ -893,9 +893,9 @@
 
       changeViewWindow: function (viewWindow) {
         if (typeof (viewWindow) === 'string') {
-          this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.track.species)
+          this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
         } else {
-          this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.species).clone()
+          this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.ref).clone()
         }
         // this.set('viewWindowString', newValue);
       },
@@ -972,10 +972,10 @@
                 windowIndex: this.windowIndex,
                 newWindow: this.dragData.oldWindow.getShift(
                         detail.dx * this.dragData.ratio, true,
-                        this.track.species).regionToString(false)
+                        this.track.ref).regionToString(false)
               })
             // this.setViewWindowString(this.dragData.oldWindow.getShift(
-            //  detail.dx * this.dragData.ratio, true, this.track.species).regionToString(false));
+            //  detail.dx * this.dragData.ratio, true, this.track.ref).regionToString(false));
             }
             break
           case 'end':

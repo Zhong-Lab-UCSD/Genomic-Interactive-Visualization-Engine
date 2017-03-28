@@ -29,7 +29,7 @@ if(isset($_REQUEST['sessionID'])) {
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
   <meta name="keywords" content="Comparative study,Epigenomics,Epigenetics,Visualization,Epigenome browser"/>
-  <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple species with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-species lift-over pairs."/>
+  <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple ref with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-ref lift-over pairs."/>
   <title>GENEMO Search</title>
   <script src="components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="components/bower_components/polymer/polymer.html">

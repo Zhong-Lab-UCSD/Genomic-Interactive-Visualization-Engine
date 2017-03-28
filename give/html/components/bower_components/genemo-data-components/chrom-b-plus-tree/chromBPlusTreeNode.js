@@ -79,7 +79,7 @@ var GIVe = (function (give) {
     // start and length is for the corresponding region
       if (isNaN(bFactor) || parseInt(bFactor) !== bFactor || bFactor <= 2) {
         console.log('Default branching factor is chosen instead of ' + bFactor)
-        bFactor = give.ChromBPlusTreeNode.DEFAULTBFACTOR
+        bFactor = give.ChromBPlusTreeNode._DEFAULT_B_FACTOR
       }
       if (typeof revdepth !== 'number' || isNaN(revdepth)) {
         revdepth = 0
@@ -201,7 +201,7 @@ var GIVe = (function (give) {
       //    an ordered array of (one or more) siblings so that the calling function can handle it.
 
       // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
-      // Root will always encompass the whole chromosome (from species definition)
+      // Root will always encompass the whole chromosome (from ref definition)
       // before calling children, the chrRegion will be split into the bins of children.
 
       // data:      an array of data elements, sorted by their own chrRegion.
@@ -740,7 +740,7 @@ var GIVe = (function (give) {
 
   // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 
-  give.ChromBPlusTreeNode.DEFAULTBFACTOR = 50        // this value may need to be tweaked
+  give.ChromBPlusTreeNode._DEFAULT_B_FACTOR = 50        // this value may need to be tweaked
 
   return give
 })(GIVe || {})

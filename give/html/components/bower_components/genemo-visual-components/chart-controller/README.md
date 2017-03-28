@@ -4,9 +4,15 @@ An embedded browser element including the view area, input for navigation and tr
 
 ### Overview
 
+`<chart-controller>` provides a web element to embed a complete browser in any html pages. The embedded browser contains three major components: view area, input for navigation and track controls.
+
 #### View area
 
+View area is the main part of the browser where individual tracks are being shown. It is implemented by using a `<chart-area>` element. Multiple views of the same genomic reference are also supported.
+
 #### Input for navigation
+
+
 
 #### Track controls
 
@@ -20,8 +26,8 @@ Most properties in GIVE are JavaScript properties that can also be used in HTML 
 > Type: `String`  
 > Default: `null`  
 > The reference used in the embedded browser. Reference needs to be in UCSC format and currently the following ones are supported:  
-> * Human: `'hg19'`, `'hg38'`
-> * Mouse: `'mm9'`, `'mm10'`
+> *   Human: `'hg19'`, `'hg38'`
+> *   Mouse: `'mm9'`, `'mm10'`
 
 **groupIdList** (*group-id-list*)  
 > Type: `Array` of `String`s  

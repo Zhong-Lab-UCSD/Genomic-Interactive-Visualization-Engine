@@ -6,7 +6,7 @@
 <link rel="import" href="../../paper-menu/paper-menu.html">
 <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
-<link rel="import" href="../../genemo-data-components/species-object/species-object.html">
+<link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
 <link rel="import" href="../genemo-styles.html">
 <dom-module id="custom-track-controller">
   <template>
@@ -34,7 +34,7 @@
         <paper-input id="trackShortLabelInput" class="fullWidth text" label="Track short label" floatingLabel="true" value="{{trackShortLabel}}"></paper-input>
         <!-- maybe implement auto-detect in the future -->
         <paper-dropdown-menu id="typeDropdown" label="Track type" class="vertMargined text" no-label-float>
-          <paper-menu class="dropdown-content" id="speciesToUpload" attr-for-selected="value" selected="{{currentType}}">
+          <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentType}}">
             <template is="dom-repeat" items="[[trackTypes]]">
               <paper-item value="[[item.trackType]]">[[item.typeName]]</paper-item>
             </template>
@@ -64,9 +64,9 @@
             value: 25
           },
 
-          species: Object,   // this is the species defined in libtracks.js
-          // notice that species should have chromSizes and location of centromeres included
-          // tracks is also within species
+          ref: Object,   // this is the ref defined in libtracks.js
+          // notice that ref should have chromSizes and location of centromeres included
+          // tracks is also within ref
           // may need to provide additional API to get track data
 
           textSize: {
@@ -139,26 +139,26 @@
           )
         },
 
-        factoryImpl: function (species, prop) {
-          this.setSpecies(species)
+        factoryImpl: function (ref, prop) {
+          this.setRef(ref)
         },
 
         openAddTrackDialog: function () {
           this.$.mainDialog.open()
         },
 
-        setSpecies: function (newSpecies, trackCtrlDOMs) {
-          // this will reset all tracks and redo the species
+        setRef: function (newRef, trackCtrlDOMs) {
+          // this will reset all tracks and redo the ref
           // note that the tracks should already be initialized before switching here
-          if (!newSpecies) {
-            throw (new Error('No new species specified!'))
+          if (!newRef) {
+            throw (new Error('No new ref specified!'))
           }
-          this.species = newSpecies
-          if (!this.species.hasOwnProperty(this.customTrackGroupID)) {
+          this.ref = newRef
+          if (!this.ref.hasOwnProperty(this.customTrackGroupID)) {
             // no custom track group, add one
-            this.customGroup = give.SpeciesObject.createCustomGroup({ID: this.customTrackGroupID})
+            this.customGroup = give.RefObject.createCustomGroup({ID: this.customTrackGroupID})
           }
-          this.species.groups[this.customTrackGroupID] = this.customGroup
+          this.ref.groups[this.customTrackGroupID] = this.customGroup
           this.isDisabled = false
         },
 
@@ -216,7 +216,7 @@
             ? this.trackShortLabel
             : 'Custom track #' + (this.customGroup.getLength() + 1)
           track.tableName = 'custom' + this.customGroup.getLength()
-          this.species.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
+          this.ref.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
           this.$.mainDialog.close()
         }
 

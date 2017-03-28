@@ -1,7 +1,7 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.TranscriptObject = function (mainParams, species, additionalParams) {
+  give.TranscriptObject = function (mainParams, ref, additionalParams) {
     // first, go through ChromObjectBehavior.factoryImpl
 
     give.ChromRegion.apply(this, arguments)
@@ -13,28 +13,7 @@ var GIVe = (function (give) {
     if (this.thickEnd && this.thickEnd > this.end) {
       this.thickEnd = this.end
     }
-    if (this.numOfBlocks) {
-      // check blockStarts and blockLengths
-      for (var i = 0; i < this.numOfBlocks; i++) {
-        if (this.blockStarts[i] < 0) {
-          this.blockStarts[i] = 0
-        } else if (this.blockStarts[i] >= this.getLength()) {
-          throw (new Error('Block #' + i + ' is invalid: ' + this.chr + ':' + this.start + '-' + this.end + ', ' +
-              this.blockStarts[i] + ' is greater than length.'))
-        } else if (this.blockSizes[i] < 0) {
-          throw (new Error('Block #' + i + ' size is invalid: ' + this.chr + ':' + this.start + '-' + this.end + '!'))
-        } else if (this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
-          this.blockSizes[i] = this.getLength() - this.blockStarts[i]
-        }
-      }
-    }
-    var geneName = mainParams.geneName || additionalParams.geneName
-    if (geneName) {
-      // this is used when geneName (ID) differs from display Name
-      this.geneName = geneName
-    } else {
-      this.geneName = this.name
-    }
+    this.geneName = this.geneName || this.name
   }
 
   give.extend(give.ChromRegion, give.TranscriptObject)
@@ -48,7 +27,7 @@ var GIVe = (function (give) {
   }
 
   give.TranscriptObject.prototype.getNumOfBlocks = function () {
-    return (typeof this.numOfBlocks === 'number' ? this.numOfBlocks : null)
+    return (Array.isArray(this.blockStarts) ? this.blockStarts.length : null)
   }
 
   give.TranscriptObject.prototype.getBlockStarts = function () {
@@ -59,9 +38,9 @@ var GIVe = (function (give) {
     return (Array.isArray(this.blockSizes) ? this.blockSizes : null)
   }
 
-  give.TranscriptObject.prototype.regionFromString = function (regionString) {
+  give.TranscriptObject.prototype._regionFromString = function (regionString) {
     var elements = regionString.split(/\s+/)
-    give.ChromRegion.prototype.regionFromBed.call(this, regionString)
+    give.ChromRegion.prototype._regionFromBed.call(this, regionString)
     if (elements[4]) {
       this.score = parseInt(elements[4])
     }
@@ -73,12 +52,12 @@ var GIVe = (function (give) {
       this.setRGB(elements[8])
     }
     if (elements[9]) {
-      this.setBlocks(elements[9], elements[10], elements[11])
+      this._setBlocksFromString(elements[9], elements[10], elements[11])
     }
   }
 
-  give.TranscriptObject.prototype.regionFromObject = function (regionObject) {
-    give.ChromRegion.prototype.regionFromObject.call(this, regionObject)
+  give.TranscriptObject.prototype._regionFromObject = function (regionObject) {
+    give.ChromRegion.prototype._regionFromObject.call(this, regionObject)
     if (regionObject.score) {
       this.score = parseInt(regionObject.score)
     }
@@ -89,8 +68,12 @@ var GIVe = (function (give) {
     if (regionObject.itemRGB) {
       this.setRGB(regionObject.itemRGB)
     }
-    if (regionObject.numOfBlocks) {
-      this.setBlocks(regionObject.numOfBlocks, regionObject.blockSizes, regionObject.blockStarts)
+    if (regionObject.blockSizes) {
+      if (Array.isArray(regionObject.blockSizes)) {
+        this._setBlocksFromArray(regionObject.blockSizes, regionObject.blockStarts)
+      } else if (typeof regionObject.blockSizes === 'string') {
+        this._setBlocksFromString(regionObject.blockSizes, regionObject.blockStarts)
+      }
     }
   }
 
@@ -106,27 +89,55 @@ var GIVe = (function (give) {
         (includeStrand !== false ? '\t0\t' + (!this.strand ? '-' : '+') : '')
   }
 
-  give.TranscriptObject.prototype.setBlocks = function (numOfExons, exonLengths, exonStarts) {
+  give.TranscriptObject.prototype._checkBlocks = function () {
+    // check blockStarts and blockLengths
+    for (var i = 0; i < this.blockStarts.length; i++) {
+      if (this.blockStarts[i] < 0) {
+        this.blockStarts[i] = 0
+      } else if (this.blockStarts[i] >= this.getLength()) {
+        throw (new Error('Block #' + i + ' is invalid: ' +
+          this.chr + ':' + this.start + '-' + this.end + ', ' +
+          this.blockStarts[i] + ' is greater than length.'))
+      } else if (this.blockSizes[i] < 0) {
+        throw (new Error('Block #' + i + ' size is invalid: ' +
+          this.chr + ':' + this.start + '-' + this.end + '!'))
+      } else if (this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
+        this.blockSizes[i] = this.getLength() - this.blockStarts[i]
+      }
+    }
+  }
+
+  give.TranscriptObject.prototype._setBlocksFromArray = function (exonLengths, exonStarts) {
+    if (exonLengths.length !== exonStarts.length) {
+      throw (new Error('Exon lengths not matching: exonLengths(' +
+        exonLengths.length + ') vs exonStarts (' + exonStarts.length + ')'))
+    }
+    this.blockStarts = exonStarts.slice()
+    this.blockSizes = exonLengths.slice()
+    this._checkBlocks()
+  }
+
+  give.TranscriptObject.prototype._setBlocksFromString = function (exonLengths, exonStarts) {
     try {
-      this.numOfBlocks = parseInt(numOfExons)
       var startArray = exonStarts.split(',')
       var lengthArray = exonLengths.split(',')
+      var numOfBlocks = startArray.length
       this.blockSizes = []
       this.blockStarts = []
-      for (var i = 0; i < this.numOfBlocks; i++) {
+      for (var i = 0; i < numOfBlocks; i++) {
         this.blockSizes.push(parseInt(lengthArray[i]))
         this.blockStarts.push(parseInt(startArray[i]))
       }
     } catch (e) {
-      if (parseInt(numOfExons) > 0) {
+      if (typeof exonStarts === 'string' && exonStarts.split(',').length) {
         // there are number of exons, but exon sizes and starts are not correct
         e.message = (e.message || '') + '(Block processing)'
         throw (e)
       }
-      this.numOfBlocks = 1
       this.blockSizes = [this.getLength()]
       this.blockStarts = [this.start]
     }
+    this._checkBlocks()
   }
 
   give.TranscriptObject.prototype.setRGB = function (strRGB) {

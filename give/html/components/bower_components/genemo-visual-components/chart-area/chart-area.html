@@ -89,9 +89,9 @@
         ],
 
         properties: {
-          species: Object, // this is the species defined in libtracks.js
-          // notice that species should have chromSizes and location of centromeres included
-          // tracks is also within species
+          ref: Object, // this is the ref defined in libtracks.js
+          // notice that ref should have chromSizes and location of centromeres included
+          // tracks is also within ref
           // may need to provide additional API to get track data
 
           viewWindows: {
@@ -205,7 +205,7 @@
 
         checkVWindowsInit: function () {
           if (!this.initialized) {
-            if (this.species && this.viewWindows.every(function (vwindow) {
+            if (this.ref && this.viewWindows.every(function (vwindow) {
               return !!vwindow
             }, this)) {
               this._setInitialized(true)
@@ -296,7 +296,7 @@
           this.trackDOMsByWindow[viewWindowIndex].splice(
             give.locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex],
               null, null, function (trackDOM1, trackDOM2) {
-                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this.species.groups)
+                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this.ref.groups)
               }.bind(this)) + 1,
             0, trackDOM)
           this.trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
@@ -383,7 +383,7 @@
             this.updateHeightLocation()
             if (this.firstRun) {
               this._setFirstRun(false)
-              this.$.coorTrackTutorial.domTargetId = 'coor_' + this.species.db + '_0_mainSvg'
+              this.$.coorTrackTutorial.domTargetId = 'coor_' + this.ref.db + '_0_mainSvg'
               this.$.coorTrackTutorial.showTutorial()
             }
             this._setReadiness(true)
@@ -391,7 +391,7 @@
         },
 
         changeViewWindow: function (viewWindow, index, forceDomReset) {
-          this.viewWindows[index] = new give.ChromRegion(viewWindow, this.species)
+          this.viewWindows[index] = new give.ChromRegion(viewWindow, this.ref)
           if (this.initialized && !forceDomReset) {
             this.updateTracksInWindow(index)
           } else {
@@ -442,14 +442,14 @@
           return result
         },
 
-        setSpecies: function (newSpecies, numOfSubs) {
-          // this will reset all tracks and redo the species
+        setRef: function (newRef, numOfSubs) {
+          // this will reset all tracks and redo the ref
           // note that the tracks should already be initialized before switching here
           // After this, this.changeAllViewWindows should be called
-          if (!newSpecies) {
-            throw (new Error('No new species specified!'))
+          if (!newRef) {
+            throw (new Error('No new ref specified!'))
           }
-          this.species = newSpecies
+          this.ref = newRef
           this.numOfSubs = numOfSubs || this.numOfSubs
 
           // reset viewWindows
@@ -477,8 +477,8 @@
 
             this.viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
-              var coorTrackDOM = this.addVisibleTrack(give.TrackObject.createCoorTrack(this.species,
-                'coor_' + this.species.db + '_' + windowIndex), windowIndex)
+              var coorTrackDOM = this.addVisibleTrack(give.TrackObject.createCoorTrack(this.ref,
+                'coor_' + this.ref.db + '_' + windowIndex), windowIndex)
               if (!windowIndex) {
                 this.coorTrackZeroDOM = coorTrackDOM
               }
@@ -500,7 +500,7 @@
         },
 
         _addAllTrackDOMsTracksReady: function (noRefreshContent) {
-          // function called when tracks are ready for this.species
+          // function called when tracks are ready for this.ref
           var showTrack = function (wIndex, track, index) {
             // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
             if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
@@ -510,13 +510,13 @@
           this.viewWindows.forEach(function (vwindow, windowIndex) {
             if (this.groupIdList && this.groupIdList.length > 0) {
               this.groupIdList.forEach(function (groupID) {
-                if (this.species.getGroups().hasOwnProperty(groupID)) {
-                  this.species.getGroups()[groupID].forEach(
+                if (this.ref.getGroups().hasOwnProperty(groupID)) {
+                  this.ref.getGroups()[groupID].forEach(
                     showTrack.bind(this, windowIndex), this)
                 }
               }, this)
             } else {
-              this.species.getTracks().forEach(
+              this.ref.getTracks().forEach(
                 showTrack.bind(this, windowIndex), this)
             }
           }, this)
@@ -525,7 +525,7 @@
         },
 
         addAllTrackDOMs: function (noRefreshContent) {
-          this.species.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
+          this.ref.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
         },
 
         removeInvisibleTrackDOMs: function () {

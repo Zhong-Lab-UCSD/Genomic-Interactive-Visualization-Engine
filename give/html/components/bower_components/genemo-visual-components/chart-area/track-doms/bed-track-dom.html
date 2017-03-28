@@ -1,4 +1,4 @@
-<link rel="import" href="track-dom-behavior.html">
+.getBlockStarts()<link rel="import" href="track-dom-behavior.html">
 <link rel="import" href="../../../genemo-data-components/gene-object/gene-object.html">
 <dom-module id="bed-track-dom">
   <template>
@@ -192,11 +192,11 @@
   //        coor = new give.ChromRegion(null, null, gene.chr, gene.thickEnd, gene.end, gene.strand);
   //      }
 
-          if (transcript.numOfBlocks) {
-            blockEnd = transcript.getStart() + transcript.blockStarts[0]
+          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
           // draw thick blocks and connecting lines
-            for (var i = 0; i < transcript.numOfBlocks; i++) {
-              blockStart = transcript.getStart() + transcript.blockStarts[i]
+            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+              blockStart = transcript.getStart() + transcript.getBlockStarts()[i]
             // first draw connecting lines (intron, if any)
               if (blockEnd < blockStart) {
                 coor = new give.ChromRegion({chr: transcript.chr,
@@ -205,7 +205,7 @@
                   strand: transcript.strand})
                 this.drawSpanningLine(coor, colorRGB, y, height)
               }
-              blockEnd = blockStart + transcript.blockSizes[i]
+              blockEnd = blockStart + transcript.getBlockSizes()[i]
               if (transcript.thickStart < blockEnd && transcript.thickStart > blockStart) {
               // CDS start is in this block
                 coor = new give.ChromRegion({chr: transcript.chr,

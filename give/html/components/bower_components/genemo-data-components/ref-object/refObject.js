@@ -2,15 +2,15 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.SpeciesObject = function (DB, Name, CommonName, IsEncode, Ref, ChromInfo, settings) {
+  give.RefObject = function (DB, Name, CommonName, IsEncode, Ref, ChromInfo, settings) {
     // notice that ChromInfo is the JSON encoded object
     //    for chromosome information from chromInfo.php
 
     // this is for navigation thing
     this.isCollapsed = false
-    // whether this species is collapsed in the browser
+    // whether this ref is collapsed in the browser
     this.isActive = true
-    // if user has not selected this species to display, then it will become false;
+    // if user has not selected this ref to display, then it will become false;
     // this is also used for navigation only
 
     this.db = DB
@@ -28,7 +28,7 @@ var GIVe = (function (give) {
       tissueMap: {}
     }
 
-    // read Object for species chrom info (if there)
+    // read Object for ref chrom info (if there)
     if (ChromInfo) {
       this.initChromInfo(ChromInfo)
     }
@@ -69,11 +69,11 @@ var GIVe = (function (give) {
     this.reverseLookupTable = {}
   }
 
-  give.SpeciesObject.prototype.getCleanID = function () {
+  give.RefObject.prototype.getCleanID = function () {
     return this.db.replace(/[\s()+/]/g, '')
   }
 
-  give.SpeciesObject.prototype.initChromInfo = function (ChromInfo) {
+  give.RefObject.prototype.initChromInfo = function (ChromInfo) {
     if (ChromInfo) {
       this.chromInfo = {}
       for (var chrom in ChromInfo) {
@@ -94,14 +94,14 @@ var GIVe = (function (give) {
     }
   }
 
-  give.SpeciesObject.prototype.initChromInfoFromServer = function (target) {
-    give.postAjax(target || give.SpeciesObject.initChromTarget, {db: this.db}, function (data) {
+  give.RefObject.prototype.initChromInfoFromServer = function (target) {
+    give.postAjax(target || give.RefObject.initChromTarget, {db: this.db}, function (data) {
       this.initChromInfo(data)
       give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-chrominfo-ready'})
-    }, 'json', null, null, this) // end ajax to initialize species
+    }, 'json', null, null, this) // end ajax to initialize ref
   }
 
-  give.SpeciesObject.prototype.initTracks = function (groupInfo, keepOld, requestUrl) {
+  give.RefObject.prototype.initTracks = function (groupInfo, keepOld, requestUrl) {
     // notice that trackInfo is supposed to be an array
     if (!keepOld) {
       this.tracks.clear()
@@ -140,12 +140,12 @@ var GIVe = (function (give) {
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-tracks-ready'})
   }
 
-  give.SpeciesObject.prototype.callOnTracksReady = function (callback) {
+  give.RefObject.prototype.callOnTracksReady = function (callback) {
     // notice that callback needs to be a bound function if 'this' is important
     return this.initTracksFromServer(null, callback)
   }
 
-  give.SpeciesObject.prototype.getTracks = function (callback) {
+  give.RefObject.prototype.getTracks = function (callback) {
     if (this._tracksInitialized) {
       return this.tracks
     } else {
@@ -154,7 +154,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.SpeciesObject.prototype.getGroups = function (callback) {
+  give.RefObject.prototype.getGroups = function (callback) {
     if (this._tracksInitialized) {
       return this.groups
     } else {
@@ -163,7 +163,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.SpeciesObject.prototype.initTracksFromServer = function (target, callback) {
+  give.RefObject.prototype.initTracksFromServer = function (target, callback) {
     // callback is the callback function taking no argument (already bound)
     if (!this._tracksInitialized) {
       if (callback) {
@@ -171,11 +171,11 @@ var GIVe = (function (give) {
           [this.getCleanID() + '-tracks-ready']))
       }
       if (!this._tracksInitializing) {
-        give.postAjax(target || give.SpeciesObject.initTrackTarget, {db: this.db}, function (data) {
+        give.postAjax(target || give.RefObject.initTrackTarget, {db: this.db}, function (data) {
           this.initTracks(data, false, give.TrackObject.fetchDataTarget)
         }, 'json', null, null, this)
         this._tracksInitializing = true
-        give._verboseConsole('Tracks not initialized for species ' +
+        give._verboseConsole('Tracks not initialized for ref ' +
           this.name + '.', give.VERBOSE_DEBUG)
       }
       return false
@@ -186,13 +186,13 @@ var GIVe = (function (give) {
     }
   }
 
-  give.SpeciesObject.prototype.addCustomTrack = function (track, group, callback) {
+  give.RefObject.prototype.addCustomTrack = function (track, group, callback) {
     // if group ID is not specified, use "customTracks" as ID;
     // replace tracks with the same groupID and track.tableName
     group = group || {}
     var groupID = group.id || 'customTracks'
     if (!this.groups.hasOwnProperty(groupID)) {
-      this.groups[groupID] = give.SpeciesObject.createCustomGroup(group)
+      this.groups[groupID] = give.RefObject.createCustomGroup(group)
     }
     // remove existing track
     if (this.groups[groupID].hasTrack(track.tableName)) {
@@ -212,7 +212,7 @@ var GIVe = (function (give) {
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-custom-tracks-ready'})
   }
 
-  give.SpeciesObject.prototype.initializeMetaFilter = function (metaEntries) {
+  give.RefObject.prototype.initializeMetaFilter = function (metaEntries) {
     // metaEntry as give.MetaDataEntries
     this.tracks.forEach(function (track) {
       var cellType = track.getSetting('cellType')
@@ -252,27 +252,27 @@ var GIVe = (function (give) {
       {flag: this.getCleanID() + '-meta-filter-ready'})
   }
 
-  give.SpeciesObject.prototype.getFilteredTrackList = function (filter) {
+  give.RefObject.prototype.getFilteredTrackList = function (filter) {
     if (filter) {
       return this.getTracks().filter(filter, this)
     }
     return this.getTracks()
   }
 
-  give.SpeciesObject.prototype.setTrackSettings = function (prop, value, filter) {
+  give.RefObject.prototype.setTrackSettings = function (prop, value, filter) {
     this.getFilteredTrackList(filter).forEach(function (track) {
       track.setSetting(prop, value)
     }, this)
   }
 
-  give.SpeciesObject.prototype.getTrackIDList = function (filter) {
+  give.RefObject.prototype.getTrackIDList = function (filter) {
     // return a list of all trackIDs that passes through the filter function
     return this.getFilteredTrackList(filter).map(function (track) {
       return track.id
     }, this)
   }
 
-  give.SpeciesObject.prototype.getTrackTableNameList = function (filter) {
+  give.RefObject.prototype.getTrackTableNameList = function (filter) {
     var result = []
     this.getFilteredTrackList(filter).forEach(function (track) {
       result = result.concat(track.getTableNames())
@@ -280,26 +280,26 @@ var GIVe = (function (give) {
     return result
   }
 
-  give.SpeciesObject.initAllTarget = '/givdata/initSpecies.php'
-  give.SpeciesObject.initChromTarget = '/givdata/initSpecies.php'
-  give.SpeciesObject.initTrackTarget = '/givdata/initTracks.php'
+  give.RefObject.initAllTarget = '/givdata/initRef.php'
+  give.RefObject.initChromTarget = '/givdata/initRef.php'
+  give.RefObject.initTrackTarget = '/givdata/initTracks.php'
 
-  give.SpeciesObject.initAllSpecies = function (target, spcArray, filter, callback) {
-    // initialize all species from db
-    // return an array of species
+  give.RefObject.initAllRef = function (target, spcArray, filter, callback) {
+    // initialize all ref from db
+    // return an array of ref
     // callback is the callback function taking spcArray as argument
     spcArray = spcArray || []
     spcArray.splice(0, spcArray.length)
     spcArray.dbMap = {}
     spcArray.ready = false
-    spcArray.currSpecies = spcArray.currSpecies || function () {
+    spcArray.currRef = spcArray.currRef || function () {
       return this[this.selected] || this.dbMap[this.selected] || null
     }
 
-    give.postAjax(target || give.SpeciesObject.initAllTarget, {}, function (data) {
+    give.postAjax(target || give.RefObject.initAllTarget, {}, function (data) {
       for (var spcDb in data) {
         if (data.hasOwnProperty(spcDb) && (typeof filter !== 'function' || filter(data[spcDb]))) {
-          spcArray.dbMap[spcDb] = new give.SpeciesObject(spcDb, data[spcDb].name,
+          spcArray.dbMap[spcDb] = new give.RefObject(spcDb, data[spcDb].name,
                                    data[spcDb].commonname,
                                    data[spcDb].encode, data[spcDb].dbname, data[spcDb].chromInfo,
                                    data[spcDb].settings)
@@ -311,13 +311,13 @@ var GIVe = (function (give) {
       if (callback) {
         callback(spcArray)
       } else {
-        give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'species-ready'})
+        give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'ref-ready'})
       }
-    }, 'json') // end ajax to initialize species
+    }, 'json') // end ajax to initialize ref
     return spcArray
   }
 
-  give.SpeciesObject.createCustomGroup = function (group) {
+  give.RefObject.createCustomGroup = function (group) {
     group = group || {}
     var groupID = group.id || 'customTracks'
     group.label = group.label || 'Custom Tracks'

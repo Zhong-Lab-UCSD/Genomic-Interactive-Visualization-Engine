@@ -1,7 +1,7 @@
 <?php
-require_once(realpath(dirname(__FILE__) . "/../../includes/species_func.php"));
-// if there is no db as input, get all species and get all ChromInfo for each species
-// otherwise, just return the ChromInfo for the species given
+require_once(realpath(dirname(__FILE__) . "/../../includes/ref_func.php"));
+// if there is no db as input, get all ref and get all ChromInfo for each ref
+// otherwise, just return the ChromInfo for the ref given
 
 $result = array();
 $req = getRequest();

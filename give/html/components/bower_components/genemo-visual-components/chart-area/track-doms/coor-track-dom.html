@@ -197,12 +197,12 @@
             newWindow: this.getMainSvg().viewWindow.getExtension(
                     diff, this.revTransXCoordinate(e.pageX -
                       e.target.getBoundingClientRect().left).coor,
-                    true, this.track.species,
+                    true, this.track.ref,
                     Math.ceil(this.windowWidth /
                       (this.MAX_SPACE_PER_BASE * this.textSize))).regionToString(false)
           })
         // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
-        //  diff, this.revTransXCoordinate(e.x).coor, true, this.track.species).regionToString(false));
+        //  diff, this.revTransXCoordinate(e.x).coor, true, this.track.ref).regionToString(false));
         // svgTarget.needsUpdate = true;
         // this.updateChart(50);
         }

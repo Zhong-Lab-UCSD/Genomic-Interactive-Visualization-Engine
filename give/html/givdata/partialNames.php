@@ -20,7 +20,7 @@
   $mysqli = connectCPB($db);
   $result = array();
   // open the genome browser database
-  // TODO: try to implement codes for multi-species lookup
+  // TODO: try to implement codes for multi-ref lookup
   if(strlen($mysqli->real_escape_string(trim($req['name']))) >= MIN_JSON_QUERY_LENGTH) {
     $queryStmt = $mysqli->prepare("SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
       . "`_NcbiGeneInfo`.`description` AS `description`, "
