@@ -57,5 +57,8 @@
     "iron-scroll-threshold": "PolymerElements/iron-scroll-threshold#^1.0.3",
     "webcomponentsjs": "^0.7.23",
     "iron-localstorage": "PolymerElements/iron-localstorage#^1.0.6"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.8"
   }
 }

@@ -233,6 +233,45 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       });
 
+      test('min greater than max', function(done) {
+        slider.min = 101;
+        flush(function() {
+          assert.equal(slider.markers.length, 0);
+          done();
+        });
+      });
+
+      test('min is NaN', function(done) {
+        slider.min = NaN;
+        flush(function() {
+          assert.equal(slider.markers.length, 0);
+          done();
+        });
+      });
+
+      test('min is Infinity', function(done) {
+        slider.min = Infinity;
+        flush(function() {
+          assert.equal(slider.markers.length, 0);
+          done();
+        });
+      });
+
+      test('max is NaN', function(done) {
+        slider.max = NaN;
+        flush(function() {
+          assert.equal(slider.markers.length, 0);
+          done();
+        });
+      });
+
+      test('max is Infinity', function(done) {
+        slider.max = Infinity;
+        flush(function() {
+          assert.equal(slider.markers.length, 0);
+          done();
+        });
+      });
     });
 
   </script>
