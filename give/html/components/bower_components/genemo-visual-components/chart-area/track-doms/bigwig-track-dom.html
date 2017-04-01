@@ -24,38 +24,62 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 		/** Margin? */
 		MARGIN{
 		type: Number;
-		value: 2;}
-		},
+		value: 2;},
 		/* the color index for fore color*/
 		FORECOLOR_INDEX{
 		type: Number;
-		value: 0;}
-		},
+		value: 0;},
 		/*the color index for text*/
 		TEXT_COLOR_RGB{
 		type: Number;
-		value: 0;}
-		},
+		value: 0;},
 		/* the color index for overflow (red)*/
 		OVERFLOW_COLOR_INDEX{
 		type: Number;
-		value: 7;}
-		},
+		value: 7;},
 		/*the width of the line that is used for the overflow*/
 		OVERFLOW_STROKE_WIDTH{
 		type: Number;
-		value: 4;}
-		},
+		value: 4;},
 		/*to be explained*/
 		SCALE_TEXT_SIZE{
 		type: Number;
-		value: 9;}
-		},
+		value: 9;},
 		/*to be explained*/
 		MIN_RESOLUTION_PER_PIXEL{
 		type: Number;
-		value: 2;}
-		},
+		value: 2;},
+		/*The upper bound for the track display. Any values above this will be displayed as a overflow line.*/
+		windowMax{
+		type: Number;
+		value: 20;},
+		/*The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.*/
+		windowMin{
+		type: Number;
+		value: 0;},
+		/*The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.*/
+		trackHeight{
+		type: Number;
+		value: 80;},
+		/*to be explained*/
+		scaleTickLength{
+		type: Number;
+		value: 5;},
+		/*A simple calculation of where the top and bottom of where to draw the track is.*/
+		drawingBoundary{
+		top: this.MARGIN, bottom: this.trackHeight - this.MARGIN},
+		/*to be explained*/
+		windowRange{
+		type: Number;
+		value: 0;},
+		/*Whether or not to automatically scale the window bounds according to the data displayed.*/
+		autoScale{
+		type: Boolean;
+		value: false;},
+		/*The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.*/
+		averagePointAmount{
+		type: Number;
+		value: 10;},
 		}
 		/**
 		*This method sets some needed variables to their needed values.
@@ -68,14 +92,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         },
 
         trackImpl: function (track, prop) {
-          this.windowMax = 20				/*The upper bound for the track display. Any values above this will be displayed as a overflow line.*/
-          this.windowMin = 0				/*The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.*/
-          this.trackHeight = 80				/*The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.*/
-          this.scaleTickLength = 5			/*to be explained*/
-          this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}/*A simple calculation of where the top and bottom of where to draw the track is.*/
-          this.windowRange = 0				/*to be explained*/
-          this.autoScale = false
-          this.averagePointAmount = 10
+         
           // this.dataPoints=[]
         },
 
