@@ -20,21 +20,51 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         behaviors: [
           give.TrackDOMBehavior
         ],
-        properties: {},
+        properties: {
+		/** Margin? */
+		MARGIN{
+		type: Number;
+		value: 2;}
+		},
+		/* the color index for fore color*/
+		FORECOLOR_INDEX{
+		type: Number;
+		value: 0;}
+		},
+		/*the color index for text*/
+		TEXT_COLOR_RGB{
+		type: Number;
+		value: 0;}
+		},
+		/* the color index for overflow (red)*/
+		OVERFLOW_COLOR_INDEX{
+		type: Number;
+		value: 7;}
+		},
+		/*the width of the line that is used for the overflow*/
+		OVERFLOW_STROKE_WIDTH{
+		type: Number;
+		value: 4;}
+		},
+		/*to be explained*/
+		SCALE_TEXT_SIZE{
+		type: Number;
+		value: 9;}
+		},
+		/*to be explained*/
+		MIN_RESOLUTION_PER_PIXEL{
+		type: Number;
+		value: 2;}
+		},
+		}
 		/**
 		*This method sets some needed variables to their needed values.
 		*
 		*
 		**/
         created: function () {
-          this.MARGIN = 2/** Margin? */
-          this.FORECOLOR_INDEX = 0 /* the color index for fore color*/
-          this.TEXT_COLOR_RGB = 0 /*the color index for text*/
-          this.OVERFLOW_COLOR_INDEX = 7 /* the color index for overflow (red)*/
-          this.OVERFLOW_STROKE_WIDTH = 4/*the width of the line that is used for the overflow*/
-          this.SCALE_TEXT_SIZE = 9/*to be explained*/
-
-          this.MIN_RESOLUTION_PER_PIXEL = 2/*to be explained*/
+         
+     
         },
 
         trackImpl: function (track, prop) {
