@@ -21,81 +21,29 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           give.TrackDOMBehavior
         ],
         properties: {
-		/** Margin? */
-		MARGIN{
-		type: Number;
-		value: 2;},
-		/* the color index for fore color*/
-		FORECOLOR_INDEX{
-		type: Number;
-		value: 0;},
-		/*the color index for text*/
-		TEXT_COLOR_RGB{
-		type: Number;
-		value: 0;},
-		/* the color index for overflow (red)*/
-		OVERFLOW_COLOR_INDEX{
-		type: Number;
-		value: 7;},
-		/*the width of the line that is used for the overflow*/
-		OVERFLOW_STROKE_WIDTH{
-		type: Number;
-		value: 4;},
-		/*to be explained*/
-		SCALE_TEXT_SIZE{
-		type: Number;
-		value: 9;},
-		/*to be explained*/
-		MIN_RESOLUTION_PER_PIXEL{
-		type: Number;
-		value: 2;},
-		/*The upper bound for the track display. Any values above this will be displayed as a overflow line.*/
-		windowMax{
-		type: Number;
-		value: 20;},
-		/*The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.*/
-		windowMin{
-		type: Number;
-		value: 0;},
-		/*The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.*/
-		trackHeight{
-		type: Number;
-		value: 80;},
-		/*to be explained*/
-		scaleTickLength{
-		type: Number;
-		value: 5;},
-		/*A simple calculation of where the top and bottom of where to draw the track is.*/
-		drawingBoundary{
-		top: this.MARGIN, bottom: this.trackHeight - this.MARGIN},
-		/*to be explained*/
-		windowRange{
-		type: Number;
-		value: 0;},
-		/*Whether or not to automatically scale the window bounds according to the data displayed.*/
-		autoScale{
-		type: Boolean;
-		value: false;},
-		/*The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.*/
-		averagePointAmount{
-		type: Number;
-		value: 10;},
-		}
-		/**
-		*This method sets some needed variables to their needed values.
-		*
-		*
-		**/
+        },
         created: function () {
-         
-     
+          this.MARGIN = 2
+          this.FORECOLOR_INDEX = 0 // the color index for fore color
+          this.TEXT_COLOR_RGB = 0 // the color index for text
+          this.OVERFLOW_COLOR_INDEX = 7 // the color index for overflow (red)
+          this.OVERFLOW_STROKE_WIDTH = 4
+          this.SCALE_TEXT_SIZE = 9
+
+          this.MIN_RESOLUTION_PER_PIXEL = 2
         },
 
         trackImpl: function (track, prop) {
-         
-          // this.dataPoints=[]
+          this.windowMax = 20
+          this.windowMin = 0
+          this.trackHeight = 80
+          this.scaleTickLength = 5
+          this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
+          this.windowRange = 0
+          this.autoScale = false
+          this.averagePointAmount = 10
+  // this.dataPoints=[]
         },
-
         getCurrentResolutions: function () {
           return Math.floor(this.mainSvg.viewWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth)
         },
@@ -245,7 +193,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
           var vwindow = this.mainSvg.viewWindow
           this.track.data[vwindow.chr].averageDataPoints = []
-          for (var i = splitAmount; i < this.track.data[vwindow.chr].dataPoints.length - splitAmount-1; i++) {
+          for (var i = splitAmount; i < this.track.data[vwindow.chr].dataPoints.length - splitAmount - 1; i++) {
             var temp = this.track.data[vwindow.chr].dataPoints[i]
             var sum = 0
             for (var j = 0; j < this.averagePointAmount; j++) {
@@ -294,8 +242,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
                 currPolygon.overflows = {exceedMax: [], exceedMin: []}
               }
             // then push the top two points
-              if (/*this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
-                this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1*/true) {
+              if (/* this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
+                this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1 */true) {
                 // both are within one pixel
                 currPolygon.points.push(
                 this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false) +

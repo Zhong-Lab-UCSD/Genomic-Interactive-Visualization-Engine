@@ -18,19 +18,19 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 ```
 
 ## Table of Contents
-  * [Installation](#installation)
-     * [Installing GIVE Web Components](#installing-give-web-components)
-     * [Installing GIVE Server](#installing-give-server)
-        * [Installing GIVE Bare-bone Server](#installing-give-bare-bone-server)
-        * [Installing GIVE Data Sources](#installing-give-data-sources)
-  * [Usage](#usage)
-     * [Importing GIVE Components](#importing-give-components)
-        * [Without Installation](#without-installation)
-        * [With Installation](#with-installation)
-     * [Implementing A Customized Genome Browser by Embedding GIVE Components](#implementing-a-customized-genome-browser-by-embedding-give-components)
-  * [Tutorial](#tutorial)
-  * [Credits](#credits)
-  * [License](#license)
+*   [Installation](#installation)
+    *   [Installing GIVE Web Components](#installing-give-web-components)
+    *   [Installing GIVE Server](#installing-give-server)
+        *   [Installing GIVE Bare-bone Server](#installing-give-bare-bone-server)
+        *   [Installing GIVE Data Sources](#installing-give-data-sources)
+*   [Usage](#usage)
+    *   [Importing GIVE Components](#importing-give-components)
+        *   [Without Installation](#without-installation)
+        *   [With Installation](#with-installation)
+    *   [Implementing A Customized Genome Browser by Embedding GIVE Components](#implementing-a-customized-genome-browser-by-embedding-give-components)
+*   [Tutorial](#tutorial)
+*   [Credits](#credits)
+*   [License](#license)
 
 ## Installation
 
@@ -111,7 +111,7 @@ var myChart = new GIVE.ChartController({
 ## Tutorial
 
 Please visit the following tutorial pages to see how to use the engine:
-* [Use GIVE to build a customized genome browser with existing code and data source](knownCodeDataSource.md)
+*   [Use GIVE to build a customized genome browser with existing code and data source](knownCodeDataSource.md)
 
 ## Credits
 

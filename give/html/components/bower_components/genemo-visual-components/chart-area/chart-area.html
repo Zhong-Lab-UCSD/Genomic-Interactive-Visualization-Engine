@@ -38,8 +38,9 @@ data.
 <chart-area group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
 ```
 
-The embedded browser contains three major components:
-view area, input for navigation and track controls.
+Although `<chart-area>` does not contain the navigational control elements as in `<chart-controller>`, users may still navigate by dragging and mouse-wheeling on the coordinates to move around.
+
+Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details on references used.
 
 -->
 <dom-module id="chart-area">
@@ -579,7 +580,8 @@ view area, input for navigation and track controls.
           if (this._refObj) {
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
+              if (this.coordinates[i] !== false &&
+                !give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
                 this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
                 this.splice('viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
               }
@@ -591,6 +593,7 @@ view area, input for navigation and track controls.
           this._refObj = refObj
           this._numOfSubsChanged(this.numOfSubs)
           this._initialized = false
+          this._checkVWindowsInit()
         },
 
         /**
