@@ -2,9 +2,6 @@ var GIVe = (function (give) {
   'use strict'
 
   var UI = new give.UIObject(window)
-  give.spcArray = give.RefObject.initAllRef(null, null, function (ref) {
-    return !!parseInt(ref.encode)
-  }, null)
 
   // this is used in trackObject.settings to indicate that this track is selected
   give.GENEMO_SELECTED_KEY = 'isGenemoSelected'
@@ -47,7 +44,7 @@ var GIVe = (function (give) {
   }
 
   give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    Polymer.dom(document).querySelector('#searchCard').setRef(give.spcArray)
+    Polymer.dom(document).querySelector('#searchCard').setRef(give.RefObject.refArray)
   }, ['web-component-ready', 'ref-ready']))
 
   give.loadSessionInfo = function (sessionID, db, selectedTracks, urlToShow, originalFile, hasDisplay, searchRange) {
@@ -71,7 +68,7 @@ var GIVe = (function (give) {
     tableNameQuery.append('ref', sessionDataObj.db)
     tableNameQuery.append('email', sessionDataObj.email)
 
-    var selTrackNames = give.spcArray.dbMap[sessionDataObj.db].getTrackTableNameList(function (track) {
+    var selTrackNames = give.RefObject.refArray.dbMap[sessionDataObj.db].getTrackTableNameList(function (track) {
       return track.getSetting(give.GENEMO_SELECTED_KEY)
     })
 
@@ -120,7 +117,7 @@ var GIVe = (function (give) {
     // maybe in the future these two can be using the same dataObj to simplify code
     var IDPrepQuery = new window.FormData()
     IDPrepQuery.append('db', dataObj.db)
-    IDPrepQuery.append('selected', give.spcArray.dbMap[dataObj.db].getTrackIDList(function (track) {
+    IDPrepQuery.append('selected', give.RefObject.refArray.dbMap[dataObj.db].getTrackIDList(function (track) {
       return track.getSetting(give.GENEMO_SELECTED_KEY)
     }))
     IDPrepQuery.append('email', dataObj.email)
@@ -151,8 +148,8 @@ var GIVe = (function (give) {
   give.loadSession = function (sessionObj) {
     try {
       // this is to change the selected setting for the ref
-      give.spcArray[sessionObj.db].setTrackSettings(give.GENEMO_SELECTED_KEY, false)
-      give.spcArray[sessionObj.db].getTracks().forEachByID(JSON.parse(sessionObj.list), function (track) {
+      give.RefObject.refArray[sessionObj.db].setTrackSettings(give.GENEMO_SELECTED_KEY, false)
+      give.RefObject.refArray[sessionObj.db].getTracks().forEachByID(JSON.parse(sessionObj.list), function (track) {
         track.setSetting(give.GENEMO_SELECTED_KEY, true)
       }, this)
       // then need to fire signal for the UI to respond
@@ -183,7 +180,7 @@ var GIVe = (function (give) {
     track.settings.requestUrl = give.TrackObject.fetchCustomTarget
     track.settings.shortLabel = 'Query input'
     track.tableName = 'queryInput'
-    give.spcArray.dbMap[db].addCustomTrack(track, { id: give.CUSTOM_GROUP_ID })
+    give.RefObject.refArray.dbMap[db].addCustomTrack(track, { id: give.CUSTOM_GROUP_ID })
   }
 
   give.uploadUiHandler = function (query, data) {
@@ -196,7 +193,7 @@ var GIVe = (function (give) {
       give.fireSignal('alert', {msg: 'No results returned.'})
     } else {
       var geneList = give.mergeGeneList(give.populateRegionList(data,
-        give.spcArray.dbMap[query.db]))
+        give.RefObject.refArray.dbMap[query.db]))
 
       give.fireCoreSignal('collapse', {group: 'query-search', flag: false})
 
@@ -274,15 +271,15 @@ var GIVe = (function (give) {
   }
 
   give.changeRef = function (ref) {
-    if (give.spcArray.dbMap[ref] && give.spcArray.dbMap[ref] !== give.spcArray.currRef()) {
+    if (give.RefObject.refArray.dbMap[ref] && give.RefObject.refArray.dbMap[ref] !== give.RefObject.refArray.currRef()) {
       // ref changed, needs to update lots of stuff
-      give.spcArray.selected = ref
-      trackFilterDom.initialize(give.spcArray.currRef())
-      trackListDom.setRef(give.spcArray.currRef())
+      give.RefObject.refArray.selected = ref
+      trackFilterDom.initialize(give.RefObject.refArray.currRef())
+      trackListDom.setRef(give.RefObject.refArray.currRef())
       // reset chromRegionList
       mainRegionListDom.setList()
       // reset mainChart
-      mainChartDom.setRef(give.spcArray.currRef())
+      mainChartDom.setRef(give.RefObject.refArray.currRef())
     }
   }
 
@@ -380,7 +377,7 @@ var GIVe = (function (give) {
     document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     document.addEventListener('change-window', function (e) {
-      give.spcArray.currRef().getGroups().encode.forEach(function (track) {
+      give.RefObject.refArray.currRef().getGroups().encode.forEach(function (track) {
         track.setVisibility(false)
       }, this)
       e.detail.tracks.forEach(function (track) {

@@ -8,13 +8,26 @@ An embedded browser element including the view area, input for navigation and tr
 
 #### View area
 
-View area is the main part of the browser where individual tracks are being shown. It is implemented by using a `<chart-area>` element. Multiple views of the same genomic reference are also supported.
+View area is the main part of the browser where individual tracks are being shown.
+It is implemented by using a `<chart-area>` element.
+Multiple views of the same genomic reference are also supported.
+
+Please refer to [`GIVe.ChartArea`](../chart-area/) for further details.
 
 #### Input for navigation
 
+`<chart-controller>` provides a input field for navigation purposes, genomic
+coordinates in `chrX:XXXXXXX-XXXXXXX` or `chrX XXXXXXX XXXXXXX` formats are
+accepted. Also gene names can be typed to search for a specific gene.
 
+The input field is a `<gene-coor-input>` element. See
+[`GIVe.GeneCoorInput`](../gene-coor-input/) for
+details. Gene annotations are generated from NCBI `gene_info` file.
 
 #### Track controls
+
+Track controls are implemented via a `<chart-track-group-list>` element. See
+[`GIVe.ChartTrackGroupList`](../chart-track-list/) for details.
 
 ### API Reference
 
@@ -50,7 +63,7 @@ Most properties in GIVE are JavaScript properties that can also be used in HTML 
 
 #### Methods
 
-**getReference**() -> `GIVE.ReferenceObject`  
+**getReference**() -> `GIVE.RefObject`  
 > Get the current reference of the embedded browser
 
 **setReference**(`ref`)  

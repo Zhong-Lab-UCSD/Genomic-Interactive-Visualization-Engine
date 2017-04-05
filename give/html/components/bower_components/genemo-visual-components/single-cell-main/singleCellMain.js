@@ -6,15 +6,6 @@ var GIVe = (function (give) {
   var scDialog, scShowRefBtn, scDoNotShowBtn,
     scLocalStorage
 
-  var spcArray = give.RefObject.initAllRef(null, null, function (ref) {
-    return ref.settings['isSingleCellEnabled']
-  }, null)
-
-  give.mainTaskScheduler.addTask(new give.TaskEntry(function () {
-    Polymer.dom(document).querySelector('#mainChartController').setRef(
-      spcArray.dbMap['mm10'])
-  }, ['web-component-ready', 'ref-ready']))
-
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})

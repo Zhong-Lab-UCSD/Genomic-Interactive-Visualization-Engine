@@ -5,9 +5,10 @@
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
 <link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
+<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-group-list">
   <template>
     <style include="genemo-shared-styles iron-flex" is="custom-style">
@@ -61,18 +62,30 @@
         is: 'chart-track-group-list',
 
         behaviors: [
-          give.GenemoTabCardContentBehavior
+          give.GenemoTabCardContentBehavior,
+          give.RefEmbeddedBehavior
         ],
 
         properties: {
-          ref: {
-            type: Object,
-            readOnly: true
+          /**
+           * The GIVe.RefObject for reference.
+           * Contains chromosomal layout and track information.
+           * @type {GIVe.RefObject}
+           */
+          _refObj: {
+            type: Object
           },
-          // this is the ref defined in libtracks.js
-          // notice that ref should have chromSizes and location of centromeres included
-          // tracks is also within ref
-          // may need to provide additional API to get track data
+
+          /**
+           * The reference used in the embedded browser.
+           * Reference names needs to be in UCSC format.
+           * Please see [GIVe.RefObject](../../genemo-data-components/ref-object/)
+           * to see available references on GIVe server.
+           */
+          ref: {
+            type: String,
+            observer: '_refChanged'
+          },
 
           textSize: {
             type: Number,
@@ -110,7 +123,6 @@
 
           this.setDOMReady(true)
           this.setReady(false)
-          this.setRef(null, true)
 
           this.completedRepeatDOMs = 0
         },
@@ -120,14 +132,14 @@
           this.splice('groupArray', 0, this.groupArray.length)
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
-              if (this.ref.getGroups().hasOwnProperty(groupID)) {
-                this.push('groupArray', this.ref.getGroups()[groupID])
+              if (this._refObj.getGroups().hasOwnProperty(groupID)) {
+                this.push('groupArray', this._refObj.getGroups()[groupID])
               }
             }, this)
           } else {
-            for (var key in this.ref.getGroups()) {
-              if (this.ref.getGroups().hasOwnProperty(key)) {
-                this.push('groupArray', this.ref.getGroups()[key])
+            for (var key in this._refObj.getGroups()) {
+              if (this._refObj.getGroups().hasOwnProperty(key)) {
+                this.push('groupArray', this._refObj.getGroups()[key])
               }
             }
           }
@@ -138,7 +150,7 @@
         },
 
         _refreshRef: function () {
-          this.ref.callOnTracksReady(this._refreshRefTrackReady.bind(this))
+          this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
         },
 
         updateAllGroupDOM: function () {
@@ -151,18 +163,18 @@
             ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
         },
 
-        setRef: function (newRef, forceUpdate) {
-        // this will reset all tracks and redo the ref
-        // note that the tracks should already be initialized before switching here
-          if (!newRef) {
-            if (!forceUpdate) {
-              throw (new Error('No new ref specified!'))
-            }
-          } else {
-            this._setRef(newRef)
-          }
+        /**
+         * Set the reference to new reference
+         *
+         * this will reset all tracks and redo the ref
+         * note that the tracks should already be initialized before switching here
+         *
+         * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
+         */
+        _setRefObj: function (refObj) {
+          this._refObj = refObj
           this.setReady(false)
-          if (this.ref) {
+          if (this._refObj) {
             this._refreshRef()
           }
         },

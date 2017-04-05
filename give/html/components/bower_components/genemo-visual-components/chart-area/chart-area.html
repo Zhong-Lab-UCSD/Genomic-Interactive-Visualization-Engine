@@ -1,16 +1,47 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../genemo-data-components/basic-func/basic-func.html">
 <link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
+<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../paper-spinner/paper-spinner.html">
 <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
 <link rel="import" href="tracks-header.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<!--
+### Overview
+
+`<chart-area>` provides a Web Component element to interactively display genomic
+data.
+
+```html
+<chart-area group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
+```
+
+The embedded browser contains three major components:
+view area, input for navigation and track controls.
+
+-->
 <dom-module id="chart-area">
   <template>
     <style include="genemo-shared-styles">
@@ -20,6 +51,7 @@
         font-family: 'Roboto', Arial, Helvetica, sans-serif;
         display: block;
         margin: 0;
+        @apply(--layout-fit);
       }
       #trackDOMHolder {
         display: none;
@@ -62,16 +94,16 @@
     </div>
     <paper-material>
       <div id="chartHoldingMaterial">
-        <svg hidden$="[[!initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        <svg hidden$="[[!_initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
-      <div id="coorLocationHolder" hidden$="[[!initialized]]"></div>
+      <div id="coorLocationHolder" hidden$="[[!_initialized]]"></div>
       <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
         <div>
           You may use mouse wheel within the coordinate track to zoom in/out, drag any track to move.
         </div>
       </tutorial-highlight>
-      <div class="uninitialized" hidden$="[[initialized]]">
+      <div class="uninitialized" hidden$="[[_initialized]]">
         Please select a region to display first.
       </div>
     </paper-material>
@@ -85,46 +117,89 @@
         is: 'chart-area',
 
         behaviors: [
-          Polymer.IronResizableBehavior
+          Polymer.IronResizableBehavior,
+          give.RefEmbeddedBehavior
         ],
 
         properties: {
-          ref: Object, // this is the ref defined in libtracks.js
-          // notice that ref should have chromSizes and location of centromeres included
-          // tracks is also within ref
-          // may need to provide additional API to get track data
-
+          /**
+           * The view windows to display in the element.
+           * @type {Array<GIVe.ChromRegion>}
+           */
           viewWindows: {
           // this will be an array of strings (viewWindowString),
           // may be changed to viewWindows directly for performance in the future
+            type: Array,
+            notify: true,
+            value: function () {
+              return []
+            }
+          },
+
+          /**
+           * The view windows to display in the element, in coordinate format.
+           * This is for HTML attributes
+           * @type {Array<string>}
+           */
+          coordinates: {
+            type: Array,
+            notify: true,
+            value: function () {
+              return []
+            }
+          },
+
+          /**
+           * The track groups included in the embedded browser. Group IDs are
+           * specified in the data source. The data source on our server currently
+           * provides these track groups:
+           * *  `'genes'`: gene annotation tracks, for all available references
+           * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
+           * *  `'interaction'`: genomic interaction data sets, including those
+           * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
+           * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
+           * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
+           * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
+           * for `mm10` only
+           * @type {Array<string>}
+           */
+          groupIdList: {
+            // this is the array of allowed group IDs in the list
             type: Array,
             value: function () {
               return []
             }
           },
 
+          /**
+           * Number of sub views in this controller.
+           * Notice that if this setting is different from `coordinates.length`,
+           * adjustments will be made to `coordinates` (truncating excessive
+           * items or padding with default values).
+           */
           numOfSubs: {
             type: Number,
-            value: 1
+            value: 1,
+            notify: true,
+            observer: '_numOfSubsChanged'
           },
 
-          initialized: {
+          _initialized: {
             type: Boolean,
-            value: false,
-            readOnly: true
+            value: false
           },
 
-          trackGap: {
+          _trackGap: {
             type: Number,
             value: 0.3    // unit is em
           },
 
-          textSize: {
+          _textSize: {
             type: Number,
             value: 12    // unit is px
           },
 
-          threshold: {
+          _threshold: {
             type: Number,
             value: 0.0
           },
@@ -135,11 +210,6 @@
             readOnly: true
           },
 
-          groupIdList: {
-            // this is the array of allowed group IDs in the list
-            type: Array
-          },
-
           firstRun: {
             type: Boolean,
             value: true,
@@ -148,8 +218,8 @@
         },
 
         listeners: {
-          'track-ready': 'trackReadyHandler',
-          'update-window': 'updateWindowHandler',
+          'track-ready': '_trackReadyHandler',
+          'update-window': '_updateWindowHandler',
           'iron-resize': '_onIronResize'
         },
 
@@ -157,69 +227,89 @@
           this.svgNS = 'http://www.w3.org/2000/svg'
           this.trackDOMMap = {
             'bed': {
-              prop: this.createBedTrackProp.bind(this),
+              prop: this._createBedTrackProp.bind(this),
               Ctor: give.BedTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             },
             'wig': {
-              prop: this.createWigTrackProp.bind(this),
+              prop: this._createWigTrackProp.bind(this),
               Ctor: give.WiggleTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             },
             'bigwig': {
-              prop: this.createWigTrackProp.bind(this),
+              prop: this._createWigTrackProp.bind(this),
               Ctor: give.BigWigTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             },
             'genebed': {
-              prop: this.createBedTrackProp.bind(this),
+              prop: this._createBedTrackProp.bind(this),
               Ctor: give.BedTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             },
             'genepred': {
-              prop: this.createBedTrackProp.bind(this),
+              prop: this._createBedTrackProp.bind(this),
               Ctor: give.BedTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             },
             'interaction': {
-              prop: this.createInteractionTrackProp.bind(this),
+              prop: this._createInteractionTrackProp.bind(this),
               Ctor: give.InteractionTrackDOM,
-              addDom: this.addInteractionTrackDOM.bind(this)
+              addDom: this._addInteractionTrackDOM.bind(this)
             },
             'coordinate': {
-              prop: this.createCoorTrackProp.bind(this),
+              prop: this._createCoorTrackProp.bind(this),
               Ctor: give.CoorTrackDOM,
-              addDom: this.addOrdinaryTrackDOM.bind(this)
+              addDom: this._addOrdinaryTrackDOM.bind(this)
             }
           }
           this.resizeDebounceInt = 100
           this.resizeJobName = 'RESIZE'
         },
 
+        ready: function () {
+          // initialize this.viewWindows from this.coordinates
+          this.coordinates.forEach(function (coordinateStr, index) {
+            if (give.ChromRegion.isValidChromRegion(coordinateStr) &&
+              (!this.viewWindows[index] ||
+                this.viewWindows[index].regionToString(false) !==
+                new give.ChromRegion(coordinateStr, this._refObj).regionToString(false))) {
+              this.splice('viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
+            }
+          }, this)
+        },
+
         attached: function () {
           this.async(function () {
             // attach all trackDOMs
-            this.checkVWindowsInit()
+            this._checkVWindowsInit()
           })
         },
 
-        checkVWindowsInit: function () {
-          if (!this.initialized) {
-            if (this.ref && this.viewWindows.every(function (vwindow) {
+        _checkVWindowsInit: function () {
+          if (!this._initialized) {
+            if (this._refObj && this.viewWindows.every(function (vwindow) {
               return !!vwindow
             }, this)) {
-              this._setInitialized(true)
+              this._initialized = true
               this.resetDOM()
               return true
             } else {
-              this._setInitialized(false)
+              this._initialized = false
               return false
             }
           }
           return true
         },
 
-        mergeProperty: function (original, newProp) {
+        /**
+         * Merge properties together
+         * @todo Will be changed into `track-dom-behavior` or `basic-funcs`
+         *
+         * @param  {object} original - original object
+         * @param  {object} newProp - object with new properties
+         * @returns {object} object with the merged properties
+         */
+        _mergeProperty: function (original, newProp) {
           for (var key in newProp) {
             if (newProp.hasOwnProperty(key)) {
               original[key] = newProp[key]
@@ -228,8 +318,8 @@
           return original
         },
 
-        createBedTrackProp: function (viewWindowIndex, properties) {
-          return this.mergeProperty({
+        _createBedTrackProp: function (viewWindowIndex, properties) {
+          return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHoldingMaterial.clientWidth,
@@ -239,8 +329,8 @@
           }, properties)
         },
 
-        createWigTrackProp: function (viewWindowIndex, properties) {
-          return this.mergeProperty({
+        _createWigTrackProp: function (viewWindowIndex, properties) {
+          return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHoldingMaterial.clientWidth,
@@ -250,8 +340,8 @@
           }, properties)
         },
 
-        createCoorTrackProp: function (viewWindowIndex, properties) {
-          return this.mergeProperty({
+        _createCoorTrackProp: function (viewWindowIndex, properties) {
+          return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHoldingMaterial.clientWidth,
@@ -261,20 +351,20 @@
           }, properties)
         },
 
-        createInteractionTrackProp: function (viewWindowIndex, properties) {
-          return this.mergeProperty({
+        _createInteractionTrackProp: function (viewWindowIndex, properties) {
+          return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHoldingMaterial.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             numOfSubs: this.viewWindows.length,
-            threshold: this.threshold
+            _threshold: this._threshold
           }, properties)
         },
 
-        createWiggleTrackProp: function (viewWindowIndex, properties) {
-          return this.mergeProperty({
+        _createWiggleTrackProp: function (viewWindowIndex, properties) {
+          return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHoldingMaterial.clientWidth,
@@ -283,35 +373,35 @@
           }, properties)
         },
 
-        createTrackProp: function (track, viewWindowIndex, props) {
+        _createTrackProp: function (track, viewWindowIndex, props) {
           return this.trackDOMMap[track.getTypeTrunk()].prop(viewWindowIndex, props)
         },
 
-        createTrackDOM: function (track, viewWindowIndex, props) {
+        _createTrackDOM: function (track, viewWindowIndex, props) {
           return new this.trackDOMMap[track.getTypeTrunk()].Ctor(track,
-                  this.createTrackProp(track, viewWindowIndex, props))
+                  this._createTrackProp(track, viewWindowIndex, props))
         },
 
-        addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
+        _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
           this.trackDOMsByWindow[viewWindowIndex].splice(
             give.locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex],
               null, null, function (trackDOM1, trackDOM2) {
-                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this.ref.groups)
+                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
               }.bind(this)) + 1,
             0, trackDOM)
           this.trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
         },
 
-        addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
+        _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
           // actually this will enum all viewWindowIndices
           this.viewWindows.forEach(function (vwindow, index) {
-            this.addOrdinaryTrackDOM(trackDOM, index)
+            this._addOrdinaryTrackDOM(trackDOM, index)
           }, this)
         },
 
-        addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
+        _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
           if (forceAdd || !this.trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
-            var newTrackDOM = this.createTrackDOM(track, viewWindowIndex, props)
+            var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
             if (newTrackDOM) {
               this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
             }
@@ -319,7 +409,7 @@
           }
         },
 
-        mergeTrackDOMsByWindow: function () {
+        _mergeTrackDOMsByWindow: function () {
           this.trackDOMs.splice(0, this.trackDOMs.length)
           this.trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
             if (windowIndex !== 0) {
@@ -337,6 +427,11 @@
           }, this)
         },
 
+        /**
+         * Update the height and location of individual tracks
+         *
+         * @param  {number} width - Width of the current area
+         */
         updateHeightLocation: function (width) {
           // calculate the heights for all tracks
           // note that by the time this is called, all tracks should be ready
@@ -346,36 +441,46 @@
           var currY = 0
           this.trackDOMs.forEach(function (trackDOM, index) {
             trackDOM.updateLocationSize(0, currY, width)
-            currY += trackDOM.getHeight() + this.trackGap * this.textSize
+            currY += trackDOM.getHeight() + this._trackGap * this._textSize
           }, this)
-          currY -= this.trackGap * this.textSize
+          currY -= this._trackGap * this._textSize
           this.$.mainSvg.setAttribute('height', currY)
           this.$.mainSvg.setAttribute('viewBox', '0 0 ' +
             this.$.chartHoldingMaterial.clientWidth + ' ' + currY)
         },
 
-        updateTracks: function (index) {
+        /**
+         * Refresh all tracks in a certain view or all views
+         *
+         * @param  {number|null} index - The index for the view being updated, use null for all views
+         */
+        _updateTracks: function (index) {
           // index is the window index
           // only need to update tracks involved with that index
           if (index) {
-            this.updateTracksInWindow(index)
+            this._updateTracksInWindow(index)
           } else {
             this.trackDOMsByWindow.forEach(function (trackDOMs, windex) {
-              this.updateTracksInWindow(windex)
+              this._updateTracksInWindow(windex)
             }, this)
           }
         },
 
-        updateTracksInWindow: function (index) {
+        /**
+         * Refresh all tracks in a certain view
+         *
+         * @param  {number} index - The index for the view being updated
+         */
+        _updateTracksInWindow: function (index) {
           // index is the window index
           // only need to update tracks involved with that index
           this._setReadiness(false)
           this.trackDOMsByWindow[index].forEach(function (trackDOM, tindex) {
-            trackDOM.updateTracks(this.viewWindows[index], index, this.threshold)
+            trackDOM.updateTracks(this.viewWindows[index], index, this._threshold)
           }, this)
         },
 
-        trackReadyHandler: function (e) {
+        _trackReadyHandler: function (e) {
           // check if all tracks are ready, otherwise do nothing
           if (this.trackDOMs.every(function (trackDOM) {
             return trackDOM.isReady
@@ -383,24 +488,41 @@
             this.updateHeightLocation()
             if (this.firstRun) {
               this._setFirstRun(false)
-              this.$.coorTrackTutorial.domTargetId = 'coor_' + this.ref.db + '_0_mainSvg'
+              this.$.coorTrackTutorial.domTargetId = 'coor_' + this._refObj.db + '_0_mainSvg'
               this.$.coorTrackTutorial.showTutorial()
             }
             this._setReadiness(true)
           }
         },
 
+        /**
+         * Change the range of a sub view.
+         * Range may be cropped if it exceed the maximum range allowed by the reference.
+         *
+         * @param  {string|GIVe.ChromRegion} viewWindow - The range to change into.
+         * @param  {number} index - Index of the viewWindow.
+         * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
+         * @return {string} The actual range (may be cropped by reference),
+         *                   converted to string.
+         */
         changeViewWindow: function (viewWindow, index, forceDomReset) {
-          this.viewWindows[index] = new give.ChromRegion(viewWindow, this.ref)
-          if (this.initialized && !forceDomReset) {
-            this.updateTracksInWindow(index)
+          this.splice('viewWindows', index, 1, new give.ChromRegion(viewWindow, this._refObj))
+          this.splice('coordinates', index, 1, this.viewWindows[index].regionToString(false))
+          if (this._initialized && !forceDomReset) {
+            this._updateTracksInWindow(index)
           } else {
-            this._setInitialized(false)
-            this.checkVWindowsInit()
+            this._initialized = false
+            this._checkVWindowsInit()
           }
           return this.viewWindows[index].regionToString(false)
         },
 
+        /**
+         * Change ranges in all views at once
+         *
+         * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
+         * @return {Array<string>} The actual ranges, converted to `string`.
+         */
         changeAllViewWindows: function (viewWindows) {
           viewWindows.forEach(function (vwindow, index) {
             this.changeViewWindow(vwindow, index)
@@ -408,32 +530,37 @@
           return this.getViewWindowStrings()
         },
 
-        changeThreshold: function (threshold) {
-          this.threshold = threshold || this.threshold
+        _changeThreshold: function (_threshold) {
+          this._threshold = _threshold || this._threshold
           this.trackDOMs.forEach(function (trackDOM, index) {
             if (trackDOM.updateThreshold) {
             // is an interaction track
-              trackDOM.updateThreshold(this.threshold)
+              trackDOM.updateThreshold(this._threshold)
             }
           }, this)
         },
 
         refreshAll: function (viewWindows, threshold) {
           if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
-            // only update threshold only
-            this.changeThreshold(threshold)
+            // only update _threshold only
+            this._changeThreshold(threshold)
             return this.getViewWindowStrings()
           } else {
-            this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
+            this._threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this._threshold)
             if (viewWindows) {
               this.changeAllViewWindows(viewWindows)
             } else {
-              this.updateTracks()
+              this._updateTracks()
             }
           }
           return this.getViewWindowStrings()
         },
 
+        /**
+         * Get the `string` of ranges in all views
+         *
+         * @returns {Array<string>} The ranges, converted to `string`.
+         */
         getViewWindowStrings: function () {
           var result = []
           this.viewWindows.forEach(function (vwindow, index) {
@@ -442,27 +569,35 @@
           return result
         },
 
-        setRef: function (newRef, numOfSubs) {
-          // this will reset all tracks and redo the ref
-          // note that the tracks should already be initialized before switching here
-          // After this, this.changeAllViewWindows should be called
-          if (!newRef) {
-            throw (new Error('No new ref specified!'))
+        /**
+         * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
+         *
+         * @param  {type} newValue new `numOfSubs` value
+         * @param  {type} oldValue old `numOfSubs` value
+         */
+        _numOfSubsChanged: function (newValue, oldValue) {
+          if (this._refObj) {
+            var defaultWindows = this._refObj.settings.defaultViewWindows
+            for (var i = 0; i < newValue; i++) {
+              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
+                this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
+                this.splice('viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
+              }
+            }
           }
-          this.ref = newRef
-          this.numOfSubs = numOfSubs || this.numOfSubs
-
-          // reset viewWindows
-          this.splice('viewWindows', 0)
-          for (var i = 0; i < this.numOfSubs; i++) {
-            this.push('viewWindows', null)
-          }
-
-          this._setInitialized(false)
         },
 
+        _setRefObj: function (refObj) {
+          this._refObj = refObj
+          this._numOfSubsChanged(this.numOfSubs)
+          this._initialized = false
+        },
+
+        /**
+         * Reset the entire DOM display
+         */
         resetDOM: function () {
-          if (this.initialized) {
+          if (this._initialized) {
             this._setReadiness(false)
             this.trackDOMs = []     // this is the array for visible tracks (DOMs with corresponding stuff)
                                     // every track is included
@@ -477,8 +612,8 @@
 
             this.viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
-              var coorTrackDOM = this.addVisibleTrack(give.TrackObject.createCoorTrack(this.ref,
-                'coor_' + this.ref.db + '_' + windowIndex), windowIndex)
+              var coorTrackDOM = this._addVisibleTrack(give.TrackObject.createCoorTrack(this._refObj,
+                'coor_' + this._refObj.db + '_' + windowIndex), windowIndex)
               if (!windowIndex) {
                 this.coorTrackZeroDOM = coorTrackDOM
               }
@@ -490,7 +625,7 @@
           }
         },
 
-        clearDOM: function () {
+        _clearDOM: function () {
           while (Polymer.dom(this.$.mainSvg).firstChild) {
             Polymer.dom(this.$.mainSvg).removeChild(Polymer.dom(this.$.mainSvg).firstChild)
           }
@@ -500,35 +635,35 @@
         },
 
         _addAllTrackDOMsTracksReady: function (noRefreshContent) {
-          // function called when tracks are ready for this.ref
+          // function called when tracks are ready for this._refObj
           var showTrack = function (wIndex, track, index) {
             // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
             if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
-              this.addVisibleTrack(track, wIndex)
+              this._addVisibleTrack(track, wIndex)
             }
           }
           this.viewWindows.forEach(function (vwindow, windowIndex) {
             if (this.groupIdList && this.groupIdList.length > 0) {
               this.groupIdList.forEach(function (groupID) {
-                if (this.ref.getGroups().hasOwnProperty(groupID)) {
-                  this.ref.getGroups()[groupID].forEach(
+                if (this._refObj.getGroups().hasOwnProperty(groupID)) {
+                  this._refObj.getGroups()[groupID].forEach(
                     showTrack.bind(this, windowIndex), this)
                 }
               }, this)
             } else {
-              this.ref.getTracks().forEach(
+              this._refObj.getTracks().forEach(
                 showTrack.bind(this, windowIndex), this)
             }
           }, this)
-          this.mergeTrackDOMsByWindow()
+          this._mergeTrackDOMsByWindow()
           this.populateDOM(noRefreshContent)
         },
 
         addAllTrackDOMs: function (noRefreshContent) {
-          this.ref.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
+          this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
         },
 
-        removeInvisibleTrackDOMs: function () {
+        _removeInvisibleTrackDOMs: function () {
           this.trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
             // notice that because tracks may get deleted, don't use forEach with splice
             var i
@@ -544,7 +679,7 @@
 
         populateDOM: function (noRefreshContent) {
           // first clear old DOMs
-          this.clearDOM()
+          this._clearDOM()
           // then populate all new DOMS
           this.trackDOMs.forEach(function (trackDOM, index) {
             Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
@@ -561,14 +696,14 @@
           // update existing DOMs, first remove all tracks that should be hidden
           // if noRefreshContent = true, do not refresh content (should be refreshed later)
           if (this.trackDOMs.length > 0) {
-            this.removeInvisibleTrackDOMs()
+            this._removeInvisibleTrackDOMs()
           }
 
           // then add new Tracks (if not there already)
           this.addAllTrackDOMs(noRefreshContent)
         },
 
-        updateWindowHandler: function (e) {
+        _updateWindowHandler: function (e) {
           // update the windows by events bubbled up from bottom tracks
           try {
             if (e.detail.newWindow instanceof give.ChromRegion ||

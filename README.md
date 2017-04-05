@@ -6,13 +6,14 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 
 <!-- Import GIVE component -->
-<link rel="import" href="/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 
 <!-- Embed the browser in your web page -->
-<chart-controller title-text="My GIVE Browser"
+<chart-controller ref="mm10" title-text="My GIVE Browser"
+  coordinates='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
 
@@ -27,6 +28,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
         * [Without Installation](#without-installation)
         * [With Installation](#with-installation)
      * [Implementing A Customized Genome Browser by Embedding GIVE Components](#implementing-a-customized-genome-browser-by-embedding-give-components)
+  * [Tutorial](#tutorial)
   * [Credits](#credits)
   * [License](#license)
 
@@ -89,7 +91,7 @@ Please use your own path if you already installed GIVE Web Components on your se
 
 After you have imported the components in your HTML page, you can use them in several ways. The most straightforward way is to use them as if you are using common HTML tags (like `<div>` or `<video>`):
 ```html
-<chart-controller title-text="My First GIVE Browser"
+<chart-controller ref="mm10" title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
 Or to use `Document.createElement()` to create the element in your JavaScript code:
@@ -105,6 +107,11 @@ var myChart = new GIVE.ChartController({
   groupIdList: ["genes", "singleCell", "customTracks"]
 })
 ```
+
+## Tutorial
+
+Please visit the following tutorial pages to see how to use the engine:
+* [Use GIVE to build a customized genome browser with existing code and data source](knownCodeDataSource.md)
 
 ## Credits
 

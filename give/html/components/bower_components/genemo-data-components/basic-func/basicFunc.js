@@ -168,5 +168,10 @@ var GIVe = (function (give) {
     }
   }
 
+  window.addEventListener('WebComponentsReady', function (e) {
+    give.fireCoreSignal('content-dom-ready', null)
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
+  })
+
   return give
 })(GIVe || {})

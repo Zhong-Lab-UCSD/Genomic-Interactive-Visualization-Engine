@@ -23,7 +23,7 @@
 <link rel="import" href="components/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="components/bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
 <link rel="import" href="components/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
 body {
 	font-family: 'Roboto';

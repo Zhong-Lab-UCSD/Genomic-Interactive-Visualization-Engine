@@ -71,6 +71,8 @@ var GIVe = (function (give) {
     this.continuedList = continuedList || []
   }
 
+  give.extend(give.WitheringNode, DataEntry)
+
   DataEntry.prototype.getResolution = function () {
     return 1
   }
@@ -82,8 +84,6 @@ var GIVe = (function (give) {
   DataEntry.prototype.hasData = function () {
     return true
   }
-
-  give.extend(give.WitheringNode, DataEntry)
 
   // data structure:
   // {
@@ -256,7 +256,7 @@ var GIVe = (function (give) {
     //    an ordered array of (one or more) siblings so that the calling function can handle it.
 
     // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
-    // Root will always encompass the whole chromosome (from ref definition)
+    // Root will always encompass the whole chromosome (from species definition)
     // before calling children, the chrRegion will be split into the bins of children.
 
     this.life = this.life || lifeSpan

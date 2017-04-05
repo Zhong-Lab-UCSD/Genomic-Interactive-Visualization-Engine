@@ -521,7 +521,7 @@ var GIVe = (function (give) {
          this.ref.chromInfo.hasOwnProperty(chrom) &&
          Array.isArray(response[chrom])) {
         if (!this.data.hasOwnProperty(chrom)) {
-          this.data[chrom] = new this.GetDataStructure()(this.ref.chromInfo[chrom].chrRegion.start,
+          this.data[chrom] = new (this.GetDataStructure())(this.ref.chromInfo[chrom].chrRegion.start,
                                  this.ref.chromInfo[chrom].chrRegion.end,
                                  this.GetSummaryCtor())
         }
@@ -547,8 +547,10 @@ var GIVe = (function (give) {
 
   give.TrackObject.DEFAULT_PRIORITY = 100.0
   give.TrackObject.NO_CALLERID_KEY = '_giveNoCallerID'
-  give.TrackObject.fetchDataTarget = '/givdata/getTrackData.php'
-  give.TrackObject.fetchCustomTarget = '/givdata/getTrackData.php'
+  give.TrackObject.fetchDataTarget = give.host +
+    (give.Trk_FetchDataTarget || '/givdata/getTrackData.php')
+  give.TrackObject.fetchCustomTarget = give.host +
+    (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
   give.TrackObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
   give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0

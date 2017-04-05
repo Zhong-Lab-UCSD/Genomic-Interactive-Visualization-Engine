@@ -52,7 +52,7 @@ var GIVe = (function (give) {
       this.setRGB(elements[8])
     }
     if (elements[9]) {
-      this._setBlocksFromString(elements[9], elements[10], elements[11])
+      this._setBlocksFromString(elements[10], elements[11])
     }
   }
 

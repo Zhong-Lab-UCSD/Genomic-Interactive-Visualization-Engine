@@ -129,7 +129,7 @@ function getRefDbNames() {
   // return a full list of ref db names
   $mysqli = connectCPB();
   $result = array();
-  $ref = $mysqli->query("SELECT dbname FROM ref");
+  $ref = $mysqli->query("SELECT dbname FROM species");
   while($spcitor = $ref->fetch_assoc()) {
     $result[] = $spcitor["dbname"];
   }
@@ -142,7 +142,7 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
   // return everything about ref from db indicated by spcDbNameList
   $mysqli = connectCPB();
   $spcinfo = array();
-  $sqlstmt = "SELECT * FROM ref";
+  $sqlstmt = "SELECT * FROM species";
   if(!empty($spcDbNameList)) {
     $sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
     $stmt = $mysqli->prepare($sqlstmt);

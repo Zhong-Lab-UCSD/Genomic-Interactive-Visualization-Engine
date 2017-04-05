@@ -14,8 +14,9 @@
 <link rel="import" href="../../iron-list/iron-list.html">
 <link rel="import" href="../../paper-item/paper-item.html">
 <link rel="import" href="../../iron-ajax/iron-ajax.html">
+<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../genemo-styles.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="gene-coor-input">
   <template>
     <style include="genemo-shared-styles iron-flex iron-flex-alignment">
@@ -93,6 +94,10 @@
       give.GeneCoorInput = Polymer({
         is: 'gene-coor-input',
 
+        behaviors: [
+          give.RefEmbeddedBehavior
+        ],
+
         properties: {
 
           value: {
@@ -114,7 +119,8 @@
 
           geneNameUrl: {
             type: String,
-            value: '../../../../givdata/partialNames.php'
+            value: give.host +
+              (give.GCI_PartialNameTarget || '/givdata/partialNames.php')
           },
 
           inputValue: {
@@ -171,7 +177,7 @@
           this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
           this.GENE_LIST_MAX_LINES = 7
 
-          this.ref = null
+          this._refObj = null
           this.querySent = ''
 
           this._decoupleInput = false
@@ -186,16 +192,6 @@
 
         attached: function () {
           this.$.partialNameAjax.auto = true
-        },
-
-        getRef: function () {
-          return this.ref
-        },
-
-        setRef: function (ref) {
-          if (ref) {
-            this.ref = ref
-          }
         },
 
         _partialInputHandler: function () {
@@ -258,9 +254,9 @@
               'name': this.querySent,
               'maxCandidates': this.MAX_CANDIDATES
             }
-            if (this.ref) {
-              params.db = this.ref.db
-              params.spcName = this.ref.name
+            if (this._refObj) {
+              params.db = this._refObj.db
+              params.spcName = this._refObj.name
             }
             this.$.partialNameAjax.params = params
           }
@@ -345,14 +341,14 @@
         _setTextFocus: function (flag) {
           this._inFocus = flag
           this._checkGList()
-          if (!flag && this.ref && this.ref.chromInfo &&
+          if (!flag && this._refObj && this._refObj.chromInfo &&
             this._valueIsCoordinate()) {
             // blurred, correct cases for chromosomal coordinates
             var chrom = this.value.split(/[:\s-]+/)[0]
-            if (this.ref.chromInfo.hasOwnProperty(chrom) &&
-              this.ref.chromInfo[chrom].name !== chrom) {
+            if (this._refObj.chromInfo.hasOwnProperty(chrom) &&
+              this._refObj.chromInfo[chrom].name !== chrom) {
               // case is wrong, fix it
-              this.value = this.value.replace(chrom, this.ref.chromInfo[chrom].name)
+              this.value = this.value.replace(chrom, this._refObj.chromInfo[chrom].name)
             }
           }
         },

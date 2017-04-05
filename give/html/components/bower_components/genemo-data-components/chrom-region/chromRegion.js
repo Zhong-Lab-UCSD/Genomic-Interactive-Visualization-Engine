@@ -31,6 +31,8 @@ var GIVe = (function (give) {
         this._regionFromString(mainParams)
       } else if (typeof mainParams === 'object') {
         this._regionFromObject(mainParams)
+      } else {
+        throw new Error('Must create ChromRegion with object or string!')
       }
       this.clipRegion(ref)
       var key
@@ -320,6 +322,18 @@ var GIVe = (function (give) {
       coor.coor = ref.chromInfo[coor.chr].chrRegion.end
     }
     return coor
+  }
+
+  give.ChromRegion.isValidChromRegion = function (chrStr, ref) {
+    try {
+      var tempChrRegion = new give.ChromRegion(chrStr)
+      tempChrRegion.clipRegion(ref)
+    } catch (e) {
+      give._verboseConsole(e.message + '\n' + e.stack,
+        give.VERBOSE_DEBUG)
+      return false
+    }
+    return true
   }
 
   give.ChromRegion.compareChrRegion = function (region1, region2) {

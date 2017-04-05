@@ -21,7 +21,7 @@
 <link rel="import" href="components/bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="components/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="components/bower_components/iron-icons/editor-icons.html">
-<link href="http://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <link rel="import" href="components/genemo_components/genemo-styles.html">
 <style is="custom-style" include="genemo-shared-styles">
 body {

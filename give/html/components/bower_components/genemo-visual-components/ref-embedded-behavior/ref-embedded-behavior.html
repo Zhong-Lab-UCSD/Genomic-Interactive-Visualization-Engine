@@ -1,0 +1,81 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
+<script>
+  var GIVe = (function (give) {
+    give._trackCounter = 0
+
+    give.RefEmbeddedBehavior = {
+      properties: {
+        /**
+         * The reference used in the embedded browser.
+         * Reference names needs to be in UCSC format.
+         * Please see [GIVe.RefObject](../../genemo-data-components/ref-object/)
+         * to see available references on GIVe server.
+         */
+        ref: {
+          type: String,
+          observer: '_refChanged'
+        },
+
+        /**
+         * The GIVe.RefObject for reference.
+         * Contains chromosomal layout and track information.
+         * @type {GIVe.RefObject}
+         */
+        _refObj: {
+          type: Object
+        }
+      },
+
+      /**
+       * _refChanged - the observer function to handle changes in this.ref
+       *
+       * @param  {string} newValue - new reference name
+       * @param  {string} oldValue - old reference name
+       */
+      _refChanged: function (newValue, oldValue) {
+        this.setRef(newValue)
+      },
+
+      /**
+       * Get the current reference of the element
+       *
+       * @return {GIVe.RefObject}  Reference currently used
+       */
+      getRef: function () {
+        return this._refObj
+      },
+
+      /**
+       * Set the reference to new reference
+       *
+       * this will reset all tracks and redo the ref
+       * note that the tracks should already be initialized before switching here
+       * After this, this.changeAllViewWindows should be called
+       *
+       * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
+       * @param  {number} numOfSubs - number of sub views
+       */
+      setRef: function (ref) {
+        if (ref) {
+          give.RefObject.callOnRefReady(this._setRefAfterReadyCheck.bind(this, ref))
+        }
+      },
+
+      _setRefAfterReadyCheck: function (ref) {
+        var refObj = give.RefObject.findRefByDb(ref)
+        if (!this._refObj || this._refObj.db !== refObj.db) {
+          // reference has been changed, needs to switch
+          this._setRefObj(refObj)
+        }
+      },
+
+      _setRefObj: function (refObj) {
+        this._refObj = refObj
+      }
+    }
+
+    return give
+  })(GIVe || {})
+
+</script>

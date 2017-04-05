@@ -67,6 +67,12 @@ var GIVe = (function (give) {
     }
 
     this.reverseLookupTable = {}
+    if (!this.settings.hasOwnProperty('defaultViewWindows')) {
+      this.settings.defaultViewWindows = give.RefObject.defaultViewWindows
+    }
+    if (typeof this.settings.defaultViewWindows === 'string') {
+      this.settings.defaultViewWindows = [this.settings.defaultViewWindows]
+    }
   }
 
   give.RefObject.prototype.getCleanID = function () {
@@ -280,41 +286,37 @@ var GIVe = (function (give) {
     return result
   }
 
-  give.RefObject.initAllTarget = '/givdata/initRef.php'
-  give.RefObject.initChromTarget = '/givdata/initRef.php'
-  give.RefObject.initTrackTarget = '/givdata/initTracks.php'
-
-  give.RefObject.initAllRef = function (target, spcArray, filter, callback) {
+  give.RefObject.initAllRef = function (target, refArray, filter, callback) {
     // initialize all ref from db
     // return an array of ref
-    // callback is the callback function taking spcArray as argument
-    spcArray = spcArray || []
-    spcArray.splice(0, spcArray.length)
-    spcArray.dbMap = {}
-    spcArray.ready = false
-    spcArray.currRef = spcArray.currRef || function () {
+    // callback is the callback function taking refArray as argument
+    refArray = refArray || []
+    refArray.splice(0, refArray.length)
+    refArray.dbMap = {}
+    refArray.ready = false
+    refArray.currRef = refArray.currRef || function () {
       return this[this.selected] || this.dbMap[this.selected] || null
     }
 
     give.postAjax(target || give.RefObject.initAllTarget, {}, function (data) {
-      for (var spcDb in data) {
-        if (data.hasOwnProperty(spcDb) && (typeof filter !== 'function' || filter(data[spcDb]))) {
-          spcArray.dbMap[spcDb] = new give.RefObject(spcDb, data[spcDb].name,
-                                   data[spcDb].commonname,
-                                   data[spcDb].encode, data[spcDb].dbname, data[spcDb].chromInfo,
-                                   data[spcDb].settings)
-          spcArray.push(spcArray.dbMap[spcDb])
+      for (var refDb in data) {
+        if (data.hasOwnProperty(refDb) && (typeof filter !== 'function' || filter(data[refDb]))) {
+          refArray.dbMap[refDb] = new give.RefObject(refDb, data[refDb].name,
+                                   data[refDb].commonname,
+                                   data[refDb].encode, data[refDb].dbname, data[refDb].chromInfo,
+                                   data[refDb].settings)
+          refArray.push(refArray.dbMap[refDb])
         }
       }
-      spcArray.ready = true
-      spcArray.selected = null
+      refArray.ready = true
+      refArray.selected = null
       if (callback) {
-        callback(spcArray)
+        callback(refArray)
       } else {
         give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'ref-ready'})
       }
     }, 'json') // end ajax to initialize ref
-    return spcArray
+    return refArray
   }
 
   give.RefObject.createCustomGroup = function (group) {
@@ -324,6 +326,55 @@ var GIVe = (function (give) {
     group.priority = group.priority || give.TrackGroup.CUSTOM_GROUP_PRIORITY
     return new give.TrackGroup(groupID, group)
   }
+
+  give.RefObject.findRefByDb = function (db) {
+    if (typeof db === 'string' && !give.RefObject.refArray.ready) {
+      // not ready yet, push to task scheduler
+      throw (new Error('refArray is not initialized yet! ' +
+        'Please use GIVe.RefObject.callOnRefReady() to wrap your function.'))
+    } else {
+      if (typeof db === 'string' &&
+        give.RefObject.refArray.dbMap.hasOwnProperty(db)) {
+        // look up reference in give.RefObject.refArray
+        return give.RefObject.refArray.dbMap[db]
+      } else if (db instanceof give.RefObject) {
+        return db
+      } else {
+        throw (new Error('Invalid RefObject was given: ' + db))
+      }
+    }
+  }
+
+  give.RefObject.callOnRefReady = function (callback) {
+    // callback is the callback function taking no argument (already bound)
+    if (!give.RefObject.refArray || !give.RefObject.refArray.ready) {
+      if (callback) {
+        give.mainTaskScheduler.addTask(new give.TaskEntry(callback,
+          ['ref-ready']))
+      }
+      return false
+    } else {
+      if (callback) {
+        return callback()
+      }
+    }
+  }
+
+  give.RefObject.refFilter = give.Ref_RefFilter || function (ref) {
+    return ref.settings['isGIVeEnabled']
+  }
+
+  give.RefObject.initAllTarget = give.host +
+    (give.Ref_InitAllTarget || '/givdata/initRef.php')
+  give.RefObject.initChromTarget = give.host +
+    (give.Ref_InitChromTarget || '/givdata/initRef.php')
+  give.RefObject.initTrackTarget = give.host +
+    (give.Ref_InitTrackTarget || '/givdata/initTracks.php')
+
+  give.RefObject.defaultViewWindows = give.Ref_DefaultViewWindows ||
+    ['chr10:30000000-55000000', 'chr10:34900000-65000000']
+
+  give.RefObject.refArray = give.RefObject.initAllRef()
 
   return give
 })(GIVe || {})
