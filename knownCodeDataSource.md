@@ -3,6 +3,17 @@
 This tutorial will show you how to use existing code base and data source to implement a customized genome browser
 
 ## Table of Contents
+*   [Prerequisites](#prerequisites)
+    *   [Using the public folder of Zhong Lab Web Server](#using-the-public-folder-of-zhong-lab-web-server)
+*   [Building a full-fledged genome browser](#building-a-full-fledged-genome-browser)
+*   [Embedding a full-fledged genome browser in existing pages](#embedding-a-full-fledged-genome-browser-in-existing-pages)
+*   [Embedding the browser panel only in existing pages](#embedding-the-browser-panel-only-in-existing-pages)
+*   [Tweak elements in the embedded browser](#tweak-elements-in-the-embedded-browser)
+    *   [Change your reference genome](#change-your-reference-genome)
+    *   [Change the number of sub-views for interactions](#change-the-number-of-sub-views-for-interactions)
+    *   [Change the coordinates showing in the browser](#change-the-coordinates-showing-in-the-browser)
+    *   [Change the data shown in the browser](#change-the-data-shown-in-the-browser)
+*   [API documentation](#api-documentation)
 
 ## Prerequisites
 
