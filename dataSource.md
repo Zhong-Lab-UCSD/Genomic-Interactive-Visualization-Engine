@@ -320,7 +320,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 
 ### Epilogue
 
-> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. It is at that time when a intelligence forensic expert detected traces of intrusion in one of the workstations from the lab.*
+> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. It is at that time when an intelligence forensic expert detected traces of intrusion in one of the workstations from the lab.*
 >
 > *Apparently the* Vulcan *subject tricked the bio-lab technicians by replacing the dataset for his sample with a recovered ancient dataset, which explains such high resemblance perfectly.*
 >
