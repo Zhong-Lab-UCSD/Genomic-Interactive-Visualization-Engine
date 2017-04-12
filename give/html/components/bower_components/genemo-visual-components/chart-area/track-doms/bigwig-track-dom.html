@@ -27,27 +27,87 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           this.FORECOLOR_INDEX = 0 // the color index for fore color
           this.TEXT_COLOR_RGB = 0 // the color index for text
           this.OVERFLOW_COLOR_INDEX = 7 // the color index for overflow (red)
+
+          /**
+           * the width of the line that is used for the overflow
+           */
           this.OVERFLOW_STROKE_WIDTH = 4
+
+          /**
+           * to be explained
+           */
           this.SCALE_TEXT_SIZE = 9
 
+          /**
+           *     to be explained
+           */
           this.MIN_RESOLUTION_PER_PIXEL = 2
         },
-
+        /**
+         * anonymous function - description
+         *
+         * @param  {type} track description
+         * @param  {type} prop  description
+         * @return {type}       description
+         */
         trackImpl: function (track, prop) {
+
+          /**
+           * The upper bound for the track display. Any values above this will be displayed as a overflow line.
+           */
           this.windowMax = 20
+
+          /**
+           * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
+           */
           this.windowMin = 0
+
+          /**
+           * The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.
+           */
           this.trackHeight = 80
+
+          /**
+           * to be explained
+           */
           this.scaleTickLength = 5
+
+          /**
+           *  A simple calculation of where the top and bottom of where to draw the track is.
+           */
           this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
+
+          /**
+           * to be explained
+           */
           this.windowRange = 0
+
+          /**
+           * Whether or not to automatically scale the window bounds according to the data displayed.
+           */
           this.autoScale = false
+
+          /**
+           * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
+           */
           this.averagePointAmount = 10
   // this.dataPoints=[]
         },
+
+        /**
+         * anonymous function - description
+         *
+         * @return {type}  returns the resolution.
+         */
         getCurrentResolutions: function () {
           return Math.floor(this.mainSvg.viewWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth)
         },
 
+        /**
+         * anonymous function - draw the given point with height determined by signal strength
+         *
+         * @return {type}  does not return anything.
+         */
         drawData: function () {
         // draw the given point with height determined by signal strength
           this.clear()
@@ -103,6 +163,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         // this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
         },
 
+        /**
+         * anonymous function - transforms a signal strength into a y coordinate on the svg.
+         *
+         * @param  {type} signal signal strength
+         * @param  {type} flags  has two booleans
+         * @return {type}        returns the y coordinate
+         */
         transformYCoordinate: function (signal, flags) {
         // transform Y coordinate from signal with this.windowMin and this.windowMax
         // notice that if the value exceeds either boundary,
@@ -122,6 +189,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           (this.drawingBoundary.bottom - this.drawingBoundary.top) + this.drawingBoundary.top
         },
 
+        /**
+         * anonymous function - scales a line to be drawn based on window ranges, assuming autoscale is being used.
+         *
+         * @param  {type} strength description
+         * @param  {type} extremes description
+         * @return {type}          description
+         */
         scaleLine: function (strength, extremes) {
           var zero, value
           if (extremes[0] < 0 && extremes[1] > 0) { // if range is from - to +
@@ -141,6 +215,12 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           return [this.height - zero, this.height - value]
         },
 
+        /**
+         * anonymous function - scales a line to be drawn based on the custom window range.
+         *
+         * @param  {type} strength description
+         * @return {type}          description
+         */
         scaleLineCustom: function (strength) {
           var zero = 0
           var value = 0
@@ -169,6 +249,12 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           return [zero, value, cutOff]
         },
 
+        /**
+         * anonymous function - Draws the horizontal thick, diferent colored lines where the values go further than the window ranges.
+         *
+         * @param  {type} overflows the list of overflow areas
+         * @return {type}           description
+         */
         drawOverflowLines: function (overflows) {
         // overflows is an object containing overflowing ChrRegions
         // { 'exceedMax': Array(), 'exceedMin': Array() }
@@ -181,6 +267,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
           overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
         },
+
+        /**
+         * anonymous function - Adds a point from the dataEntry to the datapoints.
+         *
+         * @param  {type} dataEntry holds many points, just not in the correct format (yet).
+         * @return {type}           description
+         */
         addPoint: function (dataEntry) {
       /* var x = dataEntry.getStart()
       var y = dataEntry.getEnd()
@@ -189,6 +282,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var vwindow = this.mainSvg.viewWindow
           this.track.data[vwindow.chr].dataPoints.push(dataEntry)
         },
+
+        /**
+         * anonymous function - Takes a specified amount of points (by averagePointAmount) around the point and assigns the average y value of all those points to the middle point's display.
+         * An even amount of points will mean taking an extra point to the left in the average.
+         *
+         * @return {type}  description
+         */
         averagePoints: function () {
           var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
           var vwindow = this.mainSvg.viewWindow
@@ -203,6 +303,14 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             this.track.data[vwindow.chr].averageDataPoints.push(temp)
           }
         },
+
+        /**
+         * anonymous function - Draws the given points onto the svg window.
+         *
+         * @param  {type} currPolygon description
+         * @param  {type} dataEntry   description
+         * @return {type}             description
+         */
         drawPeak: function (currPolygon, dataEntry) {
           var svgToDraw = this.mainSvg
           var windowToDraw = svgToDraw.viewWindow
@@ -275,6 +383,11 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           return true
         },
 
+        /**
+         * anonymous function - Draws the signal strength scale on the left side of the track.
+         *
+         * @return {type}  description
+         */
         drawScale: function () {
           if (this.textSvg) {
           // first draw the lines
@@ -298,6 +411,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           }
         },
 
+        /**
+         * anonymous function - Sets the window range.
+         *
+         * @param  {type} min description
+         * @param  {type} max description
+         * @return {type}     description
+         */
         setExtremes: function (min, max) {
           if (max > min) {
             this.windowMin = min
@@ -306,6 +426,12 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             this.autoScale = false
           } else {} // there is an error
         },
+
+        /**
+         * anonymous function - Automatically scales the window, taking the maximum and minimum signal strengths in the display window as the range extremes.
+         *
+         * @return {type}  description
+         */
         autoWindow: function () {
           this.autoScale = true
         }
