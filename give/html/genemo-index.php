@@ -17,7 +17,7 @@ if(isset($_REQUEST['sessionID'])) {
   try {
     $sessionInfo = json_decode(curl_exec($ch));
   } catch(Exception $e) {
-    $sessionError = "Invalid address or address expired.";
+    $sessionError = "";
   }
 }
 ?>

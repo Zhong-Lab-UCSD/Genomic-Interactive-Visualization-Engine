@@ -6,6 +6,27 @@ var GIVe = (function (give) {
     sub.prototype.constructor = sub
   }
 
+  /**
+   * getParameterByName - get parameters encoded in URL string
+   * adapted from the following StackOverflow answer:
+   * http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+   *
+   * @param  {string} name - name of the parameter
+   * @param  {string|null} url - url to be parsed, null to use the current parameter
+   * @return {string} the parameter to be returned, '' if blank, null if not set
+   */
+  give.getParameterByName = function (name, url) {
+    if (!url) {
+      url = window.location.href
+    }
+    name = name.replace(/[[]]/g, '\\$&')
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)')
+    var results = regex.exec(url)
+    if (!results) return null
+    if (!results[2]) return ''
+    return decodeURIComponent(results[2].replace(/\+/g, ' '))
+  }
+
   give.forEach = function (array, callback, thisArg) {
     // this is for window.NodeList (and other array-like objects)
     for (var i = 0; i < array.length; i++) {

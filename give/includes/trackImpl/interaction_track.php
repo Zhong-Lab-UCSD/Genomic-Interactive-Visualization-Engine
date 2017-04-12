@@ -1,7 +1,7 @@
 <?php
 require_once(realpath(dirname(__FILE__) . "/track_base.php"));
 
-function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
+function _loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
   $mysqli = connectCPB($db);
   $result = array();
@@ -80,7 +80,7 @@ function loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL
   return $result;
 }
 
-function loadCustomInteraction($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
+function _loadCustomInteraction($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
 }
 
@@ -90,5 +90,5 @@ function loadCustomInteraction($db, $remoteUrl, $chrRegion = NULL, $params = NUL
 if(!isset($trackMap['interaction'])) {
   $trackMap['interaction'] = array();
 }
-$trackMap['interaction']['loadTrack'] = 'loadInteraction';
-$trackMap['interaction']['loadCustomTrack'] = 'loadCustomInteraction';
+$trackMap['interaction']['loadTrack'] = '_loadInteraction';
+$trackMap['interaction']['loadCustomTrack'] = '_loadCustomInteraction';

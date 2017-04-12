@@ -53,7 +53,7 @@
         <div><span id = "Reference" class="text">Reference: </span></div>
         <paper-dropdown-menu id="regionDropdown" label="Reference" class="vertMargined text" no-label-float>
           <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentRef}}">
-            <template is="dom-repeat" items="[[ref]]" filter="encodeFilter">
+            <template is="dom-repeat" items="[[ref]]" filter="_encodeFilter">
               <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
             </template>
           </paper-menu>
@@ -200,7 +200,7 @@
           this.setReady(true)
         },
 
-        encodeFilter: function (value) {
+        _encodeFilter: function (value) {
           return (value.isEncode || !this.isEncodeOn)
         },
 

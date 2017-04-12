@@ -2,10 +2,22 @@
   // this file is to generate an ID and store corresponding
   require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
 
+  $result = array();
+  if (empty($_POST) && empty($_FILES)) {
+    // Both superglobals are empty, we probably hit a file that exceeds
+    // post_max_limit in php.ini
+    $result['error'] = "Error: File size exceeded maximum size allowed (" .
+      ini_get('upload_max_filesize') . "bytes). Please host your file to a public " .
+      "server and provide the URL instead. If you believe your file was within the " .
+      "limit but still received this error, please contact us and we will look " .
+      "into this issue.";
+    echo(json_encode($result));
+    exit();
+  }
+
   $hgsid = substr(trim($_REQUEST['hgsid']), 0, 6);
   $idbase = bin2hex(openssl_random_pseudo_bytes(12));
   $generatedID = $hgsid . '_' . $idbase;
-  $result = array();
   $result['id'] = $generatedID;
   $filename = '../upload/file_' . $idbase;
   $orifilename = '';
@@ -23,30 +35,50 @@
     } else {
       // is uploaded file
       if((!empty($_FILES['file'])) && ($_FILES['file']['error'] == 0)){
-        if ($_FILES['file']['size'] < MAX_UPLOAD_FILE_SIZE){
-          if (!file_exists($filename)) {
-            //Attempt to move the uploaded file to it's new place
-            if (!move_uploaded_file($_FILES['file']['tmp_name'], $filename)){
-              $result['error'] = "Error: A problem occurred during file uploading!";
-              echo json_encode($result);
-              exit();
-            }
-          } else {
-            $result['error'] = "Error: File " . htmlspecialchars($_FILES['file']['name']) . " already exists.";
+        if (!file_exists($filename)) {
+          //Attempt to move the uploaded file to it's new place
+          if (!move_uploaded_file($_FILES['file']['tmp_name'], $filename)){
+            $result['error'] = "Error: A problem occurred during file uploading!";
             echo json_encode($result);
             exit();
           }
         } else {
-          $result['error'] = "Error: File size " . $_FILES['file']['size'] . " exceeded maximum size of " . MAX_UPLOAD_FILE_SIZE . " bytes.";
+          $result['error'] = "Error: File " . htmlspecialchars($_FILES['file']['name']) . " already exists.";
           echo json_encode($result);
           exit();
         }
       } else {
-        $result['error'] = "Error: No file was uploaded. " . $_FILES['file']['error'];
-        echo json_encode($result);
-        exit();
+        switch ($_FILES['file']['error']) {
+          case UPLOAD_ERR_INI_SIZE:
+            $result['error'] = "Error: File size " . $_FILES['file']['size'] .
+              " exceeded maximum size allowed (" .
+              ini_get('upload_max_filesize') .
+              "bytes). Please host your file to a public " .
+              "server and provide the URL instead.";
+            echo json_encode($result);
+            exit();
+            break;
+          case UPLOAD_ERR_PARTIAL:
+            $result['error'] = "Error: The file was not completely uploaded. " .
+              "Please try again.";
+            echo json_encode($result);
+            exit();
+            break;
+          case UPLOAD_ERR_NO_FILE:
+            $result['error'] = "Error: No file was uploaded.";
+            echo json_encode($result);
+            exit();
+            break;
+          default:
+            $result['error'] = "Error: Upload file error. Error Number: " .
+              $_FILES['file']['error'] . ". Please contact us with your file " .
+              "and error number and we will look into it.";
+            echo json_encode($result);
+            exit();
+            break;
+        }
       }
-      $customTrackURL = "http://" . getenv('SERVER_NAME') . ":" . getenv('SERVER_PORT') . "/upload/file_" . $idbase;
+      $customTrackURL = "https://" . getenv('SERVER_NAME') . ":" . getenv('SERVER_PORT') . "/upload/file_" . $idbase;
       $orifilename = basename($_FILES['file']['name']);
     }
   }

@@ -91,6 +91,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
            * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
            */
           this.averagePointAmount = 10
+          this.slidingWindowWidth = 5   // sliding window size (single side)
+          this.dataPoints = []
   // this.dataPoints=[]
         },
 
@@ -108,6 +110,27 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
          *
          * @return {type}  does not return anything.
          */
+        getCurrentPixelLength: function () {
+          return Math.ceil(this.mainSvg.viewWindow.getLength() / this.windowWidth)
+        },
+
+        generateSmoothedPoints: function () {
+          // Get the smoothing points
+          var rawDataPoints = []
+          var smoothedDataPoints = []
+          var vwindow = this.mainSvg.viewWindow
+          var extensionSpan = Math.max(this.getCurrentPixelLength *
+            this.slidingWindowWidth, this.slidingWindowWidth)
+
+          // First populate the raw data points
+          this.track.data[vwindow.chr].traverse(vwindow.getExtension(extensionSpan),
+            rawDataPoints.push, null, this.getCurrentResolutions(),
+            rawDataPoints, false)
+
+          // Then smooth out with this.slidingWindowWidth
+
+        },
+
         drawData: function () {
         // draw the given point with height determined by signal strength
           this.clear()
@@ -141,7 +164,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             }
 
             var polygon = {}
-            this.track.data[vwindow.chr].dataPoints = []
+
             this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1, null, true), this.addPoint.bind(this),
                                 null, this.getCurrentResolutions(), this, false)
             this.averagePoints()

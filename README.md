@@ -112,6 +112,7 @@ var myChart = new GIVE.ChartController({
 
 Please visit the following tutorial pages to see how to use the engine:
 *   [Use GIVE to build a customized genome browser with existing code and data source](knownCodeDataSource.md)
+*   [Populating a reference genome with a few data tracks on a MySQL compatible data source](dataSource.md)
 
 ## Credits
 

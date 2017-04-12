@@ -275,8 +275,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 this.viewWindows[index].regionToString(false) !==
                 new give.ChromRegion(coordinateStr, this._refObj).regionToString(false))) {
               this.splice('viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
+            } else {
+              this.splice('viewWindows', index, 1, false)
             }
           }, this)
+
+          // initialize DOM array
+          this._initDOMArray()
         },
 
         attached: function () {
@@ -384,13 +389,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
-          this.trackDOMsByWindow[viewWindowIndex].splice(
-            give.locationOf(trackDOM, this.trackDOMsByWindow[viewWindowIndex],
+          this._trackDOMsByWindow[viewWindowIndex].splice(
+            give.locationOf(trackDOM, this._trackDOMsByWindow[viewWindowIndex],
               null, null, function (trackDOM1, trackDOM2) {
                 return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
               }.bind(this)) + 1,
             0, trackDOM)
-          this.trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
+          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
         },
 
         _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
@@ -401,7 +406,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
-          if (forceAdd || !this.trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
+          if (forceAdd || !this._trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
             var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
             if (newTrackDOM) {
               this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
@@ -412,7 +417,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _mergeTrackDOMsByWindow: function () {
           this.trackDOMs.splice(0, this.trackDOMs.length)
-          this.trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
+          this._trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
             if (windowIndex !== 0) {
               indTrackDOMs = indTrackDOMs.slice().reverse()
             }
@@ -444,7 +449,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             trackDOM.updateLocationSize(0, currY, width)
             currY += trackDOM.getHeight() + this._trackGap * this._textSize
           }, this)
-          currY -= this._trackGap * this._textSize
+          if (this.trackDOMs.length > 0) {
+            currY -= this._trackGap * this._textSize
+          }
           this.$.mainSvg.setAttribute('height', currY)
           this.$.mainSvg.setAttribute('viewBox', '0 0 ' +
             this.$.chartHoldingMaterial.clientWidth + ' ' + currY)
@@ -461,7 +468,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           if (index) {
             this._updateTracksInWindow(index)
           } else {
-            this.trackDOMsByWindow.forEach(function (trackDOMs, windex) {
+            this._trackDOMsByWindow.forEach(function (trackDOMs, windex) {
               this._updateTracksInWindow(windex)
             }, this)
           }
@@ -476,7 +483,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // index is the window index
           // only need to update tracks involved with that index
           this._setReadiness(false)
-          this.trackDOMsByWindow[index].forEach(function (trackDOM, tindex) {
+          this._trackDOMsByWindow[index].forEach(function (trackDOM, tindex) {
             trackDOM.updateTracks(this.viewWindows[index], index, this._threshold)
           }, this)
         },
@@ -487,12 +494,18 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             return trackDOM.isReady
           }, this)) {
             this.updateHeightLocation()
-            if (this.firstRun) {
+            try {
+              if (this.coorTrackZeroDOM) {
+                this.$.coorTrackTutorial.domTargetId = this.coorTrackZeroDOM.id
+                this.$.coorTrackTutorial.showTutorial()
+              }
               this._setFirstRun(false)
-              this.$.coorTrackTutorial.domTargetId = 'coor_' + this._refObj.db + '_0_mainSvg'
-              this.$.coorTrackTutorial.showTutorial()
+            } catch (e) {
+              give._verboseConsole(e.message + '\n' + e.stack,
+                give.VERBOSE_WARNING)
+            } finally {
+              this._setReadiness(true)
             }
-            this._setReadiness(true)
           }
         },
 
@@ -596,23 +609,19 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           this._checkVWindowsInit()
         },
 
-        /**
-         * Reset the entire DOM display
-         */
-        resetDOM: function () {
-          if (this._initialized) {
-            this._setReadiness(false)
-            this.trackDOMs = []     // this is the array for visible tracks (DOMs with corresponding stuff)
-                                    // every track is included
-            this.trackDOMsByWindow = []
-            // this is the array for visible tracks by window
-            // notice that this is an array of array
-            // tracks are grouped by its corresponding viewWindow Index
-            for (var i = 0; i < this.viewWindows.length; i++) {
-              this.trackDOMsByWindow.push([])
-              this.trackDOMsByWindow[i].map = {}
-            }
+        _initDOMArray: function () {
+          this.trackDOMs = []     // this is the array for visible tracks (DOMs with corresponding stuff)
+                                  // every track is included
+          this._trackDOMsByWindow = []
+          // this is the array for visible tracks by window
+          // notice that this is an array of array
+          // tracks are grouped by its corresponding viewWindow Index
+          for (var i = 0; i < this.viewWindows.length; i++) {
+            this._trackDOMsByWindow.push([])
+            this._trackDOMsByWindow[i].map = {}
+          }
 
+          if (this._refObj) {
             this.viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
               var coorTrackDOM = this._addVisibleTrack(give.TrackObject.createCoorTrack(this._refObj,
@@ -621,6 +630,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 this.coorTrackZeroDOM = coorTrackDOM
               }
             }, this)
+          }
+        },
+
+        /**
+         * Reset the entire DOM display
+         */
+        resetDOM: function () {
+          if (this._initialized) {
+            this._setReadiness(false)
+            this._initDOMArray()
 
             this.addAllTrackDOMs()
           } else {
@@ -667,7 +686,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _removeInvisibleTrackDOMs: function () {
-          this.trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
+          this._trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
             // notice that because tracks may get deleted, don't use forEach with splice
             var i
             for (i = indTrackDOMs.length - 1; i >= 0; i--) {

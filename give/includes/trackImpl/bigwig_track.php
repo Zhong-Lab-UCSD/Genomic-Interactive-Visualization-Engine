@@ -1,7 +1,7 @@
 <?php
 require_once(realpath(dirname(__FILE__) . "/track_base.php"));
 
-function loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
+function _loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
   // bigwig tracks does not have any database entries,
   //    all files will be either locally on the server, or on some remote server
   $mysqli = connectCPB($db);
@@ -41,7 +41,7 @@ function loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $pa
   return $result;
 }
 
-function loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
+function _loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
   // note that this *MUST* be a remote file (cannot be a local file)
   if(substr($remoteUrl, 0, 7) !== 'http://' && substr($remoteUrl, 0, 8) !== 'https://') {
     error_log('RemoteURL is not a remote URL: ' . $remoteUrl);
@@ -76,5 +76,5 @@ function loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
 if(!isset($trackMap['bigwig'])) {
   $trackMap['bigwig'] = array();
 }
-$trackMap['bigwig']['loadTrack'] = 'loadBigwig';
-$trackMap['bigwig']['loadCustomTrack'] = 'loadCustomBigwig';
+$trackMap['bigwig']['loadTrack'] = '_loadBigwig';
+$trackMap['bigwig']['loadCustomTrack'] = '_loadCustomBigwig';

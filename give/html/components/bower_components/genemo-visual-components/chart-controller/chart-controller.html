@@ -114,9 +114,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     <!-- TODO: add paper-dropmenu for ref -->
     <paper-drawer-panel>
       <div drawer class="layout vertical">
-        <template is="dom-repeat" items="[[coordinates]]">
+        <template is="dom-repeat" items="{{coordinates}}">
           <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
-            floatingLabel="true" value="[[item]]">
+            floatingLabel="true" value="{{item}}">
           </gene-coor-input>
         </template>
         <div class="layout horizontal">

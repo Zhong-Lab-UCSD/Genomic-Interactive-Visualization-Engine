@@ -5,18 +5,21 @@ require_once(realpath(dirname(__FILE__) . "/../../includes/ref_func.php"));
 $req = getRequest();
 
 if(isset($req['db'])) {
-	$dblist []= $req['db'];
-	$result = getChromInfo($req['db']);
+  $dblist []= $req['db'];
+  $result = getChromInfo($req['db']);
 } else {
-	// get all db names
-	$result = array();
-	$dblist = getRefInfoFromArray();
-	for($i = 0; $i < count($dblist); $i++) {
-		if($dblist[$i]['browserActive']) {
-			$result[$dblist[$i]['givdbname']] = $dblist[$i];
-			$result[$dblist[$i]['givdbname']]['chromInfo'] = getChromInfo($dblist[$i]['givdbname']);
-		}
-	}
+  // get all db names
+  $result = array();
+  $dblist = getRefInfoFromArray();
+  for($i = 0; $i < count($dblist); $i++) {
+    if($dblist[$i]['browserActive']) {
+      $dbName = $dblist[$i]['givdbname']?
+        $dblist[$i]['givdbname']:
+        $dblist[$i]['dbname'];
+      $result[$dbName] = $dblist[$i];
+      $result[$dbName]['chromInfo'] = getChromInfo($dbName);
+    }
+  }
 }
 header('Content-Type: application/json');
 echo empty($result)? json_encode($result, JSON_FORCE_OBJECT): json_encode($result);

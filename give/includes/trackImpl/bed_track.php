@@ -112,28 +112,43 @@ function _loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
   }
   if($chrRegion) {
     // filter out bed entries not inside the region
-    $chrRegionObj = ChromRegion::newFromRegionText($chrRegion);
+    if(!is_array($chrRegion)) {
+      $chrRegion = [$chrRegion];
+    }
+    $strToChrRegion = function($regionStr) {
+      return ChromRegion::newFromRegionText($regionStr);
+    };
+    $chrRegionObj = array_map($strToChrRegion, $chrRegion);
   } else {
     $chrRegionObj = false;
   }
   while(($line = fgets($fin)) !== false) {
-    if($chrRegionObj) {
-      $tokens = preg_split("/\s+/", trim($line));
-      $chr = trim($tokens[0], " \t\n\r\0\x0B,");
-      $start = intval(trim($tokens[1], " \t\n\r\0\x0B,"));
-      $end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
-      if(strtolower($chr) !== strtolower($chrRegionObj->chr) ||
-        $end < $chrRegionObj->start ||
-        $start > $chrRegionObj->end) {
-          continue;
+    if (trim($line, " \t\n\r\0\x0B,")[0] !== '#') {
+      if($chrRegionObj) {
+        $tokens = preg_split("/\s+/", trim($line));
+        $chr = trim($tokens[0], " \t\n\r\0\x0B,");
+        $start = intval(trim($tokens[1], " \t\n\r\0\x0B,"));
+        $end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
+
+        $overlapFlag = false;
+        for ($i = 0, $chrRegionObjLen = count($chrRegionObj); $i < $chrRegionObjLen; $i++) {
+          if(strtolower($chr) === strtolower($chrRegionObj[$i]->chr) &&
+            $end > $chrRegionObj[$i]->start &&
+            $start < $chrRegionObj[$i]->end) {
+              $overlapFlag = true;
+              break;
+          }
+        }
+      }
+      if ($overlapFlag) {
+        if(!isset($result[$chr])) {
+          $result[$chr] = array();
+        }
+        $newGene = array();
+        $newGene['geneBed'] = trim($line);
+        $result[$chr] []= $newGene;
       }
     }
-    if(!isset($result[$chr])) {
-      $result[$chr] = array();
-    }
-    $newGene = array();
-    $newGene['geneBed'] = trim($line);
-    $result[$chr] []= $newGene;
   }
   return $result;
 

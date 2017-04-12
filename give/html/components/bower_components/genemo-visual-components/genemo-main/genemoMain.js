@@ -47,17 +47,6 @@ var GIVe = (function (give) {
     Polymer.dom(document).querySelector('#searchCard').setRef(give.RefObject.refArray)
   }, ['web-component-ready', 'ref-ready']))
 
-  give.loadSessionInfo = function (sessionID, db, selectedTracks, urlToShow, originalFile, hasDisplay, searchRange) {
-    give.sessionObj = {}
-    give.sessionObj.id = sessionID
-    give.sessionObj.db = db
-    give.sessionObj.list = selectedTracks
-    give.sessionObj.urlToShow = urlToShow
-    give.sessionObj.originalFile = originalFile
-    give.sessionObj.hasDisplay = hasDisplay
-    give.sessionObj.searchRange = searchRange
-  }
-
   give.validateUploadFileOrURL = function (event) {
     var sessionDataObj = event.detail.sessionDataObj
     give.toggleUpload(false)
@@ -106,7 +95,6 @@ var GIVe = (function (give) {
       }
     })
     give.switchFromFirstRun()
-    mainPanelDom.closeDrawer()
 
     give.fireCoreSignal('collapse', {group: 'query-search', flag: false})
 
@@ -140,8 +128,7 @@ var GIVe = (function (give) {
       IDPrepQuery.append('searchRange', dataObj.searchRange)
     }
     // var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
-    var compDomain = window.location.protocol + '//comp.genemo.org/cpbrowser/'
-    give.postAjax(compDomain + 'uploadPrepare.php', IDPrepQuery,
+    give.postAjax(give.compHost + give.Gnm_UploadPrepareTarget, IDPrepQuery,
           callback, 'json')
   }
 
@@ -152,7 +139,11 @@ var GIVe = (function (give) {
       give.RefObject.refArray[sessionObj.db].getTracks().forEachByID(JSON.parse(sessionObj.list), function (track) {
         track.setSetting(give.GENEMO_SELECTED_KEY, true)
       }, this)
-      // then need to fire signal for the UI to respond
+      give.switchFromFirstRun()
+      give.setCustomTrack(sessionObj.db, sessionObj.urlToShow, saveSessionResp.bwFlag
+        ? 'bigWig' : 'bed')
+      give.getComputedRegions(saveSessionResp.bwFlag,
+        tableNameQuery, give.uploadUiHandler.bind(this, sessionDataObj))
     } catch (jsonExcept) {
       // something is wrong with JSON (which means something wrong when the PHP code tries to process input)
       console.log(sessionObj.list)
@@ -161,10 +152,13 @@ var GIVe = (function (give) {
   }
 
   give.sendRegionsToCompute = function (bwFlag, tableNameQuery, callback) {
-  // var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
-    var compDomain = window.location.protocol + '//comp.genemo.org/cpbrowser/'
-    give.postAjax(compDomain + (bwFlag ? 'geneTrackBigwig.php' : 'geneTrackComparison.php'),
-      tableNameQuery, callback, 'json')
+    give.postAjax(give.compHost + (bwFlag ? give.Gnm_CompBigwigTarget
+      : give.Gnm_CompBedTarget), tableNameQuery, callback, 'json')
+  }
+
+  give.getComputedRegions = function (id, ref, callback) {
+    give.postAjax(give.compHost + give.Gnm_LoadResultTarget,
+      { id: id, species: ref }, callback, 'json')
   }
 
   give.setCustomTrack = function (db, url, type) {
@@ -314,6 +308,45 @@ var GIVe = (function (give) {
       e.detail.map, e.detail.flags)
   }
 
+  // detect sessionID to see whether loading session is needed
+  if (give.getParameterByName('sessionID')) {
+    // sessionID is specified
+    give.sessionObj = {}
+    give.postAjax(
+      give.compHost + give.Gnm_LoadSessionTarget,
+      {
+        'sessionID': give.getParameterByName('sessionID')
+      }, function (response) {
+        // populate give.sessionObj
+        give.sessionObj.id = response.id
+        give.sessionObj.db = response.db
+        give.sessionObj.list = response.selected_tracks
+        give.sessionObj.urlToShow = response.display_file_url
+        give.sessionObj.originalFile = response.original_file_name
+          ? response.original_file_name
+          : response.display_file_url.split(/[\\/]/).pop()
+        give.sessionObj.hasDisplay = !(response.display_file_url.indexOf(response.id) >= 0 ||
+          response.display_file_url.indexOf(response.original_file_name) >= 0)
+        give.sessionObj.searchRange = response.search_range.trim()
+        give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'session-object-ready'})
+      }, 'json', 'POST', function (status) {
+        // may need to differentiate with different statuses
+        UI.alert('Invalid address or address expired.')
+      }
+    )
+
+    // schedule later operations after sessionObj is loaded
+    give.mainTaskScheduler.addTask(new give.TaskEntry(
+      give.loadSession.bind(this, give.sessionObj),
+      ['session-object-ready']
+    ))
+    give.mainTaskScheduler.addTask(new give.TaskEntry(
+      function () {
+        searchCardDom.loadSessionObj(give.sessionObj)
+      }, ['session-object-ready', 'web-component-ready']
+    ))
+  }
+
   window.addEventListener('WebComponentsReady', function () {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
@@ -388,6 +421,10 @@ var GIVe = (function (give) {
 
     if (give.sessionObj && searchCardDom) {
       searchCardDom.loadSessionObj(give.sessionObj)
+    }
+
+    if (give.sessionObj) {
+      give.setRegionListUnready()
     }
 
     if (give.sessionError) {
