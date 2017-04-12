@@ -92,7 +92,7 @@ USE `compbrowser`;
 ```
 Within the `compbrowser` database, a `ref` table is needed to store the properties of all supported references:
 ```SQL
-CREATE TABLE `ref` (
+CREATE TABLE `compbrowser`.`ref` (
  `name` char(100) DEFAULT NULL,   -- The name of the species of the reference
  `dbname` char(30) NOT NULL DEFAULT '',   -- The database name
  `commonname` char(50) DEFAULT NULL,      -- The common name of the species
@@ -115,7 +115,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
 1.  Add one entry in table `ref` of database `compbrowser`, notice that the `browserActive` field needs to be set to `1` and in the `settings` field, the JSON string also has its `browserActive` attribute set as `true`; (You may want to try <http://www.objgen.com/json> to get a JSON string with ease.)
     *__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, __please use your own db names to avoid naming conflicts.__ All db names should start with `demo_`.*
     ```SQL
-    INSERT INTO `ref` (
+    INSERT INTO `compbrowser`.`ref` (
       `name`,
       `dbname`,
       `commonname`,
@@ -139,7 +139,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     ```
 3.  Create a `cytoBandIdeo` table with chromosomal information in the *Vulcan* species database;
     ```SQL
-    CREATE TABLE `cytoBandIdeo` (
+    CREATE TABLE `demo_vlc`.`cytoBandIdeo` (
       `chrom` varchar(255) NOT NULL,          -- Chromosomal name
       `chromStart` int(10) unsigned NOT NULL, -- Start coordinate for the band
       `chromEnd` int(10) unsigned NOT NULL,   -- End coordinate for the band
@@ -150,7 +150,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     ```
 4.  Populate the `cytoBandIdeo` table. Since the presumed *Vulcan* genome is very similar to `hg19`, we can use the `cytoBandIdeo` table in UCSC `hg19` instead. The data for `cytoBandIdeo` of `hg19` can be downloaded from UCSC server at <http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/cytoBandIdeo.txt.gz>. You can use SQL command to load the __decompressed file__ into the table.
     ```SQL
-    LOAD DATA LOCAL INFILE "<your file path>/cytoBandIdeo.txt" INTO TABLE `cytoBandIdeo`;
+    LOAD DATA LOCAL INFILE "<your file path>/cytoBandIdeo.txt" INTO TABLE `demo_vlc`.`cytoBandIdeo`;
     ```
 
 With these steps done, you will be able to specify the *Vulcan* reference in embedded GIVE browser. (Please refer to [Tutorial 1, Part "Embedding a full-fledged genome browser in existing pages"](knownCodeDataSource.md#embedding-a-full-fledged-genome-browser-in-existing-pages) about how to embed GIVE browser in your web page.)
@@ -166,7 +166,7 @@ Since there was no tracks at all, the only thing you can see in the reference is
 
 Tracks in GIVE belongs to track groups for better management and these groups need their place in the database. To create a track group, create a `grp` table in the reference database if it doesn't have one already;
 ```SQL
-CREATE TABLE `grp` (
+CREATE TABLE `demo_vlc`.`grp` (
   `name` char(255) NOT NULL DEFAULT '',           -- Name of the group
   `label` char(255) NOT NULL DEFAULT '',          -- Long label of the group
   `priority` float NOT NULL DEFAULT '0',          
@@ -178,7 +178,7 @@ CREATE TABLE `grp` (
 ```
 Tracks themselves also need a place to store their annotation and data, therefore, a `trackDb` table is also needed in our *Vulcan* reference database.
 ```SQL
-CREATE TABLE `trackDb` (
+CREATE TABLE `demo_vlc`.`trackDb` (
   `tableName` varchar(255) NOT NULL,    -- Name of the track table
   `type` varchar(255) NOT NULL,         -- Type of the track (**Important**)
   `priority` float NOT NULL,            -- Order for the track (within group)
@@ -195,7 +195,7 @@ CREATE TABLE `trackDb` (
 Creating track groups is quite straightforward. Just add an entry of the group you would like to create in the `grp` table and you are good to go. In this demo, we will create two track groups, one for gene annotation (`genes`) and the other for epigenetic data (`epigenetics`).
 
 ```SQL
-INSERT INTO `grp` VALUES (
+INSERT INTO `demo_vlc`.`grp` VALUES (
   'genes',                          -- Group name
   'Genes and Gene Predictions',     -- Group long label
   3,                                -- Priority
@@ -218,7 +218,7 @@ After track groups were created, we can add tracks into the groups to display. A
 
 1.  Add the gene annotation track metadata in `trackDb` table;
     ```SQL
-    INSERT INTO `trackDb` VALUES (
+    INSERT INTO `demo_vlc`.`trackDb` VALUES (
       'GenePred',                   -- Track table name
       'genePred',                   -- Track type: gene and gene prediction
       1,
@@ -241,7 +241,7 @@ After track groups were created, we can add tracks into the groups to display. A
     *   Create a `GenePred` table for gene annotation data;
         *__Note:__ This is different than BED12 format: 1) field order is slightly different; 2) the 9th and 10th column represents the start and end coordinate of all the exons, instead of the start within the gene and length of the exon in BED12.*
         ```SQL
-        CREATE TABLE `GenePred` (
+        CREATE TABLE `demo_vlc`.`GenePred` (
           `name` varchar(255) NOT NULL DEFAULT '',
           `chrom` varchar(255) NOT NULL DEFAULT '',
           `strand` char(1) NOT NULL DEFAULT '',
@@ -264,7 +264,7 @@ After track groups were created, we can add tracks into the groups to display. A
     *   Populate the `GenePred` table with actual data.
         The annotation data we are going to use in this demo is at <https://sysbio.ucsd.edu/public/xcao3/UFPArchive/genepred.txt> and you may use `LOAD DATA LOCAL INFILE` to add them to the `GenePred` table.
         ```SQL
-        LOAD DATA LOCAL INFILE "<your file path>/genepred.txt" INTO TABLE `GenePred`;
+        LOAD DATA LOCAL INFILE "<your file path>/genepred.txt" INTO TABLE `demo_vlc`.`GenePred`;
         ```
 
 ### Adding one epigenetic track
@@ -275,7 +275,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 
 1.  Add the epigenetic track metadata in `trackDb` table;
     ```SQL
-    INSERT INTO `trackDb` VALUES (
+    INSERT INTO `demo_vlc`.`trackDb` VALUES (
       'Epi1',
       'bigWig',
       1,
@@ -305,13 +305,13 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 2.  Add the epigenetic data to the database.
     *   Create a table for epigenetic data;
         ```SQL
-        CREATE TABLE `Epi1` (
+        CREATE TABLE `demo_vlc`.`Epi1` (
           `fileName` varchar(255) NOT NULL
         );
         ```
     *   For bigWig tracks, only the URL of the data file (<https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig>) needs to be filled in the table.
         ```SQL
-        INSERT INTO `Epi1` VALUES (
+        INSERT INTO `demo_vlc`.`Epi1` VALUES (
           'https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig'
         );
         ```

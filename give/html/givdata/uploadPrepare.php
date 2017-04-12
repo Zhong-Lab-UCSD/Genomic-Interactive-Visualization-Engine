@@ -78,7 +78,7 @@
             break;
         }
       }
-      $customTrackURL = "https://" . getenv('SERVER_NAME') . ":" . getenv('SERVER_PORT') . "/upload/file_" . $idbase;
+      $customTrackURL = "https://" . getenv('SERVER_NAME') . "/upload/file_" . $idbase;
       $orifilename = basename($_FILES['file']['name']);
     }
   }

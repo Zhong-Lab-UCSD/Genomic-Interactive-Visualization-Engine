@@ -82,20 +82,22 @@ function getTracks($db, $grp = NULL) {
     } else {
       $groups = $mysqli->query($sqlstmt);
     }
-    while($itor = $groups->fetch_assoc()) {
-      // needs to redo settings part
-      // settings should be a json object
-      // convert integer, boolean and floats to correct format
-      $itor['priority'] = floatval($itor['priority']);
-      $itor['defaultIsClosed'] = ($itor['defaultIsClosed'] === '1');
-      $itor['singleChoice'] = ($itor['singleChoice'] === '1');
+    if($groups && $groups->num_rows > 0) {
+      while($itor = $groups->fetch_assoc()) {
+        // needs to redo settings part
+        // settings should be a json object
+        // convert integer, boolean and floats to correct format
+        $itor['priority'] = floatval($itor['priority']);
+        $itor['defaultIsClosed'] = ($itor['defaultIsClosed'] === '1');
+        $itor['singleChoice'] = ($itor['singleChoice'] === '1');
 
-      $result[$itor['name']] = $itor;
-      $result[$itor['name']]['tracks'] = [];
+        $result[$itor['name']] = $itor;
+        $result[$itor['name']]['tracks'] = [];
+      }
+      $groups->free();
     }
     $result['_ungrouped'] = [];
     $result['_ungrouped']['tracks'] = [];  // this is to hold ungrouped tracks
-    $groups->free();
 
     // then get track information
     $sqlstmt = "SELECT * FROM trackDb";
@@ -109,17 +111,19 @@ function getTracks($db, $grp = NULL) {
       $sqlstmt .= " ORDER BY priority";
       $tracks = $mysqli->query($sqlstmt);
     }
-    while($itor = $tracks->fetch_assoc()) {
-      // needs to redo settings part
-      // settings should be a json object
-      $itor['settings'] = json_decode($itor['settings']);
-      if(array_key_exists($itor['grp'], $result)) {
-        $result[$itor['grp']]['tracks'] []= $itor;
-      } else {
-        $result['_ungrouped']['tracks'] []= $itor;
+    if($tracks && $tracks->num_of_rows > 0) {
+      while($itor = $tracks->fetch_assoc()) {
+        // needs to redo settings part
+        // settings should be a json object
+        $itor['settings'] = json_decode($itor['settings']);
+        if(array_key_exists($itor['grp'], $result)) {
+          $result[$itor['grp']]['tracks'] []= $itor;
+        } else {
+          $result['_ungrouped']['tracks'] []= $itor;
+        }
       }
+      $tracks->free();
     }
-    $tracks->free();
     $mysqli->close();
   }
   return $result;

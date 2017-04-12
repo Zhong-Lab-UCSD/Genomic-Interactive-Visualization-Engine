@@ -11,7 +11,7 @@ function connectCPB($db = 'compbrowser') {
 	}
 	if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
 		error_log("(ConnectCPB) DB does not exist: " . $db);
-		die();
+		throw(new Exception("(ConnectCPB) DB does not exist: " . $db));
 	}
 	return $mysqli;
 }

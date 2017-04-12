@@ -13,11 +13,15 @@ if(isset($req['db'])) {
   $dblist = getRefInfoFromArray();
   for($i = 0; $i < count($dblist); $i++) {
     if($dblist[$i]['browserActive']) {
-      $dbName = $dblist[$i]['givdbname']?
-        $dblist[$i]['givdbname']:
-        $dblist[$i]['dbname'];
-      $result[$dbName] = $dblist[$i];
-      $result[$dbName]['chromInfo'] = getChromInfo($dbName);
+      try {
+        $dbName = $dblist[$i]['givdbname']?
+          $dblist[$i]['givdbname']:
+          $dblist[$i]['dbname'];
+        $dblist[$i]['chromInfo'] = getChromInfo($dbName);
+        $result[$dbName] = $dblist[$i];
+      } catch (Exception $e) {
+
+      }
     }
   }
 }
