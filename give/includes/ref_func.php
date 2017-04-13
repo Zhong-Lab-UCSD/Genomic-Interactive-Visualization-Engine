@@ -111,7 +111,7 @@ function getTracks($db, $grp = NULL) {
       $sqlstmt .= " ORDER BY priority";
       $tracks = $mysqli->query($sqlstmt);
     }
-    if($tracks && $tracks->num_of_rows > 0) {
+    if($tracks && $tracks->num_rows > 0) {
       while($itor = $tracks->fetch_assoc()) {
         // needs to redo settings part
         // settings should be a json object

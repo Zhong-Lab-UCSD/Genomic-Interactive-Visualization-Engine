@@ -7,7 +7,7 @@ This tutorial will show you how to use existing code base to implement a customi
     *   [Using the MySQL database of Zhong Lab Web Server](#using-the-mysql-database-of-zhong-lab-web-server)
         *   [Using MySQL console](#using-mysql-console)
         *   [Using phpMyAdmin](#using-phpmyadmin)
-*   [Demo: creating a <em>Vulcan</em> reference genome and visualize something on it](#demo-creating-a-vulcan-reference-genome-and-visualize-something-on-it)
+*   [Demo: creating a *Vulcan* reference genome and visualize something on it](#demo-creating-a-vulcan-reference-genome-and-visualize-something-on-it)
     *   [Preparation](#preparation)
     *   [Creating a new reference genome](#creating-a-new-reference-genome)
     *   [Creating a track group table and a track annotation table](#creating-a-track-group-table-and-a-track-annotation-table)
@@ -79,16 +79,15 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 >
 > *However, the understanding of our sibling sentient species is still quite lacking. For example, our knowledge of the mystic species of* Vulcans *is extremely limited, despite almost 200 years of contact between them and us.*
 >
-> *News came that scientists have just assembled the entire genome from a* Vulcan *sample, got a few annotations done and measured some epigenetic signals. There are obviously a lot of work to do, but we would like to check if we can see anything from what we already got.*
+> *News came that scientists have just assembled the entire genome from a* Vulcan *subject, got a few annotations done and measured some epigenetic signals. There are obviously a lot of work to do, but we would like to check if we can see anything from what we already got.*
 
 ### Preparation
 
 To facilitate connection between GIVE server and the database source, a database named `compbrowser` needs to be created on the source.
 
-*__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, then those tables are already there and you can skip this step. However, you still needs to* ``USE `compbrowser` ``
+*__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, then those tables are already there and you can skip this step.*
 ```SQL
 CREATE DATABASE `compbrowser`;
-USE `compbrowser`;
 ```
 Within the `compbrowser` database, a `ref` table is needed to store the properties of all supported references:
 ```SQL
@@ -113,6 +112,7 @@ CREATE TABLE `compbrowser`.`ref` (
 To visualize a new reference genome, GIVE only needs to know 1) the names of the species for this reference (Latin and common names are recommended but any name should work), 2) its chromosomal information, including names, sizes and the location of centromeres. These are stored in two locations within the data source, which can be done in the following steps:
 
 1.  Add one entry in table `ref` of database `compbrowser`, notice that the `browserActive` field needs to be set to `1` and in the `settings` field, the JSON string also has its `browserActive` attribute set as `true`; (You may want to try <http://www.objgen.com/json> to get a JSON string with ease.)
+
     *__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, __please use your own db names to avoid naming conflicts.__ All db names should start with `demo_`.*
     ```SQL
     INSERT INTO `compbrowser`.`ref` (
@@ -135,7 +135,6 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
 2.  Create a separate database for the reference, this database will be used to store all the track information within this species;
     ```SQL
     CREATE DATABASE `demo_vlc`;   -- This should be the same as `dbname` in `ref`
-    USE `demo_vlc`;
     ```
 3.  Create a `cytoBandIdeo` table with chromosomal information in the *Vulcan* species database;
     ```SQL
@@ -239,6 +238,7 @@ After track groups were created, we can add tracks into the groups to display. A
     ```
 2.  Add the gene annotation data to the database.
     *   Create a `GenePred` table for gene annotation data;
+
         *__Note:__ This is different than BED12 format: 1) field order is slightly different; 2) the 9th and 10th column represents the start and end coordinate of all the exons, instead of the start within the gene and length of the exon in BED12.*
         ```SQL
         CREATE TABLE `demo_vlc`.`GenePred` (
@@ -320,7 +320,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 
 ### Epilogue
 
-> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. It is at that time when an intelligence forensic expert detected traces of intrusion in one of the workstations from the lab.*
+> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. It is at that time when a intelligence forensic expert detected traces of intrusion in one of the workstations from the lab.*
 >
 > *Apparently the* Vulcan *subject tricked the bio-lab technicians by replacing the dataset for his sample with a recovered ancient dataset, which explains such high resemblance perfectly.*
 >
