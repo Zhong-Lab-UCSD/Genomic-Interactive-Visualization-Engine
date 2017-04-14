@@ -105,6 +105,10 @@ CREATE TABLE `compbrowser`.`ref` (
 )
 ```
 
+The data source will have a data structure as shown below:
+
+![UML Diagram for the database](2-extraFiles/GIVE_DB_comp.png)
+
 ### Creating a new reference genome
 
 > *Preliminary examinations revealed that this sample greatly resembles an ancient human genome assembly published about 250 years ago, the NCBI* `GRCh37` *(UCSC* `hg19` *). This is very intriguing and has casted doubt on the validity of the sample, but at least it will be easy for us to see.*
@@ -124,7 +128,10 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     )
     VALUES (
       'Vulcan',
-      'demo_vlc',   -- Note that for the tutorial it should begin with 'demo_'
+      'demo_vlc',   -- *** Please change this name to your own        ***
+      -- *** Note that for the tutorial it should begin with 'demo_'. ***
+      -- *** This will be referred to as your own DB name in the      ***
+      -- ***     comment of codes following.                          ***
       'Vulcan',
       1,            -- Make it active
       '{
@@ -134,11 +141,11 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     ```
 2.  Create a separate database for the reference, this database will be used to store all the track information within this species;
     ```SQL
-    CREATE DATABASE `demo_vlc`;   -- This should be the same as `dbname` in `ref`
+    CREATE DATABASE `demo_vlc`;   -- *** Replace `demo_vlc` with your own DB name ***
     ```
 3.  Create a `cytoBandIdeo` table with chromosomal information in the *Vulcan* species database;
     ```SQL
-    CREATE TABLE `demo_vlc`.`cytoBandIdeo` (
+    CREATE TABLE `demo_vlc`.`cytoBandIdeo` (  -- *** Replace `demo_vlc` with your own DB name ***
       `chrom` varchar(255) NOT NULL,          -- Chromosomal name
       `chromStart` int(10) unsigned NOT NULL, -- Start coordinate for the band
       `chromEnd` int(10) unsigned NOT NULL,   -- End coordinate for the band
@@ -147,6 +154,11 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
       KEY `chrom` (`chrom`(23),`chromStart`)
     );
     ```
+
+    The data source will now have a data structure as shown below (existing components that are not changed in structure is greyed out):
+
+    ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_cyto.png)
+
 4.  Populate the `cytoBandIdeo` table. Since the presumed *Vulcan* genome is very similar to `hg19`, we can use the `cytoBandIdeo` table in UCSC `hg19` instead. The data for `cytoBandIdeo` of `hg19` can be downloaded from UCSC server at <http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/cytoBandIdeo.txt.gz>. You can use SQL command to load the __decompressed file__ into the table.
     ```SQL
     LOAD DATA LOCAL INFILE "<your file path>/cytoBandIdeo.txt" INTO TABLE `demo_vlc`.`cytoBandIdeo`;
@@ -156,6 +168,8 @@ With these steps done, you will be able to specify the *Vulcan* reference in emb
 ```html
 <script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+
+<!-- ****** Replace `demo_vlc` in the next line with your own DB name ****** -->
 <chart-controller ref="demo_vlc" group-id-list='["genes", "epigenetics"]'>
 </chart-controller>
 ```
@@ -165,7 +179,7 @@ Since there was no tracks at all, the only thing you can see in the reference is
 
 Tracks in GIVE belongs to track groups for better management and these groups need their place in the database. To create a track group, create a `grp` table in the reference database if it doesn't have one already;
 ```SQL
-CREATE TABLE `demo_vlc`.`grp` (
+CREATE TABLE `demo_vlc`.`grp` (                   -- *** Replace `demo_vlc` with your own DB name ***
   `name` char(255) NOT NULL DEFAULT '',           -- Name of the group
   `label` char(255) NOT NULL DEFAULT '',          -- Long label of the group
   `priority` float NOT NULL DEFAULT '0',          
@@ -177,7 +191,7 @@ CREATE TABLE `demo_vlc`.`grp` (
 ```
 Tracks themselves also need a place to store their annotation and data, therefore, a `trackDb` table is also needed in our *Vulcan* reference database.
 ```SQL
-CREATE TABLE `demo_vlc`.`trackDb` (
+CREATE TABLE `demo_vlc`.`trackDb` (     -- *** Replace `demo_vlc` with your own DB name ***
   `tableName` varchar(255) NOT NULL,    -- Name of the track table
   `type` varchar(255) NOT NULL,         -- Type of the track (**Important**)
   `priority` float NOT NULL,            -- Order for the track (within group)
@@ -189,12 +203,16 @@ CREATE TABLE `demo_vlc`.`trackDb` (
 );
 ```
 
+The updated data structure as shown below (existing components that are not changed in structure is greyed out):
+
+![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_grp_track.png)
+
 ### Create track groups
 
 Creating track groups is quite straightforward. Just add an entry of the group you would like to create in the `grp` table and you are good to go. In this demo, we will create two track groups, one for gene annotation (`genes`) and the other for epigenetic data (`epigenetics`).
 
 ```SQL
-INSERT INTO `demo_vlc`.`grp` VALUES (
+INSERT INTO `demo_vlc`.`grp` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
   'genes',                          -- Group name
   'Genes and Gene Predictions',     -- Group long label
   3,                                -- Priority
@@ -217,7 +235,7 @@ After track groups were created, we can add tracks into the groups to display. A
 
 1.  Add the gene annotation track metadata in `trackDb` table;
     ```SQL
-    INSERT INTO `demo_vlc`.`trackDb` VALUES (
+    INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
       'GenePred',                   -- Track table name
       'genePred',                   -- Track type: gene and gene prediction
       1,
@@ -241,7 +259,7 @@ After track groups were created, we can add tracks into the groups to display. A
 
         *__Note:__ This is different than BED12 format: 1) field order is slightly different; 2) the 9th and 10th column represents the start and end coordinate of all the exons, instead of the start within the gene and length of the exon in BED12.*
         ```SQL
-        CREATE TABLE `demo_vlc`.`GenePred` (
+        CREATE TABLE `demo_vlc`.`GenePred` ( -- *** Replace `demo_vlc` with your own DB name ***
           `name` varchar(255) NOT NULL DEFAULT '',
           `chrom` varchar(255) NOT NULL DEFAULT '',
           `strand` char(1) NOT NULL DEFAULT '',
@@ -275,7 +293,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 
 1.  Add the epigenetic track metadata in `trackDb` table;
     ```SQL
-    INSERT INTO `demo_vlc`.`trackDb` VALUES (
+    INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
       'Epi1',
       'bigWig',
       1,
@@ -305,16 +323,20 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
 2.  Add the epigenetic data to the database.
     *   Create a table for epigenetic data;
         ```SQL
-        CREATE TABLE `demo_vlc`.`Epi1` (
+        CREATE TABLE `demo_vlc`.`Epi1` (  -- *** Replace `demo_vlc` with your own DB name ***
           `fileName` varchar(255) NOT NULL
         );
         ```
     *   For bigWig tracks, only the URL of the data file (<https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig>) needs to be filled in the table.
         ```SQL
-        INSERT INTO `demo_vlc`.`Epi1` VALUES (
+        INSERT INTO `demo_vlc`.`Epi1` VALUES (  -- *** Replace `demo_vlc` with your own DB name ***
           'https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig'
         );
         ```
+
+The updated data structure as shown below (existing components that are not changed in structure is greyed out):
+
+![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_final.png)
 
 > *The striking resemblance of the presumed* Vulcan *genome and epigenome has attracted great attention throughout UFP. However, lots of skeptical UFP scientists, including us, also doubted given such resemblance whether this set of data is genuinely from a* Vulcan *subject, or from some human origin.*
 
