@@ -155,7 +155,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     );
     ```
 
-    The data source will now have a data structure as shown below (existing components that are not changed in structure is greyed out):
+    The data source will now have a data structure as shown below (existing components not changed in structure are greyed out):
 
     ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_cyto.png)
 
@@ -203,7 +203,7 @@ CREATE TABLE `demo_vlc`.`trackDb` (     -- *** Replace `demo_vlc` with your own 
 );
 ```
 
-The updated data structure as shown below (existing components that are not changed in structure is greyed out):
+The updated data structure as shown below (existing components not changed in structure are greyed out):
 
 ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_grp_track.png)
 
@@ -334,7 +334,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
         );
         ```
 
-The final data structure as shown below (existing components that are not changed in structure is greyed out):
+The final data structure as shown below (existing components not changed in structure are greyed out):
 
 ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_final.png)
 
