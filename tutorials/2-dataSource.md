@@ -334,7 +334,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
         );
         ```
 
-The updated data structure as shown below (existing components that are not changed in structure is greyed out):
+The final data structure as shown below (existing components that are not changed in structure is greyed out):
 
 ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_final.png)
 
