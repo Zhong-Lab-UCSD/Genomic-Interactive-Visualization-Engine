@@ -194,7 +194,7 @@ CREATE TABLE `demo_vlc`.`grp` (                   -- *** Replace `demo_vlc` with
 Tracks themselves also need a place to store their annotation and data, therefore, a `trackDb` table is also needed in our *Vulcan* reference database.
 ```SQL
 CREATE TABLE `demo_vlc`.`trackDb` (     -- *** Replace `demo_vlc` with your own DB name ***
-  `tableName` varchar(255) NOT NULL,    -- Name of the track table
+  `tableName` varchar(150) NOT NULL,    -- Name of the track table
   `type` varchar(255) NOT NULL,         -- Type of the track (**Important**)
   `priority` float NOT NULL,            -- Order for the track (within group)
   `url` longblob,                       -- URL for the track, reserved
