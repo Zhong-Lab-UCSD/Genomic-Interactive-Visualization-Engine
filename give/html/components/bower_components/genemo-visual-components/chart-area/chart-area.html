@@ -495,8 +495,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }, this)) {
             this.updateHeightLocation()
             try {
-              if (this.coorTrackZeroDOM) {
-                this.$.coorTrackTutorial.domTargetId = this.coorTrackZeroDOM.id
+              if (this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
+                this.$.coorTrackTutorial.domTargetId =
+                  this.coorTrackZeroDOM.getTrackSvg().id
                 this.$.coorTrackTutorial.showTutorial()
               }
               this._setFirstRun(false)

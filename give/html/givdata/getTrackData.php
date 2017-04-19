@@ -12,25 +12,25 @@ ini_set('memory_limit', '30G');
 if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
   // This is not a CORS preflight request
   try {
-  	if(isset($req['db'])) {
-  		if(!isset($req['isCustom']) || !$req['isCustom']) {
-  			// not custom track with a remote file
-  			$result = loadTrack($req['db'], $req['trackID'], $req['window'],
-  								isset($req['type'])? $req['type']: NULL,
-  								isset($req['linkedTable'])? $req['linkedTable']: NULL,
-  								isset($req['params'])? $req['params']: NULL);
-  		} else {
-  			// is custom track with a remote file
-  			$result = loadCustomTrack($req['db'], $req['remoteURL'], $req['window'],
-  								isset($req['type'])? $req['type']: NULL,
-  								isset($req['params'])? $req['params']: NULL);
-  		} // end if custom track with remote file
-  	} else {
-  		throw new Exception('No db specified!');
-  	}
+    if(isset($req['db'])) {
+      if(!isset($req['isCustom']) || !$req['isCustom']) {
+        // not custom track with a remote file
+        $result = loadTrack($req['db'], $req['trackID'], $req['window'],
+                  isset($req['type'])? $req['type']: NULL,
+                  isset($req['linkedTable'])? $req['linkedTable']: NULL,
+                  isset($req['params'])? $req['params']: NULL);
+      } else {
+        // is custom track with a remote file
+        $result = loadCustomTrack($req['db'], $req['remoteURL'], $req['window'],
+                  isset($req['type'])? $req['type']: NULL,
+                  isset($req['params'])? $req['params']: NULL);
+      } // end if custom track with remote file
+    } else {
+      throw new Exception('No db specified!');
+    }
   } catch(Exception $e) {
-  	http_response_code(400);
-  	$result['error'] = $e->getMessage();
+    http_response_code(400);
+    $result['error'] = $e->getMessage();
   }
   header('Content-Type: application/json');
   echo json_encode($result);

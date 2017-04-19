@@ -28,7 +28,6 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
     $tracks->free();
     $mysqli->close();
   }
-  var_error_log($trackMap);
   // otherwise, directly use the corresponding function
   return $trackMap[$type]['loadTrack']($db, $tableName, $chrRegion, $linkedTable, $params);
 }

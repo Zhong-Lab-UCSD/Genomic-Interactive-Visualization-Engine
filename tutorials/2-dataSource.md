@@ -13,6 +13,7 @@ This tutorial will show you how to use existing code base to implement a customi
     *   [Creating a track group table and a track annotation table](#creating-a-track-group-table-and-a-track-annotation-table)
     *   [Create track groups](#create-track-groups)
     *   [Adding gene annotations](#adding-gene-annotations)
+    *   [Adding interactions](#adding-interactions)
     *   [Adding one epigenetic track](#adding-one-epigenetic-track)
     *   [Epilogue](#epilogue)
 *   [Database table properties documentation](#database-table-properties-documentation)
@@ -33,11 +34,10 @@ If you haven't set up your web server, please refer to [Tutorial 1, Part "Prereq
 
 ### Using the MySQL database of Zhong Lab Web Server
 
-Our lab server at `sysbio.ucsd.edu` also provides a working MariaDB instance you may use in this tutorial. A special user account has been created for this tutorial:
+A demo server at `demo.give.genemo.org` has been set up to provide a working MariaDB instance you may use in this tutorial. Please go to the following address to request an account and create a reference database:
 
 ```
-username: givdemo
-password: Demo0411
+https://demo.give.genemo.org/getDemoUser.html
 ```
 
 #### Using MySQL console
@@ -65,7 +65,7 @@ MariaDB [(none)]>_
 
 #### Using phpMyAdmin
 
-The MariaDB instance on `sysbio.ucsd.edu` can also be accessed via phpMyAdmin at <https://sysbio.ucsd.edu/phpmyadmin/>, just use the previous username and password to login.
+The MariaDB instance on `demo.give.genemo.org` can also be accessed via phpMyAdmin at <https://demo.give.genemo.org/phpmyadmin/>, just use the previous username and password to login.
 
 *__Note:__ While there will probably be easier and more straightforward ways for almost every command, it is still possible to directly edit SQL command in phpMyAdmin. Therefore, this tutorial will only provide the SQL command to use in all the operations.*
 
@@ -85,7 +85,7 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 
 To facilitate connection between GIVE server and the database source, a database named `compbrowser` needs to be created on the source.
 
-*__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, then those tables are already there and you can skip this step.*
+*__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, then those tables are already there and you can skip this step.*
 ```SQL
 CREATE DATABASE `compbrowser`;
 ```
@@ -115,7 +115,33 @@ The data source will have a data structure as shown below:
 
 To visualize a new reference genome, GIVE only needs to know 1) the names of the species for this reference (Latin and common names are recommended but any name should work), 2) its chromosomal information, including names, sizes and the location of centromeres. These are stored in two locations within the data source, which can be done in the following steps:
 
-1.  Add one entry in table `ref` of database `compbrowser`, notice that the `browserActive` field needs to be set to `1` and in the `settings` field, the JSON string also has its `browserActive` attribute set as `true`; (You may want to try <http://www.objgen.com/json> to get a JSON string with ease.)
+1.  Create a separate database for the reference, this database will be used to store all the track information within this species;
+
+    *__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, __please skip this step and go to step 2. Use the given database name in following steps.__*
+    ```SQL
+    CREATE DATABASE `demo_vlc`;   -- *** Replace `demo_vlc` with your own DB name ***
+    ```
+2.  Create a `cytoBandIdeo` table with chromosomal information in the *Vulcan* species database;
+    ```SQL
+    CREATE TABLE `demo_vlc`.`cytoBandIdeo` (  -- *** Replace `demo_vlc` with your own DB name ***
+      `chrom` varchar(255) NOT NULL,          -- Chromosomal name
+      `chromStart` int(10) unsigned NOT NULL, -- Start coordinate for the band
+      `chromEnd` int(10) unsigned NOT NULL,   -- End coordinate for the band
+      `name` varchar(255) NOT NULL,           -- Name of the band
+      `gieStain` varchar(255) NOT NULL,       -- Giemsa Stain info, to identify bands, centromeres, etc.
+      KEY `chrom` (`chrom`(23),`chromStart`)
+    );
+    ```
+
+    The data source will now have a data structure as shown below (existing components not changed in structure are greyed out):
+
+    ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_cyto.png)
+
+3.  Populate the `cytoBandIdeo` table. Since the presumed *Vulcan* genome is very similar to `hg19`, we can use the `cytoBandIdeo` table in UCSC `hg19` instead. The data for `cytoBandIdeo` of `hg19` can be downloaded from UCSC server at <http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/cytoBandIdeo.txt.gz>. You can use SQL command to load the __decompressed file__ into the table.
+    ```SQL
+    LOAD DATA LOCAL INFILE "<your file path>/cytoBandIdeo.txt" INTO TABLE `demo_vlc`.`cytoBandIdeo`;
+    ```
+4.  Add one entry in table `ref` of database `compbrowser`, notice that the `browserActive` field needs to be set to `1` and in the `settings` field, the JSON string also has its `browserActive` attribute set as `true`; (You may want to try <http://www.objgen.com/json> to get a JSON string with ease.)
 
     *__Note:__ If you are using the MariaDB instance on sysbio.ucsd.edu, __please use your own db names to avoid naming conflicts.__ All db names should start with `demo_`.*
     ```SQL
@@ -139,35 +165,11 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
       }'            -- Same here, make it active
     );
     ```
-2.  Create a separate database for the reference, this database will be used to store all the track information within this species;
-    ```SQL
-    CREATE DATABASE `demo_vlc`;   -- *** Replace `demo_vlc` with your own DB name ***
-    ```
-3.  Create a `cytoBandIdeo` table with chromosomal information in the *Vulcan* species database;
-    ```SQL
-    CREATE TABLE `demo_vlc`.`cytoBandIdeo` (  -- *** Replace `demo_vlc` with your own DB name ***
-      `chrom` varchar(255) NOT NULL,          -- Chromosomal name
-      `chromStart` int(10) unsigned NOT NULL, -- Start coordinate for the band
-      `chromEnd` int(10) unsigned NOT NULL,   -- End coordinate for the band
-      `name` varchar(255) NOT NULL,           -- Name of the band
-      `gieStain` varchar(255) NOT NULL,       -- Giemsa Stain info, to identify bands, centromeres, etc.
-      KEY `chrom` (`chrom`(23),`chromStart`)
-    );
-    ```
-
-    The data source will now have a data structure as shown below (existing components not changed in structure are greyed out):
-
-    ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_cyto.png)
-
-4.  Populate the `cytoBandIdeo` table. Since the presumed *Vulcan* genome is very similar to `hg19`, we can use the `cytoBandIdeo` table in UCSC `hg19` instead. The data for `cytoBandIdeo` of `hg19` can be downloaded from UCSC server at <http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/cytoBandIdeo.txt.gz>. You can use SQL command to load the __decompressed file__ into the table.
-    ```SQL
-    LOAD DATA LOCAL INFILE "<your file path>/cytoBandIdeo.txt" INTO TABLE `demo_vlc`.`cytoBandIdeo`;
-    ```
 
 With these steps done, you will be able to specify the *Vulcan* reference in embedded GIVE browser. (Please refer to [Tutorial 1, Part "Embedding a full-fledged genome browser in existing pages"](knownCodeDataSource.md#embedding-a-full-fledged-genome-browser-in-existing-pages) about how to embed GIVE browser in your web page.)
 ```html
-<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<script src="https://demo.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<link rel="import" href="https://demo.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 
 <!-- ****** Replace `demo_vlc` in the next line with your own DB name ****** -->
 <chart-controller ref="demo_vlc" group-id-list='["genes", "epigenetics"]'>
@@ -224,6 +226,12 @@ INSERT INTO `demo_vlc`.`grp` VALUES ( -- *** Replace `demo_vlc` with your own DB
   4,
   0,
   0
+), (
+  'interactions',
+  'Genomic Interactions',
+  5,
+  0,
+  0
 );
 ```
 
@@ -233,28 +241,7 @@ INSERT INTO `demo_vlc`.`grp` VALUES ( -- *** Replace `demo_vlc` with your own DB
 
 After track groups were created, we can add tracks into the groups to display. Adding tracks to GIVE database typically involves two steps: one for metadata and one for data.
 
-1.  Add the gene annotation track metadata in `trackDb` table;
-    ```SQL
-    INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
-      'GenePred',                   -- Track table name
-      'genePred',                   -- Track type: gene and gene prediction
-      1,
-      NULL,
-      NULL,
-      'genes',                      -- Group name, should be the same as grp.name
-      '{
-        "group":"genes",
-        "longLabel":"Predicted Genes for presumed Vulcan sample (by comparing against hg19)",
-        "priority":1,
-        "shortLabel":"Predicted Genes",
-        "track":"GenePred",
-        "type":"genePred",
-        "visibility":"pack",
-        "adaptive":true
-      }'
-    );
-    ```
-2.  Add the gene annotation data to the database.
+1.  Add the gene annotation data to the database.
     *   Create a `GenePred` table for gene annotation data;
 
         *__Note:__ This is different than BED12 format: 1) field order is slightly different; 2) the 9th and 10th column represents the start and end coordinate of all the exons, instead of the start within the gene and length of the exon in BED12.*
@@ -284,14 +271,99 @@ After track groups were created, we can add tracks into the groups to display. A
         ```SQL
         LOAD DATA LOCAL INFILE "<your file path>/genepred.txt" INTO TABLE `demo_vlc`.`GenePred`;
         ```
+2.  Add the gene annotation track metadata in `trackDb` table;
+    ```SQL
+    INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
+      'GenePred',                   -- Track table name
+      'genePred',                   -- Track type: gene and gene prediction
+      1,
+      NULL,
+      NULL,
+      'genes',                      -- Group name, should be the same as grp.name
+      '{
+        "group":"genes",
+        "longLabel":"Predicted Genes for presumed Vulcan sample (by comparing against hg19)",
+        "priority":1,
+        "shortLabel":"Predicted Genes",
+        "track":"GenePred",
+        "type":"genePred",
+        "visibility":"pack",
+        "adaptive":true
+      }'
+    );
+    ```
+
+### Adding interactions
+
+> *While the actual evidence for* Vulcan *genes are very slim, given its close relationship to the ancient* `hg19` *reference, it appears that whoever generated the annotations just used the human annotation as a guidance to predict where all those* Vulcan *genes may be.*
+
+Adding interaction tracks (in `interaction` format) is similar to adding `BED` or `GenePred` tracks. It also involves a data part and a metadata part.
+
+1.  Add the interaction data to the database.
+    *   Create a `interaction` table for gene annotation data;
+
+        *__Note:__ This is the interaction format converted for database use. Each interaction component will take at least two rows (one for each end) and linked by having the same `linkID`.*
+
+        ```SQL
+        CREATE TABLE `demo_vlc`.`newInteraction` ( -- *** Replace `demo_vlc` with your own DB name ***
+          `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+          `chrom` varchar(255) NOT NULL DEFAULT '',
+          `start` int(10) unsigned NOT NULL DEFAULT '0',
+          `end` int(10) unsigned NOT NULL DEFAULT '0',
+          `linkID` int(10) unsigned NOT NULL DEFAULT '0',
+          `value` float NOT NULL DEFAULT '0',
+          `dirFlag` tinyint(4) NOT NULL DEFAULT '-1',
+          PRIMARY KEY (`ID`),
+          KEY `chrom` (`chrom`(16),`start`),
+          KEY `chrom_2` (`chrom`(16),`end`),
+          KEY `linkID` (`linkID`)
+        )
+        ```
+    *   Populate the `GenePred` table with actual data.
+        The annotation data we are going to use in this demo is at <https://sysbio.ucsd.edu/public/xcao3/UFPArchive/newInteraction.txt> and you may use `LOAD DATA LOCAL INFILE` to add them to the `newInteraction` table.
+        ```SQL
+        LOAD DATA LOCAL INFILE "<your file path>/newInteraction.txt" INTO TABLE `demo_vlc`.`newInteraction`;
+        ```
+2.  Add the new interaction track metadata in `trackDb` table;
+    ```SQL
+    INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
+      'newInteraction',             -- Track table name
+      'interaction',                -- Track type: interaction
+      1,
+      NULL,
+      NULL,
+      'interaction',                      -- Group name, should be the same as grp.name
+      '{
+        "group":"interaction",
+        "longLabel":"Genomic interaction for presumed Vulcan sample",
+        "priority":1,
+        "shortLabel":"Genomic Interaction",
+        "track":"newInteraction",
+        "type":"interaction"
+      }'
+    );
+    ```
 
 ### Adding one epigenetic track
 
 > *Interestingly, there seem to be few discrepancies with the gene prediction data from human when annotating the presumed* Vulcan *sample. We haven't seen the epigenetic signal on the genome yet, but it appears that more caution would be better than less.*
 
-Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `GenePred` tracks. It also involves a metadata part and a data part.
+Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `GenePred` tracks. It also involves a data part and a metadata part.
 
-1.  Add the epigenetic track metadata in `trackDb` table;
+1.  Add the epigenetic data to the database.
+    *   Create a table for epigenetic data;
+        ```SQL
+        CREATE TABLE `demo_vlc`.`Epi1` (  -- *** Replace `demo_vlc` with your own DB name ***
+          `fileName` varchar(255) NOT NULL
+        );
+        ```
+    *   For bigWig tracks, only the URL of the data file (<https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig>) needs to be filled in the table.
+        ```SQL
+        INSERT INTO `demo_vlc`.`Epi1` VALUES (  -- *** Replace `demo_vlc` with your own DB name ***
+          'https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig'
+        );
+        ```
+2.  Add the epigenetic track metadata in `trackDb` table;
     ```SQL
     INSERT INTO `demo_vlc`.`trackDb` VALUES ( -- *** Replace `demo_vlc` with your own DB name ***
       'Epi1',
@@ -320,19 +392,6 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
       }'
     );
     ```
-2.  Add the epigenetic data to the database.
-    *   Create a table for epigenetic data;
-        ```SQL
-        CREATE TABLE `demo_vlc`.`Epi1` (  -- *** Replace `demo_vlc` with your own DB name ***
-          `fileName` varchar(255) NOT NULL
-        );
-        ```
-    *   For bigWig tracks, only the URL of the data file (<https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig>) needs to be filled in the table.
-        ```SQL
-        INSERT INTO `demo_vlc`.`Epi1` VALUES (  -- *** Replace `demo_vlc` with your own DB name ***
-          'https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig'
-        );
-        ```
 
 The final data structure as shown below (existing components not changed in structure are greyed out):
 
