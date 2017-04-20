@@ -165,7 +165,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 
             var polygon = {}
 
-            this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1, null, true), this.addPoint.bind(this),
+            this.track.data[vwindow.chr].dataPoints = []
+            this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1, null, true), this.addPoint.bind(this, vwindow.chr),
                                 null, this.getCurrentResolutions(), this, false)
             this.averagePoints()
             /* this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
@@ -297,13 +298,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
          * @param  {type} dataEntry holds many points, just not in the correct format (yet).
          * @return {type}           description
          */
-        addPoint: function (dataEntry) {
+        addPoint: function (vwindowChr, dataEntry) {
       /* var x = dataEntry.getStart()
       var y = dataEntry.getEnd()
       var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
           ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
           var vwindow = this.mainSvg.viewWindow
-          this.track.data[vwindow.chr].dataPoints.push(dataEntry)
+          this.track.data[vwindowChr].dataPoints.push(dataEntry)
         },
 
         /**

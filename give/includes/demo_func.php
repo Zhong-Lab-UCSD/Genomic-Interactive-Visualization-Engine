@@ -103,6 +103,12 @@ function getDemoUser($token) {
     throw new Exception("Error granting privileges, error: " . $mysqli->error, 1);
   }
 
+  $sqlstmt = "GRANT FILE ON *.* TO '" . $newUserName .
+    "'";
+  if(!$mysqli->query($sqlstmt)) {
+    throw new Exception("Error granting privileges, error: " . $mysqli->error, 1);
+  }
+
   $mysqli->close();
 
   return $user;
