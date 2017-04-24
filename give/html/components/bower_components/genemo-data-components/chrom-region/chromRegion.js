@@ -42,8 +42,7 @@ var GIVe = (function (give) {
             try {
               this[key] = mainParams[key]
             } catch (e) {
-              give._verboseConsole(e.message + '\n' + e.stack,
-                give.VERBOSE_WARNING)
+              give._verboseConsole(e, give.VERBOSE_WARNING)
             }
           }
         }
@@ -54,8 +53,7 @@ var GIVe = (function (give) {
             try {
               this[key] = additionalParams[key]
             } catch (e) {
-              give._verboseConsole(e.message + '\n' + e.stack,
-                give.VERBOSE_WARNING)
+              give._verboseConsole(e, give.VERBOSE_WARNING)
             }
           }
         }
@@ -329,8 +327,7 @@ var GIVe = (function (give) {
       var tempChrRegion = new give.ChromRegion(chrStr)
       tempChrRegion.clipRegion(ref)
     } catch (e) {
-      give._verboseConsole(e.message + '\n' + e.stack,
-        give.VERBOSE_DEBUG)
+      give._verboseConsole(e, give.VERBOSE_DEBUG)
       return false
     }
     return true

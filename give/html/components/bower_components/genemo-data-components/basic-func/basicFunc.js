@@ -183,9 +183,14 @@ var GIVe = (function (give) {
     return roundingFunc(value / resolution) * resolution
   }
 
-  give._verboseConsole = function (message, verboseLvl) {
+  give._verboseConsole = function (message, verboseLvl, moreMsg) {
     if (give.verboseLvl >= verboseLvl) {
-      console.log(message)
+      if (message instanceof Error) {
+        console.log((moreMsg ? moreMsg + ' | ' : '') + message.message)
+        console.log(message.stack)
+      } else {
+        console.log(message)
+      }
     }
   }
 

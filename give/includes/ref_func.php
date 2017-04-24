@@ -26,11 +26,12 @@ function getChromInfo($db) {
         $chromCentEnd = PHP_INT_MIN;
         while($chromRow = $chromIdeos->fetch_assoc()) {
           if($chromName !== $chromRow["chrom"]) {
-            if($chromName) {
-              // old chrom is there
+            if($chromName && ($chromEnd - $chromStart > 0)) {
+              // old and valid chrom is there
               $chrom["chrRegion"] = $chromName . ":" . $chromStart . "-" . $chromEnd;
-              if($chromCentStart < PHP_INT_MAX) {
-                $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
+              if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
+                $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
+                  $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
               }
               $result[$chromName] = $chrom;
             }
@@ -51,11 +52,12 @@ function getChromInfo($db) {
           $chromStart = min($chromStart, $chromRow["chromStart"]);
           $chromEnd = max($chromEnd, $chromRow["chromEnd"]);
         }
-        if($chromName) {
-          // old chrom is there
+        if($chromName && ($chromEnd - $chromStart > 0)) {
+          // old and valid chrom is there
           $chrom["chrRegion"] = $chromName . ":" . $chromStart . "-" . $chromEnd;
-          if($chromCentStart < PHP_INT_MAX) {
-            $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
+          if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
+            $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
+              $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
           }
           $result[$chromName] = $chrom;
         }

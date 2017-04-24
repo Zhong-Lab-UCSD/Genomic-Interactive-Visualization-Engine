@@ -29,9 +29,7 @@ var GIVe = (function (give) {
     }
 
     // read Object for ref chrom info (if there)
-    if (ChromInfo) {
-      this.initChromInfo(ChromInfo)
-    }
+    this.initChromInfo(ChromInfo)
 
     this.tracksUpdated = false    // regardless of whether user has selected
     this._tracksInitialized = false    // regardless of whether user has selected
@@ -81,21 +79,26 @@ var GIVe = (function (give) {
 
   give.RefObject.prototype.initChromInfo = function (ChromInfo) {
     if (ChromInfo) {
-      this.chromInfo = {}
-      for (var chrom in ChromInfo) {
-        if (ChromInfo.hasOwnProperty(chrom)) {
-          this.chromInfo[chrom] = {}
-          this.chromInfo[chrom].name = chrom
-          this.chromInfo[chrom].chrRegion =
-            new give.ChromRegion(ChromInfo[chrom].chrRegion)
-          if (ChromInfo[chrom].cent) {
-            this.chromInfo[chrom].cent =
-              new give.ChromRegion(ChromInfo[chrom].cent)
-          }
-          if (chrom.toLowerCase() !== chrom) {
-            this.chromInfo[chrom.toLowerCase()] = this.chromInfo[chrom]
+      try {
+        this.chromInfo = {}
+        for (var chrom in ChromInfo) {
+          if (ChromInfo.hasOwnProperty(chrom)) {
+            this.chromInfo[chrom] = {}
+            this.chromInfo[chrom].name = chrom
+            this.chromInfo[chrom].chrRegion =
+              new give.ChromRegion(ChromInfo[chrom].chrRegion)
+            if (ChromInfo[chrom].cent) {
+              this.chromInfo[chrom].cent =
+                new give.ChromRegion(ChromInfo[chrom].cent)
+            }
+            if (chrom.toLowerCase() !== chrom) {
+              this.chromInfo[chrom.toLowerCase()] = this.chromInfo[chrom]
+            }
           }
         }
+      } catch (err) {
+        this.ChromInfo = null
+        give._verboseConsole(err, give.VERBOSE_DEBUG, 'initChromInfo')
       }
     }
   }

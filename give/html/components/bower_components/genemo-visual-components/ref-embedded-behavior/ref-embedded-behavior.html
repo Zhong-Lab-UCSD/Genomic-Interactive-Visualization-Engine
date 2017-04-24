@@ -2,8 +2,6 @@
 <link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
 <script>
   var GIVe = (function (give) {
-    give._trackCounter = 0
-
     give.RefEmbeddedBehavior = {
       properties: {
         /**
@@ -24,6 +22,14 @@
          */
         _refObj: {
           type: Object
+        },
+
+        /**
+         * Whether this object needs a reference with valid chromInfo)
+         */
+        needsChromInfo: {
+          type: Boolean,
+          value: true
         }
       },
 
@@ -63,10 +69,21 @@
       },
 
       _setRefAfterReadyCheck: function (ref) {
-        var refObj = give.RefObject.findRefByDb(ref)
-        if (!this._refObj || this._refObj.db !== refObj.db) {
-          // reference has been changed, needs to switch
-          this._setRefObj(refObj)
+        try {
+          var refObj = give.RefObject.findRefByDb(ref)
+          if ((!this.needsChromInfo || refObj.chromInfo) &&
+            (!this._refObj || this._refObj.db !== refObj.db)) {
+            // reference has been changed, needs to switch
+            this._setRefObj(refObj)
+          } else {
+            this.ref = ''
+            throw new Error()
+          }
+        } catch (err) {
+          give._verboseConsole(err, give.VERBOSE_DEBUG, 'RefEmbeddedBehavior(' +
+            this.id + ')')
+          // call UI warning procedures in the future
+          give.fireSignal('warning', { msg: err.message || err })
         }
       },
 
