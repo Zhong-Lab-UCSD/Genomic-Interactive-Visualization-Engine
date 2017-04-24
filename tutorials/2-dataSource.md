@@ -3,7 +3,6 @@
 This tutorial will show you how to use existing code base to implement a customized genome browser with your own data.
 
 ## Table of Contents
-*   [Table of Contents](#table-of-contents)
 *   [Prerequisites](#prerequisites)
 *   [Demo: creating a <em>Vulcan</em> reference genome and visualize something on it](#demo-creating-a-vulcan-reference-genome-and-visualize-something-on-it)
     *   [OPTIONAL: Preparation for GIVE](#optional-preparation-for-give)
