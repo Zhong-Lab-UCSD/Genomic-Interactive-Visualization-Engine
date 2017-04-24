@@ -15,7 +15,7 @@ This tutorial will show you how to use existing code base to implement a customi
         *   [Adding one epigenetic track](#adding-one-epigenetic-track)
         *   [Adding interactions](#adding-interactions)
     *   [Epilogue](#epilogue)
-*   [Database table properties documentation](#database-table-properties-documentation)*   [Prerequisites](#prerequisites)
+*   [Database table properties documentation](#database-table-properties-documentation)
 
 ## Prerequisites
 
