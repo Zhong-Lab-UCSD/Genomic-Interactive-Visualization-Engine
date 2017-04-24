@@ -41,10 +41,9 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 2.  Use an SSH client to connect to GIVE Demo Server at `demo.give.genemo.org` with the following username and password to login. __Don't use your allocated username and password yet!__
 
     *__NOTE:__ The following command applies to Mac OS / Linux only. If you are using Windows, please use an SSH client, such as  [PuTTY](http://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to connect.*
-    ```sh
-    ssh demo.give.genemo.org
-    login as: givdemo
-    password: HTML4GenomeVis
+    ```
+    ssh givdemo@demo.give.genemo.org
+    givdemo@demo.give.genemo.org's password: HTML4GenomeVis
     ```
 
 3.  Use the console to login to MySQL:
@@ -119,7 +118,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
 
 5.  Create a separate database for the reference, this database will be used to store all the track information within this species;
 
-    *__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, __please skip this step and go to step 7.__*
+    *__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, __please skip this step and go to step 6.__*
     ```SQL
     CREATE DATABASE `<your_reference_database>`;
     ```
