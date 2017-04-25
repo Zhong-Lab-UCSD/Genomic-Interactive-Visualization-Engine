@@ -21,6 +21,8 @@ This tutorial will show you how to use existing code base to implement a customi
 
 To follow the tutorial, a functional MySQL-compatible instance and a PHP web server is required. For this demo, we will be using the GIVE Demo Server at demo.give.genemo.org as a PHP-supported web server linked to a working MariaDB instance. Follow these steps to connect to the demo server:
 
+***
+
 *__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. Please refer to the following resources for installing your own MySQL instance:*
 *   *[MySQL community server](https://dev.mysql.com/downloads/mysql/)*
 *   *[MariaDB](https://downloads.mariadb.org/)*
@@ -29,9 +31,10 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 *   *[PHP installation and configuration](http://php.net/manual/en/install.php)*
 *   *[cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).*
 
-*If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*
-
+*If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*  
 *If you decide to use your own MySQL instance and PHP server, please change the steps involving GIVE Demo Server accordingly and __follow all optional set-up steps__.*
+
+***
 
 1.  Please go to the following address to request an MySQL account and create a reference database:
 <https://demo.give.genemo.org/getDemoUser.html>  
@@ -39,12 +42,20 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
     The username will be referred to as `your_database_username`, the password as `password_for_your_database_user`, the database name as `your_reference_database`. __Whenever you see those name in the following steps, please replace those with what you get here.__
 
 2.  Use an SSH client to connect to GIVE Demo Server at `demo.give.genemo.org` with the following username and password to login. __Don't use your allocated username and password yet!__
-
-    *__NOTE:__ The following command applies to Mac OS / Linux only. If you are using Windows, please use an SSH client, such as  [PuTTY](http://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to connect.*
-    ```
-    ssh givdemo@demo.give.genemo.org
-    givdemo@demo.give.genemo.org's password: HTML4GenomeVis
-    ```
+    *   If you are using Mac OS or Linux, please use the following command:
+        ```
+        ssh givdemo@demo.give.genemo.org
+        givdemo@demo.give.genemo.org's password: HTML4GenomeVis
+        ```
+    *   If you are using windows, please use an SSH client, such as  [PuTTY](http://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to connect with the following parameters:  
+        Host name: `demo.give.genemo.org`  
+        port: `22`  
+        connection type: `SSH`  
+        When prompted, use the following information to login:
+        ```
+        login as: givdemo
+        givdemo@demo.give.genemo.org's password: HTML4GenomeVis
+        ```
 
 3.  Use the console to login to MySQL:
     ```sh
@@ -80,7 +91,12 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 
 ### OPTIONAL: Preparation for GIVE
 
-> __Note:__ If you are using the MariaDB instance on demo.give.genemo.org, then those steps are already done for you after you requested for a database username, password, and database name. Therefore, you can skip this section entirely.
+***
+
+*__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, your MariaDB account will not have the privilege to do the steps in this section. If you try any commands listed here, you will receive a message from MariaDB saying the operation is denied.  
+These steps are automatically done for you after you requested for a database username, password, and database name. Therefore, __please skip this section entirely.__*
+
+***
 
 *   Create a database named `compbrowser`:
     ```SQL
@@ -94,11 +110,11 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
      `name` char(100) DEFAULT NULL,   -- The name of the species of the reference
      `dbname` char(30) NOT NULL DEFAULT '',   -- The database name
      `commonname` char(50) DEFAULT NULL,      -- The common name of the species
-     `encode` tinyint(4) NOT NULL,            -- Whether it's part of ENCODE
+     `encode` tinyint(4) NOT NULL DEFAULT 0,      -- Whether it's part of ENCODE
      `specdatabase` varchar(255) DEFAULT NULL,    -- Reserved for GeNemo use
      `genomeSize` int(11) unsigned DEFAULT NULL,  -- Reserved for GeNemo use
      `browserActive` tinyint(1) NOT NULL DEFAULT '0', -- Whether the ref is active
-     `givdbname` varchar(255) NOT NULL,        -- Reserved for GeNemo use
+     `givdbname` varchar(255) NOT NULL DEFAULT '', -- Reserved for GeNemo use
      `settings` longtext NOT NULL,    -- Detailed settings for the reference, JSON format
      PRIMARY KEY (`dbname`)
     )
@@ -118,7 +134,12 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
 
 5.  Create a separate database for the reference, this database will be used to store all the track information within this species;
 
+    ***
+
     *__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, __please skip this step and go to step 6.__*
+
+    ***
+
     ```SQL
     CREATE DATABASE `<your_reference_database>`;
     ```
@@ -250,7 +271,11 @@ After track groups were created, we can add tracks into the groups to display. A
 13. Add the gene annotation data to the database.
     *   Create a `GenePred` table for gene annotation data;
 
+        ***
+
         *__Note:__ This is different than BED12 format: 1) field order is slightly different; 2) the 9th and 10th column represents the start and end coordinate of all the exons, instead of the start within the gene and length of the exon in BED12.*
+
+        ***
         ```SQL
         CREATE TABLE `<your_reference_database>`.`GenePred` ( -- *** Replace `<your_reference_database>` with your own DB name ***
           `name` varchar(255) NOT NULL DEFAULT '',
@@ -361,7 +386,11 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
 17. Add the interaction data to the database.
     *   Create a `interaction` table for gene annotation data;
 
+        ***
+
         *__Note:__ This is the interaction format converted for database use. Each interaction component will take at least two rows (one for each end) and linked by having the same `linkID`.*
+
+        ***
 
         ```SQL
         CREATE TABLE `<your_reference_database>`.`newInteraction` ( -- *** Replace `<your_reference_database>` with your own DB name ***
