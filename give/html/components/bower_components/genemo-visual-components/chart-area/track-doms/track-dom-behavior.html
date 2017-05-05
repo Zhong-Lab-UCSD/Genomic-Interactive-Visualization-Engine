@@ -196,6 +196,10 @@
           this.switchNarrowMode(true)
         }
 
+        if (properties.snap) {
+          this.snap = properties.snap
+        }
+
         // call "constructors" of child classes
         if (this.trackImpl) {
           this.trackImpl(track, properties)
@@ -327,6 +331,9 @@
         // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
         if (!newViewWindow) {
           // no new window, need to calculate
+          if (!this.mainSvg || !this.mainSvg.viewWindow) {
+            return
+          }
           newViewWindow = this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
             null, true, this.track.ref)
         }

@@ -94,7 +94,7 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 ***
 
 *__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, your MariaDB account will not have the privilege to do the steps in this section. If you try any commands listed here, you will receive a message from MariaDB saying the operation is denied.  
-These steps are automatically done for you after you requested for a database username, password, and database name. Therefore, __please skip this section entirely.__*
+These steps are automatically done for you after you requested for a database username, password, and database name. Therefore, __please skip this section entirely and go to Step 6.__*
 
 ***
 
@@ -192,7 +192,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     <link rel="import" href="https://demo.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
 
     <!-- ****** Replace `<your_reference_database>` in the next line with your own DB name ****** -->
-    <chart-controller ref="<your_reference_database>" group-id-list='["genes", "epigenetics", "interactions"]' num-of-subs="2">
+    <chart-controller ref="<your_reference_database>" group-id-list='["genes", "epigenetics"]'>
     </chart-controller>
     ```
     Since there was no tracks at all, the only thing you can see in the reference is the chromosomal coordinates. However, this is gonna change soon.
@@ -445,6 +445,16 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
     The final data structure as shown below:
 
     ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_final_interaction.png)
+
+19. Because two panels are needed to display interactions, you will need to change the embedding HTML code a little bit:  
+    ```html
+    <script src="https://demo.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="https://demo.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+
+    <!-- ****** Replace `<your_reference_database>` in the next line with your own DB name ****** -->
+    <chart-controller ref="<your_reference_database>" group-id-list='["genes", "interactions"]' num-of-subs="2">
+    </chart-controller>
+    ```
 
 ### Epilogue
 

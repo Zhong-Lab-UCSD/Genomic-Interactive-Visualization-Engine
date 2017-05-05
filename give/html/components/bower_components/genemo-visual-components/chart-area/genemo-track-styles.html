@@ -2,12 +2,6 @@
 <dom-module id="genemo-track-styles">
   <template>
     <style>
-    svg {
-      width: 100%;
-      min-width: 400px;
-      min-height: 250px;
-    }
-
     svg text {
       font-size: 12px;
       pointer-events: none;
@@ -41,17 +35,17 @@
       fill-opacity: 0.7;
     }
 
-      svg rect.pointerHandler {
+    svg rect.pointerHandler {
       fill: none;
       pointer-events: fill;
     }
 
-      svg rect.pointerHandler.grab {
+    svg rect.pointerHandler.grab {
       cursor: grab;
       cursor: -webkit-grab;
     }
 
-      svg rect.pointerHandler.grabbing {
+    svg rect.pointerHandler.grabbing {
       cursor: grabbing;
       cursor: -webkit-grabbing;
     }

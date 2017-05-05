@@ -131,7 +131,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 
          },
         drawData: function () {
-            var mode=0;
+            var mode=1;
         // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow
@@ -167,19 +167,22 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             this.track.data[vwindow.chr].dataPoints = []
             this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1, null, true), this.addPoint.bind(this, vwindow.chr),
                                 null, this.getCurrentResolutions(), this, false)
-            if(mode==1)
-            this.averagePoints()
-            if(mode==0)
-        this.bSpline();
-             this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
+            if (mode === 1) {
+              this.averagePoints()
+            }
+            if (mode === 0) {
+              this.bSpline();
+            }
+            this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
                           null, this.getCurrentResolutions(), this, false)
             this.drawPeak(polygon)  // finish up the last polygon */
-            if(mode==1)
-            for (var i = 0; i < this.track.data[vwindow.chr].averageDataPoints.length; i++) {
-              if (this.track.data[vwindow.chr].averageDataPoints[i].getStart() >= vwindow.start && this.track.data[vwindow.chr].averageDataPoints[i].getEnd() < vwindow.end) {
-                this.drawPeak(polygon, this.track.data[vwindow.chr].averageDataPoints[i])
+            if (mode === 1) {
+              for (var i = 0; i < this.track.data[vwindow.chr].averageDataPoints.length; i++) {
+                if (this.track.data[vwindow.chr].averageDataPoints[i].getStart() >= vwindow.start && this.track.data[vwindow.chr].averageDataPoints[i].getEnd() < vwindow.end) {
+                  this.drawPeak(polygon, this.track.data[vwindow.chr].averageDataPoints[i])
+                }
               }
-          }
+            }
           }
           this.drawScale()
 

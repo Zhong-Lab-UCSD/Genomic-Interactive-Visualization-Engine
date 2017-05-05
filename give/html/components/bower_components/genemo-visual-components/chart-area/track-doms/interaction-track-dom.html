@@ -115,13 +115,16 @@
 
         changeViewWindowAfterResize: function (newWindowWidth, newViewWindow) {
           // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
-          if (!newViewWindow || !Array.isArray(newViewWindow)) {
-            // no new window (or new window is not an array), need to calculate
-            this.subSvgs.forEach(function (subSvg, index) {
-              this.updateTracks(subSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
-                                       null, true, this.track.ref),
-                        index)
-            }, this)
+          try {
+            if (!newViewWindow || !Array.isArray(newViewWindow)) {
+              // no new window (or new window is not an array), need to calculate
+              this.subSvgs.forEach(function (subSvg, index) {
+                this.updateTracks(subSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
+                                         null, true, this.track.ref),
+                          index)
+              }, this)
+            }
+          } catch (err) {
           }
         },
 

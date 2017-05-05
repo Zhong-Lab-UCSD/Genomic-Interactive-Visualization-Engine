@@ -59,11 +59,29 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       }
       paper-material {
         @apply(--layout-fit);
+        @apply(--layout-vertical);
         padding: 0.8em;
         overflow-y: auto;
       }
-      paper-material > div {
+      div#chartHolding {
         padding: 0;
+        width: 100%;
+        @apply(--layout-vertical);
+        @apply(--layout-flex);
+      }
+      div#chartHolding div {
+        margin: 0;
+        padding: 0;
+      }
+      div.snappedParts {
+        @apply(--layout-start);
+        overflow-y: hidden;
+      }
+      div.scrollingParts {
+        @apply(--layout-flex);
+        overflow-y: auto;
+      }
+      div.scrollingParts svg {
         width: 100%;
       }
       #loadingBlock {
@@ -94,9 +112,27 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!readiness]]"></paper-spinner>
     </div>
     <paper-material>
-      <div id="chartHoldingMaterial">
-        <svg hidden$="[[!_initialized]]" id="mainSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-        </svg>
+      <div id="chartHolding" hidden$="[[!_initialized]]">
+        <template is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
+          <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapTop')]]">
+            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+            </svg>
+          </div>
+          <div class="scrollingParts" id="[[_getElemId(item.divId, 'Scroll')]]">
+            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+            </svg>
+          </div>
+          <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapBottom')]]">
+            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+            </svg>
+          </div>
+          <template is="dom-if" if="[[_vWindowHasSnapBetween(item)]]">
+            <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapBetween')]]">
+              <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+              </svg>
+            </div>
+          </template>
+        </template>
       </div>
       <div id="coorLocationHolder" hidden$="[[!_initialized]]"></div>
       <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
@@ -125,7 +161,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         properties: {
           /**
            * The view windows to display in the element.
-           * @type {Array<GIVe.ChromRegion>}
+           * @type {Array.<GIVe.ChromRegion>}
            */
           viewWindows: {
           // this will be an array of strings (viewWindowString),
@@ -138,9 +174,26 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           },
 
           /**
+           * The array holding trackDOMs for every view window
+           * @type {Array.<{
+           *   snapAbove: Array.<GIVe.TrackDomBehavior>,
+           *   scrolling: Array.<GIVe.TrackDomBehavior>,
+           *   snapBelow: Array.<GIVe.TrackDomBehavior>,
+           *   map: Object,
+           *   [snapInBetween: Array.<GIVe.TrackDomBehavior>]
+           * }>}
+           */
+          _trackDOMsByWindow: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          /**
            * The view windows to display in the element, in coordinate format.
            * This is for HTML attributes
-           * @type {Array<string>}
+           * @type {Array.<string>}
            */
           coordinates: {
             type: Array,
@@ -162,7 +215,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
            * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
            * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
            * for `mm10` only
-           * @type {Array<string>}
+           * @type {Array.<string>}
            */
           groupIdList: {
             // this is the array of allowed group IDs in the list
@@ -221,7 +274,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         listeners: {
           'track-ready': '_trackReadyHandler',
           'update-window': '_updateWindowHandler',
-          'iron-resize': '_onIronResize'
+          'iron-resize': '_onIronResize',
+          'dom-change': '_domChangeHandler'
         },
 
         created: function () {
@@ -328,7 +382,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return this._mergeProperty({
             x: 0,
             y: 0,
-            width: this.$.chartHoldingMaterial.clientWidth,
+            width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             windowIndex: viewWindowIndex
@@ -339,7 +393,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return this._mergeProperty({
             x: 0,
             y: 0,
-            width: this.$.chartHoldingMaterial.clientWidth,
+            width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             windowIndex: viewWindowIndex
@@ -350,10 +404,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return this._mergeProperty({
             x: 0,
             y: 0,
-            width: this.$.chartHoldingMaterial.clientWidth,
+            width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             labelLocation: ((viewWindowIndex === 0) ? 'up' : 'down'),
-            windowIndex: viewWindowIndex
+            windowIndex: viewWindowIndex,
+            snap: 'top'
+            // may need to implement some snapping code for all tracks
           }, properties)
         },
 
@@ -361,7 +417,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return this._mergeProperty({
             x: 0,
             y: 0,
-            width: this.$.chartHoldingMaterial.clientWidth,
+            width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
             numOfSubs: this.viewWindows.length,
@@ -373,7 +429,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return this._mergeProperty({
             x: 0,
             y: 0,
-            width: this.$.chartHoldingMaterial.clientWidth,
+            width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget
           }, properties)
@@ -389,8 +445,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
-          this._trackDOMsByWindow[viewWindowIndex].splice(
-            give.locationOf(trackDOM, this._trackDOMsByWindow[viewWindowIndex],
+          var holder
+          if (trackDOM.snap === 'top') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].snapAbove
+          } else if (trackDOM.snap === 'bottom') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].snapBelow
+          } else {
+            holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
+          }
+          holder.splice(
+            give.locationOf(trackDOM, holder,
               null, null, function (trackDOM1, trackDOM2) {
                 return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
               }.bind(this)) + 1,
@@ -415,46 +479,17 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }
         },
 
-        _mergeTrackDOMsByWindow: function () {
-          this.trackDOMs.splice(0, this.trackDOMs.length)
-          this._trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
-            if (windowIndex !== 0) {
-              indTrackDOMs = indTrackDOMs.slice().reverse()
-            }
-            indTrackDOMs.forEach(function (track, trackIndex) {
-              if (!track._domMergeFlag) {
-                this.trackDOMs.push(track)
-                track._domMergeFlag = true
-              }
-            }, this)
-          }, this)
-          this.trackDOMs.forEach(function (track) {
-            delete track._domMergeFlag
-          }, this)
-        },
-
         /**
          * Update the height and location of individual tracks
          *
          * @param  {number} width - Width of the current area
          */
-        updateHeightLocation: function (width) {
+        updateHeightLocation: function () {
           // calculate the heights for all tracks
           // note that by the time this is called, all tracks should be ready
           // (this is handled in track-ready event handler)
           // this will also rearrange the y value for all tracks as well
-          width = width || this.$.chartHoldingMaterial.clientWidth
-          var currY = 0
-          this.trackDOMs.forEach(function (trackDOM, index) {
-            trackDOM.updateLocationSize(0, currY, width)
-            currY += trackDOM.getHeight() + this._trackGap * this._textSize
-          }, this)
-          if (this.trackDOMs.length > 0) {
-            currY -= this._trackGap * this._textSize
-          }
-          this.$.mainSvg.setAttribute('height', currY)
-          this.$.mainSvg.setAttribute('viewBox', '0 0 ' +
-            this.$.chartHoldingMaterial.clientWidth + ' ' + currY)
+          this._trackDOMsByWindow.forEach(this._updateDomHeightInWindow, this)
         },
 
         /**
@@ -465,7 +500,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         _updateTracks: function (index) {
           // index is the window index
           // only need to update tracks involved with that index
-          if (index) {
+          if (typeof index === 'number') {
             this._updateTracksInWindow(index)
           } else {
             this._trackDOMsByWindow.forEach(function (trackDOMs, windex) {
@@ -483,19 +518,20 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // index is the window index
           // only need to update tracks involved with that index
           this._setReadiness(false)
-          this._trackDOMsByWindow[index].forEach(function (trackDOM, tindex) {
-            trackDOM.updateTracks(this.viewWindows[index], index, this._threshold)
-          }, this)
+          this._callForeachFuncOnDomInWindowEntry(
+            function (trackDOM, trackDomIndex) {
+              trackDOM.updateTracks(this.viewWindows[index], index, this._threshold)
+            }.bind(this), this._trackDOMsByWindow[index], index)
         },
 
         _trackReadyHandler: function (e) {
           // check if all tracks are ready, otherwise do nothing
-          if (this.trackDOMs.every(function (trackDOM) {
+          if (this._trackDOMsByWindow.every(this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
             return trackDOM.isReady
-          }, this)) {
+          }), this)) {
             this.updateHeightLocation()
             try {
-              if (this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
+              if (this.firstRun && this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
                 this.$.coorTrackTutorial.domTargetId =
                   this.coorTrackZeroDOM.getTrackSvg().id
                 this.$.coorTrackTutorial.showTutorial()
@@ -546,12 +582,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _changeThreshold: function (_threshold) {
           this._threshold = _threshold || this._threshold
-          this.trackDOMs.forEach(function (trackDOM, index) {
-            if (trackDOM.updateThreshold) {
-            // is an interaction track
-              trackDOM.updateThreshold(this._threshold)
-            }
-          }, this)
+          this._trackDOMsByWindow.forEach(this._callForeachFuncOnDomInWindowEntry.bind(
+            function (trackDOM, index) {
+              if (trackDOM.updateThreshold) {
+              // is an interaction track
+                trackDOM.updateThreshold(this._threshold)
+              }
+            }.bind(this)), this)
         },
 
         refreshAll: function (viewWindows, threshold) {
@@ -586,19 +623,44 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         /**
          * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
          *
-         * @param  {type} newValue new `numOfSubs` value
-         * @param  {type} oldValue old `numOfSubs` value
+         * @param  {number} newValue new `numOfSubs` value
+         * @param  {number} oldValue old `numOfSubs` value
          */
         _numOfSubsChanged: function (newValue, oldValue) {
+          this._initialized = false
           if (this._refObj) {
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
               if (this.coordinates[i] !== false &&
-                !give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
+                !give.ChromRegion.isValidChromRegion(this.coordinates[i]) &&
+                Array.isArray(this._refObj.settings.defaultViewWindows)
+              ) {
                 this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
+              }
+              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
                 this.splice('viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
+              } else {
+                this.splice('viewWindows', i, 1, null)
               }
             }
+            this._checkVWindowsInit()
+          }
+        },
+
+        _initTrackDOMHandlers: function () {
+          this._trackDOMsByWindow = []
+          for (var i = 0; i < this.viewWindows.length; i++) {
+            var newTrackDOMEntry = {
+              snapAbove: [],
+              scrolling: [],
+              snapBelow: [],
+              map: {},
+              divId: give.ChartArea.DOM_DIV_ID + i
+            }
+            if (i < this.viewWindows.length - 1) {
+              newTrackDOMEntry.snapInBetween = []
+            }
+            this.push('_trackDOMsByWindow', newTrackDOMEntry)
           }
         },
 
@@ -610,16 +672,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _initDOMArray: function () {
-          this.trackDOMs = []     // this is the array for visible tracks (DOMs with corresponding stuff)
-                                  // every track is included
-          this._trackDOMsByWindow = []
           // this is the array for visible tracks by window
           // notice that this is an array of array
           // tracks are grouped by its corresponding viewWindow Index
-          for (var i = 0; i < this.viewWindows.length; i++) {
-            this._trackDOMsByWindow.push([])
-            this._trackDOMsByWindow[i].map = {}
-          }
+          this._initTrackDOMHandlers()
 
           if (this._refObj) {
             this.viewWindows.forEach(function (vwindow, windowIndex) {
@@ -648,9 +704,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _clearDOM: function () {
-          while (Polymer.dom(this.$.mainSvg).firstChild) {
-            Polymer.dom(this.$.mainSvg).removeChild(Polymer.dom(this.$.mainSvg).firstChild)
-          }
+          var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg')
+          svgList.forEach(function (svgElem, index) {
+            while (Polymer.dom(svgElem).firstChild) {
+              Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
+            }
+          }, this)
           while (Polymer.dom(this.$.trackDOMHolder).firstChild) {
             Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild)
           }
@@ -677,7 +736,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 showTrack.bind(this, windowIndex), this)
             }
           }, this)
-          this._mergeTrackDOMsByWindow()
           this.populateDOM(noRefreshContent)
         },
 
@@ -699,14 +757,132 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }, this)
         },
 
+        _setDivElemInWindow: function (domInWindowEntry, index) {
+          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+          domInWindowEntry.snapAbove.divElem = this.$$('#' +
+            this._getElemId(domInWindowEntry.divId, reverse ? 'SnapBottom' : 'SnapTop'))
+          domInWindowEntry.scrolling.divElem = this.$$('#' +
+            this._getElemId(domInWindowEntry.divId, 'Scroll'))
+          domInWindowEntry.snapBelow.divElem = this.$$('#' +
+            this._getElemId(domInWindowEntry.divId, reverse ? 'SnapTop' : 'SnapBottom'))
+          if (domInWindowEntry.snapInBetween) {
+            domInWindowEntry.snapInBetween.divElem = this.$$('#' +
+              this._getElemId(domInWindowEntry.divId, 'SnapBetween'))
+          }
+        },
+
+        _callForeachWithElemFuncOnDomInWindowEntry: function (func, startFunc, endFunc, domInWindowEntry, index) {
+          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+          for (var key in domInWindowEntry) {
+            if (domInWindowEntry.hasOwnProperty(key) &&
+              Array.isArray(domInWindowEntry[key]) &&
+              domInWindowEntry[key].divElem &&
+              domInWindowEntry[key].divElem.querySelector('svg')
+            ) {
+              if (startFunc && typeof startFunc === 'function') {
+                startFunc(domInWindowEntry[key].divElem)
+              }
+              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+                : domInWindowEntry[key]
+              enumArray.forEach(func.bind(this,
+                domInWindowEntry[key].divElem), this)
+              if (endFunc && typeof endFunc === 'function') {
+                endFunc(domInWindowEntry[key].divElem)
+              }
+            }
+          }
+        },
+
+        _callForeachFuncOnDomInWindowEntry: function (func, domInWindowEntry, index) {
+          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+          for (var key in domInWindowEntry) {
+            if (domInWindowEntry.hasOwnProperty(key) &&
+              Array.isArray(domInWindowEntry[key])
+            ) {
+              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+                : domInWindowEntry[key]
+              enumArray.forEach(func, this)
+            }
+          }
+        },
+
+        _callEveryOnDomInWindowEntry: function (func, domInWindowEntry, index) {
+          // same thing as _callForeachFuncOnDomInWindowEntry, just replace forEach by every
+          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+          for (var key in domInWindowEntry) {
+            if (domInWindowEntry.hasOwnProperty(key) &&
+              Array.isArray(domInWindowEntry[key])
+            ) {
+              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+                : domInWindowEntry[key]
+              if (!enumArray.every(func, this)) {
+                return false
+              }
+            }
+          }
+          return true
+        },
+
+        _populateDomInWindow: function (domInWindowEntry, index) {
+          var _populateDomInComponent = function (component, trackDOM, trackDomIndex) {
+            Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
+            Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDOM.getTrackSvg())
+          }
+          this._callForeachWithElemFuncOnDomInWindowEntry(
+            _populateDomInComponent.bind(this), null, null,
+            domInWindowEntry, index)
+        },
+
+        /**
+         * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
+         *
+         * @param  {{
+         *   snapAbove: Array.<GIVe.TrackDomBehavior>,
+         *   scrolling: Array.<GIVe.TrackDomBehavior>,
+         *   snapBelow: Array.<GIVe.TrackDomBehavior>,
+         *   map: Object,
+         *   [snapInBetween: Array.<GIVe.TrackDomBehavior>]
+         * }} domInWindowEntry - viewWindow Array
+         * @param  {number} index - index of domInWindowEntry in the array
+         */
+        _updateDomHeightInWindow: function (domInWindowEntry, index) {
+          var _prepareSvgHeight = function (svgWidth, divElem) {
+            divElem._currY = 0
+            divElem._svgWidth = svgWidth || divElem.clientWidth
+          }
+          var _setDomIndHeight = function (divElem, trackDOM, index) {
+            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth)
+            divElem._currY += trackDOM.getHeight() + this._trackGap * this._textSize
+          }.bind(this)
+          var _setSvgWidthHeight = function (divElem) {
+            if (divElem._currY > 0) {
+              divElem._currY -= this._trackGap * this._textSize
+            }
+            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('width', divElem._svgWidth)
+            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('height', divElem._currY)
+            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('viewBox',
+              '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
+            delete divElem._currY
+            delete divElem._svgWidth
+          }.bind(this)
+          this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
+            _prepareSvgHeight.bind(this, this._svgWidth),
+            _setSvgWidthHeight, domInWindowEntry, index)
+          this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+          if (this._svgWidth !== domInWindowEntry.snapAbove.divElem.clientWidth) {
+            // scrolling happened, needs to shrink snapped track width
+            this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
+              _prepareSvgHeight.bind(this, this._svgWidth),
+              _setSvgWidthHeight, domInWindowEntry, index)
+          }
+        },
+
         populateDOM: function (noRefreshContent) {
           // first clear old DOMs
           this._clearDOM()
-          // then populate all new DOMS
-          this.trackDOMs.forEach(function (trackDOM, index) {
-            Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
-            Polymer.dom(this.$.mainSvg).appendChild(trackDOM.getTrackSvg())
-          }, this)
+          // then populate all new DOMS by window
+          this._trackDOMsByWindow.forEach(this._populateDomInWindow, this)
+          this.updateHeightLocation()
           Polymer.dom.flush()
           if (!noRefreshContent) {
             // then update everything
@@ -717,7 +893,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         updateDOM: function (noRefreshContent) {
           // update existing DOMs, first remove all tracks that should be hidden
           // if noRefreshContent = true, do not refresh content (should be refreshed later)
-          if (this.trackDOMs.length > 0) {
+          if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
             this._removeInvisibleTrackDOMs()
           }
 
@@ -742,8 +918,21 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }
         },
 
+        _domChangeHandler: function () {
+          this._trackDOMsByWindow.forEach(this._setDivElemInWindow, this)
+        },
+
+        _getElemId: function (divId, suffix) {
+          return divId + '_' + suffix
+        },
+
+        _vWindowHasSnapBetween: function (domInWindowEntry) {
+          return !!domInWindowEntry.snapInBetween
+        },
+
         _onIronResize: function (e, detail) {
-          if (this.trackDOMs) {
+          delete this._svgWidth
+          if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
             this.debounce(this.resizeJobName, this.updateHeightLocation.bind(this), this.resizeDebounceInt)
           }
         }
@@ -751,6 +940,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       // TODO: add/remove/rearrange tracks
 
       })
+
+      give.ChartArea.DOM_DIV_ID = 'domDiv_'
 
       return give
     })(GIVe || {})

@@ -381,37 +381,42 @@ var GIVe = (function (give) {
 
     // first merge ranges currently being debounced
 
-    if (this.isRetrivingData) {
-      this._addCallback(this.getData.bind(this, ranges, resolutions, callback, callerID))
-      return true
-    }
-
-    callerID = callerID || give.TrackObject.NO_CALLERID_KEY
-
-    if (!Array.isArray(ranges)) {
-      ranges = [ranges]
-    }
-    if (!Array.isArray(resolutions)) {
-      resolutions = (new Array(ranges.length)).fill(resolutions)
-    }
-
-    this.pendingGUIRangesFromID[callerID] = ranges
-    this.pendingGUIRangesFromID[callerID].resolutions = resolutions
-
-    this.getTrackUncachedRange()
-    if (callback) {
-      this._addCallback(callback, callerID)
-    }
-    if (this.pendingQueryRegions.regions.length > 0) {
-      give.debounce(this.getDataJobName,
-              this._retrieveData.bind(this, this.pendingQueryRegions.regions,
-                         this.pendingQueryRegions.resolutions),
-              this.getDataDebounceInt)
-    } else {
-      if (give.isDebouncerActive(this.getDataJobName)) {
-        give.cancelDebouncer(this.getDataJobName)
+    if (!this.isPureLocal) {
+      if (this.isRetrivingData) {
+        this._addCallback(this.getData.bind(this, ranges, resolutions, callback, callerID))
+        return true
       }
-      this.pendingGUIRangesFromID = {}
+
+      callerID = callerID || give.TrackObject.NO_CALLERID_KEY
+
+      if (!Array.isArray(ranges)) {
+        ranges = [ranges]
+      }
+      if (!Array.isArray(resolutions)) {
+        resolutions = (new Array(ranges.length)).fill(resolutions)
+      }
+
+      this.pendingGUIRangesFromID[callerID] = ranges
+      this.pendingGUIRangesFromID[callerID].resolutions = resolutions
+
+      this.getTrackUncachedRange()
+      if (callback) {
+        this._addCallback(callback, callerID)
+      }
+      if (this.pendingQueryRegions.regions.length > 0) {
+        give.debounce(this.getDataJobName,
+                this._retrieveData.bind(this, this.pendingQueryRegions.regions,
+                           this.pendingQueryRegions.resolutions),
+                this.getDataDebounceInt)
+      } else {
+        if (give.isDebouncerActive(this.getDataJobName)) {
+          give.cancelDebouncer(this.getDataJobName)
+        }
+        this.pendingGUIRangesFromID = {}
+        this._clearCallback(true)
+      }
+    } else if (callback) {
+      this._addCallback(callback, callerID)
       this._clearCallback(true)
     }
     // return whether data is actually being retrieved (maybe unnecessary?)
