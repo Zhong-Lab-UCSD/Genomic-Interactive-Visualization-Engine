@@ -169,13 +169,14 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
                                 null, this.getCurrentResolutions(), this, false)
             if (mode === 1) {
               this.averagePoints()
+              this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
+                            null, this.getCurrentResolutions(), this, false)
+              this.drawPeak(polygon)  // finish up the last polygon */
             }
             if (mode === 0) {
               this.bSpline();
             }
-            this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
-                          null, this.getCurrentResolutions(), this, false)
-            this.drawPeak(polygon)  // finish up the last polygon */
+
             if (mode === 1) {
               for (var i = 0; i < this.track.data[vwindow.chr].averageDataPoints.length; i++) {
                 if (this.track.data[vwindow.chr].averageDataPoints[i].getStart() >= vwindow.start && this.track.data[vwindow.chr].averageDataPoints[i].getEnd() < vwindow.end) {
