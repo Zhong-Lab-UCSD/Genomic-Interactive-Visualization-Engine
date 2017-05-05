@@ -48,6 +48,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
     <style include="genemo-shared-styles">
       :host {
         position: relative;
+        overflow-x: hidden;
         overflow-y: auto;
         font-family: 'Roboto', Arial, Helvetica, sans-serif;
         display: block;
@@ -61,6 +62,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         @apply(--layout-fit);
         @apply(--layout-vertical);
         padding: 0.8em;
+        overflow-x: hidden;
         overflow-y: auto;
       }
       div#chartHolding {
@@ -75,10 +77,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       }
       div.snappedParts {
         @apply(--layout-start);
-        overflow-y: hidden;
+        overflow: hidden;
       }
       div.scrollingParts {
         @apply(--layout-flex);
+        overflow-x: hidden;
         overflow-y: auto;
       }
       div.scrollingParts svg {
@@ -414,13 +417,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _createInteractionTrackProp: function (viewWindowIndex, properties) {
+          if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this.viewWindows.length) {
+            throw new Error('Not enough viewWindows for this interaction.')
+          }
           return this._mergeProperty({
             x: 0,
             y: 0,
             width: this.$.chartHolding.clientWidth,
             textMargin: 100,
             requestUrl: give.TrackObject.fetchDataTarget,
-            numOfSubs: this.viewWindows.length,
+            numOfSubs: give.ChartArea.INTERACTION_SUBS,
             _threshold: this._threshold
           }, properties)
         },
@@ -464,18 +470,26 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
           // actually this will enum all viewWindowIndices
-          this.viewWindows.forEach(function (vwindow, index) {
-            this._addOrdinaryTrackDOM(trackDOM, index)
-          }, this)
+          this._trackDOMsByWindow[viewWindowIndex].snapInBetween.push(trackDOM)
+          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
+          for (var i = 1; i < give.ChartArea.INTERACTION_SUBS; i++) {
+            this._trackDOMsByWindow[viewWindowIndex + i].hiddenTrackComponents.push(trackDOM)
+            this._trackDOMsByWindow[viewWindowIndex + i].map[trackDOM.track.id] = true
+          }
         },
 
         _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
           if (forceAdd || !this._trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
-            var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
-            if (newTrackDOM) {
-              this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
+            try {
+              var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
+              if (newTrackDOM) {
+                this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
+              }
+              return newTrackDOM
+            } catch (err) {
+              give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+              return null
             }
-            return newTrackDOM
           }
         },
 
@@ -657,8 +671,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
               map: {},
               divId: give.ChartArea.DOM_DIV_ID + i
             }
-            if (i < this.viewWindows.length - 1) {
+            if (i < this.viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
               newTrackDOMEntry.snapInBetween = []
+            }
+            if (i > 0) {
+              newTrackDOMEntry.hiddenTrackComponents = []
             }
             this.push('_trackDOMsByWindow', newTrackDOMEntry)
           }
@@ -942,6 +959,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       })
 
       give.ChartArea.DOM_DIV_ID = 'domDiv_'
+      give.ChartArea.INTERACTION_SUBS = 2
 
       return give
     })(GIVe || {})
