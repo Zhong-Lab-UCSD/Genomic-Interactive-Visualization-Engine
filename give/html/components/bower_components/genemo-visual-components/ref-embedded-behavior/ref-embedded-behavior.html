@@ -2,6 +2,15 @@
 <link rel="import" href="../../genemo-data-components/ref-object/ref-object.html">
 <script>
   var GIVe = (function (give) {
+    /**
+     * Behavior that allows to choose reference from its name.
+     *
+     * When the requested reference is not available (for example, needs to be
+     * loaded from some external sources), the request will be queued so that
+     * it can be executed when the references are ready.
+     *
+     * @polymerBehavior RefEmbeddedBehavior
+     */
     give.RefEmbeddedBehavior = {
       properties: {
         /**
@@ -25,7 +34,7 @@
         },
 
         /**
-         * Whether this object needs a reference with valid chromInfo)
+         * Whether this object needs a reference with valid `chromInfo`.
          */
         needsChromInfo: {
           type: Boolean,
@@ -34,7 +43,7 @@
       },
 
       /**
-       * _refChanged - the observer function to handle changes in this.ref
+       * The observer function to handle changes in `this.ref`.
        *
        * @param  {string} newValue - new reference name
        * @param  {string} oldValue - old reference name
@@ -44,20 +53,24 @@
       },
 
       /**
-       * Get the current reference of the element
+       * Get the current reference of the element.
        *
-       * @return {GIVe.RefObject}  Reference currently used
+       * @return {GIVe.RefObject}  reference currently used.
        */
       getRef: function () {
         return this._refObj
       },
 
       /**
-       * Set the reference to new reference
+       * Set the reference to new reference.
        *
        * this will reset all tracks and redo the ref
        * note that the tracks should already be initialized before switching here
-       * After this, this.changeAllViewWindows should be called
+       * After this, this.changeAllViewWindows should be called.
+       *
+       * If references are not ready (for example, need to be populated from a
+       * server), `this._setRefAfterReadyCheck` will be called
+       * after they are ready.
        *
        * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
        * @param  {number} numOfSubs - number of sub views
@@ -68,6 +81,12 @@
         }
       },
 
+      /**
+       * _setRefAfterReadyCheck - The function actually called after
+       * the references are ready.
+       *
+       * @param  {string|GIVe.RefObject} ref - the reference name or reference object
+       */
       _setRefAfterReadyCheck: function (ref) {
         try {
           var refObj = give.RefObject.findRefByDb(ref)
@@ -87,6 +106,11 @@
         }
       },
 
+      /**
+       * Simple function to set reference directly.
+       *
+       * @param  {GIVe.RefObject} refObj the reference object
+       */
       _setRefObj: function (refObj) {
         this._refObj = refObj
       }

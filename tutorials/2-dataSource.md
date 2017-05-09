@@ -8,8 +8,8 @@ This tutorial will show you how to use existing code base to implement a customi
     *   [OPTIONAL: Preparation for GIVE](#optional-preparation-for-give)
     *   [Preparation for reference genome](#preparation-for-reference-genome)
         *   [Creating a new reference genome](#creating-a-new-reference-genome)
-        *   [Creating a track group table and a track annotation table](#creating-a-track-group-table-and-a-track-annotation-table)
-        *   [Create track groups](#create-track-groups)
+        *   [Creating track groups](#creating-track-groups)
+        *   [Creating the track definition table](#creating-the-track-definition-table)
     *   [Adding data](#adding-data)
         *   [Adding gene annotations](#adding-gene-annotations)
         *   [Adding one epigenetic track](#adding-one-epigenetic-track)
@@ -87,7 +87,7 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 >
 > *However, the understanding of our sibling sentient species is still quite lacking. For example, our knowledge of the mystic species of* Vulcans *is extremely limited, despite almost 200 years of contact between them and us.*
 >
-> *News came that scientists have just assembled the entire genome from a* Vulcan *subject, got a few annotations done and measured some epigenetic signals. There are obviously a lot of work to do, but we would like to check if we can see anything from what we already got.*
+> *News came that scientists have just assembled the entire genome from a* Vulcan *subject, got a few annotations done and measured some epigenetic signals and genomic interactions. There are obviously a lot of work to do, but as astrobiologists, we would like to check if we can see anything from what we already got.*
 
 ### OPTIONAL: Preparation for GIVE
 
@@ -197,9 +197,9 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     ```
     Since there was no tracks at all, the only thing you can see in the reference is the chromosomal coordinates. However, this is gonna change soon.
 
-#### Creating a track group table and a track annotation table
+#### Creating track groups
 
-Tracks in GIVE belongs to track groups for better management and these groups need their place in the database. Tracks themselves also need a place to store their annotation and data.
+Tracks in GIVE belongs to track groups for better management and these groups need their place in the database.
 
 10. Create a `grp` table in the reference database:
 
@@ -215,7 +215,35 @@ Tracks in GIVE belongs to track groups for better management and these groups ne
     );
     ```
 
-11. Create a `trackDb` table in our *Vulcan* reference database:
+11. Create three track groups, one for gene annotation (`genes`), one for linear data (`linear_tracks`), and one for interactions (`interactions`):
+
+    ```SQL
+    INSERT INTO `<your_reference_database>`.`grp` VALUES ( -- *** Replace `<your_reference_database>` with your own DB name ***
+      'genes',                          -- Group name
+      'Genes and Gene Predictions',     -- Group long label
+      3,                                -- Priority
+      0,
+      0
+    ), (
+      'linear_tracks',
+      'Linear Tracks',
+      4,
+      0,
+      0
+    ), (
+      'interactions',
+      'Genomic Interactions',
+      5,
+      0,
+      0
+    );
+    ```
+
+### Creating the track definition table
+
+Tracks themselves also need a place to store their annotation and data. This is achieved by creating a table named `trackDb` in the reference database.
+
+12. Create a `trackDb` table in our *Vulcan* reference database:
     ```SQL
     CREATE TABLE `<your_reference_database>`.`trackDb` (
       `tableName` varchar(150) NOT NULL,    -- Name of the track table
@@ -229,37 +257,10 @@ Tracks in GIVE belongs to track groups for better management and these groups ne
     );
     ```
 
-    The updated data structure as shown below (existing components not changed in structure are greyed out):
+The updated data structure as shown below (existing components not changed in structure are greyed out):
 
-    ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_grp_track.png)
+![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_grp_track.png)
 
-#### Create track groups
-
-Tracks in GIVE need to be organized in groups for better reference and managing.
-
-12. Create three track groups, one for gene annotation (`genes`), one for epigenetic data (`epigenetics`), and one for interactions (`interactions`):
-
-    ```SQL
-    INSERT INTO `<your_reference_database>`.`grp` VALUES ( -- *** Replace `<your_reference_database>` with your own DB name ***
-      'genes',                          -- Group name
-      'Genes and Gene Predictions',     -- Group long label
-      3,                                -- Priority
-      0,
-      0
-    ), (
-      'epigenetics',
-      'Epigenetic Signals',
-      4,
-      0,
-      0
-    ), (
-      'interactions',
-      'Genomic Interactions',
-      5,
-      0,
-      0
-    );
-    ```
 
 ### Adding data
 #### Adding gene annotations
@@ -351,10 +352,10 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
       1,
       NULL,
       NULL,
-      'epigenetics',
+      'linear_tracks',
       '{
         "autoScale":false,
-        "group":"epigenetics",
+        "group":"linear_tracks",
         "dataType":"ChipSeq",
         "cellType":"Lymphocyte",
         "trackFeature":"H3K4me3",
@@ -458,11 +459,13 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
 
 ### Epilogue
 
-> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. It is at that time when a intelligence forensic expert detected traces of intrusion in one of the workstations from the lab.*
+> *To further clarify the source of this presumed sample, the bio-lab conducting the research turned to experts of all fields. Many experts do not believe that a* Vulcan *sample could bear so much resemblance to a human one, let alone a two-hundred-plus-year old one. The skepticism has grown so significant that the bio-lab tried to contact that* Vulcan *subject to get further details about the sample.*
 >
-> *Apparently the* Vulcan *subject tricked the bio-lab technicians by replacing the dataset for his sample with a recovered ancient dataset, which explains such high resemblance perfectly.*
+> *And the result is quite surprising: while the sample is indeed __from__ the* Vulcan*, however, it turns out to be not __of__* __Vulcan__ *__origin__ - it's an ancient dataset recovered in a recent expedition and apparently the* Vulcan *subject is an astro-archaeologist with specialization in ancient digital-media restoration. Therefore, the dataset might actually have came from an ancient human, which explains such high resemblance perfectly.*
 >
-> *While the recovered dataset, being more than 250 years ago, has its intrinsic archaeological value, and the way the* Vulcan *subject recovered such ancient data presents their highly advanced technology in digital media restoration. We are definitely out of luck this time and would need to wait for another chance in the future. Maybe when* USS Enterprise *returns to the earth, we can try to contact one of the crew onboard.*
+> *That* Vulcan *is surely a master of logic.*
+>
+> *While the recovered dataset, being more than 250 years ago, has its intrinsic archaeological value, we astrobiologists are definitely out of luck this time and would need to wait for another chance in the future. Maybe when* USS Enterprise *returns to the earth, we can try to contact one of the crew onboard.*
 
 ## Database table properties documentation
 

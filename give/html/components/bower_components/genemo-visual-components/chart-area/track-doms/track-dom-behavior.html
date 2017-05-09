@@ -200,6 +200,7 @@
           this.snap = properties.snap
         }
 
+        give._verboseConsole(this.id + ' created. Calling trackImpl().', give.VERBOSE_DEBUG)
         // call "constructors" of child classes
         if (this.trackImpl) {
           this.trackImpl(track, properties)
@@ -238,6 +239,7 @@
 
           this.setSvgSizeLocation()
         }
+        give._verboseConsole(this.id + '.getTrackSvg() called.', give.VERBOSE_DEBUG)
         return this.trackSvg
       },
 
@@ -493,7 +495,11 @@
       clear: function () {
         if (this.textSvg) {
           if (this.textSvg.holder) {
-            Polymer.dom(this.textSvg).removeChild(this.textSvg.holder)
+            try {
+              Polymer.dom(this.textSvg).removeChild(this.textSvg.holder)
+            } catch (err) {
+              give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+            }
           } else {
             while (Polymer.dom(this.textSvg).firstChild) {
               Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild)
@@ -502,7 +508,11 @@
           this.initTextSvgHolder()
         }
         if (this.mainSvg.holder) {
-          Polymer.dom(this.mainSvg).removeChild(this.mainSvg.holder)
+          try {
+            Polymer.dom(this.mainSvg).removeChild(this.mainSvg.holder)
+          } catch (err) {
+            give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+          }
         } else {
           while (Polymer.dom(this.mainSvg).firstChild) {
             Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild)

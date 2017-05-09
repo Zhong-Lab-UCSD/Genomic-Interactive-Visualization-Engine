@@ -140,10 +140,15 @@ var GIVe = (function (give) {
         track.setSetting(give.GENEMO_SELECTED_KEY, true)
       }, this)
       give.switchFromFirstRun()
-      give.setCustomTrack(sessionObj.db, sessionObj.urlToShow, saveSessionResp.bwFlag
+      var ext = sessionObj.originalFile.substr((~-sessionObj.originalFile.lastIndexOf('.') >>> 0) + 2).toLowerCase()
+      var bwFlag = (ext === 'bw' || ext === 'bigwig')
+      give.setCustomTrack(sessionObj.db, sessionObj.urlToShow, bwFlag
         ? 'bigWig' : 'bed')
-      give.getComputedRegions(saveSessionResp.bwFlag,
-        tableNameQuery, give.uploadUiHandler.bind(this, sessionDataObj))
+      var sessionDataObj = {
+        inputFileName: sessionObj.originalFile,
+        searchRange: sessionObj.searchRange
+      }
+      give.getComputedRegions(sessionObj.id, sessionObj.db, give.uploadUiHandler.bind(this, sessionDataObj))
     } catch (jsonExcept) {
       // something is wrong with JSON (which means something wrong when the PHP code tries to process input)
       console.log(sessionObj.list)
@@ -416,7 +421,7 @@ var GIVe = (function (give) {
       e.detail.tracks.forEach(function (track) {
         track.setVisibility(true)
       }, this)
-      mainChartDom.updateWindowHandler(e)
+      mainChartDom.updateWindow(e)
     })
 
     if (give.sessionObj && searchCardDom) {

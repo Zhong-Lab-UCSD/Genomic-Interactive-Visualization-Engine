@@ -151,7 +151,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         </paper-toolbar>
         <div class="content flex layout vertical">
           <div class="flex relative">
-            <chart-area ref="[[ref]]" class="flex" id="mainChartArea"
+            <chart-area ref="[[ref]]" id="mainChartArea"
               group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}">
             </chart-area>
           </div>
@@ -252,7 +252,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
          */
         _calcGeneCoorLabel: function (index) {
           return 'Coordinate or gene name' +
-            ((this.coordinates.length > 1) ? ' for view #' + index : '')
+            ((this.coordinates && this.coordinates.length > 1) ? ' for view #' + index : '')
         },
 
         /**

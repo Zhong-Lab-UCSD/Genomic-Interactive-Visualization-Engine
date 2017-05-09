@@ -18,7 +18,11 @@ var GIVe = (function (give) {
 
   give.TaskScheduler.prototype.eventHandler = function (e) {
     if (e.detail && e.detail.flag) {
-      this.setFlag(e.detail.flag)
+      if (!e.detail.removeFlag) {
+        this.setFlag(e.detail.flag)
+      } else {
+        this.removeFlag(e.detail.flag)
+      }
     } else {
       throw (new Error('Task scheduler error: task entry not valid.'))
     }
@@ -47,6 +51,12 @@ var GIVe = (function (give) {
 
   give.TaskScheduler.prototype.clearFlag = function () {
     this.flags = {}
+  }
+
+  give.TaskScheduler.prototype.removeFlag = function (flag) {
+    if (this.flags.hasOwnProperty(flag)) {
+      delete this.flags[flag]
+    }
   }
 
   give.TaskScheduler.prototype.checkTaskAndRun = function (task) {

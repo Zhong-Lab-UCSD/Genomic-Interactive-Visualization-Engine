@@ -131,7 +131,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 
          },
         drawData: function () {
-            var mode=1;
+            var mode=parseInt(give.getParameterByName('mode') || '1');
         // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow

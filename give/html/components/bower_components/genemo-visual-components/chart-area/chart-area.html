@@ -16,7 +16,6 @@ limitations under the License.
 -->
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-input/paper-input.html">
 <link rel="import" href="../../genemo-data-components/basic-func/basic-func.html">
 <link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../genemo-data-components/track-object/track-object.html">
@@ -116,7 +115,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
     </div>
     <paper-material>
       <div id="chartHolding" hidden$="[[!_initialized]]">
-        <template is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
+        <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
           <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapTop')]]">
             <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
             </svg>
@@ -344,7 +343,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         attached: function () {
           this.async(function () {
             // attach all trackDOMs
-            this._checkVWindowsInit()
+            this._checkVWindowsInit(true)
           })
         },
 
@@ -661,7 +660,17 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }
         },
 
-        _initTrackDOMHandlers: function () {
+        _setRefObj: function (refObj) {
+          this._refObj = refObj
+          this._numOfSubsChanged(this.numOfSubs)
+          this._initialized = false
+          this._checkVWindowsInit()
+        },
+
+        _initDOMArray: function () {
+          // this is the array for visible tracks by window
+          // notice that this is an array of array
+          // tracks are grouped by its corresponding viewWindow Index
           this._trackDOMsByWindow = []
           for (var i = 0; i < this.viewWindows.length; i++) {
             var newTrackDOMEntry = {
@@ -679,21 +688,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             }
             this.push('_trackDOMsByWindow', newTrackDOMEntry)
           }
+          this.$.trackSvgHolders.render()
         },
 
-        _setRefObj: function (refObj) {
-          this._refObj = refObj
-          this._numOfSubsChanged(this.numOfSubs)
-          this._initialized = false
-          this._checkVWindowsInit()
-        },
-
-        _initDOMArray: function () {
-          // this is the array for visible tracks by window
-          // notice that this is an array of array
-          // tracks are grouped by its corresponding viewWindow Index
-          this._initTrackDOMHandlers()
-
+        _initDOMCoorTracks: function () {
           if (this._refObj) {
             this.viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
@@ -713,15 +711,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           if (this._initialized) {
             this._setReadiness(false)
             this._initDOMArray()
-
-            this.addAllTrackDOMs()
           } else {
             this._setReadiness(true)
           }
         },
 
         _clearDOM: function () {
-          var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg')
+          var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
           svgList.forEach(function (svgElem, index) {
             while (Polymer.dom(svgElem).firstChild) {
               Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
@@ -732,32 +728,35 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }
         },
 
-        _addAllTrackDOMsTracksReady: function (noRefreshContent) {
+        _addAllTrackDOMsTracksReady: function (noRefreshContent, ref) {
           // function called when tracks are ready for this._refObj
-          var showTrack = function (wIndex, track, index) {
-            // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
-            if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
-              this._addVisibleTrack(track, wIndex)
+          if (ref === this.ref) {
+            // Only respond to this call if ref has not been changed
+            var showTrack = function (wIndex, track, index) {
+              // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
+              if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
+                this._addVisibleTrack(track, wIndex)
+              }
             }
+            this.viewWindows.forEach(function (vwindow, windowIndex) {
+              if (this.groupIdList && this.groupIdList.length > 0) {
+                this.groupIdList.forEach(function (groupID) {
+                  if (this._refObj.getGroups().hasOwnProperty(groupID)) {
+                    this._refObj.getGroups()[groupID].forEach(
+                      showTrack.bind(this, windowIndex), this)
+                  }
+                }, this)
+              } else {
+                this._refObj.getTracks().forEach(
+                  showTrack.bind(this, windowIndex), this)
+              }
+            }, this)
+            this.populateDOM(noRefreshContent)
           }
-          this.viewWindows.forEach(function (vwindow, windowIndex) {
-            if (this.groupIdList && this.groupIdList.length > 0) {
-              this.groupIdList.forEach(function (groupID) {
-                if (this._refObj.getGroups().hasOwnProperty(groupID)) {
-                  this._refObj.getGroups()[groupID].forEach(
-                    showTrack.bind(this, windowIndex), this)
-                }
-              }, this)
-            } else {
-              this._refObj.getTracks().forEach(
-                showTrack.bind(this, windowIndex), this)
-            }
-          }, this)
-          this.populateDOM(noRefreshContent)
         },
 
         addAllTrackDOMs: function (noRefreshContent) {
-          this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent))
+          this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent, this.ref))
         },
 
         _removeInvisibleTrackDOMs: function () {
@@ -935,8 +934,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }
         },
 
+        updateWindow: function (e) {
+          this._updateWindowHandler(e)
+        },
+
         _domChangeHandler: function () {
           this._trackDOMsByWindow.forEach(this._setDivElemInWindow, this)
+          this._initDOMCoorTracks()
+          if (this._initialized) {
+            this.addAllTrackDOMs()
+          }
         },
 
         _getElemId: function (divId, suffix) {
