@@ -65,7 +65,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           /**
            * The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.
            */
-          this.trackHeight = 80
+          this._setTrackHeight(80)
 
           /**
            * to be explained
@@ -174,7 +174,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               this.drawPeak(polygon)  // finish up the last polygon */
             }
             if (mode === 0) {
-              this.bSpline();
+              this.bSpline()
             }
 
             if (mode === 1) {
@@ -317,10 +317,12 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         // use svg function
 
         drawBCurve: function(bPoints){
-            var BCurve = document.createElementNS(this.svgNS,"path");
+            var svgToDraw=this.mainSvg
+            var BCurve = document.createElementNS(this.svgNS,"path")
             BCurve.setAttribute("d", "M"+bPoints[0][0]+" "+bPoints[0][1]+" C "+bPoints[1][0]+" "+bPoints[1][1]+" "+bPoints[2][0]+" "+bPoints[2][1]+" "+bPoints[3][0]+" "+bPoints[3][1])
             BCurve.setAttribute("stroke", "black")
             BCurve.setAttribute("fill","transparent")
+            this.addElement(BCurve, svgToDraw)
         },
         bSpline: function(points) {
             // for each (four?) points: calculate the tripmid point things, store them as p1.t2 , p2.t1, p2.t2, p3.t1, p3.t2, p4.t1
@@ -343,10 +345,10 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
         p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
         var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
-        p2.adjustedMidPoint=[(this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.midPoint[0]) }, false),this.transformYCoordinate(p2.midPoint[1]))]
-        p2.adjustedt2=[(this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.t2[0]) }, false),this.transformYCoordinate(p2.t2[1]))]
-        p3.adjustedt1=[(this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.t1[0]) }, false),this.transformYCoordinate(p3.t1[1]))]
-        p3.adjustedMidPoint=[(this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.midPoint[0]) }, false),this.transformYCoordinate(p3.midPoint[1]))]
+        p2.adjustedMidPoint=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.midPoint[0]) }, false),this.transformYCoordinate(p2.midPoint[1])]
+        p2.adjustedt2=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.t2[0]) }, false),this.transformYCoordinate(p2.t2[1])]
+        p3.adjustedt1=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.t1[0]) }, false),this.transformYCoordinate(p3.t1[1])]
+        p3.adjustedMidPoint=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.midPoint[0]) }, false),this.transformYCoordinate(p3.midPoint[1])]
         var adjustedBPoints = [p2.adjustedMidPoint, p2.adjustedt2, p3.adjustedt1, p3.adjustedMidPoint]
         this.drawBCurve(adjustedBPoints)}
 //this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
