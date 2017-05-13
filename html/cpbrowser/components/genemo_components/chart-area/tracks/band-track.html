@@ -124,11 +124,11 @@
 				line.genes.forEach(function(gene) {
 					this.drawSingleGene(gene, y, (this.honorItemRGB && gene.itemRGB !== undefined)? gene.itemRGB: null);
 				}, this);
-				y += (this.fullHeight + this.textLineGap) * this.textSize;
+				y += (this.fullHeight + this.lineGap) * this.textSize;
 			}, this);
 
 			// resize the heights
-			this.updateLocationSize(null, null, null, y - this.textLineGap * this.textSize);
+			this.updateLocationSize(null, null, null, y - this.lineGap * this.textSize);
 
 			// add labels (if visibility < noText)
 			if(this.activeVisibility <= Track.StatusEnum.VIS_NOTEXT 

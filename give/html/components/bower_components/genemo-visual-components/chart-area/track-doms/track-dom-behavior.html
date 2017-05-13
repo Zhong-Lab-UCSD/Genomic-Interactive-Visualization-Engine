@@ -8,82 +8,86 @@
   var GIVe = (function (give) {
     give._trackCounter = 0
 
+    /**
+     * Basic track DOM behaviors, including the svg drawing functions
+     *
+     * @polymerBehavior TrackDOMBehavior
+     */
     give.TrackDOMBehaviorImpl = {
 
       properties: {
-        ref: Object, // this is the ref defined in libtracks.js
-        // notice that ref should have chromSizes and location of centromeres included
-        // tracks is also within ref
-        // may need to provide additional API to get track data
-
+        /**
+         * The underlying track object for metadata, settings,
+         * actual data and communication with the server
+         * @type {GIVE.TrackObject}
+         */
         track: {
           type: Object,
           readOnly: true
         },
-        // this is the track object
-        // including all meta information of the track, together with the settings
-        // ref is a reference within the track object
 
+        /**
+         * The type of the track this DOM represents
+         * @type {string}
+         */
         trackType: {
           type: String,
           readOnly: true
         },
 
+        /**
+         * The CSS class for the main SVG element
+         * @type {string}
+         */
         trackMainDOMClass: {
           type: String,
           readOnly: true
         },
 
+        /**
+         * Text size of the track, will also affect line sizes.
+         * This serves as the standard for the other properties.
+         * @type {number}
+         */
         textSize: {
           type: Number,
           value: 12
         },
 
+        /**
+         * Proportion of full line height (multiplies of `this.textSize`)
+         * @type {number}
+         */
         fullHeight: {
           type: Number,
           value: 1    // em
         },
 
+        /**
+         * Proportion of half height (for bed files, for example). Multiplies of `this.textSize`
+         * @type {number}
+         */
         halfHeight: {
           type: Number,
           value: 0.6    // this is the proportion to fullHeight
         },
 
-        textLineGap: {
-          // this is the gap between multiple bed lines
+        /**
+         * This is the size of the gap between lines (in a BED file, for example).
+         * Multiplies of `this.textSize`
+         * @type {number}
+         */
+        lineGap: {
           type: Number,
           value: 0.1
         },
 
-        lineGap: {
-          // this is the gap between multiple lines
-          type: Number,
-          value: 0.2
-        },
-
-        data: {
-          type: Object,  // main data buffer of the track
-          value: function () {
-            return {}
-          }
-        },
-
-        bufferWindow: {
-          type: Object  // give.ChromRegion indicating what data we have in the buffer
-        },
-
-        requestURL: {
-          // this is the URL to request data
-          type: String,
-          value: ''
-        },
-
-        drawDebounceInt: {  // interval for update drawing, needs to be a small value for coordinates
+        _drawDebounceInt: {  // interval for update drawing, needs to be a small value for coordinates
           type: Number,
           value: 100
         },
 
-        cacheDebounceInt: {  // interval for getting data
+        _cacheDebounceInt: {  // interval for getting data
           type: Number,
           value: 300
         },
@@ -97,16 +101,30 @@
           }
         },
 
+        /**
+         * Flag to indicate whether this track has a dynamic height (from its contents).
+         * @type {boolean}
+         */
         dynamicHeight: {  // use true if the height of the track is dynamic
           type: Boolean,
           value: true,
           readOnly: true
         },
 
+        /**
+         * The actual height of the track in pixels.
+         * This will be useful if `this.dynamicHeight === true`
+         * @type {number}
+         */
         trackHeight: {
-          type: Number
+          type: Number,
+          readOnly: true
         },
 
+        /**
+         * The flag indicating whether this trackDOM is ready
+         * @type {boolean}
+         */
         isReady: {
           type: Boolean,
           value: false,
@@ -159,7 +177,7 @@
 
         this.x = properties.x || 0
         this.y = properties.y || 0
-        this.trackHeight = properties.height || 100
+        this._setTrackHeight(properties.height || 100)
 
         this._setTrack(track)
         this._setTrackType(track.getTypeTrunk())
@@ -383,7 +401,7 @@
       },
 
       setHeight: function (newHeight) {
-        this.trackHeight = newHeight
+        this._setTrackHeight(newHeight)
       },
 
       // ****** visibility control ******
@@ -722,7 +740,7 @@
               }
 
               // then add another line
-              if (currHeight + this.textSize * (this.textLineGap + this.fullHeight) > maxHeight) {
+              if (currHeight + this.textSize * (this.lineGap + this.fullHeight) > maxHeight) {
                 // too many lines, use '...', and end processing
                 do {
                   results[results.length - 1] = results[results.length - 1].slice(0, -1)
@@ -739,7 +757,7 @@
               }
               results.push('')
               resultWidths.push(0)
-              currHeight += this.textSize * (this.textLineGap + this.fullHeight)
+              currHeight += this.textSize * (this.lineGap + this.fullHeight)
             } else {
               results[results.length - 1] = (results[results.length - 1].length > 0
                                               ? results[results.length - 1] + ' '
@@ -765,9 +783,9 @@
         // get all text elements in the svg in case collision detection is needed
         var textList = Polymer.dom(svgToDraw).querySelectorAll('text')
         textArray = Array.prototype.slice.call(textList)
-        var currY = y - ((results.length - 1) * vertParam + 1) * (this.textLineGap + this.fullHeight) * this.textSize
+        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGap + this.fullHeight) * this.textSize
         if (!avoidCollision || resultWidths.every(function (width, index) {
-          currY += (this.textLineGap + this.fullHeight) * this.textSize
+          currY += (this.lineGap + this.fullHeight) * this.textSize
           var left = x
           var right = x
           switch (textAnchor) {
@@ -785,14 +803,14 @@
           return textArray.every(function (text, indexT) {
             var rect = text.getBBox()
             return (rect.x >= right || (rect.x + rect.width) <= left ||
-                rect.y > (currY + (this.textLineGap + this.fullHeight) * this.textSize) ||
+                rect.y > (currY + (this.lineGap + this.fullHeight) * this.textSize) ||
                 (rect.y + rect.height) < currY)
           }, this)
         }, this)) {
-          currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize
+          currY = y - (results.length - 1) * vertParam * (this.lineGap + this.fullHeight) * this.textSize
           results.forEach(function (line, index) {
             this.drawText(x, currY, line, textAnchor, params, svgToDraw)
-            currY += (this.textLineGap + this.fullHeight) * this.textSize
+            currY += (this.lineGap + this.fullHeight) * this.textSize
           }, this)
         }
       },
@@ -828,7 +846,7 @@
 
       drawDataDebounceWrapper: function () {
         // debounce wrapper for drawData()
-        this.debounce(this.updateJobName, this.drawDataFireWrapper, this.drawDebounceInt)
+        this.debounce(this.updateJobName, this.drawDataFireWrapper, this._drawDebounceInt)
       },
 
       checkDataAndUpdate: function () {
@@ -848,7 +866,7 @@
                                  this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.CacheRangeSpanProportion),
                                  this.getCurrentResolutions(),
                                  null, this.id),
-                     this.cacheDebounceInt)
+                     this._cacheDebounceInt)
         this.track.getData(this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion),
                    this.getCurrentResolutions(),
                    this.drawDataDebounceWrapper.bind(this),

@@ -10,6 +10,9 @@ function _loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $p
   if($mysqli && isset($tableName)) {
     $sqlstmt = "SELECT fileName FROM `" . $mysqli->real_escape_string($tableName) . "`";
     $res = $mysqli->query($sqlstmt);
+    if (!$res) {
+      error_log('TableName `' . $mysqli->real_escape_string($tableName) . '` does not exist!');
+    }
     $fName = $res->fetch_assoc();
     try {
       $bwFile = new BigWigFile($fName['fileName']);

@@ -52,7 +52,7 @@
           this.MIN_TICK_GAP = 100
           this.MIN_TICK_TEXT_MARGIN = 50
           this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50
-          this.LINEGAP_RATIO = 1.2    // this is the actual gap used to display between ticks and numbers
+          this.LINEGAP_RATIO = 2.4    // this is the actual gap used to display between ticks and numbers
         },
 
         trackImpl: function (track, properties) {
@@ -62,7 +62,7 @@
           this._setLabelLocation(properties.labelLocation || 'up')
           this._setTrackMainDOMClass('coordinates')
 
-          this.trackHeight = properties.height || this.tickLength + (this.lineGap * this.LINEGAP_RATIO + 1) * this.textSize
+          this._setTrackHeight(properties.height || this.tickLength + (this.lineGap * this.LINEGAP_RATIO + 1) * this.textSize)
 
           if (properties.hasOwnProperty('colorIndex')) {
             this.foreColor = this.colorSet[properties.colorIndex]
@@ -78,7 +78,7 @@
             this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG
           }
 
-          this.drawDebounceInt = 0
+          this._drawDebounceInt = 0
         },
 
       // ****** customized methods below ******

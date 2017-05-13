@@ -80,9 +80,9 @@
           this.fullHeight = properties.hasOwnProperty('lineHeight') ? properties.lineHeight : this.fullHeight
           this.subTrackGap = properties.hasOwnProperty('subTrackGap') ? properties.subTrackGap : this.subTrackGap
           this.threshold = properties.hasOwnProperty('threshold') ? properties.threshold : this.threshold
-          this.trackHeight = properties.hasOwnProperty('height') ? properties.height
+          this._setTrackHeight(properties.hasOwnProperty('height') ? properties.height
             : (this.fullHeight + (this.fullHeight + this.subTrackGap) *
-              (properties.numOfSubs - 1)) * this.textSize
+              (properties.numOfSubs - 1)) * this.textSize)
           this._setDynamicHeight(false)
 
           this.subSvgs = []

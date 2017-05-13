@@ -1,102 +1,26 @@
 # GIVE Tutorial 2: Populating a reference genome with a few data tracks on a MySQL compatible data source
 
-This tutorial will show you how to use existing code base to implement a customized genome browser with your own data.
+GIVE has a server-side component that can be used as connection between a MySQL-compatible data source and the client-side visualization component.
 
 ## Table of Contents
-*   [Prerequisites](#prerequisites)
-*   [Demo: creating a *Vulcan* reference genome and visualize something on it](#demo-creating-a-vulcan-reference-genome-and-visualize-something-on-it)
-    *   [OPTIONAL: Preparation for GIVE](#optional-preparation-for-give)
-    *   [Preparation for reference genome](#preparation-for-reference-genome)
-        *   [Creating a new reference genome](#creating-a-new-reference-genome)
-        *   [Creating track groups](#creating-track-groups)
-        *   [Creating the track definition table](#creating-the-track-definition-table)
-    *   [Adding data](#adding-data)
-        *   [Adding gene annotations](#adding-gene-annotations)
-        *   [Adding one epigenetic track](#adding-one-epigenetic-track)
-        *   [Adding interactions](#adding-interactions)
-    *   [Epilogue](#epilogue)
-*   [Database table properties documentation](#database-table-properties-documentation)
 
-## Prerequisites
+## Installation
 
-To follow the tutorial, a functional MySQL-compatible instance and a PHP web server is required. For this demo, we will be using the GIVE Demo Server at demo.give.genemo.org as a PHP-supported web server linked to a working MariaDB instance. Follow these steps to connect to the demo server:
+The server-side component of GIVE requires a working PHP web server with cURL support. Please refer to these instructions to install PHP with cURL library to your web server:
+*   [PHP installation and configuration](http://php.net/manual/en/install.php)
+*   [cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).
+The codes for GIVE server-side component is at the following path in the package. Please make sure they are accessible from your PHP server.
+```
+/give/includes/
+/give/givdata/
+```
 
-***
+A working MySQL-compatible database is needed as data source. Please refer to the following resources for installing your own MySQL instance:
+*   [MySQL community server](https://dev.mysql.com/downloads/mysql/)
+*   [MariaDB](https://downloads.mariadb.org/)*
 
-*__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. Please refer to the following resources for installing your own MySQL instance:*
-*   *[MySQL community server](https://dev.mysql.com/downloads/mysql/)*
-*   *[MariaDB](https://downloads.mariadb.org/)*
+### Preparing the MySQL-compatible instance for GIVE
 
-*You may also follow the instructions here to install PHP to your web server:*
-*   *[PHP installation and configuration](http://php.net/manual/en/install.php)*
-*   *[cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).*
-
-*If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*  
-*If you decide to use your own MySQL instance and PHP server, please change the steps involving GIVE Demo Server accordingly and __follow all optional set-up steps__.*
-
-***
-
-1.  Please go to the following address to request an MySQL account and create a reference database:
-<https://demo.give.genemo.org/getDemoUser.html>  
-    You will get a username, a password and a database name for later steps in the demo.  
-    The username will be referred to as `your_database_username`, the password as `password_for_your_database_user`, the database name as `your_reference_database`. __Whenever you see those name in the following steps, please replace those with what you get here.__
-
-2.  Use an SSH client to connect to GIVE Demo Server at `demo.give.genemo.org` with the following username and password to login. __Don't use your allocated username and password yet!__
-    *   If you are using Mac OS or Linux, please use the following command:
-        ```
-        ssh givdemo@demo.give.genemo.org
-        givdemo@demo.give.genemo.org's password: HTML4GenomeVis
-        ```
-    *   If you are using windows, please use an SSH client, such as  [PuTTY](http://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to connect with the following parameters:  
-        Host name: `demo.give.genemo.org`  
-        port: `22`  
-        connection type: `SSH`  
-        When prompted, use the following information to login:
-        ```
-        login as: givdemo
-        givdemo@demo.give.genemo.org's password: HTML4GenomeVis
-        ```
-
-3.  Use the console to login to MySQL:
-    ```sh
-    $ mysql -u <your_database_username> -p
-    Enter password: <password_for_your_database_user>
-    ```
-
-    When you logged in successfully, you'll see something like the following in your console:
-
-    ```text
-    Welcome to the MariaDB monitor.  Commands end with ; or \g.
-    Your MariaDB connection id is 28348
-    Server version: 10.1.21-MariaDB-1~xenial mariadb.org binary distribution
-
-    Copyright (c) 2000, 2016, Oracle, MariaDB Corporation Ab and others.
-
-    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-    MariaDB [(none)]>_
-    ```
-
-4.  All SQL commands in following steps can be directly put under this console (with essential parts replaced).
-
-## Demo: creating a *Vulcan* reference genome and visualize something on it
-
-Here we will demonstrate an example of using GIVE with the MySQL data source on Zhong Lab server.
-
-> *It's the 2260s. Human beings have mastered the technologies required in intergalactic travel.* USS Enterprise *was just launched a few years ago to explore the final frontier of space.*
->
-> *However, the understanding of our sibling sentient species is still quite lacking. For example, our knowledge of the mystic species of* Vulcans *is extremely limited, despite almost 200 years of contact between them and us.*
->
-> *News came that scientists have just assembled the entire genome with a sample from a* Vulcan *subject, got a few annotations done and measured some epigenetic signals and genomic interactions. There are obviously a lot of work to do, but as astrobiologists, we would like to check if we can see anything from what we already got.*
-
-### OPTIONAL: Preparation for GIVE
-
-***
-
-*__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, your MariaDB account will not have the privilege to do the steps in this section. If you try any commands listed here, you will receive a message from MariaDB saying the operation is denied.  
-These steps are automatically done for you after you requested for a database username, password, and database name. Therefore, __please skip this section entirely and go to Step 6.__*
-
-***
 
 *   Create a database named `compbrowser`:
     ```SQL
@@ -160,9 +84,6 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     ![UML Diagram for the database](2-extraFiles/GIVE_DB_vlc_cyto.png)
 
 7.  Populate the `cytoBandIdeo` table. Since the presumed *Vulcan* genome is very similar to `hg19`, we can use the `cytoBandIdeo` table in UCSC `hg19` instead. The data for `cytoBandIdeo` of `hg19` can be downloaded from <https://sysbio.ucsd.edu/public/xcao3/UFPArchive/cytoBandIdeo.txt> and has already been loaded on the demo server at `/home/givdemo/UFPArchive/cytoBandIdeo.txt`. You can use SQL command to load this file into the table.
-    ***
-    *__Note:__ Currently several references are provided on the GIVE server at give.genemo.org, please refer to GIVE.*
-    ***
     ```SQL
     LOAD DATA LOCAL INFILE "/home/givdemo/UFPArchive/cytoBandIdeo.txt" INTO TABLE `<your_reference_database>`.`cytoBandIdeo`;
     ```

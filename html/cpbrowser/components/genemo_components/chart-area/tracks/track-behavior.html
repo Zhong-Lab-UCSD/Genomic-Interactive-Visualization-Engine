@@ -78,7 +78,7 @@
 					value: ""
 				},
 
-				drawDebounceInt: {	// interval for update drawing, needs to be a small value for coordinates
+				_drawDebounceInt: {	// interval for update drawing, needs to be a small value for coordinates
 					type: Number,
 					value: 200
 				},
@@ -761,7 +761,7 @@
 							}
 
 							// then add another line
-							if(currHeight + this.textSize * (this.textLineGap + this.fullHeight) > maxHeight) {
+							if(currHeight + this.textSize * (this.lineGap + this.fullHeight) > maxHeight) {
 								// too many lines, use '...', and end processing
 								do {
 									results[results.length - 1] = results[results.length - 1].slice(0, -1);
@@ -776,7 +776,7 @@
 							}
 							results.push('');
 							resultWidths.push(0);
-							currHeight += this.textSize * (this.textLineGap + this.fullHeight);
+							currHeight += this.textSize * (this.lineGap + this.fullHeight);
 						} else {
 							results[results.length - 1] = (results[results.length - 1].length > 0?
 													results[results.length - 1] + ' ': '') + currWord;
@@ -800,9 +800,9 @@
 				// get all text elements in the svg in case collision detection is needed
 				var textList = Polymer.dom(svgToDraw).querySelectorAll('text');
 				var textArray = Array.prototype.slice.call(textList);
-				var currY = y - ((results.length - 1) * vertParam + 1) * (this.textLineGap + this.fullHeight) * this.textSize;
+				var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGap + this.fullHeight) * this.textSize;
 				if(!avoidCollision || resultWidths.every(function(width, index) {
-					currY += (this.textLineGap + this.fullHeight) * this.textSize;
+					currY += (this.lineGap + this.fullHeight) * this.textSize;
 					var left = x, right = x;
 					switch(textAnchor) {
 						case 'start':
@@ -819,14 +819,14 @@
 					return textArray.every(function(text, index_t) {
 						var rect = text.getBBox();
 						return (rect.x >= right || (rect.x + rect.width) <= left ||
-								rect.y > (currY + (this.textLineGap + this.fullHeight) * this.textSize) ||
+								rect.y > (currY + (this.lineGap + this.fullHeight) * this.textSize) ||
 								(rect.y + rect.height) < currY);
 					}, this);
 				}, this)) {
-					currY = y - (results.length - 1) * vertParam * (this.textLineGap + this.fullHeight) * this.textSize;
+					currY = y - (results.length - 1) * vertParam * (this.lineGap + this.fullHeight) * this.textSize;
 					results.forEach(function(line, index) {
 						this.drawText(x, currY, line, textAnchor, params, svgToDraw);
-						currY += (this.textLineGap + this.fullHeight) * this.textSize;
+						currY += (this.lineGap + this.fullHeight) * this.textSize;
 					}, this);
 				}
 
@@ -936,7 +936,7 @@
 
 			drawDataDebounceWrapper: function() {
 				// debounce wrapper for drawData()
-				this.debounce(this.updateJobName, this.drawDataFireWrapper, this.drawDebounceInt);
+				this.debounce(this.updateJobName, this.drawDataFireWrapper, this._drawDebounceInt);
 			},
 
 			updateTracks: function(viewWindow, index, threshold) {

@@ -161,7 +161,7 @@
 				}
 
 				// resize the heights
-				this.updateLocationSize(null, null, null, y - this.textLineGap * this.textSize);
+				this.updateLocationSize(null, null, null, y - this.lineGap * this.textSize);
 
 				// add labels
 				if(this.activeVisibility > Track.StatusEnum.VIS_NONE) {
@@ -236,7 +236,7 @@
 
 				height = height || this.fullHeight * this.textSize * 0.8;
 				halfHeight = halfHeight || this.halfHeight;
-				lineHeight = lineHeight || (this.fullHeight + this.textLineGap) * this.textSize
+				lineHeight = lineHeight || (this.fullHeight + this.lineGap) * this.textSize
 				if(typeof(colorRGB) !== 'number') {
 					colorRGB = this.colorSet[this.FORECOLOR_INDEX];
 				}

@@ -1,4 +1,4 @@
-.getBlockStarts()<link rel="import" href="track-dom-behavior.html">
+<link rel="import" href="track-dom-behavior.html">
 <link rel="import" href="../../../genemo-data-components/gene-object/gene-object.html">
 <dom-module id="bed-track-dom">
   <template>
@@ -83,7 +83,7 @@
 
         // resize the heights
           this.updateLocationSize(null, null, null,
-                    (numOfLines * (this.fullHeight + this.textLineGap) - this.textLineGap) * this.textSize)
+                    (numOfLines * (this.fullHeight + this.lineGap) - this.lineGap) * this.textSize)
 
         // add labels
           if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE) {
@@ -172,7 +172,7 @@
 
           height = height || this.fullHeight * this.textSize * 0.8
           halfHeight = halfHeight || this.halfHeight
-          lineHeight = lineHeight || (this.fullHeight + this.textLineGap) * this.textSize
+          lineHeight = lineHeight || (this.fullHeight + this.lineGap) * this.textSize
           if (typeof (colorRGB) !== 'number') {
             colorRGB = this.colorSet[this.FORECOLOR_INDEX]
           }

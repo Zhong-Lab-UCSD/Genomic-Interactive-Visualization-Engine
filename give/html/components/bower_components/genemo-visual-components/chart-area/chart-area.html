@@ -1,4 +1,4 @@
-<!--
+pinning<!--
 @license
 Copyright 2017 GIVe Authors
 
@@ -74,7 +74,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         margin: 0;
         padding: 0;
       }
-      div.snappedParts {
+      div.pinnedParts {
         @apply(--layout-start);
         overflow: hidden;
       }
@@ -110,13 +110,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
     </style>
     <style include="genemo-track-styles"></style>
-    <div id="loadingBlock" hidden$="[[readiness]]">
-      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!readiness]]"></paper-spinner>
+    <div id="loadingBlock" hidden$="[[_readiness]]">
+      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
     </div>
     <paper-material>
       <div id="chartHolding" hidden$="[[!_initialized]]">
         <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
-          <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapTop')]]">
+          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinTop')]]">
             <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
             </svg>
           </div>
@@ -124,12 +124,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
             </svg>
           </div>
-          <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapBottom')]]">
+          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBottom')]]">
             <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
             </svg>
           </div>
-          <template is="dom-if" if="[[_vWindowHasSnapBetween(item)]]">
-            <div class="snappedParts" id="[[_getElemId(item.divId, 'SnapBetween')]]">
+          <template is="dom-if" if="[[_vWindowHasPinBetween(item)]]">
+            <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBetween')]]">
               <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
               </svg>
             </div>
@@ -163,11 +163,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         properties: {
           /**
            * The view windows to display in the element.
+           * The members of the properties should be `GIVE.ChromRegion` Objects
            * @type {Array.<GIVe.ChromRegion>}
            */
-          viewWindows: {
-          // this will be an array of strings (viewWindowString),
-          // may be changed to viewWindows directly for performance in the future
+          _viewWindows: {
             type: Array,
             notify: true,
             value: function () {
@@ -176,13 +175,26 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           },
 
           /**
-           * The array holding trackDOMs for every view window
+           * The array holding trackDOMs for every view window.
+           * The member of the array should be Objects with the following properties:
+           * * `pinAbove`: An array of track DOMs that will be pinned at the top of the view window;
+           * * `scrolling`: An array of track DOMs that will appear in the scrolling part;
+           * * `pinBelow`: An array of track DOMs that will be pinned at the bottom of the view window;
+           * * `pinInBetween`: *(optional)* An array of track DOMs that will appear in the space between
+           *                    this view window and the next one;
+           * * `map`: An Object used for id-to-DOM lookups;
+           * * `hiddenTrackComponents`: An array of track DOMs that are hidden and never displayed;
+           *                            (this is mainly used for cross-view-window tracks because
+           *                             it will only display once but will receive update signal
+           *                             from multiple views)
+           * * `divId`: The id of the `<div>` tag for the view window.
+           * Please refer to `this._initDOMArray()` for details.
            * @type {Array.<{
-           *   snapAbove: Array.<GIVe.TrackDomBehavior>,
+           *   pinAbove: Array.<GIVe.TrackDomBehavior>,
            *   scrolling: Array.<GIVe.TrackDomBehavior>,
-           *   snapBelow: Array.<GIVe.TrackDomBehavior>,
+           *   pinBelow: Array.<GIVe.TrackDomBehavior>,
            *   map: Object,
-           *   [snapInBetween: Array.<GIVe.TrackDomBehavior>]
+           *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
            * }>}
            */
           _trackDOMsByWindow: {
@@ -260,13 +272,22 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             value: 0.0
           },
 
-          readiness: {
+          /**
+           * Flag to indicate whether the entire `chart-area` is ready
+           * @type {boolean}
+           */
+          _readiness: {
             type: Boolean,
             value: true,
             readOnly: true
           },
 
-          firstRun: {
+          /**
+           * Flag to indicate whether this is the first time this `chart-area`
+           * element is run
+           * @type {boolean}
+           */
+          _firstRun: {
             type: Boolean,
             value: true,
             readOnly: true
@@ -324,15 +345,15 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         ready: function () {
-          // initialize this.viewWindows from this.coordinates
+          // initialize this._viewWindows from this.coordinates
           this.coordinates.forEach(function (coordinateStr, index) {
             if (give.ChromRegion.isValidChromRegion(coordinateStr) &&
-              (!this.viewWindows[index] ||
-                this.viewWindows[index].regionToString(false) !==
+              (!this._viewWindows[index] ||
+                this._viewWindows[index].regionToString(false) !==
                 new give.ChromRegion(coordinateStr, this._refObj).regionToString(false))) {
-              this.splice('viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
+              this.splice('_viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
             } else {
-              this.splice('viewWindows', index, 1, false)
+              this.splice('_viewWindows', index, 1, false)
             }
           }, this)
 
@@ -349,7 +370,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _checkVWindowsInit: function () {
           if (!this._initialized) {
-            if (this._refObj && this.viewWindows.every(function (vwindow) {
+            if (this._refObj && this._viewWindows.every(function (vwindow) {
               return !!vwindow
             }, this)) {
               this._initialized = true
@@ -410,13 +431,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             textMargin: 100,
             labelLocation: ((viewWindowIndex === 0) ? 'up' : 'down'),
             windowIndex: viewWindowIndex,
-            snap: 'top'
-            // may need to implement some snapping code for all tracks
+            pin: 'top'
+            // may need to implement some pinning code for all tracks
           }, properties)
         },
 
         _createInteractionTrackProp: function (viewWindowIndex, properties) {
-          if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this.viewWindows.length) {
+          if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this._viewWindows.length) {
             throw new Error('Not enough viewWindows for this interaction.')
           }
           return this._mergeProperty({
@@ -451,10 +472,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
           var holder
-          if (trackDOM.snap === 'top') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].snapAbove
-          } else if (trackDOM.snap === 'bottom') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].snapBelow
+          if (trackDOM.pin === 'top') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
+          } else if (trackDOM.pin === 'bottom') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
           } else {
             holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
           }
@@ -469,7 +490,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
           // actually this will enum all viewWindowIndices
-          this._trackDOMsByWindow[viewWindowIndex].snapInBetween.push(trackDOM)
+          this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
           this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
           for (var i = 1; i < give.ChartArea.INTERACTION_SUBS; i++) {
             this._trackDOMsByWindow[viewWindowIndex + i].hiddenTrackComponents.push(trackDOM)
@@ -530,10 +551,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         _updateTracksInWindow: function (index) {
           // index is the window index
           // only need to update tracks involved with that index
-          this._setReadiness(false)
+          this._readiness = false
           this._callForeachFuncOnDomInWindowEntry(
             function (trackDOM, trackDomIndex) {
-              trackDOM.updateTracks(this.viewWindows[index], index, this._threshold)
+              trackDOM.updateTracks(this._viewWindows[index], index, this._threshold)
             }.bind(this), this._trackDOMsByWindow[index], index)
         },
 
@@ -544,16 +565,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           }), this)) {
             this.updateHeightLocation()
             try {
-              if (this.firstRun && this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
+              if (this._firstRun && this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
                 this.$.coorTrackTutorial.domTargetId =
                   this.coorTrackZeroDOM.getTrackSvg().id
                 this.$.coorTrackTutorial.showTutorial()
               }
-              this._setFirstRun(false)
+              this._firstRun = false
             } catch (e) {
               give._verboseConsole(e, give.VERBOSE_WARNING)
             } finally {
-              this._setReadiness(true)
+              this._readiness = true
             }
           }
         },
@@ -569,15 +590,15 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          *                   converted to string.
          */
         changeViewWindow: function (viewWindow, index, forceDomReset) {
-          this.splice('viewWindows', index, 1, new give.ChromRegion(viewWindow, this._refObj))
-          this.splice('coordinates', index, 1, this.viewWindows[index].regionToString(false))
+          this.splice('_viewWindows', index, 1, new give.ChromRegion(viewWindow, this._refObj))
+          this.splice('coordinates', index, 1, this._viewWindows[index].regionToString(false))
           if (this._initialized && !forceDomReset) {
             this._updateTracksInWindow(index)
           } else {
             this._initialized = false
             this._checkVWindowsInit()
           }
-          return this.viewWindows[index].regionToString(false)
+          return this._viewWindows[index].regionToString(false)
         },
 
         /**
@@ -627,7 +648,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          */
         getViewWindowStrings: function () {
           var result = []
-          this.viewWindows.forEach(function (vwindow, index) {
+          this._viewWindows.forEach(function (vwindow, index) {
             result.push(vwindow.regionToString(false))
           }, this)
           return result
@@ -651,9 +672,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
               }
               if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
+                this.splice('_viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
               } else {
-                this.splice('viewWindows', i, 1, null)
+                this.splice('_viewWindows', i, 1, null)
               }
             }
             this._checkVWindowsInit()
@@ -672,16 +693,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // notice that this is an array of array
           // tracks are grouped by its corresponding viewWindow Index
           this._trackDOMsByWindow = []
-          for (var i = 0; i < this.viewWindows.length; i++) {
+          for (var i = 0; i < this._viewWindows.length; i++) {
             var newTrackDOMEntry = {
-              snapAbove: [],
+              pinAbove: [],
               scrolling: [],
-              snapBelow: [],
+              pinBelow: [],
               map: {},
               divId: give.ChartArea.DOM_DIV_ID + i
             }
-            if (i < this.viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
-              newTrackDOMEntry.snapInBetween = []
+            if (i < this._viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
+              newTrackDOMEntry.pinInBetween = []
             }
             if (i > 0) {
               newTrackDOMEntry.hiddenTrackComponents = []
@@ -693,7 +714,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _initDOMCoorTracks: function () {
           if (this._refObj) {
-            this.viewWindows.forEach(function (vwindow, windowIndex) {
+            this._viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
               var coorTrackDOM = this._addVisibleTrack(give.TrackObject.createCoorTrack(this._refObj,
                 'coor_' + this._refObj.db + '_' + windowIndex), windowIndex)
@@ -709,10 +730,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          */
         resetDOM: function () {
           if (this._initialized) {
-            this._setReadiness(false)
+            this._readiness = false
             this._initDOMArray()
           } else {
-            this._setReadiness(true)
+            this._readiness = true
           }
         },
 
@@ -738,7 +759,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 this._addVisibleTrack(track, wIndex)
               }
             }
-            this.viewWindows.forEach(function (vwindow, windowIndex) {
+            this._viewWindows.forEach(function (vwindow, windowIndex) {
               if (this.groupIdList && this.groupIdList.length > 0) {
                 this.groupIdList.forEach(function (groupID) {
                   if (this._refObj.getGroups().hasOwnProperty(groupID)) {
@@ -775,15 +796,15 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _setDivElemInWindow: function (domInWindowEntry, index) {
           var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-          domInWindowEntry.snapAbove.divElem = this.$$('#' +
-            this._getElemId(domInWindowEntry.divId, reverse ? 'SnapBottom' : 'SnapTop'))
+          domInWindowEntry.pinAbove.divElem = this.$$('#' +
+            this._getElemId(domInWindowEntry.divId, reverse ? 'PinBottom' : 'PinTop'))
           domInWindowEntry.scrolling.divElem = this.$$('#' +
             this._getElemId(domInWindowEntry.divId, 'Scroll'))
-          domInWindowEntry.snapBelow.divElem = this.$$('#' +
-            this._getElemId(domInWindowEntry.divId, reverse ? 'SnapTop' : 'SnapBottom'))
-          if (domInWindowEntry.snapInBetween) {
-            domInWindowEntry.snapInBetween.divElem = this.$$('#' +
-              this._getElemId(domInWindowEntry.divId, 'SnapBetween'))
+          domInWindowEntry.pinBelow.divElem = this.$$('#' +
+            this._getElemId(domInWindowEntry.divId, reverse ? 'PinTop' : 'PinBottom'))
+          if (domInWindowEntry.pinInBetween) {
+            domInWindowEntry.pinInBetween.divElem = this.$$('#' +
+              this._getElemId(domInWindowEntry.divId, 'PinBetween'))
           }
         },
 
@@ -853,11 +874,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
          *
          * @param  {{
-         *   snapAbove: Array.<GIVe.TrackDomBehavior>,
+         *   pinAbove: Array.<GIVe.TrackDomBehavior>,
          *   scrolling: Array.<GIVe.TrackDomBehavior>,
-         *   snapBelow: Array.<GIVe.TrackDomBehavior>,
+         *   pinBelow: Array.<GIVe.TrackDomBehavior>,
          *   map: Object,
-         *   [snapInBetween: Array.<GIVe.TrackDomBehavior>]
+         *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
          * }} domInWindowEntry - viewWindow Array
          * @param  {number} index - index of domInWindowEntry in the array
          */
@@ -885,8 +906,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             _prepareSvgHeight.bind(this, this._svgWidth),
             _setSvgWidthHeight, domInWindowEntry, index)
           this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-          if (this._svgWidth !== domInWindowEntry.snapAbove.divElem.clientWidth) {
-            // scrolling happened, needs to shrink snapped track width
+          if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
+            // scrolling happened, needs to shrink pinned track width
             this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
               _prepareSvgHeight.bind(this, this._svgWidth),
               _setSvgWidthHeight, domInWindowEntry, index)
@@ -950,8 +971,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return divId + '_' + suffix
         },
 
-        _vWindowHasSnapBetween: function (domInWindowEntry) {
-          return !!domInWindowEntry.snapInBetween
+        _vWindowHasPinBetween: function (domInWindowEntry) {
+          return !!domInWindowEntry.pinInBetween
         },
 
         _onIronResize: function (e, detail) {
