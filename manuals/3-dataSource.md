@@ -29,9 +29,9 @@ To visualize a new reference genome, GIVE only needs to know:
 
 These are stored in two locations within the data source. First you need to create a database with __`your_reference_database`__:
 
-<code>
-CREATE DATABASE `<em><strong>&lt;your_reference_database&rt;</strong></em>`;
-</code>
+<pre>
+CREATE DATABASE `<em><strong>&lt;your_reference_database&gt;</strong></em>`;
+</pre>
 
 ### Creating a `cytoBandIdeo` table and populate it with data
 
@@ -47,8 +47,8 @@ Then you need to create a `cytoBandIdeo` table with chromosomal information in y
 
 The SQL code to create this table is shown below:
 
-<code>
-CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`cytoBandIdeo` (
+<pre>
+CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`cytoBandIdeo` (
   `chrom` varchar(255) NOT NULL,
   `chromStart` int(10) unsigned NOT NULL,
   `chromEnd` int(10) unsigned NOT NULL,
@@ -56,13 +56,13 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`cytoBa
   `gieStain` varchar(255) NOT NULL,
   KEY `chrom` (`chrom`(23),`chromStart`)
 );
-</code>
+</pre>
 
 The `cytoBandIdeo` table also needs to be populated by actual data. The following SQL command can be used if the file cytoBandIdeo is already on the server:
 
-<code>
-LOAD DATA LOCAL INFILE "<em><strong>&lt;cytoBandIdeo_file_path&rt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`cytoBandIdeo`;
-</code>
+<pre>
+LOAD DATA LOCAL INFILE "<em><strong>&lt;cytoBandIdeo_file_path&gt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`cytoBandIdeo`;
+</pre>
 
 ***
 *__NOTE:__ The annotation files, including the `cytoBandIdeo` file for all references available on GIVE can be downloaded from UCSC or the following URL: <https://demo.give.genemo.org/annotations/>. Currently `hg19`, `hg38`, `mm9` and `mm10` are available.*
@@ -74,7 +74,7 @@ After created the table, you also need to add one entry in table `ref` of databa
 
 The SQL code is shown below:
 
-<code>
+<pre>
 INSERT INTO `compbrowser`.`ref` (
   `dbname`,
   `name`,
@@ -82,15 +82,15 @@ INSERT INTO `compbrowser`.`ref` (
   `browserActive`,
   `settings`
 ) VALUES (
-  '<em><strong>&lt;your_reference_database&rt;</strong></em>',
-  '<em><strong>&lt;species_name&rt;</strong></em>',
-  '<em><strong>&lt;species_common_name&rt;</strong></em>',
+  '<em><strong>&lt;your_reference_database&gt;</strong></em>',
+  '<em><strong>&lt;species_name&gt;</strong></em>',
+  '<em><strong>&lt;species_common_name&gt;</strong></em>',
   1,
   '{
     "browserActive": true
   }'
 );
-</code>
+</pre>
 
 ### Creating track groups
 
@@ -106,27 +106,27 @@ Tracks in GIVE belongs to track groups for better management and these groups ne
 
 The SQL code to create this table is shown below:
 
-<code>
-CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`grp` (
+<pre>
+CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`grp` (
   `name` char(255) NOT NULL DEFAULT '',
   `label` char(255) NOT NULL DEFAULT '',
   `priority` float NOT NULL DEFAULT '0',
   `defaultIsClosed` tinyint(2) DEFAULT NULL,
   `singleChoice` tinyint(1) NOT NULL DEFAULT '0'
 );
-</code>
+</pre>
 
 Individual track groups can be created by adding entries in the `grp` table, using the following SQL command:
 
-<code>
-INSERT INTO `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`grp` VALUES (
-  '<em><strong>&lt;group_name&rt;</strong></em>',
-  '<em><strong>&lt;group_description&rt;</strong></em>',
-  <em><strong>&lt;the_priority_of_the_group&rt;</strong></em>,
-  <em><strong>&lt;default_is_closed_value&rt;</strong></em>,
-  <em><strong>&lt;whether_the_group_only_allows_one_choice&rt;</strong></em>
+<pre>
+INSERT INTO `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`grp` VALUES (
+  '<em><strong>&lt;group_name&gt;</strong></em>',
+  '<em><strong>&lt;group_description&gt;</strong></em>',
+  <em><strong>&lt;the_priority_of_the_group&gt;</strong></em>,
+  <em><strong>&lt;default_is_closed_value&gt;</strong></em>,
+  <em><strong>&lt;whether_the_group_only_allows_one_choice&gt;</strong></em>
 );
-</code>
+</pre>
 
 ### Creating the track definition table
 
@@ -144,8 +144,8 @@ Tracks themselves also need a place to store their annotation and data. This is 
 
 The SQL code to create this table is shown below:
 
-<code>
-CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`trackDb` (
+<pre>
+CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackDb` (
   `tableName` varchar(150) NOT NULL,
   `type` varchar(255) NOT NULL,
   `priority` float NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`trackD
   `settings` longtext NOT NULL,
   PRIMARY KEY (`tableName`)
 );
-</code>
+</pre>
 
 After this step, GIVE will be able to display the new reference genome and also data tracks within it.
 
@@ -189,8 +189,8 @@ The table for BED tracks needs to contain the following columns:
 
 The SQL command to create such a table is shown below:
 
-<code>
-CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><strong>&lt;track_table_name&rt;</strong></em>` (
+<pre>
+CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>` (
   `name` varchar(<em>255</em>) NOT NULL DEFAULT '',
   `chrom` varchar(<em>255</em>) NOT NULL DEFAULT '',
   `strand` char(<em>2</em>) NOT NULL DEFAULT '',
@@ -209,35 +209,35 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><s
   KEY `protein` (`proteinID`(16)),
   KEY `align` (`alignID`)
 );
-</code>
+</pre>
 
 After the table is created, you can populate it with the actual data:
-<code>
-LOAD DATA LOCAL INFILE "<em><strong>&lt;bed_data_file_path&rt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><strong>&lt;track_table_name&rt;</strong></em>`;
-</code>
+<pre>
+LOAD DATA LOCAL INFILE "<em><strong>&lt;bed_data_file_path&gt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>`;
+</pre>
 
 The entry in the `trackDb` table can be added via the following SQL command:
 
-<code>
-INSERT INTO `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`trackDb` VALUES (
-  '<em><strong>&lt;track_table_name&rt;</strong></em>',
+<pre>
+INSERT INTO `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackDb` VALUES (
+  '<em><strong>&lt;track_table_name&gt;</strong></em>',
   '<em>bed</em>',
   <em>1</em>,
   NULL,
   NULL,
   'genes',                      -- Group name, should be the same as grp.name
   '{
-    "group":"<em><strong>&lt;group_name&rt;</strong></em>",
-    "longLabel":"<em><strong>&lt;long_label&rt;</strong></em>",
+    "group":"<em><strong>&lt;group_name&gt;</strong></em>",
+    "longLabel":"<em><strong>&lt;long_label&gt;</strong></em>",
     "priority":<em>1</em>,
-    "shortLabel":"<em><strong>&lt;short_label&rt;</strong></em>",
-    "track":"<em><strong>&lt;track_table_name&rt;</strong></em>",
+    "shortLabel":"<em><strong>&lt;short_label&gt;</strong></em>",
+    "track":"<em><strong>&lt;track_table_name&gt;</strong></em>",
     "type":"<em>bed</em>",
     "visibility":"pack",
     "adaptive":true
   }'
 );
-</code>
+</pre>
 
 ### Adding linear tracks (bigWig)
 
@@ -248,41 +248,41 @@ The table for bigWig tracks only needs to contain the following column:
 
 The SQL command to create such a table is shown below:
 
-<code>
-CREATE TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><strong>&lt;track_table_name&rt;</strong></em>` (
+<pre>
+CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>` (
   `fileName` varchar(<em>255</em>) NOT NULL
 );
-</code>
+</pre>
 
 After the table is created, you can populate it with the actual data:
-<code>
-INSERT INTO `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><strong>&lt;track_table_name&rt;</strong></em>` VALUES (
-  '<em><strong>&lt;bigWig_file_path&rt;</strong></em>'
+<pre>
+INSERT INTO `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>` VALUES (
+  '<em><strong>&lt;bigWig_file_path&gt;</strong></em>'
 );
-</code>
+</pre>
 
 The entry in the `trackDb` table can be added via the following SQL command:
 
-<code>
-INSERT INTO `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`trackDb` VALUES (
-  '<em><strong>&lt;track_table_name&rt;</strong></em>',
+<pre>
+INSERT INTO `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackDb` VALUES (
+  '<em><strong>&lt;track_table_name&gt;</strong></em>',
   '<em>bigWig</em>',
   <em>1</em>,
   NULL,
   NULL,
   'genes',                      -- Group name, should be the same as grp.name
   '{
-    "group":"<em><strong>&lt;group_name&rt;</strong></em>",
-    "longLabel":"<em><strong>&lt;long_label&rt;</strong></em>",
+    "group":"<em><strong>&lt;group_name&gt;</strong></em>",
+    "longLabel":"<em><strong>&lt;long_label&gt;</strong></em>",
     "priority":<em>1</em>,
-    "shortLabel":"<em><strong>&lt;short_label&rt;</strong></em>",
-    "track":"<em><strong>&lt;track_table_name&rt;</strong></em>",
+    "shortLabel":"<em><strong>&lt;short_label&gt;</strong></em>",
+    "track":"<em><strong>&lt;track_table_name&gt;</strong></em>",
     "type":"<em>bigWig</em>",
     "visibility":"full",
     "autoScale":false,
   }'
 );
-</code>
+</pre>
 
 ### Adding interaction tracks
 
@@ -299,8 +299,8 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
 
 The SQL command to create such a table is shown below:
 
-<code>
-CREATE TABLE `<your_reference_database>`.`<em><strong>&lt;track_table_name&rt;</strong></em>` (
+<pre>
+CREATE TABLE `<your_reference_database>`.`<em><strong>&lt;track_table_name&gt;</strong></em>` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `chrom` varchar(255) NOT NULL DEFAULT '',
   `start` int(10) unsigned NOT NULL DEFAULT '0',
@@ -313,37 +313,37 @@ CREATE TABLE `<your_reference_database>`.`<em><strong>&lt;track_table_name&rt;</
   KEY `chrom_2` (`chrom`(16),`end`),
   KEY `linkID` (`linkID`)
 );
-</code>
+</pre>
 
 After the table is created, you can populate it with the actual data:
-<code>
-LOAD DATA LOCAL INFILE "<em><strong>&lt;interaction_data_file_path&rt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`<em><strong>&lt;track_table_name&rt;</strong></em>`;
-</code>
+<pre>
+LOAD DATA LOCAL INFILE "<em><strong>&lt;interaction_data_file_path&gt;</strong></em>" INTO TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>`;
+</pre>
 
 The entry in the `trackDb` table can be added via the following SQL command:
 
-<code>
-INSERT INTO `<em><strong>&lt;your_reference_database&rt;</strong></em>`.`trackDb` VALUES (
-  '<em><strong>&lt;track_table_name&rt;</strong></em>',
+<pre>
+INSERT INTO `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackDb` VALUES (
+  '<em><strong>&lt;track_table_name&gt;</strong></em>',
   '<em>interaction</em>',
   <em>1</em>,
   NULL,
   NULL,
   'genes',                      -- Group name, should be the same as grp.name
   '{
-    "group":"<em><strong>&lt;group_name&rt;</strong></em>",
-    "longLabel":"<em><strong>&lt;long_label&rt;</strong></em>",
+    "group":"<em><strong>&lt;group_name&gt;</strong></em>",
+    "longLabel":"<em><strong>&lt;long_label&gt;</strong></em>",
     "priority":<em>1</em>,
-    "shortLabel":"<em><strong>&lt;short_label&rt;</strong></em>",
-    "track":"<em><strong>&lt;track_table_name&rt;</strong></em>",
+    "shortLabel":"<em><strong>&lt;short_label&gt;</strong></em>",
+    "track":"<em><strong>&lt;track_table_name&gt;</strong></em>",
     "type":"<em>interation</em>",
     "visibility":"full",
     "thresholdPercentile": [
-      <em><strong>&lt;percentile_values_for_interaction_thresholds&rt;</strong></em>
+      <em><strong>&lt;percentile_values_for_interaction_thresholds&gt;</strong></em>
     ],
   }'
 );
-</code>
+</pre>
 
 ## Database table properties documentation
 

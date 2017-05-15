@@ -76,9 +76,9 @@ Part of GIVE Server-side Components are already included in files under `/give/h
 
 After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the server-side components' location:
 
-<code>
+<pre>
 give.host = '<em><strong>&lt;web_components_path&gt;</strong></em>'
-</code>
+</pre>
 
 ### Installing GIVE Data Sources
 
