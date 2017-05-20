@@ -176,7 +176,9 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             if (mode === 0) {
               this.bSpline()
             }
-
+            if (mode === 2) {
+              this.newBCurve()
+            }
             if (mode === 1) {
               for (var i = 0; i < this.track.data[vwindow.chr].averageDataPoints.length; i++) {
                 if (this.track.data[vwindow.chr].averageDataPoints[i].getStart() >= vwindow.start && this.track.data[vwindow.chr].averageDataPoints[i].getEnd() < vwindow.end) {
@@ -319,10 +321,20 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         drawBCurve: function(bPoints){
             var svgToDraw=this.mainSvg
             var BCurve = document.createElementNS(this.svgNS,"path")
-            BCurve.setAttribute("d", "M"+bPoints[0][0]+" "+bPoints[0][1]+" C "+bPoints[1][0]+" "+bPoints[1][1]+" "+bPoints[2][0]+" "+bPoints[2][1]+" "+bPoints[3][0]+" "+bPoints[3][1])
+            BCurve.setAttribute("d", "M"+bPoints[0][0]+" "+bPoints[0][1]+" C "+bPoints[1][0]+" "+bPoints[1][1]+" "+bPoints[2][0]+" "+bPoints[2][1]+" "+bPoints[3][0]+" "+bPoints[3][1])// use c for the rest
             BCurve.setAttribute("stroke", "black")
             BCurve.setAttribute("fill","transparent")
             this.addElement(BCurve, svgToDraw)
+        },
+        drawDownLine: function (x, y){
+            var svgToDraw=this.mainSvg
+            var DownLine = document.createElementNS(this.svgNS,"line")
+            DownLine.setAttribute("x1", x)
+            DownLine.setAttribute("x2", x)
+            DownLine.setAttribute("y1", y)
+            DownLine.setAttribute("y2", 0)
+            DownLine.setAttribute("stroke", "black")
+            this.addElement(DownLine, svgToDraw)
         },
         bSpline: function(points) {
             // for each (four?) points: calculate the tripmid point things, store them as p1.t2 , p2.t1, p2.t2, p3.t1, p3.t2, p4.t1
@@ -336,11 +348,22 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         var p2=this.track.data[vwindow.chr].dataPoints[i+1]//reassign for easier coding
         var p3=this.track.data[vwindow.chr].dataPoints[i+2]
         var p4=this.track.data[vwindow.chr].dataPoints[i+3]
+        var broken=false;
+        for (var j = i; j<i+3; j++){
+            if (this.track.data[vwindow.chr].dataPoints[j].getEnd()!=this.track.data[vwindow.chr].dataPoints[j+1].getStart())
+            {broken = true;//draw line down, might be drawn more than once
+            this.drawDownLine(this.transformXCoordinate({chr: windowToDraw.chr, coor: (this.track.data[vwindow.chr].dataPoints[j].getStart()) }, false),this.transformYCoordinate(this.track.data[vwindow.chr].dataPoints[j].data.value))
+            this.drawDownLine(this.transformXCoordinate({chr: windowToDraw.chr, coor: (this.track.data[vwindow.chr].dataPoints[j+1].getStart()) }, false),this.transformYCoordinate(this.track.data[vwindow.chr].dataPoints[j+1].data.value))
+                }
+        }
+        if(broken)
+            continue;
     //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
+    // draw lines between points, split lines into thirds
         p2.t1 = [(p1.getStart() + 2 / 3 * (p2.getStart() - p1.getStart())), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
         p2.t2 = [(p2.getStart() + 1 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
         p3.t1 = [(p2.getStart() + 2 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
-        p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p4.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
+        p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
     //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
         p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
         p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
@@ -353,6 +376,68 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         this.drawBCurve(adjustedBPoints)}
 //this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
         //drawSpline(points)
+        },
+        newBCurve: function() {//this one fills it too.
+            var vwindow = this.mainSvg.viewWindow
+            var svgToDraw=this.mainSvg
+            var curveStart = 0
+            for (var i = 0; i<this.track.data[vwindow.chr].dataPoints.length-2;i++){
+                if(this.track.data[vwindow.chr].dataPoints[i].getEnd()!=this.track.data[vwindow.chr].dataPoints[i+1].getStart()){
+                    this.newDrawBCurve(curveStart, i+1)
+                    curveStart=i+1;
+                }
+
+            }
+
+        },
+        calculateSvgCurvePoints: function(i){
+            var vwindow = this.mainSvg.viewWindow
+            var svgToDraw=this.mainSvg
+            var windowToDraw = this.mainSvg.viewWindow
+            var p1=this.track.data[vwindow.chr].dataPoints[i]
+            var p2=this.track.data[vwindow.chr].dataPoints[i+1]//reassign for easier coding
+            var p3=this.track.data[vwindow.chr].dataPoints[i+2]
+            var p4=this.track.data[vwindow.chr].dataPoints[i+3]
+
+            //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
+            // draw lines between points, split lines into thirds
+                p2.t1 = [(p1.getStart() + 2 / 3 * (p2.getStart() - p1.getStart())), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
+                p2.t2 = [(p2.getStart() + 1 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
+                p3.t1 = [(p2.getStart() + 2 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
+                p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
+            //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
+                p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
+                p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
+                var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
+                p2.adjustedMidPoint=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.midPoint[0]) }, false),this.transformYCoordinate(p2.midPoint[1])]
+                p2.adjustedt2=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p2.t2[0]) }, false),this.transformYCoordinate(p2.t2[1])]
+                p3.adjustedt1=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.t1[0]) }, false),this.transformYCoordinate(p3.t1[1])]
+                p3.adjustedMidPoint=[this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.midPoint[0]) }, false),this.transformYCoordinate(p3.midPoint[1])]
+                var adjustedBPoints = [p2.adjustedMidPoint, p2.adjustedt2, p3.adjustedt1, p3.adjustedMidPoint]
+                return adjustedBPoints
+
+        },
+        newDrawBCurve: function (start, end) {
+            var vwindow = this.mainSvg.viewWindow
+            var svgToDraw=this.mainSvg
+            var windowToDraw = this.mainSvg.viewWindow
+            var BCurve = document.createElementNS(this.svgNS,"path")
+            var d="M"
+            BCurve.setAttribute("stroke", "black")
+            BCurve.setAttribute("fill","blue")
+            //BCurve.setAttribute("d","M")
+            var SvgPoints = this.calculateSvgCurvePoints(start)
+            //Start with 0
+            d=d+SvgPoints[0][0]+" "+this.transformYCoordinate(0)+" C "+SvgPoints[1][0]+" "+SvgPoints[1][1]+" "+SvgPoints[2][0]+" "+SvgPoints[2][1]+" "+SvgPoints[3][0]+" "+SvgPoints[3][1]
+            for(var i=start+1; i<end-3; i++){//sytnax: M10 10 C 10 10 10 10 10 10 C 10 10 10 10 10 10 ...
+                    SvgPoints = this.calculateSvgCurvePoints(i)
+                    d=d+" C "+SvgPoints[1][0]+" "+SvgPoints[1][1]+" "+SvgPoints[2][0]+" "+SvgPoints[2][1]+" "+SvgPoints[3][0]+" "+SvgPoints[3][1]
+            }
+            SvgPoints=this.calculateSvgCurvePoints(end-3)
+            //end with 0
+            d=d+" C "+SvgPoints[1][0]+" "+SvgPoints[1][1]+" "+SvgPoints[2][0]+" "+SvgPoints[2][1]+" "+SvgPoints[3][0]+" "+this.transformYCoordinate(0)
+            BCurve.setAttribute("d",d)
+            this.addElement(BCurve, svgToDraw)
         },
 
         /**
