@@ -384,7 +384,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             for (var i = 0; i<this.track.data[vwindow.chr].dataPoints.length-2;i++){
                 if(this.track.data[vwindow.chr].dataPoints[i].getEnd()!=this.track.data[vwindow.chr].dataPoints[i+1].getStart()){
                     this.newDrawBCurve(curveStart, i+1)
-                    curveStart=i+1;
+                    curveStart=i+1;//will add in 0s to datapoints, need to break them if three in a row
                 }
 
             }
