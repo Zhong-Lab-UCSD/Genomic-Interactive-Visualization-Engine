@@ -207,7 +207,7 @@
               }
               blockEnd = blockStart + transcript.getBlockSizes()[i]
               if (transcript.thickStart < blockEnd && transcript.thickStart > blockStart) {
-              // CDS start is in this block
+                // CDS start is in this block
                 coor = new give.ChromRegion({chr: transcript.chr,
                   start: blockStart,
                   end: transcript.thickStart,
@@ -225,7 +225,8 @@
                 blockStart = transcript.thickEnd
               }
 
-              isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart)
+              isThick = typeof transcript.thickStart !== 'number' ||
+                ((transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart))
               coor = new give.ChromRegion({chr: transcript.chr,
                 start: blockStart,
                 end: blockEnd,

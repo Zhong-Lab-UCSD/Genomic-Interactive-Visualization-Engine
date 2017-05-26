@@ -39,7 +39,7 @@ var GIVe = (function (give) {
   }
 
   give.TranscriptObject.prototype._regionFromString = function (regionString) {
-    var elements = regionString.split(/\s+/)
+    var elements = regionString.split(/ +|\t/)
     give.ChromRegion.prototype._regionFromBed.call(this, regionString)
     if (elements[4]) {
       this.score = parseInt(elements[4])
@@ -92,6 +92,12 @@ var GIVe = (function (give) {
   give.TranscriptObject.prototype._checkBlocks = function () {
     // check blockStarts and blockLengths
     for (var i = 0; i < this.blockStarts.length; i++) {
+      if (typeof this.blockStarts[i] !== 'number' ||
+        typeof this.blockSizes[i] !== 'number' ||
+        isNaN(this.blockStarts[i]) || isNaN(this.blockSizes[i])
+      ) {
+        throw new Error('Block #' + i + ' is invalid: not a number.')
+      }
       if (this.blockStarts[i] < 0) {
         this.blockStarts[i] = 0
       } else if (this.blockStarts[i] >= this.getLength()) {
@@ -125,19 +131,21 @@ var GIVe = (function (give) {
       this.blockSizes = []
       this.blockStarts = []
       for (var i = 0; i < numOfBlocks; i++) {
-        this.blockSizes.push(parseInt(lengthArray[i]))
-        this.blockStarts.push(parseInt(startArray[i]))
+        if (lengthArray[i] !== '' && startArray[i] !== '') {
+          this.blockSizes.push(parseInt(lengthArray[i]))
+          this.blockStarts.push(parseInt(startArray[i]))
+        }
       }
+      this._checkBlocks()
     } catch (e) {
-      if (typeof exonStarts === 'string' && exonStarts.split(',').length) {
+      if (typeof exonStarts === 'string' && exonStarts && exonStarts.split(',').length) {
         // there are number of exons, but exon sizes and starts are not correct
         e.message = (e.message || '') + '(Block processing)'
         throw (e)
       }
       this.blockSizes = [this.getLength()]
-      this.blockStarts = [this.start]
+      this.blockStarts = [0]
     }
-    this._checkBlocks()
   }
 
   give.TranscriptObject.prototype.setRGB = function (strRGB) {

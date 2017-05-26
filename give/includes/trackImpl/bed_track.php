@@ -80,7 +80,9 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $para
                 . "\t" . $itor['txStart']
                 . "\t" . $itor['txEnd']
                 . "\t" . $itor['name']
-                . "\t1\t" . $itor['strand']
+                . "\t1\t"
+                . ((isset($itor['strand']) && $itor['strand'] !== "")
+                  ? $itor['strand'] : ".")
                 . "\t" . $itor['cdsStart']
                 . "\t" . $itor['cdsEnd']
                 . "\t0,0,0\t" . $itor['exonCount']

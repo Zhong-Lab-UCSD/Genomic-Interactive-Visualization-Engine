@@ -90,13 +90,14 @@
       _setRefAfterReadyCheck: function (ref) {
         try {
           var refObj = give.RefObject.findRefByDb(ref)
-          if ((!this.needsChromInfo || refObj.chromInfo) &&
-            (!this._refObj || this._refObj.db !== refObj.db)) {
-            // reference has been changed, needs to switch
-            this._setRefObj(refObj)
-          } else {
-            this.ref = ''
-            throw new Error()
+          if (!this._refObj || this._refObj.db !== refObj.db) {
+            if (!this.needsChromInfo || refObj.chromInfo) {
+              // reference has been changed, needs to switch
+              this._setRefObj(refObj)
+            } else {
+              this.ref = ''
+              throw new Error()
+            }
           }
         } catch (err) {
           give._verboseConsole(err, give.VERBOSE_DEBUG, 'RefEmbeddedBehavior(' +

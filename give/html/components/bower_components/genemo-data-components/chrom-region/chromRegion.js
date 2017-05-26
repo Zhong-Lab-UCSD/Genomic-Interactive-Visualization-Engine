@@ -131,7 +131,7 @@ var GIVe = (function (give) {
 
   give.ChromRegion.prototype._regionFromBed = function (bedString) {
     // notice that this only handle chr, start, end, name, strand in BED 4+ format
-    var tokens = bedString.split(/\s+/)
+    var tokens = bedString.split(/ +|\t/)
     this.chr = tokens[0]
     this.start = parseInt(tokens[1])
     this.end = parseInt(tokens[2])
@@ -159,7 +159,11 @@ var GIVe = (function (give) {
   give.ChromRegion.prototype.setStrand = function (newStr) {
     switch (typeof (newStr)) {
       case 'string':
-        this.strand = !(newStr.indexOf('-') >= 0 || newStr.indexOf('0') >= 0)
+        if (newStr === '.' || newStr === '') {
+          this.strand = null
+        } else {
+          this.strand = !(newStr.indexOf('-') >= 0 || newStr.indexOf('0') >= 0)
+        }
         break
       case 'number':
         this.strand = (newStr > 0)
