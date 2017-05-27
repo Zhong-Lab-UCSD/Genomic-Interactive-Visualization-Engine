@@ -131,7 +131,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 
          },
         drawData: function () {
-            var mode=parseInt(give.getParameterByName('mode') || '1');
+            var mode=parseInt(give.getParameterByName('mode') || '2');
         // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow
@@ -176,7 +176,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             if (mode === 0) {
               this.bSpline()
             }
-            if (mode === 2) {
+            if ((mode === 2)||(mode===3)) {
               this.newBCurve()
             }
             if (mode === 1) {
@@ -377,17 +377,37 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 //this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
         //drawSpline(points)
         },
-        newBCurve: function() {//this one fills it too.
+        newBCurve: function() {//this one fills it too. note that some zooms have less than four points to workwith.
             var vwindow = this.mainSvg.viewWindow
             var svgToDraw=this.mainSvg
             var curveStart = 0
+            var zeroCounter = 0 //if its is equal to 3 then consider new polygon
+            var mode=parseInt(give.getParameterByName('mode') || '2');
+            if(mode==2){
             for (var i = 0; i<this.track.data[vwindow.chr].dataPoints.length-2;i++){
                 if(this.track.data[vwindow.chr].dataPoints[i].getEnd()!=this.track.data[vwindow.chr].dataPoints[i+1].getStart()){
                     this.newDrawBCurve(curveStart, i+1)
-                    curveStart=i+1;//will add in 0s to datapoints, need to break them if three in a row
+                    curveStart=i+1;//will add in 0s to datapoints, need to break them if three in a row, also move to midpoinnt vs getStart
+                }
+            }
+
+            }
+            if(mode===3){
+            for (var i = 0; i<this.track.data[vwindow.chr].dataPoints.length-2;i++){//this is with 0's.
+                if(this.track.data[vwindow.chr].dataPoints[i].data.value==0){
+                    zeroCounter+=1;
+
+
+                }
+                if(zeroCounter>=3){
+
+                    this.newDrawBCurve(curveStart, i+1)
+                    curveStart=i+1;//will add in 0s to datapoints, need to break them if three in a row, also move to midpoinnt vs getStart
+                    zeroCounter=0;
                 }
 
             }
+        }
 
         },
         calculateSvgCurvePoints: function(i){
