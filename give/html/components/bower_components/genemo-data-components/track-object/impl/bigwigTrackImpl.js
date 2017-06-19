@@ -17,7 +17,7 @@ var GIVe = (function (give) {
             ? new give.TrackObjectImpl._BigWigImpl.SummaryCtor(resEntry.data)
             : resEntry.data),
         resolution: (resEntry.data.hasOwnProperty('validCount')
-            ? undefined : 0)
+            ? undefined : 1)
       })
     }.bind(this)
 
