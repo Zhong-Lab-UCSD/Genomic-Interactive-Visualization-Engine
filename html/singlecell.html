@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Single Cell Data Browser (powered by GIVe)</title>
+<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<link rel="import" href="components/chart-controller/chart-controller.html">
+<link rel="import" href="components/genemo-styles.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="components/ref-link-dialog/ref-link-dialog.html">
+<link rel="import" href="components/single-cell-main/single-cell-main.html">
+<style is="custom-style" include="genemo-shared-styles iron-flex iron-positioning">
+  body {
+    font-family: 'Roboto';
+    font-size: 14px;
+  }
+  h2 {
+    font-family: 'Roboto';
+    font-size: 16px;
+    line-height: 1.4em;
+    margin: 1em 1em 0.5em 1em;
+  }
+  p {
+    margin: 0.5em 1.5em;
+    line-height: 1.4em;
+  }
+  paper-dialog paper-button {
+    margin: 0 0.2em;
+  }
+</style>
+<script language="javascript">
+</script>
+</head>
+
+<body unresolved class="fullbleed layout vertical">
+  <script>
+    /* eslint-disable */
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-3695776-4', 'auto');
+    ga('send', 'pageview');
+    /* eslint-enable */
+  </script>
+  <chart-controller title-text="Single-cell RNA-Seq Genome Browser (powered by GIVe - Genomic Interaction Visualizer)"
+    id="mainChartController" group-id-list='["genes", "singleCell", "customTracks"]'
+    num-of-subs="1" class="flex" ref="mm10" coordinates='["chr17:35504032-35512777"]'
+    hide-annotation>
+    <paper-button raised noink class="toolBarCtrls" id="SCShowRef">
+      References
+    </paper-button>
+  </chart-controller>
+  <paper-dialog id="SCRefDialog" with-backdrop>
+    <h2>Single-cell RNA-Seq Genome Browser <em>(powered by GIVe)</em></h2>
+    <paper-dialog-scrollable>
+      <p>
+        The Single-cell RNA-Seq Genome Browser presents 49 new single-cell RNA-seq datasets (<a href="http://genome.cshlp.org/content/24/11/1787.full" target="_blank">Biase <em>et al.</em>, <strong>Genome Research</strong>, 24:1787-1796</a>) along with mouse genome assembly GRCm38 (mm10) for comparative studies. Published RNA-seq datasets of
+        <ref-link-dialog ref-link-text="sperms">
+          Gan, H. <em>et al.</em> Dynamics of 5-hydroxymethylcytosine during mouse spermatogenesis. <em>Nat Commun</em> 4 [<a href="http://www.ncbi.nlm.nih.gov/pubmed/23759713" target="_blank">PUBMED</a>] [<a href="http://www.nature.com/ncomms/2013/130613/ncomms2995/full/ncomms2995.html" target="_blank">ARTICLE</a>]
+        </ref-link-dialog> and
+        <ref-link-dialog ref-link-text="oocytes">
+          Ramskold, D. <em>et al.</em> Full-length mRNA-Seq from single-cell levels of RNA and individual circulating tumor cells. <em>Nat Biotech</em> 30, 777-782 [<a href="http://www.ncbi.nlm.nih.gov/pubmed/22820318" target="_blank">PUBMED</a>] [<a href="http://www.nature.com/nbt/journal/v30/n8/full/nbt.2282.html" target="_blank">ARTICLE</a>]
+        </ref-link-dialog> are also incorporated. To show these tracks, please scroll down the page and turn corresponding tracks (sperm and/or oocyte) on in "Single Cell Expression Profiling for Embryos group".
+      </p>
+      <p>
+        The interface and usage of Single-cell Genome Browser is similar to <a href="https://give.genemo.org/" target="_blank">GIVe (Genomic Interaction Visualizer)</a>.
+      </p>
+      <p>
+        The height of the signals in every track is the number of reads stacked at the genomic position. <strong>The scale is set for each track to normalize the effect from different total numbers of reads for all samples. Therefore, in the browser, signals across cells at the same genomic region would be comparable by height in image.</strong> To see the total number of mapped reads, please click the button to the left of the track or click track name in track settings below.
+      </p>
+      <p>
+        For questions, please contact Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).
+      </p>
+    </paper-dialog-scrollable>
+    <div class="buttons">
+      <paper-button id="SCDoNotShow" hidden>Do not show automatically in the future</paper-button>
+      <paper-button dialog-dismiss>Close</paper-button>
+    </div>
+  </paper-dialog>
+</body>
+</html>

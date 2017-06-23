@@ -6,6 +6,8 @@ class BigWigFile  {
 	const CHR = 0;
 	const START = 1;
 	const END = 2;
+	const DEFAULT_SUMMARY_SIZE = 1000;
+	
 	private $fileHandle;
 	
 	private $version;
@@ -107,7 +109,7 @@ class BigWigFile  {
 			if($offset >= $mergedOffset + $mergedSize) {
 				// need to read
 				list($mergedOffset, $mergedSize) = each($mergedBlocks);
-				$mergedBuf = $this->fileHandle->readString($mergedSize, $mergedOffset);
+				$mergedBuf = $this->fileHandle->readRawBuffer($mergedSize, $mergedOffset);
 			}
 			$blockBuf = substr($mergedBuf, $offset - $mergedOffset, $size);
 			if($this->uncompressBufSize > 0) {
@@ -124,9 +126,10 @@ class BigWigFile  {
 		return $result;
 	}
 	
-	private function intervalSlice($baseStart, $baseEnd, &$intervalList) {
+	private function intervalSlice($chromIx, $baseStart, $baseEnd, &$intervalList) {
+		// get the summary of interval slices that fall between $baseStart and $baseEnd
 		$interval = current($intervalList);
-		$summary = new SummaryElement();
+		$summary = SummaryElement::newFromCoordinates($chromIx, $baseStart, $baseEnd);
 		if($interval !== false) {
 			while($interval !== false && $interval[BWGSection::START] < $baseEnd) {
 				$overlap = rangeIntersection($baseStart, $baseEnd, $interval[BWGSection::START], $interval[BWGSection::END]);
@@ -147,12 +150,12 @@ class BigWigFile  {
 		return $summary;
 	}
 	
-	private function summarySlice($baseStart, $baseEnd, &$summaryList) {
+	private function summarySlice($chromIx, $baseStart, $baseEnd, &$summaryList) {
 		$oldSummary = current($summaryList);
-		$newSummary = new SummaryElement();
+		$newSummary = SummaryElement::newFromCoordinates($chromIx, $baseStart, $baseEnd);
 		if($oldSummary !== false) {
-			while($oldSummary !== false && $oldSummary->chromRegion->start < $baseEnd) {
-				$overlap = rangeIntersection($baseStart, $baseEnd, $oldSummary->chromRegion->start, $oldSummary->chromRegion->end);
+			while($oldSummary !== false && $oldSummary->start < $baseEnd) {
+				$overlap = $newSummary->overlap($oldSummary);
 				if($overlap > 0) {
 					$newSummary->addSummaryData($oldSummary, $overlap);
 				}
@@ -174,7 +177,7 @@ class BigWigFile  {
 		reset($intervalList);
 		$interval = current($intervalList);
 		for($i = 0; $i < $summarySize; $i++) {
-			$baseEnd = $start + $baseCount * ($i + 1) / $summarySize;
+			$baseEnd = $start + intval(floor($baseCount * ($i + 1) / $summarySize));
 			$end1 = $baseEnd;
 			if($end1 == $baseStart) {
 				$end1++;
@@ -182,7 +185,7 @@ class BigWigFile  {
 			while($interval !== false && $interval[BWGSection::END] <= $baseStart) {
 				$interval = next($intervalList);
 			}
-			$summary = $this->intervalSlice($baseStart, $end1, $intervalList);
+			$summary = $this->intervalSlice($chromIx, $baseStart, $end1, $intervalList);
 			$interval = current($intervalList);
 			$baseStart = $baseEnd;
 			$result[] = $summary;
@@ -259,7 +262,7 @@ class BigWigFile  {
 			if($offset >= $mergedOffset + $mergedSize) {
 				// need to read
 				list($mergedOffset, $mergedSize) = each($mergedBlocks);
-				$mergedBuf = $this->fileHandle->readString($mergedSize, $mergedOffset);
+				$mergedBuf = $this->fileHandle->readRawBuffer($mergedSize, $mergedOffset);
 			}
 			$blockBuf = substr($mergedBuf, $offset - $mergedOffset, $size);
 			if($this->uncompressBufSize > 0) {
@@ -271,10 +274,10 @@ class BigWigFile  {
 			$memFileHandle = new BufferedFile($blockBuf, BufferedFile::MEMORY, $this->fileHandle->getSwapped());
 			$itemCount = strlen($blockBuf) / SummaryElement::DATASIZE;
 			for($i = 0; $i < $itemCount; $i++) {
-				$summaryElement = new SummaryElement(NULL, $memFileHandle);
-				if($summaryElement->chromRegion->chromID == $chromIx) {
-					$s = max($summaryElement->chromRegion->start, $start);
-					$e = min($summaryElement->chromRegion->end, $end);
+				$summaryElement = new SummaryElement($memFileHandle);
+				if($summaryElement->chr == $chromIx) {
+					$s = max($summaryElement->start, $start);
+					$e = min($summaryElement->end, $end);
 					if($s < $e) {
 						$sumList[] = $summaryElement;
 					}
@@ -289,15 +292,15 @@ class BigWigFile  {
 			reset($sumList);
 			$oldSummary = current($sumList);
 			for($i = 0; $i < $summarySize; $i++) {
-				$baseEnd = $start + $baseCount * ($i + 1) / $summarySize;
+				$baseEnd = intval(floor($start + $baseCount * ($i + 1) / $summarySize));
 				$end1 = $baseEnd;
 				if($end1 == $baseStart) {
 					$end1++;
 				}
-				while($oldSummary !== false && $oldSummary->chromRegion->end <= $baseStart) {
+				while($oldSummary !== false && $oldSummary->end <= $baseStart) {
 					$oldSummary = next($sumList);
 				}
-				$summary = $this->summarySlice($baseStart, $baseEnd, $sumList);
+				$summary = $this->summarySlice($chromIx, $baseStart, $baseEnd, $sumList);
 				$oldSummary = current($sumList);
 				$baseStart = $baseEnd;
 				$result[] = $summary;
@@ -310,8 +313,8 @@ class BigWigFile  {
 	private function &histSlice($baseStart, $baseEnd, &$summaryList, &$histResult) {
 		$oldSummary = current($summaryList);
 		if($oldSummary !== false) {
-			while($oldSummary !== false && $oldSummary->chromRegion->start < $baseEnd) {
-				$overlap = rangeIntersection($baseStart, $baseEnd, $oldSummary->chromRegion->start, $oldSummary->chromRegion->end);
+			while($oldSummary !== false && $oldSummary->start < $baseEnd) {
+				$overlap = rangeIntersection($baseStart, $baseEnd, $oldSummary->start, $oldSummary->end);
 				if($overlap > 0) {
 					$histResult->addData($histResult->getBin($oldSummary->sumData), $overlap);
 				}
@@ -336,7 +339,7 @@ class BigWigFile  {
 			if($offset >= $mergedOffset + $mergedSize) {
 				// need to read
 				list($mergedOffset, $mergedSize) = each($mergedBlocks);
-				$mergedBuf = $this->fileHandle->readString($mergedSize, $mergedOffset);
+				$mergedBuf = $this->fileHandle->readRawBuffer($mergedSize, $mergedOffset);
 			}
 			$blockBuf = substr($mergedBuf, $offset - $mergedOffset, $size);
 			if($this->uncompressBufSize > 0) {
@@ -348,10 +351,10 @@ class BigWigFile  {
 			$memFileHandle = new BufferedFile($blockBuf, BufferedFile::MEMORY, $this->fileHandle->getSwapped());
 			$itemCount = strlen($blockBuf) / SummaryElement::DATASIZE;
 			for($i = 0; $i < $itemCount; $i++) {
-				$summaryElement = new SummaryElement(NULL, $memFileHandle);
-				if($summaryElement->chromRegion->chromID == $chromIx) {
-					$s = max($summaryElement->chromRegion->start, $start);
-					$e = min($summaryElement->chromRegion->end, $end);
+				$summaryElement = new SummaryElement($memFileHandle);
+				if($summaryElement->chr == $chromIx) {
+					$s = max($summaryElement->start, $start);
+					$e = min($summaryElement->end, $end);
 					if($s < $e) {
 						$sumList[] = $summaryElement;
 					}
@@ -375,7 +378,7 @@ class BigWigFile  {
 				if($end1 == $baseStart) {
 					$end1++;
 				}
-				while($oldSummary !== false && $oldSummary->chromRegion->end <= $baseStart) {
+				while($oldSummary !== false && $oldSummary->end <= $baseStart) {
 					$oldSummary = next($sumList);
 				}
 				$this->histSlice($baseStart, $baseEnd, $sumList, $result);
@@ -424,16 +427,75 @@ class BigWigFile  {
 		}
 	}
 	
-	function getSummaryStats($regions, $summarySize) {
+	function getSummaryStats($regions, $params, $paramIsResolution = FALSE) {
 		// $regions is an array of ChromRegion, the return value will also be an array of summary stats 
 		// (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
 		// notice that need to translate every region into chromIx
 		// also the zoom part will be handled here (not now)
-		$summaryList = array();
-		foreach($regions as $region) {
-			$summaryList[] = $this->getSummaryStatsSingleRegion($region, $summarySize);
+		$result = [];
+		
+		foreach($regions as $index => $region) {
+			if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
+				throw new Exception("Chromosome " . $region->chr . " is invalid.");
+			}
+			if(!array_key_exists($region->chr, $result)) {
+				$result[$region->chr] = [];
+			}
+			if(isset($params) && isset($params[$index])) {
+				$summarySize = $paramIsResolution? intval(ceil($region->getLength() / $params[$index])): $params[$index];
+				$summary = $this->getSummaryStatsSingleRegion($region, $summarySize);
+				foreach($summary as $summaryEntry) {
+					$summaryEntry->chr = $this->chromNameID[$summaryEntry->chr][ChromBPT::NAME];
+					$result[$summaryEntry->chr][] = array(
+						'regionString' => $summaryEntry->regionToString(),
+						'data' => $summaryEntry,
+					);
+				}
+			} else {
+				$result[$region->chr] = array_merge($result[$region->chr], $this->getRawDataInSingleRegion($region));
+			}
 		}
-		return $summaryList;
+		return $result;
+	}
+	
+	function getSummaryOrRaw($regions, $params, $paramIsResolution = FALSE) {
+		// $regions is an array of ChromRegion, the return value will also be an array of summary stats 
+		// (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
+		// notice that need to translate every region into chromIx
+		// also the zoom part will be handled here (not now)
+		$result = [];
+		
+		foreach($regions as $index => $region) {
+			if(!array_key_exists(strtolower(trim($region->chr)), $this->chromNameID)) {
+				throw new Exception("Chromosome " . $region->chr . " is invalid.");
+			}
+			if(!array_key_exists($region->chr, $result)) {
+				$result[$region->chr] = [];
+			}
+			$zoom = NULL;
+			if(isset($params) && isset($params[$index])) {
+				$summarySize = $paramIsResolution? intval(ceil($region->getLength() / $params[$index])): $params[$index];
+				$zoomLevel = $paramIsResolution? $params[$index]: intval(floor($region->getLength() / $params[$index]));
+				// get the zoom level
+				$zoom = $this->bestZoom($zoomLevel);
+			}
+			if(!is_null($zoom)) {
+				$chromIx = $this->chromNameID[strtolower(trim($region->chr))][ChromBPT::ID];
+				$summary = $this->getSummaryArrayFromZoom($zoom, $chromIx, $region->start, $region->end, $summarySize);
+				foreach($summary as $summaryEntry) {
+					if($summaryEntry->validCount > 0) {
+						$summaryEntry->chr = $this->chromNameID[$summaryEntry->chr][ChromBPT::NAME];
+						$result[$summaryEntry->chr][] = array(
+							'regionString' => $summaryEntry->regionToString(),
+							'data' => $summaryEntry,
+						);
+					}
+				}
+			} else {
+				$result[$region->chr] = array_merge($result[$region->chr], $this->getRawDataInSingleRegion($region));
+			}
+		}
+		return $result;
 	}
 	
 	function getHistogram($regions, $histResolution = 1, $binSize = 1, $logChrException = false, $throwChrException = false) {
@@ -445,7 +507,7 @@ class BigWigFile  {
 		foreach($regions as $region) {
 			try {
 				$this->getHistSingleRegion($region, $histElement);
-				error_log($histElement);
+				//error_log($histElement);
 			} catch (Exception $e) {
 				if($logChrException) {
 					error_log($e->getMessage());
@@ -461,9 +523,49 @@ class BigWigFile  {
 	function getAllRegions() {
 		$regions = array();
 		foreach($this->chromNameID as $name => $idsize) {
-			$regions []= new ChromRegion($name, ChromRegion::BEGINNING, $idsize[ChromBPT::SIZE]); 
+			if(gettype($name) === 'string') {
+				$regions[] = ChromRegion::newFromCoordinates($name, ChromRegion::BEGINNING, $idsize[ChromBPT::SIZE]); 
+			}
 		}
 		return $regions;
+	}
+	
+	function getRawDataInSingleRegion($region) {
+		
+		$result = [];
+		$chromIx = $this->chromNameID[$region->chr][ChromBPT::ID];
+		$regionResult = $this->intervalQuery($chromIx, $region->start, $region->end);
+		foreach($regionResult as $resultEntry) {
+			$result[] = array(
+				'regionString' => strval(ChromRegion::newFromCoordinates($region->chr,
+																		 $resultEntry[BWGSection::START], 
+																		 $resultEntry[BWGSection::END])),
+				'data' => array(
+					'value' => $resultEntry[BWGSection::VALUE]
+				)
+			);
+		}
+		return $result;
+		
+	}
+	
+	function getRawDataInRegions($regions) {
+		// get raw bigWig data (in bedGraph format) within all regions
+		$result = [];
+		foreach($regions as $region) {
+			if(!array_key_exists(strtolower($region->chr), $this->chromNameID)) {
+				throw new Exception("Chromosome " . $region->chr . " is invalid.");
+			}
+			if(!array_key_exists($region->chr, $result)) {
+				$result[$region->chr]= [];
+			}
+			$result[$region->chr] = array_merge($result[$region->chr], $this->getRawDataInSingleRegion($region));
+		}
+		return $result;
+	}
+	
+	function getAllRawData() {
+		return $this->getRawDataInRegions($this->getAllRegions());
 	}
 	
 	function getAllSummaryStats($region) {
@@ -475,8 +577,13 @@ class BigWigFile  {
 		return $this->getHistogram($this->getAllRegions(), $histResolution, $binSize);
 	}
 	
-	function __construct($fpathname, $isRemote) {
-		$this->fileHandle = new BufferedFile($fpathname, $isRemote? BufferedFile::REMOTE: BufferedFile::LOCAL);
+	function __construct($fpathname) {
+		$fileType = BufferedFile::LOCAL;
+		if(substr($fpathname, 0, 7) === 'http://' || substr($fpathname, 0, 8) === 'https://') {
+			// is a remote file
+			$fileType = BufferedFile::REMOTE;
+		}
+		$this->fileHandle = new BufferedFile($fpathname, $fileType);
 		$this->readBasicParameters();
 		
 		// next is zoom levels
