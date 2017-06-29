@@ -770,13 +770,36 @@ var GIVe = (function (give) {
     return this
   }
 
-  // allow sectional loading (will return an array of chrRegions that does not have data loaded)
-  give.GiveTreeNode.prototype.getUncachedRange = function (chrRange, resolution) {
+  //
+  /**
+   * getUncachedRange - Return an array of chrRegions that does not have data loaded
+   *   to allow buffered loading of data
+   *
+   * @param  {GIVE.ChromRegion} chrRange - The range of query.
+   * @param  {number} resolution - Resolution required for the query,
+   *   will override `chrRange.resolution` if both exist.
+   * @param  {number} bufferingRatio - Ratio of desired resolution if the data
+   *   is not available. This would allow a "resolution buffering" by requesting
+   *   data at a slightly finer resolution than currently required.
+   * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
+   *   does not have the data at the current resolution requirement.
+   */
+  give.GiveTreeNode.prototype.getUncachedRange = function (chrRange, resolution, bufferingRatio) {
     // return the range list with range(s) without any data
     //   (either not loaded, or purges for memory usage issue (to be implemented))
     // if no non-data ranges are found, return []
 
     // resolutionFunc is used to determine if the summary of this is already enough (to be implemented)
+
+    resolution = resolution || chrRange.resolution
+    bufferingRatio = bufferingRatio || 1
+    if (bufferingRatio < 1) {
+      give._verboseConsole(
+        'Invalid bufferingRatio: ' + bufferingRatio +
+        '. Should be greater than 1. Changed to 1 instead.',
+        give.VERBOSE_WARNING)
+      bufferingRatio = 1
+    }
 
     if (chrRange) {
       // clip chrRegion first
@@ -806,13 +829,17 @@ var GIVe = (function (give) {
           newResult.push(new give.ChromRegion({
             chr: chrRange.chr,
             start: retrieveStart,
-            end: retrieveEnd
+            end: retrieveEnd,
+            resolution: resolution / bufferingRatio
           }))
         } else if (this.values[currIndex]) {
           if (this.childResNotEnough(currIndex, resolution)) {
             // child has not enough resolution
             newResult = this.values[currIndex].getUncachedRange({
-              chr: chrRange.chr, start: rangeStart, end: rangeEnd}, resolution)
+              chr: chrRange.chr,
+              start: rangeStart,
+              end: rangeEnd
+            }, resolution, bufferingRatio)
           } else if (!this.childHasData(currIndex)) {
             // child does not have summary data, but resolution is OK
             if (parseInt(Math.max(this.keys[currIndex], rangeStart)) <
@@ -820,7 +847,9 @@ var GIVe = (function (give) {
               newResult.push(new give.ChromRegion({
                 chr: chrRange.chr,
                 start: parseInt(Math.max(this.keys[currIndex], rangeStart)),
-                end: parseInt(Math.min(rangeEnd, this.keys[currIndex + 1])) }))
+                end: parseInt(Math.min(rangeEnd, this.keys[currIndex + 1])),
+                resolution: resolution / bufferingRatio
+              }))
             }
           }
         } // end if (this.values[currIndex] === null)

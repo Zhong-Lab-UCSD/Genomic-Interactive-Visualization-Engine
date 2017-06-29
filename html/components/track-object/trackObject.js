@@ -310,7 +310,7 @@ var GIVe = (function (give) {
     // notice that chrRanges should be an ordered, non-overlapping array of ChromRegionObject
     this.pendingQueryRegions = {regions: [], resolutions: []}
     var mergedGUIRanges = this.mergeGUIRegionsByResolution()
-    if (!this.isPureLocal && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
+    if (!this.noData && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
       mergedGUIRanges.forEach(function (chrRange, index) {
         if (this.data[chrRange.chr] && this.data[chrRange.chr].getUncachedRange) {
           var uncachedRanges =
@@ -381,7 +381,7 @@ var GIVe = (function (give) {
 
     // first merge ranges currently being debounced
 
-    if (!this.isPureLocal) {
+    if (!this.noData) {
       if (this.isRetrivingData) {
         this._addCallback(this.getData.bind(this, ranges, resolutions, callback, callerID))
         return true
@@ -562,10 +562,10 @@ var GIVe = (function (give) {
 
   give.TrackObject.createCoorTrack = function (ref, id) {
     var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
-      { type: 'coordinate', priority: 0, isPureLocal: true }, ref)
+      { type: 'coordinate', priority: 0, noData: true }, ref)
     newTrack.setSetting('type', 'coordinate')
     newTrack.priority = 0
-    newTrack.isPureLocal = true
+    newTrack.noData = true
     return newTrack
   }
 

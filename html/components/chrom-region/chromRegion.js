@@ -7,14 +7,20 @@ var GIVe = (function (give) {
    * @property {string} chr - Chromosome name
    * @property {number} start - Starting coordinate
    * @property {number} end - Ending coordinate (not included in the region)
-   * @property {boolean|number|string|null} strand - The strand of the region
+   * @property {boolean|null} strand - The strand of the region
    *
    * @class give.ChromRegion
    * Data structure for chromosomal region
    *
-   * @param {(ChromRegionLiteral|give.ChromRegion|string)} mainParams - Main parameters used in the ChromRegion
-   * @param  {give.RefObject} [ref] - Reference genome of the region, use null to omit
-   * @param  {(object|null)} additionalParams - Additional parameters needed to be in the ChromRegion
+   * @constructor
+   * @param {(ChromRegionLiteral|give.ChromRegion|string)} mainParams -
+   *   Main parameters used in the ChromRegion.
+   *   Either use a string like 'chr1:12345-56789'
+   *   or an object with chr, start, end, and strand or other essential props
+   * @param {give.RefObject} [ref] - Reference genome of the region,
+   *   used for clipping the region, use `null` to omit
+   * @param {(object|null)} additionalParams - Additional parameters needed
+   *   to be in the ChromRegion
    */
   give.ChromRegion = function (mainParams, ref, additionalParams) {
     // usage: new ChromRegionObject(mainParam, ref, additionalParam)
@@ -218,6 +224,11 @@ var GIVe = (function (give) {
   }
 
   give.ChromRegion.prototype.concat = function (region, strandSpecific) {
+    if (strandSpecific &&
+      (this.strand !== null && region.strand !== null) &&
+      this.strand !== region.strand) {
+      return null
+    }
     if (this.end === region.start) {
       this.end = region.end
     } else if (this.start === region.end) {
