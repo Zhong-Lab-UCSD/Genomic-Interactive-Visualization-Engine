@@ -1,4 +1,20 @@
-// JavaScript Document
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var GIVe = (function (give) {
   'use strict'
 
@@ -247,7 +263,7 @@ var GIVe = (function (give) {
    *   Multiple consecutive calls will be collapsed together to reduce
    *   computational burden.
    *
-   * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges The range to
+   * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges - The range to
    *   be queried
    * @param  {function} callback - Callback function after the data are ready
    * @param  {string} callerID - ID of the caller elements, to group consecutive
@@ -305,10 +321,14 @@ var GIVe = (function (give) {
   give.TrackDataObject.prototype._addCallback = function (callback, callbackID) {
     callbackID = callbackID ||
       give.TrackDataObject._getDataQueueCallbackID + this._callbackArray.length
-    if (!this._callbackFuncs.hasOwnProperty(callbackID)) {
-      this._callbackArray.push(callbackID)
+    if (typeof callback === 'function') {
+      if (!this._callbackFuncs.hasOwnProperty(callbackID)) {
+        this._callbackArray.push(callbackID)
+      }
+      this._callbackFuncs[callbackID] = callback
+    } else {
+      throw new Error('Callback is not a function!')
     }
-    this._callbackFuncs[callbackID] = callback
   }
 
   /**
