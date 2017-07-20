@@ -16,7 +16,8 @@ var GIVe = (function (give) {
     this.db = DB
     this.name = Name
     this.commonName = CommonName
-    this.isEncode = IsEncode
+    this.isEncode = ((typeof IsEncode === 'boolean') ? IsEncode
+      : ((typeof IsEncode === 'string') ? IsEncode !== '0' : !!IsEncode))
     this.ref = Ref
     this.groups = {}        // this is used to get all the groups
     this.settings = {}        // object for all settings
