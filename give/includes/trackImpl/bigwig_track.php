@@ -65,8 +65,13 @@ function _loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
     $strToChrRegion = function($regionStr) {
       return ChromRegion::newFromRegionText($regionStr);
     };
-
-    $result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
+    error_log('Params:');
+    var_error_log($params);
+    if(isset($params) && isset($params['resolutions'])) {
+      $result = $bwFile->getSummaryOrRaw(array_map($strToChrRegion, $chrRegion), $params['resolutions'], TRUE);
+    } else {
+      $result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
+    }
   } else {
     // load everything from the bigWig file (should be extremely rare)
     $result = $bwFile->getAllRawData();

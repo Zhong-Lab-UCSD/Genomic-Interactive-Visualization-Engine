@@ -214,8 +214,8 @@
           this.switchNarrowMode(true)
         }
 
-        if (properties.snap) {
-          this.snap = properties.snap
+        if (properties.pin) {
+          this.pin = properties.pin
         }
 
         give._verboseConsole(this.id + ' created. Calling trackImpl().', give.VERBOSE_DEBUG)
@@ -447,7 +447,7 @@
         // placeholder for data drawing
       },
 
-      getCurrentResolutions: function () {
+      getResolution: function (vWindow) {
         return null
       },
 
@@ -823,8 +823,9 @@
 
       // ** Track event handling and functions **
 
-      drawDataFireWrapper: function () {
+      drawDataFireWrapper: function (newVWindow) {
         // fire track-ready event to its container (to calculate size and do other stuff)
+        this.changeViewWindow(newVWindow)
         this.drawData()
         // draw a rectangle over the coordinate track to handle mouse events
 
@@ -844,33 +845,39 @@
         }
       },
 
-      drawDataDebounceWrapper: function () {
+      drawDataDebounceWrapper: function (newVWindow) {
         // debounce wrapper for drawData()
-        this.debounce(this.updateJobName, this.drawDataFireWrapper, this._drawDebounceInt)
+        this.debounce(this.updateJobName, this.drawDataFireWrapper.bind(
+          this, newVWindow), this._drawDebounceInt)
       },
 
-      checkDataAndUpdate: function () {
+      checkDataAndUpdate: function (newVWindow) {
         // Steps:
         //     * run this.track.getData with drawData (debounced) as callback
         //    * whenever drawData (debounced) is done, run updateCache
         //    Meanwhile, run fetch data (debounced) without visible callback
         //    * Otherwise, run fetch data with drawData (debounced) as callback
+
         if (this.isDebouncerActive(this.cacheUpdateJobName)) {
           this.cancelDebouncer(this.cacheUpdateJobName)
         }
 
         // this is to set up cache loading functions as call back after draw
-        this.callbackAfterDraw =
-          this.debounce.bind(this, this.cacheUpdateJobName,
-                     this.track.getData.bind(this.track,
-                                 this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.CacheRangeSpanProportion),
-                                 this.getCurrentResolutions(),
-                                 null, this.id),
-                     this._cacheDebounceInt)
-        this.track.getData(this.getCurrentViewWindowExt(give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion),
-                   this.getCurrentResolutions(),
-                   this.drawDataDebounceWrapper.bind(this),
-                   this.id)
+        this.callbackAfterDraw = this.debounce.bind(
+          this, this.cacheUpdateJobName, this.track.getData.bind(
+            this.track, newVWindow.getExtension(
+              give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
+              null, true, this.track.ref
+            ), this.getResolution(newVWindow), null, this.id
+          ), this._cacheDebounceInt)
+        this.track.getData(
+          newVWindow.getExtension(
+            give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
+            null, true, this.track.ref
+          ), this.getResolution(newVWindow),
+          this.drawDataDebounceWrapper.bind(
+            this, newVWindow
+          ), this.id)
       },
 
       updateTracks: function (viewWindow, index, threshold) {
@@ -878,19 +885,18 @@
         // index is the index of viewWindow (for tracks with multiple viewWindows)
         // if both are omitted, just refresh the track
 
-        viewWindow = viewWindow || this.mainSvg.viewWindow
+        viewWindow = this._verifyViewWindow(viewWindow)
 
         try {
           // Steps:
           // Change view window by calling changeViewWindow()
           //    May clip viewwindow by ref
-          this.changeViewWindow(viewWindow)
           this._setIsReady(false)
           // this.oldViewWindow = this.mainSvg.viewWindow;
 
           // Get data clipped by viewWindow by calling getData()
           //    May also include data preparation
-          this.checkDataAndUpdate()
+          this.checkDataAndUpdate(viewWindow)
 
           // Update detailed content by calling drawData()
           //    Will be debounced to prevent lagging
@@ -927,10 +933,21 @@
       },
 
       changeViewWindow: function (viewWindow) {
+        // if (typeof (viewWindow) === 'string') {
+        //   this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+        // } else {
+        //   this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+        // }
+        // this.set('viewWindowString', newValue);
+        this.mainSvg.viewWindow = viewWindow
+      },
+
+      _verifyViewWindow: function (viewWindow) {
+        viewWindow = viewWindow || this.mainSvg.viewWindow
         if (typeof (viewWindow) === 'string') {
-          this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+          return new give.ChromRegion(viewWindow, this.track.ref)
         } else {
-          this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+          return viewWindow.clipRegion(this.track.ref).clone()
         }
         // this.set('viewWindowString', newValue);
       },

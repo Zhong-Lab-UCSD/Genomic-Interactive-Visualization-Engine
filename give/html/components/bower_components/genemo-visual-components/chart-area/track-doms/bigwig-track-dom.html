@@ -94,8 +94,10 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
          *
          * @return {type}  returns the resolution.
          */
-        getCurrentResolution: function () {
-          return Math.max(Math.floor(this.mainSvg.viewWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth), 1)
+        getResolution: function (newVWindow) {
+          return Math.max(Math.floor(
+            newVWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth
+          ), 1)
         },
 
         _pushSingleRawPointEntry: function (dataPointArray, chrRange, pixelSpan, dataEntry) {
@@ -138,12 +140,16 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             ), null, resolution,
             this, false)
           // Insert more zeroes to the end
-          while (rawDataPoints[rawDataPoints.length - 1].end < vwindow.end) {
+          var lastEnd = rawDataPoints.length
+            ? rawDataPoints[rawDataPoints.length - 1].end
+            : vwindow.getStart()
+          while (lastEnd < vwindow.getEnd()) {
             rawDataPoints.push(new give.ChromRegion({
               chr: vwindow.chr,
-              start: rawDataPoints[rawDataPoints.length - 1].end,
-              end: rawDataPoints[rawDataPoints.length - 1].end + resolution
+              start: lastEnd,
+              end: lastEnd + resolution
             }, this.track.ref, { data: { value: 0.0 } }))
+            lastEnd += resolution
           }
           return rawDataPoints
         },
@@ -151,41 +157,30 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         _generateSmoothedPoints: function () {
           // Get the smoothing points
           var vwindow = this.mainSvg.viewWindow
-          var slidingWindowSpan = this.getCurrentResolution() *
+          var slidingWindowSpan = this.getResolution(vwindow) *
             this.slidingWindowWidth * this.MIN_RESOLUTION_PER_PIXEL
           var halfWindowIndexLength = Math.ceil(this.slidingWindowWidth *
             this.MIN_RESOLUTION_PER_PIXEL / 2)
-          var extendedWindow = vwindow.getExtension(slidingWindowSpan)
+          var extendedWindow = vwindow.getExtension(slidingWindowSpan).clipRegion(this.track.ref)
 
           // Get the raw points list first
           var rawDataPoints = this._generateRawPointsList(extendedWindow,
-            this.getCurrentResolution())
+            this.getResolution(vwindow))
 
           // Then smooth out with this.slidingWindowWidth
           // Needs to check if the borders do not have enough points
 
           // Prepare for the sliding sumData
-          var slidingSum = 0
-          var currIndex = 0
-          var windowElemCount = 0
           var smoothedPointsList = []
 
-          // adding the first sums in sliding window
-          for (var i = 0; i < halfWindowIndexLength - 1; i++) {
-            if (rawDataPoints[currIndex + i]) {
-              slidingSum += rawDataPoints[currIndex + i].data.value
-              windowElemCount++
-            }
-          }
-
-          for (; currIndex < rawDataPoints.length; currIndex++) {
-            if (rawDataPoints[currIndex + halfWindowIndexLength]) {
-              slidingSum += rawDataPoints[currIndex + halfWindowIndexLength].data.value
-              windowElemCount++
-            }
-            if (rawDataPoints[currIndex - halfWindowIndexLength]) {
-              slidingSum -= rawDataPoints[currIndex + halfWindowIndexLength].data.value
-              windowElemCount--
+          for (var currIndex = 0; currIndex < rawDataPoints.length; currIndex++) {
+            var slidingSum = 0
+            var windowElemCount = 0
+            for (var i = -halfWindowIndexLength; i <= halfWindowIndexLength; i++) {
+              if (rawDataPoints[currIndex + i]) {
+                slidingSum += rawDataPoints[currIndex + i].data.value
+                windowElemCount++
+              }
             }
             smoothedPointsList.push(new give.ChromRegion({
               chr: vwindow.chr,
@@ -197,8 +192,9 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         },
 
         drawData: function () {
-          var mode = parseInt(give.getParameterByName('mode') || '2')
-        // draw the given point with height determined by signal strength
+          // default drawing mode is 0 (sliding window smoothing)
+          var mode = parseInt(give.getParameterByName('mode') || 0)
+          // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow
 
@@ -217,35 +213,23 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               this.windowMax = Number.NEGATIVE_INFINITY
               this.windowMin = Number.POSITIVE_INFINITY
               this.track.data[vwindow.chr].traverse(vwindow, updateExtreme, null,
-                this.getCurrentResolution(), this, false)
+                this.getResolution(vwindow), this, false)
               if (this.windowMax === Number.NEGATIVE_INFINITY) {
                 this.windowMax = 1
                 this.windowMin = 0
               }
             }
 
-            var polygon = {}
-            this.track.data[vwindow.chr].dataPoints = []
-            this.track.data[vwindow.chr].traverse(vwindow.getExtension(0.1, null, true), this.addPoint.bind(this, vwindow.chr),
-                                null, this.getCurrentResolution(), this, false)
-            if (mode === 1) {
-              this.averagePoints()
-              this.track.data[vwindow.chr].traverse(vwindow, this.drawPeak.bind(this, polygon),
-                            null, this.getCurrentResolution(), this, false)
-              this.drawPeak(polygon)  // finish up the last polygon */
-            }
+            this.dataPoints = this._generateSmoothedPoints()
+
             if (mode === 0) {
+              this.drawPeak(this.dataPoints)
+            }
+            if (mode === 1) {
               this.bSpline()
             }
             if ((mode === 2) || (mode === 3)) {
               this.newBCurve()
-            }
-            if (mode === 1) {
-              for (var i = 0; i < this.track.data[vwindow.chr].averageDataPoints.length; i++) {
-                if (this.track.data[vwindow.chr].averageDataPoints[i].getStart() >= vwindow.start && this.track.data[vwindow.chr].averageDataPoints[i].getEnd() < vwindow.end) {
-                  this.drawPeak(polygon, this.track.data[vwindow.chr].averageDataPoints[i])
-                }
-              }
             }
           }
           this.drawScale()
@@ -253,8 +237,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           if (this.textSvg) {
             this.drawShortLabel(null, this.textMargin - this.MARGIN - this.TEXT_MARGIN_GAP)
           }
-        // shape.push([0,this.windowWidth]);
-        // this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
+          // shape.push([0,this.windowWidth]);
+          // this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
         },
 
         /**
@@ -369,11 +353,11 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
          * @return {type}           description
          */
         addPoint: function (vwindowChr, dataEntry) {
-      /* var x = dataEntry.getStart()
-      var y = dataEntry.getEnd()
-      var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
-          ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
-          var vwindow = this.mainSvg.viewWindow
+          /* var x = dataEntry.getStart()
+          var y = dataEntry.getEnd()
+          var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
+              ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
+              // var vwindow = this.mainSvg.viewWindow
           this.track.data[vwindowChr].dataPoints.push(dataEntry)
         },
         // another function called draw splines? which converts the four bezier  points to scale on the svg and draws them as a curve?
@@ -424,13 +408,13 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             if (broken) {
               continue
             }
-    //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
-    // draw lines between points, split lines into thirds
+            //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
+            // draw lines between points, split lines into thirds
             p2.t1 = [(p1.getStart() + 2 / 3 * (p2.getStart() - p1.getStart())), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
             p2.t2 = [(p2.getStart() + 1 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
             p3.t1 = [(p2.getStart() + 2 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
             p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
-    //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
+            //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
             p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
             p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
             var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
@@ -441,8 +425,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             var adjustedBPoints = [p2.adjustedMidPoint, p2.adjustedt2, p3.adjustedt1, p3.adjustedMidPoint]
             this.drawBCurve(adjustedBPoints)
           }
-// this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
-        // drawSpline(points)
+          // this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
+          // drawSpline(points)
         },
         newBCurve: function () { // this one fills it too. note that some zooms have less than four points to workwith.
           var vwindow = this.mainSvg.viewWindow
@@ -541,14 +525,106 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           }
         },
 
+        _pushCoorToPolygon: function (polygon, vwindow, xCoor, yValue, flags, replace) {
+          if (!replace) {
+            polygon.points.push(this.transformXCoordinate({
+              chr: vwindow.chr,
+              coor: xCoor
+            }, false) + ',' + this.transformYCoordinate(yValue, flags))
+          } else {
+            polygon.points[0] = this.transformXCoordinate({
+              chr: vwindow.chr,
+              coor: xCoor
+            }, false) + ',' + this.transformYCoordinate(yValue, flags)
+          }
+          polygon.lastX = xCoor
+        },
+
+        _endPolygon: function (polygon) {
+          var svgToDraw = this.mainSvg
+          this.createRawPolygon(polygon.points, {
+            class: 'wiggleShapes',
+            fill: this.rgbToHex(this.colorSet[0]),
+            stroke: this.rgbToHex(this.colorSet[0])
+          }, svgToDraw)
+          this.drawOverflowLines(polygon.overflows)
+          polygon.points = []
+          polygon.overflows = {exceedMax: [], exceedMin: []}
+        },
+
         /**
-         * anonymous function - Draws the given points onto the svg window.
+         * drawPeak - Draws the given points onto the svg window.
          *
          * @param  {type} currPolygon description
          * @param  {type} dataEntry   description
          * @return {type}             description
          */
-        drawPeak: function (currPolygon, dataEntry) {
+        drawPeak: function (dataPoints) {
+          var svgToDraw = this.mainSvg
+          var windowToDraw = svgToDraw.viewWindow
+
+          var currPolygon = { points: [], overflows: {exceedMax: [], exceedMin: []} }
+
+          for (var i = 0; i < dataPoints.length; i++) {
+            var start = dataPoints[i].getStart()
+            var end = dataPoints[i].getEnd()
+            var yValue = dataPoints[i].data.value
+
+            // first decide whether only one point will be pushed
+            var middlePointOnly = (this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1)
+
+            if (yValue !== 0) {
+              // this point (two points) should be pushed to currPolygon
+              if (currPolygon.points.length === 0) {
+                // no point yet, push a zero first
+                this._pushCoorToPolygon(currPolygon, windowToDraw,
+                  (middlePointOnly ? (start + end) / 2 : start), 0)
+              }
+              var flags = {}
+              if (middlePointOnly) {
+                this._pushCoorToPolygon(currPolygon, windowToDraw,
+                  (start + end) / 2, yValue, flags)
+              } else {
+                this._pushCoorToPolygon(currPolygon, windowToDraw,
+                  start, yValue, flags)
+                this._pushCoorToPolygon(currPolygon, windowToDraw,
+                  end, yValue, flags)
+              }
+              // process overflows
+              if (flags.EXCEED_MIN) {
+                var lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
+                if (!lastExceed || !lastExceed.concat(dataPoints[i])) {
+                  currPolygon.overflows.exceedMin.push(dataPoints[i].clone())
+                }
+              } else if (flags.EXCEED_MAX) {
+                lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
+                if (!lastExceed || !lastExceed.concat(dataPoints[i])) {
+                  currPolygon.overflows.exceedMax.push(dataPoints[i].clone())
+                }
+              }
+            } else { // yValue === 0
+              if (currPolygon.points.length > 1) {
+                // there is an old polygon, finish this first
+                this._pushCoorToPolygon(currPolygon, windowToDraw,
+                  (middlePointOnly ? (start + end) / 2 : start), 0)
+                this._endPolygon(currPolygon)
+              }
+              // then put the zero in currPolygon
+              // (replace the previous one if exists)
+              this._pushCoorToPolygon(currPolygon, windowToDraw,
+                (middlePointOnly ? (start + end) / 2 : end), 0, null, true)
+            }
+          } // end iterating dataPoints
+
+          if (currPolygon.points.length > 1) {
+            this._pushCoorToPolygon(currPolygon, windowToDraw,
+              currPolygon.lastX, 0)
+            this._endPolygon(currPolygon)
+          }
+        },
+
+        _drawPeakFromBedGraph: function (currPolygon, dataEntry) {
           var svgToDraw = this.mainSvg
           var windowToDraw = svgToDraw.viewWindow
           var flags = {}
@@ -604,7 +680,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               currPolygon.lastX = end
             }
           }
-        // process overflows
+          // process overflows
           if (flags.EXCEED_MIN) {
             var lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
             if (!lastExceed || !lastExceed.concat(dataEntry)) {

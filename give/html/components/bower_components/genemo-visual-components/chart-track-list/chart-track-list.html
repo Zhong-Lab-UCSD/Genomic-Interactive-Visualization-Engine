@@ -41,7 +41,8 @@
     <paper-material elevation="1">
       <div class="header">[[group.label]]</div>
       <iron-list id="groupList" items="[[group.array]]" as="track"
-        selection-enabled multi-selection$="[[!group.singleChoice]]">
+        selection-enabled multi-selection$="[[!group.singleChoice]]"
+        on-selected-items-changed="_selectedItemsChangedHandler">
         <template>
           <track-mini-control track="[[track]]" group="[[group]]"
             selected="[[selected]]">
@@ -70,6 +71,11 @@
 
           group: {
             type: Object
+          },
+
+          instantChange: {
+            type: Boolean,
+            value: false
           }
         },
 
@@ -131,6 +137,12 @@
               }
             }
           }, this)
+        },
+
+        _selectedItemsChangedHandler: function (e) {
+          if (this.instantChange) {
+            this.DOMToTrack()
+          }
         }
       })
 

@@ -126,7 +126,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         <genemo-card disable-folding class="flex flexFillGenemoCard">
           <chart-track-group-list ref="[[ref]]" class="genemoBody" id="mainTrackList"
             group-id-list='[[groupIdList]]' setting-key="visibility"
-            no-controls>
+            no-controls='[[noControls]]' with-filter='[[withFilter]]'
+            instant-change='[[instantChange]]'>
           </chart-track-group-list>
         </genemo-card>
         <custom-track-controller ref="[[ref]]" id="mainCTController"></custom-track-controller>
@@ -179,6 +180,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
            * Notice that if this setting is different from `coordinates.length`,
            * adjustments will be made to `coordinates` (truncating excessive
            * items or padding with default values).
+           * @type {number}
            */
           numOfSubs: {
             type: Number,
@@ -225,16 +227,48 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 
           /**
            * The title text that will appear in the embedded browser.
+           * @type {string}
            */
           titleText: {
             type: String,
             value: 'GIVe (Genomic Interaction Visualizer)'
+          },
+
+          /**
+           * Whether the track controller will support filter function
+           * @type {boolean}
+           */
+          withFilter: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * Whether the track controller will reflect change immediately
+           * without calling this.DOMToTrack().
+           * This is always false if noControls === false
+           * @type {boolean}
+           */
+          instantChange: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * Whether the track controller will not show OK/Cancel controls
+           * @type {boolean}
+           */
+          noControls: {
+            type: Boolean,
+            value: false
           }
         },
 
         listeners: {
           'update-window': '_updateWindowHandler',
-          'update-track-structure': 'updateTrackstructureHandler'
+          'update-track-structure': 'updateTrackstructureHandler',
+          'show-track-filter': '_showTrackFilterHandler',
+          'filter-tracks': '_filterTracksHandler'
         },
 
         ready: function () {
@@ -258,8 +292,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         /**
          * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
          *
-         * @param  {type} newValue new `numOfSubs` value
-         * @param  {type} oldValue old `numOfSubs` value
+         * @param  {number} newValue new `numOfSubs` value
+         * @param  {number} oldValue old `numOfSubs` value
          */
         _numOfSubsChanged: function (newValue, oldValue) {
           if (this._refObj) {

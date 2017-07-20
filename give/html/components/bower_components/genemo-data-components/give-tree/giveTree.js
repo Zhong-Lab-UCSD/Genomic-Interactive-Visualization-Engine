@@ -33,7 +33,7 @@ var GIVe = (function (give) {
       lifeSpan = give.GiveTree._DEFAULT_LIFESPAN
     }
     this.lifeSpan = lifeSpan
-    this.root = new give.GiveTreeNode(0, start, end, summaryCtor, null, null, bFactor, true, lifeSpan)
+    this.root = new give.GiveTreeNode(null, start, end, summaryCtor, null, null, bFactor, true, lifeSpan)
   }
 
   give.GiveTree.prototype.insert = function (data, chrRange, continuedList,
@@ -135,14 +135,14 @@ var GIVe = (function (give) {
   // TODO: allow summary and leveled traverse (leveled traverse done)
 
   // allow sectional loading (will return an array of chrRegions that does not have data loaded)
-  give.GiveTree.prototype.getUncachedRange = function (chrRange, resolution) {
+  give.GiveTree.prototype.getUncachedRange = function (chrRange, resolution, bufferingRatio) {
     // return the range list with range(s) without any data
     //   (either not loaded, or purges for memory usage issue (to be implemented))
     // if no non-data ranges are found, return []
 
     // resolution is used to determine if the summary of this is already enough (to be implemented)
 
-    return this.root.getUncachedRange(chrRange, resolution)
+    return this.root.getUncachedRange(chrRange, resolution, bufferingRatio)
   }
 
   // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)

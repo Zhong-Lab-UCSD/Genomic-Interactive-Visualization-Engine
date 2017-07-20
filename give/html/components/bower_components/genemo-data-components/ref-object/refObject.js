@@ -57,9 +57,9 @@ var GIVe = (function (give) {
     }
 
     this.metaFilterInitialized = false
-    if (give.mainTaskScheduler && give.mainMetaDataEntries) {
+    if (give.mainTaskScheduler) {
       give.mainTaskScheduler.addTask(new give.TaskEntry(
-        this.initializeMetaFilter.bind(this, give.mainMetaDataEntries),
+        this.initializeMetaFilter.bind(this),
         ['meta-data-ready', this.getCleanID() + '-tracks-ready']
       ))
     }
@@ -223,6 +223,7 @@ var GIVe = (function (give) {
 
   give.RefObject.prototype.initializeMetaFilter = function (metaEntries) {
     // metaEntry as give.MetaDataEntries
+    metaEntries = metaEntries || give.mainMetaDataEntries
     this.tracks.forEach(function (track) {
       var cellType = track.getSetting('cellType')
       var labName = track.getSetting('labName')

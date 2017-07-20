@@ -57,8 +57,8 @@ var GIVe = (function (give) {
     if (this.getSetting('groupDataType')) {
       return this.getSetting('groupDataType') +
         (this.getSetting('groupFeature') ? ' (' + this.getSetting('groupFeature') + ')' : '')
-    } else if (this.getSetting('trackDataType')) {
-      return this.getSetting('trackDataType') +
+    } else if (this.getSetting('dataType')) {
+      return this.getSetting('dataType') +
         (this.getSetting('trackFeature') ? ' (' + this.getSetting('trackFeature') + ')' : '')
     }
     return ''
@@ -312,16 +312,29 @@ var GIVe = (function (give) {
     var mergedGUIRanges = this.mergeGUIRegionsByResolution()
     if (!this.isPureLocal && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
       mergedGUIRanges.forEach(function (chrRange, index) {
-        if (this.data[chrRange.chr] && this.data[chrRange.chr].getUncachedRange) {
-          var uncachedRanges =
-            this.data[chrRange.chr].getUncachedRange(chrRange,
-                                 mergedGUIRanges.resolutions[index])
+        if (!this.data.hasOwnProperty(chrRange.chr)) {
+          this.data[chrRange.chr] = new (this.GetDataStructure())(
+            this.ref.chromInfo[chrRange.chr].chrRegion.start,
+            this.ref.chromInfo[chrRange.chr].chrRegion.end,
+            this.GetSummaryCtor()
+          )
+        }
+        if (this.data[chrRange.chr].getUncachedRange) {
+          var uncachedRanges = this.data[chrRange.chr].getUncachedRange(
+            chrRange, mergedGUIRanges.resolutions[index], give.TrackObject.RESOLUTION_BUFFER_RATIO
+          )
           this.pendingQueryRegions.regions = this.pendingQueryRegions.regions.concat(uncachedRanges)
           this.pendingQueryRegions.resolutions = this.pendingQueryRegions.resolutions.concat(
-            (new Array(uncachedRanges.length)).fill(
-              typeof mergedGUIRanges.resolutions[index] === 'number'
-                ? mergedGUIRanges.resolutions[index] / give.TrackObject.RESOLUTION_BUFFER_RATIO
-                : mergedGUIRanges.resolutions[index]))
+            uncachedRanges.map(function (range) {
+              if (typeof range.resolution === 'number') {
+                return range.resolution
+              } else {
+                return typeof mergedGUIRanges.resolutions[index] === 'number'
+                  ? mergedGUIRanges.resolutions[index] / give.TrackObject.RESOLUTION_BUFFER_RATIO
+                  : mergedGUIRanges.resolutions[index]
+              }
+            }, this)
+          )
         } else {
           this.pendingQueryRegions.regions.push(chrRange)
           this.pendingQueryRegions.resolutions.push(
@@ -346,7 +359,7 @@ var GIVe = (function (give) {
         window: regions.map(function (region) {
           return region.regionToString(false)
         }, this),
-        resolutions: Array.isArray(resolutions) ? {
+        params: Array.isArray(resolutions) ? {
           resolutions: resolutions
         } : null,
         isCustom: true
@@ -380,7 +393,6 @@ var GIVe = (function (give) {
     // data handling will be done locally (in TrackObject here)
 
     // first merge ranges currently being debounced
-
     if (!this.isPureLocal) {
       if (this.isRetrivingData) {
         this._addCallback(this.getData.bind(this, ranges, resolutions, callback, callerID))
@@ -392,6 +404,8 @@ var GIVe = (function (give) {
       if (!Array.isArray(ranges)) {
         ranges = [ranges]
       }
+      give._verboseConsole('getData()', give.VERBOSE_DEBUG)
+      give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
       if (!Array.isArray(resolutions)) {
         resolutions = (new Array(ranges.length)).fill(resolutions)
       }
@@ -401,8 +415,12 @@ var GIVe = (function (give) {
 
       this.getTrackUncachedRange()
       if (callback) {
+        give._verboseConsole('addCallback()', give.VERBOSE_DEBUG)
+        give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
         this._addCallback(callback, callerID)
       }
+      give._verboseConsole('pendingQueryRegions', give.VERBOSE_DEBUG)
+      give._verboseConsole(this.pendingQueryRegions.regions.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
       if (this.pendingQueryRegions.regions.length > 0) {
         give.debounce(this.getDataJobName,
                 this._retrieveData.bind(this, this.pendingQueryRegions.regions,
@@ -413,6 +431,8 @@ var GIVe = (function (give) {
           give.cancelDebouncer(this.getDataJobName)
         }
         this.pendingGUIRangesFromID = {}
+        give._verboseConsole('clearCallback()', give.VERBOSE_DEBUG)
+        give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
         this._clearCallback(true)
       }
     } else if (callback) {
@@ -558,7 +578,7 @@ var GIVe = (function (give) {
     (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
   give.TrackObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
-  give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0
+  give.TrackObject.RESOLUTION_BUFFER_RATIO = 0.1
 
   give.TrackObject.createCoorTrack = function (ref, id) {
     var newTrack = new give.TrackObject(id || 'coor_' + ref.db,

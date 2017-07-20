@@ -17,7 +17,7 @@ var GIVe = (function (give) {
   var mainPanelDom, mainPanelDrawerDom,
     mainRegionListDom,
     searchTracksDom,
-    trackListDom, trackFilterDom,
+    trackListDom,
     mainChartDom, firstContainerDom,
     videoButtonDom, searchPanelDom,
     searchCardDom
@@ -273,7 +273,6 @@ var GIVe = (function (give) {
     if (give.RefObject.refArray.dbMap[ref] && give.RefObject.refArray.dbMap[ref] !== give.RefObject.refArray.currRef()) {
       // ref changed, needs to update lots of stuff
       give.RefObject.refArray.selected = ref
-      trackFilterDom.initialize(give.RefObject.refArray.currRef())
       trackListDom.setRef(give.RefObject.refArray.currRef())
       // reset chromRegionList
       mainRegionListDom.setList()
@@ -300,17 +299,6 @@ var GIVe = (function (give) {
 
   give.switchPageHandler = function (e) {
     give.switchPage(e.detail.selectedPageID)
-  }
-
-  give.filterTracksFromList = function (trackListId, map, flags) {
-    // first apply settings to ref.tracks (data object)
-    // then call trackToDOM to
-    Polymer.dom(document).querySelector('#' + trackListId).applyFilter(map, flags)
-  }
-
-  give.filterTracksHandler = function (e) {
-    give.filterTracksFromList(e.detail.trackListId,
-      e.detail.map, e.detail.flags)
   }
 
   // detect sessionID to see whether loading session is needed
@@ -382,7 +370,6 @@ var GIVe = (function (give) {
 
     firstContainerDom = Polymer.dom(document).querySelector('#genemoFirstContainer')
 
-    trackFilterDom = Polymer.dom(document).querySelector('#trackFilter')
     mainChartDom = Polymer.dom(document).querySelector('#mainChartArea')
 
     searchPanelDom = Polymer.dom(document).querySelector('#' + give.SEARCH_PANEL_DOM_ID)
@@ -410,9 +397,6 @@ var GIVe = (function (give) {
 
     document.addEventListener('ref-changed', give.refChangedHandler)
     document.addEventListener('switch-page', give.switchPageHandler)
-
-    document.addEventListener('show-track-filter', trackFilterDom.show.bind(trackFilterDom))
-    document.addEventListener('filter-tracks', give.filterTracksHandler)
 
     document.addEventListener('change-window', function (e) {
       give.RefObject.refArray.currRef().getGroups().encode.forEach(function (track) {

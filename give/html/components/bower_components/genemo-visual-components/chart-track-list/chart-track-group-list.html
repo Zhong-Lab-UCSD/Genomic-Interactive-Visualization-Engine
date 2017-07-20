@@ -8,6 +8,7 @@
 <link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
+<link rel="import" href="../genemo-track-filter/genemo-track-filter.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-group-list">
   <template>
@@ -30,11 +31,12 @@
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <chart-track-list text-size="[[textSize]]" group="[[group]]"
-        setting-key="[[settingKey]]" class="flex">
+        setting-key="[[settingKey]]" class="flex"
+        instant-change="[[instantChange]]">
       </chart-track-list>
     </template>
-    <template is="dom-if" if="[[!noControls]]" restamp="true">
-      <div class="cardActions">
+    <div class="cardActions">
+      <template is="dom-if" if="[[withFilter]]" restamp="true">
         <paper-button on-tap="launchFilter">
           <iron-icon icon="filter-list"></iron-icon>
           Filter
@@ -43,6 +45,10 @@
           <iron-icon icon="refresh"></iron-icon>
           Reset to default
         </paper-button>
+        <genemo-track-filter id="trackFilter" ref='[[ref]]'
+          on-filter-tracks="_filterTracksHandler"></genemo-track-filter>
+      </template>
+      <template is="dom-if" if="[[!noControls]]" restamp="true">
         <paper-button on-tap="cancelChanges">
           <iron-icon icon="close"></iron-icon>
           Cancel
@@ -51,8 +57,8 @@
           <iron-icon icon="check"></iron-icon>
           OK
         </paper-button>
-      </div>
-    </template>
+      </template>
+    </div>
   </template>
   <script>
     var GIVe = (function (give) {
@@ -67,26 +73,6 @@
         ],
 
         properties: {
-          /**
-           * The GIVe.RefObject for reference.
-           * Contains chromosomal layout and track information.
-           * @type {GIVe.RefObject}
-           */
-          _refObj: {
-            type: Object
-          },
-
-          /**
-           * The reference used in the embedded browser.
-           * Reference names needs to be in UCSC format.
-           * Please see [GIVe.RefObject](../../genemo-data-components/ref-object/)
-           * to see available references on GIVe server.
-           */
-          ref: {
-            type: String,
-            observer: '_refChanged'
-          },
-
           textSize: {
             type: Number,
             value: 12    // unit is px
@@ -109,6 +95,30 @@
             type: Array
           },
 
+          /**
+           * Whether the track controller will support filter function
+           * @type {boolean}
+           */
+          withFilter: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * Whether the track controller will reflect change immediately
+           * without calling this.DOMToTrack().
+           * This is always false if noControls === false
+           * @type {boolean}
+           */
+          instantChange: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * Whether the track controller will not show OK/Cancel controls
+           * @type {boolean}
+           */
           noControls: {
             type: Boolean,
             value: false
@@ -203,8 +213,27 @@
           this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
         },
 
+        /**
+         * launchFilter - Show track filter element
+         */
         launchFilter: function () {
-          this.fire('show-track-filter')
+          if (this.$$('#trackFilter')) {
+            this.$$('#trackFilter').show()
+          }
+        },
+
+        /**
+         * _filterTracksHandler - Event handler to filter the track
+         *
+         * @param  {Object} e - event from the track filter element
+         */
+        _filterTracksHandler: function (e) {
+          if (!e.detail.targetId || e.detail.targetId === this.id) {
+            e.stopPropagation()
+            this.applyFilter(e.detail.map, e.detail.flags)
+          }
+          // Otherwise the filter wants to change some other list (extremely rare),
+          // when whoever listens to filter-tracks event will handle.
         },
 
         submitChanges: function () {

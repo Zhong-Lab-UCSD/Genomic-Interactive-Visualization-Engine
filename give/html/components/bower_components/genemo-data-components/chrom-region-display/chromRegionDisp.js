@@ -54,7 +54,8 @@ var GIVe = (function (give) {
     if (typeof includeStrand === 'undefined' || includeStrand === null) {
       includeStrand = true
     }
-    return this.chr + ':' + this._extendedStart + '-' + this._extendedEnd +
+    return this.chr + ':' + (this._extendedStart + 1 - give.ChromRegion.CHROM_BASE) +
+      '-' + this._extendedEnd +
       ((!includeStrand || this.strand === null) ? '' : (' (' +
       (this.strand ? '+' : '-') + ')'))
   }

@@ -34,7 +34,7 @@
   </style>
     <paper-card heading="Filter tracks">
       <div class="card-content">
-        <genemo-track-filter-pages id="mainPage"></genemo-track-filter-pages>
+        <genemo-track-filter-pages id="mainPage" ref='[[ref]]'></genemo-track-filter-pages>
       </div>
       <div class="card-actions">
         <paper-button noink on-tap="selectAll">Select all</paper-button>
@@ -73,9 +73,13 @@
           value: 'fade-out-animation'
         },
 
-        trackListId: {
+        targetId: {
           type: String,
-          value: ''
+          value: null
+        },
+
+        ref: {
+          type: String
         }
 
       },
@@ -106,17 +110,6 @@
         this.playAnimation('exit')
       },
 
-      initialize: function (ref) {
-        if (ref.metaFilterInitialized) {
-          this.$.mainPage.initialize(ref)
-        } else {
-          give.mainTaskScheduler.addTask(new give.TaskEntry(
-            this.$.mainPage.initialize.bind(this.$.mainPage, ref),
-            [ref.getCleanID() + '-meta-filter-ready']
-          ))
-        }
-      },
-
       selectAll: function () {
         this.$.mainPage.setAllCheckboxes(true)
       },
@@ -127,7 +120,7 @@
 
       addToSelection: function () {
         this.fire('filter-tracks', {
-          trackListId: this.trackListId,
+          targetId: this.targetId,
           map: this.$.mainPage.getCurrentListMap(),
           flags: { matched: true }
         })
@@ -136,7 +129,7 @@
 
       filterSelection: function () {
         this.fire('filter-tracks', {
-          trackListId: this.trackListId,
+          targetId: this.targetId,
           map: this.$.mainPage.getCurrentListMap(),
           flags: { unmatched: false }
         })
@@ -145,7 +138,7 @@
 
       excludeFromSelection: function () {
         this.fire('filter-tracks', {
-          trackListId: this.trackListId,
+          targetId: this.targetId,
           map: this.$.mainPage.getCurrentListMap(),
           flags: { matched: false }
         })
