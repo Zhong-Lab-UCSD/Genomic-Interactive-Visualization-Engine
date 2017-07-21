@@ -55,7 +55,7 @@ var GIVe = (function (give) {
   // all private methods and static data for a single chrom B+ tree
 
   // Private-ish part for data structure
-  var DataEntry = function (startList, continuedList, lifeSpan) {
+  var DataNode = function (startList, continuedList, lifeSpan) {
     //    { startList: [], continuedList: [], resolution: int }:
     //      An object saving references to actual data (Objects with ChromRegion behavior) that spans the bin,
     //      startList:    data that start at this bin (have the same start coordinate),
@@ -71,17 +71,17 @@ var GIVe = (function (give) {
     this.continuedList = continuedList || []
   }
 
-  give.extend(give.WitheringNode, DataEntry)
+  give.extend(give.WitheringNode, DataNode)
 
-  DataEntry.prototype.getResolution = function () {
+  DataNode.prototype.getResolution = function () {
     return 1
   }
 
-  DataEntry.prototype.resNotEnough = function (resolution) {
+  DataNode.prototype.resNotEnough = function (resolution) {
     return false
   }
 
-  DataEntry.prototype.hasData = function () {
+  DataNode.prototype.hasData = function () {
     return true
   }
 
@@ -89,7 +89,8 @@ var GIVe = (function (give) {
   // {
   //    isRoot:           Boolean, showing whether this is root;
   //    branchingFactor:  Integer, showing the number of children a node can have;
-  //    revDepth:         Integer, showing the reverse depth of node (leaf = 0 and root = max);
+  //    revDepth:         Integer, showing the reverse depth of node
+  //                      (DataNode = 0, leaf = 1 and root = max);
   //    start:            Integer, the starting coordinate;
   //    keys:             [](Integer), the separating keys (coordinates for window);
   //    values:           [](Records), the records (see above for data structure);
@@ -118,7 +119,13 @@ var GIVe = (function (give) {
     this.values = [null]
     this.revDepth = revdepth
     this.next = nextNode
+    if (nextNode) {
+      nextNode.prev = this
+    }
     this.prev = prevNode
+    if (prevNode) {
+      prevNode.next = this
+    }
     if (typeof summaryCtor === 'function') {
       this.SummaryCtor = summaryCtor
     }
@@ -148,7 +155,7 @@ var GIVe = (function (give) {
             rangeStart + ', end: ' + rangeEnd + '\nCurrent node start: ' +
             this.getStart() + ', end: ' + this.getEnd()))
     }
-    return { start: rangeStart, end: rangeEnd }
+    return { chr: chrRange.chr, start: rangeStart, end: rangeEnd }
   }
 
   give.GiveTreeNode.prototype.getStart = function () {
@@ -225,14 +232,18 @@ var GIVe = (function (give) {
         }
         var newSummary = new this.SummaryCtor()
         if (this.values.every(function (entry, index) {
+          if (entry === false) {
+            // Child is zero, just return true
+            return true
+          }
           if (entry === null ||
-             (this.revDepth > 0 && entry.getSummaryData() === null)) {
+             (this.revDepth > 1 && entry.getSummaryData() === null)) {
             return false
           }
-          if (this.revDepth > 0) {
+          if (this.revDepth > 1) {
             newSummary.addSummary(entry.getSummaryData())
-          } else if (entry) {
-            newSummary.addData(entry, this.keys[index + 1] - this.keys[index])
+          } else if (entry && entry.startList && entry.startList[0] && entry.startList[0].data) {
+            newSummary.addData(entry.startList[0].data, this.keys[index + 1] - this.keys[index])
           }
           return true
         }, this)) {
@@ -274,7 +285,7 @@ var GIVe = (function (give) {
       chrRange = this.truncateChrRange(chrRange, true, true)
       this.rejuvenate(lifeSpan)
       // there are three cases for insertion:
-      // 1. leaf nodes: use DataEntry to store raw data
+      // 1. leaf nodes: use DataNode to store raw data
       // 2. non-leaf nodes with adequate resolution:
       //    update summary
       // 3. non-leaf nodes with worse resolution:
@@ -326,23 +337,40 @@ var GIVe = (function (give) {
         this.values.splice(currIndex, 0, this.values[currIndex - 1])
       }
 
-      var childDataNonEmptyStart = give.fitRes(data[currDataIndex]
-          ? Math.min(rangeEnd, data[currDataIndex].getStart())
-          : rangeEnd, childRes, Math.floor)
+      // Then pad all the regions without data,
+      // sectionStart will become the first coordinate with actual data
+      sectionStart = data[currDataIndex]
+        ? give.fitRes(Math.min(rangeEnd, data[currDataIndex].getStart()),
+          childRes, Math.floor)
+        : (rangeEnd >= this.getEnd() ? this.getEnd()
+          : give.fitRes(rangeEnd, childRes, Math.floor))
 
-      if (this.keys[currIndex] < childDataNonEmptyStart) {
-        // insert the false nodes
-        currIndex++
-        this.keys.splice(currIndex, 0, childDataNonEmptyStart)
-        this.values.splice(currIndex, 0, false)
-        sectionStart = childDataNonEmptyStart
+      while (this.keys[currIndex] < sectionStart) {
+        // There are gaps with no data
+        // First check if the gap needs another node
+        if (sectionStart < this.keys[currIndex + 1]) {
+          // new node is needed
+          this.keys.splice(currIndex + 1, 0, sectionStart)
+          this.values.splice(currIndex, 0, false)
+        } else {
+          // no new node is needed, just clear this one
+          this.values[currIndex] = false
+        }
+
+        // Merge child with previous one if both are false
+        if (this.values[currIndex - 1] === false) {
+          this.keys.splice(currIndex, 1)
+          this.values.splice(currIndex, 1)
+        } else {
+          currIndex++
+        }
       }
 
       sectionEnd = sectionStart + childRes
 
       if (sectionStart < rangeEnd) {
         if (this.keys[currIndex + 1] > sectionEnd) {
-          // this child is actually a placeholder for multiple nodes
+          // this child is actually another placeholder for multiple nodes
           // and there should be spaces after the new current node
           this.keys.splice(currIndex + 1, 0, sectionEnd)
           this.values.splice(currIndex + 1, 0, this.values[currIndex])
@@ -361,27 +389,34 @@ var GIVe = (function (give) {
           var nextChild = ((currIndex < this.values.length - 1)
             ? this.values[currIndex + 1]
             : (this.next ? this.next.getFirstChild() : null)) || null
-          this.values[currIndex] = new give.GiveTreeNode(this.revdepth - 1,
+          this.values[currIndex] = new give.GiveTreeNode(this.revDepth - 1,
             sectionStart, sectionEnd, this.SummaryCtor, nextChild,
             prevChild, this.branchingFactor, false, lifeSpan)
+          if (prevChild) {
+            prevChild.next = this.values[currIndex]
+          }
+          if (nextChild) {
+            nextChild.prev = this.values[currIndex]
+          }
         }
 
-        if (this.resNotEnough()) {
+        if (this.childResNotEnough(resolution, currIndex)) {
           // case 3: non-leaf nodes with worse resolution
           this.values[currIndex].insert(data,
             { start: childDataRangeStart, end: childDataRangeEnd },
             continuedList, callback, resolution, lifeSpan)
-        } else { // if (!this.resNotEnough())
-          // case 2: non-leaf nodes with adequate resolution
-          // note that data[0] should be exactly the same as this.getStart()
-          if (this.getStart() !== data[currDataIndex].getStart() ||
-            this.getEnd() !== data[currDataIndex].getEnd()) {
+        } else { // if (!this.childResNotEnough(resolution, currIndex))
+          // case 2: non-leaf nodes with adequate resolution (for children)
+          // note that data[0] should be exactly the same as
+          // this.values[currIndex].getStart()
+          if (this.values[currIndex].getStart() !== data[currDataIndex].getStart() ||
+            this.values[currIndex].getEnd() !== data[currDataIndex].getEnd()) {
             throw (new Error('Summary coordinates do not match! Need ' +
-              this.getStart() + '-' + this.getEnd() +
+              this.values[currIndex].getStart() + '-' + this.values[currIndex].getEnd() +
               ', get ' + data[currDataIndex].getStart() + '-' +
               data[currDataIndex].getEnd()))
           }
-          this.updateSummary(data[currDataIndex].data)
+          this.values[currIndex].updateSummary(data[currDataIndex].data)
           if (callback) {
             callback(data[currDataIndex])
           }
@@ -477,7 +512,7 @@ var GIVe = (function (give) {
           this.values[currIndex] = false
         }
         if (startList.length > 0 || continuedList.length > 0) {
-          this.values[currIndex] = new DataEntry(startList, continuedList, lifeSpan)
+          this.values[currIndex] = new DataNode(startList, continuedList, lifeSpan)
         }
       }
 
@@ -503,39 +538,6 @@ var GIVe = (function (give) {
     data.splice(0, currDataIndex)
   }
 
-  give.GiveTreeNode.prototype.addRecordAsNonLeaf = function (data,
-    rangeStart, rangeEnd, continuedList, callback, resolution) {
-    // This function only adds record(s), it won't restructure the tree
-
-    // This is not a leaf node
-    // Break out chrRange by child, then insert the sub-range into every child
-    var currIndex = 0
-    var insertSibling = function (sibling) {
-      // First put the end value
-      currIndex++
-      this.keys.splice(currIndex, 0, sibling.getStart())
-      this.values.splice(currIndex, 0, sibling)
-    }
-
-    while (rangeStart < rangeEnd) {
-      while (this.keys[currIndex + 1] <= rangeStart) {
-        currIndex++
-      }
-
-      // Now the start of chrRange is in the range of current child
-      var sectionEnd = this.keys[currIndex + 1] > rangeEnd ? rangeEnd : this.keys[currIndex + 1]
-      var potentialSiblings = this.values[currIndex].insert(data,
-        { start: rangeStart, end: sectionEnd }, continuedList, callback, resolution)
-      if (Array.isArray(potentialSiblings)) {
-        // Has siblings, put them into this.values
-        potentialSiblings.forEach(insertSibling, this)
-      }
-
-      rangeStart = sectionEnd
-      currIndex++
-    } // end while(rangeStart < rangeEnd);
-  }
-
   give.GiveTreeNode.prototype.remove = function (data, removeExactMatch, callback) {
     // Removing a single data entry.
     // Notice that if data is provided and duplicate keys (same start and end) exist,
@@ -552,7 +554,7 @@ var GIVe = (function (give) {
       i++
     }
     if (this.values[i]) {
-      if (this.revDepth === 0) {
+      if (this.revDepth === 1) {
         // Leaf node, remove data if it's there
         if (this.keys[i] === data.getStart() && this.values[i].startList) {
           for (var stListIndex = 0; stListIndex < this.values[i].startList.length; stListIndex++) {
@@ -592,7 +594,7 @@ var GIVe = (function (give) {
         } else {
           console.log('Data ' + data + ' is not found in the tree at leaves.')
         }
-      } else { // this.revDepth !== 0
+      } else { // this.revDepth !== 1
         // Non leaf node, do remove in the child node that may have data
         var flag = this.values[i].remove(data, removeExactMatch)
         var updateStart = (i === 0)    // May need to update start because the first children is involved
@@ -639,9 +641,9 @@ var GIVe = (function (give) {
         if (i === 0 && this.prev) {
           this.prev.setEnd(this.getStart())
         }
-      } // end if(this.revDepth === 0)
+      } // end if(this.revDepth === 1)
 
-      if (this.isRoot && this.revDepth > 0 && this.values.length < 2) {
+      if (this.isRoot && this.revDepth > 1 && this.values.length < 2) {
         // If this is root and it has only one child,
         // reduce depth of the tree by 1 and return its only child as new root
         this.values[0].isRoot = true
@@ -717,23 +719,29 @@ var GIVe = (function (give) {
       }
 
       while (this.keys[currIndex] < chrRange.end && currIndex < this.values.length) {
-        if (this.revDepth === 0 || !this.resNotEnough(currIndex, resolution)) {
-          if (this.revDepth > 0) {
-            callFuncOnDataEntry.call(thisVar, this.values[currIndex].getSummaryData())
-          } else { // this.revDepth === 0
-            if (!notFirstCall) {
-              // This is the first call, should call on all continuedList as well
-              if (this.values[currIndex] &&
-                 Array.isArray(this.values[currIndex].continuedList)) {
-                if (!this.values[currIndex].continuedList.every(callFuncOnDataEntry, thisVar)) {
-                  return false
+        if (this.revDepth === 1 || !this.childResNotEnough(resolution, currIndex)) {
+          if (this.values[currIndex] !== false) {
+            if (this.revDepth > 1) {
+              // NOTE: Temporary fix: wrap a ChromRegion object around the summary data
+              // May need to explore better solutions
+              callFuncOnDataEntry.call(thisVar, new give.ChromRegion({
+                chr: chrRange.chr,
+                start: this.keys[currIndex],
+                end: this.keys[currIndex + 1]
+              }, null, { data: this.values[currIndex].getSummaryData() }))
+            } else { // this.revDepth === 1
+              if (!notFirstCall) {
+                // This is the first call, should call on all continuedList as well
+                if (Array.isArray(this.values[currIndex].continuedList)) {
+                  if (!this.values[currIndex].continuedList.every(callFuncOnDataEntry, thisVar)) {
+                    return false
+                  }
                 }
               }
-            }
-            if (this.values[currIndex] &&
-               Array.isArray(this.values[currIndex].startList)) {
-              if (!this.values[currIndex].startList.every(callFuncOnDataEntry, thisVar)) {
-                return false
+              if (Array.isArray(this.values[currIndex].startList)) {
+                if (!this.values[currIndex].startList.every(callFuncOnDataEntry, thisVar)) {
+                  return false
+                }
               }
             }
           }
@@ -755,22 +763,37 @@ var GIVe = (function (give) {
   }
 
   give.GiveTreeNode.prototype.wither = function () {
-    // this will cause this and *all the children of this* wither
-    if (!give.WitheringNode.prototype.wither.call(this)) {
+    // If current node itself withers,
+    // it will cause this and *all the children of this* wither
+    // NOTE: Root node never withers
+    if (!give.WitheringNode.prototype.wither.call(this) && !this.isRoot) {
+      if (this.prev) {
+        this.prev.next = null
+      }
+      if (this.next) {
+        this.next.prev = null
+      }
+      // return null so that the parent can remove it
       return null
     }
+
+    // Then process all the children to see if any withers
     for (var i = 0; i < this.values.length; i++) {
       if (this.values[i] && !this.values[i].wither()) {
+        // replace the node with null (nothing)
+        this.values[i] = null
+      }
+      if (i > 0 && this.values[i] === null && this.values[i - 1] === null) {
+        // previous one is also null
+        this.keys.splice(i + 1, 1)
+        this.values.splice(i + 1, 1)
         // remove the i-th element and its corresponding key
-        this.keys.splice(i, 1)
-        this.values.splice(i, 1)
         i--
       }
     }
     return this
   }
 
-  //
   /**
    * getUncachedRange - Return an array of chrRegions that does not have data loaded
    *   to allow buffered loading of data
@@ -813,49 +836,42 @@ var GIVe = (function (give) {
       }
       while (rangeStart < rangeEnd) {
         var newResult = []
-        if (this.values[currIndex] === null) {
-          // current child is a placeholder
+        if (this.values[currIndex] &&
+          this.childResNotEnough(resolution, currIndex)
+        ) {
+          // child has not enough resolution
+          newResult = this.values[currIndex].getUncachedRange({
+            chr: chrRange.chr,
+            start: rangeStart,
+            end: rangeEnd
+          }, resolution, bufferingRatio)
+        } else if (this.values[currIndex] === null ||
+          (!this.childHasData(currIndex) &&
+            parseInt(Math.max(this.keys[currIndex], rangeStart)) <
+            parseInt(Math.min(rangeEnd, this.keys[currIndex + 1]))
+          )
+        ) {
+          // either no child at all or child does not have summary data
           // calculate the closest range needed for the resolution
           // first normalize resolution to branchingFactor
           var retrieveStart, retrieveEnd, res
           res = Math.floor(Math.pow(this.branchingFactor,
-            Math.floor(Math.log(resolution) / Math.log(this.branchingFactor))))
+            Math.floor(Math.log(resolution / bufferingRatio) / Math.log(this.branchingFactor))))
 
-          retrieveStart = parseInt(Math.max(this.getStart(),
+          retrieveStart = parseInt(Math.max(this.keys[currIndex],
             give.fitRes(rangeStart, res, Math.floor)))
-          retrieveEnd = parseInt(Math.min(this.getEnd(),
+          retrieveEnd = parseInt(Math.min(this.keys[currIndex + 1],
             give.fitRes(rangeEnd, res, Math.ceil)))
-
           newResult.push(new give.ChromRegion({
             chr: chrRange.chr,
             start: retrieveStart,
             end: retrieveEnd,
-            resolution: resolution / bufferingRatio
+            resolution: res
           }))
-        } else if (this.values[currIndex]) {
-          if (this.childResNotEnough(currIndex, resolution)) {
-            // child has not enough resolution
-            newResult = this.values[currIndex].getUncachedRange({
-              chr: chrRange.chr,
-              start: rangeStart,
-              end: rangeEnd
-            }, resolution, bufferingRatio)
-          } else if (!this.childHasData(currIndex)) {
-            // child does not have summary data, but resolution is OK
-            if (parseInt(Math.max(this.keys[currIndex], rangeStart)) <
-              parseInt(Math.min(rangeEnd, this.keys[currIndex + 1]))) {
-              newResult.push(new give.ChromRegion({
-                chr: chrRange.chr,
-                start: parseInt(Math.max(this.keys[currIndex], rangeStart)),
-                end: parseInt(Math.min(rangeEnd, this.keys[currIndex + 1])),
-                resolution: resolution / bufferingRatio
-              }))
-            }
-          }
-        } // end if (this.values[currIndex] === null)
+        }
 
         if (result[result.length - 1] && newResult[0] &&
-          result[result.length - 1].concat(newResult)) {
+          result[result.length - 1].concat(newResult[0])) {
           // newResult[0] has been assimilated
           newResult.splice(0, 1)
         }
@@ -868,8 +884,6 @@ var GIVe = (function (give) {
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }
   }
-
-  // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 
   return give
 })(GIVe || {})

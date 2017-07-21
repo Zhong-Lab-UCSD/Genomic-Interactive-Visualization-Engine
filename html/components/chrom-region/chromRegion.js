@@ -130,7 +130,7 @@ var GIVe = (function (give) {
     return this.end
   }
 
-  give.ChromRegion.prototype._regionFromString = function (regionString) {
+  give.ChromRegion.prototype._regionFromString = function (regionString, zeroBased) {
     var cleanedChrString = regionString.replace(/,/g, '')
       .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
     var elements = cleanedChrString.split(/[:\s-]+/)
@@ -139,7 +139,7 @@ var GIVe = (function (give) {
      * @property
      */
     this.chr = elements[0]
-    this.start = parseInt(elements[1])
+    this.start = parseInt(elements[1]) - (zeroBased ? 0 : (1 - give.ChromRegion.CHROM_BASE))
     this.end = parseInt(elements[2])
     this.setStrand((elements.length < 4) ? this.strand : !(elements[3] === 'NEGSTR'))
   }
@@ -164,9 +164,9 @@ var GIVe = (function (give) {
 
   give.ChromRegion.prototype.regionToString = function (includeStrand) {
     // default is including strand
-    return this.chr + ':' + this.start + '-' + this.end +
-      ((includeStrand === false || this.strand === null) ? ''
-      : (' (' + (this.strand ? '+' : '-') + ')'))
+    return this.chr + ':' + (this.start + 1 - give.ChromRegion.CHROM_BASE) +
+      '-' + this.end + ((includeStrand === false || this.strand === null)
+      ? '' : (' (' + (this.strand ? '+' : '-') + ')'))
   }
 
   give.ChromRegion.prototype.regionToBed = function (includeStrand) {
@@ -341,7 +341,7 @@ var GIVe = (function (give) {
   give.ChromRegion._REGION_SHORTNAME_LIMIT = 11
   give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH = 6
   give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH = 4
-  give.ChromRegion.CHROM_BASE = 1      // may be 0 for UCSC
+  give.ChromRegion.CHROM_BASE = 0      // may be 0 for UCSC
 
   give.ChromRegion.clipCoordinate = function (coor, ref) {
     // this is to clip single coordinate

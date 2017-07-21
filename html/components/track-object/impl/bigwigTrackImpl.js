@@ -51,7 +51,7 @@ var GIVe = (function (give) {
     if (oldSummary) {
       this.validCount = oldSummary.validCount || 0
       this.sumData = oldSummary.sumData || 0
-      this.sumSquare = oldSummary.sumSquare || 0
+      this.sumSquares = oldSummary.sumSquares || 0
       this.minVal = (typeof oldSummary.minVal === 'number' && !isNaN(oldSummary.minVal))
           ? oldSummary.minVal : Number.POSITIVE_INFINITY
       this.maxVal = (typeof oldSummary.maxVal === 'number' && !isNaN(oldSummary.maxVal))
@@ -60,7 +60,7 @@ var GIVe = (function (give) {
     } else {
       this.validCount = 0
       this.sumData = 0
-      this.sumSquare = 0
+      this.sumSquares = 0
       this.minVal = Number.POSITIVE_INFINITY
       this.maxVal = Number.NEGATIVE_INFINITY
       this.value = 0

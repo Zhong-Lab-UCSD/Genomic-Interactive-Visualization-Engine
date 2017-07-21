@@ -50,7 +50,8 @@ var GIVe = (function (give) {
       }
     }
     this.isReady = true
-    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'meta-data-ready'})
+    give._verboseConsole('Meta data loaded.', give.VERBOSE_DEBUG)
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'meta-data-ready', data: this})
   }
 
   give.MetaDataEntries.prototype.findMeta = function (organism, term, key) {

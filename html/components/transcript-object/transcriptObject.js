@@ -77,13 +77,6 @@ var GIVe = (function (give) {
     }
   }
 
-  give.TranscriptObject.prototype.regionToString = function (includeStrand) {
-    // default is including strand
-    return this.chr + ':' + this.start + '-' + this.end +
-      ((includeStrand === false || this.strand === null) ? '' : (' (' +
-       (this.strand ? '+' : '-') + ')'))
-  }
-
   give.TranscriptObject.prototype.regionToBed = function (includeStrand) {
     return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name ? this.name : '.') +
         (includeStrand !== false ? '\t0\t' + (!this.strand ? '-' : '+') : '')
@@ -102,11 +95,11 @@ var GIVe = (function (give) {
         this.blockStarts[i] = 0
       } else if (this.blockStarts[i] >= this.getLength()) {
         throw (new Error('Block #' + i + ' is invalid: ' +
-          this.chr + ':' + this.start + '-' + this.end + ', ' +
+          this.regionToString(false) + ', ' +
           this.blockStarts[i] + ' is greater than length.'))
       } else if (this.blockSizes[i] < 0) {
         throw (new Error('Block #' + i + ' size is invalid: ' +
-          this.chr + ':' + this.start + '-' + this.end + '!'))
+          this.regionToString(false) + '!'))
       } else if (this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
         this.blockSizes[i] = this.getLength() - this.blockStarts[i]
       }

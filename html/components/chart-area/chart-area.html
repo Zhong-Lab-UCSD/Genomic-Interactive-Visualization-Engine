@@ -779,14 +779,22 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _removeInvisibleTrackDOMs: function () {
-          this._trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
+          this._trackDOMsByWindow.forEach(function (domInWindowEntry, windowIndex) {
             // notice that because tracks may get deleted, don't use forEach with splice
-            var i
-            for (i = indTrackDOMs.length - 1; i >= 0; i--) {
-              if (indTrackDOMs[i].track.getSetting('visibility') === give.TrackObject.StatusEnum.VIS_NONE) {
-                // this track should be hidden by now
-                delete indTrackDOMs.map[indTrackDOMs[i].track.id]
-                indTrackDOMs.splice(i, 1)
+            for (var key in domInWindowEntry) {
+              if (domInWindowEntry.hasOwnProperty(key) &&
+                Array.isArray(domInWindowEntry[key])
+              ) {
+                // filter out all tracks with visibility set as 0
+                // delete entries in domInWindowEntry.map first
+                for (var i = 0; i < domInWindowEntry[key].length; i++) {
+                  if (domInWindowEntry[key][i].track.getSetting('visibility') ===
+                    give.TrackObject.StatusEnum.VIS_NONE) {
+                    delete domInWindowEntry.map[domInWindowEntry[key][i].track.id]
+                    domInWindowEntry[key].splice(i, 1)
+                    i--
+                  }
+                }
               }
             }
           }, this)

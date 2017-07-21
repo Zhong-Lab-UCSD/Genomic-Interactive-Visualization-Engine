@@ -28,10 +28,14 @@ function getChromInfo($db) {
           if($chromName !== $chromRow["chrom"]) {
             if($chromName && ($chromEnd - $chromStart > 0)) {
               // old and valid chrom is there
-              $chrom["chrRegion"] = $chromName . ":" . $chromStart . "-" . $chromEnd;
+              $chrom["chrRegion"] = $chromName . ":" .
+                ($chromStart + 1 - ChromRegion::BEGINNING) .
+                "-" . $chromEnd;
               if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
                 $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
-                  $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
+                  $chrom["cent"] = $chromName . ":" .
+                    ($chromCentStart + 1 - ChromRegion::BEGINNING) .
+                    "-" . $chromCentEnd;
               }
               $result[$chromName] = $chrom;
             }
@@ -54,10 +58,14 @@ function getChromInfo($db) {
         }
         if($chromName && ($chromEnd - $chromStart > 0)) {
           // old and valid chrom is there
-          $chrom["chrRegion"] = $chromName . ":" . $chromStart . "-" . $chromEnd;
+          $chrom["chrRegion"] = $chromName . ":" .
+            ($chromStart + 1 - ChromRegion::BEGINNING) .
+            "-" . $chromEnd;
           if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
             $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
-              $chrom["cent"] = $chromName . ":" . $chromCentStart . "-" . $chromCentEnd;
+              $chrom["cent"] = $chromName . ":" .
+              ($chromCentStart + 1 - ChromRegion::BEGINNING) .
+              "-" . $chromCentEnd;
           }
           $result[$chromName] = $chrom;
         }

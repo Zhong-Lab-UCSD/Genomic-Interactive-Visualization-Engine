@@ -16,7 +16,8 @@ var GIVe = (function (give) {
     this.db = DB
     this.name = Name
     this.commonName = CommonName
-    this.isEncode = IsEncode
+    this.isEncode = ((typeof IsEncode === 'boolean') ? IsEncode
+      : ((typeof IsEncode === 'string') ? IsEncode !== '0' : !!IsEncode))
     this.ref = Ref
     this.groups = {}        // this is used to get all the groups
     this.settings = {}        // object for all settings
@@ -57,9 +58,9 @@ var GIVe = (function (give) {
     }
 
     this.metaFilterInitialized = false
-    if (give.mainTaskScheduler && give.mainMetaDataEntries) {
+    if (give.mainTaskScheduler) {
       give.mainTaskScheduler.addTask(new give.TaskEntry(
-        this.initializeMetaFilter.bind(this, give.mainMetaDataEntries),
+        this.initializeMetaFilter.bind(this),
         ['meta-data-ready', this.getCleanID() + '-tracks-ready']
       ))
     }
@@ -223,6 +224,7 @@ var GIVe = (function (give) {
 
   give.RefObject.prototype.initializeMetaFilter = function (metaEntries) {
     // metaEntry as give.MetaDataEntries
+    metaEntries = metaEntries || give.mainMetaDataEntries
     this.tracks.forEach(function (track) {
       var cellType = track.getSetting('cellType')
       var labName = track.getSetting('labName')
