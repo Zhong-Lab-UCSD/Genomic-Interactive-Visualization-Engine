@@ -109,9 +109,11 @@ var GIVe = (function (give) {
               GUIRange.overlaps(mergedGUIRanges[j])) {
             // needs to determine which one should take the resolution
             var queryRange = mergedGUIRanges[j]
-            if (typeof GUIRange.resolution !== 'number' ||
-               (typeof queryRange.resolution === 'number' &&
-              GUIRange.resolution < queryRange.resolution)) {
+            if (typeof queryRange.resolution === 'number' &&
+              (typeof GUIRange.resolution !== 'number' ||
+                GUIRange.resolution < queryRange.resolution
+              )
+            ) {
               // GUI has smaller resolution
               if (queryRange.getStart() < GUIRange.getStart()) {
                 if (queryRange.getEnd() > GUIRange.getEnd()) {
@@ -132,9 +134,11 @@ var GIVe = (function (give) {
                 }
                 j--
               }
-            } else if (typeof GUIRange.resolution !== 'number' ||
-               (typeof queryRange.resolution === 'number' &&
-              GUIRange.resolution < queryRange.resolution)) {
+            } else if (typeof GUIRange.resolution === 'number' &&
+              (typeof queryRange.resolution !== 'number' ||
+                queryRange.resolution < GUIRange.resolution
+              )
+            ) {
               // query has smaller resolution
               if (queryRange.getStart() <= GUIRange.getStart()) {
                 if (queryRange.getEnd() >= GUIRange.getEnd()) {
@@ -191,7 +195,13 @@ var GIVe = (function (give) {
     var totalUncachedRanges = []
     if (!this.noData && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
       mergedGUIRanges.forEach(function (chrRange, index) {
-        if (this.data[chrRange.chr] && this.data[chrRange.chr].getUncachedRange) {
+        if (!this.data.hasOwnProperty(chrRange.chr)) {
+          this.data[chrRange.chr] = new this._DataStructure(
+            this.parent.ref.chromInfo[chrRange.chr].chrRegion.start,
+            this.parent.ref.chromInfo[chrRange.chr].chrRegion.end,
+            this._SummaryCtor)
+        }
+        if (this.data[chrRange.chr].getUncachedRange) {
           var uncachedRanges = this.data[chrRange.chr].getUncachedRange(
             chrRange, null, give.TrackDataObject.RESOLUTION_BUFFER_RATIO)
           totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
@@ -228,8 +238,9 @@ var GIVe = (function (give) {
         window: regions.map(function (region) {
           return region.regionToString(false)
         }, this),
-        resolutions: regions.map(getRegionRes, this),
-        isCustom: true
+        params: regions.some(getRegionRes, this) ? {
+          resolutions: regions.map(getRegionRes, this)
+        } : null
       }
     } else {
       return {
@@ -281,6 +292,8 @@ var GIVe = (function (give) {
       if (!Array.isArray(ranges)) {
         ranges = [ranges]
       }
+      give._verboseConsole('getData()', give.VERBOSE_DEBUG)
+      give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
 
       this._unmergedGUIRangesFromID[callerID] = ranges
 
@@ -457,7 +470,7 @@ var GIVe = (function (give) {
     (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
   give.TrackDataObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
-  give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 2.0
+  give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.5
   give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
 
   // ** The following are implementations for the data components of individual tracks

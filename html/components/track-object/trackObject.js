@@ -55,8 +55,8 @@ var GIVe = (function (give) {
     if (this.getSetting('groupDataType')) {
       return this.getSetting('groupDataType') +
         (this.getSetting('groupFeature') ? ' (' + this.getSetting('groupFeature') + ')' : '')
-    } else if (this.getSetting('trackDataType')) {
-      return this.getSetting('trackDataType') +
+    } else if (this.getSetting('dataType')) {
+      return this.getSetting('dataType') +
         (this.getSetting('trackFeature') ? ' (' + this.getSetting('trackFeature') + ')' : '')
     }
     return ''
