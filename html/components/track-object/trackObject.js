@@ -1,12 +1,49 @@
-// JavaScript Document
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var GIVe = (function (give) {
   'use strict'
 
+  /**
+   * Object representing a track,
+   * contains its data component and visualization component.
+   * @typedef {object} TrackObjectBase
+   * @property {string} id - ID of track object
+   * @property {object} Settings - Settings of the track, in a dictionary format
+   * @property {object} defaultSettings - defaultSettings upon initialization
+   * @property {RefObjectLiteral} ref - Genome reference object of the track
+   * @property {TrackDataObjectBase} _dataObj - The data object,
+   *   should be an instance of `give.TrackDataObject` or its derived class
+   *
+   * @class give.TrackObject
+   *
+   * @constructor
+   * @param {string} ID - The ID of the new track object
+   * @param {object} Settings - Settings of the new track. Dictionary format.
+   *   Note that if `Settings` has a property named `settings`,
+   *   it will be merged with `this.Settings`, while properties in
+   *   `Settings.settings` take precedence in cases of conflict names
+   * @param {RefObjectLiteral} ref - the reference the track is using
+   */
   give.TrackObject = function (ID, Settings, ref) {
     this.id = ID
     Settings = Settings || {}
     // collapse settings object first
-    //  (properties in Settings.settings takes precedence)
+    //  (properties in Settings.settings take precedence)
     if (Settings.settings) {
       Settings = Object.assign(Settings, Settings.settings)
       delete Settings.settings
@@ -20,14 +57,25 @@ var GIVe = (function (give) {
     this._dataObj = (typeof this._DataObjCtor === 'function')
       ? new this._DataObjCtor(this)
       : null
-    this._domObj = (typeof this._DomObjCtor === 'function')
-      ? new this._DomObjCtor(this)
-      : null
   }
 
+  /**
+   * @memberof TrackObjectBase.prototype
+   * The constructor for actual data object being used in this track.
+   */
   give.TrackObject.prototype._DataObjCtor = null
+
+  /**
+   * @memberof TrackObjectBase.prototype
+   * The constructor for actual DOM object being used in this track.
+   */
   give.TrackObject.prototype._DomObjCtor = null
 
+  /**
+   * _initSettings - Initialize settings for track object
+   * This is used to set some flags from this.Settings for compatibility
+   * @memberof TrackObjectBase.prototype
+   */
   give.TrackObject.prototype._initSettings = function () {
     this.priority = this.getSetting('priority') || give.TrackObject.DEFAULT_PRIORITY
     if (this.getSetting('visibility')) {
@@ -50,6 +98,14 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * getTitle - Get the track title information
+   * Title is showing what the track is actually about. Currently it's
+   * `<datatype>` [(`feature`)], e.g. 'ChIP-Seq (CTCF)'
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  the resulting title
+   */
   give.TrackObject.prototype.getTitle = function () {
     // generate this.title (previously done by UCSC Browser core)
     if (this.getSetting('groupDataType')) {
@@ -67,11 +123,26 @@ var GIVe = (function (give) {
     return this.getSetting('track')
   }
 
+  /**
+   * getCleanLowerTitle - Get the track title,
+   * removing blanks and other characters, then converting to lowercase
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  the resulting title
+   */
   give.TrackObject.prototype.getCleanLowerTitle = function () {
     // generate this.title (previously done by UCSC Browser core)
     return this.getTitle().replace(/[\s-]+/g, '').toLowerCase()
   }
 
+  /**
+   * getUcscVis - Get UCSC visibility string
+   * Used to get a short string showing the visibility in UCSC format.
+   * (Internally the visibility is stored as a number.)
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  UCSC visibility of the track
+   */
   give.TrackObject.prototype.getUcscVis = function () {
     switch (this.getSetting('visibility')) {
       case give.TrackObject.StatusEnum.VIS_FULL:
@@ -89,10 +160,15 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * setSetting - Set the setting value.
+   *
+   * @memberof TrackObjectBase.prototype
+   * @param  {string} key - Key of the setting entry
+   * @param  {object} value - value of the entry
+   */
   give.TrackObject.prototype.setSetting = function (key, value) {
-//    if(this.Settings.hasOwnProperty(key)) {
-//      delete this.Settings[key];
-//    }
+    // Visibility needs special treatment
     if (key === 'visibility') {
       this.setVisibility(value)
     } else {
@@ -100,6 +176,13 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * resetSetting - Reset the setting to its default value
+   * If the setting does not have default value, remove the setting entry
+   *
+   * @memberof TrackObjectBase.prototype
+   * @param  {string} key - Key of the setting entry
+   */
   give.TrackObject.prototype.resetSetting = function (key) {
     if (this.defaultSettings.hasOwnProperty(key)) {
       this.setSetting(key, this.defaultSettings[key])
@@ -108,11 +191,22 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * resetAllSettings - Reset all settings to default values
+   * @memberof TrackObjectBase.prototype
+   */
   give.TrackObject.prototype.resetAllSettings = function () {
     this.Settings = Object.assign({}, this.defaultSettings)
     this._initSettings()
   }
 
+  /**
+   * getSetting - get setting value
+   *
+   * @memberof TrackObjectBase.prototype
+   * @param  {type} key - the key of the setting entry
+   * @returns {object} The value of the setting entry
+   */
   give.TrackObject.prototype.getSetting = function (key) {
 //    if(!this.Settings.settings.hasOwnProperty(key)) {
 //      if(this.Settings.hasOwnProperty(key)) {
@@ -123,6 +217,18 @@ var GIVe = (function (give) {
     return this.Settings[key]
   }
 
+  /**
+   * setVisibility - Set the visibility of the track
+   *
+   * @memberof TrackObjectBase.prototype
+   * @param  {boolean|string|number|undefined|null} vis The visibility.
+   *   If `vis` is a `boolean`, `null` or `undefined`, it will work by toggling
+   *     between the current non-`hide` visibility and `hide`.
+   *     Current visibility will be saved in `this.oldVisibility`;
+   *   If `vis` is a `number`, it just works as the internal values;
+   *   If `vis` is a `string`, it will convert UCSC terms into internal numeric
+   *     values.
+   */
   give.TrackObject.prototype.setVisibility = function (vis) {
     // if vis === false, then save old visibility
     if (typeof vis === 'boolean') {
@@ -180,27 +286,78 @@ var GIVe = (function (give) {
   //  return this.info.replace(/\t/g, ' - ');
   // };
   //
+  //
+  /**
+   * getID - Get the ID of the track
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  The ID
+   */
   give.TrackObject.prototype.getID = function () {
     return this.id
   }
 
+  /**
+   * getReadableID - Get a human readable ID of the track,
+   *   `_` will be replaced by ` `
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  Human readable ID
+   */
   give.TrackObject.prototype.getReadableID = function () {
     return this.getID().replace(/_+/g, ' ')
   }
 
+  /**
+   * getType - Get the track type string.
+   *   The track type string is inherited from UCSC, where the first keyword
+   *   indicates the main track type (which can be retrieved by
+   *   `this.getTypeTrunk()`)
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  The track type string
+   */
   give.TrackObject.prototype.getType = function () {
     return this.getSetting('type')
   }
 
+  /**
+   * getTypeTrunk - Get the track type keyword.
+   *   This is used to get the lowercase keyword of the track type
+   *   (see `this.getType()`).
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  The track type keyword
+   */
   give.TrackObject.prototype.getTypeTrunk = function () {
     return this.getSetting('type').split(/\s+/, 2)[0].toLowerCase()
   }
 
+  /**
+   * getCleanID - Get the ID that conforms to HTML 4.1
+   *   Brackets and spaces will be removed in ID.
+   *   *Since HTML5 is being required now, this function may be deprecated.*
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {string}  Cleaned ID
+   */
   give.TrackObject.prototype.getCleanID = function () {
     // remove blanks and brackets in IDs to conform to HTML 4.1
     return this.getID().replace(/[\s()+/]/g, '')
   }
 
+  /**
+   * getPriority - Get the priority value of the track
+   *   This value is changable at runtime and will affect the order of the track
+   *     in `chart-area` element **within the same group**.
+   *   Tracks with smaller priority will be put closer to the top of the view
+   *     (if the view has its order reversed, then it will be closer to the
+   *     bottom).
+   *   Please refer to `give.ChartArea` for track orders
+   *
+   * @memberof TrackObjectBase.prototype
+   * @returns {number}  The priority value
+   */
   give.TrackObject.prototype.getPriority = function () {
     // TODO:
     //  1. implement group priority
@@ -208,6 +365,23 @@ var GIVe = (function (give) {
     return this.priority
   }
 
+  /**
+   * getData - Get data for ranges at given resolutions, then call callback.
+   *
+   * @memberof TrackObjectBase.prototype
+   * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges -
+   *   An array of `give.ChromRegion`s to get the data for.
+   *   For each `ChromRegion` element, resolution can be individually assigned
+   *     by setting `element.resolution` property or using the next parameter
+   *     (When both are assigned, `elemnent.resolution` takes precedence).
+   * @param  {Array<number>} resolutions Resolutions required for the ranges
+   * @param  {function} callback    The callback function that will be called
+   *   once the data is loaded.
+   *   The function should not take any arguments (Use function.prototype.bind()
+   *     to pre-package required parameters).
+   * @param  {string} callerID    The element ID calling `this.getData`, this is
+   *   used to collapse multiple calls from the same element.
+   */
   give.TrackObject.prototype.getData = function (ranges, resolutions, callback, callerID) {
     if (this._dataObj && this._dataObj.getData) {
       return this._dataObj.getData(ranges, resolutions, callback, callerID)
@@ -219,6 +393,16 @@ var GIVe = (function (give) {
     }
   }
 
+  give.TrackObject.prototype.createDomObj = function (prop) {
+
+  }
+
+  /**
+   * Enum for track visibility values.
+   * @static
+   * @readonly
+   * @enum {number}
+   */
   give.TrackObject.StatusEnum = {
     VIS_FULL: 5,
     VIS_NONE: 0,
@@ -228,10 +412,21 @@ var GIVe = (function (give) {
     VIS_DENSE: 1
   }
 
+  /**
+   * @property {number} DEFAULT_PRIORITY - The default values for priorities
+   * @static
+   */
   give.TrackObject.DEFAULT_PRIORITY = 100.0
 
-  give.TrackObject.RESOLUTION_BUFFER_RATIO = 2.0
-
+  /**
+   * createCoorTrack - Create a coordinate track for given reference
+   *
+   * @static
+   * @param  {RefObjectLiteral} ref Reference for the coordinate track
+   * @param  {string} id  ID of the coordinate track
+   *   If no ID is specified, `'coor_' + ref.db` will be used as ID
+   * @returns {TrackObjectBase}     The resulting track object
+   */
   give.TrackObject.createCoorTrack = function (ref, id) {
     var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
       { type: 'coordinate', priority: 0, noData: true }, ref)
@@ -241,6 +436,22 @@ var GIVe = (function (give) {
     return newTrack
   }
 
+  /**
+   * comparePriorities - compare the priority values between two tracks
+   *   The group priority will take precedence and be compared first, then
+   *   individual track priority will be compared.
+   *   `undefined` is larger than any numeric value.
+   *
+   * @static
+   * @memberof TrackObjectBase
+   * @param  {TrackObjectBase} track1 The first track object
+   * @param  {TrackObjectBase} track2 The second track object
+   * @param  {object} groups Dictionary for groups (key is `group.id`)
+   * @returns {number}  Compare results:
+   *   1 if track1's priority is larger than track2's;
+   *   0 if both priorities are equal;
+   *   -1 if track1's priority is smaller than track2's.
+   */
   give.TrackObject.comparePriorities = function (track1, track2, groups) {
     // compare group priorities first, then local priorities
     // tracks without groups will be considered as top priority (for now)

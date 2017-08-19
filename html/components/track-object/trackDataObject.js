@@ -19,8 +19,8 @@ var GIVe = (function (give) {
   'use strict'
 
   /**
-   * @typedef TrackDataObjectBaseLiteral
-   * @type {object}
+   * Data structure for a track in GIVE
+   * @typedef {object} TrackDataObjectBase
    * @property {TrackObjectBase} parent - Track object as parent
    * @property {string} _getDataJobName - The job name of debouncing purposes
    * @property {number} getDataDebounceInt - Debouncing interval
@@ -30,13 +30,10 @@ var GIVe = (function (give) {
    *   to requests (remote or local)
    * @property {OakTreeLiteral|PineTreeLiteral} data - The data structure, an
    *   instance of `this._DataStructure`
-   * @property {object} _callbackFuncs - Objects storing callback functions,
-   *   each caller ID can has only one pending callback functions
-   * @property {Array<string>} _callbackArray - Array for callback caller ID
-   *   to requests (remote or local)
+   * @property {CallbackManager} _callbackMgr - A `give.CallbackManager` object
+   *   that handles all callback operations.
    *
    * @class give.TrackDataObject
-   * Data structure for a track in GIVE
    *
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
@@ -57,8 +54,9 @@ var GIVe = (function (give) {
     this.data = {}
     this.noData = this.parent.getSetting('noData')
 
-    this._callbackArray = []
-    this._callbackFuncs = {}
+    this._callbackMgr = new give.CallbackManager(
+      give.TrackDataObject._getDataQueueCallbackID
+    )
 
     this.isRetrivingData = false
   }
@@ -74,6 +72,7 @@ var GIVe = (function (give) {
    * The result will be a single array of all requested ranges, each with the finest
    * resolution requirement by the GUI element.
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Object} unmergedGUIRanges - An `Object` containing all requested
    * `GIVE.ChromRegion`s, the object should have properties named by its requesting
    * GUI element and the value being an `Array` of non-overlapping
@@ -89,7 +88,9 @@ var GIVe = (function (give) {
    * ```
    * @returns {Array<ChromRegionLiteral>} An ordered array of merged ranges.
    */
-  give.TrackDataObject.prototype._mergeGUIRegionsByResolution = function (unmergedGUIRanges) {
+  give.TrackDataObject.prototype._mergeGUIRegionsByResolution = function (
+    unmergedGUIRanges
+  ) {
     // this is to generate a single array of ChromRegions, separated by resolution
     var mergedGUIRanges = []
     for (var callerID in unmergedGUIRanges) {
@@ -186,6 +187,7 @@ var GIVe = (function (give) {
    * _getTrackUncachedRange - get uncached ranges from the data object (Oak tree,
    * Pine tree, etc.)
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>} mergedGUIRanges - An ordered,
    *   non-overlapping list of merged regions, this list can be obtained by
    *   calling `this._mergeGUIRegionsByResolution()`.
@@ -219,6 +221,7 @@ var GIVe = (function (give) {
   /**
    * _prepareRemoteQuery - Prepare the remote query object
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
    * @returns {object} - The object being fed to the server via AJAX
    */
@@ -261,6 +264,7 @@ var GIVe = (function (give) {
    * _prepareCustomQuery - Provide data to custom track query.
    *   for most of the tracks, this is only window (does not need to stringify)
    *
+   * @memberof TrackDataObjectBase.prototype
    * @returns {Array<ChromRegionLiteral>} The array of query regions
    */
   give.TrackDataObject.prototype._prepareCustomQuery = function () {
@@ -274,6 +278,7 @@ var GIVe = (function (give) {
    *   Multiple consecutive calls will be collapsed together to reduce
    *   computational burden.
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges - The range to
    *   be queried
    * @param  {function} callback - Callback function after the data are ready
@@ -283,7 +288,7 @@ var GIVe = (function (give) {
   give.TrackDataObject.prototype.getData = function (ranges, callback, callerID) {
     if (!this.noData) {
       if (this.isRetrivingData) {
-        this._addCallback(this.getData.bind(this, ranges, callback, callerID))
+        this._callbackMgr.add(this.getData.bind(this, ranges, callback, callerID))
         return true
       }
 
@@ -298,49 +303,14 @@ var GIVe = (function (give) {
       this._unmergedGUIRangesFromID[callerID] = ranges
 
       if (callback) {
-        this._addCallback(callback, callerID)
+        this._callbackMgr.add(callback, callerID)
       }
       give.debounce(this._getDataJobName,
               this._queryAndRetrieveData.bind(this),
               this.getDataDebounceInt)
     } else if (callback) {
-      this._addCallback(callback, callerID)
-      this._clearCallback(true)
-    }
-  }
-
-  /**
-   * _clearCallback - Clear all pending callback functions
-   *
-   * @param  {boolean} execute - Whether to execute the callback function
-   */
-  give.TrackDataObject.prototype._clearCallback = function (execute) {
-    while (this._callbackArray.length > 0) {
-      var callback = this._callbackFuncs[this._callbackArray.shift()]
-      if (execute) {
-        callback()
-      }
-    }
-    this._callbackFuncs = {}
-  }
-
-  /**
-   * _addCallback - Queue a callback function, functions from the same caller
-   *   will be collapsed and only the last callback function will be retained
-   *
-   * @param  {function} callback - Callback function after the data are ready
-   * @param  {string} callbackID - ID of the caller elements
-   */
-  give.TrackDataObject.prototype._addCallback = function (callback, callbackID) {
-    callbackID = callbackID ||
-      give.TrackDataObject._getDataQueueCallbackID + this._callbackArray.length
-    if (typeof callback === 'function') {
-      if (!this._callbackFuncs.hasOwnProperty(callbackID)) {
-        this._callbackArray.push(callbackID)
-      }
-      this._callbackFuncs[callbackID] = callback
-    } else {
-      throw new Error('Callback is not a function!')
+      this._callbackMgr.add(callback, callerID)
+      this._callbackMgr.clear(true)
     }
   }
 
@@ -349,6 +319,7 @@ var GIVe = (function (give) {
    *   `this._unmergedGUIRangesFromID`, filter out the cached
    *   portion, store the results in `this._pendingQueryRegions`,
    *   then proceed with data retrieval
+   * @memberof TrackDataObjectBase.prototype
    */
   give.TrackDataObject.prototype._queryAndRetrieveData = function () {
     this.isRetrivingData = true
@@ -361,7 +332,7 @@ var GIVe = (function (give) {
     } else {
       // nothing really needs to be done to get data, so just call callback function
       this.isRetrivingData = false
-      this._clearCallback(true)
+      this._callbackMgr.clear(true)
     }
   }
 
@@ -369,6 +340,7 @@ var GIVe = (function (give) {
    * _retrieveData - Retrieve data based on track type (determined by
    *   `this.isCustom` and `this.localFile`)
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
@@ -393,6 +365,7 @@ var GIVe = (function (give) {
   /**
    * _responseHandler - Function used to handle remote responses
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {object} response - Responses from remote servers.
    *   The object should contain chromosomal names as its
    *   property names, and an array of data entries as the property value.
@@ -427,12 +400,13 @@ var GIVe = (function (give) {
     this._dataHandler(response, this._pendingQueryRegions)
     this._pendingQueryRegions.length = 0
     this.isRetrivingData = false
-    this._clearCallback(true)
+    this._callbackMgr.clear(true)
   }
 
   /**
    * _readLocalFile - description
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
@@ -440,12 +414,13 @@ var GIVe = (function (give) {
     this._localFileHandler(this.localFile, regions)
     regions.length = 0
     this.isRetrivingData = false
-    this._clearCallback(true)
+    this._callbackMgr.clear(true)
   }
 
   /**
    * _readRemoteFile - placeholder to read remote URL
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {string} URL - The URL of the remote file
    * @param  {Array<ChromRegionLiteral>} query - Query regions, including
    *   potential resolutions
@@ -461,24 +436,64 @@ var GIVe = (function (give) {
     return false
   }
 
-  // static members for give.TrackDataObject
-
-  give.TrackDataObject._NO_CALLERID_KEY = '_giveNoCallerID'
+  // Static members for give.TrackDataObject
+  // URLs for data retrieval
+  /**
+   * @property {string} fetchDataTarget - The URL to fetch remote data.
+   * @static
+   */
   give.TrackDataObject.fetchDataTarget = give.host +
     (give.Trk_FetchDataTarget || '/givdata/getTrackData.php')
+
+  /**
+   * @property {string} fetchCustomTarget - The URL to fetch custom track data.
+   * @static
+   */
   give.TrackDataObject.fetchCustomTarget = give.host +
     (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
+
+  /**
+   * @property {number} _getDataQueueCallbackID - The default values for
+   *   prefix for debouncing job names.
+   * @static
+   */
   give.TrackDataObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
+  /**
+   * @property {string} _NO_CALLERID_KEY - Default caller ID if none is provided.
+   * @static
+   */
+  give.TrackDataObject._NO_CALLERID_KEY = '_giveNoCallerID'
+
+  /**
+   * @property {number} RESOLUTION_BUFFER_RATIO - The default values for buffer
+   *   if data at current resolution is not available.
+   * @static
+   */
   give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.5
+
+  /**
+   * @property {number} DEFAULT_DEBOUNCE_INTERVAL - The default values for
+   *   debounce interval (in milliseconds) between `getData()` calls.
+   * @static
+   */
   give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
 
-  // ** The following are implementations for the data components of individual tracks
+  /**
+   * **************************************************************************
+   * The following are implementations for the data components of
+   *   individual tracks.
+   * To implement tracks for any new type, override the following methods to
+   *   process the data being implemented.
+   * Please refer to implementations under `impl/` for examples.
+   * **************************************************************************
+   */
 
   /**
    * _dataHandler - This should be the detailed implementation about how to
    *   handle the responses from server
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {object} response - The response from server, see
    *   `this._responseHandler`
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
@@ -491,6 +506,7 @@ var GIVe = (function (give) {
    * _localFileHandler - This should be the detailed implementation about how to
    *   handle local files
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {string} localFile - Path of the local file
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
@@ -501,6 +517,7 @@ var GIVe = (function (give) {
   /**
    * _SummaryCtor - Constructor of summary data
    * @constructor
+   * @memberof TrackDataObjectBase.prototype
    */
   give.TrackDataObject.prototype._SummaryCtor = null
 
@@ -508,6 +525,7 @@ var GIVe = (function (give) {
    * _DataStructure - Constructor for underlying data structure used in
    *   `this.data`. Default value is `GIVE.ChromBPlusTree` (OakTree)
    * @constructor
+   * @memberof TrackDataObjectBase.prototype
    */
   give.TrackDataObject.prototype._DataStructure = give.ChromBPlusTree
 

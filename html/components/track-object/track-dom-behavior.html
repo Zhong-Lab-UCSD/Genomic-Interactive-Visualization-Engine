@@ -1,3 +1,20 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 <link rel="import" href="../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../chrom-b-plus-tree/chrom-b-plus-tree.html">
@@ -21,17 +38,8 @@
          * actual data and communication with the server
          * @type {GIVE.TrackObject}
          */
-        track: {
+        parent: {
           type: Object,
-          readOnly: true
-        },
-
-        /**
-         * The type of the track this DOM represents
-         * @type {string}
-         */
-        trackType: {
-          type: String,
           readOnly: true
         },
 
@@ -82,12 +90,20 @@
           value: 0.1
         },
 
-        _drawDebounceInt: {  // interval for update drawing, needs to be a small value for coordinates
+        /**
+         * Interval for update drawing, needs to be a small value for coordinates
+         * @type {number}
+         */
+        _drawDebounceInt: {
           type: Number,
           value: 100
         },
 
-        _cacheDebounceInt: {  // interval for getting data
+        /**
+         * Interval for getting data into cache. This is longer than draw debouncing
+         * @type {number}
+         */
+        _cacheDebounceInt: {  //
           type: Number,
           value: 300
         },
@@ -179,9 +195,9 @@
         this.y = properties.y || 0
         this._setTrackHeight(properties.height || 100)
 
-        this._setTrack(track)
+        this._setParent(track)
         this._setTrackType(track.getTypeTrunk())
-        this.id = this.track.getTypeTrunk() + '_' + give._trackCounter++
+        this.id = this.parent.getTypeTrunk() + '_' + give._trackCounter++
 
         // this is the type of visibility values that are allowed in a particular track
         this.allowedVisibilities = [
@@ -194,7 +210,7 @@
         ]
         this.defaultVisibility = give.TrackObject.StatusEnum.VIS_FULL
 
-        this.activeVisibility = this.track.getSetting('visibility') || this.defaultVisibility
+        this.activeVisibility = this.parent.getSetting('visibility') || this.defaultVisibility
 
         if (properties.hasOwnProperty('textMargin')) {
           this.textMargin = properties.textMargin
@@ -225,12 +241,19 @@
         }
       },
 
+      /**
+       * getTrackSvg - Get the main SVG element for track display
+       *   This will be called after the trackDOM is initialized
+       *   (should be later than "attached")
+       *
+       * @returns {DOMelement}  SVG DOM element
+       */
       getTrackSvg: function () {
         // this will be called after the trackDOM is initialized (should be later than "attached")
 
         if (!this.trackSvg) {
           this.trackSvg = document.createElementNS(this.svgNS, 'svg')
-          this.trackSvg.setAttribute('id', this.track.getCleanID() + '_trackSvg')
+          this.trackSvg.setAttribute('id', this.parent.getCleanID() + '_trackSvg')
           this.trackSvg.setAttribute('class', 'trackSvg')
 
           // if textMargin is specified, create a svg element for text labels
@@ -241,14 +264,14 @@
 
           // create dom elements (svg)
           this.mainSvg = document.createElementNS(this.svgNS, 'svg')
-          this.mainSvg.setAttribute('id', this.track.getCleanID() + '_mainSvg')
+          this.mainSvg.setAttribute('id', this.parent.getCleanID() + '_mainSvg')
           if (this.trackMainDOMClass) {
             this.mainSvg.setAttribute('class', this.trackMainDOMClass)
           }
           Polymer.dom(this.trackSvg).appendChild(this.mainSvg)
 
     //      this._setInitialized(true);
-    //      this.fire('track-initialized', {ID: this.track.getID()});
+    //      this.fire('track-initialized', {ID: this.parent.getID()});
           this.initSvgHolder()
 
           if (typeof this.initSvgComponents === 'function') {
@@ -261,6 +284,10 @@
         return this.trackSvg
       },
 
+      /**
+       * setSvgSizeLocation - Set the size and location (mainly Y value) of
+       *   main track SVG element.
+       */
       setSvgSizeLocation: function () {
         if (this.trackSvg) {
           this.trackSvg.setAttributeNS(null, 'x', this.x)
@@ -294,40 +321,70 @@
         }
       },
 
+      /**
+       * getHeight - get the height of the track SVG
+       *
+       * @returns {number}  height value
+       */
       getHeight: function () {
         return this.trackHeight
       },
 
+      /**
+       * getMainSvg - get the mainSvg element (the SVG with most graphing)
+       *
+       * @returns {DOMelement}  mainSvg element
+       */
       getMainSvg: function () {
         return this.mainSvg
       },
 
+      /**
+       * getTextSvg - get the textSvg element (the SVG with side text annotations)
+       *
+       * @returns {DOMelement}  textSvg element
+       */
       getTextSvg: function () {
         return this.textSvg
       },
 
+      /**
+       * initTextSvgAndHolder - Initialize the text SVG element and its content
+       *   holder.
+       */
       initTextSvgAndHolder: function () {
         this.textSvg = document.createElementNS(this.svgNS, 'svg')
-        this.textSvg.setAttribute('id', this.track.getCleanID() + '_textSvg')
+        this.textSvg.setAttribute('id', this.parent.getCleanID() + '_textSvg')
         Polymer.dom(this.trackSvg).appendChild(this.textSvg)
         this.initTextSvgHolder()
       },
 
+      /**
+       * initTextSvgHolder - Initialize the text SVG element's content
+       *   holder only.
+       */
       initTextSvgHolder: function () {
         // notice that this.textSvg should be there
         this.textSvg.holder = document.createElementNS(this.svgNS, 'g')
         Polymer.dom(this.textSvg).appendChild(this.textSvg.holder)
       },
 
+      /**
+       * initSvgHolder - Initialize the main SVG element's content holder.
+       */
       initSvgHolder: function () {
         this.mainSvg.holder = document.createElementNS(this.svgNS, 'g')
         Polymer.dom(this.mainSvg).appendChild(this.mainSvg.holder)
       },
 
+      /**
+       * initSvgReceiver - Add a gesture listener (rectangle) to the SVG element.
+       *   Notice that text holder and main holder have their listeners separately.
+       *   Also the actual listener is attached to svg elements, not the rectangles
+       *
+       * @param  {DOMelement} svgToDraw The SVG element to attach listeners to
+       */
       initSvgReceiver: function (svgToDraw) {
-        // Add a gesture listener (rectangle) to the track.
-        //    Notice that text holder and main holder have their listeners separately.
-        //    Also the actual listener is attached to svg elements, not the rectangles
         if (!svgToDraw.gestureReceiver) {
           // draw a rectangle over the coordinate track to handle mouse events
 
@@ -338,15 +395,23 @@
           Polymer.dom(svgToDraw).appendChild(svgToDraw.gestureReceiver)
         }
         Polymer.dom.flush()
-        // this.listen(svgToDraw, 'track', 'dragHandler');
-        // this.listen(svgToDraw, 'wheel', 'wheelHandler');
+        this.listen(svgToDraw, 'track', 'dragHandler')
+        this.listen(svgToDraw, 'wheel', 'wheelHandler')
       },
 
-      // Functions for changing window width and height (e.g. resizing browser window from iron-resized)
-      // Notice that this is a track-level solution
-      // the first track(s) (very likely to be coordinates) will generate a new newViewWindow
-      // while the rest of the tracks will follow such window
-
+      /**
+       * changeViewWindowAfterResize - Change window width and height
+       *   (__e.g.__ resizing browser window from an `iron-resized` event).
+       * Notice that this is a track-level solution: the first track(s) (very
+       *   likely to be coordinates) will generate a new `newViewWindow` value
+       *   while the rest of the tracks will follow such window
+       *
+       * @param  {number} newWindowWidth The new window width (in pixels)
+       * @param  {number} newViewWindow  The new view window coordinate.
+       *   If this value is `undefined` or `null`, then a new one will be
+       *   generated based on the current view window, current width and
+       *   new width.
+       */
       changeViewWindowAfterResize: function (newWindowWidth, newViewWindow) {
         // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
         if (!newViewWindow) {
@@ -355,9 +420,9 @@
             return
           }
           newViewWindow = this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
-            null, true, this.track.ref)
+            null, true, this.parent.ref)
         }
-        this.updateTracks(newViewWindow)
+        this.updateTrack(newViewWindow)
       },
 
       setWideModeWidthParameters: function (newWidth, newTxtMargin, newViewWindow) {
@@ -396,7 +461,7 @@
           this.switchNarrowMode(true)
           // TODO: complete narrow mode codes
         } else {
-          this.setWideModeWidthParameters(newWidth, newTxtMargin)
+          this.setWideModeWidthParameters(newWidth, newTxtMargin, newWindow)
         }
       },
 
@@ -434,7 +499,7 @@
         if (forceUpdate === true || !this.annoUpdated) {
           for (var key in annoMap) {
             if (key !== 'track' && annoMap.hasOwnProperty(key)) {
-              this.track.setSetting(key, annoMap[key])
+              this.parent.setSetting(key, annoMap[key])
             }
           }
         }
@@ -452,7 +517,7 @@
       },
 
       getCurrentViewWindowExt: function (extension) {
-        return this.mainSvg.viewWindow.getExtension(extension, null, true, this.track.ref)
+        return this.mainSvg.viewWindow.getExtension(extension, null, true, this.parent.ref)
       },
 
       // ****** common methods used by all tracks ******
@@ -491,7 +556,7 @@
         var windowToDraw = svgToDraw.viewWindow || Polymer.dom(svgToDraw).parentNode.viewWindow
         return give.ChromRegion.clipCoordinate({chr: windowToDraw.chr,
           coor: parseInt(x / this.windowWidth * windowToDraw.getLength() +
-            windowToDraw.start + 0.5)}, this.track.ref)
+            windowToDraw.start + 0.5)}, this.parent.ref)
       },
 
       // ** Simple SVG Drawing **
@@ -817,7 +882,7 @@
 
       drawShortLabel: function (label, maxX) {
         maxX = maxX || this.textMargin
-        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.track.getSetting('shortLabel'),
+        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.parent.getSetting('shortLabel'),
                     'end', 'both', null, this.textSvg, maxX, this.trackHeight, true)
       },
 
@@ -838,7 +903,7 @@
           this.listen(this.getMainSvg(), 'wheel', 'wheelHandler')
         }
         this._setIsReady(true)
-        this.fire('track-ready', {ID: this.track.getID()})
+        this.fire('track-ready', {ID: this.parent.getID()})
         if (this.callbackAfterDraw) {
           this.callbackAfterDraw()
           delete this.callbackAfterDraw
@@ -853,34 +918,46 @@
 
       checkDataAndUpdate: function (newVWindow) {
         // Steps:
-        //     * run this.track.getData with drawData (debounced) as callback
+        //    * run this.parent.getData with drawData (debounced) as callback
         //    * whenever drawData (debounced) is done, run updateCache
         //    Meanwhile, run fetch data (debounced) without visible callback
         //    * Otherwise, run fetch data with drawData (debounced) as callback
+        //    * Also, convert all new ranges into arrays first
 
         if (this.isDebouncerActive(this.cacheUpdateJobName)) {
           this.cancelDebouncer(this.cacheUpdateJobName)
         }
 
+        if (!Array.isArray(newVWindow)) {
+          newVWindow = [newVWindow]
+        }
+
         // this is to set up cache loading functions as call back after draw
         this.callbackAfterDraw = this.debounce.bind(
-          this, this.cacheUpdateJobName, this.track.getData.bind(
-            this.track, newVWindow.getExtension(
-              give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
-              null, true, this.track.ref
-            ), this.getResolution(newVWindow), null, this.id
+          this, this.cacheUpdateJobName, this.parent.getData.bind(
+            this.parent,
+            newVWindow.map(function (range) {
+              return range.getExtension(
+                give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
+                null, true, this.parent.ref
+              )
+            }, this), this.getResolution(newVWindow), null, this.id
           ), this._cacheDebounceInt)
-        this.track.getData(
-          newVWindow.getExtension(
-            give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
-            null, true, this.track.ref
-          ), this.getResolution(newVWindow),
+        this.parent.getData(
+          newVWindow.map(function (range) {
+            return range.getExtension(
+              give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
+              null, true, this.parent.ref
+            )
+          }, this),
+          this.getResolution(newVWindow),
           this.drawDataDebounceWrapper.bind(
             this, newVWindow
-          ), this.id)
+          ), this.id
+        )
       },
 
-      updateTracks: function (viewWindow, index, threshold) {
+      updateTrack: function (viewWindow, index, threshold) {
         // viewWindow is the new viewWindow value of coordinates
         // index is the index of viewWindow (for tracks with multiple viewWindows)
         // if both are omitted, just refresh the track
@@ -907,10 +984,11 @@
   //          this.set('viewWindowString', this.oldViewWindowString);
   //        }
         }
+        return viewWindow
       },
 
       setTrackVisibility: function (visString) {
-        this.track.setVisibility(visString)
+        this.parent.setVisibility(visString)
       },
 
       regionInWindow: function (region, svgToDraw) {
@@ -934,9 +1012,9 @@
 
       changeViewWindow: function (viewWindow) {
         // if (typeof (viewWindow) === 'string') {
-        //   this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+        //   this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
         // } else {
-        //   this.mainSvg.viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+        //   this.mainSvg.viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
         // }
         // this.set('viewWindowString', newValue);
         this.mainSvg.viewWindow = viewWindow
@@ -945,9 +1023,9 @@
       _verifyViewWindow: function (viewWindow) {
         viewWindow = viewWindow || this.mainSvg.viewWindow
         if (typeof (viewWindow) === 'string') {
-          return new give.ChromRegion(viewWindow, this.track.ref)
+          return new give.ChromRegion(viewWindow, this.parent.ref)
         } else {
-          return viewWindow.clipRegion(this.track.ref).clone()
+          return viewWindow.clipRegion(this.parent.ref).clone()
         }
         // this.set('viewWindowString', newValue);
       },
@@ -1024,10 +1102,10 @@
                 windowIndex: this.windowIndex,
                 newWindow: this.dragData.oldWindow.getShift(
                         detail.dx * this.dragData.ratio, true,
-                        this.track.ref).regionToString(false)
+                        this.parent.ref).regionToString(false)
               })
             // this.setViewWindowString(this.dragData.oldWindow.getShift(
-            //  detail.dx * this.dragData.ratio, true, this.track.ref).regionToString(false));
+            //  detail.dx * this.dragData.ratio, true, this.parent.ref).regionToString(false));
             }
             break
           case 'end':
