@@ -5,3 +5,5 @@ Just copy paste the two following lines to jsfiddle (https://jsfiddle.net), an o
 2) Copy paste the following lines to the HTML panel (top left);
 3) Hit "run" button.
 4) Congratulations! You will see your first genome browser HTML page. You can modify it at your wish.
+
+
