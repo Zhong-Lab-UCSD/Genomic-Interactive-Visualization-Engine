@@ -172,7 +172,7 @@ var GIVe = (function (give) {
           }
 
           if (GUIRange) {
-            mergedGUIRanges.splice(j, 0, GUIRange)
+            mergedGUIRanges.splice(j, 0, GUIRange.clone())
           }
         }
       }

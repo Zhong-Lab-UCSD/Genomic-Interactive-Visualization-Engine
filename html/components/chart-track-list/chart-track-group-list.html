@@ -48,7 +48,7 @@
         <genemo-track-filter id="trackFilter" ref='[[ref]]'
           on-filter-tracks="_filterTracksHandler"></genemo-track-filter>
       </template>
-      <template is="dom-if" if="[[!noControls]]" restamp="true">
+      <template is="dom-if" if="[[hasControls]]" restamp="true">
         <paper-button on-tap="cancelChanges">
           <iron-icon icon="close"></iron-icon>
           Cancel
@@ -95,6 +95,13 @@
             type: Array
           },
 
+          defaultTrackIdList: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
           /**
            * Whether the track controller will support filter function
            * @type {boolean}
@@ -107,7 +114,7 @@
           /**
            * Whether the track controller will reflect change immediately
            * without calling this.DOMToTrack().
-           * This is always false if noControls === false
+           * This is always false if hasControls === true
            * @type {boolean}
            */
           instantChange: {
@@ -116,10 +123,10 @@
           },
 
           /**
-           * Whether the track controller will not show OK/Cancel controls
+           * Whether the track controller will show OK/Cancel controls
            * @type {boolean}
            */
-          noControls: {
+          hasControls: {
             type: Boolean,
             value: false
           }
@@ -135,10 +142,39 @@
           this.setReady(false)
 
           this.completedRepeatDOMs = 0
+
+          if (this.defaultTrackIdList.length > 0) {
+            this._needOverrideDefault = true
+          }
+        },
+
+        /**
+         * _overrideTrackDefaultSettings - Override the default track settings
+         */
+        _overrideTrackDefaultSettings: function () {
+          if (this._refObj && this.defaultTrackIdList.length > 0) {
+            this._refObj.setTrackSettings(this.settingKey, false, null)
+            this.defaultTrackIdList.forEach(function (id) {
+              try {
+                this._refObj.getTracks().get(id).setSetting(this.settingKey, true)
+              } catch (e) {
+                give._verboseConsole('Track `' + id + '` does not exist!',
+                  give.VERBOSE_WARNING)
+              }
+            }, this)
+          }
         },
 
         _refreshRefTrackReady: function () {
           // this is called after track is ready for trackRef
+          if (this._needOverrideDefault) {
+            this._overrideTrackDefaultSettings()
+            delete this._needOverrideDefault
+          } else {
+            // reference has changed, no need to override anymore
+            this.splice('defaultTrackIdList', 0, this.defaultTrackIdList.length)
+          }
+
           this.splice('groupArray', 0, this.groupArray.length)
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
@@ -182,6 +218,7 @@
          * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
          */
         _setRefObj: function (refObj) {
+          // TODO: may need to add something to remove the override array
           this._refObj = refObj
           this.setReady(false)
           if (this._refObj) {
@@ -207,6 +244,9 @@
           Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
             elem.resetAllTracks()
           }, this)
+
+          // override default values if needed
+          this._overrideTrackDefaultSettings()
         },
 
         backToSearch: function () {

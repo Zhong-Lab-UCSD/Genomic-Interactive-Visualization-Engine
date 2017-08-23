@@ -126,8 +126,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         <genemo-card disable-folding class="flex flexFillGenemoCard">
           <chart-track-group-list ref="[[ref]]" class="genemoBody" id="mainTrackList"
             group-id-list='[[groupIdList]]' setting-key="visibility"
-            no-controls='[[noControls]]' with-filter='[[withFilter]]'
-            instant-change='[[instantChange]]'>
+            has-controls='[[hasControls]]' with-filter='[[withFilter]]'
+            instant-change='[[instantChange]]'
+            default-track-id-list='[[defaultTrackIdList]]'>
           </chart-track-group-list>
         </genemo-card>
         <custom-track-controller ref="[[ref]]" id="mainCTController"></custom-track-controller>
@@ -153,7 +154,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         <div class="content flex layout vertical">
           <div class="flex relative">
             <chart-area ref="[[ref]]" id="mainChartArea"
-              group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}">
+              group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}"
+              default-track-id-list='[[defaultTrackIdList]]'>
             </chart-area>
           </div>
           <div class="dataReference">
@@ -208,6 +210,14 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               return []
             }
           },
+
+          defaultTrackIdList: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
           /**
            * Coordinates of every view.
            * @type {Array<string>}
@@ -246,7 +256,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           /**
            * Whether the track controller will reflect change immediately
            * without calling this.DOMToTrack().
-           * This is always false if noControls === false
+           * This is always false if hasControls === true
            * @type {boolean}
            */
           instantChange: {
@@ -258,7 +268,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
            * Whether the track controller will not show OK/Cancel controls
            * @type {boolean}
            */
-          noControls: {
+          hasControls: {
             type: Boolean,
             value: false
           }

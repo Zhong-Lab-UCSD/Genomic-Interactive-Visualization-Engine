@@ -239,6 +239,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             }
           },
 
+          defaultTrackIdList: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
           /**
            * Number of sub views in this controller.
            * Notice that if this setting is different from `coordinates.length`,
@@ -355,6 +362,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             }
           }, this)
 
+          if (this.defaultTrackIdList.length > 0) {
+            this._needOverrideDefault = true
+          }
           // initialize DOM array
           this._initDOMArray()
         },
@@ -653,6 +663,24 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         /**
+         * _overrideTrackDefaultVis - Override default shown tracks
+         */
+        _overrideTrackDefaultVis: function () {
+          if (this._refObj && this.defaultTrackIdList.length > 0) {
+            this._refObj.setTrackSettings('visibility', false, null)
+            this.defaultTrackIdList.forEach(function (id) {
+              try {
+                this._refObj.getTracks().get(id).setSetting('visibility', true)
+              } catch (e) {
+                give._verboseConsole('Track `' + id + '` does not exist!',
+                  give.VERBOSE_WARNING)
+              }
+            }, this)
+          }
+          delete this._needOverrideDefault
+        },
+
+        /**
          * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
          *
          * @param  {number} newValue new `numOfSubs` value
@@ -751,6 +779,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // function called when tracks are ready for this._refObj
           if (ref === this.ref) {
             // Only respond to this call if ref has not been changed
+            if (this._needOverrideDefault) {
+              this._overrideTrackDefaultVis()
+            }
             var showTrack = function (wIndex, track, index) {
               // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
               if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
@@ -965,12 +996,18 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           this._updateWindowHandler(e)
         },
 
-        _domChangeHandler: function () {
+        _initTrackDOMContainers: function () {
           this._trackDOMsByWindow.forEach(this._setDivElemInWindow, this)
           this._initDOMCoorTracks()
           if (this._initialized) {
             this.addAllTrackDOMs()
           }
+        },
+
+        _domChangeHandler: function () {
+          this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
+            this._initTrackDOMContainers.bind(this),
+            give.ChartArea.DOM_CHANGE_DEBOUNCE)
         },
 
         _getElemId: function (divId, suffix) {
@@ -994,6 +1031,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
       give.ChartArea.DOM_DIV_ID = 'domDiv_'
       give.ChartArea.INTERACTION_SUBS = 2
+
+      give.ChartArea.DOM_CHANGE_JOBNAME = 'DOMChange'
+      give.ChartArea.DOM_CHANGE_DEBOUNCE = 200
 
       return give
     })(GIVe || {})

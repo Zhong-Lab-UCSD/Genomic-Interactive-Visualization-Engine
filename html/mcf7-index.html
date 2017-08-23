@@ -39,7 +39,12 @@
     /* eslint-enable */
   </script>
   <chart-controller ref="hg19" id="mainChartController" num-of-subs="2"
-    group-id-list='["genes", "interaction", "customTracks"]' class="flex">
+    group-id-list='["genes", "encode", "interactions", "customTracks"]'
+    class="flex"
+    default-track-id-list='["knownGene", "wgEncodeEH001151_1",
+    "wgEncodeEH002872", "wgEncodeEH001130", "GSM1250485_interaction"]'
+    coordinates='["chr17:1-81195210", "chr17:45000000-55000000"]'
+    title-text='Epigenome and genome interaction (MCF-7)'>
   </chart-controller>
 </body>
 </html>
