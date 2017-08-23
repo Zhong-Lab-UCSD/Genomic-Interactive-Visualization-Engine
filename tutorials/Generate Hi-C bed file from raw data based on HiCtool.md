@@ -1,0 +1,110 @@
+**Normalized data analysis**
+============================
+
+Prerequirements
+* This section requires python libraries: math, numpy, matplotlib, matplotlib.pyplot, PIL.
+* This section requires python package: HiFive.
+* This section requires Hi-C raw data (HiCfile_pair1.bam and HiCfile_pair2.bam), restriction emzyme site file (restrictionsites.bed). To learn more about these files, Please visit [HiCtool](https://doc.genomegitar.org/index.html).
+
+
+Run the program to generate the normalized contact matrix and plot the heatmap
+
+The script [HiCtool_norm_contact_matrix.py](sysbio.ucsd.edu/pubic/qiw034/HiCtool_hifive.py) is used to run only HiFive functions (steps 1-6 below), whose outputs are **.hdf5** files. For more information about these functions, please see [HiFive's API documentation](http://bxlab-hifive.readthedocs.io/en/latest/api.html).
+
+The script [HiCtool_normalization_visualization.py](sysbio.ucsd.edu/pubic/qiw034/HiCtool_normalization_visualization.py) contains all the functions to normalize the data generate contact matrix. To use this code, steps 1-6 must be run first.
+
+1. Creating a Fend object
+
+A Fragment-end (**Fend**) object (hdf5 format) contains information about the fragments created by digestion of a genome by a specific restriction enzyme (RE). To create a Fend object you must provide the location of the RE fragments. In our script, this information is supplied in the form of a BED-formatted file (**RE_data_filename**) containing the information about the start and end position of the restriction enzyme (HindIII) recognition sites for the target genome for each chromosome.
+
+To create a Fend object use the function **hifive.fend**:
+```
+    import hifive
+   
+    fend = hifive.Fend(out_filename, mode='w')
+    fend.load_fends(RE_data_filename, re_name='HindIII', format='bed')
+    fend.save()
+```
+2. Creating a HiCData object
+
+**HiC dataset** (hdf5 format) created from a Fend file and mapped data in bam format. The original bam file has to be splitted into two bam files (`see preprocessing <preprocessing_data.html#splitting-the-bam-file-to-separate-the-two-reads-in-a-pair>`_) each containing the information of one of the two mapped reads, and then they are passed to the function as elements of a list. The 'maxinsert' parameter (int.) is a cutoff for filtering paired end reads whose total distance to their respective restriction sites exceeds this value.
+
+To create a HiCData object use the function **hifive.HiCData**:
+```
+    import hifive
+
+    data = hifive.HiCData(out_filename, mode='w')
+    data.load_data_from_bam(fend_filename,
+                  	    [BAM_file_1, BAM_file_2], 
+                            maxinsert=500)
+    data.save()
+```
+3. Creating a HiC project object
+
+The **HiC project object** (hdf5 format) contains links to HiCData and Fend object, information about which fends to include in the analysis, model parameters and learned model values. This is the standard way of working with Hi-C data in HiFive and this object will be used for learning the model, extracting portions of data, plotting and downstream analysis.
+
+To create a HiC project object use the function **hifive.HiC**:
+```
+    import hifive
+
+    hic = hifive.HiC(out_filename, 'w')
+    hic.load_data(data_filename)
+    hic.save()
+```
+where **out_filename** specifies the location to save the HiC object to and **data_filename** is the appropriate data object.
+
+4. Finding HiC distance function
+
+Estimation of the **distance-dependence relationship** from the data prior to normalization, in order to avoid biases that may result due to restriction site distribution characteristics or the influence of distance/signal relationship.
+
+Restriction sites throughout the genome are unevenly distributed. This results in greatly varying sets of distances between fragments and their neighbors. Because interaction signal is strongly inversely-related to inter-fragment distance, this unequal distribution means that fragments with lots of shorter adjacent fragments have a nearby neighborhood of higher interaction values than fragments surrounded by longer restriction fragments, simply due to cutsite variation.
+
+To find HiC distance function use **hifive.find_distance_parameters**::
+```
+    import hifive
+    
+    hic = hifive.HiC('HiC_project_object.hdf5')
+    hic.find_distance_parameters(numbins=90, minsize=200, maxsize=0)
+    hic.save()
+```
+5. Finding HiC distance function
+
+Estimation of the distance-dependence relationship from the data prior to normalization, in order to avoid biases that may result due to restriction site distribution characteristics or the influence of distance/signal relationship.
+
+Restriction sites throughout the genome are unevenly distributed. This results in greatly varying sets of distances between fragments and their neighbors. Because interaction signal is strongly inversely-related to inter-fragment distance, this unequal distribution means that fragments with lots of shorter adjacent fragments have a nearby neighborhood of higher interaction values than fragments surrounded by longer restriction fragments, simply due to cutsite variation.
+
+To find HiC distance function use hifive.find_distance_parameters:
+```
+    import hifive
+
+    hic = hifive.HiC('HiC_project_object.hdf5')
+    hic.find_distance_parameters(numbins=90, minsize=200, maxsize=0)
+    hic.save('HiC_distance_function.hdf5')
+
+```
+6. Learning the correction model
+
+Algorithm to learn the correction model for Hi-C data. For the normalization, we take into account of fragments length and GC content biases, according to the information provided by the Fend object.
+
+To normalize the data using binning algorithm (Yaffe E. and Tanay A., 2011) use hic.find_binning_fend_corrections:
+ ```
+    import hifive
+
+    hic = hifive.HiC('HiC_distance_function.hdf5')
+    hic.find_binning_fend_corrections(max_iterations=1000,
+                                      mindistance=500000,
+                                      maxdistance=0,
+                                      num_bins=[20,20],
+                                      model=['len','gc'],
+                                      parameters=['even','even'],
+                                      usereads='cis',
+                                      learning_threshold=1.0)
+    hic.save('HiC_norm_binning.hdf5')
+```
+7. Normalization of the data
+
+To calculate and save the normalized enrichment data use normalize_chromosome_enrich_data:
+```
+    normalize_chromosome_enrich_data(a_chr='6', bin_size=40000, species='hg38', save_obs=True, save_expect=True)
+```
+To get the required bed format, use the bash script gitar2give to convert.
