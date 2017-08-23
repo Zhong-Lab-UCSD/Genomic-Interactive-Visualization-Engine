@@ -80,6 +80,6 @@ When you have built tracks in MariaDB, it's very easy to build a genome browser.
 </chart-controller>
 ```
 
-You can read this [toturial](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/1-knownCodeDataSource.md) to learn how to simply tweak the genome browser. [`give_chic.html`](./give_chic.html) is our tweaked demo html file.
+You can read this [toturial](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/1-knownCodeDataSource.md) to learn how to simply tweak the genome browser. Our [demo](https://chic.givengine.org/) is based on the tweaked [`give_chic.html`](./give_chic.html) html file.
 
 
