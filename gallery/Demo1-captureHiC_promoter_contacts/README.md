@@ -49,17 +49,19 @@ mysql -u <your user name> -p <./GIVE_chicTrack.sql
 ```
 
 ## Build genome browser
-When you have built tracks in MariaDB, it's very easy to build a genome browser. The following code block is all what you need. 
+When you have built tracks in MariaDB, it's very easy to build a genome browser. The following code is what we used to build our [demo](https://chic.givengine.org/). You can just copy and paste it in [jsfiddle](https://jsfiddle.net/) and then you can get the genome browser supported by our GIVE server. If you have built the tracks on your own GIVE server, you only need to replace the url in the code with your own server's url. 
 
 ```html
+<!-- change the url to your own server path -->
 <script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script> 
+<!-- change the url to your own server path-->
 <link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 <!-- Embed the browser in your web page -->
 <chart-controller title-text="long-range promoter contacts with capture Hi-C" ref="hg19" num-of-subs="2" coordinates='["chr18:19140000-19450000", "chr18:19140000-19450000"]' group-id-list='["genes", "CHi-C_promoter", "customTracks"]'>
 </chart-controller>
 ```
 
-
+You can read this [toturial](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/1-knownCodeDataSource.md) to learn how to simply tweak the genome browser.
 
 
 
