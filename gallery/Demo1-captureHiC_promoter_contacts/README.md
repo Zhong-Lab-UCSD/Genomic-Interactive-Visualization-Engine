@@ -1,5 +1,5 @@
 # [Long-range promoter contacts with capture Hi-C](https://chic.givengine.org/)
-This genome browser presents 4 datasets of long-range genome interactions along with human genome assembly GRCh37 (hg19) for comparative studies. These datasets were generated from a ***Nature Genetics*** paper [Borbala Mifsud et al., *Nature Genetics* 47, 598-606 (2015)](http://www.nature.com/ng/journal/v47/n6/full/ng.3286.html). They used Capture Hi-C (CHi-C), an adapted genome conformation assay, to examine the long-range interactions of almost 22,000 promoters in 2 human blood cell types, GM12878 and CD34<sup>+</sup>. The promoter-promoter and promoter-other interactions were separated as different tracks in the genome browser.
+This genome browser demo presents 4 datasets of long-range genome interactions along with human genome assembly GRCh37 (hg19) for comparative studies. These datasets were generated from a ***Nature Genetics*** paper [Borbala Mifsud et al., *Nature Genetics* 47, 598-606 (2015)](http://www.nature.com/ng/journal/v47/n6/full/ng.3286.html). They used Capture Hi-C (CHi-C), an adapted genome conformation assay, to examine the long-range interactions of almost 22,000 promoters in 2 human blood cell types, GM12878 and CD34<sup>+</sup>. The promoter-promoter and promoter-other interactions were separated as different tracks in the genome browser.
 
 ![fig](./GIVE_demo1_chic.PNG)
 
@@ -11,7 +11,13 @@ The processed significant long-range promoter contacts data in that paper can be
 wget http://www.ebi.ac.uk/arrayexpress/files/E-MTAB-2323/E-MTAB-2323.additional.1.zip
 unzip E-MTAB-2323.additional.1.zip
 ```
-After unzipping the downloaded file, we got four datasets, `TS5_CD34_promoter-promoter_significant_interactions.txt`,  `TS5_GM12878_promoter-promoter_significant_interactions.txt`, `TS5_CD34_promoter-other_significant_interactions.txt`,  `TS5_GM12878_promoter-other_significant_interactions.txt`. Following table shows the format of the datasets. Columns 1-3 and 7-9 show the two genome coordinates with interactions. The last column can be treated as interaction score. These datasets are based on hg19(GRCh37) human genome assembly.
+After unzipping the downloaded file, we got four datasets, 
+- `TS5_CD34_promoter-promoter_significant_interactions.txt`,  
+- `TS5_GM12878_promoter-promoter_significant_interactions.txt`, 
+- `TS5_CD34_promoter-other_significant_interactions.txt`,  
+- `TS5_GM12878_promoter-other_significant_interactions.txt`. 
+
+Following table shows the format of the datasets. Columns 1-3 and 7-9 show the coordinates of two genome regions with interactions. The last column can be treated as interaction score. These datasets are based on GRCh37 (hg19) human genome assembly.
 
 |chr | start | end | Symbol | Ensembl Gene ID | expresssion quartile | chr | start | end | Symbol | Ensembl Gene ID | expresssion quartile | raw count | log(observed/expected)|
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -19,7 +25,7 @@ After unzipping the downloaded file, we got four datasets, `TS5_CD34_promoter-pr
 |chr3|183266196|183267882|KLHL6-AS1-001|ENSG00000242522|1|chr3|183269400|183277960|KLHL6-001|ENSG00000172578|5|249|16.4555995112416|
 |chr6|26238741|26244133|HIST1H4F-201|ENSG00000198327|5|chr6|26244367|26249842|HIST1H4G-201|ENSG00000124578|1|443|16.2749178680534|
 
-We need to convert the datasets to the GIVE supported interaction bed format (the format definiation can be found in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)). Use simple scripts `chic2give.sh` and `chic2give_directed.sh`, we can easily convert them to GIVE interaction bed files, which are named with a prefix `give_x_`. `chic2give_directed.sh` is used for promoter-other interactions to assign interacion direction using `dirFlag` column (see detail in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)).
+We need to convert the datasets to the GIVE supported interaction bed format (the format definiation can be found in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)). Use simple scripts [`chic2give.sh`](./chic2give.sh) and `chic2give_directed.sh`, we can easily convert them to GIVE interaction bed files, which are named with a prefix `give_x_`. `chic2give_directed.sh` is used for promoter-other interactions to assign interacion direction using `dirFlag` column (see detail in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)).
 
 ```bash
 ## run these commands in linux shell
@@ -32,7 +38,13 @@ bash chic2give_directed.sh TS5_CD34_promoter-other_significant_interactions.txt 
 bash chic2give_directed.sh TS5_GM12878_promoter-other_significant_interactions.txt ./
 ```
 
-Finally, we got four GIVE interaction bed files, `give_x_TS5_CD34_promoter-promoter_significant_interactions.txt`, `give_x_TS5_CD34_promoter-other_significant_interactions.txt`, `give_x_TS5_GM12878_promoter-promoter_significant_interactions.txt`,`give_x_TS5_GM12878_promoter-other_significant_interactions.txt`. The following table shows the GIVE interaction bed format. These datasets can be loaded to GIVE MySQL server. 
+Finally, we got four GIVE interaction bed files, 
+- `give_x_TS5_CD34_promoter-promoter_significant_interactions.txt`, 
+- `give_x_TS5_CD34_promoter-other_significant_interactions.txt`,
+- `give_x_TS5_GM12878_promoter-promoter_significant_interactions.txt`,
+- `give_x_TS5_GM12878_promoter-other_significant_interactions.txt`. 
+
+The following table shows the GIVE interaction bed format. These datasets can be loaded to GIVE MySQL server. 
 
 |ID|chrom|Start|End|linkID|value|dirFlag|
 | --- | --- | --- | --- | --- | --- | --- |
@@ -48,8 +60,8 @@ You need a server to build a genome browser with GIVE. Please read the [prerequi
 
 ```bash
 ## run these commands in linux shell
-# change <your user name> to your user name of MariaDB
-mysql -u <your user name> -p <./GIVE_chicTrack.sql
+# change `<your user name>` to your user name of MariaDB
+mysql -u `<your user name>` -p <./GIVE_chicTrack.sql
 ```
 
 ## Build genome browser
@@ -69,7 +81,6 @@ When you have built tracks in MariaDB, it's very easy to build a genome browser.
 ```
 
 You can read this [toturial](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/1-knownCodeDataSource.md) to learn how to simply tweak the genome browser.
-
 
 
 
