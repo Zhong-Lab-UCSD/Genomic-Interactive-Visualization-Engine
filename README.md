@@ -116,7 +116,7 @@ Please visit the following tutorial pages to see how to use the engine:
 
 ## Credits
 
-GIVE is developed by Xiaoyi Cao, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
+GIVE is developed by Xiaoyi Cao, Zhangming Yan, Qiuyang Wu, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
 
 ## License
 
