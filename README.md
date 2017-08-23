@@ -6,10 +6,10 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
 
 <!-- Import GIVE component -->
-<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" title-text="My GIVE Browser"
