@@ -5,7 +5,7 @@ This genome browser demo presents 15 datasets of ChIA-PET long-range chromatin i
 ![fig](./GIVE_demo2_chiapet.PNG)
 
 ## Data preparation for GIVE
-We used the ENCODE ChIA-PET long-range chromatin interactions bed (bed12) format data, which can be download from [**ENCODE** Experiment Matrix](https://www.encodeproject.org/matrix/?type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2&files.file_type=bed+bed12). ALternatively, you can use [`batch_download.txt`](./) with following shell command to download all the data.
+We used the ENCODE ChIA-PET long-range chromatin interactions bed (bed12) format data, which can be download from [**ENCODE** Experiment Matrix](https://www.encodeproject.org/matrix/?type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2&files.file_type=bed+bed12). ALternatively, you can use [`batch_download.txt`](./batch_download.txt) with following shell command to download all the data.
 
 ```bash
 ## run the following command in linux shell 
