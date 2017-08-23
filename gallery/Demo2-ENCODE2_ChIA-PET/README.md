@@ -41,10 +41,49 @@ The following table shows a sample of the bed12 format used in **ENCODE** datase
 |chr1|761369|763199|chr1:761369..763199-chr8:182999..184804,2|200|.|761369|763199|255,0,0|1|1830|0|
 |chr8|182999|184804|chr1:761369..763199-chr8:182999..184804,2|200|.|182999|184804|255,0,0|1|1805|0|
 
-The first two rows in the sample show two intra-chromosome interactions, and the last two rows duplicately show one inter-chromosome interactions. So you may have found that we only need the `name` column to get all the interaction information. So we wrote a simple script [chiapet2give.sh](./chiapet2give.sh) to convert the datasets to the GIVE supported interaction bed format (the format definiation can be found in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)). Run following command we can get converted GIVE interaction bed files, which are named with a prefix `give_x_`.
+The first two rows in the sample show two intra-chromosome interactions, and the last two rows duplicately show one inter-chromosome interactions. So you may have found that we only need the `name` column to get all the interaction information. So we wrote a simple script [chiapet2give.sh](./chiapet2give.sh) to convert the datasets to the GIVE supported interaction bed format (the format definiation can be found in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)). Run following command we can get converted GIVE interaction bed files, which are named with a prefix `give_x_`, such as `give_x_ENCFF001THU.bed.gz.bed`.
 
+```bash
+## run in linux shell
+ls ENCFF*.bed.gz |xargs -n 1 -P 4 -I {} bash ../../chiapet2give.sh {} ./
+```
 
+The following table shows the GIVE interaction bed format. These datasets can be loaded to GIVE MySQL server. 
 
+|ID|chrom|Start|End|linkID|value|dirFlag|
+| --- | --- | --- | --- | --- | --- | --- |
+|1|chr20|47889560|47895795|1|16.026310742063|0|
+|2|chr20|47896527|47898203|1|16.026310742063|0|
+|3|chr17|79827812|79838989|2|15.548584214411|0|
+|4|chr17|79848037|79871266|2|15.548584214411|0|
+|5|chr17|27046828|27048611|3|15.5357777367182|0|
+|6|chr17|27048612|27049990|3|15.5357777367182|0|
+
+## Build track in MariaDB
+You need a server to build a genome browser with GIVE. Please read the [prerequisites and configuration of GIVE server](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#prerequisites). In that tutorial page, you will also learn how to [prepare MariaDB database](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#optional-preparation-for-give) and [build reference genome for GIVE](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#preparation-for-reference-genome). When you have prepared MariaDB and build a `hg19` database, you can use [`GIVE_chiapetTrack.sql`](./GIVE_chiapetTrack.sql) file and following command template to load all the datasets to MariaDB and build 15 tracks.
+
+```bash
+## run these commands in linux shell
+# change `<your user name>` to your user name of MariaDB
+mysql -u `<your user name>` -p <./GIVE_chiapetTrack.sql
+```
+## Build genome browser
+When you have built tracks in MariaDB, it's very easy to build a genome browser. The following code is what we used to build our [demo](https://chiapet.givengine.org/). You can just copy and paste it in [jsfiddle](https://jsfiddle.net/) and then you can get the genome browser supported by our GIVE server. If you have built the tracks on your own GIVE server, you only need to replace the url in the code with your own server's url. 
+
+```html
+<!-- change the url to your own server path -->
+<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script> 
+<!-- change the url to your own server path-->
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+<!-- Embed the browser in your web page -->
+<chart-controller title-text="ChIA-PET long-range chromatin interactions" 
+    ref="hg19" num-of-subs="2" 
+    coordinates='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
+    group-id-list='["genes", "ENCODE2_ChIA-PET", "customTracks"]'>
+</chart-controller>
+```
+
+You can read this [toturial](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/1-knownCodeDataSource.md) to learn how to simply tweak the genome browser. Our [demo](https://chiapet.givengine.org/) is based on the tweaked [`give_chiapet.html`](./give_chiapet.html) HTML file.
 
 
 
