@@ -5,7 +5,7 @@ This genome browser presents 4 datasets of long-range genome interactions along 
 The processed significant long-range promoter contacts data in that paper can be downloaded from [E-MTAB-2323 of ArrayExpress](http://www.ebi.ac.uk/arrayexpress/files/E-MTAB-2323/E-MTAB-2323.additional.1.zip). 
 
 ``` bash
-# run these commands in linux shell
+## run these commands in linux shell
 wget http://www.ebi.ac.uk/arrayexpress/files/E-MTAB-2323/E-MTAB-2323.additional.1.zip
 unzip E-MTAB-2323.additional.1.zip
 ```
@@ -20,7 +20,7 @@ After unzipping the downloaded file, we got four datasets, `TS5_CD34_promoter-pr
 We need to convert the datasets to the GIVE supported interaction bed format (the format definiation can be found in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/GIVE_demo/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)). Use simple scripts `chic2give.sh` and `chic2give_directed.sh`, we can easily convert them to GIVE interaction bed files, which are named with a prefix `give_x_`. `chic2give_directed.sh` is used for promoter-other interactions to assign interacion direction using `dirFlag` column (see detail in [GIVE Manual](https://github.com/Zhong-Lab-UCSD/GIVE_demo/blob/master/manuals/3-dataSource.md#adding-interaction-tracks)).
 
 ``` bash
-# run these commands in linux shell
+## run these commands in linux shell
 # the first two command lines are used for undirected promoter-promoter interactions
 bash chic2give.sh TS5_CD34_promoter-promoter_significant_interactions.txt ./
 bash chic2give.sh TS5_GM12878_promoter-promoter_significant_interactions.txt ./
