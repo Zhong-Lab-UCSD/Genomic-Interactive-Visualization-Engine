@@ -1,0 +1,16 @@
+https://www.encodeproject.org/metadata/type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2&files.file_type=bed+bed12/metadata.tsv
+https://www.encodeproject.org/files/ENCFF001THT/@@download/ENCFF001THT.bed.gz
+https://www.encodeproject.org/files/ENCFF001THZ/@@download/ENCFF001THZ.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIA/@@download/ENCFF001TIA.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIB/@@download/ENCFF001TIB.bed.gz
+https://www.encodeproject.org/files/ENCFF001TID/@@download/ENCFF001TID.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIE/@@download/ENCFF001TIE.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIF/@@download/ENCFF001TIF.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIJ/@@download/ENCFF001TIJ.bed.gz
+https://www.encodeproject.org/files/ENCFF001THX/@@download/ENCFF001THX.bed.gz
+https://www.encodeproject.org/files/ENCFF001THY/@@download/ENCFF001THY.bed.gz
+https://www.encodeproject.org/files/ENCFF001THW/@@download/ENCFF001THW.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIC/@@download/ENCFF001TIC.bed.gz
+https://www.encodeproject.org/files/ENCFF001THV/@@download/ENCFF001THV.bed.gz
+https://www.encodeproject.org/files/ENCFF001TIG/@@download/ENCFF001TIG.bed.gz
+https://www.encodeproject.org/files/ENCFF001THU/@@download/ENCFF001THU.bed.gz
