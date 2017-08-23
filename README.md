@@ -75,8 +75,8 @@ To use GIVE components, just use HTML `import` to import Web Components polyfill
 
 All components, including Web Component polyfill, is available on our web site for direct HTML import.
 ```html
-<script src="https://give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-<link rel="import" href="https://give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 ```
 
 #### With Installation
