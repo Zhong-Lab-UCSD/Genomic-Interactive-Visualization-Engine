@@ -3,7 +3,7 @@ This genome browser demo presents 4 datasets of long-range genome interactions a
 
 ![fig](./GIVE_demo1_chic.PNG) 
 
-## Data Preparation for GIVE
+## Data preparation for GIVE
 The processed significant long-range promoter contacts data in that paper can be downloaded from [E-MTAB-2323 of ArrayExpress](http://www.ebi.ac.uk/arrayexpress/files/E-MTAB-2323/E-MTAB-2323.additional.1.zip). 
 
 ```bash

@@ -6,10 +6,10 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
 
 <!-- Import GIVE component -->
-<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" title-text="My GIVE Browser"
@@ -75,8 +75,8 @@ To use GIVE components, just use HTML `import` to import Web Components polyfill
 
 All components, including Web Component polyfill, is available on our web site for direct HTML import.
 ```html
-<script src="https://give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-<link rel="import" href="https://give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 ```
 
 #### With Installation
@@ -116,7 +116,7 @@ Please visit the following tutorial pages to see how to use the engine:
 
 ## Credits
 
-GIVE is developed by Xiaoyi Cao, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
+GIVE is developed by Xiaoyi Cao, Zhangming Yan, Qiuyang Wu, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
 
 ## License
 
