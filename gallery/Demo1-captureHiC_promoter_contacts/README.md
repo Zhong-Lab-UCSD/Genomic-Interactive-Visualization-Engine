@@ -42,13 +42,25 @@ Finally, we got four GIVE interaction bed files, `give_x_TS5_CD34_promoter-promo
 |6|chr17|27048612|27049990|3|15.5357777367182|1|
 
 ## Build track in MariaDB
-You need a server to build a genome browser with GIVE. Please read the [prerequisites and configuration of GIVE server](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#prerequisites). In that tutorial page, you will also learn how to [prepare MariaDB database](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#optional-preparation-for-give) and [build reference genome for GIVE](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#preparation-for-reference-genome). 
-After you have prepared need to build a reference genome database `hg19` in MariaDB following that tutorial.
-Here we only show how to upload the four datasets to MariaDB and build track.
+You need a server to build a genome browser with GIVE. Please read the [prerequisites and configuration of GIVE server](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#prerequisites). In that tutorial page, you will also learn how to [prepare MariaDB database](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#optional-preparation-for-give) and [build reference genome for GIVE](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#preparation-for-reference-genome). When you have prepared MariaDB and build a `hg19` database, you can use `GIVE_chicTrack.sql` file and following command template to load all the datasets to MariaDB and build track.
+
+```bash
+mysql -u <your user name> -p <./GIVE_chicTrack.sql
+```
+
+## Build genome browser
+When you have built tracks in MariaDB, it's very easy to build a genome browser. The following code block is all what you need. 
+
+```html
+<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script> 
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+<!-- Embed the browser in your web page -->
+<chart-controller title-text="long-range promoter contacts with capture Hi-C" ref="hg19" num-of-subs="2" coordinates='["chr18:19140000-19450000", "chr18:19140000-19450000"]' group-id-list='["genes", "CHi-C_promoter", "customTracks"]'>
+</chart-controller>
+```
 
 
 
-##   
 
-There are 4 tracks in this genome browser, including significant promoter-promoter interactions and promoter-other interactions for both GM12878 and CD34+ cell types. We treat the promoter-other interactions as directed interactions, i.e., promoters are shown on the top genome and the interacted other genome regions are shown on the bottom genome. 
-For questions, please contact Xiaoyi Cao (x9cao at ucsd dot edu). 
+
+
