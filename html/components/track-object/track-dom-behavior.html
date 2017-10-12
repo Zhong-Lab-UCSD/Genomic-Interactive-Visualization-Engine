@@ -196,7 +196,7 @@ limitations under the License.
         this._setTrackHeight(properties.height || 100)
 
         this._setParent(track)
-        this._setTrackType(track.getTypeTrunk())
+        // this._setTrackType(track.getTypeTrunk())
         this.id = this.parent.getTypeTrunk() + '_' + give._trackCounter++
 
         // this is the type of visibility values that are allowed in a particular track
@@ -918,7 +918,7 @@ limitations under the License.
 
       checkDataAndUpdate: function (newVWindow) {
         // Steps:
-        //    * run this.parent.getData with drawData (debounced) as callback
+        //    * run this.parent.fetchData with drawData (debounced) as callback
         //    * whenever drawData (debounced) is done, run updateCache
         //    Meanwhile, run fetch data (debounced) without visible callback
         //    * Otherwise, run fetch data with drawData (debounced) as callback
@@ -934,7 +934,7 @@ limitations under the License.
 
         // this is to set up cache loading functions as call back after draw
         this.callbackAfterDraw = this.debounce.bind(
-          this, this.cacheUpdateJobName, this.parent.getData.bind(
+          this, this.cacheUpdateJobName, this.parent.fetchData.bind(
             this.parent,
             newVWindow.map(function (range) {
               return range.getExtension(
@@ -943,7 +943,7 @@ limitations under the License.
               )
             }, this), this.getResolution(newVWindow), null, this.id
           ), this._cacheDebounceInt)
-        this.parent.getData(
+        this.parent.fetchData(
           newVWindow.map(function (range) {
             return range.getExtension(
               give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
@@ -971,7 +971,7 @@ limitations under the License.
           this._setIsReady(false)
           // this.oldViewWindow = this.mainSvg.viewWindow;
 
-          // Get data clipped by viewWindow by calling getData()
+          // Get data clipped by viewWindow by calling fetchData()
           //    May also include data preparation
           this.checkDataAndUpdate(viewWindow)
 

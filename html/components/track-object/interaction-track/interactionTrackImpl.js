@@ -21,34 +21,24 @@ var GIVe = (function (give) {
 
     // notice that dirFlag can be undefined,
     //    however, if it's defined, then it will be the window index (for now)
-    var linkMap = {}
     var resToRegion = function (resEntry) {
-      return new give.ChromRegion(resEntry.regionString,
-                    this.ref, {
-                      data: {
-                        linkID: parseInt(resEntry.linkID),
-                        regionID: parseInt(resEntry.ID),
-                        value: parseFloat(resEntry.value),
-                        dirFlag: isNaN(parseInt(resEntry.dirFlag)) ? null : parseInt(resEntry.dirFlag)
-                      }
-                    })
+      return new give.ChromRegion(
+        resEntry.regionString,
+        this.ref, {
+          data: {
+            linkID: parseInt(resEntry.linkID),
+            regionID: parseInt(resEntry.ID),
+            value: parseFloat(resEntry.value),
+            dirFlag: isNaN(parseInt(resEntry.dirFlag)) ? null : parseInt(resEntry.dirFlag)
+          }
+        }
+      )
     }.bind(this)
-    var linkRegion = function (linkMap, region) {
-      if (!linkMap.hasOwnProperty(region.data.linkID)) {
-        linkMap[region.data.linkID] = []
-        linkMap[region.data.linkID].map = {}
-      }
-      if (!linkMap[region.data.linkID].map.hasOwnProperty(region.data.regionID)) {
-        linkMap[region.data.linkID].push(region)
-        linkMap[region.data.linkID].map[region.data.regionID] = true
-      }
-      region.data.linkedRegions = linkMap[region.data.linkID]
-    }.bind(this, linkMap)
 
     for (var chrom in res) {
       if (res.hasOwnProperty(chrom) && Array.isArray(res[chrom])) {
         data[chrom].insert(res[chrom].map(resToRegion, this),
-                   chrRegions, null, linkRegion)
+                   chrRegions)
       }
     }
   }

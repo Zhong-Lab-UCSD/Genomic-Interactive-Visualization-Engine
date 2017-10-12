@@ -83,9 +83,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         overflow-x: hidden;
         overflow-y: auto;
       }
-      div.scrollingParts svg {
-        width: 100%;
-      }
       #loadingBlock {
         display: block;
         pointer-events: none;
@@ -531,7 +528,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // note that by the time this is called, all tracks should be ready
           // (this is handled in track-ready event handler)
           // this will also rearrange the y value for all tracks as well
-          this._trackDOMsByWindow.forEach(this._updateDomHeightInWindow, this)
+          if (!this._trackDOMsByWindow.every(this._updateDomHeightInWindow, this)) {
+            // resizing is needed for all the windows
+            // note that new width is already stored in `this._svgWidth`
+            this._trackDOMsByWindow.forEach(this._updateDomHeightInWindow, this)
+          }
         },
 
         /**
@@ -560,6 +561,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // index is the window index
           // only need to update tracks involved with that index
           this._readiness = false
+          delete this._svgWidth
           this._callForeachFuncOnDomInWindowEntry(
             function (trackDOM, trackDomIndex) {
               trackDOM.updateTracks(this._viewWindows[index], index, this._threshold)
@@ -942,12 +944,15 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
             _prepareSvgHeight.bind(this, this._svgWidth),
             _setSvgWidthHeight, domInWindowEntry, index)
-          this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-          if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
-            // scrolling happened, needs to shrink pinned track width
-            this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-              _prepareSvgHeight.bind(this, this._svgWidth),
-              _setSvgWidthHeight, domInWindowEntry, index)
+
+          if (domInWindowEntry.pinAbove.divElem.clientWidth >
+            domInWindowEntry.scrolling.divElem.clientWidth
+          ) {
+            // scroll bar detected
+            this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+            return false
+          } else {
+            return true
           }
         },
 

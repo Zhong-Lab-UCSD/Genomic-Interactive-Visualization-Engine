@@ -366,7 +366,7 @@ var GIVe = (function (give) {
   }
 
   /**
-   * getData - Get data for ranges at given resolutions, then call callback.
+   * fetchData - Get data for ranges at given resolutions, then call callback.
    *
    * @memberof TrackObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges -
@@ -379,12 +379,12 @@ var GIVe = (function (give) {
    *   once the data is loaded.
    *   The function should not take any arguments (Use function.prototype.bind()
    *     to pre-package required parameters).
-   * @param  {string} callerID    The element ID calling `this.getData`, this is
+   * @param  {string} callerID    The element ID calling `this.fetchData`, this is
    *   used to collapse multiple calls from the same element.
    */
-  give.TrackObject.prototype.getData = function (ranges, resolutions, callback, callerID) {
-    if (this._dataObj && this._dataObj.getData) {
-      return this._dataObj.getData(ranges, resolutions, callback, callerID)
+  give.TrackObject.prototype.fetchData = function (ranges, resolutions, callback, callerID) {
+    if (this._dataObj && this._dataObj.fetchData) {
+      return this._dataObj.fetchData(ranges, resolutions, callback, callerID)
     } else {
       // There is no data in this track, get the callback done and return
       if (typeof callback === 'function') {
@@ -393,8 +393,39 @@ var GIVe = (function (give) {
     }
   }
 
-  give.TrackObject.prototype.createDomObj = function (prop) {
+  /**
+   * getData - Get the actual `this._DataStructure` object representing the
+   *    underlying data. Underlying data are supposed to be ready when this
+   *    method is called.
+   * This method can be overriden to accept `null` if needed
+   *
+   * @param  {string} chrom The chrom to be requested
+   * @returns {this._dataObj._DataStructure|null}       the underlying data
+   *    (or `null` if no data for the track)
+   */
+  give.TrackData.prototype.getData = function (chrom) {
+    return this._dataObj.getData(chrom)
+  }
 
+
+  /**
+   * ********** Static Properties for TrackObject Below **********
+   */
+
+  /**
+   * createDomObj - Create a DOM Object from this track.
+   *   The DOM Object will need to handle all display issues separately but
+   *   connects to `this` for data retrieval and other issues.
+   *
+   * @param  {object} prop - Properties to be passed on to the DOM Object
+   * @returns {give.TrackDOMBehavior}      - The DOM Object
+   */
+  give.TrackObject.prototype.createDomObj = function (prop) {
+    if (typeof this._DomObjCtor === 'function') {
+      return new this._DomObjCtor(this, prop)
+    } else {
+      return null
+    }
   }
 
   /**
@@ -417,24 +448,6 @@ var GIVe = (function (give) {
    * @static
    */
   give.TrackObject.DEFAULT_PRIORITY = 100.0
-
-  /**
-   * createCoorTrack - Create a coordinate track for given reference
-   *
-   * @static
-   * @param  {RefObjectLiteral} ref Reference for the coordinate track
-   * @param  {string} id  ID of the coordinate track
-   *   If no ID is specified, `'coor_' + ref.db` will be used as ID
-   * @returns {TrackObjectBase}     The resulting track object
-   */
-  give.TrackObject.createCoorTrack = function (ref, id) {
-    var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
-      { type: 'coordinate', priority: 0, noData: true }, ref)
-    newTrack.setSetting('type', 'coordinate')
-    newTrack.priority = 0
-    newTrack.noData = true
-    return newTrack
-  }
 
   /**
    * comparePriorities - compare the priority values between two tracks
@@ -470,6 +483,98 @@ var GIVe = (function (give) {
       : (track1.getPriority() < track2.getPriority() ? -1
         : track1.getPriority() > track2.getPriority() ? 1 : 0)
   }
+
+  /**
+   * createCoorTrack - Create a coordinate track for given reference
+   *
+   * @static
+   * @param  {RefObjectLiteral} ref Reference for the coordinate track
+   * @param  {string} id  ID of the coordinate track
+   *   If no ID is specified, `'coor_' + ref.db` will be used as ID
+   * @returns {TrackObjectBase}     The resulting track object
+   */
+  give.TrackObject.createCoorTrack = function (ref, id) {
+    var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
+      { type: 'coordinate', priority: 0, noData: true }, ref)
+    newTrack.setSetting('type', 'coordinate')
+    newTrack.priority = 0
+    newTrack.noData = true
+    return newTrack
+  }
+
+  /**
+   * createTrack - Create a track object by its type
+   *
+   * @param  {string} type     The type of the track
+   * @param  {string} ID       ID of the track, see constructor
+   * @param  {object} Settings Settings to be passed, see constructor
+   * @param  {RefObjectLiteral} ref      Reference, see constructor
+   * @returns {TrackObjectBase}          returned TrackObject
+   */
+  give.TrackObject.createTrack = function (ID, Settings, ref, type) {
+    try {
+      type = type || Settings.type || Settings.settings.type
+      type = type.split(/\s+/, 2)[0].toLowerCase()
+    } catch (e) {
+    }
+    if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
+      return new this.typeMap[type](ID, Settings, ref)
+    } else {
+      give._verboseConsole('Type \'' + type + '\' is not a valid type! ',
+        give.VERBOSE_WARNING)
+      return new this.typeMap._default(ID, Settings, ref)
+    }
+  }
+
+  /**
+   * registerTrack - Register this track by its type trunk
+   *
+   * @param  {TrackObjectBase} trackImpl Implementation of track,
+   *    `trackImpl.getType()` (notice that this is __not__
+   *    `trackImpl.prototype.getType()`, which is the non-static method)
+   *    will be called to get the key value(s)
+   * @returns {boolean}     Return true if there is no implementation with the
+   *    same key(s), otherwise false
+   */
+  give.TrackObject.registerTrack = function (trackImpl) {
+    var keys = trackImpl.getType()
+    if (!Array.isArray(keys)) {
+      keys = [keys]
+    }
+    var result = keys.every(function(key) {
+      return !give.TrackObject.typeMap.hasOwnProperty(key)
+    }, this)
+    keys.forEach(function(key) {
+      give.TrackObject.typeMap[key] = trackImpl
+    }, this)
+    return result
+  }
+
+  /**
+   * typeMap - a dictionary where all the implementations should register.
+   * To register, put the type string as `key`, derived TrackObject as `value`.
+   * e.g. `give.TrackObject.typeMap['bed'] = give.BedTrack`
+   */
+  give.TrackObject.typeMap = {
+    _default: give.TrackObject
+  }
+
+  /**
+   * ********** Virtual Methods to Be Implemented in Tracks Below **********
+   */
+
+  /**
+   * @memberof TrackObjectBase.prototype
+   * The constructor for actual data object being used in this track.
+   */
+  give.TrackObject.prototype._DataObjCtor = null
+
+  /**
+   * @memberof TrackObjectBase.prototype
+   * The constructor for actual DOM object being used in this track.
+   */
+  give.TrackObject.prototype._DomObjCtor = null
+
 
   return give
 })(GIVe || {})

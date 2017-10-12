@@ -1,154 +1,193 @@
-// JavaScript Document
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var GIVe = (function (give) {
   'use strict'
-  // all private methods and static data for a single chrom B+ tree
 
-  // data structure:
-  // {
-  //    isRoot:        Boolean, showing whether this is root;
-  //    branchingFactor:  Integer, showing the number of children a node can have;
-  //    revDepth:      Integer, showing the reverse depth of node (leaf = 0 and root = max);
-  //    start:        Integer, the starting coordinate;
-  //    keys:        [](Integer), the separating keys (coordinates for window);
-  //    values:        [](Records), the records;
-  //    next:        The next node with the same revDepth as this one;
-  //    prev:        The previous node with the same revDepth.
-  // }
-
-  // public API
-  give.GiveTree = function (start, end, summaryCtor, bFactor, lifeSpan) {
-    // start and length is for the corresponding region
-    // lifeSpan is the lifeSpan a node will live, in terms of
-    //    number of traverses
-    // If any node is not called after this number of traverses being requested
-    //    for the tree, the node will be deleted (wither)
-    // If lifeSpan < 0, then no node will be deleted (no withering)
-
-    if (isNaN(bFactor) || parseInt(bFactor) !== bFactor || bFactor <= 2) {
-      console.log('Default branching factor is chosen instead of ' + bFactor)
-      bFactor = give.GiveTree._DEFAULT_B_FACTOR
-    }
-    if (isNaN(lifeSpan) || parseInt(lifeSpan) !== lifeSpan || lifeSpan < 0) {
-      console.log('Default life span is chosen instead of ' + bFactor)
-      lifeSpan = give.GiveTree._DEFAULT_LIFESPAN
-    }
-    this.lifeSpan = lifeSpan
-    this.root = new give.GiveTreeNode(null, start, end, summaryCtor, null, null, bFactor, true, lifeSpan)
+  /**
+   * Object for data storage, most likely a tree of some sort
+   * @typedef {object} GiveTreeBase
+   * @property {string} chr - Chromosome that this data storage unit is for
+   * @property {GiveTreeNode} _root - Root node object
+   *
+   * @class give.GiveTree
+   *
+   * @constructor
+   * @param {ChromRegionLiteral} chrRange - The range this data storage unit
+   *    will be responsible for.
+   * @param {function|null} summaryCtor - The constructor of summary objects
+   * @param {object} props - properties that will be passed to the individual
+   *    implementations
+   */
+  give.GiveTree = function (chrRange, summaryCtor, props) {
+    this.chr = chrRange.chr
+    this._root = new give.GiveTreeNode(null, chrRange.start, chrRange.end,
+      summaryCtor, null, null, bFactor, true, lifeSpan)
   }
 
-  give.GiveTree.prototype.insert = function (data, chrRange, continuedList,
-    callback, resolution) {
-    // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
-    // Root will always encompass the whole chromosome (from ref definition)
-    // before calling children, the chrRegion will be split into the bins of children.
+  /**
+   * _insertSingleRange - Insert data entries within a single range
+   * Please refer to `this.insert` for parameter annotation
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param {Array<ChromRegionLiteral>} data
+   * @param {ChromRegionLiteral|null} chrRange -
+   *    the chromosomal range that `data` corresponds to.
+   * @param {Array<ChromRegionLiteral>} continuedList
+   * @param {function|null} callback
+   * @param {number|null} resolution - the resolution of the data being
+   *    inserted.
+   * @param {object|null} props
+   */
+  give.GiveTree.prototype._insertSingleRange = function (
+    data, chrRange, continuedList, callback, resolution, props
+  ) {
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      this._root = this._root.insert(data, ((!chrRange && data.length === 1) ?
+        data[0] : chrRange), continuedList,
+        callback, resolution, props)
+    }
+  }
 
-    // data:      an array of data elements, sorted by their own chrRegion.
-    //          data === null or data === [] means there is no data in chrRegion
-    //          (change all nulls into falses).
-    //          *NOTICE*: any data overlapping chrRange should appear either here or in continuedList
-    //          otherwise continuedList in record entries may not work properly.
-    // chrRange:    the chromosomal region where data will be populated
-    //          (no null value will present within this region after this operation).
-    //          This parameter should be an Object with at least two properties:
-    //          { start: <start coordinate>, end: <end coordinate>, ... }.
-    //          If data.length === 1 and chrRegion === null,
-    //          then chrRegion = data[0] (because of ChromRegion behavior).
-    // continuedList:  an array for data elements that should be put into the continue list
-    //          at the beginning of the tree, only useful when chrRange.start === this.start.
-    //          Note that for best efficiency, continuedList should not contain anything that's
-    //          already in data.
-    // callback:    some function to be called upon the data element: callback(dataElement);
-
+  /**
+   * insert - Insert data entries within chromosomal range(s)
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries
+   *    (each should be an extension of `GIVe.ChromRegion`).
+   *    `data === null` or `data === []` means there is no data in `chrRange`
+   *    and `false`s will be used in actual storage.
+   *    __NOTICE:__ any data overlapping `chrRange` should appear either here or
+   *    in `continuedList`, otherwise `continuedList` in data entries may not
+   *    work properly.
+   * @param {Array<ChromRegionLiteral>|ChromRegionLiteral|null} chrRanges -
+   *    the array of chromosomal range(s) that `data` corresponds to.
+   *    This is used to mark the empty regions correctly. No `null` will present
+   *    within these regions after this operation.
+   *    The elements of this parameter should be an `Object` with at least two
+   *    properties: `{ start: <start coordinate>, end: <end coordinate>, ... }`,
+   *    preferably a `GIVe.ChromRegion` object.
+   *    If `data.length === 1` and `chrRange === null`, then
+   *    `chrRegion = data[0]` because of ChromRegion behavior.
+   * @param {Array<ChromRegionLiteral>} continuedList - the list of data entries
+   *    that should not start in `chrRange` but are passed from the earlier
+   *    regions, this will be useful for later regions if date for multiple
+   *    regions are inserted at the same time
+   * @param {function|null} callback - the callback function to be used (with
+   *    the data entry as its sole parameter) when inserting
+   * @param {Array<number>|number|null} resolution - the resolution(s) of the
+   *    data being inserted.  Smaller is finer. If this is an `Array`, it should
+   *    have the same `length` as `chrRanges` does.
+   * @param {object|null} props - additional properties being passed onto nodes
+   */
+  give.GiveTree.prototype.insert = function (
+    data, chrRanges, continuedList, callback, resolution, props
+  ) {
     continuedList = continuedList || []
-    if (Array.isArray(chrRange)) {
-      chrRange.forEach(function (range, index) {
-        this.root = this.root.insert(data, range, continuedList, callback,
-          Array.isArray(resolution) ? resolution[index] : resolution,
-          this.lifeSpan)
+    if (Array.isArray(chrRanges)) {
+      chrRanges.forEach(function (range, index) {
+        this._insertSingleRange(data, range, continuedList, callback,
+          Array.isArray(resolution) ? resolution[index] : resolution, props)
       }, this)
     } else {
-      this.root = this.root.insert(data, chrRange, continuedList, callback,
-        resolution, this.lifeSpan)
+      this._insertSingleRange(data, chrRanges, continuedList, callback,
+        resolution, props)
     }
   }
 
-  give.GiveTree.prototype.remove = function (data, removeExactMatch, callback) {
-    // Removing a single data entry.
-    // Notice that if data is provided and duplicate keys (same start and end) exist,
-    // it will behave as removeExactMatch indicated.
-    // If removeExactMatch, data will be compared by .equalTo(data) if exists, === if not.
-
-    // Also, the return value will be dependent on this.isRoot
-    // * For root nodes, return this if no decreasing height happen, otherwise the new root node
-    // * For non-root nodes, return false if redistribution needs to be handled by its parent
-    //            return this if no redistribution is needed (keys may still need to be readjusted)
-
-    this.root = this.root.remove(data, removeExactMatch, callback)
+  /**
+   * remove - Removing a single data entry.
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param  {ChromRegionLiteral} data - the data that needs to be removed
+   * @param  {boolean} removeExactMatch - whether an exact match is needed to
+   *    remove the entry. If `true`, then `.equalTo(data)` method (if exists
+   *    within the data entry) or `===` (if no `equalTo` method exists) will be
+   *    used to evaluate whether a data entry should be removed. If `false`,
+   *    then all data entries at the same location (start and end) will be
+   *    removed.
+   * @param  {function|null} callback - the callback function to be used (with
+   *    the data entry as its sole parameter) when the data entry is/entries are
+   *    being removed.
+   * @param  {object|null} props - additional properties being passed onto nodes
+   */
+  give.GiveTree.prototype.remove = function (
+    data, removeExactMatch, callback, props
+  ) {
+    this._root = this._root.remove(data, removeExactMatch, callback, props)
   }
 
-//    removeRange: function(chrRange) {
-//      // if data is not provided, every region whose start is within chrRange (probably not used very much)
-//    },
-//
+  /**
+   * traverse - traverse given chromosomal range to apply functions to all
+   * overlapping data entries.
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param {ChromRegionLiteral} chrRanges - the chromosomal range to traverse
+   * @param {function} callback - the callback function to be used (with the
+   *    data entry as its sole parameter) on all overlapping data entries
+   *    (that pass `filter` if it exists).
+   * @param {function} filter - the filter function to be used (with the data
+   *    entry as its sole parameter), return `false` to exclude the entry from
+   *    being called with `callback`.
+   * @param {number|null} resolution - the resolution that is required, data
+   *    entry (or summary entries) that can just meet this requirement will be
+   *    chosen. Smaller is finer.
+   * @param {Object} thisVar - `this` element to be used in `callback` and
+   *    `filter`.
+   * @param {boolean} breakOnFalse - whether the traversing should break if
+   *    `false` has been returned from `callback`
+   * @param {object|null} props - additional properties being passed onto nodes
+   * @returns {boolean} If the traverse breaks on `false`, returns `false`,
+   *    otherwise `true`
+   */
   give.GiveTree.prototype.traverse = function (chrRange, callback, filter,
-    resolution, thisVar, breakOnFalse, wither) {
-    // Will apply callbacks to all data overlapping with chrRegion;
-    //    callback should take the node (or record) as its sole parameter:
-    //    callback(record/node)
-    // If filter is applied, callbacks will only apply when filter(data) === true
-    // resolution is the maximum resolution needed for traversing
-
-    // Notice that if chrRegion does not overlap with this node,
-    //    then an exception will be thrown.
-
-    // thisVar is the 'this' used to call callback
-    // If breakOnFalse is true, then traverse will return false once callback returns false
-
-    // Find the starting node first, then call child.traverse on child
-    // However, this is not a recursive call because children can get to their next sibling by themselves
-
-    // notFirstCall is a flag marking internal calls,
-    //     calls from outside should always have notFirstCall === undefined, null or false
-    //    when traverse calls children that are not the first one overlapping chrRegion
-    //    notFirstCall will be set as true
-
-    // wither is a flag whether to reduce life for nodes not traversed
-    var result = this.root.traverse(chrRange, callback, filter,
-                  resolution, thisVar, breakOnFalse, false,
-                  wither ? this.lifeSpan + 1 : 0)
-    if (wither) {
-      this.wither()
+    resolution, thisVar, breakOnFalse, props) {
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      return this._root.traverse(chrRange, callback, filter,
+        resolution, thisVar, breakOnFalse, false)
     }
-    return result
   }
 
-  give.GiveTree.prototype.wither = function () {
-    // this is the method called to wither all nodes
-    if (!this.root.wither()) {
-      // the whole tree will wither
-      delete this.root
-      return null
+  /**
+   * getUncachedRange - get an array of chrRegions that do not have data ready.
+   * This is used for sectional loading.
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param {ChromRegionLiteral} chrRange - the chromosomal range to query
+   * @param {number|null} resolution - the resolution that is required.
+   *    Smaller is finer.
+   * @param {number|null} bufferingRatio - the ratio to 'boost' `resolution` so
+   *    that less data fetching may be needed.
+   * @param {object|null} props - additional properties being passed onto nodes
+   * @returns {Array<ChromRegionLiteral>} the chromosomal ranges that do not
+   *    have their data ready in this data storage unit (therefore need to be
+   *    fetched from sources). If all the data needed is ready, `[]` will be
+   *    returned.
+   */
+  give.GiveTree.prototype.getUncachedRange = function (
+    chrRange, resolution, bufferingRatio, props
+  ) {
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      return this._root.getUncachedRange(chrRange, resolution,
+        bufferingRatio, props)
+    } else {
+      return []
     }
-    return this
   }
-
-  // TODO: allow summary and leveled traverse (leveled traverse done)
-
-  // allow sectional loading (will return an array of chrRegions that does not have data loaded)
-  give.GiveTree.prototype.getUncachedRange = function (chrRange, resolution, bufferingRatio) {
-    // return the range list with range(s) without any data
-    //   (either not loaded, or purges for memory usage issue (to be implemented))
-    // if no non-data ranges are found, return []
-
-    // resolution is used to determine if the summary of this is already enough (to be implemented)
-
-    return this.root.getUncachedRange(chrRange, resolution, bufferingRatio)
-  }
-
-  // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
-
-  give.GiveTree._DEFAULT_B_FACTOR = 20        // this value may need to be tweaked
-  give.GiveTree._DEFAULT_LIFESPAN = 10       // this value may need to be tweaked
 
   return give
 })(GIVe || {})

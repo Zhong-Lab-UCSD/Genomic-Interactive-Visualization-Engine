@@ -16,9 +16,40 @@ var GIVe = (function (give) {
   // }
 
   // public API
-  give.ChromBPlusTree = function (start, end, summaryCtor, bFactor) {
+  give.ChromBPlusTree = function (chrRange, summaryCtor, bFactor) {
     // start and length is for the corresponding region
-    this.root = new give.ChromBPlusTreeNode(0, start, end, summaryCtor, null, null, bFactor, true)
+    this.chr = chrRange.chr
+    this.root = new give.ChromBPlusTreeNode(0, chrRange.start, chrRange.end,
+      summaryCtor, null, null, bFactor, true)
+  }
+
+  give.ChromBPlusTree.prototype._insertSingleRange = function (
+    data, chrRange, continuedList, callback, resolution
+  ) {
+    // This insert function is not supposed to handle the case where data exceeds boundary of chrRegion.
+    // Root will always encompass the whole chromosome (from ref definition)
+    // before calling children, the chrRegion will be split into the bins of children.
+
+    // data:      an array of data elements, sorted by their own chrRegion.
+    //          data === null or data === [] means there is no data in chrRegion
+    //          (change all nulls into falses).
+    //          *NOTICE*: any data overlapping chrRange should appear either here or in continuedList
+    //          otherwise continuedList in record entries may not work properly.
+    // chrRange:    the chromosomal region where data will be populated
+    //          (no null value will present within this region after this operation).
+    //          This parameter should be an Object with at least two properties:
+    //          { start: <start coordinate>, end: <end coordinate>, ... }.
+    //          If data.length === 1 and chrRegion === null,
+    //          then chrRegion = data[0] (because of ChromRegion behavior).
+    // continuedList:  an array for data elements that should be put into the continue list
+    //          at the beginning of the tree, only useful when chrRange.start === this.start.
+    //          Note that for best efficiency, continuedList should not contain anything that's
+    //          already in data.
+    // callback:    some function to be called upon the data element: callback(dataElement);
+
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      this.root = this.root.insert(data, chrRange, continuedList, callback, resolution)
+    }
   }
 
   give.ChromBPlusTree.prototype.insert = function (data, chrRange, continuedList, callback, resolution) {
@@ -46,11 +77,11 @@ var GIVe = (function (give) {
     continuedList = continuedList || []
     if (Array.isArray(chrRange)) {
       chrRange.forEach(function (range, index) {
-        this.root = this.root.insert(data, range, continuedList, callback,
-                       Array.isArray(resolution) ? resolution[index] : resolution)
+        this._insertSingleRange(data, range, continuedList, callback,
+          Array.isArray(resolution) ? resolution[index] : resolution)
       }, this)
     } else {
-      this.root = this.root.insert(data, chrRange, continuedList, callback, resolution)
+      this._insertSingleRange(data, chrRange, continuedList, callback, resolution)
     }
   }
 
@@ -93,8 +124,10 @@ var GIVe = (function (give) {
     //    when traverse calls children that are not the first one overlapping chrRegion
     //    notFirstCall will be set as true
 
-    return this.root.traverse(chrRange, callback, filter,
-                  resolution, thisVar, breakOnFalse, false)
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      return this.root.traverse(chrRange, callback, filter,
+        resolution, thisVar, breakOnFalse, false)
+    }
   }
 
   // TODO: allow summary and leveled traverse (leveled traverse done)
@@ -107,10 +140,12 @@ var GIVe = (function (give) {
 
     // resolution is used to determine if the summary of this is already enough (to be implemented)
 
-    return this.root.getUncachedRange(chrRange, resolution)
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      return this.root.getUncachedRange(chrRange, resolution)
+    } else {
+      return []
+    }
   }
-
-  // TODO: allow caching (nodes not used for a while will be cleared to preserve memory)
 
   return give
 })(GIVe || {})

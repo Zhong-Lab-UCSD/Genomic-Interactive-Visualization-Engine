@@ -28,7 +28,7 @@ var GIVe = (function (give) {
    *   that have not been merged yet
    * @property {Array<ChromRegionLiteral>} _pendingQueryRegions - Regions submitted
    *   to requests (remote or local)
-   * @property {OakTreeLiteral|PineTreeLiteral} data - The data structure, an
+   * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
    * @property {CallbackManager} _callbackMgr - A `give.CallbackManager` object
    *   that handles all callback operations.
@@ -51,7 +51,7 @@ var GIVe = (function (give) {
       give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
     this._unmergedGUIRangesFromID = {}
     this._pendingQueryRegions = []
-    this.data = {}
+    this._data = {}
     this.noData = this.parent.getSetting('noData')
 
     this._callbackMgr = new give.CallbackManager(
@@ -197,14 +197,14 @@ var GIVe = (function (give) {
     var totalUncachedRanges = []
     if (!this.noData && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
       mergedGUIRanges.forEach(function (chrRange, index) {
-        if (!this.data.hasOwnProperty(chrRange.chr)) {
-          this.data[chrRange.chr] = new this._DataStructure(
+        if (!this._data.hasOwnProperty(chrRange.chr)) {
+          this._data[chrRange.chr] = new this._DataStructure(
             this.parent.ref.chromInfo[chrRange.chr].chrRegion.start,
             this.parent.ref.chromInfo[chrRange.chr].chrRegion.end,
             this._SummaryCtor)
         }
-        if (this.data[chrRange.chr].getUncachedRange) {
-          var uncachedRanges = this.data[chrRange.chr].getUncachedRange(
+        if (this._data[chrRange.chr].getUncachedRange) {
+          var uncachedRanges = this._data[chrRange.chr].getUncachedRange(
             chrRange, null, give.TrackDataObject.RESOLUTION_BUFFER_RATIO)
           totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
         } else {
@@ -272,7 +272,7 @@ var GIVe = (function (give) {
   }
 
   /**
-   * getData - Get data from this TrackDataObject.
+   * fetchData - Get data from this TrackDataObject.
    *   GUI elements will call this function to see if data in cache need to be
    *   retrieved, and queue a callback function once data are ready.
    *   Multiple consecutive calls will be collapsed together to reduce
@@ -285,10 +285,10 @@ var GIVe = (function (give) {
    * @param  {string} callerID - ID of the caller elements, to group consecutive
    *   calls together
    */
-  give.TrackDataObject.prototype.getData = function (ranges, callback, callerID) {
+  give.TrackDataObject.prototype.fetchData = function (ranges, callback, callerID) {
     if (!this.noData) {
       if (this.isRetrivingData) {
-        this._callbackMgr.add(this.getData.bind(this, ranges, callback, callerID))
+        this._callbackMgr.add(this.fetchData.bind(this, ranges, callback, callerID))
         return true
       }
 
@@ -297,7 +297,7 @@ var GIVe = (function (give) {
       if (!Array.isArray(ranges)) {
         ranges = [ranges]
       }
-      give._verboseConsole('getData()', give.VERBOSE_DEBUG)
+      give._verboseConsole('fetchData()', give.VERBOSE_DEBUG)
       give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
 
       this._unmergedGUIRangesFromID[callerID] = ranges
@@ -312,6 +312,26 @@ var GIVe = (function (give) {
       this._callbackMgr.add(callback, callerID)
       this._callbackMgr.clear(true)
     }
+
+  /**
+   * getData - Get the actual `this._DataStructure` object representing the
+   *    underlying data. Underlying data are supposed to be ready when this
+   *    method is called.
+   * This method can be overriden to accept `null` if needed
+   *
+   * @param  {string} chrom The chrom to be requested
+   * @returns {this._DataStructure|null}       the underlying data
+   *    (or `null` if no data for the track)
+   */
+  give.TrackDataObject.prototype.getData = function (chrom) {
+    if (this.noData) {
+      return null
+    }
+    if (!this._data || !this._data.hasOwnProperty(chrom)) {
+      throw new Error('Data not ready for track \'' + this.parent.getID() + '\'' +
+                      ', chromosome \'' + chrom + '\'.')
+    }
+    return this._data[chrom]
   }
 
   /**
@@ -389,10 +409,9 @@ var GIVe = (function (give) {
       if (response.hasOwnProperty(chrom) &&
          this.parent.ref.chromInfo.hasOwnProperty(chrom) &&
          Array.isArray(response[chrom])) {
-        if (!this.data.hasOwnProperty(chrom)) {
-          this.data[chrom] = new this._DataStructure(
-            this.parent.ref.chromInfo[chrom].chrRegion.start,
-            this.parent.ref.chromInfo[chrom].chrRegion.end,
+        if (!this._data.hasOwnProperty(chrom)) {
+          this._data[chrom] = new this._DataStructure(
+            this.parent.ref.chromInfo[chrom].chrRegion,
             this._SummaryCtor)
         }
       }
@@ -474,7 +493,7 @@ var GIVe = (function (give) {
 
   /**
    * @property {number} DEFAULT_DEBOUNCE_INTERVAL - The default values for
-   *   debounce interval (in milliseconds) between `getData()` calls.
+   *   debounce interval (in milliseconds) between `fetchData()` calls.
    * @static
    */
   give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
@@ -523,7 +542,7 @@ var GIVe = (function (give) {
 
   /**
    * _DataStructure - Constructor for underlying data structure used in
-   *   `this.data`. Default value is `GIVE.ChromBPlusTree` (OakTree)
+   *   `this._data`. Default value is `GIVE.ChromBPlusTree` (OakTree)
    * @constructor
    * @memberof TrackDataObjectBase.prototype
    */

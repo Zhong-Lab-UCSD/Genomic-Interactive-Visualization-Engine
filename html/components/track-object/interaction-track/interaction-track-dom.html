@@ -224,7 +224,7 @@
             if (this.subSvgs.every(function (subSvg) {
               return subSvg.viewWindow
             }, this)) {
-              // Get data clipped by viewWindow by calling getData()
+              // Get data clipped by viewWindow by calling fetchData()
               //    May also include data preparation
               this.checkDataAndUpdate()
               // Update detailed content by calling drawData()
@@ -275,13 +275,21 @@
               if (colorIndex >= this.colorSet.length) {
                 colorIndex = 0
               }
-              linkMap[linkID] = region.data.linkedRegions
+              linkMap[linkID] = []
               linkMap[linkID].color = colorIndex
+              linkMap[linkID].map = {}
+            }
+            if (!linkMap[linkID].map.hasOwnProperty(region.data.regionID)) {
+              linkMap[linkID].push(region)
+              linkMap[linkID].map[region.data.regionID] = region
             }
           }.bind(this, linkMap)
           var filterFunc = function (region) {
             if (!this.isAboveThreshold(region.data.value) ||
-            (typeof (region.data.dirFlag) === 'number' && region.data.dirFlag !== index)) {
+              (typeof (region.data.dirFlag) === 'number' &&
+                region.data.dirFlag !== index
+              )
+            ) {
               return false
             }
             return true
@@ -358,11 +366,22 @@
               }
 
               perm.forEach(function (permIndex, index) {
-                if (permIndex.some(function (currentPerm, svgIndex) {
-                  return (typeof (linkMap[regionID][currentPerm].data.dirFlag) !== 'number' ||
-                    linkMap[regionID][currentPerm].data.dirFlag === svgIndex) &&
-                    this.regionInWindow(linkMap[regionID][currentPerm], svgNeighbors[svgIndex])
-                }, this)) {
+                if (
+                  permIndex.some(
+                    function (currentPerm, svgIndex) {
+                      return this.regionInWindow(linkMap[regionID][currentPerm], svgNeighbors[svgIndex])
+                    },
+                    this
+                  ) &&
+                  permIndex.every(
+                    function (currentPerm, svgIndex) {
+                      return (typeof (linkMap[regionID][currentPerm].data.dirFlag) !== 'number' ||
+                        linkMap[regionID][currentPerm].data.dirFlag === svgIndex) &&
+                        linkMap[regionID][currentPerm].chr === svgNeighbors[svgIndex].viewWindow.chr
+                    },
+                    this
+                  )
+                ) {
                   // prepare the points
                   var startPoints = []
                   var endPoints = []
