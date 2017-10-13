@@ -127,7 +127,7 @@ You will then need to configure the PHP component and link GIVE Server to the My
   define('CPB_USER', '<em><strong>&lt;give_data_user&gt;</strong></em>');
   define('CPB_PASS', '<em><strong>&lt;give_data_pass&gt;</strong></em>');
 
-  define('CLASS_DIR', '<em><strong>&lt;include_path&gt;</strong></em>/classes');
+  define('CLASS_DIR', '<em><strong>&lt;include_path&gt;</strong></em>classes');
   define('GOOGLE_ANALYTICS_ACCOUNT', '<em><strong>&lt;your_google_analytics_id&gt;</strong></em>');
 </pre>
 
