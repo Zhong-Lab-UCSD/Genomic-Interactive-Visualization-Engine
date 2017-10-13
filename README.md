@@ -19,10 +19,6 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 ## Table of Contents
 *   [Installation](#installation)
-    *   [Installing GIVE Web Components](#installing-give-web-components)
-    *   [Installing GIVE Server](#installing-give-server)
-        *   [Installing GIVE Bare-bone Server](#installing-give-bare-bone-server)
-        *   [Installing GIVE Data Sources](#installing-give-data-sources)
 *   [Usage](#usage)
     *   [Importing GIVE Components](#importing-give-components)
         *   [Without Installation](#without-installation)
@@ -38,33 +34,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 GIVE consists of two major parts: GIVE Web Components, the client-side codes running in browsers, implemented by HTML5; and GIVE server, including bare server codes, implemented by PHP, and data sources.
 
-To install any part of GIVE, a web-hosting environment is needed on your server.
-
-### Installing GIVE Web Components
-
-Just put the whole `/give/html` folder to your web server and you are good to go. Use the path on your hosting environment for the HTML `import`s to import the components in your page.
-
-### Installing GIVE Server
-
-GIVE server consists of bare-bone server code, which serves as interfaces between GIVE Web Components and the data sources.
-
-#### Installing GIVE Bare-bone Server
-
-To install GIVE server, put `/give/html/givdata` and `/includes` under your hosting environment. PHP 7.0 or higher is required.
-
-After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the new bare-bone server location and path:
-```JavaScript
-give.Host = '<bare-bone host URL>'
-give.ServerPath = '<bare-bone server path>'
-```
-Note that `bare-bone server path` is the path relative to the root path of your hosting environment __with the trailing `/`__. For example, if you host your web site at `/var/www/`, and bare-bone server is installed at `/var/www/give-server/`, then you'll need to edit `constants.js` as following:
-```JavaScript
-give.ServerPath = '/give-server/'
-```
-
-#### Installing GIVE Data Sources
-
-*Scripts to install GIVE databases are under development and this part will be updated whenever they are ready.*
+To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Manual - 1. Installation](manual/1-installation.md) for detailed instructions.
 
 ## Usage
 

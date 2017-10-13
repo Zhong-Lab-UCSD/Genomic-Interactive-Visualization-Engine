@@ -31,7 +31,7 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 *   *[cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).*
 
 *If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*  
-*If you decide to use your own MySQL instance and PHP server, please __follow all steps__ in [GIVE Manual Chapter 1 - Installation](../manuals/1-installation.md), and start from __Step 5__.*
+*If you decide to use your own MySQL instance and PHP server, please __follow all steps__ in [GIVE Manual - 1. Installation](../manuals/1-installation.md), and start from __Step 5__.*
 
 ***
 
