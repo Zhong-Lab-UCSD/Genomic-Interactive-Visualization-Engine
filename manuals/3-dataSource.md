@@ -33,6 +33,12 @@ These are stored in two locations within the data source. First you need to crea
 CREATE DATABASE `<em><strong>&lt;your_reference_database&gt;</strong></em>`;
 </pre>
 
+And make sure your __GIVE Database User__ has access to this database (if you haven't granted privilege for `*.*`):
+
+<pre>
+GRANT SELECT, CREATE TEMPORARY TABLES ON `<em><strong>&lt;your_reference_database&gt;</strong></em>`.* TO `<em><strong>&lt;give_data_user&gt;</strong></em>`@'%';
+</pre>
+
 ### Creating a `cytoBandIdeo` table and populate it with data
 
 Then you need to create a `cytoBandIdeo` table with chromosomal information in your reference database with the following columns:

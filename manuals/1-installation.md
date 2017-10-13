@@ -10,10 +10,11 @@
     *   [Installing a Web Server](#installing-a-web-server)
     *   [Installing PHP](#installing-php)
     *   [Installing a MySQL-compatible Instance](#installing-a-mysql-compatible-instance)
-*   [Installing GIVE Web Components](#installing-give-web-components)
+*   [Overview of Paths](#overview-of-paths)
 *   [Installing GIVE Server](#installing-give-server)
     *   [Installing GIVE Server-side Components](#installing-give-server-side-components)
     *   [Installing GIVE Data Sources](#installing-give-data-sources)
+*   [Installing GIVE Web Components](#installing-give-web-components)
 
 ## Introduction
 
@@ -37,7 +38,19 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 *   [Internet Information Services (IIS)](https://www.iis.net/learn/get-started/getting-started-with-iis) (Included in Windows)
 *   [Python `SimpleHTTPServer` module](https://docs.python.org/2/library/simplehttpserver.html) (Windows, Mac OS, Linux supported)
 
+***
+
+*__NOTE:__ After installation, the URL to access your web server will be referred to as __`give_host`__ later in the manual.*
+
+***
+
 ### Installing PHP
+
+***
+
+*__NOTE:__ This part is only required if you would like to install your own GIVE Server.
+
+***
 
 The server-side component of GIVE requires a functional PHP (7.0 or higher) web server with cURL support to work. Please refer to the following instructions to install PHP and cURL module to your web server:
 *   [PHP installation and configuration](http://php.net/manual/en/install.php)
@@ -45,44 +58,84 @@ The server-side component of GIVE requires a functional PHP (7.0 or higher) web 
 
 ### Installing a MySQL-compatible Instance
 
+***
+
+*__NOTE:__ This part is only required if you would like to install your own GIVE Server.
+
+***
+
 GIVE also needs a MySQL-compatible instance as a data source. Please refer to the following resources for installing your own MySQL instance:
 *   [MySQL community server](https://dev.mysql.com/downloads/mysql/)
 *   [MariaDB](https://downloads.mariadb.org/)
 
-## Installing GIVE Web Components
-
-Copy the contents of `/give/html` folder to a designated folder on your web server.
-
-The URL to access your designated folder (including the trailing `/`) on your hosting environment will be referred to as __GIVE Web Components Path__ or __`web_components_path`__ (in code) throughout the manual and it will be needed when importing GIVE Web Components in your HTML pages.
-
-> For example, if your server is accessible from `https://www.example.com/` and all files under `/give/html/` is copied to `/give_components` on your server (if you are using Apache in Linux, the folder may be `/var/www/html/give_components/`, for IIS in Windows, it may be `C:\wwwroot\give_components\`), then your __GIVE Web Components Path__ or __`web_components_path`__ will be:
-> ```
-> https://www.example.com/give_components/
-> ```
+Due to security concerns, we would recommend you create a dedicated user (instead of `root`) on the instance for GIVE Server.
 
 ***
 
-*__NOTE:__ A public GIVE server is available at demo.give.genemo.org. If you wish to use GIVE Web Components hosted on the public server, please use `https://demo.give.genemo.org/` as your __`web_components_path`__*
+*__NOTE:__ The user will be referred to as __GIVE Database User__, its user name as __`give_data_user`__, and its password as __`give_data_pass`__.*
+
+***
+
+__GIVE Database User__ needs to have the following privileges to function properly:
+
+| Privilege(s) | Database.Table |
+| --- | --- |
+| `SELECT`, `CREATE TEMPORARY TABLES` | `` `compbrowser`.*`` |
+| `SELECT`, `CREATE TEMPORARY TABLES` | `` `<your_reference_databases>`.*`` (See [3. Adding Data in GIVE Data Sources](3-dataSource.md) for a detailed description of reference databases.) |
+
+The SQL code to grant the privileges is shown below:
+
+<pre>
+GRANT SELECT, CREATE TEMPORARY TABLES ON `compbrowser`.* TO `<em><strong>&lt;give_data_user&gt;</strong></em>`@'%';
+GRANT SELECT, CREATE TEMPORARY TABLES ON `<em><strong>&lt;your_reference_database&gt;</strong></em>`.* TO `<em><strong>&lt;give_data_user&gt;</strong></em>`@'%'; -- please do this for each of your reference database
+</pre>
+
+***
+
+*__NOTE:__ You can simply grant those privilages on `*.*`, although this may increase the damage if your __GIVE Database User__ gets compromised. If you determine to do this (please take necessary measures), you can use the following SQL code at the MySQL console:*
+
+<pre>
+GRANT SELECT, CREATE TEMPORARY TABLES ON *.* TO `<em><strong>&lt;give_data_user&gt;</strong></em>`@'%';
+</pre>
 
 ***
 
 ## Installing GIVE Server
 
+***
+
+*__NOTE:__ This is completely optional if you don't want to link GIVE to your own data sources. If you wish to use the public GIVE Server hosted at `www.givengine.org`, please use `https://www.givengine.org/` as your __`web_components_path`__ when installing your GIVE Web Components.*
+
+***
+
 GIVE server consists of two parts: GIVE server-side component, which serves as interfaces between GIVE Web Components and the data sources, and the data sources themselves.
 
 ### Installing GIVE Server-side Components
 
-Part of GIVE Server-side Components are already included in files under `/give/html/` and have been installed with GIVE Web Components. Please put the contents under `/give/includes/` somewhere on your server. The files under `/give/includes/` does not need to be directly accessed, however, __it will be easier if the relative path from `/give/html/givdata` to `/give/include` was kept the same.__
+Copy everything under `/give/html/givdata/` and `/give/includes/` somewhere on your server. The files under `/give/includes/` does not need to be directly accessed from the web server (and it will be preferable to __keep it inaccessible__ for security reason), however, __it will be easier if the relative path from `/give/html/givdata` to `/give/include` was kept the same.__
 
-After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the server-side components' location:
+***
+
+*__NOTE:__ The file system path where you put `/give/includes/` on your server (including the leading and trailing `/`'s or `\`'s, same below for all paths, for example, `/var/www/give/includes/`) will be referred to as __`include_path`__, and the URL path where you can access `/give/html/givdata/` online (for example, `/givdata/`) from a browser will be referred to as __`give_server_path`__.*
+
+***
+
+You will then need to configure the PHP component and link GIVE Server to the MySQL-compatible instance, by editing the configuration file in GIVE Server. Please make a copy of `constants_template.php` under your __`include_path`__ and edit the following lines to provide the necessary information:
 
 <pre>
-give.host = '<em><strong>&lt;web_components_path&gt;</strong></em>'
+  define('CPB_HOST', '<em><strong>&lt;your_mysql_host&gt;</strong></em>');
+  define('CPB_USER', '<em><strong>&lt;give_data_user&gt;</strong></em>');
+  define('CPB_PASS', '<em><strong>&lt;give_data_pass&gt;</strong></em>');
+
+  define('CLASS_DIR', '<em><strong>&lt;include_path&gt;</strong></em>/classes');
+  define('GOOGLE_ANALYTICS_ACCOUNT', '<em><strong>&lt;your_google_analytics_id&gt;</strong></em>');
 </pre>
+
+When you are done, __rename it to `constants.php`__ so GIVE Server can access your data source.
 
 ### Installing GIVE Data Sources
 
-To link the MySQL-compatible instance to the server-side component of GIVE, a database named `compbrowser` with a table named `ref` need to be created on the instance. The `ref` table is used to tell engine what references are available to be displayed and it needs at least the following columns:
+A database named `compbrowser` with a table named `ref` need to be created on the instance. The `ref` table is used to tell engine what references are available to be displayed and it needs at least the following columns:
 
 | Column name | Type | Description |
 | --- | --- | --- |
@@ -107,6 +160,25 @@ CREATE TABLE `compbrowser`.`ref` (
 
 The data structure is illustrated as below:  
 ![UML Diagram for the database](images/1-GIVE_DB_comp.png)
+
+## Installing GIVE Web Components
+
+Copy the contents of `/give/html/components` folder to a designated folder on your web server.
+
+***
+
+*__NOTE:__ The URL path where your designated folder can be accessed online on your hosting environment will be referred to as __`web_components_path`__ throughout the manual.*
+
+***
+
+The __`web_components_path`__ will be needed when importing GIVE Web Components in your HTML pages.
+
+After installation, please edit __`<web_components_path>`__`bower_components/genemo-data-components/basic-func/constants.js` to indicate the server-side components' location:
+
+<pre>
+give.Host = '<em><strong>&lt;give_host&gt;</strong></em>'
+give.ServerPath = '<em><strong>&lt;give_server_path&gt;</strong></em>'
+</pre>
 
 ||||
 | --- | --- | --- |

@@ -52,13 +52,14 @@ GIVE server consists of bare-bone server code, which serves as interfaces betwee
 
 To install GIVE server, put `/give/html/givdata` and `/includes` under your hosting environment. PHP 7.0 or higher is required.
 
-After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the new bare-bone server location:
+After installation, please edit `/give/html/components/bower_components/genemo-data-components/basic-func/constants.js` to indicate the new bare-bone server location and path:
 ```JavaScript
-give.host = '<bare-bone server path>'
+give.Host = '<bare-bone host URL>'
+give.ServerPath = '<bare-bone server path>'
 ```
-Note that `bare-bone server path` is the path relative to the root path of your hosting environment. For example, if you host your web site at `/var/www/`, and bare-bone server is installed at `/var/www/give-server/`, then you'll need to edit `constants.js` as following:
+Note that `bare-bone server path` is the path relative to the root path of your hosting environment __with the trailing `/`__. For example, if you host your web site at `/var/www/`, and bare-bone server is installed at `/var/www/give-server/`, then you'll need to edit `constants.js` as following:
 ```JavaScript
-give.host = '/give-server'
+give.ServerPath = '/give-server/'
 ```
 
 #### Installing GIVE Data Sources
