@@ -100,8 +100,8 @@ The data source on GIVE server data source currently provides these track groups
 *   `"interaction"`: genomic interaction data sets, including those generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin) data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
 *   `"singleCell"`: mouse embryo single-cell RNA-seq data set from [Biase *et al.*, *Genome Research*, __24__:1787-1796](http://genome.cshlp.org/content/24/11/1787.full), for `mm10` only
 
-> For example, the following code defines a pair of genomic regions in the embedded interaction browser for `hg19`, displaying `genes` and `interaction` groups:
-> ```
+> For example, the following code defines a pair of genomic regions in the embedded interaction browser for `hg38`, displaying `genes` and `interaction` groups:
+> ```html
 > <chart-controller ref="hg38" num-of-subs="2"
 >   coordinates='["chrX:73800000-73870000", "chrX:40000000-90000000"]'
 >   group-id-list='["genes", "interaction"]'>
