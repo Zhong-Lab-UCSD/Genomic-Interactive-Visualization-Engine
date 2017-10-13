@@ -34,7 +34,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 GIVE consists of two major parts: GIVE Web Components, the client-side codes running in browsers, implemented by HTML5; and GIVE server, including bare server codes, implemented by PHP, and data sources.
 
-To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Manual - 1. Installation](manual/1-installation.md) for detailed instructions.
+To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Manual - 1. Installation](manuals/1-installation.md) for detailed instructions.
 
 ## Usage
 
