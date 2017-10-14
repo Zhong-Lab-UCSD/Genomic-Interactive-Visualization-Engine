@@ -49,7 +49,7 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 
 ***
 
-*__NOTE:__ After installation, the URL to access your web server will be referred to as __`give_host`__ later in the manual.*
+*__NOTE:__ After installation, the URL to access your web server will be referred to as __`give_host`__ later in the manual. You can use empty string if you plan to put your GIVE Server and GIVE Web Components under the same host.*
 
 ***
 

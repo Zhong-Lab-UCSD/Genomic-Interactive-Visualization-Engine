@@ -61,7 +61,7 @@ var GIVe = (function (give) {
     return null
   }
 
-  give.MetaDataEntries.defaultUrl = 'genemo-assets/encodeDCC/cv.ra'
+  give.MetaDataEntries.defaultUrl = './assets/encodeDCC/cv.ra'
 
   give.mainMetaDataEntries = new give.MetaDataEntries()
 
