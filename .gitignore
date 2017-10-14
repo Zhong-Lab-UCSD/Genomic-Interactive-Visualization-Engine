@@ -232,6 +232,7 @@ samples/
 
 testData/
 */includes/constants.*
+*/basic-func/constants.js
 
 #Genome Browser data files
 *.bigWig
