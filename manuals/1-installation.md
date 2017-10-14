@@ -7,6 +7,7 @@
 ## Table of Contents
 *   [Introduction](#introduction)
 *   [Prerequisites](#prerequisites)
+    *   [Getting GIVE Code](#getting-give-code)
     *   [Installing a Web Server](#installing-a-web-server)
     *   [Installing PHP](#installing-php)
     *   [Installing a MySQL-compatible Instance](#installing-a-mysql-compatible-instance)
@@ -29,6 +30,14 @@ GIVE consists of two major parts:
     *   __GIVE data sources__
 
 ## Prerequisites
+
+### Getting GIVE Code
+
+Clone GIVE from Github to your computer/server to get the source code:
+
+```
+git clone https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine.git
+```
 
 ### Installing a Web Server
 
