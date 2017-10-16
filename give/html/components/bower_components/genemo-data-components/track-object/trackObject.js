@@ -572,10 +572,12 @@ var GIVe = (function (give) {
 
   give.TrackObject.DEFAULT_PRIORITY = 100.0
   give.TrackObject.NO_CALLERID_KEY = '_giveNoCallerID'
-  give.TrackObject.fetchDataTarget = give.host +
-    (give.Trk_FetchDataTarget || '/givdata/getTrackData.php')
-  give.TrackObject.fetchCustomTarget = give.host +
-    (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
+  give.TrackObject.fetchDataTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Trk_FetchDataTarget || 'getTrackData.php')
+  give.TrackObject.fetchCustomTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Trk_FetchCustomTarget || 'getTrackData.php')
   give.TrackObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
   give.TrackObject.RESOLUTION_BUFFER_RATIO = 0.1

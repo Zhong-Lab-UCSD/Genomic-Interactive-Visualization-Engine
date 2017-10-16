@@ -119,8 +119,9 @@
 
           geneNameUrl: {
             type: String,
-            value: give.host +
-              (give.GCI_PartialNameTarget || '/givdata/partialNames.php')
+            value: give.Host +
+              (give.ServerPath || '/') +
+              (give.GCI_PartialNameTarget || 'partialNames.php')
           },
 
           inputValue: {
