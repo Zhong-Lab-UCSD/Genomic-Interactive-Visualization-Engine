@@ -182,12 +182,14 @@ Copy the contents of `/give/html/components` folder to a designated folder on yo
 
 The __`web_components_path`__ will be needed when importing GIVE Web Components in your HTML pages.
 
-After installation, please edit __`<web_components_path>`__`bower_components/genemo-data-components/basic-func/constants.js` to indicate the server-side components' location:
+After installation, please make a copy of __`<web_components_path>`__`bower_components/genemo-data-components/basic-func/constants-template.js` to indicate the server-side components' location:
 
 <pre>
 give.Host = '<em><strong>&lt;give_host&gt;</strong></em>'
 give.ServerPath = '<em><strong>&lt;give_server_path&gt;</strong></em>'
 </pre>
+
+__Rename your copy to `constants.js`__ under the name path to apply the settings.
 
 ||||
 | --- | --- | --- |

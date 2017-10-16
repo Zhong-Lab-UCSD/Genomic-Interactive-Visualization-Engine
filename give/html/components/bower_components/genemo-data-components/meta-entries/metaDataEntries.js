@@ -61,7 +61,9 @@ var GIVe = (function (give) {
     return null
   }
 
-  give.MetaDataEntries.defaultUrl = './assets/encodeDCC/cv.ra'
+  give.MetaDataEntries.defaultUrl = give.Host +
+    (give.ServerPath || '/') +
+    (give.Meta_KeyTarget || 'assets/encodeDCC/cv.ra')
 
   give.mainMetaDataEntries = new give.MetaDataEntries()
 
