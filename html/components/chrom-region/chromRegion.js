@@ -30,7 +30,7 @@ var GIVe = (function (give) {
    * Data structure for chromosomal region
    *
    * @constructor
-   * @param {(ChromRegionLiteral|give.ChromRegion|string)} mainParams -
+   * @param {(ChromRegionLiteral|string)} mainParams -
    *   Main parameters used in the ChromRegion.
    *   Either use a string like 'chr1:12345-56789'
    *   or an object with chr, start, end, and strand or other essential props

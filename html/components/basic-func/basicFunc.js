@@ -1,6 +1,12 @@
 var GIVe = (function (give) {
   'use strict'
 
+  /**
+   * extend - Syntactic sugar for class inheritance
+   *
+   * @param  {object} base Base class
+   * @param  {object} sub  Derived class
+   */
   give.extend = function (base, sub) {
     sub.prototype = Object.create(base.prototype)
     sub.prototype.constructor = sub

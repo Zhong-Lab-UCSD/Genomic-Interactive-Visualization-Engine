@@ -33,8 +33,8 @@
 //  Non-leaf nodes can be null or false to indicate unloaded or no data within
 //    the region specified in the keys
 //
-//  When traversing, everything in 'continuedList' of *the starting record only* will be processed first,
-//  then everything in 'startList' in all overlapping records will be processed.
+//  When traversing, everything in 'ContList' of *the starting record only* will be processed first,
+//  then everything in 'StartList' in all overlapping records will be processed.
 //
 //  Because of the nature of this range-indiced data,
 //  the arrangements of keys will be slightly different from normal B+ trees:
@@ -55,20 +55,20 @@ var GIVe = (function (give) {
   // all private methods and static data for a single chrom B+ tree
 
   // Private-ish part for data structure
-  var DataNode = function (startList, continuedList, lifeSpan) {
-    //    { startList: [], continuedList: [], resolution: int }:
+  var DataNode = function (StartList, ContList, lifeSpan) {
+    //    { StartList: [], ContList: [], resolution: int }:
     //      An object saving references to actual data (Objects with ChromRegion behavior) that spans the bin,
-    //      startList:    data that start at this bin (have the same start coordinate),
-    //              startList will become an empty array only if the previous bin is unloaded
+    //      StartList:    data that start at this bin (have the same start coordinate),
+    //              StartList will become an empty array only if the previous bin is unloaded
     //              (because otherwise this bin can be merged with the previous one),
     //              or this is the first bin;
-    //      continuedList:  data that starts at previous bin(s) but overlapping with this bin,
+    //      ContList:  data that starts at previous bin(s) but overlapping with this bin,
     //              this array will be sorted by the actual starting points,
     //              [] will have the same effect as 'undefined'.
     //
     give.WitheringNode.call(this, lifeSpan)
-    this.startList = startList || []
-    this.continuedList = continuedList || []
+    this.StartList = StartList || []
+    this.ContList = ContList || []
   }
 
   give.extend(give.WitheringNode, DataNode)
@@ -242,8 +242,8 @@ var GIVe = (function (give) {
           }
           if (this.revDepth > 1) {
             newSummary.addSummary(entry.getSummaryData())
-          } else if (entry && entry.startList && entry.startList[0] && entry.startList[0].data) {
-            newSummary.addData(entry.startList[0].data, this.keys[index + 1] - this.keys[index])
+          } else if (entry && entry.StartList && entry.StartList[0] && entry.StartList[0].data) {
+            newSummary.addData(entry.StartList[0].data, this.keys[index + 1] - this.keys[index])
           }
           return true
         }, this)) {
@@ -260,7 +260,7 @@ var GIVe = (function (give) {
   }
 
   give.GiveTreeNode.prototype.insert = function (data, chrRange,
-    continuedList, callback, resolution, lifeSpan) {
+    ContList, callback, resolution, lifeSpan) {
     // The return value of this will be different for root and non-root nodes:
     // for root nodes, this will return a new root if split happens;
     // for inner nodes (or leaf), this will either self (this) or
@@ -277,7 +277,7 @@ var GIVe = (function (give) {
     }
 
     if (data && !Array.isArray(data)) {
-      throw (new Error('Data is not an array! This will cause problems in continuedList.'))
+      throw (new Error('Data is not an array! This will cause problems in ContList.'))
     }
 
     if (chrRange) {
@@ -293,11 +293,11 @@ var GIVe = (function (give) {
       if (this.revDepth > 1) {
         // case 2 and 3
         this.addNonLeafRecords(data, chrRange.start, chrRange.end,
-          continuedList, callback, resolution, lifeSpan)
+          ContList, callback, resolution, lifeSpan)
       } else {
         // case 1
         this.addLeafRecords(data, chrRange.start, chrRange.end,
-          continuedList, callback, resolution, lifeSpan)
+          ContList, callback, resolution, lifeSpan)
       }
       this.updateSummary()
     } else { // chrRange
@@ -307,7 +307,7 @@ var GIVe = (function (give) {
   }
 
   give.GiveTreeNode.prototype.addNonLeafRecords = function (data,
-    rangeStart, rangeEnd, continuedList, callback, resolution, lifeSpan) {
+    rangeStart, rangeEnd, ContList, callback, resolution, lifeSpan) {
     // This function adds record(s), and structures of the tree
 
     // In leaf nodes, the actual record trunks may need to be split before range
@@ -404,7 +404,7 @@ var GIVe = (function (give) {
           // case 3: non-leaf nodes with worse resolution
           this.values[currIndex].insert(data,
             { start: childDataRangeStart, end: childDataRangeEnd },
-            continuedList, callback, resolution, lifeSpan)
+            ContList, callback, resolution, lifeSpan)
         } else { // if (!this.childResNotEnough(resolution, currIndex))
           // case 2: non-leaf nodes with adequate resolution (for children)
           // note that data[0] should be exactly the same as
@@ -432,13 +432,13 @@ var GIVe = (function (give) {
   }
 
   give.GiveTreeNode.prototype.addLeafRecords = function (data,
-    rangeStart, rangeEnd, continuedList, callback, resolution, lifeSpan) {
+    rangeStart, rangeEnd, ContList, callback, resolution, lifeSpan) {
     // Adding leaf node records
     var currIndex = 0
     var currDataIndex = 0
     var prevDataIndex = 0
 
-    var filterContinuedList = function (rangeStart, item) {
+    var filterContList = function (rangeStart, item) {
       return item.getEnd() > rangeStart
     }
 
@@ -458,12 +458,12 @@ var GIVe = (function (give) {
         this.values.splice(currIndex, 0, this.values[currIndex - 1])
       }
 
-      // First get data that should belong to continuedList done.
+      // First get data that should belong to ContList done.
       while (currDataIndex < data.length &&
         data[currDataIndex].getStart() < this.keys[currIndex]) {
-        // This entry belongs to continuedList from now on.
+        // This entry belongs to ContList from now on.
         if (data[currDataIndex].getEnd() > this.keys[currIndex]) {
-          continuedList.push(data[currDataIndex])
+          ContList.push(data[currDataIndex])
           if (callback) {
             callback(data[currDataIndex])
           }
@@ -472,10 +472,10 @@ var GIVe = (function (give) {
       }
 
       // Compile all entries that should appear at this point.
-      var startList = []
+      var StartList = []
       while (currDataIndex < data.length &&
         data[currDataIndex].getStart() === this.keys[currIndex]) {
-        startList.push(data[currDataIndex])
+        StartList.push(data[currDataIndex])
         if (callback) {
           callback(data[currDataIndex])
         }
@@ -496,9 +496,9 @@ var GIVe = (function (give) {
         this.values.splice(currIndex + 1, 0, this.values[currIndex])
       }
 
-      if (startList.length === 0 &&
+      if (StartList.length === 0 &&
           ((!this.values[currIndex] ||
-            this.values[currIndex].startList.length <= 0) &&
+            this.values[currIndex].StartList.length <= 0) &&
            (this.values[currIndex - 1] ||
             this.values[currIndex - 1] === false))) {
           // There isn't any stuff in this bin and previous bin is there, then merge.
@@ -511,23 +511,23 @@ var GIVe = (function (give) {
         if (!this.values[currIndex]) {
           this.values[currIndex] = false
         }
-        if (startList.length > 0 || continuedList.length > 0) {
-          this.values[currIndex] = new DataNode(startList, continuedList, lifeSpan)
+        if (StartList.length > 0 || ContList.length > 0) {
+          this.values[currIndex] = new DataNode(StartList, ContList, lifeSpan)
         }
       }
 
       currIndex++
       rangeStart = nextRangeStart
 
-      // Then go through continuedList to remove everything that won't continue
-      continuedList = continuedList.filter(filterContinuedList.bind(this, rangeStart), this)
+      // Then go through ContList to remove everything that won't continue
+      ContList = ContList.filter(filterContList.bind(this, rangeStart), this)
 
       // Go through data from 0 to currDataIndex - 1 to see
-      // If anything needs to be put onto continuedList
+      // If anything needs to be put onto ContList
       for (var i = prevDataIndex; i < currDataIndex; i++) {
         if (data[i].getEnd() > rangeStart) {
-          // needs to be put onto continuedList
-          continuedList.push(data[i])
+          // needs to be put onto ContList
+          ContList.push(data[i])
         }
         data[i] = null
       }
@@ -556,20 +556,20 @@ var GIVe = (function (give) {
     if (this.values[i]) {
       if (this.revDepth === 1) {
         // Leaf node, remove data if it's there
-        if (this.keys[i] === data.getStart() && this.values[i].startList) {
-          for (var stListIndex = 0; stListIndex < this.values[i].startList.length; stListIndex++) {
-            if (this.values[i].startList[stListIndex].getEnd() === data.getEnd() &&
-            (!removeExactMatch || (data.equalTo && data.equalTo(this.values[i].startList[stListIndex])) ||
-            data === this.values[i].startList[stListIndex])) {
+        if (this.keys[i] === data.getStart() && this.values[i].StartList) {
+          for (var stListIndex = 0; stListIndex < this.values[i].StartList.length; stListIndex++) {
+            if (this.values[i].StartList[stListIndex].getEnd() === data.getEnd() &&
+            (!removeExactMatch || (data.equalTo && data.equalTo(this.values[i].StartList[stListIndex])) ||
+            data === this.values[i].StartList[stListIndex])) {
               // Match found
               if (callback) {
-                callback(this.values[i].startList[stListIndex])
+                callback(this.values[i].StartList[stListIndex])
               }
-              this.values[i].startList.splice(stListIndex, 1)
+              this.values[i].StartList.splice(stListIndex, 1)
               stListIndex--
             }
           }
-          if (this.values[i].startList.length <= 0) {
+          if (this.values[i].StartList.length <= 0) {
             // All data removed in the record, needs to merge with the previous record
             if (i > 0 || (this.prev && this.prev.values[this.prev.values.length - 1] !== null)) {
               // there is a previous node at the same revDepth level
@@ -731,15 +731,15 @@ var GIVe = (function (give) {
               }, null, { data: this.values[currIndex].getSummaryData() }))
             } else { // this.revDepth === 1
               if (!notFirstCall) {
-                // This is the first call, should call on all continuedList as well
-                if (Array.isArray(this.values[currIndex].continuedList)) {
-                  if (!this.values[currIndex].continuedList.every(callFuncOnDataEntry, thisVar)) {
+                // This is the first call, should call on all ContList as well
+                if (Array.isArray(this.values[currIndex].ContList)) {
+                  if (!this.values[currIndex].ContList.every(callFuncOnDataEntry, thisVar)) {
                     return false
                   }
                 }
               }
-              if (Array.isArray(this.values[currIndex].startList)) {
-                if (!this.values[currIndex].startList.every(callFuncOnDataEntry, thisVar)) {
+              if (Array.isArray(this.values[currIndex].StartList)) {
+                if (!this.values[currIndex].StartList.every(callFuncOnDataEntry, thisVar)) {
                   return false
                 }
               }

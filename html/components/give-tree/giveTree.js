@@ -36,7 +36,7 @@ var GIVe = (function (give) {
   give.GiveTree = function (chrRange, summaryCtor, props) {
     this.chr = chrRange.chr
     this._root = new give.GiveTreeNode(null, chrRange.start, chrRange.end,
-      summaryCtor, null, null, bFactor, true, lifeSpan)
+      summaryCtor, null, null, bFactor, true, props)
   }
 
   /**
@@ -158,7 +158,7 @@ var GIVe = (function (give) {
     resolution, thisVar, breakOnFalse, props) {
     if (!chrRange.chr || chrRange.chr === this.chr) {
       return this._root.traverse(chrRange, callback, filter,
-        resolution, thisVar, breakOnFalse, false)
+        resolution, thisVar, breakOnFalse, false, props)
     }
   }
 
