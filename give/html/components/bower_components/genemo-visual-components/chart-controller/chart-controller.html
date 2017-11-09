@@ -189,6 +189,17 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             notify: true,
             observer: '_numOfSubsChanged'
           },
+
+          /**
+           * Objects being passed into the text fields
+           */
+          _coorObjs: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
           /**
            * The track groups included in the embedded browser. Group IDs are
            * specified in the data source. The data source on our server currently
@@ -222,16 +233,6 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             },
             notify: true,
             observer: '_coorChanged'
-          },
-
-          /**
-           * Objects being passed into the text fields
-           */
-          _coorObjs: {
-            type: Array,
-            value: function () {
-              return []
-            }
           },
 
           _threshold: {
@@ -370,8 +371,10 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
                   if (coor) {
                     this._coorObjs[index].coor = coor
                     this.coordinates[index] = coor
+                    this.notifyPath(['_coorObjs', index, 'coor'])
                   } else {
                     this._coorObjs[index].invalid = true
+                    this.notifyPath(['_coorObjs', index, 'invalid'])
                   }
                 }, this)
               }
@@ -381,8 +384,10 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 
         updateTracks: function () {
           // remove the invalid marks
-          this._coorObjs.forEach(function (coorObj) {
+          this._coorObjs.forEach(function (coorObj, index) {
             coorObj.invalid = false
+            // notify Polymer
+            this.notifyPath(['_coorObjs', index, 'invalid'])
           }, this)
           if (this.$.mainTrackList) {
             this.$.mainTrackList.DOMToTrack()
@@ -426,7 +431,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               coor: coorText,
               invalid: false
             })
-          })
+          }, this)
         }
 
       })
