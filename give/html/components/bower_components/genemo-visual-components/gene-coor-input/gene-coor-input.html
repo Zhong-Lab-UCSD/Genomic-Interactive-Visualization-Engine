@@ -59,7 +59,9 @@
       value="{{inputValue}}" on-input="_partialInputHandler"
       on-focus="_textFocus" on-blur="_textUnFocus"
       no-label-float="[[noLabelFloat]]"
-      always-float-label="[[alwaysFloatLabel]]">
+      always-float-label="[[alwaysFloatLabel]]"
+      error-message="[[errorMessage]]"
+      invalid="[[invalid]]">
       <div suffix>
         [[coorSuffix]]
       </div>
@@ -134,6 +136,11 @@
             value: 'Coordinate or gene name'
           },
 
+          errorMessage: {
+            type: String,
+            value: 'Invalid chromosomal region!'
+          },
+
           candidates: {
             type: Array,
             value: function () {
@@ -165,6 +172,11 @@
             // this is the number of ms before hiding the menu
             type: Number,
             value: 1000
+          },
+
+          invalid: {
+            type: Boolean,
+            value: false
           }
         },
 

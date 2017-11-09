@@ -116,7 +116,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       <div drawer class="layout vertical">
         <template is="dom-repeat" items="{{coordinates}}">
           <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
-            floatingLabel="true" value="{{item}}">
+            floatingLabel="true" value="{{item.coor}}" invalid="[[item.invalid]]">
           </gene-coor-input>
         </template>
         <div class="layout horizontal">
@@ -153,7 +153,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         <div class="content flex layout vertical">
           <div class="flex relative">
             <chart-area ref="[[ref]]" id="mainChartArea"
-              group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}">
+              group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}"
+              pass-exceptions>
             </chart-area>
           </div>
           <div class="dataReference">
@@ -215,7 +216,10 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           coordinates: {
             type: Array,
             value: function () {
-              return ['chr10:30000000-50000000']
+              return [{
+                coor: 'chr10:30000000-50000000',
+                invalid: false
+              }]
             },
             notify: true
           },
@@ -278,6 +282,13 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           }
         },
 
+        attached: function () {
+          if (this._refObj) {
+            this.updateSvg()
+          }
+          this._isAttached = true
+        },
+
         /**
          * _calcGeneCoorLabel - calculate the label for `<gene-coor-input>`
          *
@@ -286,7 +297,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
          */
         _calcGeneCoorLabel: function (index) {
           return 'Coordinate or gene name' +
-            ((this.coordinates && this.coordinates.length > 1) ? ' for view #' + index : '')
+            ((this.coordinates && this.coordinates.length > 1)
+              ? ' for view #' + (index + 1) : '')
         },
 
         /**
@@ -299,8 +311,11 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           if (this._refObj) {
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
+              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i].coor)) {
+                this.splice('coordinates', i, 1, {
+                  coor: defaultWindows[i % defaultWindows.length],
+                  invalid: false
+                })
               }
             }
           }
@@ -315,8 +330,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         _setRefObj: function (refObj) {
           this._refObj = refObj
           this._numOfSubsChanged(this.numOfSubs)
-
-          this.updateSvg()
+          if (this._isAttached) {
+            this.updateSvg()
+          }
           this._threshold = 1
         },
 
@@ -328,12 +344,35 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
          */
         updateSvg: function () {
           if (this.$.mainChartArea) {
-            var correctedVWindows = this.$.mainChartArea.refreshAll(this.coordinates, this._threshold)
-            this.coordinates = correctedVWindows
+            try {
+              var correctedVWindows = this.$.mainChartArea.refreshAll(
+                this.coordinates.map(function (coorObj) {
+                  return coorObj.coor
+                }, this), this._threshold
+              )
+              this.coordinates = correctedVWindows
+            } catch (e) {
+              // This will happen if the value is not valid
+              // TODO: Show the paper-input elements as invalid
+              if (e.data.updatedCoors) {
+                // update the coordinates that are changed
+                e.data.updatedCoors.forEach(function (coor, index) {
+                  if (coor) {
+                    this.coordinates[index].coor = coor
+                  } else {
+                    this.coordinates[index].invalid = true
+                  }
+                }, this)
+              }
+            }
           }
         },
 
         updateTracks: function () {
+          // remove the invalid marks
+          this.coordinates.forEach(function (coorObj) {
+            coorObj.invalid = false
+          }, this)
           if (this.$.mainTrackList) {
             this.$.mainTrackList.DOMToTrack()
             this.$.mainChartArea.updateDOM(true)
