@@ -349,12 +349,17 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         ready: function () {
           // initialize this._viewWindows from this.coordinates
-          this.coordinates.forEach(function (coordinateStr, index) {
-            if (give.ChromRegion.isValidChromRegion(coordinateStr) &&
+          this.coordinates.forEach(function (coorStr, index) {
+            if (give.ChromRegion.isValidChromRegion(coorStr, this._refObj) &&
               (!this._viewWindows[index] ||
                 this._viewWindows[index].regionToString(false) !==
-                new give.ChromRegion(coordinateStr, this._refObj).regionToString(false))) {
-              this.splice('_viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
+                new give.ChromRegion(
+                  coorStr, this._refObj
+                ).regionToString(false)
+              )
+            ) {
+              this.splice('_viewWindows', index, 1,
+                new give.ChromRegion(coorStr, this._refObj))
             } else {
               this.splice('_viewWindows', index, 1, false)
             }
