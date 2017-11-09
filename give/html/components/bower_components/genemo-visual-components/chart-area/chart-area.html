@@ -641,7 +641,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             } else {
               err.data = err.data || {}
               err.data.updatedCoor =
-                this._viewWindows[index].regionToString(false)
+                (this._viewWindows[index] &&
+                  this._viewWindows[index].regionToString)
+                ? this._viewWindows[index].regionToString(false) : null
               throw err
             }
           }
@@ -672,10 +674,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
               var error = new Error('Exception occured during ChromRegion' +
                 ' conversion.')
               error.data.exceptionList = exceptionList
-              error.data.updatedCoors = viewWindowObjs.map(function (vWindowObj) {
-                return (vWindowObj.regionToString
-                  ? vWindowObj.regionToString(false) : null)
-              })
+              error.data.updatedCoors = viewWindowObjs.map(
+                function (vWindowObj) {
+                  return ((vWindowObj && vWindowObj.regionToString)
+                    ? vWindowObj.regionToString(false) : null)
+                }
+              )
               throw error
             } else {
               // TODO: gracefully handle the exception
@@ -690,13 +694,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _changeThreshold: function (_threshold) {
           this._threshold = _threshold || this._threshold
-          this._trackDOMsByWindow.forEach(this._callForeachFuncOnDomInWindowEntry.bind(
-            function (trackDOM, index) {
-              if (trackDOM.updateThreshold) {
-              // is an interaction track
-                trackDOM.updateThreshold(this._threshold)
-              }
-            }.bind(this)), this)
+          this._trackDOMsByWindow.forEach(
+            this._callForeachFuncOnDomInWindowEntry.bind(
+              function (trackDOM, index) {
+                if (trackDOM.updateThreshold) {
+                // is an interaction track
+                  trackDOM.updateThreshold(this._threshold)
+                }
+              }.bind(this)
+            ), this
+          )
         },
 
         refreshAll: function (viewWindows, threshold) {
