@@ -673,6 +673,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             if (this.passExceptions) {
               var error = new Error('Exception occured during ChromRegion' +
                 ' conversion.')
+              error.data = error.data || {}
               error.data.exceptionList = exceptionList
               error.data.updatedCoors = viewWindowObjs.map(
                 function (vWindowObj) {
