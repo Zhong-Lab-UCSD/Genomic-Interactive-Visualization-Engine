@@ -782,35 +782,34 @@
         // then draw everything in results
         // get all text elements in the svg in case collision detection is needed
         var textList = Polymer.dom(svgToDraw).querySelectorAll('text')
-        textArray = Array.prototype.slice.call(textList)
-        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGap + this.fullHeight) * this.textSize
-        if (!avoidCollision || resultWidths.every(function (width, index) {
+        var oldTextArray = Array.prototype.slice.call(textList)
+        // then store all new labels in newTextArray for collision detection
+        var newTextArray = []
+        var currY = y - (results.length - 1) * vertParam *
+          (this.lineGap + this.fullHeight) * this.textSize
+        results.forEach(function (line, index) {
+          newTextArray.push(this.drawText(
+            x, currY, line, textAnchor, params, svgToDraw
+          ))
           currY += (this.lineGap + this.fullHeight) * this.textSize
-          var left = x
-          var right = x
-          switch (textAnchor) {
-            case 'start':
-              right += width
-              break
-            case 'end':
-              left -= width
-              break
-            case 'middle':
-              right += width / 2
-              left -= width / 2
-              break
-          }
-          return textArray.every(function (text, indexT) {
-            var rect = text.getBBox()
-            return (rect.x >= right || (rect.x + rect.width) <= left ||
-                rect.y > (currY + (this.lineGap + this.fullHeight) * this.textSize) ||
-                (rect.y + rect.height) < currY)
+        }, this)
+
+        // collision detection, if collision is detected, remove all new labels
+        // because there should not be many text elements within the labeling
+        // area, a brute-force approach should be enough
+        if (avoidCollision && newTextArray.some(function (newNode) {
+          var newBox = newNode.getBBox()
+          return oldTextArray.some(function (oldNode) {
+            var oldBox = oldNode.getBBox()
+            return (newBox.x + newBox.width > oldBox.x) &&
+              (oldBox.x + oldBox.width > newBox.x) &&
+              (newBox.y + newBox.height > oldBox.y) &&
+              (oldBox.y + oldBox.height > newBox.y)
           }, this)
         }, this)) {
-          currY = y - (results.length - 1) * vertParam * (this.lineGap + this.fullHeight) * this.textSize
-          results.forEach(function (line, index) {
-            this.drawText(x, currY, line, textAnchor, params, svgToDraw)
-            currY += (this.lineGap + this.fullHeight) * this.textSize
+          // collision found, remove everything from the newTextArray
+          newTextArray.forEach(function (textElem) {
+            this.removeElement(textElem, svgToDraw)
           }, this)
         }
       },
