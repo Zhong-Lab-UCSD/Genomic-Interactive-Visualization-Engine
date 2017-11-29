@@ -54,37 +54,6 @@ var GIVe = (function (give) {
 
   // all private methods and static data for a single chrom B+ tree
 
-  // Private-ish part for data structure
-  var DataNode = function (StartList, ContList, lifeSpan) {
-    //    { StartList: [], ContList: [], resolution: int }:
-    //      An object saving references to actual data (Objects with ChromRegion behavior) that spans the bin,
-    //      StartList:    data that start at this bin (have the same start coordinate),
-    //              StartList will become an empty array only if the previous bin is unloaded
-    //              (because otherwise this bin can be merged with the previous one),
-    //              or this is the first bin;
-    //      ContList:  data that starts at previous bin(s) but overlapping with this bin,
-    //              this array will be sorted by the actual starting points,
-    //              [] will have the same effect as 'undefined'.
-    //
-    give.WitheringNode.call(this, lifeSpan)
-    this.StartList = StartList || []
-    this.ContList = ContList || []
-  }
-
-  give.extend(give.WitheringNode, DataNode)
-
-  DataNode.prototype.getResolution = function () {
-    return 1
-  }
-
-  DataNode.prototype.resNotEnough = function (resolution) {
-    return false
-  }
-
-  DataNode.prototype.hasData = function () {
-    return true
-  }
-
   // data structure:
   // {
   //    isRoot:           Boolean, showing whether this is root;
@@ -192,6 +161,12 @@ var GIVe = (function (give) {
       (this.values[index] !== null && this.values[index].hasData())
   }
 
+  /**
+   * getResolution - get the resolution of this data node
+   *
+   * @returns {number}  Return the resolution (span of the node),
+   *    1 is the smallest (finest)
+   */
   give.GiveTreeNode.prototype.getResolution = function () {
     return Math.floor(Math.pow(this.branchingFactor, this.revDepth))
   }
@@ -199,23 +174,36 @@ var GIVe = (function (give) {
   give.GiveTreeNode.prototype.getChildResolution = function (index) {
     // if index is a number, then it's asking for the resolution of that
     //   specific child, otherwise it's a generalized child resolution
-    if (isNaN(index) || parseInt(index) !== index ||
-      this.values[index] !== false) {
-      return Math.floor(Math.pow(this.branchingFactor, this.revDepth - 1))
-    } else if (this.values[index] && this.values[index].getResolution) {
-      return this.values[index].getResolution()
+    if (!isNaN(index) && parseInt(index) === index) {
+      // Specialized child resolution
+      if (this.Values[index] === false) {
+        return 1
+      } else if (this.values[index] && this.values[index].getResolution) {
+        return this.values[index].getResolution()
+      }
     }
-    // there is definitely no data in the node, so resolution is minimum
-    return 1
+    // Generalized child resolution
+    return Math.floor(Math.pow(this.branchingFactor, this.revDepth - 1))
   }
 
+  /**
+   * resNotEnough - get whether the resolution of this data node is not enough
+   *    for the given resolution requirement.
+   *
+   * @param  {number|null} resolution - the resolution required, if `null`, use
+   *    `1` (the finest) instead
+   * @returns {boolean}  Return `true` if the resolution is not enough,
+   *    otherwise `false`.
+   */
   give.GiveTreeNode.prototype.resNotEnough = function (resolution) {
-    resolution = (typeof resolution === 'number' && !isNaN(resolution)) ? resolution : 1
+    resolution = (typeof resolution === 'number' && !isNaN(resolution))
+      ? resolution : 1
     return (this.getResolution() > resolution)
   }
 
   give.GiveTreeNode.prototype.childResNotEnough = function (resolution, index) {
-    resolution = (typeof resolution === 'number' && !isNaN(resolution)) ? resolution : 1
+    resolution = (typeof resolution === 'number' && !isNaN(resolution))
+      ? resolution : 1
     return this.getChildResolution(index) > resolution
   }
 
@@ -799,11 +787,12 @@ var GIVe = (function (give) {
    *   to allow buffered loading of data
    *
    * @param  {GIVE.ChromRegion} chrRange - The range of query.
-   * @param  {number} resolution - Resolution required for the query,
+   * @param  {object|null} props - additional properties being passed onto nodes
+   * @param  {number|null} props.resolution - Resolution required for the query,
    *   will override `chrRange.resolution` if both exist.
-   * @param  {number} bufferingRatio - Ratio of desired resolution if the data
-   *   is not available. This would allow a "resolution buffering" by requesting
-   *   data at a slightly finer resolution than currently required.
+   * @param  {number|null} props.bufferingRatio - Ratio of desired resolution if
+   *   the data is not available. This would allow a "resolution buffering" by
+   *   requesting data at a slightly finer resolution than currently required.
    * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
    *   does not have the data at the current resolution requirement.
    */

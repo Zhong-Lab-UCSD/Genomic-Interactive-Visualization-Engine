@@ -7,9 +7,10 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.WitheringNode = function (lifeSpan) {
+  give.WitheringNode = function (props) {
     // start and length is for the corresponding region
-    this.life = lifeSpan
+    give.GiveTreeNode.call(this, arguments)
+    this.life = props.LifeSpan
   }
 
   give.WitheringNode.prototype.wither = function (amount) {

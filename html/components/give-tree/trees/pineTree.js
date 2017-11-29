@@ -16,7 +16,7 @@ var GIVe = (function (give) {
   // }
 
   // public API
-  give.GiveTree = function (chrRange, summaryCtor, bFactor, lifeSpan) {
+  give.PineTree = function (chrRange, summaryCtor, bFactor, lifeSpan) {
     // start and length is for the corresponding region
     // lifeSpan is the lifeSpan a node will live, in terms of
     //    number of traverses

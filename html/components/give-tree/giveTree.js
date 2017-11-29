@@ -23,20 +23,35 @@ var GIVe = (function (give) {
    * @typedef {object} GiveTreeBase
    * @property {string} chr - Chromosome that this data storage unit is for
    * @property {GiveTreeNode} _root - Root node object
+   * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
+   *    nodes
+   * @property {GiveTreeNode} _LeafNodeCtor - Constructor for all leaf nodes,
+   *    if `null`, non-leaf constructor will be used by default
+   *    `GIVE.GiveTreeNode` design.
    *
    * @class give.GiveTree
    *
    * @constructor
    * @param {ChromRegionLiteral} chrRange - The range this data storage unit
    *    will be responsible for.
-   * @param {function|null} summaryCtor - The constructor of summary objects
    * @param {object} props - properties that will be passed to the individual
    *    implementations
+   * @param {number} NonLeafNodeCtor - The start coordinate this tree will cover.
+   *    Equals to `this.Keys[0]`.
+   * @param {number} LeafNodeCtor - The end coordinate this node will cover.
+   *    Equals to `this.Keys[this.Keys.length - 1]`.
+   *    Exceptions will be thrown if `props.Start` or `props.End` is not an
+   *    positive integer number or `props.Start >= props.End` (zero-length
+   *    regions not allowed).
    */
-  give.GiveTree = function (chrRange, summaryCtor, props) {
+  give.GiveTree = function (chrRange, NonLeafNodeCtor, LeafNodeCtor, props) {
     this.chr = chrRange.chr
-    this._root = new give.GiveTreeNode(null, chrRange.start, chrRange.end,
-      summaryCtor, null, null, bFactor, true, props)
+    props = props || {}
+    props.Start = chrRange.getStart()
+    props.End = chrRange.getEnd()
+    props.IsRoot = true
+    this._root = new NonLeafNodeCtor(props)
+    this._LeafNodeCtor = LeafNodeCtor
   }
 
   /**
@@ -54,12 +69,14 @@ var GIVe = (function (give) {
    * @param {object|null} props
    */
   give.GiveTree.prototype._insertSingleRange = function (
-    data, chrRange, continuedList, callback, resolution, props
+    data, chrRange, continuedList, callback, props
   ) {
     if (!chrRange.chr || chrRange.chr === this.chr) {
-      this._root = this._root.insert(data, ((!chrRange && data.length === 1) ?
-        data[0] : chrRange), continuedList,
-        callback, resolution, props)
+      props = props || {}
+      props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
+      this._root = this._root.insert(data, ((!chrRange && data.length === 1)
+        ? data[0] : chrRange), continuedList,
+        callback, props)
     }
   }
 
@@ -89,23 +106,27 @@ var GIVe = (function (give) {
    *    regions are inserted at the same time
    * @param {function|null} callback - the callback function to be used (with
    *    the data entry as its sole parameter) when inserting
-   * @param {Array<number>|number|null} resolution - the resolution(s) of the
-   *    data being inserted.  Smaller is finer. If this is an `Array`, it should
-   *    have the same `length` as `chrRanges` does.
-   * @param {object|null} props - additional properties being passed onto nodes
+   * @param {Array<object>|object|null} props - additional properties being
+   *    passed onto nodes. If this is an `Array`, it should have the same
+   *    `length` as `chrRanges` does.
+   * @param {number|null} props.resolution - the resolution(s) of the data being
+   *    inserted. Smaller is finer. This is required for implementations that
+   *    support resolutions only.
+   * @param {function|null} props.LeafNodeCtor - the constructor function of
+   *    leaf nodes if they are not the same as the non-leaf nodes.
    */
   give.GiveTree.prototype.insert = function (
-    data, chrRanges, continuedList, callback, resolution, props
+    data, chrRanges, continuedList, callback, props
   ) {
     continuedList = continuedList || []
     if (Array.isArray(chrRanges)) {
       chrRanges.forEach(function (range, index) {
         this._insertSingleRange(data, range, continuedList, callback,
-          Array.isArray(resolution) ? resolution[index] : resolution, props)
+          Array.isArray(props) ? props[index] : props)
       }, this)
     } else {
       this._insertSingleRange(data, chrRanges, continuedList, callback,
-        resolution, props)
+        props)
     }
   }
 
@@ -143,22 +164,23 @@ var GIVe = (function (give) {
    * @param {function} filter - the filter function to be used (with the data
    *    entry as its sole parameter), return `false` to exclude the entry from
    *    being called with `callback`.
-   * @param {number|null} resolution - the resolution that is required, data
-   *    entry (or summary entries) that can just meet this requirement will be
-   *    chosen. Smaller is finer.
    * @param {Object} thisVar - `this` element to be used in `callback` and
    *    `filter`.
    * @param {boolean} breakOnFalse - whether the traversing should break if
    *    `false` has been returned from `callback`
    * @param {object|null} props - additional properties being passed onto nodes
+   * @param {number|null} props.resolution - the resolution that is required,
+   *    data entry (or summary entries) that can just meet this requirement will
+   *    be chosen. Smaller is finer.
+   *    This is used in implementations that support resolutions
    * @returns {boolean} If the traverse breaks on `false`, returns `false`,
    *    otherwise `true`
    */
   give.GiveTree.prototype.traverse = function (chrRange, callback, filter,
-    resolution, thisVar, breakOnFalse, props) {
+    thisVar, breakOnFalse, props) {
     if (!chrRange.chr || chrRange.chr === this.chr) {
       return this._root.traverse(chrRange, callback, filter,
-        resolution, thisVar, breakOnFalse, false, props)
+        thisVar, breakOnFalse, false, props)
     }
   }
 
@@ -168,22 +190,19 @@ var GIVe = (function (give) {
    * @memberof GiveTreeBase.prototype
    *
    * @param {ChromRegionLiteral} chrRange - the chromosomal range to query
-   * @param {number|null} resolution - the resolution that is required.
-   *    Smaller is finer.
-   * @param {number|null} bufferingRatio - the ratio to 'boost' `resolution` so
-   *    that less data fetching may be needed.
    * @param {object|null} props - additional properties being passed onto nodes
+   * @param {number|null} props.resolution - the resolution that is required.
+   *    Smaller is finer.
+   * @param {number|null} props.bufferingRatio - the ratio to 'boost'
+   *    `resolution` so that less data fetching may be needed.
    * @returns {Array<ChromRegionLiteral>} the chromosomal ranges that do not
    *    have their data ready in this data storage unit (therefore need to be
    *    fetched from sources). If all the data needed is ready, `[]` will be
    *    returned.
    */
-  give.GiveTree.prototype.getUncachedRange = function (
-    chrRange, resolution, bufferingRatio, props
-  ) {
+  give.GiveTree.prototype.getUncachedRange = function (chrRange, props) {
     if (!chrRange.chr || chrRange.chr === this.chr) {
-      return this._root.getUncachedRange(chrRange, resolution,
-        bufferingRatio, props)
+      return this._root.getUncachedRange(chrRange, props)
     } else {
       return []
     }

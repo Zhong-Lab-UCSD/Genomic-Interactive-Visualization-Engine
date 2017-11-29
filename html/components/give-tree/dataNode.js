@@ -45,6 +45,7 @@ var GIVe = (function (give) {
    *              the instance of a class described in this file
    *
    * @typedef {object} GiveDataNodeBase
+   * @property {number} Start - the starting coordinate of this data node.
    * @property {Array<ChromRegionLiteral>} StartList - A list of data entries
    *    that __start exactly at__ the start coordinate of this node.
    *    `StartList` will become an empty array only if the previous bin is
@@ -57,9 +58,10 @@ var GIVe = (function (give) {
    * @class give.DataNode
    *
    * @constructor
-   * @extends give.GiveTreeNode
+   * @implements give.GiveTreeNode
    * @param {object} props - properties that will be passed to the individual
-   *    implementations. For `GIVE.DataNode`, two properties will be used:
+   *    implementations. For `GIVE.DataNode`, three properties will be used:
+   * @param {number} props.Start - for `this.Start`
    * @param {Array<ChromRegionLiteral>|null} props.StartList - for
    *    `this.StartList`
    * @param {Array<ChromRegionLiteral>|null} props.ContList - for
@@ -68,38 +70,16 @@ var GIVe = (function (give) {
    */
   give.DataNode = function (props) {
     give.GiveTreeNode.call(this, arguments)
+    this.Start = props.Start
     this.StartList = props.StartList || []
     this.ContList = props.ContList || []
   }
 
   give.extend(give.GiveTreeNode, give.DataNode)
 
-
   /**
    * Implementing GIVE.GiveTreeNode methods
    */
-
-  /**
-   * getResolution - get the resolution of this data node
-   *
-   * @returns {number}  Because data node is the leaf of all tree structures,
-   *    it will always return `1` (the finest resolution).
-   */
-  give.DataNode.prototype.getResolution = function () {
-    return 1
-  }
-
-  /**
-   * resNotEnough - get whether the resolution of this data node is not enough
-   *    for the given resolution requirement.
-   *
-   * @param  {number} resolution - the resolution required
-   * @returns {boolean}  Because data node is the leaf of all tree structures,
-   *    it will always return `false` (always enough).
-   */
-  give.DataNode.prototype.resNotEnough = function (resolution) {
-    return false
-  }
 
   /**
    * hasData - get whether this data node has data stored.
@@ -110,3 +90,145 @@ var GIVe = (function (give) {
   give.DataNode.prototype.hasData = function () {
     return true
   }
+
+  give.DataNode.prototype.getStart = function () {
+    return this.Start
+  }
+
+  give.DataNode.prototype.insert = function (
+    data, chrRange, contList, callback, thisVar, props
+  ) {
+    // Steps:
+    // 1. Push everything in `data` that has `getStart()` value smalled than
+    //    `this` into `contList`
+    // 2. Check all `contList` to ensure they still overlap with `this`
+    //    (getEnd() should be greater than `this.getStart()`), remove those who
+    //    don't, copy those who do to `this.ContList`;
+    // 3. Find all `data` entries that have same `getStart()` value as `this`,
+    //    and copy those to `this.StartList`, move them from `data` to
+    //    `contList`;
+
+    // Helper function: find `entries` in `data` that returns `true` with
+    //    `critFunc.call(thisVarCriteria, entry)`, call `callback` on `entry`
+    //    if `callback` exists and advance `currIndex`.
+    function traverseData (
+      data, currIndex, critFunc, thisVarCriteria, callback, thisVar
+    ) {
+      while (currIndex < data.length &&
+        critFunc.call(thisVarCriteria, data[currIndex])
+      ) {
+        if (typeof callback === 'function') {
+          callback.call(thisVar, data[currIndex])
+        }
+        currIndex++
+      }
+      return currIndex
+    }
+
+    // 1. Push everything in `data` that has `getStart()` value smaller than
+    //    `this` into `contList`
+    var currIndex = (typeof props.CurrIndex === 'number' ? props.CurrIndex : 0)
+    var prevIndex = currIndex
+    currIndex = traverseData(data, currIndex, function (dataEntry) {
+      return dataEntry.getStart() < this.getStart()
+    }, this, callback, thisVar)
+
+    // 2. Check all `contList` to ensure they still overlap with `this`
+    //    (getEnd() should be greater than `this.getStart()`), remove those who
+    //    don't, copy those who do to `this.ContList`;
+    contList = contList.concat(data.slice(prevIndex, currIndex)).filter(
+      function (entry) {
+        return entry.getEnd() > this.getStart()
+      }, this
+    )
+    this.ContList = contList.slice()
+
+    // 3. Find all `data` entries that have same `getStart()` value as `this`,
+    //    and copy those to `this.StartList`, move them from `data` to
+    //    `contList`;
+    prevIndex = currIndex
+    currIndex = traverseData(data, currIndex, function (dataEntry) {
+      return dataEntry.getStart() === this.getStart()
+    }, this, callback, thisVar)
+    this.StartList = data.slice(prevIndex, currIndex)
+
+    if (typeof props.currIndex !== 'number') {
+      // remove data if props.currIndex is not specified
+      data.splice(0, currIndex)
+    } else {
+      // update `props.currIndex`
+      props.currIndex = currIndex
+    }
+
+    return this
+  }
+
+  give.DataNode.prototype.remove = function (
+    data, removeExactMatch, callback, thisVar, props
+  ) {
+    if (data instanceof this.constructor &&
+      this.getStart() === data.getStart() && (
+        (!removeExactMatch) || this._compareData(data, this)
+      )
+    ) {
+      // this node should be removed
+      this.clear()
+      return false
+    }
+    if (data.getStart() === this.getStart()) {
+      this.StartList = this.StartList.filter(function (dataIn) {
+        if (!removeExactMatch || this._compareData(data, dataIn)) {
+          if (typeof callback === 'function') {
+            callback.call(thisVar, dataIn)
+          }
+          return false
+        }
+        return true
+      }, this)
+    }
+    this.ContList = this.ContList.filter(function (dataIn) {
+      if (dataIn.getStart() === data.getStart() && (
+        (!removeExactMatch) || this._compareData(data, dataIn)
+      )) {
+        if (typeof callback === 'function') {
+          callback.call(thisVar, dataIn)
+        }
+        return false
+      }
+      return true
+    }, this)
+    return (this.StartList.length > 0 || this.ContList.length > 0)
+      ? this : false
+  }
+
+  give.DataNode.prototype.clear = function () {
+    this.StartList = []
+    this.ContList = []
+  }
+
+  give.DataNode.prototype.traverse = function (
+    chrRange, callback, filter, thisVar, breakOnFalse, props
+  ) {
+    // helper function
+    var callFunc = this._callFuncOnDataEntry.bind(
+      this, chrRange, callback, breakOnFalse, filter, thisVar)
+    // needs to traverse on ContList if `!props.NotFirstCall`
+    if (!props.NotFirstCall) {
+      if (!this.ContList.every(callFunc, this)) {
+        return false
+      }
+    }
+    if (!this.StartList.every(callFunc, this)
+    ) {
+      return false
+    }
+    props.notFirstCall = true
+    return true
+  }
+
+  give.DataNode.prototype.getUncachedRange = function (chrRange, props) {
+    return []
+  }
+
+  return give
+})(GIVe || {})
