@@ -78,7 +78,8 @@ var GIVe = (function (give) {
     function (revdepth, start, end, summaryCtor, nextNode, prevNode, bFactor, isroot) {
     // start and length is for the corresponding region
       if (isNaN(bFactor) || parseInt(bFactor) !== bFactor || bFactor <= 2) {
-        console.log('Default branching factor is chosen instead of ' + bFactor)
+        give._verboseConsole('Default branching factor is chosen instead of ' +
+          bFactor, give.VERBOSE_DEBUG)
         bFactor = give.ChromBPlusTreeNode._DEFAULT_B_FACTOR
       }
       if (typeof revdepth !== 'number' || isNaN(revdepth)) {

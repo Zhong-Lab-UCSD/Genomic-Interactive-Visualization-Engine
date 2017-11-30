@@ -861,19 +861,25 @@
           this.cancelDebouncer(this.cacheUpdateJobName)
         }
 
+        var newVWArr = Array.isArray(newVWindow) ? newVWindow : [newVWindow]
+
         // this is to set up cache loading functions as call back after draw
         this.callbackAfterDraw = this.debounce.bind(
           this, this.cacheUpdateJobName, this.track.getData.bind(
-            this.track, newVWindow.getExtension(
-              give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
-              null, true, this.track.ref
-            ), this.getResolution(newVWindow), null, this.id
+            this.track, newVWArr.map(function (range) {
+              return range.getExtension(
+                give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
+                null, true, this.track.ref
+              )
+            }, this), this.getResolution(newVWindow), null, this.id
           ), this._cacheDebounceInt)
         this.track.getData(
-          newVWindow.getExtension(
-            give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
-            null, true, this.track.ref
-          ), this.getResolution(newVWindow),
+          newVWArr.map(function (range) {
+            return range.getExtension(
+              give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
+              null, true, this.track.ref
+            )
+          }, this), this.getResolution(newVWindow),
           this.drawDataDebounceWrapper.bind(
             this, newVWindow
           ), this.id)
@@ -946,7 +952,7 @@
         if (typeof (viewWindow) === 'string') {
           return new give.ChromRegion(viewWindow, this.track.ref)
         } else {
-          return viewWindow.clipRegion(this.track.ref).clone()
+          return viewWindow.clone().clipRegion(this.track.ref)
         }
         // this.set('viewWindowString', newValue);
       },

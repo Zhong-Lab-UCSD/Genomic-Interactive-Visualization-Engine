@@ -109,10 +109,12 @@ var GIVe = (function (give) {
           !!(navigator.userAgent.match(/Trident/) ||
              navigator.userAgent.match(/rv 11/)))) {
           // IE detected (should be IE 11), fix the json return issue
-          console.log('You are currently using IE 11 to visit this site. ' +
-          'Some part of the site may behave differently and if you encounter ' +
-          'any problems, please use the info on \'About us\' page to ' +
-          'contact us.')
+          give._verboseConsole(
+            'You are currently using IE 11 to visit this site. ' +
+            'Some part of the site may behave differently and if you encounter ' +
+            'any problems, please use the info on \'About us\' page to ' +
+            'contact us.', give.VERBOSE_MAJ_ERROR
+          )
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)
@@ -192,6 +194,22 @@ var GIVe = (function (give) {
         console.log(message)
       }
     }
+  }
+
+  give._findPercentile = function (dataArr, upperPercentile, lowerPercentile) {
+    function numberComp (a, b) {
+      return a - b
+    }
+    lowerPercentile = lowerPercentile || upperPercentile
+    var sortedArr = dataArr.sort(numberComp)
+    return {
+      upper: sortedArr[parseInt(sortedArr.length * (1 - upperPercentile))],
+      lower: sortedArr[parseInt(sortedArr.length * lowerPercentile)]
+    }
+  }
+
+  give._maxDecimalDigits = function (number, digits) {
+    return Number(Math.round(number + 'e' + digits) + 'e-' + digits)
   }
 
   window.addEventListener('WebComponentsReady', function (e) {

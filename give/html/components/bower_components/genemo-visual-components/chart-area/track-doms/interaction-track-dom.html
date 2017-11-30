@@ -27,7 +27,7 @@
 
           subTrackGap: {
             type: Number,
-            value: 4    // em
+            value: 6    // em
           },
 
           // data structure for interaction tracks:
@@ -89,6 +89,8 @@
           this.numOfSubs = properties.numOfSubs
           this.bufferWindow = []
           this.percentiles = this.track.getSetting('thresholdPercentile')
+
+          this._pendingVWs = []
         },
 
         initSvgComponents: function () {
@@ -203,6 +205,66 @@
           this.initSubSvgHolders()
         },
 
+        drawDataFireWrapper: function (newVWindow) {
+          // fire track-ready event to its container (to calculate size and do other stuff)
+          this.changeViewWindow(newVWindow)
+          this.drawData()
+          this._setIsReady(true)
+          this.fire('track-ready', {ID: this.track.getID()})
+          if (this.callbackAfterDraw) {
+            this.callbackAfterDraw()
+            delete this.callbackAfterDraw
+          }
+        },
+
+        drawDataDebounceWrapper: function (newVWindow) {
+          // debounce wrapper for drawData()
+          this.debounce(this.updateJobName, this.drawDataFireWrapper.bind(
+            this, newVWindow), this._drawDebounceInt)
+        },
+
+        checkDataAndUpdate: function (newVWindow) {
+          // Steps:
+          //     * run this.track.getData with drawData (debounced) as callback
+          //    * whenever drawData (debounced) is done, run updateCache
+          //    Meanwhile, run fetch data (debounced) without visible callback
+          //    * Otherwise, run fetch data with drawData (debounced) as callback
+
+          newVWindow = newVWindow || this._pendingVWs
+
+          if (this.isDebouncerActive(this.cacheUpdateJobName)) {
+            this.cancelDebouncer(this.cacheUpdateJobName)
+          }
+
+          if (!Array.isArray(newVWindow)) {
+            newVWindow = [newVWindow]
+          }
+
+          // this is to set up cache loading functions as call back after draw
+          this.callbackAfterDraw = this.debounce.bind(
+            this, this.cacheUpdateJobName, this.track.getData.bind(
+              this.track,
+              newVWindow.map(function (range) {
+                return range.getExtension(
+                  give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
+                  null, true, this.track.ref
+                )
+              }, this), this.getResolution(newVWindow), null, this.id
+            ), this._cacheDebounceInt)
+          this.track.getData(
+            newVWindow.map(function (range) {
+              return range.getExtension(
+                give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
+                null, true, this.track.ref
+              )
+            }, this),
+            this.getResolution(newVWindow),
+            this.drawDataDebounceWrapper.bind(
+              this, newVWindow
+            ), this.id
+          )
+        },
+
         updateTracks: function (viewWindow, index, threshold) {
           // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
           // index: if viewWindow is a single give.ChromRegion Object, index will be the index
@@ -215,18 +277,18 @@
             if (viewWindow) {
               if (Array.isArray(viewWindow)) {
                 // then it must have enough elements
-                viewWindow.forEach(this.changeViewWindow, this)
+                this._pendingVWs = viewWindow
               } else {
-                this.changeViewWindow(viewWindow, index)
+                this._pendingVWs[index] = viewWindow
               }
             }
 
-            if (this.subSvgs.every(function (subSvg) {
-              return subSvg.viewWindow
+            if (this._pendingVWs.every(function (pendingVWindow) {
+              return pendingVWindow
             }, this)) {
               // Get data clipped by viewWindow by calling getData()
               //    May also include data preparation
-              this.checkDataAndUpdate()
+              this.checkDataAndUpdate(this._pendingVWs)
               // Update detailed content by calling drawData()
               //    Will be debounced to prevent lagging
             }
@@ -245,10 +307,15 @@
         },
 
         changeViewWindow: function (viewWindow, index) {
-          if (typeof (viewWindow) === 'string') {
-            this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+          if (Array.isArray(viewWindow)) {
+            viewWindow.forEach(this.changeViewWindow, this)
           } else {
-            this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+            if (typeof (viewWindow) === 'string') {
+              this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+            } else {
+              this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+            }
+            this._pendingVWs[index] = this.subSvgs[index].viewWindow
           }
         },
 

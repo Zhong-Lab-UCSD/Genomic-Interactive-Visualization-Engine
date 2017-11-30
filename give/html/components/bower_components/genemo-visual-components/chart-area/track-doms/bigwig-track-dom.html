@@ -21,6 +21,25 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           give.TrackDOMBehavior
         ],
         properties: {
+          upperPercentile: {
+            type: Number,
+            value: 0.01
+          },
+
+          lowerPercentile: {
+            type: Number,
+            value: 0.01
+          },
+
+          numOfDigits: {
+            type: Number,
+            value: 2
+          },
+
+          includeZero: {
+            type: Boolean,
+            value: true
+          }
         },
         created: function () {
           this.MARGIN = 2
@@ -199,28 +218,29 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var vwindow = this.mainSvg.viewWindow
 
           if (this.track.data.hasOwnProperty(vwindow.chr)) {
-            var updateExtreme = function (dataSegment) {
-              var yvalue = dataSegment.data.value
-              if (Math.ceil(yvalue) > this.windowMax) {
-                this.windowMax = Math.ceil(yvalue)
-              }
-              if (Math.floor(yvalue) < this.windowMin) {
-                this.windowMin = Math.floor(yvalue)
-              }
-            }.bind(this)
+            this.dataPoints = this._generateSmoothedPoints()
 
             if (this.autoScale) {
               this.windowMax = Number.NEGATIVE_INFINITY
-              this.windowMin = Number.POSITIVE_INFINITY
-              this.track.data[vwindow.chr].traverse(vwindow, updateExtreme, null,
-                this.getResolution(vwindow), this, false)
+              this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
+              try {
+                var extremities = give._findPercentile(this.dataPoints.map(
+                  function (dataEntry) {
+                    return dataEntry.data.value
+                  }, this), this.upperPercentile, this.lowerPercentile)
+                if (this.windowMax < extremities.upper) {
+                  this.windowMax = extremities.upper
+                }
+                if (this.windowMin > extremities.lower) {
+                  this.windowMin = extremities.lower
+                }
+              } catch (e) {
+              }
               if (this.windowMax === Number.NEGATIVE_INFINITY) {
                 this.windowMax = 1
                 this.windowMin = 0
               }
             }
-
-            this.dataPoints = this._generateSmoothedPoints()
 
             if (mode === 0) {
               this.drawPeak(this.dataPoints)
@@ -716,10 +736,12 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
 
           // then the text
             this.drawText(this.textMargin - this.MARGIN - this.scaleTickLength - this.TEXT_MARGIN_GAP,
-                  this.drawingBoundary.top + this.textSize * 0.4, this.windowMax.toString(),
+                  this.drawingBoundary.top + this.textSize * 0.4,
+                  give._maxDecimalDigits(this.windowMax, this.numOfDigits).toString(),
                   'end', null, this.textSvg)
             this.drawText(this.textMargin - this.MARGIN - this.scaleTickLength - this.TEXT_MARGIN_GAP,
-                  this.drawingBoundary.bottom - this.textSize * 0.4, this.windowMin.toString(),
+                  this.drawingBoundary.bottom - this.textSize * 0.4,
+                  give._maxDecimalDigits(this.windowMin, this.numOfDigits).toString(),
                   'end', null, this.textSvg)
           }
         },
