@@ -228,7 +228,8 @@ var GIVe = (function (give) {
     if (this.start >= region.end || this.end <= region.start) {
       return 0
     }
-    return Math.min(this.end, region.end) - Math.max(this.start, region.start)
+    return parseInt(Math.min(this.end, region.end)) -
+      parseInt(Math.max(this.start, region.start))
   }
 
   give.ChromRegion.prototype.assimilate = function (region, strandSpecific) {

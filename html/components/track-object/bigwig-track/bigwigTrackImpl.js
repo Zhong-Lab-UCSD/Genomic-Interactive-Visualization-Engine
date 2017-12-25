@@ -78,6 +78,7 @@ var GIVe = (function (give) {
 
   give.TrackObjectImpl._BigWigImpl.SummaryCtor.prototype.addData = function (data, length) {
     // data can be either a summary or actual components
+    // TODO: if data supports data.getLength(), use data.getLength() instead
     if (data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor) {
       this.addSummary(data)
     } else {

@@ -19,6 +19,15 @@ var GIVe = (function (give) {
   give.ChromBPlusTree = function (chrRange, summaryCtor, bFactor) {
     // start and length is for the corresponding region
     this.chr = chrRange.chr
+    if (
+      !Number.isInteger(props.BranchingFactor) || props.BranchingFactor <= 2
+    ) {
+      console.log('Default branching factor is chosen instead of ' +
+        props.BranchingFactor)
+      this.BranchingFactor = give.OakNode._DEFAULT_B_FACTOR
+    } else {
+      this.BranchingFactor = props.BranchingFactor
+    }
     this.root = new give.ChromBPlusTreeNode(0, chrRange.start, chrRange.end,
       summaryCtor, null, null, bFactor, true)
   }
@@ -146,6 +155,8 @@ var GIVe = (function (give) {
       return []
     }
   }
+
+  give.OakNode._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked
 
   return give
 })(GIVe || {})

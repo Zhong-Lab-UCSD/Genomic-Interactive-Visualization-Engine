@@ -84,18 +84,19 @@ var GIVe = (function (give) {
    *    This parameter should be an `Object` with at least two properties:
    *    `{ start: <start coordinate>, end: <end coordinate>, ... }`,
    *    preferably a `GIVe.ChromRegion` object.
-   * @param {Array<ChromRegionLiteral>} contList - the list of data entries
-   *    that should not start in `chrRange` but are passed from the earlier
-   *    regions, this will be useful for later regions if date for multiple
-   *    regions are inserted at the same time
-   * @param {function|null} callback - the callback function to be used (with
-   *    the data entry as its sole parameter) when inserting
-   * @param {object|null} thisVar - `this` used in calling `callback`.
    * @param {object|null} props - additional properties being
    *    passed onto nodes.
+   * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
+   *    entries that should not start in `chrRange` but are passed from the
+   *    earlier regions, this will be useful for later regions if date for
+   *    multiple regions are inserted at the same time
+   * @param {function|null} props.Callback - the callback function to be used
+   *    (with the data entry as its sole parameter) when inserting
+   * @param {object|null} props.ThisVar - `this` used in calling
+   *    `props.Callback`.
    * @param {function|null} props.LeafNodeCtor - the constructor function of
    *    leaf nodes if they are not the same as the non-leaf nodes.
-   * @param {number|null} props.CurrIndex - the current index of `data`.
+   * @param {number|null} props.DataIndex - the current index of `data`.
    *    If this is specified, no array splicing will be done on `data` to
    *    improve performance. `props.currIndex` will be shifted (and passed
    *    back).
@@ -105,9 +106,7 @@ var GIVe = (function (give) {
    *    For example, auto-balancing trees may return multiple entries,
    *    indicating siblings being created.
    */
-  give.GiveTreeNode.prototype.insert = function (
-    data, chrRange, contList, callback, thisVar, props
-  ) {
+  give.GiveTreeNode.prototype.insert = function (data, chrRange, props) {
     throw new Error('GiveTreeNode.insert not implemented in `' +
       this.constructor.name + '`!')
   }
@@ -128,11 +127,14 @@ var GIVe = (function (give) {
    *    `this.constructor._compareData(dataIn, dataEx)`)
    *    If `false`, all entries matching the start and end values will be
    *    removed.
-   * @param  {function|null} callback - the callback function to be used (with
-   *    the data entry as its sole parameter) when deleting
-   * @param  {object|null} thisVar - `this` used in calling `callback`.
    * @param  {object|null} props - additional properties being
    *    passed onto nodes.
+   * @param {boolean|null} props.ConvertTo - what shall be used to replace
+   *    the removed nodes, should be either `null` (default) or `false`.
+   * @param {function|null} props.Callback - the callback function to be used
+   *    (with the data entry as its sole parameter) when deleting
+   * @param {object|null} props.ThisVar - `this` used in calling
+   *    `props.Callback`.
    * @returns {give.GiveTreeNode|boolean}
    *    This shall reflect whether auto-balancing is supported for the tree.
    *    See `give.GiveNonLeafNode.prototype._restructuring` for details.
@@ -140,7 +142,7 @@ var GIVe = (function (give) {
    *    caller (likely the parent node) handle the upper structure.
    */
   give.GiveTreeNode.prototype.remove = function (
-    data, removeExactMatch, callback, thisVar, props
+    data, removeExactMatch, props
   ) {
     throw new Error('GiveTreeNode.remove not implemented in `' +
       this.constructor.name + '`!')
@@ -163,8 +165,10 @@ var GIVe = (function (give) {
   /**
    * clear - clear everything within this node and make it empty (basic
    *    properties should still be retained).
+   * @param {boolean|null} convertTo - what shall be used to replace the
+   *    removed contents, should be either `null` (default) or `false`.
    */
-  give.GiveTreeNode.prototype.clear = function () {
+  give.GiveTreeNode.prototype.clear = function (convertTo) {
     throw new Error('GiveTreeNode.remove not implemented in `' +
       this.constructor.name + '`!')
   }

@@ -26,32 +26,26 @@ var GIVe = (function (give) {
    * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes
    * @property {GiveTreeNode} _LeafNodeCtor - Constructor for all leaf nodes,
-   *    if `null`, non-leaf constructor will be used by default
-   *    `GIVE.GiveTreeNode` design.
    *
    * @class give.GiveTree
    *
    * @constructor
    * @param {ChromRegionLiteral} chrRange - The range this data storage unit
    *    will be responsible for.
+   * @param {function} NonLeafNodeCtor
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} NonLeafNodeCtor - The start coordinate this tree will cover.
-   *    Equals to `this.Keys[0]`.
-   * @param {number} LeafNodeCtor - The end coordinate this node will cover.
-   *    Equals to `this.Keys[this.Keys.length - 1]`.
-   *    Exceptions will be thrown if `props.Start` or `props.End` is not an
-   *    positive integer number or `props.Start >= props.End` (zero-length
-   *    regions not allowed).
+   * @param {number} props.LeafNodeCtor - if omitted, the constructor of
+   *    `this.root` will be used
    */
-  give.GiveTree = function (chrRange, NonLeafNodeCtor, LeafNodeCtor, props) {
+  give.GiveTree = function (chrRange, NonLeafNodeCtor, props) {
     this.chr = chrRange.chr
     props = props || {}
     props.Start = chrRange.getStart()
     props.End = chrRange.getEnd()
     props.IsRoot = true
     this._root = new NonLeafNodeCtor(props)
-    this._LeafNodeCtor = LeafNodeCtor
+    this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
   }
 
   /**
@@ -149,6 +143,7 @@ var GIVe = (function (give) {
   give.GiveTree.prototype.remove = function (
     data, removeExactMatch, callback, props
   ) {
+    props = props || {}
     this._root = this._root.remove(data, removeExactMatch, callback, props)
   }
 
@@ -176,8 +171,10 @@ var GIVe = (function (give) {
    * @returns {boolean} If the traverse breaks on `false`, returns `false`,
    *    otherwise `true`
    */
-  give.GiveTree.prototype.traverse = function (chrRange, callback, filter,
-    thisVar, breakOnFalse, props) {
+  give.GiveTree.prototype.traverse = function (
+    chrRange, callback, filter, thisVar, breakOnFalse, props
+  ) {
+    props = props || {}
     if (!chrRange.chr || chrRange.chr === this.chr) {
       return this._root.traverse(chrRange, callback, filter,
         thisVar, breakOnFalse, false, props)
@@ -201,6 +198,7 @@ var GIVe = (function (give) {
    *    returned.
    */
   give.GiveTree.prototype.getUncachedRange = function (chrRange, props) {
+    props = props || {}
     if (!chrRange.chr || chrRange.chr === this.chr) {
       return this._root.getUncachedRange(chrRange, props)
     } else {

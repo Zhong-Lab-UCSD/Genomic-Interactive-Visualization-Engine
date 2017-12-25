@@ -200,6 +200,20 @@ var GIVe = (function (give) {
     }
   }
 
+  give._traverseData = function (
+    data, currIndex, critFunc, thisVarCriteria, callback, thisVar
+  ) {
+    while (currIndex < data.length &&
+      critFunc.call(thisVarCriteria, data[currIndex])
+    ) {
+      if (typeof callback === 'function') {
+        callback.call(thisVar, data[currIndex])
+      }
+      currIndex++
+    }
+    return currIndex
+  }
+
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})

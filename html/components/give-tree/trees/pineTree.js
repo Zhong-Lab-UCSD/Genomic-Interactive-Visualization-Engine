@@ -33,6 +33,32 @@ var GIVe = (function (give) {
       lifeSpan = give.GiveTree._DEFAULT_LIFESPAN
     }
     this.lifeSpan = lifeSpan
+    // Scaling factor
+    if (
+      !Number.isInteger(props.ScalingFactor) || props.ScalingFactor <= 2
+    ) {
+      console.log('Default scaling factor is chosen instead of ' +
+        props.ScalingFactor)
+      this.ScalingFactor = give.PineNode._DEFAULT_S_FACTOR
+    } else {
+      this.ScalingFactor = props.ScalingFactor
+    }
+
+    // Leaf scaling factor
+    if (
+      !Number.isInteger(props.LeafScalingFactor) || props.LeafScalingFactor <= 2
+    ) {
+      console.log('Non-leaf scaling factor is chosen for leaves instead of ' +
+        props.LeafScalingFactor)
+      this.LeafScalingFactor = this.ScalingFactor
+    } else {
+      this.LeafScalingFactor = props.LeafScalingFactor
+    }
+
+    if (typeof props.SummaryCtor === 'function') {
+      this.Tree.SummaryCtor = props.SummaryCtor
+    }
+
     this.chr = chrRange.chr
     this.root = new give.GiveTreeNode(null, chrRange.start, chrRange.end,
       summaryCtor, null, null, bFactor, true, lifeSpan)
