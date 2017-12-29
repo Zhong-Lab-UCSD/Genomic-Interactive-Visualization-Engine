@@ -1,4 +1,4 @@
-# GIVE (Genomic Interactive Visualization Engine)
+# GIVI (Genomic Interactive Visualization Engine)
 
 GIVE (Genomic Interactive Visualization Engine) is a HTML5 library that lets you embed genomic visualization panels like you work with standard HTML elements, to build a customized genome browser to visualize data from public deposits (such as ENCODE) and/or in-house data.
 
