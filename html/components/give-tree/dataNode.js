@@ -244,13 +244,13 @@ var GIVe = (function (give) {
    *    `GIVE.ChromRegion` object as its sole parameter and returns something
    *    that can be evaluated as a boolean value to determine whether the call
    *    shall continue (if `breakOnFalse === true`).
-   * @param  {boolean} breakOnFalse - whether the traverse should be stopped if
-   *    `false` is returned from the callback function.
+   * @param  {object|null} thisVar - `this` used in calling both `filter` and
+   *    `callback`.
    * @param  {function|null} filter - a filter function that takes a
    *    `GIVE.ChromRegion` object as its sole parameter and returns whether the
    *    region should be included in traverse.
-   * @param  {object|null} thisVar - `this` used in calling both `filter` and
-   *    `callback`.
+   * @param  {boolean} breakOnFalse - whether the traverse should be stopped if
+   *    `false` is returned from the callback function.
    * @param  {object|null} props - additional properties being
    *    passed onto nodes.
    * @param  {boolean} props.NotFirstCall - whether this is not the first call
@@ -258,11 +258,11 @@ var GIVe = (function (give) {
    * @returns {boolean} - whether future traverses should be conducted.
    */
   give.DataNode.prototype.traverse = function (
-    chrRange, callback, filter, thisVar, breakOnFalse, props
+    chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
     // helper function
     var callFunc = this._callFuncOnDataEntry.bind(
-      this, chrRange, callback, breakOnFalse, filter, thisVar)
+      this, chrRange, callback, thisVar, filter, breakOnFalse)
     // needs to traverse on ContList if `!props.NotFirstCall`
     if (!props.NotFirstCall) {
       if (!this.ContList.every(callFunc, this)) {

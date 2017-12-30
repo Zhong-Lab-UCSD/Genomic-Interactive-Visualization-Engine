@@ -32,17 +32,18 @@ var GIVe = (function (give) {
    * @constructor
    * @param {ChromRegionLiteral} chrRange - The range this data storage unit
    *    will be responsible for.
-   * @param {function} NonLeafNodeCtor
+   * @param {function} NonLeafNodeCtor - for `this._NonLeafNodeCtor`
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} props.LeafNodeCtor - if omitted, the constructor of
+   * @param {function} props.LeafNodeCtor - if omitted, the constructor of
    *    `this.root` will be used
    */
   give.GiveTree = function (chrRange, NonLeafNodeCtor, props) {
-    this.chr = chrRange.chr
+    this.Chr = chrRange.chr
     props = props || {}
     props.Start = chrRange.getStart()
     props.End = chrRange.getEnd()
+    props.Tree = this
     props.IsRoot = true
     this._root = new NonLeafNodeCtor(props)
     this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
@@ -58,14 +59,12 @@ var GIVe = (function (give) {
    *    the chromosomal range that `data` corresponds to.
    * @param {Array<ChromRegionLiteral>} continuedList
    * @param {function|null} callback
-   * @param {number|null} resolution - the resolution of the data being
-   *    inserted.
    * @param {object|null} props
    */
   give.GiveTree.prototype._insertSingleRange = function (
     data, chrRange, continuedList, callback, props
   ) {
-    if (!chrRange.chr || chrRange.chr === this.chr) {
+    if (!chrRange.chr || chrRange.chr === this.Chr) {
       props = props || {}
       props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
       this._root = this._root.insert(data, ((!chrRange && data.length === 1)
@@ -103,9 +102,6 @@ var GIVe = (function (give) {
    * @param {Array<object>|object|null} props - additional properties being
    *    passed onto nodes. If this is an `Array`, it should have the same
    *    `length` as `chrRanges` does.
-   * @param {number|null} props.resolution - the resolution(s) of the data being
-   *    inserted. Smaller is finer. This is required for implementations that
-   *    support resolutions only.
    * @param {function|null} props.LeafNodeCtor - the constructor function of
    *    leaf nodes if they are not the same as the non-leaf nodes.
    */
@@ -164,10 +160,6 @@ var GIVe = (function (give) {
    * @param {boolean} breakOnFalse - whether the traversing should break if
    *    `false` has been returned from `callback`
    * @param {object|null} props - additional properties being passed onto nodes
-   * @param {number|null} props.resolution - the resolution that is required,
-   *    data entry (or summary entries) that can just meet this requirement will
-   *    be chosen. Smaller is finer.
-   *    This is used in implementations that support resolutions
    * @returns {boolean} If the traverse breaks on `false`, returns `false`,
    *    otherwise `true`
    */
@@ -175,7 +167,7 @@ var GIVe = (function (give) {
     chrRange, callback, filter, thisVar, breakOnFalse, props
   ) {
     props = props || {}
-    if (!chrRange.chr || chrRange.chr === this.chr) {
+    if (!chrRange.chr || chrRange.chr === this.Chr) {
       return this._root.traverse(chrRange, callback, filter,
         thisVar, breakOnFalse, false, props)
     }
@@ -188,10 +180,6 @@ var GIVe = (function (give) {
    *
    * @param {ChromRegionLiteral} chrRange - the chromosomal range to query
    * @param {object|null} props - additional properties being passed onto nodes
-   * @param {number|null} props.resolution - the resolution that is required.
-   *    Smaller is finer.
-   * @param {number|null} props.bufferingRatio - the ratio to 'boost'
-   *    `resolution` so that less data fetching may be needed.
    * @returns {Array<ChromRegionLiteral>} the chromosomal ranges that do not
    *    have their data ready in this data storage unit (therefore need to be
    *    fetched from sources). If all the data needed is ready, `[]` will be
@@ -199,7 +187,7 @@ var GIVe = (function (give) {
    */
   give.GiveTree.prototype.getUncachedRange = function (chrRange, props) {
     props = props || {}
-    if (!chrRange.chr || chrRange.chr === this.chr) {
+    if (!chrRange.chr || chrRange.chr === this.Chr) {
       return this._root.getUncachedRange(chrRange, props)
     } else {
       return []

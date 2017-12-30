@@ -236,8 +236,7 @@ var GIVe = (function (give) {
       // `nextNode === null` or `nextNode === false`
       try {
         this.getLastChild().setNext(nextNode)
-      } catch (e) {
-      }
+      } catch (ignore) { }
     }
   }
 
@@ -248,9 +247,9 @@ var GIVe = (function (give) {
    *    previous node
    */
   give.GiveNonLeafNode.prototype.setPrev = function (prevNode) {
-    this.Next = prevNode || null
+    this.Prev = prevNode || null
     if (prevNode) {
-      prevNode.Prev = this
+      prevNode.Next = this
       if (
         this.getFirstChild() &&
         typeof this.getFirstChild().setPrev === 'function'
@@ -269,7 +268,91 @@ var GIVe = (function (give) {
       // `nextNode === null` or `nextNode === false`
       try {
         this.getFirstChild().setPrev(prevNode)
-      } catch (e) {
+      } catch (ignore) { }
+    }
+  }
+
+  /**
+   * _severeSelfLinks - break links between siblings and `this`
+   *
+   * @param  {boolean|null} convertTo convert the link into. Should be either
+   *    `null` (default) or `false`.
+   * @param  {boolean} noPrev - do not severe links from previous siblings
+   * @param  {boolean} noNext - do not severe links from next siblings
+   */
+  give.GiveNonLeafNode.prototype._severeSelfLinks = function (
+    convertTo, noPrev, noNext
+  ) {
+    if (!noPrev) {
+      try {
+        this.getPrev().setNext(convertTo)
+      } catch (ignore) { }
+    }
+    if (!noNext) {
+      try {
+        this.getNext().setPrev(convertTo)
+      } catch (ignore) { }
+    }
+  }
+
+  /**
+   * _severeChildLinks - break links between all children.
+   *
+   * @param  {boolean|null} convertTo convert the link into. Should be either
+   *    `null` (default) or `false`.
+   * @param  {boolean} noPrev - do not severe links from previous siblings
+   * @param  {boolean} noNext - do not severe links from next siblings
+   */
+  give.GiveNonLeafNode.prototype._severeChildLinks = function (
+    convertTo, noPrev, noNext
+  ) {
+    if (!noPrev) {
+      try {
+        this.getFirstChild()._severeLinks(convertTo, false, true)
+      } catch (ignore) { }
+    }
+    if (!noNext) {
+      try {
+        this.getLastChild()._severeLinks(convertTo, true, false)
+      } catch (ignore) { }
+    }
+  }
+
+  /**
+   * _severeLinks - break links between siblings and `this`, and between all
+   *    children as well.
+   *
+   * @param  {boolean|null} convertTo convert the link into. Should be either
+   *    `null` (default) or `false`.
+   * @param  {boolean} noPrev - do not severe links from previous siblings
+   * @param  {boolean} noNext - do not severe links from next siblings
+   */
+  give.GiveNonLeafNode.prototype._severeLinks = function (
+    convertTo, noPrev, noNext
+  ) {
+    this._severeChildLinks(convertTo, noPrev, noNext)
+    this._severeSelfLinks(convertTo, noPrev, noNext)
+  }
+
+  /**
+   * _fixChildLinks - fix sibling links for a specific child.
+   *
+   * @param  {number} index - the index of the child
+   */
+  give.GiveNonLeafNode.prototype._fixChildLinks = function (index) {
+    if (this.RevDepth > 0) {
+      var prevChild = this._getChildPrev(index)
+      var nextChild = this._getChildNext(index)
+      if (this.Values[index]) {
+        this.Values[index].setNext(nextChild)
+        this.Values[index].setPrev(prevChild)
+      } else {
+        try {
+          prevChild.setNext(this.Values[index])
+        } catch (ignore) { }
+        try {
+          nextChild.setPrev(this.Values[index])
+        } catch (ignore) { }
       }
     }
   }
@@ -278,7 +361,7 @@ var GIVe = (function (give) {
    * getFirstChild - get the first child element of `this`.
    * @memberof GiveNonLeafNode.prototype
    *
-   * @returns {give.GiveTreeNode}  The first child element
+   * @returns {give.GiveTreeNode|boolean|null}  The first child element
    */
   give.GiveNonLeafNode.prototype.getFirstChild = function () {
     return this.Values[0]
@@ -288,10 +371,35 @@ var GIVe = (function (give) {
    * getLastChild - get the last child element of `this`.
    * @memberof GiveNonLeafNode.prototype
    *
-   * @returns {give.GiveTreeNode}  The last child element
+   * @returns {give.GiveTreeNode|boolean|null}  The last child element
    */
   give.GiveNonLeafNode.prototype.getLastChild = function () {
     return this.Values[this.Values.length - 1]
+  }
+
+  /**
+   * _getChildPrev - get the previous sibling of child at `index`.
+   * @memberof GiveNonLeafNode.prototype
+   *
+   * @param {number} index - index of the child
+   * @returns {give.GiveTreeNode|boolean|null}  the previous sibling of the
+   *    child
+   */
+  give.GiveNonLeafNode.prototype._getChildPrev = function (index) {
+    return (index > 0 ? this.Values[index - 1]
+      : (this.getPrev() ? this.getPrev().getLastChild() : this.getPrev()))
+  }
+
+  /**
+   * _getChildNext - get the next sibling of child at `index`.
+   * @memberof GiveNonLeafNode.prototype
+   *
+   * @param {number} index - index of the child
+   * @returns {give.GiveTreeNode|boolean|null}  the next sibling of the child
+   */
+  give.GiveNonLeafNode.prototype._getChildNext = function (index) {
+    return (index < (this.Values.length - 1) ? this.Values[index + 1]
+      : (this.getNext() ? this.getNext().getFirstChild() : this.getNext()))
   }
 
   /**
@@ -460,10 +568,10 @@ var GIVe = (function (give) {
   }
 
   give.GiveTreeNode.prototype.clear = function (convertTo) {
+    convertTo = convertTo === false ? false : null
+    this._severeChildLinks(convertTo)
     this.Keys = [this.getStart(), this.getEnd()]
     this.Values = [convertTo]
-    this.setNext(this.getNext())
-    this.setPrev(this.getPrev())
   }
 
   /**
@@ -482,8 +590,10 @@ var GIVe = (function (give) {
     this.Keys.splice(index + 1, 0, newKey)
     this.Values.splice(index + 1, 0,
       newLatterChild === undefined ? this.Values[index] : newLatterChild)
+    this._fixChildLinks(index + 1)
     if (newFormerChild !== undefined) {
       this.Value[index] = newFormerChild
+      this._fixChildLinks(index)
     }
   }
 
@@ -523,27 +633,17 @@ var GIVe = (function (give) {
     index, mergeNext, crossBorder
   ) {
     var merged = false
-    // merge previous child first
-    if (index > 0 &&
-      give.GiveNonLeafNode._childMergable(
-        this.Values[index - 1], this.Values[index]
-      )
-    ) {
-      // remove child at `index`
-      this.Keys.splice(index, 1)
-      this.Values.splice(index, 1)
-      merged = true
-    } else if (crossBorder && index === 0 &&
-      this.Prev && this.Values.length > 1 &&
-      give.GiveNonLeafNode._childMergable(
-        this.Prev.getLastChild(), this.Values[index]
-      )
-    ) {
-      this.Keys.splice(index, 1)
-      this.Values.splice(index, 1)
-      // needs to change the boundary of sibling node
-      this.Prev.setEnd(this.getStart())
-      merged = true
+    if ((crossBorder && this.Values.length > 1) || index > 0) {
+      // merge previous child first
+      var prevChild = this._getChildPrev(index)
+      if (give.GiveNonLeafNode._childMergable(prevChild, this.Values[index])) {
+        // remove child at `index`
+        this.Keys.splice(index, 1)
+        this.Values.splice(index, 1)
+        this.getPrev().setEnd(this.getStart())
+        this._fixChildLinks(index > 0 ? index - 1 : index)
+        merged = true
+      }
     }
 
     // if `mergeNext` is `true`, do the same to the next node
@@ -556,19 +656,21 @@ var GIVe = (function (give) {
         // remove child at `index + 1`
         this.Keys.splice(index + 1, 1)
         this.Values.splice(index + 1, 1)
+        this._fixChildLinks(index)
         merged = true
       } else if (crossBorder && index === this.Values.length - 1 &&
-        this.Next && this.Values.length > 1 &&
+        this.getNext() && this.Values.length > 1 &&
         give.GiveNonLeafNode._childMergable(
-          this.Values[index], this.Next.getFirstChild()
+          this.Values[index], this._getChildNext(index)
         )
       ) {
-        this.Next.Keys[0] = this.Keys[index]
-        this.Next.Values[0] = this.Values[index]
+        this.getNext().Keys[0] = this.Keys[index]
+        this.getNext().Values[0] = this.Values[index]
         this.Keys.splice(index, 1)
         this.Values.splice(index, 1)
         // needs to change the boundary of sibling node
-        this.setEnd(this.Next.getStart())
+        this.setEnd(this.getNext().getStart())
+        this.getNext()._fixChildLinks(0)
         merged = true
       }
     }
@@ -576,7 +678,7 @@ var GIVe = (function (give) {
   }
 
   give.GiveNonLeafNode.prototype.traverse = function (
-    chrRange, callback, filter, thisVar, breakOnFalse, props
+    chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
     // Implementation without resolution support
     // Because this is a non-leaf node, it always descends to its children
@@ -589,17 +691,18 @@ var GIVe = (function (give) {
 
       var currIndex = 0
 
-      while (this.Keys[currIndex + 1] <= chrRange.start) {
+      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
         currIndex++
       }
 
       while (
-        this.Keys[currIndex] < chrRange.end && currIndex < this.Values.length
+        this.Keys[currIndex] < chrRange.getEnd() &&
+        currIndex < this.Values.length
       ) {
         if (
           this.Values[currIndex] &&
-          !this.Values[currIndex].traverse(chrRange, callback, filter,
-            thisVar, breakOnFalse, props
+          !this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
+            breakOnFalse, props
           )
         ) {
           return false
@@ -620,15 +723,10 @@ var GIVe = (function (give) {
    * @param  {GIVE.ChromRegion} chrRange - The range of query.
    * @param  {object|null} props - additional properties being passed onto nodes
    * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
-   *   does not have the data at the current resolution requirement.
+   *    does not have the data at the current resolution requirement.
+   *    If no non-data ranges are found, return []
    */
   give.GiveNonLeafNode.prototype.getUncachedRange = function (chrRange, props) {
-    // return the range list with range(s) without any data
-    //   (either not loaded, or purges for memory usage issue (to be implemented))
-    // if no non-data ranges are found, return []
-
-    // resolutionFunc is used to determine if the summary of this is already enough (to be implemented)
-
     if (chrRange) {
       // clip chrRegion first (should never happen)
       var currRange = this.truncateChrRange(chrRange, true, true)

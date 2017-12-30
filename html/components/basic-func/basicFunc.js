@@ -1,11 +1,28 @@
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var GIVe = (function (give) {
   'use strict'
 
   /**
    * extend - Syntactic sugar for class inheritance
    *
-   * @param  {object} base Base class
-   * @param  {object} sub  Derived class
+   * @param  {object} base - Base class
+   * @param  {object} sub  - Derived class
    */
   give.extend = function (base, sub) {
     sub.prototype = Object.create(base.prototype)
@@ -18,7 +35,8 @@ var GIVe = (function (give) {
    * http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
    *
    * @param  {string} name - name of the parameter
-   * @param  {string|null} url - url to be parsed, null to use the current parameter
+   * @param  {string|null} url - url to be parsed, null to use the current
+   *    parameter
    * @return {string} the parameter to be returned, '' if blank, null if not set
    */
   give.getParameterByName = function (name, url) {
@@ -33,6 +51,15 @@ var GIVe = (function (give) {
     return decodeURIComponent(results[2].replace(/\+/g, ' '))
   }
 
+  /**
+   * forEach - implement Array.forEach onto array-like objects (for example,
+   *    `window.NodeList`)
+   *
+   * @param  {object} array - array-like object, needs to have `.length` and
+   *    numbered keys.
+   * @param  {function} callback - call back function
+   * @param  {object} [thisArg] - the `this` used in `callback`
+   */
   give.forEach = function (array, callback, thisArg) {
     // this is for window.NodeList (and other array-like objects)
     for (var i = 0; i < array.length; i++) {
@@ -180,13 +207,6 @@ var GIVe = (function (give) {
     } else {
       return str
     }
-  }
-
-  give.fitRes = function (value, resolution, roundingFunc) {
-    // use roundingFunc to fit value to the closest resolution
-    // roundingFunc can be Math.floor, Math.ceil or Math.round
-    roundingFunc = roundingFunc || Math.round
-    return roundingFunc(value / resolution) * resolution
   }
 
   give._verboseConsole = function (message, verboseLvl, moreMsg) {

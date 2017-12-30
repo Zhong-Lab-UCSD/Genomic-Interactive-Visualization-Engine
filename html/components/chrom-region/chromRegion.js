@@ -36,7 +36,7 @@ var GIVe = (function (give) {
    *   or an object with chr, start, end, and strand or other essential props
    * @param {give.RefObject} [ref] - Reference genome of the region,
    *   used for clipping the region, use `null` to omit
-   * @param {(object|null)} additionalParams - Additional parameters needed
+   * @param {object} [additionalParams] - Additional parameters needed
    *   to be in the ChromRegion
    */
   give.ChromRegion = function (mainParams, ref, additionalParams) {

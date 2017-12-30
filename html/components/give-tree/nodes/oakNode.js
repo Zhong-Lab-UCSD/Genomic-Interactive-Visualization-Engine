@@ -91,7 +91,7 @@ var GIVe = (function (give) {
           Keys: this.Keys.slice(-(sibNumOfChildren + 1)),
           Values: this.Values.slice(-sibNumOfChildren),
           RevDepth: this.RevDepth,
-          NextNode: this.Next,
+          NextNode: this.getNext(),
           PrevNode: this,
           Tree: this.Tree
         }
@@ -318,6 +318,7 @@ var GIVe = (function (give) {
         //    of the tree
         if (this.RevDepth <= 0) {
           this.Values[i] = props.ConvertTo
+          this._fixChildLinks(i)
         } else {
           // restructure to match B+ tree specification
           var updateStart = (i === 0)
@@ -348,7 +349,7 @@ var GIVe = (function (give) {
           } else {
             // needs to merge, remove sibBack
             sibFront.setNext(sibBack.getNext())
-            sibBack.Nect = null
+            sibBack.Next = null
             sibBack.Prev = null
             this.Values.splice(i, 1)
             this.Keys.splice(i, 1)
