@@ -1,5 +1,7 @@
 # GIVE (Genomic Interactive Visualization Engine)
 
+[![DOI](https://zenodo.org/badge/14942891.svg)](https://zenodo.org/badge/latestdoi/14942891)
+
 GIVE (Genomic Interactive Visualization Engine) is a HTML5 library that lets you embed genomic visualization panels like you work with standard HTML elements, to build a customized genome browser to visualize data from public deposits (such as ENCODE) and/or in-house data.
 
 GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polymer Library](https://www.polymer-project.org/) for user interface and [Scaled Vector Graphics (SVG) 1.1](https://www.w3.org/TR/SVG/) for graphics. These components are supported by all major browsers.
