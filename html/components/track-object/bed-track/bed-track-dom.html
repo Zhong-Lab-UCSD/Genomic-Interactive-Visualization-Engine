@@ -1,5 +1,39 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 <link rel="import" href="track-dom-behavior.html">
 <link rel="import" href="../../gene-object/gene-object.html">
+<!--
+### Overview
+
+`<bed-track-dom>` is the Web Component to display BED tracks. It's part of
+`GIVe.BedTrack` object and is used to visualize data from the `GIVe.BedTrack`
+object.
+
+### Visibility level
+
+### References
+*   [`GIVe.TrackObject`](../index.html) for details on tracks in
+general;
+*   [`GIVe.BedTrack`](./bed-track/index.html) for details on BED
+track implementation;
+*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
+for Polymer Element guide, including lifecycles, properties, methods and others.
+
+-->
 <dom-module id="bed-track-dom">
   <template>
   </template>
@@ -15,33 +49,56 @@
         ],
 
         properties: {
-
-        // data structure for bed tracks:
-        // data has one key (chrom), all other keys will be deleted upon changing chromosome
-        // data[chrom] is an array of Genes (for now)
-        //    Future plan: arrays
-        //    outside indices are start coordinates of every gene
-        //    inside indices are used if multiple genes start at the same location
-        //    NOTICE: start is always smaller than end, if the strand is negative, start is TTS, end is TSS
-        //     values in the inner array are Gene objects
-
+          /**
+           * whether this track honors itemRGB values provided by BED data.
+           */
           honorItemRGB: {
-          // whether this track honors itemRGB values
             type: Boolean,
             value: false
           }
-
         },
 
         created: function () {
+          /**
+           * @property {number} GENE_MARGIN
+           * margin size between genes when gene name is shown. Unit in px.
+           */
           this.GENE_MARGIN = 10
+
+          /**
+           * @property {number} GENE_HEIGHT
+           * height of gene entries. Proportion to `this.textSize`.
+           */
+          this.GENE_HEIGHT = 0.8
+
+          /**
+           * @property {number} GENE_NOTEXT_MARGIN
+           * margin size between genes when no text is shown. Unit in px.
+           */
           this.GENE_NOTEXT_MARGIN = 2
-          this.ADAPTIVE_MAXLINES = 12    // limit to downgrade visibility
-          this.TRIANGLE_FILL = 0xFFFFFF    // the fill color for the triangles (indicating clipped content)
-          this.FORECOLOR_INDEX = 0      // the color index for fore color
+
+          /**
+           * @property {number} ADAPTIVE_MAXLINES
+           * limit to downgrade visibility
+           */
+          this.ADAPTIVE_MAXLINES = 12
+
+          /**
+           * @property {number} TRIANGLE_FILL
+           * the fill color for the triangles (indicating clipped content)
+           */
+          this.TRIANGLE_FILL = 0xFFFFFF
+
+          /**
+           * @property {number} FORECOLOR_INDEX
+           * the color index for fore color
+           */
+          this.FORECOLOR_INDEX = 0
         },
 
-      // ****** customized methods below ******
+        /**
+         * ****** Implementation methods below ******
+         */
 
         trackImpl: function (track, prop) {
           if (prop.hasOwnProperty('honorItemRGB')) {
@@ -50,112 +107,153 @@
         },
 
         drawData: function () {
-        // this is to draw everything from this.data to the svg
-        // Steps:
-        //     put genes into lines (pack display)
-        //    draw genes out line by line
+          // this is to draw everything from this.data to the svg
+          // Steps:
+          //     put genes into lines (pack display)
+          //    draw genes out line by line
 
-        // clear text Margin svg
+          // clear text Margin svg
           this.clear()
 
-          this.changeVisibility(this.track.getSetting('visibility'), false)
+          this.changeVisibility(this.parent.getSetting('visibility'), false)
           var numOfLines
+          var data = this._getDataObject(this.mainSvg.viewWindow.chr)
 
-          while (!(numOfLines = this.prepareLines()) &&
+          while (!(numOfLines = this._prepareLines(data)) &&
             this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
 
-          if (this.track.data[this.mainSvg.viewWindow.chr]) {
-            this.track.data[this.mainSvg.viewWindow.chr].traverse(this.mainSvg.viewWindow, function (gene) {
-              if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_COLLAPSED && gene.transcripts) {
-                gene.transcripts.forEach(function (transcript) {
-                  if (this.regionInWindow(transcript)) {
-                    this.drawSingleGene(transcript,
-                            this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE ? null : 0,
-                            (this.honorItemRGB && gene.itemRGB !== undefined) ? gene.itemRGB : null)
-                  }
-                }, this)
-              } else {
-                this.drawSingleGene(gene, this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE ? null : 0,
-                        (this.honorItemRGB && gene.itemRGB !== undefined) ? gene.itemRGB : null)
-              }
-            }, null, null, this, false)
+          if (data) {
+            data.traverse(
+              this.mainSvg.viewWindow, this._drawSingleGene,
+              null, null, this, false
+            )
           }
 
-        // resize the heights
+          // resize the heights
           this.updateLocationSize(null, null, null,
-                    (numOfLines * (this.fullHeight + this.lineGap) - this.lineGap) * this.textSize)
+            this._calcHeight(numOfLines))
 
-        // add labels
+          // add labels
           if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE) {
             this.drawShortLabel()
           }
         },
 
-      // prepare genes
+        /**
+         * ****** Private and helper methods below ******
+         */
 
-        prepareLines: function () {
-        // calculate the x0 and x1 for every gene, (taking text width into consideration)
-        // then update gene.y or transcript.y as needed
+        /**
+         * _calcHeight - calculate the height of this track
+         *
+         * @param  {number} [numOfLines] - number of lines in this track
+         * @returns {number} height of this track
+         */
+        _calcHeight: function (numOfLines) {
+          numOfLines = numOfLines || 1
+          return (numOfLines * (this.fullHeight + this.lineGap) -
+            this.lineGap) * this.textSize
+        },
+
+        /**
+         * _allocateLineToTrans - test and allocate line number to a single
+         *    transcript.
+         *    Allocated line number will be written into `transcript` via its
+         *    `lineY` property.
+         *
+         * @param  {Array<object>} lineEnds - An array of objects depicting
+         *    existing line ends for collision detection., object can have two
+         *    properties:
+         *    * end: the end coordinate of the line;
+         *    * textAtLeft: whether this line has text at left (in text column).
+         * @param  {TranscriptObject} transcript - the transcript to be
+         *    allocated.
+         * @returns {boolean} return `true` if allocation succeeds, `false` if
+         *    allocation cannot be done under current settings.
+         *    (This will happen when adaptive display is on and current active
+         *    setting cannot hold all transcripts.)
+         */
+        _allocateLineToTrans: function (lineEnds, transcript) {
+          // calculate x0 and x1 for the gene
+          if (!this.regionInWindow(transcript)) {
+            return true
+          }
+          var x0 = this.transformXCoordinate(transcript.getStartCoor(), true)
+          var x1 = this.transformXCoordinate(transcript.getEndCoor(), true)
+          var textAtLeft = false
+          if (this.activeVisibility >
+            give.TrackObject.StatusEnum.VIS_NOTEXT &&
+            transcript.getGeneName(true)
+          ) {
+            var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP,
+              this.Y_HIDDEN, transcript.getGeneName(true), 'end')
+            // move text to textMargin if out of bounds
+            if (this.textMargin && newLabel.getBBox().x < 0) {
+              x0 = 0
+              textAtLeft = true
+            } else {
+              x0 = newLabel.getBBox().x
+            }
+            this.removeElement(newLabel)
+          }
+
+          if (!lineEnds.some(function (lineEnd, index) {
+            if (
+              (lineEnd.end <= x0 && !(lineEnd.textAtLeft && textAtLeft)) ||
+              this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
+            ) {
+              // this gene can be fit into this line
+              transcript.lineY = index
+              lineEnd.end = x1 + (this.activeVisibility >
+                give.TrackObject.StatusEnum.VIS_NOTEXT
+                  ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN)
+              return true
+            }
+            return false
+          }, this)) {
+            // no empty lines, create a new line
+            if (this.parent.getSetting('adaptive') &&
+              lineEnds.length >= this.ADAPTIVE_MAXLINES
+            ) {
+              // maximum number of lines exceeded
+              // reduce visibility level by 1
+              this.changeVisibility(-1, true)
+              return false
+            }
+            transcript.lineY = lineEnds.length
+            lineEnds.push({
+              end: x1 + (this.activeVisibility >
+                give.TrackObject.StatusEnum.VIS_NOTEXT
+                  ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN),
+              textAtLeft: textAtLeft
+            })
+          }
+          return true
+        },
+
+        /**
+         * _prepareLines - prepare lines for genes in adaptive cases.
+         *    This is especially useful for display modes like `pack`, where
+         *      items are stacked if space allows.
+         *    When `this.parent.getSetting('adaptive') === true`, the actual
+         *      display mode needs to be determined by the code. This function
+         *      will calculate the x0 and x1 for every gene, taking text width
+         *      into consideration, and increase display density accordingly.
+         *    This function will allocate items to their corresponding lines by
+         *      setting the `lineY` property.
+         *
+         * @param  {GiveTreeBase} data - data object used to prepare the lines.
+         * @returns {number}  number of lines this track will take.
+         */
+        _prepareLines: function (data) {
           var lineEnds = []    // arrays of line end coordinates
-          if (this.track.data[this.mainSvg.viewWindow.chr]) {
-            if (this.track.data[this.mainSvg.viewWindow.chr].traverse(this.mainSvg.viewWindow, function (gene) {
-              var transcripts
-              if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_COLLAPSED && gene.transcripts) {
-              // then transcripts needs to be drawn
-                transcripts = gene.transcripts
-              } else {
-                transcripts = [gene]
-              }
-              return transcripts.every(function (transcript) {
-              // calculate x0 and x1 for the gene
-                if (!this.regionInWindow(transcript)) {
-                  return true
-                }
-                var x0 = this.transformXCoordinate(transcript.getStartCoor(), true)
-                var x1 = this.transformXCoordinate(transcript.getEndCoor(), true)
-                var textAtLeft = false
-                if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT && transcript.getGeneName(true)) {
-                  var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP, this.Y_HIDDEN,
-                               transcript.getGeneName(true), 'end')
-                // move text to textMargin if out of bounds
-                  if (this.textMargin && newLabel.getBBox().x < 0) {
-                    x0 = 0
-                    textAtLeft = true
-                  } else {
-                    x0 = newLabel.getBBox().x
-                  }
-
-                  this.removeElement(newLabel)
-                }
-
-                if (!lineEnds.some(function (lineEnd, index) {
-                  if ((lineEnd.end <= x0 && !(lineEnd.textAtLeft && textAtLeft)) ||
-                   this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE) {
-                  // this gene can be fit into this line
-                    transcript.y = index
-                    lineEnd.end = x1 +
-                      (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT
-                        ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN)
-                    return true
-                  }
-                  return false
-                }, this)) {
-                // no empty lines, create a new line
-                  if (this.track.getSetting('adaptive') && lineEnds.length >= this.ADAPTIVE_MAXLINES) {
-                    this.changeVisibility(-1, true)
-                    return false
-                  }
-                  transcript.y = lineEnds.length
-                  lineEnds.push({
-                    end: x1 +
-                      (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT
-                        ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN),
-                    textAtLeft: textAtLeft
-                  })
-                }
-                return true
-              }, this)
-            }, null, null, this, true)) {
+          if (data) {
+            if (data.traverse(
+              this.mainSvg.viewWindow,
+              this._callTransFuncOnGene.bind(this,
+                this._allocateLineToTrans.bind(this, lineEnds)
+              ), null, null, this, true)
+            ) {
               return lineEnds.length > 0 ? lineEnds.length : 1
             } else {
               return false
@@ -164,101 +262,172 @@
           return 1
         },
 
-        drawSingleGene: function (transcript, y, colorRGB, height, halfHeight, lineHeight) {
-        // transcript: the transcript to be drawn
-        // y: the y coordinate of the gene (line location)
-        // if y is not a number then transcript.y will be used
-        // height: the height of gene (notice that thin regions will have this.halfHeight * height)
+        /**
+         * _drawOverflowTriangles - draw two overflow triangles if genes exceed
+         *    the viewWindow
+         *
+         * @param  {TranscriptObject} transcript - the gene/transcript to be
+         *    drawn. Only the entry provided here will be drawn, so if a gene
+         *    is provided, only the gene, not its transcript(s) will be drawn.
+         * @param  {number} colorRGB - RGB value of the color for the gene
+         * @param  {number} height - full height for drawing (CDS for example).
+         * @param  {number} yCoor - the y coordinate from the top to draw this
+         *    gene/transcript. __Notice that genes drawn are vertically-aligned
+         *    to the center so yCoor should be the coordinates at the center.__
+         */
+        _drawOverflowTriangles: function (transcript, colorRGB, height, yCoor) {
+          var halfHeight = 0.5 * height
+          if (this.transformXCoordinate(transcript.getStartCoor(), false) < 0) {
+            // left triangles
+            this.createRawPolygon([ '0,' + yCoor,
+              halfHeight + ',' + (yCoor - halfHeight),
+              halfHeight + ',' + yCoor,
+              height + ',' + (yCoor - halfHeight),
+              height + ',' + (yCoor + halfHeight),
+              halfHeight + ',' + yCoor,
+              halfHeight + ',' + (yCoor + halfHeight) ],
+              { fill: this.TRIANGLE_FILL, stroke: colorRGB }
+            )
+          }
 
-          height = height || this.fullHeight * this.textSize * 0.8
-          halfHeight = halfHeight || this.halfHeight
-          lineHeight = lineHeight || (this.fullHeight + this.lineGap) * this.textSize
+          if (this.transformXCoordinate(transcript.getEndCoor(), false) >
+            this.windowWidth
+          ) {
+            // right triangles
+            this.createRawPolygon([ this.windowWidth + ',' + yCoor,
+              (this.windowWidth - halfHeight) + ',' + (yCoor - halfHeight),
+              (this.windowWidth - halfHeight) + ',' + yCoor,
+              (this.windowWidth - height) + ',' + (yCoor - halfHeight),
+              (this.windowWidth - height) + ',' + (yCoor + halfHeight),
+              (this.windowWidth - halfHeight) + ',' + yCoor,
+              (this.windowWidth - halfHeight) + ',' + (yCoor + halfHeight) ],
+              { fill: this.TRIANGLE_FILL, stroke: colorRGB }
+            )
+          }
+        },
+
+        /**
+         * _callTransFuncOnGene - call functions on transcripts of genes, or
+         *    the gene itself depends on visibility settings.
+         *    If active visibility is greater than
+         *    `give.TrackObject.StatusEnum.VIS_COLLAPSED`, then function will
+         *    be called upon every transcript, otherwise it will be called upon
+         *    the gene.
+         *    Notice that the loop will be broken once `transcriptCallback`
+         *    returns `false`.
+         *
+         * @param  {function} transcriptCallback - call back functions for
+         *    each transcript (taking only the transcript as )
+         * @param  {GeneObject} gene - the gene to be called upon.
+         */
+        _callTransFuncOnGene: function (transcriptCallback, gene) {
+          var transcripts
+          if (this.activeVisibility >
+            give.TrackObject.StatusEnum.VIS_COLLAPSED &&
+            gene.transcripts
+          ) {
+            transcripts = gene.transcripts
+          } else {
+            transcripts = [gene]
+          }
+          return transcripts.every(transcriptCallback, this)
+        },
+
+        /**
+         * _drawSingleTranscript - draw a single gene in the track SVG
+         *
+         * @param  {GeneObject} gene - the gene to be drawn.
+         */
+        _drawSingleGene: function (gene) {
+          this._callTransFuncOnGene(function (transcript) {
+            if (this.regionInWindow(transcript)) {
+              this._drawSingleTranscript(transcript,
+                this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
+                  ? null : 0.5 * this.fullHeightRatio * this.textSize,
+                (this.honorItemRGB && gene.itemRGB !== undefined)
+                  ? gene.itemRGB : null)
+            }
+          })
+        },
+
+        /**
+         * _drawSingleTranscript - draw a single transcript in the track SVG
+         *
+         * @param  {TranscriptObject} transcript - the transcript to be
+         *    drawn. Only the entry provided here will be drawn, so if a gene
+         *    is provided, only the gene, not its transcript(s) will be drawn.
+         * @param  {number} [yCoor] - the y coordinate from the top to draw this
+         *    transcript. __Notice that genes drawn are vertically-aligned
+         *    to the center so yCoor should be the coordinates at the center.__
+         * @param  {number} [colorRGB] - RGB value of the color for the gene
+         * @param  {number} [height] - full height for drawing (CDS for
+         *    example).
+         * @param  {number} [halfHeightRatio] - Ratio for lower height values in
+         *    some regions (for example, UTRs). __This should be normalized by
+         *    `height`.__
+         * @param  {number} [lineHeight] - unit for all height values.
+         */
+        _drawSingleTranscript: function (
+           transcript, yCoor, colorRGB, height, halfHeightRatio, lineHeight
+        ) {
+          if (!this.regionInWindow(transcript)) {
+            return
+          }
+
+          height = height ||
+            this.fullHeightRatio * this.textSize * this.GENE_HEIGHT
+          halfHeightRatio = halfHeightRatio || this.halfHeightRatio
+          lineHeight = lineHeight ||
+            (this.fullHeightRatio + this.lineGapRatio) * this.textSize
           if (typeof (colorRGB) !== 'number') {
             colorRGB = this.colorSet[this.FORECOLOR_INDEX]
           }
 
-          if (typeof (y) !== 'number' || isNaN(y)) {
-            y = parseInt(transcript.y) * lineHeight || 0
+          if (typeof (yCoor) !== 'number' || isNaN(yCoor)) {
+            yCoor = (parseInt(transcript.lineY) + 0.5) * lineHeight ||
+              lineHeight / 2
           }
 
-          var coor, blockStart, blockEnd
-          var isThick = false
-  //      // draw thin segments (if any)
-  //      if(gene.thickStart > gene.getStart()) {
-  //        coor = new give.ChromRegion(null, null, gene.chr, gene.getStart(), gene.thickStart, gene.strand);
-  //        this.drawRectangle(coor, 0, y + height * 0.5 * halfHeight, height * halfHeight);
-  //      }
-  //      if(gene.thickEnd < gene.end) {
-  //        coor = new give.ChromRegion(null, null, gene.chr, gene.thickEnd, gene.end, gene.strand);
-  //      }
-
-          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
-            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
-          // draw thick blocks and connecting lines
-            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
-              blockStart = transcript.getStart() + transcript.getBlockStarts()[i]
-            // first draw connecting lines (intron, if any)
-              if (blockEnd < blockStart) {
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockEnd,
-                  end: blockStart,
-                  strand: transcript.strand})
-                this.drawSpanningLine(coor, colorRGB, y, height)
-              }
-              blockEnd = blockStart + transcript.getBlockSizes()[i]
-              if (transcript.thickStart < blockEnd && transcript.thickStart > blockStart) {
+          /**
+           * _processSingleBlock - helper function to draw only one block
+           *
+           * @param  {number} blockStart - the start coordinate of the block.
+           * @param  {number} blockEnd - the end coordinate of the block.
+           * @param  {number} [thickStart] - the start coordinate of thick
+           *    portions, which may overlap with the block.
+           * @param  {number} [thickEnd] - the end coordinate of thick
+           *    portions, which may overlap with the block.
+           */
+          function _processSingleBlock (
+            blockStart, blockEnd, thickStart, thickEnd
+          ) {
+            if (typeof thickStart === 'number' ||
+              typeof thickEnd === 'number'
+            ) {
+              if (thickStart < blockEnd && thickStart > blockStart) {
                 // CDS start is in this block
                 coor = new give.ChromRegion({chr: transcript.chr,
                   start: blockStart,
-                  end: transcript.thickStart,
+                  end: thickStart,
                   strand: transcript.strand})
-                this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB)
-                blockStart = transcript.thickStart
+                this.drawRectangle(coor, colorRGB,
+                  yCoor, height * halfHeightRatio,
+                  this.mainSvg, colorRGB
+                )
+                blockStart = thickStart
               }
-              if (transcript.thickEnd < blockEnd && transcript.thickEnd > blockStart) {
-              // CDS end is in this block
+              if (thickEnd < blockEnd && thickEnd > blockStart) {
+                // CDS end is in this block
                 coor = new give.ChromRegion({chr: transcript.chr,
                   start: blockStart,
-                  end: transcript.thickEnd,
+                  end: thickEnd,
                   strand: transcript.strand})
-                this.drawRectangle(coor, colorRGB, y, height, null, colorRGB)
-                blockStart = transcript.thickEnd
+                this.drawRectangle(coor, colorRGB, yCoor,
+                  height, null, colorRGB
+                )
+                blockStart = thickEnd
               }
-
-              isThick = typeof transcript.thickStart !== 'number' ||
-                ((transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart))
-              coor = new give.ChromRegion({chr: transcript.chr,
-                start: blockStart,
-                end: blockEnd,
-                strand: transcript.strand})
-              this.drawRectangle(coor, colorRGB, y + (isThick ? 0 : height * 0.5 * (1 - halfHeight)),
-                      height * (isThick ? 1 : halfHeight), null, colorRGB)
-            }
-          } else {
-          // no blocks
-            blockStart = transcript.getStart()
-            blockEnd = transcript.getEnd()
-            if (typeof (transcript.thickStart) === 'number' || typeof (transcript.thickEnd) === 'number') {
-              if (transcript.thickStart && transcript.thickStart > blockStart) {
-              // CDS start is in this block
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockStart,
-                  end: transcript.thickStart,
-                  strand: transcript.strand})
-                this.drawRectangle(coor, colorRGB, y + height * 0.5 * (1 - halfHeight), height * halfHeight, null, colorRGB)
-                blockStart = transcript.thickStart
-              }
-              if (transcript.thickEnd && transcript.thickEnd > blockStart) {
-              // CDS end is in this block
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockStart,
-                  end: transcript.thickEnd,
-                  strand: transcript.strand})
-                this.drawRectangle(coor, colorRGB, y, height, null, colorRGB)
-                blockStart = transcript.thickEnd
-              }
-
-              isThick = (transcript.thickStart < blockEnd) && (transcript.thickEnd > blockStart)
+              isThick = (thickStart < blockEnd) && (thickEnd > blockStart)
             } else {
               isThick = true
             }
@@ -266,52 +435,62 @@
               start: blockStart,
               end: blockEnd,
               strand: transcript.strand})
-            this.drawRectangle(coor, colorRGB, y + (isThick ? 0 : height * 0.5 * (1 - halfHeight)),
-                    height * (isThick ? 1 : halfHeight), null, colorRGB)
+            this.drawRectangle(coor, colorRGB,
+              yCoor, height * (isThick ? 1 : halfHeightRatio),
+              this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
+            )
           }
 
-        // draw text
-          if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT) {
-            var newLabel = this.drawText(this.transformXCoordinate(transcript.getStartCoor(), true) - this.TEXT_MARGIN_GAP,
-                         y + 0.6 * height, transcript.getGeneName(true), 'end',
-                         {style: 'fill: ' + this.rgbToHex(colorRGB)})
+          var coor, blockStart, blockEnd
+          var isThick = false
 
-          // move text to textMargin if out of bounds
+          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+            // Have different blocks
+            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
+            // draw thick blocks and connecting lines
+            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+              blockStart = transcript.getStart() +
+                transcript.getBlockStarts()[i]
+              // first draw connecting lines (intron, if any)
+              if (blockEnd < blockStart) {
+                coor = new give.ChromRegion({chr: transcript.chr,
+                  start: blockEnd,
+                  end: blockStart,
+                  strand: transcript.strand})
+                this._drawSpanningLine(coor, colorRGB, yCoor, height)
+              }
+              blockEnd = blockStart + transcript.getBlockSizes()[i]
+              _processSingleBlock(blockStart, blockEnd,
+                transcript.thickStart, transcript.thickEnd
+              )
+            }
+          } else {
+            // no blocks
+            _processSingleBlock(transcript.getStart(), transcript.getEnd(),
+              transcript.thickStart, transcript.thickEnd
+            )
+          }
+
+          // draw text
+          if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT) {
+            var newLabel = this.drawText(
+              this.transformXCoordinate(transcript.getStartCoor(), true) -
+                this.TEXT_MARGIN_GAP,
+              yCoor, transcript.getGeneName(true), 'end',
+              {style: 'fill: ' + this.rgbToHex(colorRGB)}
+            )
+
+            // move text to textMargin if out of bounds
             if (this.textMargin && newLabel.getBBox().x < 0) {
               newLabel.setAttributeNS(null, 'x', this.textMargin)
               this.addElement(newLabel, this.textSvg)
             }
           }
 
-        // draw triangle(s) indicating that the gene is not completely within the view
-          if (this.transformXCoordinate(transcript.getStartCoor(), false) < 0) {
-          // left triangle
-            this.createRawPolygon(['0,' + (y + height * 0.5),
-              height * 0.5 + ',' + y,
-              height * 0.5 + ',' + (y + height * 0.5),
-              height + ',' + y,
-              height + ',' + (y + height),
-              height * 0.5 + ',' + (y + height * 0.5),
-              height * 0.5 + ',' + (y + height) ],
-              {fill: this.TRIANGLE_FILL,
-                stroke: colorRGB})
-          }
-
-          if (this.transformXCoordinate(transcript.getEndCoor(), false) > this.windowWidth) {
-          // right triangle
-            this.createRawPolygon([this.windowWidth + ',' + (y + height * 0.5),
-              (this.windowWidth - height * 0.5) + ',' + y,
-              (this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
-              (this.windowWidth - height) + ',' + y,
-              (this.windowWidth - height) + ',' + (y + height),
-              (this.windowWidth - height * 0.5) + ',' + (y + height * 0.5),
-              (this.windowWidth - height * 0.5) + ',' + (y + height) ],
-              {fill: this.TRIANGLE_FILL,
-                stroke: colorRGB})
-          }
+          this._drawOverflowTriangles(transcript, colorRGB, height, yCoor)
         },
 
-        drawSpanningLine: function (region, colorRGB, y, height) {
+        _drawSpanningLine: function (region, colorRGB, y, height) {
           height = height || 1
           y = y || 0
 
@@ -321,11 +500,11 @@
           if (windowToDraw.overlaps(region) > 0) {
             var x0 = this.transformXCoordinate(region.getStartCoor(), true)
             var x1 = this.transformXCoordinate(region.getEndCoor(), true)
-            this.drawLine(x0, y + 0.5 * height, x1, y + 0.5 * height, colorRGB)
-            this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), colorRGB)
+            this.drawLine(x0, y, x1, y, colorRGB)
+            this.drawStrandArrows(x0, y - 0.5 * height, x1, y + 0.5 * height,
+              region.getStrand(), colorRGB)
           }
         }
-
       })
 
       return give

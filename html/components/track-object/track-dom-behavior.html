@@ -63,19 +63,20 @@ limitations under the License.
         },
 
         /**
-         * Proportion of full line height (multiplies of `this.textSize`)
+         * Proportion of full line height (multiplies of `this.textSize`).
          * @type {number}
          */
-        fullHeight: {
+        fullHeightRatio: {
           type: Number,
           value: 1    // em
         },
 
         /**
-         * Proportion of half height (for bed files, for example). Multiplies of `this.textSize`
+         * Proportion of half height (for bed files, for example). Multiplies
+         * of `this.textSize`.
          * @type {number}
          */
-        halfHeight: {
+        halfHeightRatio: {
           type: Number,
           value: 0.6    // this is the proportion to fullHeight
         },
@@ -85,7 +86,7 @@ limitations under the License.
          * Multiplies of `this.textSize`
          * @type {number}
          */
-        lineGap: {
+        lineGapRatio: {
           type: Number,
           value: 0.1
         },
@@ -272,7 +273,7 @@ limitations under the License.
 
     //      this._setInitialized(true);
     //      this.fire('track-initialized', {ID: this.parent.getID()});
-          this.initSvgHolder()
+          this.initSvgHolder(this.mainSvg)
 
           if (typeof this.initSvgComponents === 'function') {
             this.initSvgComponents()
@@ -356,25 +357,19 @@ limitations under the License.
         this.textSvg = document.createElementNS(this.svgNS, 'svg')
         this.textSvg.setAttribute('id', this.parent.getCleanID() + '_textSvg')
         Polymer.dom(this.trackSvg).appendChild(this.textSvg)
-        this.initTextSvgHolder()
+        this.initSvgHolder(this.textSvg)
       },
 
       /**
-       * initTextSvgHolder - Initialize the text SVG element's content
-       *   holder only.
+       * initSvgHolder - Initialize the content holder for an SVG element.
+       *
+       * @param {DOMelement} svgElem - the SVG element to put the content
+       *    holder in.
        */
-      initTextSvgHolder: function () {
-        // notice that this.textSvg should be there
-        this.textSvg.holder = document.createElementNS(this.svgNS, 'g')
-        Polymer.dom(this.textSvg).appendChild(this.textSvg.holder)
-      },
-
-      /**
-       * initSvgHolder - Initialize the main SVG element's content holder.
-       */
-      initSvgHolder: function () {
-        this.mainSvg.holder = document.createElementNS(this.svgNS, 'g')
-        Polymer.dom(this.mainSvg).appendChild(this.mainSvg.holder)
+      initSvgHolder: function (svgElem) {
+        // notice that `svgElem` should be there
+        svgElem.holder = document.createElementNS(this.svgNS, 'g')
+        Polymer.dom(svgElem).appendChild(svgElem.holder)
       },
 
       /**
@@ -425,7 +420,20 @@ limitations under the License.
         this.updateTrack(newViewWindow)
       },
 
-      setWideModeWidthParameters: function (newWidth, newTxtMargin, newViewWindow) {
+      /**
+       * setWideModeWidthParameters - set width-related parameters in wide mode.
+       *
+       * @param  {number} newWidth - new width, in px
+       * @param  {number} newTxtMargin - new text margin, in px
+       * @param  {ChromRegionLiteral} [newViewWindow] - new view window
+       *    coordinates. This is useful when view window has changed in one
+       *    track and every other track needs to be brought to synchronization.
+       *    If omitted, new view window will be recalculated based on new
+       *    width (useful for the first track).
+       */
+      setWideModeWidthParameters: function (
+        newWidth, newTxtMargin, newViewWindow
+      ) {
         var widthChanged = false
         if (newTxtMargin && newTxtMargin !== this.textMargin) {
           // needs to change txtMargin
@@ -453,6 +461,18 @@ limitations under the License.
         }
       },
 
+      /**
+       * setWidthParameters - set width-related parameters and switching
+       *    between narrow (to be implemented) or wide mode if needed.
+       *
+       * @param  {number} newWidth - new width, in px
+       * @param  {number} newTxtMargin - new text margin, in px
+       * @param  {ChromRegionLiteral} [newViewWindow] - new view window
+       *    coordinates. This is useful when view window has changed in one
+       *    track and every other track needs to be brought to synchronization.
+       *    If omitted, new view window will be recalculated based on new
+       *    width (useful for the first track).
+       */
       setWidthParameters: function (newWidth, newTxtMargin, newWindow) {
         newWidth = (typeof (newWidth) === 'number' && newWidth > 0) ? newWidth : this.totalWidth
         newTxtMargin = (typeof (newTxtMargin) === 'number' && newTxtMargin > 0) ? newTxtMargin : (this.textMargin ? this.textMargin : null)
@@ -465,12 +485,29 @@ limitations under the License.
         }
       },
 
+      /**
+       * setHeight - set the height of the track
+       *
+       * @param  {number} newHeight - new height of the track, in px
+       */
       setHeight: function (newHeight) {
         this._setTrackHeight(newHeight)
       },
 
       // ****** visibility control ******
 
+      /**
+       * changeVisibility - change the visibility level of the track.
+       *
+       * @param  {number} newValue description
+       * @param  {boolean} relative - whether `newValue` is the absolute
+       *    visibility level or the relative level.
+       *    If `false`, absolute level is used. Please see
+       *    `give.TrackObject.StatusEnum` for possible absolute values.
+       *    If `true`, then `newValue` will be used to adjust visibility levels
+       *    according to `this.allowedVisibilities`. Negative value means
+       *    lowering the amount of details shown.
+       */
       changeVisibility: function (newValue, relative) {
         if (!relative) {
           // setting the absolute visibility value,
@@ -495,6 +532,17 @@ limitations under the License.
         }
       },
 
+      /**
+       * updateAnno - update track properties from JS annotation map object.
+       *    Update happens when the track has never been updated, or
+       *    `forceUpdate === true`.
+       *
+       * @param  {object} annoMap - annotation map used to update properties.
+       *    If update happens, all properties of `annoMap` will replace
+       *    properties with the same name in the track.
+       * @param  {boolean} forceUpdate - update annotation even if this track
+       *    has already updated before.
+       */
       updateAnno: function (annoMap, forceUpdate) {
         if (forceUpdate === true || !this.annoUpdated) {
           for (var key in annoMap) {
@@ -508,8 +556,19 @@ limitations under the License.
 
       // ****** customized methods ******
 
+      /**
+       * drawData - draw the data of the track
+       *    This method should be implemented in track implementations.
+       *    When implementing this method, use `this._getDataObject` to get
+       *    the GiveTree object storing all necessary data corresponding to
+       *    the correct chromosome. Then use `.traverse` to traverse through
+       *    the content of the GiveTree object and apply customized drawing
+       *    methods.
+       */
       drawData: function () {
-        // placeholder for data drawing
+        give._verboseConsole('TrackDOMBehavior.drawData gets called but has' +
+          ' not been implemented in `' + this.constructor.name + '`.',
+          give.VERBOSE_WARNING)
       },
 
       getResolution: function (vWindow) {
@@ -521,6 +580,19 @@ limitations under the License.
       },
 
       // ****** common methods used by all tracks ******
+
+      /**
+       * _getDataObject - get the data structure from `this.parent`
+       *
+       * @param  {string} [chrom] - the chromosome to be fetched. If omitted,
+       *    use `this.mainSvg.viewWindow.chr`
+       * @returns {GiveTreeBase|null} return the data structure object.
+       */
+      _getDataObject: function (chrom) {
+        chrom = chrom || this.mainSvg.viewWindow.chr
+        return this.parent.getData(chrom)
+      },
+
       // ** coordinates **
 
       transformXCoordinate: function (coordinate, moveOutsideToBorder, svgToDraw) {
@@ -577,31 +649,24 @@ limitations under the License.
 
       clear: function () {
         if (this.textSvg) {
-          if (this.textSvg.holder) {
-            try {
-              Polymer.dom(this.textSvg).removeChild(this.textSvg.holder)
-            } catch (err) {
-              give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
-            }
-          } else {
-            while (Polymer.dom(this.textSvg).firstChild) {
-              Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild)
-            }
-          }
-          this.initTextSvgHolder()
+          this.clearSvg(this.textSvg)
         }
-        if (this.mainSvg.holder) {
+        this.clearSvg(this.mainSvg)
+      },
+
+      clearSvg: function (svgElem) {
+        if (svgElem.holder) {
           try {
-            Polymer.dom(this.mainSvg).removeChild(this.mainSvg.holder)
+            Polymer.dom(svgElem).removeChild(svgElem.holder)
           } catch (err) {
             give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
           }
+          this.initSvgHolder(svgElem)
         } else {
-          while (Polymer.dom(this.mainSvg).firstChild) {
-            Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild)
+          while (Polymer.dom(svgElem).firstChild) {
+            Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
           }
         }
-        this.initSvgHolder()
       },
 
       updateLocationSize: function (x, y, width, height, newTxtWidth, newWindow) {
@@ -707,7 +772,9 @@ limitations under the License.
 
       // ** Complex SVG drawing for track **
 
-      drawRectangle: function (region, colorRGB, y, height, svgToDraw, strokeColorRGB) {
+      drawRectangle: function (
+        region, colorRGB, y, height, svgToDraw, strokeColorRGB, vertAlign
+      ) {
         // height is the percentage of svgToDraw, top-aligned
         // color is an index from colorSet
         // TODO: allow different alignment
@@ -717,6 +784,12 @@ limitations under the License.
 
         svgToDraw = svgToDraw || this.mainSvg
         var windowToDraw = svgToDraw.viewWindow
+
+        if (vertAlign === give.TrackDOMBehaviorImpl.VALIGN_CENTER) {
+          y -= height / 2
+        } else if (vertAlign === give.TrackDOMBehaviorImpl.VALIGN_BOTTOM) {
+          y -= height
+        }
 
         if (windowToDraw.overlaps(region) > 0) {
           var x0 = this.transformXCoordinate(region.getStartCoor(), true)
@@ -1127,9 +1200,16 @@ limitations under the License.
       }
     }
 
+    give.TrackDOMBehaviorImpl.VALIGN_TOP = 0
+    give.TrackDOMBehaviorImpl.VALIGN_CENTER = 1
+    give.TrackDOMBehaviorImpl.VALIGN_BOTTOM = 2
+
     give.TrackDOMBehaviorImpl.CacheRangeSpanProportion = 0.5
     give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion = 0.1  // this is used for smoothing purposes
 
+    /**
+     * @polymerBehavior
+     */
     give.TrackDOMBehavior = [
       Polymer.IronResizableBehavior,
       give.TrackDOMBehaviorImpl

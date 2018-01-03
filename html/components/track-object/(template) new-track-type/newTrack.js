@@ -19,9 +19,9 @@ var GIVe = (function (give) {
   'use strict'
 
   /**
-   * Object representing a BED track, see `GIVe.TrackObject` for details.
-   * @typedef {object} BedTrack
-   * @class give.BedTrack
+   * New track template, see `GIVe.TrackObject` for details.
+   * @typedef {object} NewTrack
+   * @class give.NewTrack
    *
    * @constructor
    * @implements give.TrackObject
@@ -32,21 +32,32 @@ var GIVe = (function (give) {
    *   `Settings.settings` take precedence in cases of conflict names
    * @param {RefObjectLiteral} ref - the reference the track is using
    */
-  give.BedTrack = function (ID, Settings, ref) {
+  give.NewTrack = function (ID, Settings, ref) {
     give.TrackObject.apply(this, arguments)
   }
 
-  give.extend(give.TrackObject, give.BedTrack)
+  give.extend(give.TrackObject, give.NewTrack)
 
-  give.BedTrack.getType = function () {
-    return ['bed', 'genebed', 'genepred']
+  /**
+   * getType - get the key strings showing this type of data.
+   *    This shall be the same as the `type` column for track entries in
+   *    `trackDb` table so that GIVE is able to figure out the track is of this
+   *    type.
+   *
+   * @returns {Array<string>}  return all keys matching this type.
+   */
+  give.NewTrack.getType = function () {
+    return ['new', 'new-track']
   }
 
-  give.BedTrack.prototype._DataObjCtor = give.BedTrackData
+  // specify the data object (if needed) used in this track
+  give.NewTrack.prototype._DataObjCtor = give.NewTrackData
 
-  give.BedTrack.prototype._DomObjCtor = give.BedTrackDOM
+  // specify the visualization object used in this track
+  give.NewTrack.prototype._DomObjCtor = give.NewTrackDOM
 
-  give.TrackObject.registerTrack(give.BedTrack)
+  // __IMPORTANT:__ register this new track type
+  give.TrackObject.registerTrack(give.NewTrack)
 
   return give
 })(GIVe || {})

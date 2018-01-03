@@ -27,7 +27,7 @@ var GIVe = (function (give) {
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
    */
-  give.BedTrackData = function(parent) {
+  give.BedTrackData = function (parent) {
     give.TrackDataObject.apply(this, arguments)
   }
 
@@ -47,11 +47,15 @@ var GIVe = (function (give) {
     var resChromEntryFunc = function (geneArray, geneNameMap, resChromEntry) {
       var newGene = new give.GeneObject(
         new give.TranscriptObject(resChromEntry.geneBed,
-                      this.ref,
-                      { geneName: resChromEntry.geneSymbol }))
+          this.ref,
+          { geneName: resChromEntry.geneSymbol }
+        )
+      )
       if (this.getTypeTrunk().indexOf('gene') > -1) {
         // is some gene oriented type
-        if (geneNameMap.hasOwnProperty(newGene.name) && geneNameMap[newGene.name].overlaps(newGene)) {
+        if (geneNameMap.hasOwnProperty(newGene.name) &&
+          geneNameMap[newGene.name].overlaps(newGene)
+        ) {
           // check if it overlaps with existing gene(s)
           // because the gene list is sorted by start,
           //    whenever it doesn't overlap with the current gene
@@ -76,8 +80,8 @@ var GIVe = (function (give) {
         var geneArray = []
         res[chrom].forEach(resChromEntryFunc.bind(this, geneArray, geneNameMap), this)
         // then populate the B+ Tree with geneArray
-        this.data[chrom].insert(geneArray.sort(give.ChromRegion.compareChrRegion),
-          regionsInChrom)
+        this.getData(chrom, true).insert(
+          geneArray.sort(give.ChromRegion.compareChrRegion), regionsInChrom)
       }
     }
   }

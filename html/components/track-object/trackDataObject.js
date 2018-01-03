@@ -52,7 +52,6 @@ var GIVe = (function (give) {
     this._unmergedGUIRangesFromID = {}
     this._pendingQueryRegions = []
     this._data = {}
-    this.noData = this.parent.getSetting('noData')
 
     this._callbackMgr = new give.CallbackManager(
       give.TrackDataObject._getDataQueueCallbackID
@@ -110,9 +109,9 @@ var GIVe = (function (give) {
               GUIRange.overlaps(mergedGUIRanges[j])) {
             // needs to determine which one should take the resolution
             var queryRange = mergedGUIRanges[j]
-            if (typeof queryRange.resolution === 'number' &&
-              (typeof GUIRange.resolution !== 'number' ||
-                GUIRange.resolution < queryRange.resolution
+            if (typeof queryRange.Resolution === 'number' &&
+              (typeof GUIRange.Resolution !== 'number' ||
+                GUIRange.Resolution < queryRange.Resolution
               )
             ) {
               // GUI has smaller resolution
@@ -135,9 +134,9 @@ var GIVe = (function (give) {
                 }
                 j--
               }
-            } else if (typeof GUIRange.resolution === 'number' &&
-              (typeof queryRange.resolution !== 'number' ||
-                queryRange.resolution < GUIRange.resolution
+            } else if (typeof GUIRange.Resolution === 'number' &&
+              (typeof queryRange.Resolution !== 'number' ||
+                queryRange.Resolution < GUIRange.Resolution
               )
             ) {
               // query has smaller resolution
@@ -195,22 +194,19 @@ var GIVe = (function (give) {
    */
   give.TrackDataObject.prototype._getTrackUncachedRange = function (mergedGUIRanges) {
     var totalUncachedRanges = []
-    if (!this.noData && mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
+    if (mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
       mergedGUIRanges.forEach(function (chrRange, index) {
-        if (!this._data.hasOwnProperty(chrRange.chr)) {
-          this._data[chrRange.chr] = new this._DataStructure(
-            this.parent.ref.chromInfo[chrRange.chr].chrRegion.start,
-            this.parent.ref.chromInfo[chrRange.chr].chrRegion.end,
-            this._SummaryCtor)
-        }
-        if (this._data[chrRange.chr].getUncachedRange) {
-          var uncachedRanges = this._data[chrRange.chr].getUncachedRange(
-            chrRange, null, give.TrackDataObject.RESOLUTION_BUFFER_RATIO)
+        if (this.getData(chrRange.chr, true).getUncachedRange) {
+          var uncachedRanges = this.getData(chrRange.chr).getUncachedRange(
+            chrRange, {
+              BufferingRatio: this._getResBufferRatio()
+            }
+          )
           totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
         } else {
-          chrRange.resolution = typeof chrRange.resolution === 'number'
-            ? chrRange.resolution / give.TrackDataObject.RESOLUTION_BUFFER_RATIO
-            : chrRange.resolution
+          chrRange.Resolution = typeof chrRange.Resolution === 'number'
+            ? chrRange.Resolution / this._getResBufferRatio()
+            : chrRange.Resolution
           totalUncachedRanges.push(chrRange)
         }
       }, this)
@@ -230,7 +226,7 @@ var GIVe = (function (give) {
     // for most of the tracks, this is only trackID and window
 
     var getRegionRes = function (region) {
-      return region.resolution
+      return region.Resolution
     }
 
     if (this.isCustom) {
@@ -286,32 +282,28 @@ var GIVe = (function (give) {
    *   calls together
    */
   give.TrackDataObject.prototype.fetchData = function (ranges, callback, callerID) {
-    if (!this.noData) {
-      if (this.isRetrivingData) {
-        this._callbackMgr.add(this.fetchData.bind(this, ranges, callback, callerID))
-        return true
-      }
-
-      callerID = callerID || give.TrackDataObject._NO_CALLERID_KEY
-
-      if (!Array.isArray(ranges)) {
-        ranges = [ranges]
-      }
-      give._verboseConsole('fetchData()', give.VERBOSE_DEBUG)
-      give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
-
-      this._unmergedGUIRangesFromID[callerID] = ranges
-
-      if (callback) {
-        this._callbackMgr.add(callback, callerID)
-      }
-      give.debounce(this._getDataJobName,
-              this._queryAndRetrieveData.bind(this),
-              this.getDataDebounceInt)
-    } else if (callback) {
-      this._callbackMgr.add(callback, callerID)
-      this._callbackMgr.clear(true)
+    if (this.isRetrivingData) {
+      this._callbackMgr.add(this.fetchData.bind(this, ranges, callback, callerID))
+      return true
     }
+
+    callerID = callerID || give.TrackDataObject._NO_CALLERID_KEY
+
+    if (!Array.isArray(ranges)) {
+      ranges = [ranges]
+    }
+    give._verboseConsole('fetchData()', give.VERBOSE_DEBUG)
+    give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
+
+    this._unmergedGUIRangesFromID[callerID] = ranges
+
+    if (callback) {
+      this._callbackMgr.add(callback, callerID)
+    }
+    give.debounce(this._getDataJobName,
+            this._queryAndRetrieveData.bind(this),
+            this.getDataDebounceInt)
+  }
 
   /**
    * getData - Get the actual `this._DataStructure` object representing the
@@ -319,17 +311,22 @@ var GIVe = (function (give) {
    *    method is called.
    * This method can be overriden to accept `null` if needed
    *
-   * @param  {string} chrom The chrom to be requested
+   * @param  {string} chrom - The chrom to be requested
+   * @param  {boolean} createIfNotExist - if the data structure is not there
+   *    for the chromosome, create a new data structure if this is `true`,
+   *    throw an exception if this is `false`.
    * @returns {this._DataStructure|null}       the underlying data
    *    (or `null` if no data for the track)
    */
-  give.TrackDataObject.prototype.getData = function (chrom) {
-    if (this.noData) {
-      return null
-    }
+  give.TrackDataObject.prototype.getData = function (chrom, createIfNotExist) {
     if (!this._data || !this._data.hasOwnProperty(chrom)) {
-      throw new Error('Data not ready for track \'' + this.parent.getID() + '\'' +
-                      ', chromosome \'' + chrom + '\'.')
+      if (createIfNotExist) {
+        this._data = this._data || {}
+        this._data[chrom] = this._createNewDataStructure(chrom)
+      } else {
+        throw new Error('Data not ready for track \'' + this.parent.getID() + '\'' +
+                        ', chromosome \'' + chrom + '\'.')
+      }
     }
     return this._data[chrom]
   }
@@ -383,6 +380,33 @@ var GIVe = (function (give) {
   }
 
   /**
+   * _createNewDataStructure - create a new data structure and pass in
+   *    necessary parameters based on `this`.
+   *
+   * @param  {string} chrom - chromosomal name of the new data structure.
+   * @returns {this._DataStructure} - a new data structure for the chromosome.
+   */
+  give.TrackDataObject.prototype._createNewDataStructure = function (chrom) {
+    return new this._DataStructure(
+      this.parent.ref.chromInfo[chrom].chrRegion,
+      {
+        SummaryCtor: this._SummaryCtor
+      }
+    )
+  }
+
+  /**
+   * _getDataStructure - create a new data structure and pass in
+   *    necessary parameters based on `this`.
+   *
+   * @param  {string} chrom - chromosomal name of the new data structure.
+   * @returns {this._DataStructure} - current data structure for the chromosome.
+   */
+  give.TrackDataObject.prototype._getDataStructure = function (chrom) {
+
+  }
+
+  /**
    * _responseHandler - Function used to handle remote responses
    *
    * @memberof TrackDataObjectBase.prototype
@@ -405,17 +429,6 @@ var GIVe = (function (give) {
    *   both the server-side code and `this._dataHandler`
    */
   give.TrackDataObject.prototype._responseHandler = function (response) {
-    for (var chrom in response) {
-      if (response.hasOwnProperty(chrom) &&
-         this.parent.ref.chromInfo.hasOwnProperty(chrom) &&
-         Array.isArray(response[chrom])) {
-        if (!this._data.hasOwnProperty(chrom)) {
-          this._data[chrom] = new this._DataStructure(
-            this.parent.ref.chromInfo[chrom].chrRegion,
-            this._SummaryCtor)
-        }
-      }
-    }
     this._dataHandler(response, this._pendingQueryRegions)
     this._pendingQueryRegions.length = 0
     this.isRetrivingData = false
@@ -455,6 +468,16 @@ var GIVe = (function (give) {
     return false
   }
 
+  /**
+   * _getResBufferRatio - get the buffer ratio of resolution
+   *
+   * @returns {number}  the buffer ratio. For example, 1.2 means the requested
+   *    resolution will be 20% finer than needed.
+   */
+  give.TrackDataObject.prototype._getResBufferRatio = function () {
+    return give.TrackDataObject.RESOLUTION_BUFFER_RATIO
+  }
+
   // Static members for give.TrackDataObject
   // URLs for data retrieval
   /**
@@ -489,7 +512,7 @@ var GIVe = (function (give) {
    *   if data at current resolution is not available.
    * @static
    */
-  give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.5
+  give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.25
 
   /**
    * @property {number} DEFAULT_DEBOUNCE_INTERVAL - The default values for
@@ -504,7 +527,8 @@ var GIVe = (function (give) {
    *   individual tracks.
    * To implement tracks for any new type, override the following methods to
    *   process the data being implemented.
-   * Please refer to implementations under `impl/` for examples.
+   * Please refer to implementations under individual track folders for
+   *   examples.
    * **************************************************************************
    */
 
@@ -542,11 +566,11 @@ var GIVe = (function (give) {
 
   /**
    * _DataStructure - Constructor for underlying data structure used in
-   *   `this._data`. Default value is `GIVE.ChromBPlusTree` (OakTree)
+   *   `this._data`. Default value is `GIVE.OakTree`
    * @constructor
    * @memberof TrackDataObjectBase.prototype
    */
-  give.TrackDataObject.prototype._DataStructure = give.ChromBPlusTree
+  give.TrackDataObject.prototype._DataStructure = give.OakTree
 
   return give
 })(GIVe || {})

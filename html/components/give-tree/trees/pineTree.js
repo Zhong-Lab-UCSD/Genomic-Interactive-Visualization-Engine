@@ -46,8 +46,8 @@ var GIVe = (function (give) {
    * @param {object} props - properties that will be passed to the individual
    *    implementations
    * @param {number} props.ScalingFactor - for `this.BranchingFactor`
-   * @param {number} props.LeafScalingFactor - for `this.BranchingFactor`
-   * @param {function} props.SummaryCtor - for `this.BranchingFactor`
+   * @param {number} props.LeafScalingFactor - for `this.LeafBranchingFactor`
+   * @param {function} props.SummaryCtor - for `this.SummaryCtor`
    * @param {number} props.LifeSpan - for `this.LifeSpan`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.

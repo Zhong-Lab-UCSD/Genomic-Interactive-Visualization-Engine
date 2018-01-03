@@ -394,8 +394,8 @@ var GIVe = (function (give) {
   }
 
   /**
-   * getData - Get the actual `this._DataStructure` object representing the
-   *    underlying data. Underlying data are supposed to be ready when this
+   * getData - Get the actual `this._dataObj._DataStructure` object representing
+   *    the underlying data. Underlying data are supposed to be ready when this
    *    method is called.
    * This method can be overriden to accept `null` if needed
    *
@@ -404,9 +404,11 @@ var GIVe = (function (give) {
    *    (or `null` if no data for the track)
    */
   give.TrackData.prototype.getData = function (chrom) {
-    return this._dataObj.getData(chrom)
+    if (this._dataObj) {
+      return this._dataObj.getData(chrom)
+    }
+    return null
   }
-
 
   /**
    * ********** Static Properties for TrackObject Below **********
@@ -435,12 +437,34 @@ var GIVe = (function (give) {
    * @enum {number}
    */
   give.TrackObject.StatusEnum = {
+    /**
+     * Full visibility. Show the most amount of details for the track.
+     */
     VIS_FULL: 5,
-    VIS_NONE: 0,
+    /**
+     * Show lots of details for the track. Pack the information together if
+     * possible.
+     */
     VIS_PACK: 4,
-    VIS_COLLAPSED: 3,      // this is for gene track only, will collapse overlapping transcripts
-    VIS_NOTEXT: 2,        // this is for gene track only, will remove all texts
-    VIS_DENSE: 1
+    /**
+     * Show some details for the track. Pack the information together if
+     * possible. Some information may be collapsed.
+     */
+    VIS_COLLAPSED: 3,
+    /**
+     * Show some details for the track. Pack the information together if
+     * possible. Some information may be collapsed. Text labels will be omitted.
+     */
+    VIS_NOTEXT: 2,
+    /**
+     * Show as few details for the track as possible. Only minimum details
+     * is shown to provide essential information for the track.
+     */
+    VIS_DENSE: 1,
+    /**
+     * Hide the track. Do not show in the browser.
+     */
+    VIS_NONE: 0
   }
 
   /**
@@ -541,10 +565,10 @@ var GIVe = (function (give) {
     if (!Array.isArray(keys)) {
       keys = [keys]
     }
-    var result = keys.every(function(key) {
+    var result = keys.every(function (key) {
       return !give.TrackObject.typeMap.hasOwnProperty(key)
     }, this)
-    keys.forEach(function(key) {
+    keys.forEach(function (key) {
       give.TrackObject.typeMap[key] = trackImpl
     }, this)
     return result
@@ -574,7 +598,6 @@ var GIVe = (function (give) {
    * The constructor for actual DOM object being used in this track.
    */
   give.TrackObject.prototype._DomObjCtor = null
-
 
   return give
 })(GIVe || {})
