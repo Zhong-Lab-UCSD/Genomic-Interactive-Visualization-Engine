@@ -23,10 +23,9 @@ limitations under the License.
 `GIVe.BedTrack` object and is used to visualize data from the `GIVe.BedTrack`
 object.
 
-### References
-*   [`GIVe.TrackObject`](../index.html) for details on tracks, including track
-    object, track data object and track DOM element;
-*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
+Please refer to [`GIVe.TrackObject`](../index.html) for details on tracks in
+general, to [`GIVe.BedTrack`](./bed-track/index.html) for details on BED
+track implementation, or to [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
 for Polymer Element guide, including lifecycles, properties, methods and others.
 
 -->
@@ -71,20 +70,17 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           // this.EXAMPLE_CONSTANT = 10
         },
 
-        /** #### Customized methods below
+        // ****** customized methods below ******
+
+        /**
+         * trackImpl - methods that will be called when the track DOM is
+         * initialized.
          *
-         *  ##### Helper and private functions ***
+         * @param  {give.TrackObject} track - the track object linked to this
+         *    DOM.
+         * @param  {object} prop - additional properties needed to initialize
+         *    the DOM.
          */
-
-        // // This is an example private function.
-        // _calcHeight: function (numOfLines) {
-        //   numOfLines = numOfLines || 1
-        //   return (numOfLines * (this.fullHeight + this.lineGap) -
-        //     this.lineGap) * this.textSize
-        // },
-
-        /** ##### Methods to be implemented for `TrackDOMBehavior` */
-
         trackImpl: function (track, prop) {
           /**
            * This will be called when initializing the track. Properties from
@@ -99,47 +95,14 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          * drawData - draw the data of the track
          *    This method should be implemented in track implementations.
          *    When implementing this method, use `this._getDataObject` to get
-         *    the `GiveTree` object storing all necessary data corresponding to
+         *    the GiveTree object storing all necessary data corresponding to
          *    the correct chromosome. Then use `.traverse` to traverse through
-         *    the content of the `GiveTree` object and apply customized drawing
+         *    the content of the GiveTree object and apply customized drawing
          *    methods.
-         *
-         *    See documentation for `GIVe.TrackDOMBehavior` for references to
-         *    `this._getDataObject`, and `GIVe.GiveTree` for references to
-         *    `.traverse`.
-         *
-         *    An example is given in the code as comments.
          */
         drawData: function () {
-          // // clear old content
-          // this.clear()
-          //
-          // // preparation (traversing the data may be needed)
-          // this.changeVisibility(this.parent.getSetting('visibility'), false)
-          // var numOfLines
-          // var data = this._getDataObject(this.mainSvg.viewWindow.chr)
-          // while (!(numOfLines = this._prepareLines(data)) &&
-          //   this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
-          //
-          // // traverse through the data and draw
-          // if (data) {
-          //   data.traverse(
-          //     this.mainSvg.viewWindow, this._drawSingleGene,
-          //     null, null, this, false
-          //   )
-          // }
-          //
-          // // resize the heights
-          // this.updateLocationSize(null, null, null,
-          //   this._calcHeight(numOfLines))
-          //
-          // // add labels
-          // if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE) {
-          //   this.drawShortLabel()
-          // }
         }
       })
-
       return give
     })(GIVe || {})
   </script>
