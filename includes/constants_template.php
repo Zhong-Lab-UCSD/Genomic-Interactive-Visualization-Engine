@@ -3,13 +3,13 @@
   // Also mysql user and passwords
   // This file will not be pushed onto Github
 
-  define('CPB_HOST', 'CPB_HOST');
-  define('CPB_USER', 'CPB_USER');
-  define('CPB_PASS', 'CPB_PASS');
+  define('CPB_HOST', '<CPB_HOST>');
+  define('CPB_USER', '<CPB_USER>');
+  define('CPB_PASS', '<CPB_PASS>');
 
-  define('CPB_EDIT_HOST', 'CPB_EDIT_HOST');
-  define('CPB_EDIT_USER', 'CPB_EDIT_USER');
-  define('CPB_EDIT_PASS', 'CPB_EDIT_PASS');
+  define('CPB_EDIT_HOST', '[CPB_EDIT_HOST]');
+  define('CPB_EDIT_USER', '[CPB_EDIT_USER]');
+  define('CPB_EDIT_PASS', '[CPB_EDIT_PASS]');
 
   define('CLASS_DIR', '/usr/include/classes/');
   define('GOOGLE_ANALYTICS_ACCOUNT', 'GOOGLE_ANALYTICS_ACCOUNT');

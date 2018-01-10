@@ -21,12 +21,15 @@ First, `import` everything needed to implement a new track.
 <!--
 Then import all other dependencies (omit if none is needed).
 -->
-<link rel="import" href="../../gene-object/gene-object.html">
+<link rel="import" href="../../basic-func/external-libs.html">
+<link rel="import" href="../../chrom-region/chrom-region.html">
+<link rel="import" href="../../give-tree/trees/pine-tree.html">
 
 <!--
 Finally, all the components are either `import`ed (HTML file) or put in
 `<script></script>` tags (JS files).
 -->
-<link rel="import" href="bed-track-dom.html">
-<script src="bedTrackData.js"></script>
-<script src="bedTrack.js"></script>
+<link rel="import" href="bigwig-track-dom.html">
+<!-- <script src="bigWigReader.js"></script> -->
+<script src="bigwigTrackData.js"></script>
+<script src="bigwigTrack.js"></script>
