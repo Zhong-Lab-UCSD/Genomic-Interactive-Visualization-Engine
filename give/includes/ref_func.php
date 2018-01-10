@@ -32,7 +32,7 @@ function getChromInfo($db) {
                 ($chromStart + 1 - ChromRegion::BEGINNING) .
                 "-" . $chromEnd;
               if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
-                $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
+                $chromCentEnd >= $chromStart && $chromCentEnd < $chromEnd) {
                   $chrom["cent"] = $chromName . ":" .
                     ($chromCentStart + 1 - ChromRegion::BEGINNING) .
                     "-" . $chromCentEnd;
@@ -62,7 +62,7 @@ function getChromInfo($db) {
             ($chromStart + 1 - ChromRegion::BEGINNING) .
             "-" . $chromEnd;
           if($chromCentStart >= $chromStart && $chromCentStart < $chromEnd &&
-            $chromCentEnd >= $chromStart && $chromCentEnd < $chromStart) {
+            $chromCentEnd >= $chromStart && $chromCentEnd < $chromEnd) {
               $chrom["cent"] = $chromName . ":" .
               ($chromCentStart + 1 - ChromRegion::BEGINNING) .
               "-" . $chromCentEnd;
