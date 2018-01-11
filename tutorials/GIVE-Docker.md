@@ -47,14 +47,18 @@ After successfully deploying GIVE, you can utilize the power of GIVE to build yo
 - Login to GIVE container
   
   You can login to the running GIVE container `give` as root and then do anything what you want. 
+  
   ```
   docker exec -t -i give /bin/bash
   ```
+  
   Alternatively, you can also directly login to the MySQL database of container `give`.
+  
   ```
   docker exec -t -i give mysql -uroot -p
   ```
-  The passwd of MySQL `root` account is `Admin2015`.
+  
+  The passwd of MySQL `root` account is `Admin2015`.
   
   
   
