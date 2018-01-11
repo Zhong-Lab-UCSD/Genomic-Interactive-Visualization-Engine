@@ -13,3 +13,8 @@ We documented both approaches of deployment. The following links will lead you t
 
 
 ## [System-level installation](1.2-system-level_installation.md)
+
+
+||||
+| --- | --- | --- |
+| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2. Using GIVE Web Components →](2-webComponents.md) |

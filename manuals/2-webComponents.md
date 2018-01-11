@@ -74,7 +74,7 @@ By specifying the `ref` attribute, you may change the reference genome used in t
 &lt;chart-controller ref="<em><strong>&lt;your_reference_database&gt;</strong></em>"&gt;&lt;/chart-controller&gt;
 </pre>
 
-__`your_reference_database`__ is the name of reference database. Currently the following reference databases are supported on GIVE server data source at demo.give.genemo.org: (also see [1. Installation - Installing GIVE Data Sources](1-installation.md#installing-give-data-sources))
+__`your_reference_database`__ is the name of reference database. Currently the following reference databases are supported on GIVE server data source at demo.give.genemo.org: (also see [1.2. System-level Installation - Installing GIVE Data Sources](1.2-system-level_installation.md#installing-give-data-sources))
 *   Human: `hg19` and `hg38`
 *   Mouse: `mm9` and `mm10`
 
@@ -116,4 +116,4 @@ The detailed attributes available for `<chart-controller>` and `<chart-area>` el
 
 ||||
 | --- | --- | --- |
-| [← 1. Installation](1-installation.md) | [↑ Index](index.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
+| [← 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) | [↑ Index](Readme.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
