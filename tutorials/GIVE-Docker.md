@@ -13,17 +13,38 @@ The `root` account passwd of MySQL is `Admin2015`.
 - **Install Docker CE**
   
   If Docker was not installed on your computer, please download and install [Docker CE]( https://www.docker.com/community-edition ). It's very easy to install and supports all the mainstream operating systems and cloud computing services, such as Mac OS, Windows 10, Ubuntu, AWS and AZURE. 
-  
+  After installation, you need to start the Docker service. For Windows and Mac OS users, just start the installed Docker software. For Linux users, you need to run the following command with root privileges. 
+  ```
+  service docker start
+  ```
+   
 - **Pull GIVE-Docker from [Docker Hub](https://hub.docker.com/r/zhonglab/give/)**
 
-As we published GIVE-Docker on [Docker Hub](https://hub.docker.com/r/zhonglab/give/), so it's easy to pull GIVE-Docker with a command.
-```
-docker pull zhonglab/give
-```
+  As we published GIVE-Docker on [Docker Hub](https://hub.docker.com/r/zhonglab/give/), so it's easy to pull GIVE-Docker with a command.
+  ```
+  docker pull zhonglab/give
+  ```
 
 - **Run GIVE-Docker container**
 
-- **Test the built-in [Demo2-ENCODE2_ChIA-PET](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET) genome browser**
+  Excute the following command, then a GIVE container named as `give` will run in background. 
+  ```
+  docker run -d -it -p 40080:80 -p 40443:443 -p 43306:3306 --name give zhonglab/give
+  ```
 
-### Build custom tracks
+- **Test the built-in [Demo2-ENCODE2_ChIA-PET](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET) genome browser**
+  In the previous `docker run` command, `-p` options set three ports for communication between operating system and GIVE container. With the communication ports `40080 -> 80`(for http) and `40443 -> 443`(for https), we can use web browser to open the built-in Demo2-ENCODE2_ChIA-PET genome browser with following URLs (the https URL may encounter SSL certificate problem).
+  [http://localhost:40080](http://localhost:40080)
+  
+  [https://localhost:40443](https://localhost:40443)
+  ```
+  ![Demo2 screen](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/gallery/Demo2-ENCODE2_ChIA-PET/GIVE_demo2_chiapet.PNG)
+
+
+### Essential tips for building custom tracks
+
+- Login to GIVE-Docker container
+- Transfer files to GIVE-Docker container
+- Data storage of MySQL
+- 
 
