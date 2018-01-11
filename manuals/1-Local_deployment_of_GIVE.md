@@ -1,3 +1,7 @@
+||||
+| --- | --- | --- |
+| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2. Using GIVE Web Components →](2-webComponents.md) |
+
 # Local Deployment of GIVE
 We provide two approaches for deploying GIVE to local machines or cloud services, which are **system-level installation** and **GIVE-Docker**. 
 
