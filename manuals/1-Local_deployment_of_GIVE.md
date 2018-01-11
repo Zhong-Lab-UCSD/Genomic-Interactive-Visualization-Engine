@@ -17,4 +17,4 @@ We documented both approaches of deployment. The following links will lead you t
 
 ||||
 | --- | --- | --- |
-| ← *None* | [↑ Index](Readme.md) | [→ 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) |
+| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2. Using GIVE Web Components →](2-webComponents.md) |
