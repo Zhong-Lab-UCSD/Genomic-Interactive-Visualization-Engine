@@ -59,10 +59,13 @@ After successfully deploying GIVE, you can utilize the power of GIVE to build yo
   The passwd of MySQL `root` account is `Admin2015`.
 - Transfer files
   You can transfer files between GIVE container and your operating system using `docker cp` command. The following commands are examples.
+  
   ```
-  # from OS to the container give
+  # run GIVE-Docker container, named as give
+  docker run -d -it -p 40080:80 -p 40443:443 -p 43306:3306 --name give zhonglab/give
+  # copy file test.sh from OS to the container give
   docker cp ~/test.sh give:/tmp/test.sh
-  # from the container give to OS
+  # copy file from the container give to OS
   docker give:/tmp/test.sh ~/test.sh
   ```
 - Data storage of MySQL
