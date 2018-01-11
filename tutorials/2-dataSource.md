@@ -23,7 +23,7 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 
 ***
 
-*__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. Please refer to the following resources for installing your own MySQL instance:*
+*__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. We recommend you to use GIVE-Docker to deploy GIVE to your own machines. Following [GIVE-Docker tutorial](GIVE-Docker.md) to set it up. If you really want to do system-level configuration by your self. Please refer to the following resources for installing your own MySQL instance:*
 *   *[MySQL community server](https://dev.mysql.com/downloads/mysql/)*
 *   *[MariaDB](https://downloads.mariadb.org/)*
 
