@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| [← 1. Installation](1-installation.md) | [↑ Index](index.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
+| [← 1.2. System-level Installation](1.2-system-level_installation.md) | [↑ Index](Readme.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
 
 # Using GIVE Web Components
 
