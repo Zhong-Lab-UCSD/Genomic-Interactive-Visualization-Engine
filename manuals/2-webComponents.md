@@ -116,4 +116,4 @@ The detailed attributes available for `<chart-controller>` and `<chart-area>` el
 
 ||||
 | --- | --- | --- |
-| [← 1. Installation](1-installation.md) | [↑ Index](index.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
+| [← 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) | [↑ Index](Readme.md) | [3. Adding Data in GIVE Data Sources →](3-dataSource.md) |
