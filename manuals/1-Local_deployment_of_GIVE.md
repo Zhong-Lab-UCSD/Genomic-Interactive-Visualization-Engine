@@ -13,3 +13,8 @@ We documented both approaches of deployment. The following links will lead you t
 
 
 ## [System-level installation](1.2-system-level_installation.md)
+
+
+||||
+| --- | --- | --- |
+| ← *None* | [↑ Index](Readme.md) | [→ 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) |
