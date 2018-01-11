@@ -12,7 +12,7 @@
   define('CPB_EDIT_PASS', '[CPB_EDIT_PASS]');
 
   define('CLASS_DIR', '/usr/include/classes/');
-  define('GOOGLE_ANALYTICS_ACCOUNT', 'GOOGLE_ANALYTICS_ACCOUNT');
+  define('GOOGLE_ANALYTICS_ACCOUNT', '[GOOGLE_ANALYTICS_ACCOUNT]');
 
   define('CUSTOM_TRACK_TABLE_NAME', 'customTrackFiles');
   define('CUSTOM_TRACK_DB_NAME', 'customTrackDb');

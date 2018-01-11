@@ -223,6 +223,8 @@ var GIVe = (function (give) {
    *    have their data ready in this data storage unit (therefore need to be
    *    fetched from sources). If all the data needed is ready, `[]` will be
    *    returned.
+   *    Every returned chromosomal range will also have its corrsponding
+   *    resolution in its `.Resolution` property.
    */
   give.PineTree.prototype.getUncachedRange = function (chrRange, props) {
     return give.GiveTree.prototype.getUncachedRange.call(this, arguments)

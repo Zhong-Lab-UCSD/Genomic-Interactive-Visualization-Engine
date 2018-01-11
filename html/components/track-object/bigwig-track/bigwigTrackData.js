@@ -74,7 +74,7 @@ var GIVe = (function (give) {
      * {data: {value: <actual value>} }
      */
     var preConvertData = function (resEntry) {
-      return new give.ChromRegion(resEntry.regionString, this.ref, {
+      return new give.ChromRegion(resEntry.regionString, this.parent.ref, {
         data: (resEntry.data.hasOwnProperty('validCount')
           ? new this._SummaryCtor(resEntry.data)
           : resEntry.data),
@@ -84,11 +84,14 @@ var GIVe = (function (give) {
     }.bind(this)
 
     for (var chrom in res) {
-      if (res.hasOwnProperty(chrom) && Array.isArray(res[chrom]) &&
-        this.getData(chrom)
+      var regionsInChrom = regions.filter(function (region) {
+        return region.chr === chrom
+      }, this)
+      if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
+        Array.isArray(res[chrom])
       ) {
-        this.getData(chrom).insert(res[chrom].map(preConvertData, this), chrRegions,
-                     null, null, resolutions)
+        this.getData(chrom, true).insert(res[chrom].map(preConvertData, this),
+          regionsInChrom)
       }
     }
   }

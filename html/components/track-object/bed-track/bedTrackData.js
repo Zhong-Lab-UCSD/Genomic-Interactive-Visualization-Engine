@@ -47,7 +47,7 @@ var GIVe = (function (give) {
     var resChromEntryFunc = function (geneArray, geneNameMap, resChromEntry) {
       var newGene = new give.GeneObject(
         new give.TranscriptObject(resChromEntry.geneBed,
-          this.ref,
+          this.parent.ref,
           { geneName: resChromEntry.geneSymbol }
         )
       )
@@ -75,10 +75,13 @@ var GIVe = (function (give) {
         return region.chr === chrom
       }, this)
       if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
-          Array.isArray(res[chrom])) {
+        Array.isArray(res[chrom])
+      ) {
         var geneNameMap = {}
         var geneArray = []
-        res[chrom].forEach(resChromEntryFunc.bind(this, geneArray, geneNameMap), this)
+        res[chrom].forEach(
+          resChromEntryFunc.bind(this, geneArray, geneNameMap), this
+        )
         // then populate the B+ Tree with geneArray
         this.getData(chrom, true).insert(
           geneArray.sort(give.ChromRegion.compareChrRegion), regionsInChrom)

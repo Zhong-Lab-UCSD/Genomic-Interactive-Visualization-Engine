@@ -542,7 +542,9 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  give.TrackDataObject.prototype._dataHandler = function (response, queryRegions) {
+  give.TrackDataObject.prototype._dataHandler = function (
+    response, queryRegions
+  ) {
   }
 
   /**
@@ -554,7 +556,9 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  give.TrackDataObject.prototype._localFileHandler = function (localFile, regions) {
+  give.TrackDataObject.prototype._localFileHandler = function (
+    localFile, regions
+  ) {
   }
 
   /**
