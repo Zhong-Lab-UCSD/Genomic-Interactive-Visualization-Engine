@@ -9,10 +9,21 @@ The GIVE-Docker image delivers an already configured GIVE with LAMP environment 
 The `root` account passwd of MySQL is `Admin2015`.
 
 ## How to use GIVE-Docker?
-### Five steps to deploy GIVE
+### 4-steps to deploy GIVE
 - **Install Docker CE**
   
-  test
-- Install
-### Tips for building custom tracks
+  If Docker was not installed on your computer, please download and install [Docker CE]( https://www.docker.com/community-edition ). It's very easy to install and supports all the mainstream operating systems and cloud computing services, such as Mac OS, Windows 10, Ubuntu, AWS and AZURE. 
+  
+- **Pull GIVE-Docker from [Docker Hub](https://hub.docker.com/r/zhonglab/give/)**
+
+As we published GIVE-Docker on [Docker Hub](https://hub.docker.com/r/zhonglab/give/), so it's easy to pull GIVE-Docker with a command.
+```
+docker pull zhonglab/give
+```
+
+- **Run GIVE-Docker container**
+
+- **Test the built-in [Demo2-ENCODE2_ChIA-PET](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET) genome browser**
+
+### Build custom tracks
 
