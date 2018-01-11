@@ -66,6 +66,19 @@ Here, we give you some essential tips for adding data to GIVE container. You can
   # copy file from the container give to OS
   docker give:/tmp/test.sh ~/test.sh
   ```
-- External data storage of MySQL in GIVE container
+- Stop, restart and remove running container
+  You can use `docker ps -a` to check all the running and exited container. You can stop, restart and remove them. Keep in mind that all the changes made to the running container will lose after you stop it.
+  ```
+  docker stop give
+  docker restart give
+  docker rm give
+  ```
+- Backup data of GIVE container
+  As all the custom changes made to container do not affect the Docker image, so if you want to save the changed container you can use `docker commit` and `docker save` to save it, and use `docker load` to restore it. 
+  ```
+  docker commit -p give give-custom
+  docker save -o ~/give-custom.tar give-custom
+  docker load -i ~/give-custom.tar
+  ```
 
 
