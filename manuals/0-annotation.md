@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| ← *None* | [↑ Index](index.md) | [→ 1. Installation](1-installation.md) |
+| ← *None* | [↑ Index](Readme.md) | [→ 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) |
 
 # Annotations in the Manual
 
