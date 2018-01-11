@@ -42,9 +42,23 @@ The `root` account passwd of MySQL is `Admin2015`.
   ![Demo2 screen](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/gallery/Demo2-ENCODE2_ChIA-PET/GIVE_demo2_chiapet.PNG)
 
 
-### Essential tips for building custom tracks
+### Essential tips for adding data to GIVE container
+After successfully deploying GIVE, you can utilize the power of GIVE to build your portable genome browser. You can learn how to customize your own genome browser in [GIVE Tutorial 1](https://github.com/frankyan/Genomic-Interactive-Visualization-Engine-1/blob/master/tutorials/1-knownCodeDataSource.md), and learn how to add your own data to GIVE MySQL database in [GIVE Tutorial 2](https://github.com/frankyan/Genomic-Interactive-Visualization-Engine-1/blob/master/tutorials/2-dataSource.md). Here, we give you some essential tips for adding data to GIVE container, in case you haven't used Docker before.
+- Login to GIVE container
+  
+  You can login to the running GIVE container `give` as root and then do anything what you want. 
+  ```
+  docker exec -t -i give /bin/bash
+  ```
+  Alternatively, you can also directly login to the MySQL database of container `give`.
+  ```
+  docker exec -t -i give mysql -uroot -p
+  ```
+  The passwd of MySQL `root` account is `Admin2015`.
+  
+  
+  
 
-- Login to GIVE-Docker container
 - Transfer files to GIVE-Docker container
 - Data storage of MySQL
 - 
