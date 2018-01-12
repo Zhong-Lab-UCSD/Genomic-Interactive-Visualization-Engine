@@ -25,6 +25,12 @@
             value: 1    // em
           },
 
+          numOfSubs: {
+            type: Number,
+            value: 2,
+            readOnly: true
+          },
+
           subTrackGap: {
             type: Number,
             value: 4    // em
@@ -86,7 +92,7 @@
           this._setDynamicHeight(false)
 
           this.subSvgs = []
-          this.numOfSubs = properties.numOfSubs
+          this._setNumOfSubs(properties.numOfSubs)
           this.bufferWindow = []
           this.percentiles = this.track.getSetting('thresholdPercentile')
         },

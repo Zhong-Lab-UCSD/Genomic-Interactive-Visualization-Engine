@@ -475,6 +475,24 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                   this._createTrackProp(track, viewWindowIndex, props))
         },
 
+        _addTrackDOM: function (trackDOM, viewWindowIndex) {
+          var holder
+          if (trackDOM.pin === 'top') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
+          } else if (trackDOM.pin === 'bottom') {
+            holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
+          } else {
+            holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
+          }
+          holder.splice(
+            give.locationOf(trackDOM, holder,
+              null, null, function (trackDOM1, trackDOM2) {
+                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
+              }.bind(this)) + 1,
+            0, trackDOM)
+          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
+        },
+
         _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
           var holder
           if (trackDOM.pin === 'top') {
@@ -912,13 +930,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         /**
          * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
          *
-         * @param  {{
+         * @param  {[
          *   pinAbove: Array.<GIVe.TrackDomBehavior>,
          *   scrolling: Array.<GIVe.TrackDomBehavior>,
          *   pinBelow: Array.<GIVe.TrackDomBehavior>,
          *   map: Object,
          *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-         * }} domInWindowEntry - viewWindow Array
+         * ]} domInWindowEntry - viewWindow Array
          * @param  {number} index - index of domInWindowEntry in the array
          */
         _updateDomHeightInWindow: function (domInWindowEntry, index) {

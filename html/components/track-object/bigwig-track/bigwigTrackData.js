@@ -46,7 +46,7 @@ var GIVe = (function (give) {
    *
    *    An example is given in the code as comments.
    *
-   * @param  {object} response - Responses from remote servers.
+   * @param  {object} res - Responses from remote servers.
    *   The object should contain chromosomal names as its
    *   property names, and an array of data entries as the property value.
    *   For example:
@@ -75,11 +75,8 @@ var GIVe = (function (give) {
      */
     var preConvertData = function (resEntry) {
       return new give.ChromRegion(resEntry.regionString, this.parent.ref, {
-        data: (resEntry.data.hasOwnProperty('validCount')
-          ? new this._SummaryCtor(resEntry.data)
-          : resEntry.data),
-        resolution: (resEntry.data.hasOwnProperty('validCount')
-          ? undefined : 1)
+        data: resEntry.data.hasOwnProperty('validCount')
+          ? new this._SummaryCtor(resEntry.data) : resEntry.data
       })
     }.bind(this)
 
@@ -99,8 +96,6 @@ var GIVe = (function (give) {
   /**
    * _localFileHandler - This should be the detailed implementation about how to
    *    handle local files
-   *
-   *    An example is given in the code as comments.
    *
    * @param  {string} localFile - Path of the local file
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including

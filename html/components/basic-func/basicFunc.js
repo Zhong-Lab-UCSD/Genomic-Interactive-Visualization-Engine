@@ -234,6 +234,22 @@ var GIVe = (function (give) {
     return currIndex
   }
 
+  give._findPercentile = function (dataArr, upperPercentile, lowerPercentile) {
+    function numberComp (a, b) {
+      return a - b
+    }
+    lowerPercentile = lowerPercentile || upperPercentile
+    var sortedArr = dataArr.sort(numberComp)
+    return {
+      upper: sortedArr[parseInt(sortedArr.length * (1 - upperPercentile))],
+      lower: sortedArr[parseInt(sortedArr.length * lowerPercentile)]
+    }
+  }
+
+  give._maxDecimalDigits = function (number, digits) {
+    return Number(Math.round(number + 'e' + digits) + 'e-' + digits)
+  }
+
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})

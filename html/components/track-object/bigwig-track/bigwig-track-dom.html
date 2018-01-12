@@ -57,6 +57,26 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           give.TrackDOMBehavior
         ],
         properties: {
+          upperPercentile: {
+            type: Number,
+            value: 0.01
+          },
+          lowerPercentile: {
+            type: Number,
+            value: 0.01
+          },
+          numOfDigits: {
+            type: Number,
+            value: 2
+          },
+          autoScale: {
+            type: Boolean,
+            value: true
+          },
+          includeZero: {
+            type: Boolean,
+            value: true
+          }
         },
         created: function () {
           this.MARGIN = 2
@@ -77,7 +97,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           /**
            *     to be explained
            */
-          this.MIN_RESOLUTION_PER_PIXEL = 2
+          this.MIN_RESOLUTION_PER_PIXEL = 1
         },
 
         trackImpl: function (track, prop) {
@@ -104,7 +124,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           /**
            *  A simple calculation of where the top and bottom of where to draw the track is.
            */
-          this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
+          this.drawingBoundary = {top: this.MARGIN, bottom: this.parentHeight - this.MARGIN}
 
           /**
            * to be explained
@@ -114,7 +134,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           /**
            * Whether or not to automatically scale the window bounds according to the data displayed.
            */
-          this.autoScale = false
+          this.autoScale = true
 
           /**
            * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
@@ -132,11 +152,14 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
          */
         getResolution: function (newVWindow) {
           return Math.max(Math.floor(
-            newVWindow.getLength() / this.MIN_RESOLUTION_PER_PIXEL / this.windowWidth
+            newVWindow.getLength() / this.windowWidth /
+            this.MIN_RESOLUTION_PER_PIXEL
           ), 1)
         },
 
-        _pushSingleRawPointEntry: function (dataPointArray, chrRange, pixelSpan, dataEntry) {
+        _pushSingleRawPointEntry: function (
+          dataPointArray, chrRange, pixelSpan, dataEntry
+        ) {
           // start is the end of the last entry in dataPointArray
           // or chrRange.start
           var start = chrRange.start
@@ -155,12 +178,15 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             start: start,
             end: start + span
           })
-          while (chrSpan.start < dataEntry.end && chrSpan.start < chrRange.end) {
+          while (chrSpan.start < dataEntry.end &&
+            chrSpan.start < chrRange.end
+          ) {
             // This will insert 0 in the gaps, split value in overlaps
             // and have full value afterwards
             var newData = chrSpan.clone()
             newData.data = {
-              value: dataEntry.data.value * newData.overlaps(dataEntry) / newData.getLength()
+              value: dataEntry.data.value * newData.overlaps(dataEntry) /
+                newData.getLength()
             }
             dataPointArray.push(newData)
             chrSpan.move(span)
@@ -170,7 +196,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         _generateRawPointsList: function (vwindow, resolution) {
           var rawDataPoints = []
           // First populate the raw data points
-          this.track.data[vwindow.chr].traverse(vwindow,
+          this.parent.getData(vwindow.chr).traverse(vwindow,
             this._pushSingleRawPointEntry.bind(this, rawDataPoints,
               vwindow, resolution
             ), null, resolution,
@@ -184,7 +210,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               chr: vwindow.chr,
               start: lastEnd,
               end: lastEnd + resolution
-            }, this.track.ref, { data: { value: 0.0 } }))
+            }, this.parent.ref, { data: { value: 0.0 } }))
             lastEnd += resolution
           }
           return rawDataPoints
@@ -197,7 +223,8 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             this.slidingWindowWidth * this.MIN_RESOLUTION_PER_PIXEL
           var halfWindowIndexLength = Math.ceil(this.slidingWindowWidth *
             this.MIN_RESOLUTION_PER_PIXEL / 2)
-          var extendedWindow = vwindow.getExtension(slidingWindowSpan).clipRegion(this.track.ref)
+          var extendedWindow = vwindow.getExtension(slidingWindowSpan)
+            .clipRegion(this.parent.ref)
 
           // Get the raw points list first
           var rawDataPoints = this._generateRawPointsList(extendedWindow,
@@ -222,9 +249,31 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               chr: vwindow.chr,
               start: rawDataPoints[currIndex].start,
               end: rawDataPoints[currIndex].end
-            }, this.track.ref, { data: { value: slidingSum / windowElemCount } }))
+            }, this.parent.ref, { data: { value: slidingSum / windowElemCount } }))
           }
           return smoothedPointsList
+        },
+
+        _findAutoScale: function () {
+          this.windowMax = Number.NEGATIVE_INFINITY
+          this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
+          try {
+            var extremities = give._findPercentile(this.dataPoints.map(
+              function (dataEntry) {
+                return dataEntry.data.value
+              }, this), this.upperPercentile, this.lowerPercentile)
+            if (this.windowMax < extremities.upper) {
+              this.windowMax = extremities.upper
+            }
+            if (this.windowMin > extremities.lower) {
+              this.windowMin = extremities.lower
+            }
+          } catch (ignore) {
+          }
+          if (this.windowMax === Number.NEGATIVE_INFINITY) {
+            this.windowMax = 1
+            this.windowMin = 0
+          }
         },
 
         drawData: function () {
@@ -233,31 +282,11 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow
-
           if (this.track.data.hasOwnProperty(vwindow.chr)) {
-            var updateExtreme = function (dataSegment) {
-              var yvalue = dataSegment.data.value
-              if (Math.ceil(yvalue) > this.windowMax) {
-                this.windowMax = Math.ceil(yvalue)
-              }
-              if (Math.floor(yvalue) < this.windowMin) {
-                this.windowMin = Math.floor(yvalue)
-              }
-            }.bind(this)
-
-            if (this.autoScale) {
-              this.windowMax = Number.NEGATIVE_INFINITY
-              this.windowMin = Number.POSITIVE_INFINITY
-              this.track.data[vwindow.chr].traverse(vwindow, updateExtreme, null,
-                this.getResolution(vwindow), this, false)
-              if (this.windowMax === Number.NEGATIVE_INFINITY) {
-                this.windowMax = 1
-                this.windowMin = 0
-              }
-            }
-
             this.dataPoints = this._generateSmoothedPoints()
-
+            if (this.autoScale) {
+              this._findAutoScale()
+            }
             if (mode === 0) {
               this.drawPeak(this.dataPoints)
             }
@@ -269,12 +298,10 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             }
           }
           this.drawScale()
-
           if (this.textSvg) {
-            this.drawShortLabel(null, this.textMargin - this.MARGIN - this.TEXT_MARGIN_GAP)
+            this.drawShortLabel(null,
+              this.textMargin - this.MARGIN - this.TEXT_MARGIN_GAP)
           }
-          // shape.push([0,this.windowWidth]);
-          // this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
         },
 
         /**
@@ -339,14 +366,14 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var zero = 0
           var value = 0
           var cutOff = 0
-          zero = this.windowMax / this.windowRange * this.trackHeight
-          value = (this.windowMax - strength) / this.windowRange * this.trackHeight
+          zero = this.windowMax / this.windowRange * this.parentHeight
+          value = (this.windowMax - strength) / this.windowRange * this.parentHeight
           if (this.windowMax < 0) {
             zero = 0
             cutOff += 1
           }
           if (this.windowMin > 0) {
-            zero = this.trackHeight
+            zero = this.parentHeight
             cutOff -= 1
           }
           if (strength > this.windowMax) {
@@ -354,7 +381,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             cutOff += 1
           }
           if (strength < this.windowMin) {
-            value = this.trackHeight
+            value = this.parentHeight
             cutOff -= 1
           }
           if ((this.windowMin > 0 && strength > this.windowMax) || (this.windowMax < 0 && strength < this.windowMin)) {
@@ -379,7 +406,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
           }.bind(this)
           overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
-          overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
+          overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.parentHeight - this.OVERFLOW_STROKE_WIDTH))
         },
 
         /**
@@ -394,7 +421,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
               ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
               // var vwindow = this.mainSvg.viewWindow
-          this.track.data[vwindowChr].dataPoints.push(dataEntry)
+          this.parent.data[vwindowChr].dataPoints.push(dataEntry)
         },
         // another function called draw splines? which converts the four bezier  points to scale on the svg and draws them as a curve?
         // use svg function
@@ -424,21 +451,21 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         // this should take points and bspline it?    ToDo: create separate functions for regular average and bspline, to switch between them easily.
           var vwindow = this.mainSvg.viewWindow
           var windowToDraw = this.mainSvg.viewWindow
-          for (var i = 0; i < this.track.data[vwindow.chr].dataPoints.length - 4; i++) { // calculate thirdpoints and put them in arrays
-            var p1 = this.track.data[vwindow.chr].dataPoints[i]
-            var p2 = this.track.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
-            var p3 = this.track.data[vwindow.chr].dataPoints[i + 2]
-            var p4 = this.track.data[vwindow.chr].dataPoints[i + 3]
+          for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 4; i++) { // calculate thirdpoints and put them in arrays
+            var p1 = this.parent.data[vwindow.chr].dataPoints[i]
+            var p2 = this.parent.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
+            var p3 = this.parent.data[vwindow.chr].dataPoints[i + 2]
+            var p4 = this.parent.data[vwindow.chr].dataPoints[i + 3]
             var broken = false
             for (var j = i; j < i + 3; j++) {
-              if (this.track.data[vwindow.chr].dataPoints[j].getEnd() !== this.track.data[vwindow.chr].dataPoints[j + 1].getStart()) {
+              if (this.parent.data[vwindow.chr].dataPoints[j].getEnd() !== this.parent.data[vwindow.chr].dataPoints[j + 1].getStart()) {
                 broken = true// draw line down, might be drawn more than once
                 this.drawDownLine(this.transformXCoordinate({
-                  chr: windowToDraw.chr, coor: (this.track.data[vwindow.chr].dataPoints[j].getStart())
-                }, false), this.transformYCoordinate(this.track.data[vwindow.chr].dataPoints[j].data.value))
+                  chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j].getStart())
+                }, false), this.transformYCoordinate(this.parent.data[vwindow.chr].dataPoints[j].data.value))
                 this.drawDownLine(this.transformXCoordinate({
-                  chr: windowToDraw.chr, coor: (this.track.data[vwindow.chr].dataPoints[j + 1].getStart())
-                }, false), this.transformYCoordinate(this.track.data[vwindow.chr].dataPoints[j + 1].data.value))
+                  chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j + 1].getStart())
+                }, false), this.transformYCoordinate(this.parent.data[vwindow.chr].dataPoints[j + 1].data.value))
               }
             }
             if (broken) {
@@ -471,16 +498,16 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var zeroCounter = 0 // if its is equal to 3 then consider new polygon
           var mode = parseInt(give.getParameterByName('mode') || '2')
           if (mode == 2) {
-            for (var i = 0; i < this.track.data[vwindow.chr].dataPoints.length - 2; i++) {
-              if (this.track.data[vwindow.chr].dataPoints[i].getEnd() != this.track.data[vwindow.chr].dataPoints[i + 1].getStart()) {
+            for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 2; i++) {
+              if (this.parent.data[vwindow.chr].dataPoints[i].getEnd() != this.parent.data[vwindow.chr].dataPoints[i + 1].getStart()) {
                 this.newDrawBCurve(curveStart, i + 1)
                 curveStart = i + 1// will add in 0s to datapoints, need to break them if three in a row, also move to midpoinnt vs getStart
               }
             }
           }
           if (mode === 3) {
-            for (var i = 0; i < this.track.data[vwindow.chr].dataPoints.length - 2; i++) { // this is with 0's.
-              if (this.track.data[vwindow.chr].dataPoints[i].data.value == 0) {
+            for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 2; i++) { // this is with 0's.
+              if (this.parent.data[vwindow.chr].dataPoints[i].data.value == 0) {
                 zeroCounter += 1
               }
               if (zeroCounter >= 3) {
@@ -495,10 +522,10 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var vwindow = this.mainSvg.viewWindow
           var svgToDraw = this.mainSvg
           var windowToDraw = this.mainSvg.viewWindow
-          var p1 = this.track.data[vwindow.chr].dataPoints[i]
-          var p2 = this.track.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
-          var p3 = this.track.data[vwindow.chr].dataPoints[i + 2]
-          var p4 = this.track.data[vwindow.chr].dataPoints[i + 3]
+          var p1 = this.parent.data[vwindow.chr].dataPoints[i]
+          var p2 = this.parent.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
+          var p3 = this.parent.data[vwindow.chr].dataPoints[i + 2]
+          var p4 = this.parent.data[vwindow.chr].dataPoints[i + 3]
 
             //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
             // draw lines between points, split lines into thirds
@@ -549,15 +576,15 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         averagePoints: function () {
           var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
           var vwindow = this.mainSvg.viewWindow
-          this.track.data[vwindow.chr].averageDataPoints = []
-          for (var i = splitAmount; i < this.track.data[vwindow.chr].dataPoints.length - splitAmount - 1; i++) {
-            var temp = this.track.data[vwindow.chr].dataPoints[i]
+          this.parent.data[vwindow.chr].averageDataPoints = []
+          for (var i = splitAmount; i < this.parent.data[vwindow.chr].dataPoints.length - splitAmount - 1; i++) {
+            var temp = this.parent.data[vwindow.chr].dataPoints[i]
             var sum = 0
             for (var j = 0; j < this.averagePointAmount; j++) {
-              sum += this.track.data[vwindow.chr].dataPoints[i - splitAmount + j].data.value
+              sum += this.parent.data[vwindow.chr].dataPoints[i - splitAmount + j].data.value
             }
             temp.data.value = parseInt(sum / this.averagePointAmount + 0.5)
-            this.track.data[vwindow.chr].averageDataPoints.push(temp)
+            this.parent.data[vwindow.chr].averageDataPoints.push(temp)
           }
         },
 
@@ -733,30 +760,37 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         },
 
         /**
-         * anonymous function - Draws the signal strength scale on the left side of the track.
-         *
-         * @return {type}  description
+         * drawScale - Draws the signal strength scale on the left side of the
+         *  track.
          */
         drawScale: function () {
           if (this.textSvg) {
           // first draw the lines
-            this.drawLine(this.textMargin - this.MARGIN, this.drawingBoundary.top,
-                 this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-                 this.TEXT_COLOR_RGB, this.textSvg)
-            this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength, this.drawingBoundary.top,
-                 this.textMargin - this.MARGIN, this.drawingBoundary.top,
-                 this.TEXT_COLOR_RGB, this.textSvg)
-            this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength, this.drawingBoundary.bottom,
-                 this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-                 this.TEXT_COLOR_RGB, this.textSvg)
-
-          // then the text
-            this.drawText(this.textMargin - this.MARGIN - this.scaleTickLength - this.TEXT_MARGIN_GAP,
-                  this.drawingBoundary.top + this.textSize * 0.4, this.windowMax.toString(),
-                  'end', null, this.textSvg)
-            this.drawText(this.textMargin - this.MARGIN - this.scaleTickLength - this.TEXT_MARGIN_GAP,
-                  this.drawingBoundary.bottom - this.textSize * 0.4, this.windowMin.toString(),
-                  'end', null, this.textSvg)
+            this.drawLine(
+              this.textMargin - this.MARGIN, this.drawingBoundary.top,
+              this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
+              this.TEXT_COLOR_RGB, this.textSvg)
+            this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
+              this.drawingBoundary.top,
+              this.textMargin - this.MARGIN, this.drawingBoundary.top,
+              this.TEXT_COLOR_RGB, this.textSvg)
+            this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
+              this.drawingBoundary.bottom,
+              this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
+              this.TEXT_COLOR_RGB, this.textSvg)
+            // then the text
+            this.drawText(this.textMargin - this.MARGIN -
+              this.scaleTickLength - this.TEXT_MARGIN_GAP,
+              this.drawingBoundary.top + this.textSize * 0.4,
+              give._maxDecimalDigits(this.windowMax,
+                this.numOfDigits).toString(),
+              'end', null, this.textSvg)
+            this.drawText(this.textMargin - this.MARGIN -
+              this.scaleTickLength - this.TEXT_MARGIN_GAP,
+              this.drawingBoundary.bottom - this.textSize * 0.4,
+              give._maxDecimalDigits(this.windowMin,
+                this.numOfDigits).toString(),
+              'end', null, this.textSvg)
           }
         },
 
