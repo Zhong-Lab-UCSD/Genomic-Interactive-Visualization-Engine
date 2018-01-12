@@ -33,7 +33,8 @@ The `root` account passwd of MySQL is `Admin2015`.
   ```
 
 - **Test the built-in [Demo2-ENCODE2_ChIA-PET](../gallery/Demo2-ENCODE2_ChIA-PET) genome browser**
-  In the previous `docker run` command, `-p` options map three ports for communication between the operating system and GIVE container. With the mapping ports `40080 -> 80`(for http) and `40443 -> 443`(for https), we can use web browser to open the built-in Demo2-ENCODE2_ChIA-PET genome browser with following URLs (the https URL may encounter SSL certificate problem).
+  
+  In the previous `docker run` command, `-p` options map three ports for communication between the operating system and GIVE container. With the mapping ports `40080 -> 80`(for http) and `40443 -> 443`(for https), we can use web browser to open the built-in Demo2-ENCODE2_ChIA-PET genome browser with following URLs (the https URL may encounter SSL certificate problem).
   
   [http://localhost:40080](http://localhost:40080)
   
