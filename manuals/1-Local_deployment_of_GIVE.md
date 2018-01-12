@@ -9,10 +9,10 @@ The traditional way is system-level installation. However, it's always annoying 
 
 We documented both approaches of deployment. The following links will lead you to a GIVE-Docker usage tutorial and system-level installation manual. __The GIVE-Docker approach is highly recommended.__
 
-## [GIVE-Docker](../tutorials/GIVE-Docker.md)
+## [GIVE-Docker (recommended)](../tutorials/GIVE-Docker.md)
 
 
-## [System-level installation](1.2-system-level_installation.md)
+## [Custom installation](1.2-system-level_installation.md)
 
 
 ||||
