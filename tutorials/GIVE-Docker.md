@@ -78,8 +78,7 @@ Here, we give you some essential tips for adding data to GIVE container. You rea
   docker rm give
   ```
 - Backup data of GIVE container
-  
-  **Keep in mind that all the custom changes made to container do not affect the Docker image, so when you remove a container you will lose all the data.** So if you want to save data in the container, such as MySQL data, there are at least three approaches to do it. 
+    **Keep in mind that all the custom changes made to container do not affect the Docker image, so when you remove a container you will lose all the data.** So if you want to save data in the container, such as MySQL data, there are at least three approaches to do it. 
   - Use `docker commit` and `docker save` to save the whole container, and use `docker load` to restore it.
     
     ```
