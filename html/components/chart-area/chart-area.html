@@ -305,43 +305,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         created: function () {
           this.svgNS = 'http://www.w3.org/2000/svg'
-          this.trackDOMMap = {
-            'bed': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'wig': {
-              prop: this._createWigTrackProp.bind(this),
-              Ctor: give.WiggleTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'bigwig': {
-              prop: this._createWigTrackProp.bind(this),
-              Ctor: give.BigWigTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'genebed': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'genepred': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'interaction': {
-              prop: this._createInteractionTrackProp.bind(this),
-              Ctor: give.InteractionTrackDOM,
-              addDom: this._addInteractionTrackDOM.bind(this)
-            },
-            'coordinate': {
-              prop: this._createCoorTrackProp.bind(this),
-              Ctor: give.CoorTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            }
-          }
           this.resizeDebounceInt = 100
           this.resizeJobName = 'RESIZE'
         },
@@ -352,8 +315,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             if (give.ChromRegion.isValidChromRegion(coordinateStr) &&
               (!this._viewWindows[index] ||
                 this._viewWindows[index].regionToString(false) !==
-                new give.ChromRegion(coordinateStr, this._refObj).regionToString(false))) {
-              this.splice('_viewWindows', index, 1, new give.ChromRegion(coordinateStr, this._refObj))
+                new give.ChromRegion(coordinateStr, this._refObj)
+                  .regionToString(false)
+              )
+            ) {
+              this.splice('_viewWindows', index, 1,
+                new give.ChromRegion(coordinateStr, this._refObj))
             } else {
               this.splice('_viewWindows', index, 1, false)
             }
@@ -406,76 +373,25 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           return original
         },
 
-        _createBedTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            windowIndex: viewWindowIndex
-          }, properties)
-        },
-
-        _createWigTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            windowIndex: viewWindowIndex
-          }, properties)
-        },
-
-        _createCoorTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            labelLocation: ((viewWindowIndex === 0) ? 'up' : 'down'),
-            windowIndex: viewWindowIndex,
-            pin: 'top'
-            // may need to implement some pinning code for all tracks
-          }, properties)
-        },
-
-        _createInteractionTrackProp: function (viewWindowIndex, properties) {
-          if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this._viewWindows.length) {
-            throw new Error('Not enough viewWindows for this interaction.')
-          }
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            numOfSubs: give.ChartArea.INTERACTION_SUBS,
-            _threshold: this._threshold
-          }, properties)
-        },
-
-        _createWiggleTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget
-          }, properties)
-        },
-
-        _createTrackProp: function (track, viewWindowIndex, props) {
-          return this.trackDOMMap[track.getTypeTrunk()].prop(viewWindowIndex, props)
-        },
-
-        _createTrackDOM: function (track, viewWindowIndex, props) {
-          return new this.trackDOMMap[track.getTypeTrunk()].Ctor(track,
-                  this._createTrackProp(track, viewWindowIndex, props))
+        _createTrackProp: function (viewWindowIndex, props) {
+          props = props || {}
+          props.windowIndex = viewWindowIndex
+          return props
         },
 
         _addTrackDOM: function (trackDOM, viewWindowIndex) {
+          if (trackDOM.parent.windowSpan > 1) {
+            // this track involves multiple windows for display
+            // (e.g. interaction tracks)
+            this._addMultiWindowTrackDOM(trackDOM, viewWindowIndex)
+          } else {
+            this._addSingleWindowTrackDOM(trackDOM, viewWindowIndex)
+          }
+          this._trackDOMsByWindow[viewWindowIndex]
+            .map[trackDOM.parent.getID()] = true
+        },
+
+        _addSingleWindowTrackDOM: function (trackDOM, viewWindowIndex) {
           var holder
           if (trackDOM.pin === 'top') {
             holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
@@ -485,48 +401,34 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
           }
           holder.splice(
-            give.locationOf(trackDOM, holder,
-              null, null, function (trackDOM1, trackDOM2) {
-                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
-              }.bind(this)) + 1,
-            0, trackDOM)
-          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
+            give.locationOf(trackDOM, holder, null, null,
+              function (trackDOM1, trackDOM2) {
+                return give.TrackObject.comparePriorities(trackDOM1.parent,
+                  trackDOM2.parent, this._refObj.groups)
+              }.bind(this)
+            ) + 1, 0, trackDOM)
         },
 
-        _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
-          var holder
-          if (trackDOM.pin === 'top') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
-          } else if (trackDOM.pin === 'bottom') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
-          } else {
-            holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
-          }
-          holder.splice(
-            give.locationOf(trackDOM, holder,
-              null, null, function (trackDOM1, trackDOM2) {
-                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
-              }.bind(this)) + 1,
-            0, trackDOM)
-          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
-        },
-
-        _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
+        _addMultiWindowTrackDOM: function (trackDOM, viewWindowIndex) {
           // actually this will enum all viewWindowIndices
           this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
-          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
-          for (var i = 1; i < give.ChartArea.INTERACTION_SUBS; i++) {
-            this._trackDOMsByWindow[viewWindowIndex + i].hiddenTrackComponents.push(trackDOM)
-            this._trackDOMsByWindow[viewWindowIndex + i].map[trackDOM.track.id] = true
+          for (var i = 1; i < trackDOM.parent.windowSpan; i++) {
+            this._trackDOMsByWindow[viewWindowIndex + i]
+              .hiddenTrackComponents.push(trackDOM)
           }
         },
 
         _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
-          if (forceAdd || !this._trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
+          if (forceAdd || (
+            !this._trackDOMsByWindow[viewWindowIndex].map
+            .hasOwnProperty(track.getID()) &&
+            viewWindowIndex + track.windowSpan < this._viewWindows.length
+          )) {
             try {
-              var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
+              var newTrackDOM = new track._DomObjCtor(track,
+                this._createTrackProp(viewWindowIndex, props))
               if (newTrackDOM) {
-                this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
+                this._addTrackDOM(newTrackDOM, viewWindowIndex)
               }
               return newTrackDOM
             } catch (err) {
@@ -582,18 +484,23 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           delete this._svgWidth
           this._callForeachFuncOnDomInWindowEntry(
             function (trackDOM, trackDomIndex) {
-              trackDOM.updateTracks(this._viewWindows[index], index, this._threshold)
+              trackDOM.updateTracks(this._viewWindows[index],
+                index, this._threshold)
             }.bind(this), this._trackDOMsByWindow[index], index)
         },
 
         _trackReadyHandler: function (e) {
           // check if all tracks are ready, otherwise do nothing
-          if (this._trackDOMsByWindow.every(this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
-            return trackDOM.isReady
-          }), this)) {
+          if (this._trackDOMsByWindow.every(
+            this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
+              return trackDOM.isReady
+            }), this)
+          ) {
             this.updateHeightLocation()
             try {
-              if (this._firstRun && this.coorTrackZeroDOM && this.coorTrackZeroDOM.getTrackSvg()) {
+              if (this._firstRun && this.coorTrackZeroDOM &&
+                this.coorTrackZeroDOM.getTrackSvg()
+              ) {
                 this.$.coorTrackTutorial.domTargetId =
                   this.coorTrackZeroDOM.getTrackSvg().id
                 this.$.coorTrackTutorial.showTutorial()

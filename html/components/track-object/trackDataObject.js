@@ -60,6 +60,37 @@ var GIVe = (function (give) {
     this.isRetrivingData = false
   }
 
+  give.TrackDataObject.prototype.getTrackSetting = function (key) {
+    return this.parent.getSetting(key)
+  }
+
+  give.TrackDataObject.prototype.setTrackSetting = function (key, value) {
+    return this.parent.setSetting(key, value)
+  }
+
+  give.TrackDataObject.prototype._initSettings = function () {
+    // if (this.parent.getSetting('requestUrl')) {
+    //   this.requestUrl = this.parent.getSetting('requestUrl')
+    // }
+    //
+    // if (this.parent.getSetting('isCustom')) {
+    //   this.isCustom = true
+    //   if (this.parent.getSetting('localFile')) {
+    //     // should be a File Object (extension of Blob)
+    //     this.localFile = this.parent.getSetting('localFile')
+    //   } else if (this.parent.getSetting('remoteUrl')) {
+    //     // should be a URL
+    //     this.remoteFile = this.parent.getSetting('remoteUrl')
+    //   }
+    // }
+    if (!this.getTrackSetting('isCustom')) {
+      if (!this.getTrackSetting('remoteUrl')) {
+        this.setTrackSetting('remoteUrl', give.TrackDataObject.fetchDataTarget)
+      }
+    } else if (!this.getTrackSetting)
+
+  }
+
   /**
    * _mergeGUIRegionsByResolution - merge the ranges submitted to the data object
    * (potentially by different GUI elements, __e.g.__ different view windows) into
@@ -229,11 +260,11 @@ var GIVe = (function (give) {
       return region.Resolution
     }
 
-    if (this.isCustom) {
+    if (this.getTrackSetting('isCustom')) {
       return {
         db: this.parent.ref.db,
-        type: this.getTypeTrunk(),
-        remoteURL: this.remoteFile,
+        type: this.parent.getTypeTrunk(),
+        remoteURL: this.getTrackSetting('remoteUrl'),
         window: regions.map(function (region) {
           return region.regionToString(false)
         }, this),
@@ -244,8 +275,8 @@ var GIVe = (function (give) {
     } else {
       return {
         db: this.parent.ref.db,
-        type: this.getTypeTrunk(),
-        trackID: this.getID(),
+        type: this.parent.getTypeTrunk(),
+        trackID: this.parent.getID(),
         window: regions.map(function (region) {
           return region.regionToString(false)
         }, this),
@@ -324,8 +355,8 @@ var GIVe = (function (give) {
         this._data = this._data || {}
         this._data[chrom] = this._createNewDataStructure(chrom)
       } else {
-        throw new Error('Data not ready for track \'' + this.parent.getID() + '\'' +
-                        ', chromosome \'' + chrom + '\'.')
+        throw new Error('Data not ready for track \'' +
+          this.parent.getID() + '\'' + ', chromosome \'' + chrom + '\'.')
       }
     }
     return this._data[chrom]
@@ -355,7 +386,8 @@ var GIVe = (function (give) {
 
   /**
    * _retrieveData - Retrieve data based on track type (determined by
-   *   `this.isCustom` and `this.localFile`)
+   *   `this.getTrackSetting('isCustom')` and
+   *   `this.getTrackSetting('localFile')`)
    *
    * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
@@ -369,13 +401,14 @@ var GIVe = (function (give) {
     // callback is in case update is needed
     // remoteQuery is already prepared or can be provided by regions
 
-    if (this.isCustom && this.localFile) {
+    if (this.getTrackSetting('isCustom') && this.getTrackSetting('localFile')) {
       // if track has its own getLocalData function, then get local data instead of getting remote data
       this._readLocalFile(regions)
       // afterwards it's this.dataHandler()'s job.
-    } else if (this.requestUrl) {
-      give.postAjax(this.requestUrl, this._prepareRemoteQuery(regions),
-              this._responseHandler, 'json', null, null, this)
+    } else if (this.getTrackSetting('requestUrl')) {
+      give.postAjax(this.getTrackSetting('requestUrl'),
+        this._prepareRemoteQuery(regions),
+        this._responseHandler, 'json', null, null, this)
     }
   }
 

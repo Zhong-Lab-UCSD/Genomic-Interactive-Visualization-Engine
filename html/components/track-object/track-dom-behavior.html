@@ -151,6 +151,16 @@ limitations under the License.
         pin: {
           type: String,
           value: ''
+        },
+
+        multiWindow: {
+          type: Boolean,
+          value: false
+        },
+
+        windowSpan: {
+          type: Number,
+          value: 1
         }
 
   //      initialized: {
@@ -218,13 +228,9 @@ limitations under the License.
 
         this.activeVisibility = this.parent.getSetting('visibility') || this.defaultVisibility
 
-        if (properties.hasOwnProperty('textMargin')) {
-          this.textMargin = properties.textMargin
-        }
+        this.textMargin = this.textMargin || properties.textMargin || 0
 
-        if (properties.hasOwnProperty('windowIndex')) {
-          this.windowIndex = properties.windowIndex
-        }
+        this.windowIndex = this.windowIndex || properties.windowIndex || 0
 
         this.cacheRegionSpan = give.TrackDOMBehaviorImpl.CacheRangeSpanProportion
 

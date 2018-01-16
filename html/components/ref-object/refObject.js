@@ -111,7 +111,9 @@ var GIVe = (function (give) {
     }, 'json', null, null, this) // end ajax to initialize ref
   }
 
-  give.RefObject.prototype.initTracks = function (groupInfo, keepOld, requestUrl) {
+  give.RefObject.prototype.initTracks = function (
+    groupInfo, keepOld, requestUrl
+  ) {
     // notice that trackInfo is supposed to be an array
     if (!keepOld) {
       this.tracks.clear()
@@ -119,7 +121,7 @@ var GIVe = (function (give) {
       this.reverseLookupTable = {}
     }
     var loadTrackFromRemoteData = function (groupID, track) {
-      var newTrack = new give.TrackObject(track.tableName, track, this)
+      var newTrack = give.TrackObject.createTrack(track.tableName, track, this)
       newTrack.groupID = groupID
       if (requestUrl && !newTrack.requestUrl) {
         newTrack.requestUrl = requestUrl

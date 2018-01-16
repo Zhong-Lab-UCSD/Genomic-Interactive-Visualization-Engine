@@ -54,6 +54,7 @@ var GIVe = (function (give) {
     this._initSettings()
 
     this.ref = ref
+    this.windowSpan = 1
     this._dataObj = (typeof this._DataObjCtor === 'function')
       ? new this._DataObjCtor(this)
       : null
@@ -77,25 +78,11 @@ var GIVe = (function (give) {
    * @memberof TrackObjectBase.prototype
    */
   give.TrackObject.prototype._initSettings = function () {
-    this.priority = this.getSetting('priority') || give.TrackObject.DEFAULT_PRIORITY
+    this.priority = this.getSetting('priority') ||
+      give.TrackObject.DEFAULT_PRIORITY
     if (this.getSetting('visibility')) {
       this.setVisibility(this.getSetting('visibility'))
     } // otherwise leave it to DOM
-
-    if (this.getSetting('requestUrl')) {
-      this.requestUrl = this.getSetting('requestUrl')
-    }
-
-    if (this.getSetting('isCustom')) {
-      this.isCustom = true
-      if (this.getSetting('localFile')) {
-        // should be a File Object (extension of Blob)
-        this.localFile = this.getSetting('localFile')
-      } else if (this.getSetting('remoteUrl')) {
-        // should be a URL
-        this.remoteFile = this.getSetting('remoteUrl')
-      }
-    }
   }
 
   /**

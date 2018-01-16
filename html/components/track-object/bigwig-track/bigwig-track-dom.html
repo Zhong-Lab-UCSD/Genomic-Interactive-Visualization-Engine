@@ -162,15 +162,15 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
         ) {
           // start is the end of the last entry in dataPointArray
           // or chrRange.start
-          var start = chrRange.start
+          var start = chrRange.getStart()
           var lastElem = dataPointArray[dataPointArray.length - 1]
-          if (lastElem && lastElem.end) {
+          if (lastElem && lastElem.getEnd()) {
             // lastElem is a ChromRegion object, may need to add some data
             if (lastElem.overlaps(dataEntry) > 0) {
               lastElem.data.value += dataEntry.data.value *
                 lastElem.overlaps(dataEntry) / lastElem.getLength()
             }
-            start = lastElem.end
+            start = lastElem.getEnd()
           }
           var span = Math.max(parseInt(pixelSpan), 1)
           var chrSpan = new give.ChromRegion({
@@ -282,7 +282,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           // draw the given point with height determined by signal strength
           this.clear()
           var vwindow = this.mainSvg.viewWindow
-          if (this.track.data.hasOwnProperty(vwindow.chr)) {
+          if (this.parent.getData(vwindow.chr)) {
             this.dataPoints = this._generateSmoothedPoints()
             if (this.autoScale) {
               this._findAutoScale()
