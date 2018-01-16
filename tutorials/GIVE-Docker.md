@@ -48,6 +48,7 @@ After successfully deploying GIVE, you can utilize the power of GIVE to build yo
 
 Here, we give you some essential tips for adding data to GIVE container. You read [Docker official docs](https://docs.docker.com/get-started/) to learn more of Docker usage.
 - Login to GIVE container
+
   You can login to the running GIVE container `give` as root and then do anything that you want. 
   ```
   docker exec -t -i give /bin/bash
@@ -58,6 +59,7 @@ Here, we give you some essential tips for adding data to GIVE container. You rea
   ```
   The passwd of MySQL `root` account is `Admin2015`.
 - Transfer files
+  
   You can transfer files between GIVE container and your operating system using `docker cp` command. The following commands are examples.
   ```
   # run GIVE-Docker container, named as give
@@ -68,13 +70,15 @@ Here, we give you some essential tips for adding data to GIVE container. You rea
   docker give:/tmp/test.sh ~/test.sh
   ```
 - Stop, restart and remove running container
-  You can use `docker ps -a` to check all the running and exited container. You can stop, restart and remove them. Keep in mind that all the changes made to the running container will lose after you stop it.
+  
+  You can use `docker ps -a` to check all the running and exited container. You can stop, restart and remove them. Keep in mind that all the changes made to the running container will lose after you stop it.
   ```
   docker stop give
   docker restart give
   docker rm give
   ```
 - Backup data of GIVE container
+  
   As all the custom changes made to container do not affect the Docker image, so if you want to save the changed container you can use `docker commit` and `docker save` to save it, and use `docker load` to restore it. 
   ```
   docker commit -p give give-custom
