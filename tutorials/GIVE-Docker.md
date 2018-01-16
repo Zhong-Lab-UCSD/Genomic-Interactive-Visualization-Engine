@@ -80,14 +80,17 @@ Here, we give you some essential tips for adding data to GIVE container. You rea
 - Backup data of GIVE container
   
   **Keep in mind that all the custom changes made to container do not affect the Docker image, so when you remove a container you will lose all the data.** So if you want to save data in the container, such as MySQL data, there are at least three approaches to do it. 
+    
     - Use `docker commit` and `docker save` to save the whole container, and use `docker load` to restore it.
     ```
     docker commit -p give give-custom
     docker save -o ~/give-custom.tar give-custom
     docker load -i ~/give-custom.tar
     ```
-    - Use **Docker Volume** `-v` option to assign a host dir for saving data when you start the container. For example, in the following command, the dir `/tmp/hostDir` will be mounted to the MySQL data dir in the GIVE-Docker container. All the changes you made to the MySQL databases in the container are saved in the host dir `/tmp/hostDir`.
+    
+    - Use **Docker Volume** `-v` option to assign a host dir for saving data when you start the container. For example, in the following command, the dir `/tmp/hostDir` will be mounted to the MySQL data dir in the GIVE-Docker container. All the changes you made to the MySQL databases in the container are saved in the host dir `/tmp/hostDir`.
     ```
     docker run -d -it -v /tmp/hostDir:/var/lib/mysql -p 40080:80 -p 40443:443 -p 43306:3306 --name give zhonglab/give
     ```
+    
     - Use **Data Container**. Check [this tutorial](https://www.digitalocean.com/community/tutorials/how-to-share-data-between-docker-containers) to learn more.
