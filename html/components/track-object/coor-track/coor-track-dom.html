@@ -62,14 +62,15 @@
           this._setLabelLocation(properties.labelLocation || 'up')
           this._setTrackMainDOMClass('coordinates')
 
-          this._setTrackHeight(properties.height || this.tickLength + (this.lineGap * this.LINEGAP_RATIO + 1) * this.textSize)
+          this._setTrackHeight(properties.height || this.tickLength +
+            (this.lineGap * this.LINEGAP_RATIO + 1) * this.textSize)
 
           if (properties.hasOwnProperty('colorIndex')) {
             this.foreColor = this.colorSet[properties.colorIndex]
           } else if (properties.hasOwnProperty('color')) {
             this.foreColor = parseInt(properties.color)
           }
-        // coordinates are not supposed to communicate with server
+          // coordinates are not supposed to communicate with server
           if (this.hasOwnProperty('requestUrl')) {
             delete (this.requestUrl)
           }
@@ -105,7 +106,8 @@
         // should be an array of [1,2,5] * 10^x
         // the results will contain two sets of ticks
           viewWindow = viewWindow || this.mainSvg.viewWindow
-          maxNumOfTicks = maxNumOfTicks || Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
+          maxNumOfTicks = maxNumOfTicks ||
+            Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
           var span = viewWindow.getLength() / maxNumOfTicks
           var minorSpan
           if (Math.ceil(span) > 0) {
@@ -130,41 +132,46 @@
           minorSpan = Math.ceil(span * this.minorMajorRatio)
 
           var currIndex = Math.ceil(viewWindow.start / minorSpan) * minorSpan
-          var result = [{chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)}]
+          var result = [{
+            chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
+          }]
           currIndex += minorSpan
           while (currIndex < viewWindow.end) {
-            result.push({chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)})
+            result.push({
+              chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
+            })
             currIndex += minorSpan
           }
           return result
         },
 
         drawCoordinates: function (svgToDraw, labels) {
-        // svgToDraw is the DOM svg component (the track element, not the figure itself)
-        // windowToDraw is the window object (chr, start, end, subwindows)
-        // this will draw coordinate for windowToDraw at the top of svgToDraw
-        // labels will be some values to indicate whether a label needs to be included:
-        //    'up' means the labels will be put on top of the ticks
-        //    'down' means the labels will be put below the ticks
+          // svgToDraw is the DOM svg component (the track element, not the figure itself)
+          // windowToDraw is the window object (chr, start, end, subwindows)
+          // this will draw coordinate for windowToDraw at the top of svgToDraw
+          // labels will be some values to indicate whether a label needs to be included:
+          //    'up' means the labels will be put on top of the ticks
+          //    'down' means the labels will be put below the ticks
 
           svgToDraw = this.mainSvg || svgToDraw
 
           var windowToDraw = svgToDraw.viewWindow
           labels = labels || this.labelLocation
 
-        // first get the drawing window size from svgToDraw
-        // calculate number of ticks in the svg
+          // first get the drawing window size from svgToDraw
+          // calculate number of ticks in the svg
           var ticks = this.getRealTicks()
           ticks.forEach(function (value, index) {
             var tickX = this.transformXCoordinate(value, false, svgToDraw)
             var tickY = 0.5
             if (labels === 'up') {
               tickY += this.textSize * (1 + this.lineGap * this.LINEGAP_RATIO) +
-                ((!value.major) ? this.tickLength * (1 - this.minorLength) : 0) - 0.5
+                (!value.major ? this.tickLength * (1 - this.minorLength) : 0) -
+                0.5
             }
             this.drawLine(tickX, tickY, tickX,
-              tickY + this.tickLength *
-              ((!value.major) ? this.minorLength : 1), this.foreColor, svgToDraw)
+              tickY + this.tickLength * (!value.major ? this.minorLength : 1),
+              this.foreColor, svgToDraw)
 
             if (value.major && tickX > this.MIN_TICK_TEXT_MARGIN &&
               tickX < this.windowWidth - this.MIN_TICK_TEXT_MARGIN &&
@@ -175,18 +182,19 @@
                 0.5 * this.textSize, value.coor, 'middle')
             }
           }, this)
-        // then draw a line connecting all the ticks
+          // then draw a line connecting all the ticks
           this.drawLine(0, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
             this.windowWidth, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
             this.foreColor, svgToDraw)
 
           if (labels === 'up' || labels === 'down') {
             this.drawText(this.textMargin ? this.textMargin : 0,
-                  (labels === 'up' ? 0.5
-                    : this.lineGap * this.LINEGAP_RATIO * this.textSize +
-                      this.tickLength) + 0.5 * this.textSize,
-                  windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
-                  this.textMargin ? this.textSvg : this.mainSvg)
+              (labels === 'up' ? 0.5
+                : this.lineGap * this.LINEGAP_RATIO * this.textSize +
+                  this.tickLength
+              ) + 0.5 * this.textSize,
+              windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
+              this.textMargin ? this.textSvg : this.mainSvg)
           }
         },
 
@@ -194,12 +202,14 @@
           var diff = e.deltaY / 100 * this.scrollPercentage
           this.fire('update-window', {
             windowIndex: this.windowIndex,
-            newWindow: this.getMainSvg().viewWindow.getExtension(
-                    diff, this.revTransXCoordinate(e.pageX -
-                      e.target.getBoundingClientRect().left).coor,
-                    true, this.track.ref,
-                    Math.ceil(this.windowWidth /
-                      (this.MAX_SPACE_PER_BASE * this.textSize))).regionToString(false)
+            newWindow: this.getMainSvg().viewWindow
+              .getExtension(
+                diff, this.revTransXCoordinate(e.pageX -
+                  e.target.getBoundingClientRect().left).coor,
+                true, this.track.ref,
+                Math.ceil(this.windowWidth /
+                  (this.MAX_SPACE_PER_BASE * this.textSize))
+              ).regionToString(false)
           })
         // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
         //  diff, this.revTransXCoordinate(e.x).coor, true, this.track.ref).regionToString(false));

@@ -83,10 +83,14 @@
         trackImpl: function (track, properties) {
           properties = properties || {}
 
-          this.fullHeight = properties.hasOwnProperty('lineHeight') ? properties.lineHeight : this.fullHeight
-          this.subTrackGap = properties.hasOwnProperty('subTrackGap') ? properties.subTrackGap : this.subTrackGap
-          this.threshold = properties.hasOwnProperty('threshold') ? properties.threshold : this.threshold
-          this._setTrackHeight(properties.hasOwnProperty('height') ? properties.height
+          this.fullHeight = properties.hasOwnProperty('lineHeight')
+            ? properties.lineHeight : this.fullHeight
+          this.subTrackGap = properties.hasOwnProperty('subTrackGap')
+            ? properties.subTrackGap : this.subTrackGap
+          this.threshold = properties.hasOwnProperty('threshold')
+            ? properties.threshold : this.threshold
+          this._setTrackHeight(properties.hasOwnProperty('height')
+            ? properties.height
             : (this.fullHeight + (this.fullHeight + this.subTrackGap) *
               (properties.numOfSubs - 1)) * this.textSize)
           this._setDynamicHeight(false)
@@ -94,13 +98,13 @@
           this.subSvgs = []
           this._setNumOfSubs(properties.numOfSubs)
           this.bufferWindow = []
-          this.percentiles = this.track.getSetting('thresholdPercentile')
+          this.percentiles = this.parent.getSetting('thresholdPercentile')
         },
 
         initSvgComponents: function () {
           for (var i = 0; i < this.numOfSubs; i++) {
             var newSubSvg = document.createElementNS(this.svgNS, 'svg')
-            newSubSvg.setAttribute('id', this.track.getCleanID() + '_subSvg' + i)
+            newSubSvg.setAttribute('id', this.parent.getCleanID() + '_subSvg' + i)
             Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
             this.subSvgs.push(newSubSvg)
           }
@@ -125,9 +129,11 @@
             if (!newViewWindow || !Array.isArray(newViewWindow)) {
               // no new window (or new window is not an array), need to calculate
               this.subSvgs.forEach(function (subSvg, index) {
-                this.updateTracks(subSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
-                                         null, true, this.track.ref),
-                          index)
+                this.updateTracks(
+                  subSvg.viewWindow.getExtension(
+                    (newWindowWidth - this.windowWidth) / this.windowWidth,
+                    null, true, this.parent.ref
+                  ), index)
               }, this)
             }
           } catch (err) {
@@ -139,7 +145,9 @@
         getCurrentViewWindowExt: function (extension) {
           var result = []
           this.subSvgs.forEach(function (subSvg) {
-            result.push(subSvg.viewWindow.getExtension(extension, null, true, this.track.ref))
+            result.push(subSvg.viewWindow.getExtension(
+              extension, null, true, this.parent.ref
+            ))
           }, this)
           return result
         },
@@ -166,12 +174,14 @@
           this.linkMap = {}
           // draw box track for each child svg
           this.subSvgs.forEach(function (subSvg, index) {
-            this.drawBoxTrack(this.track.data[subSvg.viewWindow.chr], this.linkMap, 0.5,
-                      this.textSize * this.fullHeight - 1, subSvg, index)
+            this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
+              this.linkMap, 0.5, this.textSize * this.fullHeight - 1,
+              subSvg, index)
           }, this)
 
           // draw interaction track for main svg
-          this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs, this.svgMain)
+          this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs,
+            this.svgMain)
           this.drawShortLabel()
         },
 
@@ -252,13 +262,15 @@
 
         changeViewWindow: function (viewWindow, index) {
           if (typeof (viewWindow) === 'string') {
-            this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.track.ref)
+            this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
           } else {
-            this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.track.ref).clone()
+            this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
           }
         },
 
-        drawBoxTrack: function (regions, linkMap, y, height, svgToDraw, index) {
+        drawBoxTrack: function (
+          regions, linkMap, y, height, svgToDraw, index
+        ) {
           // regions is a chromBPTree of all connections
           // regions with the same ID is connected and needs to be colored accordingly
           // linkMap is an object with regionID as key and value as following:
@@ -306,19 +318,19 @@
           }
 
           // then draw the two horizontal lines
-          if (!this.regionInWindow(this.track.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
+          if (!this.regionInWindow(this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
             // no centromere, just draw two lines
             this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
             this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
           } else {
             // has centromere, draw p part first
-            var pX = this.transformXCoordinate(this.track.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw)
+            var pX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw)
             if (pX > 0 && pX < this.windowWidth) {
               this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
               this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw)
             }
             // then centromere
-            var qX = this.transformXCoordinate(this.track.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw)
+            var qX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw)
             this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
             this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
             // then q part
