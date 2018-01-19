@@ -59,7 +59,10 @@
           properties = properties || {}
 
           this._setDynamicHeight(false)
-          this._setLabelLocation(properties.labelLocation || 'up')
+          this._setLabelLocation(
+            (isNaN(properties.windowIndex) || properties.windowIndex === 0)
+              ? 'up' : 'down'
+          )
           this._setTrackMainDOMClass('coordinates')
 
           this._setTrackHeight(properties.height || this.tickLength +
@@ -70,10 +73,6 @@
           } else if (properties.hasOwnProperty('color')) {
             this.foreColor = parseInt(properties.color)
           }
-          // coordinates are not supposed to communicate with server
-          if (this.hasOwnProperty('requestUrl')) {
-            delete (this.requestUrl)
-          }
 
           if (this.textMargin) {
             this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG
@@ -83,10 +82,6 @@
         },
 
       // ****** customized methods below ******
-
-        getTrackUncachedRange: function () {
-          return []
-        },
 
         drawData: function () {
         // this is to draw everything from this.data to the svg
@@ -206,13 +201,13 @@
               .getExtension(
                 diff, this.revTransXCoordinate(e.pageX -
                   e.target.getBoundingClientRect().left).coor,
-                true, this.track.ref,
+                true, this.parent.ref,
                 Math.ceil(this.windowWidth /
                   (this.MAX_SPACE_PER_BASE * this.textSize))
               ).regionToString(false)
           })
         // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
-        //  diff, this.revTransXCoordinate(e.x).coor, true, this.track.ref).regionToString(false));
+        //  diff, this.revTransXCoordinate(e.x).coor, true, this.parent.ref).regionToString(false));
         // svgTarget.needsUpdate = true;
         // this.updateChart(50);
         }

@@ -104,7 +104,8 @@
         initSvgComponents: function () {
           for (var i = 0; i < this.numOfSubs; i++) {
             var newSubSvg = document.createElementNS(this.svgNS, 'svg')
-            newSubSvg.setAttribute('id', this.parent.getCleanID() + '_subSvg' + i)
+            newSubSvg.setAttribute('id', this.parent.getCleanID() +
+              '_subSvg' + i)
             Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
             this.subSvgs.push(newSubSvg)
           }
@@ -114,16 +115,20 @@
         setSvgComponentsSizeLocation: function () {
           this.subSvgs.forEach(function (subSvg, index) {
             subSvg.setAttributeNS(null, 'x', 0)
-            subSvg.setAttributeNS(null, 'y', (this.fullHeight + this.subTrackGap) * index * this.textSize)
+            subSvg.setAttributeNS(null, 'y',
+              (this.fullHeight + this.subTrackGap) * index * this.textSize)
             subSvg.setAttributeNS(null, 'width', this.windowWidth)
 
-            subSvg.setAttributeNS(null, 'height', this.fullHeight * this.textSize)
+            subSvg.setAttributeNS(null, 'height',
+              this.fullHeight * this.textSize)
             subSvg.setAttribute('viewBox', '0 0 ' +
               this.windowWidth + ' ' + this.fullHeight * this.textSize)
           }, this)
         },
 
-        changeViewWindowAfterResize: function (newWindowWidth, newViewWindow) {
+        changeViewWindowAfterResize: function (
+          newWindowWidth, newViewWindow
+        ) {
           // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
           try {
             if (!newViewWindow || !Array.isArray(newViewWindow)) {
@@ -150,16 +155,6 @@
             ))
           }, this)
           return result
-        },
-
-        readLocalFile: function (file, query) {
-        },
-
-        readRemoteFile: function (URL, query) {
-          // placeholder to read remote URL
-          // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-          // data will be passed via firing a 'response' event with {detail: data}
-          // and the response will be handled by this.responseHandler(e, detail)
         },
 
         drawData: function () {
@@ -193,30 +188,12 @@
         },
 
         clear: function () {
-          var i
-          if (this.textMargin) {
-            if (this.textSvg.holder) {
-              Polymer.dom(this.textSvg).removeChild(this.textSvg.holder)
-            } else {
-              while (Polymer.dom(this.textSvg).firstChild) {
-                Polymer.dom(this.textSvg).removeChild(Polymer.dom(this.textSvg).firstChild)
-              }
-            }
-            this.initTextSvgHolder()
-          }
-          for (i = 0; i < this.numOfSubs; i++) {
-            while (Polymer.dom(this.subSvgs[i]).firstChild) {
-              Polymer.dom(this.subSvgs[i]).removeChild(Polymer.dom(this.subSvgs[i]).firstChild)
-            }
-          }
-          while (Polymer.dom(this.mainSvg).firstChild) {
-            Polymer.dom(this.mainSvg).removeChild(Polymer.dom(this.mainSvg).firstChild)
-          }
-          this.initSvgHolder()
-          for (i = 0; i < this.numOfSubs; i++) {
-            Polymer.dom(this.mainSvg.holder).appendChild(this.subSvgs[i])
-          }
-          this.initSubSvgHolders()
+          give.TrackDOMBehaviorImpl.clear.call(this)
+          this.subSvgs.forEach(this.clearSvg, this)
+          this.subSvgs.forEach(
+            Polymer.dom(this.mainSvg.holder).appendChild,
+            Polymer.dom(this.mainSvg.holder)
+          )
         },
 
         updateTracks: function (viewWindow, index, threshold) {

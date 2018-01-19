@@ -1,4 +1,4 @@
-<!--
+this.trackHeight<!--
 @license
 Copyright 2017 GIVe Authors
 *
@@ -124,7 +124,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           /**
            *  A simple calculation of where the top and bottom of where to draw the track is.
            */
-          this.drawingBoundary = {top: this.MARGIN, bottom: this.parentHeight - this.MARGIN}
+          this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
 
           /**
            * to be explained
@@ -366,14 +366,14 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
           var zero = 0
           var value = 0
           var cutOff = 0
-          zero = this.windowMax / this.windowRange * this.parentHeight
-          value = (this.windowMax - strength) / this.windowRange * this.parentHeight
+          zero = this.windowMax / this.windowRange * this.trackHeight
+          value = (this.windowMax - strength) / this.windowRange * this.trackHeight
           if (this.windowMax < 0) {
             zero = 0
             cutOff += 1
           }
           if (this.windowMin > 0) {
-            zero = this.parentHeight
+            zero = this.trackHeight
             cutOff -= 1
           }
           if (strength > this.windowMax) {
@@ -381,7 +381,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
             cutOff += 1
           }
           if (strength < this.windowMin) {
-            value = this.parentHeight
+            value = this.trackHeight
             cutOff -= 1
           }
           if ((this.windowMin > 0 && strength > this.windowMax) || (this.windowMax < 0 && strength < this.windowMin)) {
@@ -406,7 +406,7 @@ bigwig-track-dom takes data from a track.data and displays it accordingly.
               y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
           }.bind(this)
           overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
-          overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.parentHeight - this.OVERFLOW_STROKE_WIDTH))
+          overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
         },
 
         /**

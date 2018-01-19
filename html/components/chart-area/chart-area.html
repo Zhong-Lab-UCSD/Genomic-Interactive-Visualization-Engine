@@ -18,14 +18,13 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="genemo-track-styles.html">
-<link rel="import" href="tracks-header.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -669,8 +668,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           if (this._refObj) {
             this._viewWindows.forEach(function (vwindow, windowIndex) {
               // coordinate track
-              var coorTrackDOM = this._addVisibleTrack(give.TrackObject.createCoorTrack(this._refObj,
-                'coor_' + this._refObj.db + '_' + windowIndex), windowIndex)
+              var coorTrackDOM = this._addVisibleTrack(
+                give.TrackObject.createTrack(
+                  'coor_' + this._refObj.db + '_' + windowIndex,
+                  this._createTrackProp(windowIndex,
+                    { type: 'coordinate', priority: 0 }
+                  ), this._refObj
+                ), windowIndex)
               if (!windowIndex) {
                 this.coorTrackZeroDOM = coorTrackDOM
               }
