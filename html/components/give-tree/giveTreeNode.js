@@ -86,17 +86,17 @@ var GIVe = (function (give) {
    *    preferably a `GIVe.ChromRegion` object.
    * @param {object|null} props - additional properties being
    *    passed onto nodes.
-   * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
+   * @param {Array<ChromRegionLiteral>} [props.ContList] - the list of data
    *    entries that should not start in `chrRange` but are passed from the
    *    earlier regions, this will be useful for later regions if date for
    *    multiple regions are inserted at the same time
-   * @param {function|null} props.Callback - the callback function to be used
+   * @param {function} [props.Callback] - the callback function to be used
    *    (with the data entry as its sole parameter) when inserting
-   * @param {object|null} props.ThisVar - `this` used in calling
+   * @param {object} [props.ThisVar] - `this` used in calling
    *    `props.Callback`.
-   * @param {function|null} props.LeafNodeCtor - the constructor function of
+   * @param {function} [props.LeafNodeCtor] - the constructor function of
    *    leaf nodes if they are not the same as the non-leaf nodes.
-   * @param {number|null} props.DataIndex - the current index of `data`.
+   * @param {number} [props.DataIndex] - the current index of `data`.
    *    If this is specified, no array splicing will be done on `data` to
    *    improve performance. `props.currIndex` will be shifted (and passed
    *    back).

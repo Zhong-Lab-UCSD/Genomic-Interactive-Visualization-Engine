@@ -116,14 +116,26 @@ var GIVe = (function (give) {
    * @param {number} [chrRange.Resolution] - the resolution of the data being
    *    inserted. Will override `props.Resolution` if both exists.
    * @param {Array<ChromRegionLiteral>} continuedList
-   * @param {function|null} callback
-   * @param {object|null} props
+   * @param {Array<ChromRegionLiteral>} [props.ContList] - the list of data
+   *    entries that should not start in `chrRange` but are passed from the
+   *    earlier regions, this will be useful for later regions if date for
+   *    multiple regions are inserted at the same time
+   * @param {function} [props.Callback] - the callback function to be used
+   *    (with the data entry as its sole parameter) when inserting
+   * @param {object} [props.ThisVar] - `this` used in calling
+   *    `props.Callback`.
+   * @param {function} [props.LeafNodeCtor] - the constructor function of
+   *    leaf nodes if they are not the same as the non-leaf nodes.
+   * @param {number} [props.DataIndex] - the current index of `data`.
+   *    If this is specified, no array splicing will be done on `data` to
+   *    improve performance. `props.currIndex` will be shifted (and passed
+   *    back).
    * @param {number} [props.LifeSpan] - the life span for inserted nodes.
    * @param {number} [props.Resolution] - the resolution of the data being
    *    inserted. Will be overridden by `chrRange.Resolution` if both exists.
    */
   give.PineTree.prototype._insertSingleRange = function (
-    data, chrRange, continuedList, callback, props
+    data, chrRange, props
   ) {
     if (!chrRange.chr || chrRange.chr === this.Chr) {
       props = props || {}
@@ -131,8 +143,7 @@ var GIVe = (function (give) {
       props.LifeSpan = props.LifeSpan || this.LifeSpan
       props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
       this._root = this._root.insert(data, ((!chrRange && data.length === 1)
-        ? data[0] : chrRange), continuedList,
-        callback, props)
+        ? data[0] : chrRange), props)
     }
   }
 
@@ -149,11 +160,11 @@ var GIVe = (function (give) {
    * @param {function} callback - the callback function to be used (with the
    *    data entry as its sole parameter) on all overlapping data entries
    *    (that pass `filter` if it exists).
+   * @param {Object} thisVar - `this` element to be used in `callback` and
+   *    `filter`.
    * @param {function} filter - the filter function to be used (with the data
    *    entry as its sole parameter), return `false` to exclude the entry from
    *    being called with `callback`.
-   * @param {Object} thisVar - `this` element to be used in `callback` and
-   *    `filter`.
    * @param {boolean} breakOnFalse - whether the traversing should break if
    *    `false` has been returned from `callback`
    * @param {object|null} props - additional properties being passed onto nodes
@@ -168,7 +179,7 @@ var GIVe = (function (give) {
    *    otherwise `true`
    */
   give.PineTree.prototype.traverse = function (
-    chrRange, callback, filter, thisVar, breakOnFalse, props
+    chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
     props = props || {}
     // replace `props.Wither` flag with `props.Rejuvenation`
@@ -177,8 +188,8 @@ var GIVe = (function (give) {
     }
     // wither is a flag whether to reduce life for nodes not traversed
     if (!chrRange.chr || chrRange.chr === this.chr) {
-      var result = this._root.traverse(chrRange, callback, filter,
-        thisVar, breakOnFalse, false, props)
+      var result = this._root.traverse(chrRange, callback, thisVar, filter,
+        breakOnFalse, false, props)
       if (props.Wither) {
         this.wither()
       }
@@ -193,7 +204,7 @@ var GIVe = (function (give) {
    * @returns {PineTree|null} return `this` if the whole tree has not withered
    *    yet. Otherwise return `null`
    */
-  give.GiveTree.prototype.wither = function () {
+  give.PineTree.prototype.wither = function () {
     // this is the method called to wither all nodes
     if (!this._root.wither()) {
       // the whole tree will wither
@@ -227,7 +238,7 @@ var GIVe = (function (give) {
    *    resolution in its `.Resolution` property.
    */
   give.PineTree.prototype.getUncachedRange = function (chrRange, props) {
-    return give.GiveTree.prototype.getUncachedRange.call(this, arguments)
+    return give.GiveTree.prototype.getUncachedRange.apply(this, arguments)
   }
 
   /**

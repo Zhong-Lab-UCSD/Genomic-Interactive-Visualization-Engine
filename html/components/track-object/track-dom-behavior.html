@@ -851,7 +851,7 @@ limitations under the License.
         var textArray = text.split(/\s+/)
         var results = []
         var resultWidths = []
-        var currHeight = this.textSize * this.fullHeight
+        var currHeight = this.textSize * this.fullHeightRatio
         results.push('')
         resultWidths.push(0)
 
@@ -879,7 +879,7 @@ limitations under the License.
               }
 
               // then add another line
-              if (currHeight + this.textSize * (this.lineGapRatio + this.fullHeight) > maxHeight) {
+              if (currHeight + this.textSize * (this.lineGapRatio + this.fullHeightRatio) > maxHeight) {
                 // too many lines, use '...', and end processing
                 do {
                   results[results.length - 1] = results[results.length - 1].slice(0, -1)
@@ -896,7 +896,7 @@ limitations under the License.
               }
               results.push('')
               resultWidths.push(0)
-              currHeight += this.textSize * (this.lineGapRatio + this.fullHeight)
+              currHeight += this.textSize * (this.lineGapRatio + this.fullHeightRatio)
             } else {
               results[results.length - 1] = (results[results.length - 1].length > 0
                                               ? results[results.length - 1] + ' '
@@ -922,9 +922,9 @@ limitations under the License.
         // get all text elements in the svg in case collision detection is needed
         var textList = Polymer.dom(svgToDraw).querySelectorAll('text')
         textArray = Array.prototype.slice.call(textList)
-        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGapRatio + this.fullHeight) * this.textSize
+        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGapRatio + this.fullHeightRatio) * this.textSize
         if (!avoidCollision || resultWidths.every(function (width, index) {
-          currY += (this.lineGapRatio + this.fullHeight) * this.textSize
+          currY += (this.lineGapRatio + this.fullHeightRatio) * this.textSize
           var left = x
           var right = x
           switch (textAnchor) {
@@ -942,14 +942,14 @@ limitations under the License.
           return textArray.every(function (text, indexT) {
             var rect = text.getBBox()
             return (rect.x >= right || (rect.x + rect.width) <= left ||
-                rect.y > (currY + (this.lineGapRatio + this.fullHeight) * this.textSize) ||
+                rect.y > (currY + (this.lineGapRatio + this.fullHeightRatio) * this.textSize) ||
                 (rect.y + rect.height) < currY)
           }, this)
         }, this)) {
-          currY = y - (results.length - 1) * vertParam * (this.lineGapRatio + this.fullHeight) * this.textSize
+          currY = y - (results.length - 1) * vertParam * (this.lineGapRatio + this.fullHeightRatio) * this.textSize
           results.forEach(function (line, index) {
             this.drawText(x, currY, line, textAnchor, params, svgToDraw)
-            currY += (this.lineGapRatio + this.fullHeight) * this.textSize
+            currY += (this.lineGapRatio + this.fullHeightRatio) * this.textSize
           }, this)
         }
       },
@@ -1002,29 +1002,29 @@ limitations under the License.
           this.cancelDebouncer(this.cacheUpdateJobName)
         }
 
-        if (!Array.isArray(newVWindow)) {
-          newVWindow = [newVWindow]
-        }
+        var newVWArr = Array.isArray(newVWindow) ? newVWindow : [newVWindow]
+        newVWArr.forEach(function (range) {
+          range.Resolution = this.getResolution(range) || 1
+        }, this)
 
         // this is to set up cache loading functions as call back after draw
         this.callbackAfterDraw = this.debounce.bind(
           this, this.cacheUpdateJobName, this.parent.fetchData.bind(
             this.parent,
-            newVWindow.map(function (range) {
+            newVWArr.map(function (range) {
               return range.getExtension(
                 give.TrackDOMBehaviorImpl.CacheRangeSpanProportion,
                 null, true, this.parent.ref
               )
-            }, this), this.getResolution(newVWindow), null, this.id
+            }, this), null, this.id
           ), this._cacheDebounceInt)
         this.parent.fetchData(
-          newVWindow.map(function (range) {
+          newVWArr.map(function (range) {
             return range.getExtension(
               give.TrackDOMBehaviorImpl.DefaultRangeSpanProportion,
               null, true, this.parent.ref
             )
           }, this),
-          this.getResolution(newVWindow),
           this.drawDataDebounceWrapper.bind(
             this, newVWindow
           ), this.id

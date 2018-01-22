@@ -62,14 +62,14 @@ var GIVe = (function (give) {
    * @param {object|null} props
    */
   give.GiveTree.prototype._insertSingleRange = function (
-    data, chrRange, continuedList, callback, props
+    data, chrRange, props
   ) {
     if (!chrRange.chr || chrRange.chr === this.Chr) {
       props = props || {}
+      props.ContList = props.ContList || []
       props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
       this._root = this._root.insert(data, ((!chrRange && data.length === 1)
-        ? data[0] : chrRange), continuedList,
-        callback, props)
+        ? data[0] : chrRange), props)
     }
   }
 
@@ -106,17 +106,15 @@ var GIVe = (function (give) {
    *    leaf nodes if they are not the same as the non-leaf nodes.
    */
   give.GiveTree.prototype.insert = function (
-    data, chrRanges, continuedList, callback, props
+    data, chrRanges, props
   ) {
-    continuedList = continuedList || []
     if (Array.isArray(chrRanges)) {
       chrRanges.forEach(function (range, index) {
-        this._insertSingleRange(data, range, continuedList, callback,
+        this._insertSingleRange(data, range,
           Array.isArray(props) ? props[index] : props)
       }, this)
     } else {
-      this._insertSingleRange(data, chrRanges, continuedList, callback,
-        props)
+      this._insertSingleRange(data, chrRanges, props)
     }
   }
 
@@ -152,11 +150,11 @@ var GIVe = (function (give) {
    * @param {function} callback - the callback function to be used (with the
    *    data entry as its sole parameter) on all overlapping data entries
    *    (that pass `filter` if it exists).
+   * @param {Object} thisVar - `this` element to be used in `callback` and
+   *    `filter`.
    * @param {function} filter - the filter function to be used (with the data
    *    entry as its sole parameter), return `false` to exclude the entry from
    *    being called with `callback`.
-   * @param {Object} thisVar - `this` element to be used in `callback` and
-   *    `filter`.
    * @param {boolean} breakOnFalse - whether the traversing should break if
    *    `false` has been returned from `callback`
    * @param {object|null} props - additional properties being passed onto nodes
@@ -164,12 +162,12 @@ var GIVe = (function (give) {
    *    otherwise `true`
    */
   give.GiveTree.prototype.traverse = function (
-    chrRange, callback, filter, thisVar, breakOnFalse, props
+    chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
     props = props || {}
     if (!chrRange.chr || chrRange.chr === this.Chr) {
-      return this._root.traverse(chrRange, callback, filter,
-        thisVar, breakOnFalse, false, props)
+      return this._root.traverse(chrRange, callback, thisVar, filter,
+        breakOnFalse, props)
     }
   }
 

@@ -124,7 +124,7 @@
 				line.genes.forEach(function(gene) {
 					this.drawSingleGene(gene, y, (this.honorItemRGB && gene.itemRGB !== undefined)? gene.itemRGB: null);
 				}, this);
-				y += (this.fullHeight + this.lineGapRatio) * this.textSize;
+				y += (this.fullHeightRatio + this.lineGapRatio) * this.textSize;
 			}, this);
 
 			// resize the heights
@@ -207,7 +207,7 @@
 			// y: the y coordinate of the gene (line location)
 			// height: the height of gene (notice that thin regions will have this.halfHeight * height)
 
-			height = height || this.fullHeight * this.textSize * 0.8;
+			height = height || this.fullHeightRatio * this.textSize * 0.8;
 			halfHeight = halfHeight || this.halfHeight;
 			if(typeof(colorRGB) !== 'number') {
 				colorRGB = this.colorSet[this.FORECOLOR_INDEX];

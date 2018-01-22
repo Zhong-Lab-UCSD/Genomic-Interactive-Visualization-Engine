@@ -19,7 +19,7 @@ var GIVe = (function (give) {
   'use strict'
 
   /**
-   * Example for a new track data object,
+   * Object representing a BiwWig track data object,
    * see `GIVe.TrackDataObject` for details.
    * @typedef {object} BigWigTrackData
    * @class give.BigWigTrackData
@@ -184,7 +184,7 @@ var GIVe = (function (give) {
    * @constructor
    * @memberof TrackDataObjectBase.prototype
    */
-  give.TrackDataObject.prototype._DataStructure = give.PineTree
+  give.BigWigTrackData.prototype._DataStructure = give.PineTree
 
   return give
 })(GIVe || {})

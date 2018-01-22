@@ -359,9 +359,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges -
    *   An array of `give.ChromRegion`s to get the data for.
    *   For each `ChromRegion` element, resolution can be individually assigned
-   *     by setting `element.resolution` property or using the next parameter
-   *     (When both are assigned, `elemnent.resolution` takes precedence).
-   * @param  {Array<number>} resolutions Resolutions required for the ranges
+   *     by setting `.Resolution` property of the element.
    * @param  {function} callback    The callback function that will be called
    *   once the data is loaded.
    *   The function should not take any arguments (Use function.prototype.bind()
@@ -369,9 +367,9 @@ var GIVe = (function (give) {
    * @param  {string} callerID    The element ID calling `this.fetchData`, this is
    *   used to collapse multiple calls from the same element.
    */
-  give.TrackObject.prototype.fetchData = function (ranges, resolutions, callback, callerID) {
+  give.TrackObject.prototype.fetchData = function (ranges, callback, callerID) {
     if (this._dataObj && this._dataObj.fetchData) {
-      return this._dataObj.fetchData(ranges, resolutions, callback, callerID)
+      return this._dataObj.fetchData(ranges, callback, callerID)
     } else {
       // There is no data in this track, get the callback done and return
       if (typeof callback === 'function') {

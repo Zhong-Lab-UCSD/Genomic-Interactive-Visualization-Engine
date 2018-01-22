@@ -79,10 +79,6 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode = function (props) {
     // start and length is for the corresponding region
     props = props || {}
-    if (!Number.isInteger(props.Start) || !Number.isInteger(props.End)) {
-      throw (new Error('Start or End is not an integer number in non-leaf ' +
-             'node construction!'))
-    }
     this.IsRoot = !!props.IsRoot
     this.Tree = props.Tree
     if (
@@ -93,7 +89,10 @@ var GIVe = (function (give) {
       this.Keys = props.Keys
       this.Values = props.Values
     } else {
-      if (props.Start < 0 || props.End < 0 || props.Start >= props.End) {
+      if (!Number.isInteger(props.Start) || !Number.isInteger(props.End)) {
+        throw (new Error('Start or End is not an integer number in non-leaf ' +
+               'node construction!'))
+      } else if (props.Start < 0 || props.End < 0 || props.Start >= props.End) {
         throw (new Error('Range error. Start: ' + props.Start +
           ', end: ' + props.End))
       }
@@ -732,14 +731,14 @@ var GIVe = (function (give) {
       var currRange = this.truncateChrRange(chrRange, true, true)
       var result = []
       var currIndex = 0
-      while (this.keys[currIndex + 1] <= currRange.getStart()) {
+      while (this.Keys[currIndex + 1] <= currRange.getStart()) {
         currIndex++
       }
       while (currRange.getStart() < currRange.getEnd()) {
         if (this.Values[currIndex]) {
           // there is a child node here, descend
           var newRanges =
-            this.values[currIndex].getUncachedRange(currRange, props)
+            this.Values[currIndex].getUncachedRange(currRange, props)
           if (result[result.length - 1] && newRanges[0] &&
             result[result.length - 1].concat(newRanges[0])
           ) {

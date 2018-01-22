@@ -122,7 +122,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           if (data) {
             data.traverse(
               this.mainSvg.viewWindow, this._drawSingleGene,
-              null, null, this, false
+              this, null, false
             )
           }
 
@@ -148,7 +148,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          */
         _calcHeight: function (numOfLines) {
           numOfLines = numOfLines || 1
-          return (numOfLines * (this.fullHeight + this.lineGapRatio) -
+          return (numOfLines * (this.fullHeightRatio + this.lineGapRatio) -
             this.lineGapRatio) * this.textSize
         },
 
@@ -249,7 +249,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               this.mainSvg.viewWindow,
               this._callTransFuncOnGene.bind(this,
                 this._allocateLineToTrans.bind(this, lineEnds)
-              ), null, null, this, true)
+              ), this, null, true)
             ) {
               return lineEnds.length > 0 ? lineEnds.length : 1
             } else {
@@ -344,7 +344,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
                 (this.honorItemRGB && gene.itemRGB !== undefined)
                   ? gene.itemRGB : null)
             }
-          })
+          }, gene)
         },
 
         /**
@@ -395,7 +395,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
            * @param  {number} [thickEnd] - the end coordinate of thick
            *    portions, which may overlap with the block.
            */
-          function _processSingleBlock (
+          var _processSingleBlock = function (
             blockStart, blockEnd, thickStart, thickEnd
           ) {
             if (typeof thickStart === 'number' ||
@@ -436,7 +436,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               yCoor, height * (isThick ? 1 : halfHeightRatio),
               this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
             )
-          }
+          }.bind(this)
 
           var coor, blockStart, blockEnd
           var isThick = false

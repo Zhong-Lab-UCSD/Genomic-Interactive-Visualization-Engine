@@ -70,12 +70,10 @@ var GIVe = (function (give) {
   }
 
   give.TrackDataObject.prototype._initSettings = function () {
-    if (!this.getTrackSetting('isCustom')) {
-      if (!this.getTrackSetting('remoteUrl')) {
-        this.setTrackSetting('remoteUrl', give.TrackDataObject.fetchDataTarget)
-      }
-    } else if (!this.getTrackSetting('remoteUrl')) {
-      this.setTrackSetting('remoteUrl', give.TrackDataObject.fetchCustomTarget)
+    if (!this.getTrackSetting('requestUrl')) {
+      this.setTrackSetting('requestUrl', this.getTrackSetting('isCustom')
+        ? give.TrackDataObject.fetchCustomTarget
+        : give.TrackDataObject.fetchDataTarget)
     }
   }
 

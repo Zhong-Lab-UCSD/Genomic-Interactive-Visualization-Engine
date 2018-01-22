@@ -179,7 +179,9 @@ var GIVe = (function (give) {
     props.DataIndex = 0
     var prevDataIndex
     props.ContList = props.ContList || []
-    if (!(props.LeafNodeCtor instanceof give.GiveTreeNode)) {
+    if (!(give.GiveTreeNode.prototype.isPrototypeOf(
+      props.LeafNodeCtor.prototype
+    ))) {
       throw new Error('LeafNodeCtor `' + props.LeafNodeCtor +
         '` is not a constructor for a tree node!')
     }

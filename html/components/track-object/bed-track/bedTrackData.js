@@ -51,7 +51,7 @@ var GIVe = (function (give) {
           { geneName: resChromEntry.geneSymbol }
         )
       )
-      if (this.getTypeTrunk().indexOf('gene') > -1) {
+      if (this.parent.getTypeTrunk().indexOf('gene') > -1) {
         // is some gene oriented type
         if (geneNameMap.hasOwnProperty(newGene.name) &&
           geneNameMap[newGene.name].overlaps(newGene)

@@ -147,7 +147,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         },
 
         _pushSingleRawPointEntry: function (
-          dataPointArray, chrRange, pixelSpan, dataEntry
+          dataPointArray, chrRange, dataEntry
         ) {
           // start is the end of the last entry in dataPointArray
           // or chrRange.start
@@ -161,7 +161,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             }
             start = lastElem.getEnd()
           }
-          var span = Math.max(parseInt(pixelSpan), 1)
+          var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
           var chrSpan = new give.ChromRegion({
             chr: chrRange.chr,
             start: start,
@@ -182,14 +182,12 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           }
         },
 
-        _generateRawPointsList: function (vwindow, resolution) {
+        _generateRawPointsList: function (vwindow) {
           var rawDataPoints = []
           // First populate the raw data points
           this.parent.getData(vwindow.chr).traverse(vwindow,
-            this._pushSingleRawPointEntry.bind(this, rawDataPoints,
-              vwindow, resolution
-            ), null, resolution,
-            this, false)
+            this._pushSingleRawPointEntry.bind(this, rawDataPoints, vwindow),
+            this, null, false)
           // Insert more zeroes to the end
           var lastEnd = rawDataPoints.length
             ? rawDataPoints[rawDataPoints.length - 1].end
@@ -198,9 +196,9 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             rawDataPoints.push(new give.ChromRegion({
               chr: vwindow.chr,
               start: lastEnd,
-              end: lastEnd + resolution
+              end: lastEnd + vwindow.Resolution
             }, this.parent.ref, { data: { value: 0.0 } }))
-            lastEnd += resolution
+            lastEnd += vwindow.Resolution
           }
           return rawDataPoints
         },
@@ -214,10 +212,10 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             this.MIN_RESOLUTION_PER_PIXEL / 2)
           var extendedWindow = vwindow.getExtension(slidingWindowSpan)
             .clipRegion(this.parent.ref)
+          extendedWindow.Resolution = this.getResolution(vwindow)
 
           // Get the raw points list first
-          var rawDataPoints = this._generateRawPointsList(extendedWindow,
-            this.getResolution(vwindow))
+          var rawDataPoints = this._generateRawPointsList(extendedWindow)
 
           // Then smooth out with this.slidingWindowWidth
           // Needs to check if the borders do not have enough points

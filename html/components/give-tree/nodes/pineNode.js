@@ -415,9 +415,11 @@ var GIVe = (function (give) {
     while (chrRange.getStart() < chrRange.getEnd()) {
       // 1. Find the range where the first child node should be inserted.
       //    This should be the node where `chrRange.getStart()` falls in.
-      childRange.start = give.fitRes(chrRange.getStart(), childRes, Math.floor)
+      childRange.start = give.PineNode.fitRes(
+        chrRange.getStart(), childRes, Math.floor
+      )
       childRange.end = Math.min(this.getEnd(),
-        give.fitRes(chrRange.getEnd(), childRes, Math.ceil),
+        give.PineNode.fitRes(chrRange.getEnd(), childRes, Math.ceil),
         childRange.start + childRes
       )
 
@@ -499,7 +501,9 @@ var GIVe = (function (give) {
     props.DataIndex = 0
     var prevDataIndex
     props.ContList = props.ContList || []
-    if (!(props.LeafNodeCtor instanceof give.GiveTreeNode)) {
+    if (!(give.GiveTreeNode.prototype.isPrototypeOf(
+      props.LeafNodeCtor.prototype
+    ))) {
       throw new Error('LeafNodeCtor `' + props.LeafNodeCtor +
         '` is not a constructor for a tree node!')
     }

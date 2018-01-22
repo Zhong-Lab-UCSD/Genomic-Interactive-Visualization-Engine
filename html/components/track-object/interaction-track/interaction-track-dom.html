@@ -115,15 +115,15 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         trackImpl: function (track, properties) {
           properties = properties || {}
 
-          this.fullHeight = properties.hasOwnProperty('lineHeight')
-            ? properties.lineHeight : this.fullHeight
+          this.fullHeightRatio = properties.hasOwnProperty('lineHeight')
+            ? properties.lineHeight : this.fullHeightRatio
           this.subTrackGap = properties.hasOwnProperty('subTrackGap')
             ? properties.subTrackGap : this.subTrackGap
           this.threshold = properties.hasOwnProperty('threshold')
             ? properties.threshold : this.threshold
           this._setTrackHeight(properties.hasOwnProperty('height')
             ? properties.height
-            : (this.fullHeight + (this.fullHeight + this.subTrackGap) *
+            : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
               (properties.numOfSubs - 1)) * this.textSize)
           this._setDynamicHeight(false)
 
@@ -148,13 +148,13 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           this.subSvgs.forEach(function (subSvg, index) {
             subSvg.setAttributeNS(null, 'x', 0)
             subSvg.setAttributeNS(null, 'y',
-              (this.fullHeight + this.subTrackGap) * index * this.textSize)
+              (this.fullHeightRatio + this.subTrackGap) * index * this.textSize)
             subSvg.setAttributeNS(null, 'width', this.windowWidth)
 
             subSvg.setAttributeNS(null, 'height',
-              this.fullHeight * this.textSize)
+              this.fullHeightRatio * this.textSize)
             subSvg.setAttribute('viewBox', '0 0 ' +
-              this.windowWidth + ' ' + this.fullHeight * this.textSize)
+              this.windowWidth + ' ' + this.fullHeightRatio * this.textSize)
           }, this)
         },
 
@@ -202,7 +202,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           // draw box track for each child svg
           this.subSvgs.forEach(function (subSvg, index) {
             this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
-              this.linkMap, 0.5, this.textSize * this.fullHeight - 1,
+              this.linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
               subSvg, index)
           }, this)
 
@@ -323,7 +323,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           }.bind(this)
 
           if (regions && regions instanceof give.ChromBPlusTree) {
-            regions.traverse(windowToDraw, traverseFunc, filterFunc, null, this, false)
+            regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
           }
 
           // then draw the two horizontal lines

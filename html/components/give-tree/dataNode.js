@@ -273,7 +273,7 @@ var GIVe = (function (give) {
     ) {
       return false
     }
-    props.notFirstCall = true
+    props.NotFirstCall = true
     return true
   }
 
