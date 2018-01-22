@@ -375,6 +375,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         _createTrackProp: function (viewWindowIndex, props) {
           props = props || {}
           props.windowIndex = viewWindowIndex
+          props.width = this.$.chartHolding.clientWidth
           return props
         },
 
@@ -483,7 +484,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           delete this._svgWidth
           this._callForeachFuncOnDomInWindowEntry(
             function (trackDOM, trackDomIndex) {
-              trackDOM.updateTracks(this._viewWindows[index],
+              trackDOM.updateTrack(this._viewWindows[index],
                 index, this._threshold)
             }.bind(this), this._trackDOMsByWindow[index], index)
         },

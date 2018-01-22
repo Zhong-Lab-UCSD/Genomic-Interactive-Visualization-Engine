@@ -57,6 +57,7 @@ var GIVe = (function (give) {
       give.TrackDataObject._getDataQueueCallbackID
     )
 
+    this._initSettings()
     this.isRetrivingData = false
   }
 
@@ -69,26 +70,13 @@ var GIVe = (function (give) {
   }
 
   give.TrackDataObject.prototype._initSettings = function () {
-    // if (this.parent.getSetting('requestUrl')) {
-    //   this.requestUrl = this.parent.getSetting('requestUrl')
-    // }
-    //
-    // if (this.parent.getSetting('isCustom')) {
-    //   this.isCustom = true
-    //   if (this.parent.getSetting('localFile')) {
-    //     // should be a File Object (extension of Blob)
-    //     this.localFile = this.parent.getSetting('localFile')
-    //   } else if (this.parent.getSetting('remoteUrl')) {
-    //     // should be a URL
-    //     this.remoteFile = this.parent.getSetting('remoteUrl')
-    //   }
-    // }
     if (!this.getTrackSetting('isCustom')) {
       if (!this.getTrackSetting('remoteUrl')) {
         this.setTrackSetting('remoteUrl', give.TrackDataObject.fetchDataTarget)
       }
-    } else if (!this.getTrackSetting)
-
+    } else if (!this.getTrackSetting('remoteUrl')) {
+      this.setTrackSetting('remoteUrl', give.TrackDataObject.fetchCustomTarget)
+    }
   }
 
   /**

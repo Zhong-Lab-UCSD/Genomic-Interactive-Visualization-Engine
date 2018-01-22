@@ -390,7 +390,7 @@ var GIVe = (function (give) {
    * @returns {this._dataObj._DataStructure|null}       the underlying data
    *    (or `null` if no data for the track)
    */
-  give.TrackData.prototype.getData = function (chrom) {
+  give.TrackObject.prototype.getData = function (chrom) {
     if (this._dataObj) {
       return this._dataObj.getData(chrom)
     }

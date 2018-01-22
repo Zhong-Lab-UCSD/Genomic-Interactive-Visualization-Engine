@@ -15,12 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<link rel="import" href="../../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../../chrom-b-plus-tree/chrom-b-plus-tree.html">
-<link rel="import" href="../../chrom-region/chrom-region.html">
-<link rel="import" href="../../track-object/track-object.html">
-<link rel="import" href="../../ref-object/ref-object.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../give-tree/give-tree.html">
+<link rel="import" href="../chrom-region/chrom-region.html">
+<link rel="import" href="track-object.html">
+<link rel="import" href="../ref-object/ref-object.html">
 <script>
   var GIVe = (function (give) {
     give._trackCounter = 0
@@ -879,7 +879,7 @@ limitations under the License.
               }
 
               // then add another line
-              if (currHeight + this.textSize * (this.lineGap + this.fullHeight) > maxHeight) {
+              if (currHeight + this.textSize * (this.lineGapRatio + this.fullHeight) > maxHeight) {
                 // too many lines, use '...', and end processing
                 do {
                   results[results.length - 1] = results[results.length - 1].slice(0, -1)
@@ -896,7 +896,7 @@ limitations under the License.
               }
               results.push('')
               resultWidths.push(0)
-              currHeight += this.textSize * (this.lineGap + this.fullHeight)
+              currHeight += this.textSize * (this.lineGapRatio + this.fullHeight)
             } else {
               results[results.length - 1] = (results[results.length - 1].length > 0
                                               ? results[results.length - 1] + ' '
@@ -922,9 +922,9 @@ limitations under the License.
         // get all text elements in the svg in case collision detection is needed
         var textList = Polymer.dom(svgToDraw).querySelectorAll('text')
         textArray = Array.prototype.slice.call(textList)
-        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGap + this.fullHeight) * this.textSize
+        var currY = y - ((results.length - 1) * vertParam + 1) * (this.lineGapRatio + this.fullHeight) * this.textSize
         if (!avoidCollision || resultWidths.every(function (width, index) {
-          currY += (this.lineGap + this.fullHeight) * this.textSize
+          currY += (this.lineGapRatio + this.fullHeight) * this.textSize
           var left = x
           var right = x
           switch (textAnchor) {
@@ -942,14 +942,14 @@ limitations under the License.
           return textArray.every(function (text, indexT) {
             var rect = text.getBBox()
             return (rect.x >= right || (rect.x + rect.width) <= left ||
-                rect.y > (currY + (this.lineGap + this.fullHeight) * this.textSize) ||
+                rect.y > (currY + (this.lineGapRatio + this.fullHeight) * this.textSize) ||
                 (rect.y + rect.height) < currY)
           }, this)
         }, this)) {
-          currY = y - (results.length - 1) * vertParam * (this.lineGap + this.fullHeight) * this.textSize
+          currY = y - (results.length - 1) * vertParam * (this.lineGapRatio + this.fullHeight) * this.textSize
           results.forEach(function (line, index) {
             this.drawText(x, currY, line, textAnchor, params, svgToDraw)
-            currY += (this.lineGap + this.fullHeight) * this.textSize
+            currY += (this.lineGapRatio + this.fullHeight) * this.textSize
           }, this)
         }
       },

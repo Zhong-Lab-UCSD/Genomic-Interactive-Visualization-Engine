@@ -13,10 +13,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
--->
-<link rel="import" href="../track-dom-behavior.html">
-<link rel="import" href="../../gene-object/gene-object.html">
-<!--
+
 ### Overview
 
 `<bed-track-dom>` is the Web Component to display BED tracks. It's part of
@@ -151,8 +148,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          */
         _calcHeight: function (numOfLines) {
           numOfLines = numOfLines || 1
-          return (numOfLines * (this.fullHeight + this.lineGap) -
-            this.lineGap) * this.textSize
+          return (numOfLines * (this.fullHeight + this.lineGapRatio) -
+            this.lineGapRatio) * this.textSize
         },
 
         /**
