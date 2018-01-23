@@ -4,7 +4,8 @@ require_once(realpath(dirname(__FILE__) . "/../common_func.php"));
 class ChromBPT  {
 	const SIG = 0x78CA8C91;
 	const ID = 0;
-	const SIZE = 1;
+	const SIZE = 1;	
+	const NAME = 2;
 	
 	private $fileHandle;
 	
@@ -26,14 +27,15 @@ class ChromBPT  {
 				$newChromName = $this->fileHandle->readString($this->keySize);
 				$newChrom[self::ID] = $this->fileHandle->readBits32();
 				$newChrom[self::SIZE] = $this->fileHandle->readBits32();
-				$list[strtolower(trim($newChromName))] = $newChrom;
-				// $list[$newChrom['id']] = $newChrom;		// not sure if this is needed, maybe
+				$newChrom[self::NAME] = $newChromName;
+				$list[strtolower($newChromName)] = $newChrom;
+				$list[$newChrom[self::ID]] = $newChrom;
 			}
 		} else {
 			// get all offsets of children
 			$offsets = array();
 			for($i = 0; $i < $childCount; $i++) {
-				$this->fileHandle->readString($this->keySize);
+				$this->fileHandle->readRawBuffer($this->keySize);
 				$offsets[] = $this->fileHandle->readBits64();
 			}
 			foreach($offsets as $childOffset) {

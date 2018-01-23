@@ -1,0 +1,640 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="query-card-content">
+  <template>
+    <style include="genemo-shared-styles">
+		:host {
+			display: block;
+			font-family: 'Roboto', Arial, Helvetica, sans-serif;
+			font-size: 12px;
+			line-height: 1.2em;
+			vertical-align: middle;
+			padding: 1em;
+		}
+
+		#searchform input.searchFieldBusy {
+			background: #FFFFFF url(../../../images/loading1.gif) no-repeat 100% 50%;
+		}
+
+		#spcDropDownMenu {
+			width: 7em;
+			--paper-menu-button: {
+				padding: 0.3em 0 0.3em 0.1em;
+			};
+		}
+
+		paper-menu.autoText {
+			max-height: 25em;
+			min-width: 180px;
+			cursor: pointer;
+		}
+
+		paper-menu.autoText paper-item {
+			--paper-item-min-height: 1.5em;
+			--paper-item: {
+				display: block;
+				font-size: 12px;
+				text-transform: none;
+			};
+		}
+
+		paper-menu.autoText paper-item * {
+			display: inline;
+			margin: 0;
+			padding: 0;
+		}
+
+		/************************** Polymer and Material Design components below *********************/
+
+		.lineContainer {
+			display: table;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		.lineContainer > * {
+			display: table-cell;
+		}
+
+		.lineContainer > :not(.right) {
+			padding-left: 0.3em;
+		}
+
+		.lineContainer > .right {
+			width: 45px;
+		}
+
+		.rightNoMargin {
+			margin: 0 0 0 0.5em;
+		}
+
+		.anno {
+			color: #3F51B5;
+			margin: 0.3em;
+			font-weight: 700;
+		}
+
+		#refTable > div {
+			margin-top: 0.3em;
+			margin-bottom: 0.3em;
+		}
+
+		/************************** Polymer and Material Design color below *********************/
+
+		/************************** Polymer and Material Design size and others below *********************/
+
+		paper-radio-group > * {
+			padding: 1em 0.5em !important;
+		}
+
+		paper-radio-button::shadow #radioLabel {
+			margin-left: 0.5em;
+		}
+
+		paper-material {
+			padding: 0.5em;
+		}
+
+	</style>
+    <iron-signals on-iron-signal-toggle="signalToggle" on-iron-signal-disable="signalDisabled" on-iron-signal-encodecheck="signalEncodeCheck"></iron-signals>
+    <paper-radio-group selected="{{geneRegionSelection}}">
+      <paper-radio-button name="gene"><span id="Gene" class="text">Gene</span></paper-radio-button>
+      <paper-radio-button name="region"><span id="Region for" class="text">Region for</span></paper-radio-button>
+    </paper-radio-group>
+    <paper-dropdown-menu id="spcDropDownMenu" disabled$="{{spcCoorDropDisabled}}" label="Reference" class="vertMargined" no-label-float noink>
+      <paper-menu class="dropdown-content" selected="{{spcCoorSelection}}" attr-for-selected="value">
+        <template is="dom-repeat" items="[[currSelectedRef]]">
+          <paper-item value="[[item.db]]">[[item.db]]</paper-item>
+        </template>
+      </paper-menu>
+    </paper-dropdown-menu>
+    <div class="lineContainer vertMargined">
+      <div id="geneNameHotRegion">
+        <paper-input class="fullWidth" id="geneName" label="Input your query here" value="{{InputGeneName}}" no-label-float></paper-input>
+        <iron-dropdown id="geneNameDropDown" vertical-offset="24">
+          <paper-menu class="dropdown-content autoText" selected="{{partialSelection}}" attr-for-selected="value">
+            <template is="dom-repeat" items="[[candidates]]">
+              <paper-item disabled$="[[item.disabled]]" value="[[item.value]]"><span>[[item.contentBefore]]</span><strong>[[item.contentBold]]</strong><em>[[item.contentItalic]]</em><span>[[item.contentAfter]]</span></paper-item>
+            </template>
+          </paper-menu>
+        </iron-dropdown>
+      </div>
+      <div class="right">
+        <paper-button class="colored rightNoMargin" raised id="querySubmit" disabled$="[[isDisabled]]" on-tap="submitQuery">GO</paper-button>
+      </div>
+    </div>
+    <iron-ajax id="partialNameAjax" url="jsongenename.php" handle-as="json" on-response="updatePartialQuery" debounce-duration="300" method="POST"></iron-ajax>
+    <paper-material id="refTable" class="vertMargined" elevation="1">
+      <div class="anno fullWidth"><span id="Ref to compare" class="text"> Ref to compare: </span></div>
+      <template is="dom-repeat" items="[[ref]]">
+        <div id="[[computeCheckboxWrapper(item.db)]]">
+          <paper-checkbox noink checked name="[[item.db]]" id="[[item.db]]" value="[[item.db]]" disabled$="[[item.checkDisabled]]" on-change="refCheckHandler">
+            <span><em>[[item.name]]</em> (<span>[[item.commonName]]</span>) [<span>[[item.db]]</span>]</span>
+          </paper-checkbox>
+        </div>
+      </template>
+    </paper-material>
+	<paper-button class="fullWidth vertMargined trackSelection" toggles raised noink active$="{{trackSelActive}}" on-tap="trackSelectionHandler">Data selection</paper-button>
+  </template>
+  <script>
+    Polymer({
+
+		is: "query-card-content",
+
+		behaviors: [
+			_GIVe.GenemoTabCardContentBehavior
+		],
+
+		properties: {
+			isEncodeOn: {
+				type: Boolean,
+				value: true
+			},
+
+			spcCoorSelection: {
+				type: String,
+				value: ""
+			},
+
+			spcCoorDropDisabled: {
+				type: Boolean,
+				value: true
+			},
+
+			trackSelActive: {
+				type: Boolean,
+				value: false
+			},
+
+			toggleGroup: {
+				type: String,
+				value: 'trackSelect'
+			},
+
+			isDisabled: {
+				type: Boolean,
+				value: false
+			},
+
+			disableGroup: {
+				type: String,
+				value: 'query-search'
+			},
+
+			collapseElement: {
+				type: String,
+				value: ""
+			},
+
+			ref: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+
+			selectedRefs: {			// This is the references selected during submission
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+
+			currSelectedRef: {	// This is the current selected ref (not submitted yet)
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+
+			candidates: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+
+			timerOn: {
+				type: Boolean,
+				value: false
+			},
+
+			inFocus: {
+				type: Boolean,
+				value: false
+			},
+
+			mouseInGList: {
+				type: Boolean,
+				value: false
+			},
+
+			gListOpen: {
+				type: Boolean,
+				value: false
+			},
+
+			querySent: {
+				type: String,
+				value: '',
+			},
+
+			mouseOutJobName: {
+				type: String,
+				value: 'MouseOutJob'
+			},
+
+			mouseOutTimeOut: {
+				// this is the number of ms before hiding the menu
+				type: Number,
+				value: 1000
+			},
+
+			geneRegionSelection: {
+				type: String,
+				value: "gene",
+				observer: "geneRegionSelectionChanged"
+			},
+
+			partialSelection: {
+				type: String,
+				value: "",
+				observer: "partialSelectionChanged"
+			},
+
+			direct: {
+				type: Boolean,
+				value: false
+			},
+
+			firstRun: {
+				type: Boolean,
+				value: true
+			},
+
+			InputGeneName: {
+				type: String,
+				value: ""
+			}
+		},
+
+		computeCheckboxWrapper: function(textstem) {
+			return textstem + '_checkboxwrapper';
+		},
+
+        checkEncodeRef: function (flag) {
+            var spcAvailableCount = 0;
+			if(typeof(flag) == 'boolean') {
+				this.isEncodeOn = flag;
+			}
+            if(this.ref) {
+                for(var i = 0; i < this.ref.length; i++) {
+                    if(this.isEncodeOn && !this.ref[i].isEncode) {
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db + '_checkboxwrapper').style.display = 'none';
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked = false;
+                    } else if (!this.isEncodeOn) {
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db + '_checkboxwrapper').style.display = 'block';
+                        Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked = true;
+                        spcAvailableCount++;
+                    }
+                }
+                this.updateAllSpcActive();
+                if(spcAvailableCount > 2) {
+                    this.$.refTable.style.display = 'block';
+                } else {
+                    this.$.refTable.style.display = 'none';
+                }
+                this.updateType();
+            }
+        },
+
+        updateAllSpcActive: function () {
+            // numbersOnly means no update of checkboxes to ref.isActive
+            // otherwise ref.isActive will be updated first to reflect choice
+            this.updateAllSpcActiveUI();
+            this.ref.updateAllSpcActiveNum();
+        },
+
+        updateAllSpcActiveUI: function () {
+            for(var i = 0; i < this.ref.length; i++) {
+                this.ref[i].isActive = Polymer.dom(this.root).querySelector('#' + this.ref[i].db).checked;
+            }
+        },
+
+        updateType: function () {
+            var typeSelected = this.spcCoorSelection;
+            this.splice('currSelectedRef', 0, this.currSelectedRef.length);
+			var lastActiveRef;
+            for(var i = 0; i < this.ref.length; i++) {
+                if(this.ref[i].isActive) {
+                    this.push('currSelectedRef', this.ref[i]);
+					lastActiveRef = this.ref[i].db;
+                } else if(i == this.ref.map[typeSelected]) {
+					typeSelected = lastActiveRef;
+					this.spcCoorSelection = typeSelected;
+					this.geneRegionSelection = 'gene';
+				}
+            }
+        },
+
+        encodeFilter: function(value) {
+			return (value.isEncode || !this.isEncodeOn);
+        },
+
+        geneRegionSelectionChanged: function() {
+            this.spcCoorDropDisabled = (this.geneRegionSelection == 'gene');
+        },
+
+        queryTextChanged: function() {
+            //$("#waiting").html($("#geneName").val());
+            var chromRegex = /^chr\w+\s*(:|\s)/i;
+            if(this.geneRegionSelection == "gene"
+                && this.InputGeneName.trim().length > 1
+                && this.InputGeneName.trim() != this.querySent
+                && !chromRegex.test(this.InputGeneName.trim())) {
+                    // length is enough for ajax and also not already updated
+                    // start the timer to prepare for ajax
+                    this.direct = false;
+					this.sendPartialQuery();
+            } else if(this.InputGeneName.trim().length <= 1
+                || chromRegex.test(this.InputGeneName.trim())) {
+                    this.toggleGList(false);
+            }
+        },
+
+        sendPartialQuery: function() {
+            //$("#waiting").html($.trim($("#geneName").val()).length);
+            if(this.InputGeneName.trim().length > 1
+                && this.InputGeneName.trim() != this.querySent) {
+                // send Ajax
+                this.querySent = this.InputGeneName.trim();
+                //$('#geneName').addClass('searchFieldBusy');
+                //toggleGList(0);
+//					$('#GListResponse').html('<em>Loading...</em>');
+//					toggleGList(1);
+                this.$.partialNameAjax.params = {"name": this.querySent};
+            }
+        },
+
+        updatePartialQuery: function(e, detail) {
+            //$('#geneName').removeClass('searchFieldBusy');
+            this.splice('candidates', 0, this.candidates.length);
+			var data = detail.response;
+			for(var key in data) {
+				if(data.hasOwnProperty(key)) {
+					var val = data[key];
+					var entry = {};
+					entry.contentBefore = '';
+					entry.contentItalic = '';
+					entry.contentBold = '';
+					entry.contentAfter = '';
+					if(key == "(none)") {
+						entry.value = "(none)";
+						entry.id = "none_dummy";
+						entry.contentItalic = "(No results)";
+						entry.disabled = true;
+						this.push('candidates', entry);
+					} else if(key == "(too_many)") {
+						entry.value = "(too_many)";
+						entry.id = "toomany_dummy";
+						entry.contentItalic = "(Type more for candidates)";
+						entry.disabled = true;
+						this.push('candidates', entry);
+					} else {
+						key = key.replace(/__[0-9]+/, "");		// remove potential duplicate aliases
+						entry.id = val;
+						entry.value = val;
+						if(key == val) {
+							entry.contentBold = val.substr(0, this.querySent.length);
+							entry.contentAfter = val.substr(this.querySent.length);
+						} else {
+							// key is alias, val is real gene name
+							entry.contentBefore = val + ' (';
+							entry.contentBold = key.substr(0, this.querySent.length);
+							entry.contentAfter = key.substr(this.querySent.length) + ')';
+						}
+						this.push('candidates', entry);
+					}
+				}
+			}
+            // this is to fix the bug that core-dropdown will not
+            // 		update it's size automatically
+
+//            var el = this.querySelector("::shadow core-dropdown");
+//
+//            el.target.style.width = null;
+//            el.target.style.height = null;
+            if(this.candidates.length > 0) {
+				this.toggleGList(true);
+			}
+
+ //           // this is to fix the bug that core-dropdown will not
+//            // 		update it's size automatically at first run
+//			if(this.firstRun) {
+//				this.firstRun = false;
+//				this.job('flushdrop', this.updatePartialQuery.bind(this, data), 100);
+//			} else {
+//				data = null;
+//			}
+
+        },
+
+        partialSelectionChanged: function(newValue, oldValue) {
+            if(newValue) {
+                this.change_text(newValue);
+            }
+        },
+
+        toggleGList: function(toggle) {
+            if(toggle) {
+                // turn on GList
+                this.partialSelection = '';
+                this.gListIsOn = true;
+                this.$.geneNameDropDown.open();
+				this.$.partialNameAjax.debounceDuration = 50;
+            } else {
+                this.gListIsOn = false;
+                this.$.geneNameDropDown.close();
+				this.$.partialNameAjax.debounceDuration = 300;
+            }
+        },
+
+        textFocus: function(flag) {
+            this.inFocus = flag;
+			this.checkGList();
+        },
+
+        inGList: function(flag) {
+            this.mouseInGList = flag;
+			this.checkGList();
+        },
+
+		checkGList: function() {
+			if(!this.inFocus && !this.mouseInGList) {
+				this.debounce(this.mouseOutJobName, this.hideGListResponse, this.mouseOutTimeOut);
+			} else {
+				if(this.isDebouncerActive(this.mouseOutJobName)) {
+					this.cancelDebouncer(this.mouseOutJobName);
+				}
+			}
+		},
+
+        hideGListResponse: function() {
+            this.timerOn = false;
+            this.toggleGList(false);
+        },
+
+
+        clear_text: function() {
+            if(this.geneRegionSelection != "gene") {
+                this.InputGeneName = "";
+            }
+        },
+
+        change_text: function(txtValue) {
+            this.querySent = txtValue;
+            this.InputGeneName = this.querySent;
+            this.direct = true;
+            this.timerOn = false;
+            this.toggleGList(false);
+        },
+
+		getTabHeader: function() {
+		},
+
+		submitQuery: function() {
+			if(this.InputGeneName == "") {
+				this.fire("alert", {msg: "You need to either choose a gene or type in part of its name before proceeding."});
+				return false;
+			}
+			var chromRegex = /^chr\w+\s*(:|\s)\s*[0-9,]+\s*(-|\s)\s*[0-9,]+/i;
+			if(chromRegex.test(this.InputGeneName)) {
+				if(this.geneRegionSelection == "gene") {
+					// should choose a ref
+					this.fire("alert", {msg: "Please specify the ref of the coordinates.\n\nYou can do this by clicking \"Gene Name\" to the left of\n the query field."});
+					return false;
+				}
+			} else if(this.geneRegionSelection != "gene") {
+				// should input coordinate
+				this.fire("alert", {msg: "Please specify coordinates in one of the following formats:\n\n   \"chrX:XXXXX-XXXXX\"\n   \"chrX XXXXX XXXXX\"\n\n You can also select \"Gene name\" to query a gene across all ref."});
+				return false;
+			}
+
+			this.updateAllSpcActive();
+
+			if(this.ref.activeNumber < 2) {
+				this.fire("alert", {msg: "You need to choose at least TWO (2) ref."});
+				return false;
+			}
+			// Prepare post data
+			var postdata = {};
+
+			if(this.geneRegionSelection == "gene") {
+				postdata['ref'] = "gene";
+			} else {
+				postdata['ref'] = this.spcCoorSelection;
+			}
+			postdata['geneName'] = this.InputGeneName;
+			postdata['direct'] = this.direct? 'true': 'false';
+
+			this.splice('selectedRefs', 0, this.selectedRefs.length);
+			for(var i = 0; i < this.ref.length; i++) {
+				if(this.ref[i].isActive) {
+					postdata[this.ref[i].db] = this.ref[i].db;
+					this.push('selectedRefs', this.ref[i].db);
+				}
+			}
+
+			this.updateCurrentInfo({ Query: this.InputGeneName, Ref: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
+			this.fire("iron-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
+
+			this.fire("submit-genequery", {postdata: postdata});
+		},
+
+		signalToggle: function(e, detail) {
+			if(detail.group == this.toggleGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.trackSelActive = detail.flag;
+				} else {
+					this.trackSelActive = !this.trackSelActive;
+				}
+			}
+		},
+
+		signalDisabled: function(e, detail) {
+			if(detail.group == this.disableGroup) {
+				if(detail.flag || (detail.flag == false)) {
+					this.isDisabled = detail.flag;
+				} else {
+					this.isDisabled = !this.isDisabled;
+				}
+			}
+		},
+
+		signalEncodeCheck: function(e, detail) {
+			this.checkEncodeRef(detail.flag);
+		},
+
+		refCheckHandler: function() {
+			this.updateAllSpcActive();
+			this.updateType();
+		},
+
+		trackSelectionHandler: function() {
+			this.fire("toggle-window");
+		},
+
+        ready: function() {
+
+//			for(var i=0; i<spcArray.length; i++) {
+//				this.push('ref', spcArray[i]);
+//			}
+//
+//			this.ref.map = spcArray.map;
+
+			this._setIcon('view-list');
+			this._setIconAlt('query');
+			this._setHeaderText('Cross-ref query');
+			this._setTabText('Query');
+
+			this.ref = spcArray;
+			spcArray[spcArray.map['hg19']].checkDisabled = true;
+
+            this.$.geneName.addEventListener('input', this.queryTextChanged.bind(this));
+            this.$.geneName.addEventListener('blur', this.textFocus.bind(this, false));
+            this.$.geneName.addEventListener('focus', this.textFocus.bind(this, true));
+
+            this.$.geneNameHotRegion.addEventListener('mouseover', this.inGList.bind(this, true));
+            this.$.geneNameHotRegion.addEventListener('mouseout', this.inGList.bind(this, false));
+
+            this.$.geneNameDropDown.addEventListener('mouseover', this.inGList.bind(this, true));
+            this.$.geneNameDropDown.addEventListener('mouseout', this.inGList.bind(this, false));
+
+			this.$.geneNameDropDown.positionTarget = this.$.geneName;
+			this.$.geneNameDropDown.focusTarget = this.$.geneName;
+
+			this.$.partialNameAjax.auto = true;
+
+			this.setDOMReady(true);
+			this.setReady(true);
+
+        }
+
+    });
+  </script>
+</dom-module>

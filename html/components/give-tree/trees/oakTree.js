@@ -1,0 +1,74 @@
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+var GIVe = (function (give) {
+  'use strict'
+
+  /**
+   * Oak tree for data storage, derived from B+ tree.
+   * See `GIVE.GiveTree` for other properties and methods.
+   * @typedef {object} OakTree
+   * @property {number} BranchingFactor - branching factor for the tree. The
+   *    number of children for all non-root nodes will be equal to or greater
+   *    than `this.BranchingFactor / 2`. The number of children for all nodes
+   *    will be smaller than `this.BranchingFactor`. This is adapted from B+
+   *    tree to achieve auto-balancing.
+   * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
+   *    nodes. Should be `GIVE.OakNode` all the time. Can be overridden but not
+   *    recommended.
+   * @property {GiveTreeNode} _LeafNodeCtor - Constructor for all leaf nodes,
+   *    `GIVE.DataNode` by default
+   *
+   * @class give.GiveTree
+   *
+   * @constructor
+   * @implements GiveTreeBase
+   * @param {ChromRegionLiteral} chrRange - The range this data storage unit
+   *    will be responsible for.
+   * @param {object} props - properties that will be passed to the individual
+   *    implementations
+   * @param {number} props.BranchingFactor - for `this.BranchingFactor`
+   * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
+   *    constructors.
+   * @param {function} props.LeafNodeCtor - if omitted, the constructor of
+   *    `GIVE.DataNode` will be used
+   */
+  give.OakTree = function (chrRange, props) {
+    // start and length is for the corresponding region
+    // note that `OakTree` should be populated with `OakNode`s
+    props = props || {}
+    props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
+    if (
+      !Number.isInteger(props.BranchingFactor) || props.BranchingFactor <= 2
+    ) {
+      console.log('Default branching factor is chosen instead of ' +
+        props.BranchingFactor)
+      this.BranchingFactor = give.OakTree._DEFAULT_B_FACTOR
+    } else {
+      this.BranchingFactor = props.BranchingFactor
+    }
+    give.GiveTree.call(
+      this, chrRange, props.NonLeafNodeCtor || give.OakNode, props
+    )
+  }
+
+  give.extend(give.GiveTree, give.OakTree)
+
+  give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked
+
+  return give
+})(GIVe || {})

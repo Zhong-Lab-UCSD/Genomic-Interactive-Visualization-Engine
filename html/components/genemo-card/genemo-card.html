@@ -1,0 +1,316 @@
+<!-- GeNemo Card element
+  A wrapper for title and contents.
+  Contents should implement GenemoTabCardContentBehavior,
+  and can be folded unless disable-folding is set on the card.
+
+  When the local DOM initialization is done, domReady flag will be set.
+  When content-dom-ready event occurs and local DOM has been completed,
+  populateDOM() will be called to populate local DOM, then content-dom-ready
+  will be bubbled to parent elements
+
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../genemo-styles.html">
+<link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="genemo-card" attributes="isOpened collapseGroup">
+  <template>
+    <style include="genemo-shared-styles">
+    :host {
+      display: inline-block;
+      font-family: 'Roboto', Arial, Helvetica, sans-serif;
+      margin: 0.6em 0;
+      z-index: 0;
+      text-align: left;
+      position: relative;
+      @apply(--genemo-card-mixin);
+    /*  border: #757575 solid 1px;
+      border: rgba(0, 0, 0, .54) solid 1px;
+    */}
+
+    /************************** Polymer and Material Design components below *********************/
+
+    /************************** Polymer and Material Design size and others below *********************/
+    #cardHeadHolder {
+      display: none;
+    }
+
+    #loadingBlock.notReady {
+      display: block;
+      @apply(--layout-fit);
+      z-index: 1;
+      opacity: 0.8;
+      background: var(--card-background-color);
+    }
+
+    #loadingBlock {
+      display: none;
+    }
+
+    paper-spinner {
+      position: absolute;
+      top: 50%;
+      margin-top: -12px;
+      left: 50%;
+      margin-left: -12px;
+      height: 24px;
+      width: 24px;
+      opacity: 1;
+    }
+
+    paper-material {
+      background: var(--card-background-color);
+      @apply(--genemo-card-material-mixin);
+    }
+
+    #cardFixedContent {
+      @apply(--genemo-card-fixed-content-mixin)
+    }
+
+  </style>
+    <iron-signals on-iron-signal-collapse="collapseSignal"></iron-signals>
+    <paper-material elevation="1">
+      <div id="loadingBlock" class="notReady">
+        <paper-spinner id="loadingSpinner" alt="Loading card content" active></paper-spinner>
+      </div>
+      <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
+        <paper-icon-button icon="[[expandIcon]]" class="leftFloat" id="expandButton"
+          on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
+        <div id="cardHeadContent" class="vertCenterElement"></div>
+        <div id="cardHeadHolder">
+          <content id="cardhead" select=".genemoHead"></content>
+        </div>
+      </div>
+      <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
+        hidden$="[[disableFolding]]">
+        <content id="cardbody" select=".genemoBody"></content>
+      </iron-collapse>
+      <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
+    </paper-material>
+  </template>
+  <script>
+  var GIVe = (function (give) {
+    'use strict'
+
+    give.GenemoCard = Polymer({
+
+      is: 'genemo-card',
+
+      behaviors: [
+        Polymer.NeonAnimatableBehavior
+      ],
+
+      properties: {
+
+        isOpened: {
+          type: Boolean,
+          value: true,
+          reflectToAttribute: true,
+          observer: 'isOpenedChanged'
+        },
+
+        collapseGroup: {
+          type: String,
+          value: ''
+        },
+
+        collapseHeaderEl: {
+          type: Object,
+          value: null
+        },
+
+        enableSignal: {
+          type: Boolean,
+          value: true
+        },
+
+        expandIcon: {
+          type: String,
+          value: 'expand-more'
+        },
+
+        domReady: {     // flag indicating whether local DOM is ready
+          type: Boolean,
+          value: false,
+          readOnly: true
+        },
+
+        readyFlag: {
+          type: Boolean,
+          value: false,
+          readOnly: true
+        },
+
+        disableFolding: {
+          type: Boolean,
+          value: false,
+          observer: '_disableFoldingObserver'
+        }
+
+      },
+
+      listeners: {
+        'content-dom-ready': 'contentDOMReady',
+        'content-ready': 'contentReady'
+      },
+
+      attached: function () {
+        this.async(function () {
+          // observe the children being added here
+          this._setDomReady(true)
+          // if folding is disabled, move contents out of iron-collapse
+          this.contentDOMReady({detail: {flag: true}}) &&
+            this.contentReady({detail: {flag: true}})
+        })
+      },
+
+      _disableFoldingObserver: function (newValue, oldValue) {
+        if (newValue) {
+          Polymer.dom(this.$.cardFixedContent).appendChild(this.$.cardbody)
+        } else {
+          Polymer.dom(this.$.mainCollapse).appendChild(this.$.cardbody)
+        }
+      },
+
+      toggleCollapseHeader: function (flag) {
+        // the top node with GenemoBody should have a member function getCollapse()
+        // then use the returned DOM to replace collapseHeaderEl
+        // if nothing, then collapseHeaderEl is simply GenemoHead
+        // flag is the target status
+
+        if (flag && this.collapseHeaderEl) {
+          // there is old collapseHeader, needs to be removed
+          Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl)
+          Polymer.dom(this.$.cardHeadContent).classList.remove('hidden')
+        } else if (!flag) {
+          var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes()
+          if (contentNode) {
+            contentNode = contentNode[0]
+            if (contentNode.getCollapse) {
+              this.collapseHeaderEl = contentNode.getCollapse()
+              if (this.collapseHeaderEl) {
+                Polymer.dom(this.$.cardHeadContent).classList.add('hidden')
+                Polymer.dom(this.$.cardHeader).appendChild(this.collapseHeaderEl)
+              }
+            }
+          }
+        }
+      },
+
+      isOpenedChanged: function (newValue, oldValue) {
+        this.enableSignal = false
+        if (newValue) {
+          // un-collapse, send signal for all collapse groups
+          this.fire('iron-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}})
+        }
+        this.expandIcon = newValue ? 'expand-less' : 'expand-more'
+        this.toggleCollapseHeader(newValue)
+        this.enableSignal = true
+      },
+
+      collapseSignal: function (e, detail) {
+        if (this.enableSignal && this.collapseGroup === detail.group &&
+          this.isOpened !== detail.flag) {
+          this.isOpened = detail.flag
+        }
+      },
+
+      toggleCollapse: function () {
+        // hide GenemoBody and convert GenemoHead to GenemoCollapse (if any)
+        this.isOpened = !this.isOpened
+      },
+
+      populateDOM: function () {
+        // if the content has a .getExpandedHeader member,
+        //  it will be used to generate the node to replace the node
+        //  given in .GenemoHead
+        var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes()
+        var oldHead = Polymer.dom(this.$.cardHeadContent)
+        var newHead
+        while (oldHead.firstChild) {
+          oldHead.removeChild(oldHead.firstChild)
+        }
+        if (contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
+          newHead = contentNode[0].getExpandedHeader()
+          oldHead.appendChild(newHead)
+          Polymer.dom(newHead).classList.add('headerText')
+        } else {
+          // populate header with #cardhead
+          newHead = Polymer.dom(this.$.cardhead).getDistributedNodes()
+          if (newHead) {
+            for (var i = 0; i < newHead.length; i++) {
+              oldHead.appendChild(newHead[i])
+            }
+          }
+        }
+      },
+
+      contentDOMReady: function (e) {
+        if (this.domReady && e.detail.flag) {
+          // this will only happen if this.domReady !== true
+          if (Polymer.dom(this.$.cardbody).getDistributedNodes().every(function (node, index) {
+            return !node.isDOMReady || node.isDOMReady()
+          }, this)) {
+            this.populateDOM()
+          } else if (e.preventDefault) {
+            // stop event from bubbling if status not the same as the one in the event
+            e.stopPropagation()
+            e.preventDefault()
+          }
+        }
+        return e.detail.flag
+      },
+
+      setCardReady: function (readiness) {
+        if (readiness) {
+          // if card is not ready, use paper-spinner and add "notReady" class to cardContent
+          this.$.loadingSpinner.active = false
+          this.$.loadingBlock.classList.remove('notReady')
+        } else {
+          // otherwise, deactivate paper-spinner and remove "notReady" class
+          this.$.loadingBlock.classList.add('notReady')
+          this.$.loadingSpinner.active = true
+        }
+        this._setReadyFlag(readiness)
+      },
+
+      contentReady: function (e) {
+        if (this.readyFlag !== e.detail.flag) {
+          if (e.detail.flag) {
+            // set Ready = true, this will only happen if this.domReady !== true
+            if (Polymer.dom(this.$.cardbody).getDistributedNodes().every(function (node, index) {
+              return !node.isReady || node.isReady()
+            }, this)) {
+              this.setCardReady(true)
+            } else if (e.preventDefault) {
+              // stop event from bubbling if status not the same as the one in the event
+              e.preventDefault()
+            }
+          } else {
+            this.setCardReady(false)
+          }
+        }
+        return this.readyFlag
+      },
+
+      setAllReadiness: function (readiness) {
+        // set both DOM and content flags
+        this.contentDOMReady({detail: {flag: readiness}})
+        this.contentReady({detail: {flag: readiness}})
+      }
+
+    })
+
+    return give
+  })(GIVe || {})
+
+  </script>
+</dom-module>

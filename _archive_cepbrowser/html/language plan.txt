@@ -1,0 +1,4 @@
+1) Create JSON with objects that have en and zh properties.
+2) Put span tags around the text objects in the html with special ID's and classes.
+3) Make js file that imports JSON, and replaces span tags with corresponding text given language.
+4) Put js file into each html file if needed.

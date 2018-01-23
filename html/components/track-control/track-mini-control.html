@@ -1,0 +1,82 @@
+<!-- Minimal track control "band" component
+  This is used to show minimal information of tracks and
+  do the very basic control to adjust display settings
+
+  Currently the implementation is extreme simplistic (a paper-checkbox or paper-radio-button)
+  TODO: call track-control element from here
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../basic-func/basic-func.html">
+<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../chart-area/genemo-track-styles.html">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="track-mini-control">
+  <template>
+    <style include="genemo-shared-styles">
+    :host {
+      padding: 0.1em 0;
+    }
+    </style>
+    <template is="dom-if" if="[[_groupSingleChoice(group)]]" restamp>
+      <paper-radio-button id="choiceElem" name="[[track.id]]" checked="{{selected}}">
+        [[_getTrackShortLabel(track)]]
+      </paper-radio-button>
+    </template>
+    <template is="dom-if" if="[[!_groupSingleChoice(group)]]" restamp>
+      <paper-checkbox id="choiceElem" name="[[track.id]]" checked="{{selected}}">
+        [[_getTrackShortLabel(track)]]
+      </paper-checkbox>
+    </template>
+  </template>
+  <script type="text/javascript">
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.TrackMiniControl = Polymer({
+        is: 'track-mini-control',
+
+        created: function () {
+          this.TRACK_LABEL_LIMIT = 25
+          this.TRACK_LABEL_PREFIX = 21
+          this.TRACK_LABEL_SUFFIX = 3
+        },
+
+        properties: {
+          id: {
+            type: String,
+            readOnly: true
+          },
+
+          track: {
+            type: Object
+          },
+
+          group: {
+            type: Object
+          },
+
+          selected: {
+            type: Boolean
+          }
+        },
+
+        _groupSingleChoice: function (group) {
+          return group && group.singleChoice && group.singleChoice !== '0'
+        },
+
+        _getTrackShortLabel: function (track) {
+          return give.shortenString(track.getSetting('shortLabel'),
+            this.TRACK_LABEL_LIMIT,
+            this.TRACK_LABEL_PREFIX,
+            this.TRACK_LABEL_SUFFIX)
+        }
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>
