@@ -371,12 +371,15 @@ var GIVe = (function (give) {
     return ref.settings['isGIVeEnabled']
   }
 
-  give.RefObject.initAllTarget = give.host +
-    (give.Ref_InitAllTarget || '/givdata/initRef.php')
-  give.RefObject.initChromTarget = give.host +
-    (give.Ref_InitChromTarget || '/givdata/initRef.php')
-  give.RefObject.initTrackTarget = give.host +
-    (give.Ref_InitTrackTarget || '/givdata/initTracks.php')
+  give.RefObject.initAllTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Ref_InitAllTarget || 'initRef.php')
+  give.RefObject.initChromTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Ref_InitChromTarget || 'initRef.php')
+  give.RefObject.initTrackTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Ref_InitTrackTarget || 'initTracks.php')
 
   give.RefObject.defaultViewWindows = give.Ref_DefaultViewWindows ||
     ['chr10:30000000-55000000', 'chr10:34900000-65000000']

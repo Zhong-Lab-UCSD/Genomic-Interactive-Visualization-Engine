@@ -89,7 +89,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.ChromRegion.prototype.clipRegion = function (ref) {
+  give.ChromRegion.prototype.clipRegion = function (ref, minLength) {
     if (this.start < give.ChromRegion.CHROM_BASE) {
       this.start = give.ChromRegion.CHROM_BASE
     }
@@ -105,7 +105,16 @@ var GIVe = (function (give) {
       }
     }
     if (this.start > this.end) {
-      throw (new Error('Coordinates out of bounds: ' + this.chr + ':' + this.start + '-' + this.end + '!'))
+      if (typeof minLength === 'number') {
+        give._verboseConsole('Coordinates out of bounds: ' + this.chr + ':' +
+          this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
+        this.start = Math.max(give.ChromRegion.CHROM_BASE, this.end - minLength)
+        give._verboseConsole('Changed into: ' + this.chr + ':' +
+          this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
+      } else {
+        throw (new Error('Coordinates out of bounds: ' + this.chr + ':' +
+          this.start + '-' + this.end + '!'))
+      }
     }
     return this
   }
@@ -135,9 +144,6 @@ var GIVe = (function (give) {
       .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
     var elements = cleanedChrString.split(/[:\s-]+/)
 
-    /**
-     * @property
-     */
     this.chr = elements[0]
     this.start = parseInt(elements[1]) - (zeroBased ? 0 : (1 - give.ChromRegion.CHROM_BASE))
     this.end = parseInt(elements[2])

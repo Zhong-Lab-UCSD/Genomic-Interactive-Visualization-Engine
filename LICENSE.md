@@ -174,7 +174,7 @@
       of your accepting any such warranty or additional liability.
 
    END OF TERMS AND CONDITIONS
-      
+
    Copyright 2017 GIVe Authors
 
    Licensed under the Apache License, Version 2.0 (the "License");

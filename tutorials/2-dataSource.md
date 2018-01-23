@@ -5,7 +5,6 @@ This tutorial will show you how to use existing code base to implement a customi
 ## Table of Contents
 *   [Prerequisites](#prerequisites)
 *   [Demo: creating a *Vulcan* reference genome and visualize something on it](#demo-creating-a-vulcan-reference-genome-and-visualize-something-on-it)
-    *   [OPTIONAL: Preparation for GIVE](#optional-preparation-for-give)
     *   [Preparation for reference genome](#preparation-for-reference-genome)
         *   [Creating a new reference genome](#creating-a-new-reference-genome)
         *   [Creating track groups](#creating-track-groups)
@@ -23,7 +22,7 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 
 ***
 
-*__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. Please refer to the following resources for installing your own MySQL instance:*
+*__NOTE:__ You may want to use your own server / database to complete these demo steps so that you may have a better understanding of the underlying components. We recommend you to use GIVE-Docker to deploy GIVE to your own machines. Following [GIVE-Docker tutorial](GIVE-Docker.md) to set it up. If you really want to do system-level configuration by your self. Please refer to the following resources for installing your own MySQL instance:*
 *   *[MySQL community server](https://dev.mysql.com/downloads/mysql/)*
 *   *[MariaDB](https://downloads.mariadb.org/)*
 
@@ -32,7 +31,7 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 *   *[cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).*
 
 *If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*  
-*If you decide to use your own MySQL instance and PHP server, please change the steps involving GIVE Demo Server accordingly and __follow all optional set-up steps__.*
+*If you decide to use your own MySQL instance and PHP server, please __follow all steps__ in [GIVE Manual - 1. Installation](../manuals/1-installation.md), and start from __Step 5__.*
 
 ***
 
@@ -77,7 +76,16 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
     MariaDB [(none)]>_
     ```
 
-4.  All SQL commands in following steps can be directly put under this console (with essential parts replaced).
+4.  All SQL commands in following steps can be directly put under this console (with essential parts replaced). There will be a database named `compbrowser` on the MariaDB instance that serves as the vital connection between GIVE server and the database source, and a table named `ref` within it to store the properties of all supported references.
+    The data source will have a data structure as shown below:
+
+    ![UML Diagram for the database](2-extraFiles/GIVE_DB_comp.png)
+
+    ***
+
+    *If you use your own MySQL instance and PHP server, you should have created `compbrowser` and `ref` in the steps described in [GIVE Manual Chapter 1 - Installation](../manuals/1-installation.md).*
+
+    ***
 
 ## Demo: creating a *Vulcan* reference genome and visualize something on it
 
@@ -88,42 +96,6 @@ Here we will demonstrate an example of using GIVE with the MySQL data source on 
 > *However, the understanding of our sibling sentient species is still quite lacking. For example, our knowledge of the mystic species of* Vulcans *is extremely limited, despite almost 200 years of contact between them and us.*
 >
 > *News came that scientists have just assembled the entire genome with a sample from a* Vulcan *subject, got a few annotations done and measured some epigenetic signals and genomic interactions. There are obviously a lot of work to do, but as astrobiologists, we would like to check if we can see anything from what we already got.*
-
-### OPTIONAL: Preparation for GIVE
-
-***
-
-*__Note:__ If you are using the MariaDB instance on demo.give.genemo.org, your MariaDB account will not have the privilege to do the steps in this section. If you try any commands listed here, you will receive a message from MariaDB saying the operation is denied.  
-These steps are automatically done for you after you requested for a database username, password, and database name. Therefore, __please skip this section entirely and go to Step 6.__*
-
-***
-
-*   Create a database named `compbrowser`:
-    ```SQL
-    CREATE DATABASE `compbrowser`;
-    ```
-    This database serves as the vital connection between GIVE server and the database source.
-
-*   Within the `compbrowser` database, create a table named `ref`:
-    ```SQL
-    CREATE TABLE `compbrowser`.`ref` (
-     `name` char(100) DEFAULT NULL,   -- The name of the species of the reference
-     `dbname` char(30) NOT NULL DEFAULT '',   -- The database name
-     `commonname` char(50) DEFAULT NULL,      -- The common name of the species
-     `encode` tinyint(4) NOT NULL DEFAULT 0,      -- Whether it's part of ENCODE
-     `specdatabase` varchar(255) DEFAULT NULL,    -- Reserved for GeNemo use
-     `genomeSize` int(11) unsigned DEFAULT NULL,  -- Reserved for GeNemo use
-     `browserActive` tinyint(1) NOT NULL DEFAULT '0', -- Whether the ref is active
-     `givdbname` varchar(255) NOT NULL DEFAULT '', -- Reserved for GeNemo use
-     `settings` longtext NOT NULL,    -- Detailed settings for the reference, JSON format
-     PRIMARY KEY (`dbname`)
-    )
-    ```
-    This table is needed to store the properties of all supported references.
-
-    The data source will have a data structure as shown below:
-
-    ![UML Diagram for the database](2-extraFiles/GIVE_DB_comp.png)
 
 ### Preparation for reference genome
 #### Creating a new reference genome

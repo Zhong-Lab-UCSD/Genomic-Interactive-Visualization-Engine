@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| ← *None* | [↑ Index](index.md) | [→ 1. Installation](1-installation.md) |
+| ← *None* | [↑ Index](Readme.md) | [→ 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) |
 
 # Annotations in the Manual
 
@@ -12,7 +12,7 @@ There will be many examples in the manual to demonstrate the functionalities of 
 
 Codes will be written in a monospace font. They are intended to be called from the console (such as bash or MySQL), or be included in actual files (like JavaScript or HTML), or be used to indicate names of variables or types. __Please replace codes that are written in bold and italics, and enclosed in angle brackets (`<>`)__, with their corresponding values according to the situation. __Codes in italics only__ are default values and can be replaced by proper values if needed. __All other code are not supposed to be changed__ unless you know exactly what you are doing.
 
-> For example, the following codes are supposed to be used in a MySQL console.
+> For example, the following codes are supposed to be used in a MySQL-compatible console.
 >
 > <code>
 > CREATE TABLE `<em><strong>&lt;dbname&gt;</strong></em>`.`<em><strong>&lt;linear_track_table_name&gt;</strong></em>` (
@@ -30,4 +30,4 @@ Special notes will be shown in blocks separated by horizontal lines and written 
 
 ||||
 | --- | --- | --- |
-| ← *None* | [↑ Index](index.md) | [→ 1. Installation](1-installation.md) |
+| ← *None* | [↑ Index](Readme.md) | [→ 1. Local Deployment of GIVE](1-Local_deployment_of_GIVE.md) |

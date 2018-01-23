@@ -4,7 +4,6 @@ This tutorial will show you how to use existing code base and data source to imp
 
 ## Table of Contents
 *   [Prerequisites](#prerequisites)
-    *   [Using the public folder of Zhong Lab Web Server](#using-the-public-folder-of-zhong-lab-web-server)
 *   [Building a full-fledged genome browser](#building-a-full-fledged-genome-browser)
 *   [Embedding a full-fledged genome browser in existing pages](#embedding-a-full-fledged-genome-browser-in-existing-pages)
 *   [Embedding the browser panel only in existing pages](#embedding-the-browser-panel-only-in-existing-pages)
@@ -26,25 +25,6 @@ To follow the tutorial, a functional web server is required. There are several w
 *   [CodePen](https://codepen.io/pen/), a powerful real-time HTML/CSS/JS code simulator for testing purposes.
 *   [JSFiddle](https://jsfiddle.net/), also a powerful real-time HTML/CSS/JS code simulator
 
-### Using the public folder of Zhong Lab Web Server
-
-Our lab server at `sysbio.ucsd.edu` also provides a public folder from which you may host web pages. If you have a user account at the server, you may request having a hosting folder (if you haven't got one already) by [sending email to Xiaoyi Cao](mailto:x9cao@eng.ucsd.edu).
-
-The public folder is `/var/www/html/public/<your username>`, under which you may put your files to be hosted. The URL to access the hosted files follows this rule: anything under `/var/www/html/public/` is mapped to `http(s)://sysbio.ucsd.edu/public/`. Therefore, the following file:
-
-```
-/var/www/html/public/<your username>/testingSite/index.html
-```
-
-will be accessible via the following URLs:
-
-```
-http://sysbio.ucsd.edu/public/<your username>/testingSite/index.html
-https://sysbio.ucsd.edu/public/<your username>/testingSite/index.html
-```
-
-Please note that file and directory names are case-sensitive so `index.html` and `Index.html` will refer to different files.
-
 ## Building a full-fledged genome browser
 
 Here we start by using GIVE code base together with the data sources. With them it will be extremely easy to create a genome browser by generating an HTML file under your web hosting folder simply as following (key lines in the HTML file are preceded by comments in `<!-- -->` to show their functionality):
@@ -53,11 +33,11 @@ Here we start by using GIVE code base together with the data sources. With them 
 <!doctype html>
 <html>
   <head>
-    <title>GIVe (Genomic Interaction Visualizer)</title>
+    <title>GIVE Demo</title>
     <!-- Polyfill Web Components for browsers without native support -->
-    <script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
     <!-- Import GIVE component -->
-    <link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+    <link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
   </head>
   <body>
     <!-- Embed the browser in your web page -->
@@ -79,9 +59,9 @@ The following code is an example of embedding:
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
-<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" coordinates='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'>
@@ -98,9 +78,9 @@ By using the `<chart-area>` element instead of `<chart-controller>` element, it 
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://beta.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
-<link rel="import" href="https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-area/chart-area.html">
+<link rel="import" href="https://www.givengine.org/lib/chart-area/chart-area.html">
 <!-- Embed the browser in your web page -->
 <chart-area ref="mm10" coordinates='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'>

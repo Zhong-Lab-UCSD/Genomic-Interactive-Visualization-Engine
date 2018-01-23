@@ -114,9 +114,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     <!-- TODO: add paper-dropmenu for ref -->
     <paper-drawer-panel>
       <div drawer class="layout vertical">
-        <template is="dom-repeat" items="{{coordinates}}">
+        <template is="dom-repeat" items="{{_coorObjs}}">
           <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
-            floatingLabel="true" value="{{item}}">
+            floatingLabel="true" value="{{item.coor}}" invalid="[[item.invalid]]">
           </gene-coor-input>
         </template>
         <div class="layout horizontal">
@@ -155,7 +155,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           <div class="flex relative">
             <chart-area ref="[[ref]]" id="mainChartArea"
               group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}"
-              default-track-id-list='[[defaultTrackIdList]]'>
+              default-track-id-list='[[defaultTrackIdList]]'
+              pass-exceptions>
             </chart-area>
           </div>
           <div class="dataReference">
@@ -190,6 +191,17 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             notify: true,
             observer: '_numOfSubsChanged'
           },
+
+          /**
+           * Objects being passed into the text fields
+           */
+          _coorObjs: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
           /**
            * The track groups included in the embedded browser. Group IDs are
            * specified in the data source. The data source on our server currently
@@ -220,6 +232,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 
           /**
            * Coordinates of every view.
+           * This is the value that can be specified by HTML attributes.
            * @type {Array<string>}
            */
           coordinates: {
@@ -227,7 +240,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             value: function () {
               return ['chr10:30000000-50000000']
             },
-            notify: true
+            notify: true,
+            observer: '_coorChanged'
           },
 
           _threshold: {
@@ -288,6 +302,13 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           }
         },
 
+        attached: function () {
+          if (this._refObj) {
+            this.updateSvg()
+          }
+          this._isAttached = true
+        },
+
         /**
          * _calcGeneCoorLabel - calculate the label for `<gene-coor-input>`
          *
@@ -296,7 +317,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
          */
         _calcGeneCoorLabel: function (index) {
           return 'Coordinate or gene name' +
-            ((this.coordinates && this.coordinates.length > 1) ? ' for view #' + index : '')
+            ((this._coorObjs && this._coorObjs.length > 1)
+              ? ' for view #' + (index + 1) : '')
         },
 
         /**
@@ -309,8 +331,11 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           if (this._refObj) {
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
+              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i].coor)) {
+                this.splice('coordinates', i, 1, {
+                  coor: defaultWindows[i % defaultWindows.length],
+                  invalid: false
+                })
               }
             }
           }
@@ -325,8 +350,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         _setRefObj: function (refObj) {
           this._refObj = refObj
           this._numOfSubsChanged(this.numOfSubs)
-
-          this.updateSvg()
+          if (this._isAttached) {
+            this.updateSvg()
+          }
           this._threshold = 1
         },
 
@@ -338,12 +364,40 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
          */
         updateSvg: function () {
           if (this.$.mainChartArea) {
-            var correctedVWindows = this.$.mainChartArea.refreshAll(this.coordinates, this._threshold)
-            this.coordinates = correctedVWindows
+            try {
+              var correctedVWindows = this.$.mainChartArea.refreshAll(
+                this._coorObjs.map(function (coorObj) {
+                  return coorObj.coor
+                }, this), this._threshold
+              )
+              this.coordinates = correctedVWindows
+            } catch (e) {
+              // This will happen if the value is not valid
+              // TODO: Show the paper-input elements as invalid
+              if (e.data.updatedCoors) {
+                // update the coordinates that are changed
+                e.data.updatedCoors.forEach(function (coor, index) {
+                  if (coor) {
+                    this._coorObjs[index].coor = coor
+                    this.coordinates[index] = coor
+                    this.notifyPath(['_coorObjs', index, 'coor'])
+                  } else {
+                    this._coorObjs[index].invalid = true
+                    this.notifyPath(['_coorObjs', index, 'invalid'])
+                  }
+                }, this)
+              }
+            }
           }
         },
 
         updateTracks: function () {
+          // remove the invalid marks
+          this._coorObjs.forEach(function (coorObj, index) {
+            coorObj.invalid = false
+            // notify Polymer
+            this.notifyPath(['_coorObjs', index, 'invalid'])
+          }, this)
           if (this.$.mainTrackList) {
             this.$.mainTrackList.DOMToTrack()
             this.$.mainChartArea.updateDOM(true)
@@ -377,6 +431,16 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 
         updateTrackstructureHandler: function (e) {
           this.updateTrackstructure()
+        },
+
+        _coorChanged: function (newValue, oldValue) {
+          this.splice('_coorObjs', 0)
+          this.coordinates.forEach(function (coorText) {
+            this.push('_coorObjs', {
+              coor: coorText,
+              invalid: false
+            })
+          }, this)
         }
 
       })

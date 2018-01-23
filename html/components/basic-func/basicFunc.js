@@ -142,10 +142,12 @@ var GIVe = (function (give) {
           !!(navigator.userAgent.match(/Trident/) ||
              navigator.userAgent.match(/rv 11/)))) {
           // IE detected (should be IE 11), fix the json return issue
-          console.log('You are currently using IE 11 to visit this site. ' +
-          'Some part of the site may behave differently and if you encounter ' +
-          'any problems, please use the info on \'About us\' page to ' +
-          'contact us.')
+          give._verboseConsole(
+            'You are currently using IE 11 to visit this site. ' +
+            'Some part of the site may behave differently and if you encounter ' +
+            'any problems, please use the info on \'About us\' page to ' +
+            'contact us.', give.VERBOSE_MAJ_ERROR
+          )
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)

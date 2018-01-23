@@ -82,6 +82,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         overflow-x: hidden;
         overflow-y: auto;
       }
+      div.scrollingParts svg {
+        width: 100%;
+      }
       #loadingBlock {
         display: block;
         pointer-events: none;
@@ -253,6 +256,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             value: 1,
             notify: true,
             observer: '_numOfSubsChanged'
+          },
+
+          passExceptions: {
+            type: Boolean,
+            value: false
           },
 
           _initialized: {
@@ -521,25 +529,59 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         /**
+         * _changeViewWindowObj - Change the range of a sub view.
+         *   The range should be a `GIVE.ChromRegion` object and clipped.
+         *   No exceptions should be thrown from this function.
+         *
+         * @param  {ChromRegionLiteral} viewWindow - The target range
+         * @param  {number} index - Index of the viewWindow.
+         * @return {string} The actual range (may be cropped by reference),
+         *                   converted to string.
+         */
+        _changeViewWindowObj: function (viewWindow, index) {
+          this.splice('_viewWindows', index, 1, viewWindow.clone())
+          this.splice('coordinates', index, 1,
+            this._viewWindows[index].regionToString(false))
+          if (this._initialized) {
+            this._updateTracksInWindow(index)
+          } else {
+            this._checkVWindowsInit()
+          }
+          return this._viewWindows[index].regionToString(false)
+        },
+
+        /**
          * Change the range of a sub view.
          * Range may be cropped if it exceed the maximum range allowed by the reference.
          *
-         * @param  {string|GIVe.ChromRegion} viewWindow - The range to change into.
+         * @param  {string|ChromRegionLiteral} viewWindow - The range to change into.
          * @param  {number} index - Index of the viewWindow.
          * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
          * @return {string} The actual range (may be cropped by reference),
          *                   converted to string.
          */
         changeViewWindow: function (viewWindow, index, forceDomReset) {
-          this.splice('_viewWindows', index, 1, new give.ChromRegion(viewWindow, this._refObj))
-          this.splice('coordinates', index, 1, this._viewWindows[index].regionToString(false))
-          if (this._initialized && !forceDomReset) {
-            this._updateTracksInWindow(index)
-          } else {
+          if (forceDomReset) {
             this._initialized = false
-            this._checkVWindowsInit()
           }
-          return this._viewWindows[index].regionToString(false)
+          try {
+            // This may throw some exceptions
+            // (when invalid view windows are supplied)
+            var viewWindowObj = new give.ChromRegion(viewWindow, this._refObj)
+          } catch (err) {
+            // Invalid view windows are supplied, fail gracefully
+            if (!this.passExceptions) {
+              // TODO: gracefully handle the exception
+            } else {
+              err.data = err.data || {}
+              err.data.updatedCoor =
+                (this._viewWindows[index] &&
+                  this._viewWindows[index].regionToString)
+                ? this._viewWindows[index].regionToString(false) : null
+              throw err
+            }
+          }
+          return this._changeViewWindowObj(viewWindowObj, index)
         },
 
         /**
@@ -549,21 +591,54 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          * @return {Array<string>} The actual ranges, converted to `string`.
          */
         changeAllViewWindows: function (viewWindows) {
-          viewWindows.forEach(function (vwindow, index) {
-            this.changeViewWindow(vwindow, index)
+          var exceptionList = []
+          var viewWindowObjs = viewWindows.map(function (vWindow, index) {
+            var vWindowObj = null
+            try {
+              vWindowObj = new give.ChromRegion(vWindow, this._refObj)
+            } catch (err) {
+              exceptionList.push(index, err)
+            }
+            return vWindowObj
           }, this)
+          if (exceptionList.length > 0) {
+            // some exception has happended during the conversion
+            // throw an exception telling calling procedures
+            if (this.passExceptions) {
+              var error = new Error('Exception occured during ChromRegion' +
+                ' conversion.')
+              error.data = error.data || {}
+              error.data.exceptionList = exceptionList
+              error.data.updatedCoors = viewWindowObjs.map(
+                function (vWindowObj) {
+                  return ((vWindowObj && vWindowObj.regionToString)
+                    ? vWindowObj.regionToString(false) : null)
+                }
+              )
+              throw error
+            } else {
+              // TODO: gracefully handle the exception
+            }
+          } else {
+            viewWindowObjs.forEach(function (vwindow, index) {
+              this._changeViewWindowObj(vwindow, index)
+            }, this)
+          }
           return this.getViewWindowStrings()
         },
 
         _changeThreshold: function (_threshold) {
           this._threshold = _threshold || this._threshold
-          this._trackDOMsByWindow.forEach(this._callForeachFuncOnDomInWindowEntry.bind(
-            function (trackDOM, index) {
-              if (trackDOM.updateThreshold) {
-              // is an interaction track
-                trackDOM.updateThreshold(this._threshold)
-              }
-            }.bind(this)), this)
+          this._trackDOMsByWindow.forEach(
+            this._callForeachFuncOnDomInWindowEntry.bind(
+              function (trackDOM, index) {
+                if (trackDOM.updateThreshold) {
+                // is an interaction track
+                  trackDOM.updateThreshold(this._threshold)
+                }
+              }.bind(this)
+            ), this
+          )
         },
 
         refreshAll: function (viewWindows, threshold) {
@@ -880,15 +955,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
             _prepareSvgHeight.bind(this, this._svgWidth),
             _setSvgWidthHeight, domInWindowEntry, index)
-
-          if (domInWindowEntry.pinAbove.divElem.clientWidth >
-            domInWindowEntry.scrolling.divElem.clientWidth
-          ) {
-            // scroll bar detected
-            this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-            return false
-          } else {
-            return true
+          this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+          if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
+            // scrolling happened, needs to shrink pinned track width
+            this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
+              _prepareSvgHeight.bind(this, this._svgWidth),
+              _setSvgWidthHeight, domInWindowEntry, index)
           }
         },
 
