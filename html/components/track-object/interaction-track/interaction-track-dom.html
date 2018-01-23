@@ -57,12 +57,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             value: 1    // em
           },
 
-          numOfSubs: {
-            type: Number,
-            value: 2,
-            readOnly: true
-          },
-
           subTrackGap: {
             type: Number,
             value: 4    // em
@@ -124,24 +118,25 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           this._setTrackHeight(properties.hasOwnProperty('height')
             ? properties.height
             : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
-              (properties.numOfSubs - 1)) * this.textSize)
+              (this.parent.windowSpan - 1)) * this.textSize)
           this._setDynamicHeight(false)
 
           this.subSvgs = []
-          this._setNumOfSubs(properties.numOfSubs)
           this.bufferWindow = []
           this.percentiles = this.parent.getSetting('thresholdPercentile')
+
+          this._pendingVWs = []
         },
 
         initSvgComponents: function () {
-          for (var i = 0; i < this.numOfSubs; i++) {
+          for (var i = 0; i < this.parent.windowSpan; i++) {
             var newSubSvg = document.createElementNS(this.svgNS, 'svg')
             newSubSvg.setAttribute('id', this.parent.getCleanID() +
               '_subSvg' + i)
             Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
             this.subSvgs.push(newSubSvg)
           }
-          this.initSubSvgHolders()
+          this.subSvgs.forEach(this.initSvgHolder, this)
         },
 
         setSvgComponentsSizeLocation: function () {
@@ -212,13 +207,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           this.drawShortLabel()
         },
 
-        initSubSvgHolders: function () {
-          for (var i = 0; i < this.numOfSubs; i++) {
-            this.subSvgs[i].holder = document.createElementNS(this.svgNS, 'g')
-            Polymer.dom(this.subSvgs[i]).appendChild(this.subSvgs[i].holder)
-          }
-        },
-
         clear: function () {
           give.TrackDOMBehaviorImpl.clear.call(this)
           this.subSvgs.forEach(this.clearSvg, this)
@@ -228,7 +216,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           )
         },
 
-        updateTracks: function (viewWindow, index, threshold) {
+        updateTrack: function (viewWindow, index, threshold) {
           // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
           // index: if viewWindow is a single give.ChromRegion Object, index will be the index
           this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
@@ -240,18 +228,18 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             if (viewWindow) {
               if (Array.isArray(viewWindow)) {
                 // then it must have enough elements
-                viewWindow.forEach(this.changeViewWindow, this)
+                this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
               } else {
-                this.changeViewWindow(viewWindow, index)
+                this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
               }
             }
 
-            if (this.subSvgs.every(function (subSvg) {
-              return subSvg.viewWindow
+            if (this._pendingVWs.every(function (pendingVWindow) {
+              return pendingVWindow
             }, this)) {
               // Get data clipped by viewWindow by calling fetchData()
               //    May also include data preparation
-              this.checkDataAndUpdate()
+              this.checkDataAndUpdate(this._pendingVWs)
               // Update detailed content by calling drawData()
               //    Will be debounced to prevent lagging
             }
@@ -270,10 +258,15 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         },
 
         changeViewWindow: function (viewWindow, index) {
-          if (typeof (viewWindow) === 'string') {
-            this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
+          if (Array.isArray(viewWindow)) {
+            viewWindow.forEach(this.changeViewWindow, this)
           } else {
-            this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
+            if (typeof (viewWindow) === 'string') {
+              this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
+            } else {
+              this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
+            }
+            this._pendingVWs[index] = this.subSvgs[index].viewWindow
           }
         },
 
@@ -322,7 +315,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             return true
           }.bind(this)
 
-          if (regions && regions instanceof give.ChromBPlusTree) {
+          if (regions && regions instanceof give.GiveTree) {
             regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
           }
 

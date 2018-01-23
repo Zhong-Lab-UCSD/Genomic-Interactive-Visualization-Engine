@@ -122,7 +122,7 @@ var GIVe = (function (give) {
           Tree: this.Tree
         }
         var newRoot = new this.constructor(props)
-        this.isRoot = false
+        this.IsRoot = false
 
         return newRoot
       } else {
@@ -131,7 +131,7 @@ var GIVe = (function (give) {
     } else { // !(this.Values.length > this.Tree.BranchingFactor)
       return ((this.Values.length <= 0 || (
           this.Values.length === 1 && this.Values[0] === false)
-        ) ? this : false)
+        ) ? false : this)
     }
   }
 

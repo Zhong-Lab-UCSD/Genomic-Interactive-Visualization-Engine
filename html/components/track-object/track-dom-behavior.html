@@ -216,7 +216,7 @@ limitations under the License.
         ]
         this.defaultVisibility = give.TrackObject.StatusEnum.VIS_FULL
 
-        this.activeVisibility = this.parent.getSetting('visibility') || this.defaultVisibility
+        this.activeVisibility = this.getTrackSetting('visibility') || this.defaultVisibility
 
         this.textMargin = this.textMargin || properties.textMargin || 0
 
@@ -241,6 +241,14 @@ limitations under the License.
         if (this.trackImpl) {
           this.trackImpl(track, properties)
         }
+      },
+
+      getTrackSetting: function (key) {
+        return this.parent.getSetting(key)
+      },
+
+      setTrackSetting: function (key, value) {
+        return this.parent.setSetting(key, value)
       },
 
       /**
@@ -956,7 +964,7 @@ limitations under the License.
 
       drawShortLabel: function (label, maxX) {
         maxX = maxX || this.textMargin
-        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.parent.getSetting('shortLabel'),
+        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.getTrackSetting('shortLabel'),
                     'end', 'both', null, this.textSvg, maxX, this.trackHeight, true)
       },
 

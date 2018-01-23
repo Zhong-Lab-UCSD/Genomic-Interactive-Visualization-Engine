@@ -270,6 +270,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             value: 12    // unit is px
           },
 
+          textMargin: {
+            type: Number,
+            value: 100    // unit is px
+          },
+
           _threshold: {
             type: Number,
             value: 0.0
@@ -376,6 +381,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           props = props || {}
           props.windowIndex = viewWindowIndex
           props.width = this.$.chartHolding.clientWidth
+          props.textMargin = this.textMargin
           return props
         },
 
@@ -422,7 +428,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           if (forceAdd || (
             !this._trackDOMsByWindow[viewWindowIndex].map
             .hasOwnProperty(track.getID()) &&
-            viewWindowIndex + track.windowSpan < this._viewWindows.length
+            viewWindowIndex + track.windowSpan <= this._viewWindows.length
           )) {
             try {
               var newTrackDOM = new track._DomObjCtor(track,
@@ -751,9 +757,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
                 // filter out all tracks with visibility set as 0
                 // delete entries in domInWindowEntry.map first
                 for (var i = 0; i < domInWindowEntry[key].length; i++) {
-                  if (domInWindowEntry[key][i].track.getSetting('visibility') ===
+                  if (domInWindowEntry[key][i].getTrackSetting('visibility') ===
                     give.TrackObject.StatusEnum.VIS_NONE) {
-                    delete domInWindowEntry.map[domInWindowEntry[key][i].track.id]
+                    delete domInWindowEntry.map[domInWindowEntry[key][i].parent.id]
                     domInWindowEntry[key].splice(i, 1)
                     i--
                   }

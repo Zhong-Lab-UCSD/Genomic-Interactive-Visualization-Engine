@@ -90,6 +90,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         trackImpl: function (track, properties) {
           properties = properties || {}
 
+          this.pin = this.pin || 'top'
+
           this._setDynamicHeight(false)
           this._setLabelLocation(
             (isNaN(properties.windowIndex) || properties.windowIndex === 0)
