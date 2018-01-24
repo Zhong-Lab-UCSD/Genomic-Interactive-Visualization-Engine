@@ -6,7 +6,7 @@
     "Andrei Tuputcyn <Andrew.Tupitsin@gmail.com>",
     "Vitaly Puzrin <vitaly@rcdesign.ru>"
   ],
-  "description": "deflate / inflate / gzip for bworser - very fast zlib port",
+  "description": "deflate / inflate / gzip for browser - very fast zlib port",
   "keywords": [
     "zlib",
     "deflate",
@@ -26,14 +26,15 @@
     "benchmark",
     "coverage"
   ],
-  "version": "1.0.5",
-  "_release": "1.0.5",
+  "version": "1.0.6",
+  "_release": "1.0.6",
   "_resolution": {
     "type": "version",
-    "tag": "1.0.5",
-    "commit": "588a4376d24f24b3bae4167b4a5c8cd43761a5cd"
+    "tag": "1.0.6",
+    "commit": "893381abcafa10fa2081ce60dae7d4d8e873a658"
   },
   "_source": "https://github.com/nodeca/pako.git",
-  "_target": "^1.0.4",
-  "_originalSource": "pako"
+  "_target": "^1.0.6",
+  "_originalSource": "pako",
+  "_direct": true
 }
