@@ -24,5 +24,7 @@ var GIVe = (function (give) {
 
   give.GCI_PartialNameTarget = 'partialNames.php'
 
+  give.Meta_KeyTarget = 'assets/encodeDCC/cv.ra'
+
   return give
 })(GIVe || {})

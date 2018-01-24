@@ -342,6 +342,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             this._needOverrideDefault = true
           }
           // initialize DOM array
+          this._domsReady = false
           this._initDOMArray()
         },
 
@@ -1012,12 +1013,14 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         _initTrackDOMContainers: function () {
           this._trackDOMsByWindow.forEach(this._setDivElemInWindow, this)
           this._initDOMCoorTracks()
+          this._domsReady = true
           if (this._initialized) {
             this.addAllTrackDOMs()
           }
         },
 
         _domChangeHandler: function () {
+          this._domsReady = false
           this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
             this._initTrackDOMContainers.bind(this),
             give.ChartArea.DOM_CHANGE_DEBOUNCE)
@@ -1033,7 +1036,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _onIronResize: function (e, detail) {
           delete this._svgWidth
-          if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
+          if (this._domsReady) {
             this.debounce(this.resizeJobName, this.updateHeightLocation.bind(this), this.resizeDebounceInt)
           }
         }

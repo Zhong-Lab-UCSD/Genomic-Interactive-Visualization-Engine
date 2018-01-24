@@ -503,15 +503,17 @@ var GIVe = (function (give) {
    * @property {string} fetchDataTarget - The URL to fetch remote data.
    * @static
    */
-  give.TrackDataObject.fetchDataTarget = give.host +
-    (give.Trk_FetchDataTarget || '/givdata/getTrackData.php')
+  give.TrackDataObject.fetchDataTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Trk_FetchDataTarget || 'getTrackData.php')
 
   /**
    * @property {string} fetchCustomTarget - The URL to fetch custom track data.
    * @static
    */
-  give.TrackDataObject.fetchCustomTarget = give.host +
-    (give.Trk_FetchCustomTarget || '/givdata/getTrackData.php')
+  give.TrackDataObject.fetchCustomTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Trk_FetchCustomTarget || 'getTrackData.php')
 
   /**
    * @property {number} _getDataQueueCallbackID - The default values for

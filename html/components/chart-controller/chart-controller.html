@@ -331,8 +331,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           if (this._refObj) {
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i].coor)) {
-                this.splice('coordinates', i, 1, {
+              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
+                this.splice('_coorObjs', i, 1, {
                   coor: defaultWindows[i % defaultWindows.length],
                   invalid: false
                 })
