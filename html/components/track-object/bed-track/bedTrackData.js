@@ -123,5 +123,56 @@ var GIVe = (function (give) {
     reader.readAsText(localFile)
   }
 
+  /**
+   * _SummaryCtor - Constructor of summary data
+   * @constructor
+   * @memberof TrackDataObjectBase.prototype
+   */
+  give.BedTrackData.prototype._SummaryCtor = function (oldSummary) {
+    if (oldSummary) {
+
+    } else {
+      this.summaryLength
+    }
+  }
+
+  give.BedTrackData.prototype._SummaryCtor.prototype.addSummary = function (
+    summary
+  ) {
+    this.validCount += summary.validCount
+    this.sumData += summary.sumData
+    this.sumSquares += summary.sumSquares
+    this.minVal = (this.minVal <= summary.minVal)
+      ? this.minVal : summary.minVal
+    this.maxVal = (this.maxVal >= summary.maxVal)
+      ? this.maxVal : summary.maxVal
+    this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
+  }
+
+  give.BedTrackData.prototype._SummaryCtor.prototype.addData = function (
+    data, length
+  ) {
+    // data can be either a summary or actual components
+    // TODO: if data supports data.getLength(), use data.getLength() instead
+    if (data instanceof this.constructor) {
+      this.addSummary(data)
+    } else {
+      this.validCount += length
+      this.sumData += data.value * length
+      this.sumSquares += data.value * data.value * length
+      this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
+      this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
+      this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
+    }
+  }
+
+  /**
+   * _DataStructure - Constructor for underlying data structure used in
+   *   `this._data`. Default value is `GIVE.OakTree`
+   * @constructor
+   * @memberof TrackDataObjectBase.prototype
+   */
+  give.BedTrackData.prototype._DataStructure = give.PineTree
+
   return give
 })(GIVe || {})
