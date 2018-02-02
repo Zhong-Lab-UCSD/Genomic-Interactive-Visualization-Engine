@@ -76,7 +76,7 @@ var GIVe = (function (give) {
     var preConvertData = function (resEntry) {
       return new give.ChromRegion(resEntry.regionString, this.parent.ref, {
         data: resEntry.data.hasOwnProperty('validCount')
-          ? new this._SummaryCtor(resEntry.data) : resEntry.data
+          ? new this._SummaryCtor(null, resEntry.data) : resEntry.data
       })
     }.bind(this)
 
@@ -124,9 +124,20 @@ var GIVe = (function (give) {
   /**
    * _SummaryCtor - Constructor of summary data
    * @constructor
-   * @memberof TrackDataObjectBase.prototype
+   * @memberof BigWigTrackData.prototype
+   *
+   * @class BigWigTrackData.prototype._SummaryCtor
+   *
+   * @property {number} validCount - the number of valid counts (nucleotides)
+   *    with signal
+   * @property {number} sumData - the sum value of all signals
+   * @property {number} sumSquares - the sum of square values of all signals
+   * @property {number} minVal - the minimum value of all signals
+   * @property {number} maxVal - the maximum value of all signals
+   * @property {number} value - the 'value' of this summary data, should be
+   *    `this.sumData / this.validCount`
    */
-  give.BigWigTrackData.prototype._SummaryCtor = function (oldSummary) {
+  give.BigWigTrackData.prototype._SummaryCtor = function (node, oldSummary) {
     if (oldSummary) {
       this.validCount = oldSummary.validCount || 0
       this.sumData = oldSummary.sumData || 0
@@ -149,7 +160,7 @@ var GIVe = (function (give) {
   }
 
   give.BigWigTrackData.prototype._SummaryCtor.prototype.addSummary = function (
-    summary
+    node, summary
   ) {
     this.validCount += summary.validCount
     this.sumData += summary.sumData
@@ -162,16 +173,16 @@ var GIVe = (function (give) {
   }
 
   give.BigWigTrackData.prototype._SummaryCtor.prototype.addData = function (
-    data, length
+    node, data
   ) {
     // data can be either a summary or actual components
     // TODO: if data supports data.getLength(), use data.getLength() instead
     if (data instanceof this.constructor) {
-      this.addSummary(data)
+      this.addSummary(node, data)
     } else {
-      this.validCount += length
-      this.sumData += data.value * length
-      this.sumSquares += data.value * data.value * length
+      this.validCount += node.getLength()
+      this.sumData += data.value * node.getLength()
+      this.sumSquares += data.value * data.value * node.getLength()
       this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
       this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
       this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
