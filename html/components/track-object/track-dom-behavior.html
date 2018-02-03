@@ -199,7 +199,11 @@ limitations under the License.
 
         this.x = properties.x || 0
         this.y = properties.y || 0
-        this._setTrackHeight(properties.height || 100)
+        try {
+          this.setHeight(properties.height)
+        } catch (e) {
+          this.setHeight(100)
+        }
 
         this._setParent(track)
         // this._setTrackType(track.getTypeTrunk())
@@ -500,7 +504,11 @@ limitations under the License.
        * @param  {number} newHeight - new height of the track, in px
        */
       setHeight: function (newHeight) {
-        this._setTrackHeight(newHeight)
+        if (newHeight > 0) {
+          this._setTrackHeight(newHeight)
+        } else {
+          throw new Error('Invalid height value: ' + newHeight)
+        }
       },
 
       // ****** visibility control ******

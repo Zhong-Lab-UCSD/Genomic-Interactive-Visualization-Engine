@@ -191,17 +191,38 @@ var GIVe = (function (give) {
    * getSetting - get setting value
    *
    * @memberof TrackObjectBase.prototype
-   * @param  {type} key - the key of the setting entry
+   * @param  {string} key - the key of the setting entry
+   * @param  {string} key - the key of the setting entry
    * @returns {object} The value of the setting entry
    */
-  give.TrackObject.prototype.getSetting = function (key) {
+  give.TrackObject.prototype.getSetting = function (key, type) {
 //    if(!this.Settings.settings.hasOwnProperty(key)) {
 //      if(this.Settings.hasOwnProperty(key)) {
 //        this.Settings.settings[key] = this.Settings[key];
 //      }
 //    }
 //    delete this.Settings[key];
-    return this.Settings[key]
+    switch (type) {
+      case 'integer':
+        return parseInt(this.Settings[key])
+      case 'float':
+        return parseFloat(this.Settings[key])
+      case 'boolean':
+        switch (typeof this.Settings[key]) {
+          case 'string':
+            // This is quite hard to handle because "yes", "true", "on", etc.
+            return (this.Settings[key].toLowerCase() === 'on' ||
+              this.Settings[key].toLowerCase() === 'true' ||
+              this.Settings[key].toLowerCase() === 'yes' ||
+              this.Settings[key].toLowerCase() === 'y' ||
+              this.Settings[key].toLowerCase() === 't'
+            )
+          default:
+            return !!this.Settings[key]
+        }
+      default:
+        return this.Settings[key]
+    }
   }
 
   /**
