@@ -23,9 +23,9 @@ There are 6 fields for an interaction part:
 > base should __not__ be included in the entry.  
 > __linkID__ - The unique ID for the interaction. All parts of the same
 > interaction should have the same `linkID`. Because of this, the rows of the
-> same interaction do not have to be adjacent to one another.
+> same interaction do not have to be adjacent to one another.  
 > __value__ - This value can be used to represent the strength of the
-> interaction. Values will be shown in different colors.
+> interaction. Values will be shown in different colors.  
 > __dirFlag__ - If the interaction is directional, this value can be used to
 > indicate the directionality of this part. It should take a value of `0` or
 > `1`. __NOTE__: If the interaction is non-directional, this field should be
