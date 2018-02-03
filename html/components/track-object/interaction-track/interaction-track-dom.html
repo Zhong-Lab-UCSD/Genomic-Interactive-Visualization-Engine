@@ -77,7 +77,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             value: 0
           },
 
-          percentiles: {
+          quantiles: {
             type: Array,
             value: function () {
               return []
@@ -115,7 +115,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             ? properties.subTrackGap : this.subTrackGap
           this.threshold = properties.hasOwnProperty('threshold')
             ? properties.threshold : this.threshold
-          this._setTrackHeight(properties.hasOwnProperty('height')
+          this.setHeight(properties.hasOwnProperty('height')
             ? properties.height
             : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
               (this.parent.windowSpan - 1)) * this.textSize)
@@ -123,7 +123,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
 
           this.subSvgs = []
           this.bufferWindow = []
-          this.percentiles = this.parent.getSetting('thresholdPercentile')
+          this.quantiles = this.parent.getSetting('quantiles') ||
+            this.parent.getSetting('thresholdquantile')
 
           this._pendingVWs = []
         },
@@ -375,7 +376,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               // region is here, draw the link (polygon)
 
               // if(linkMap[regionID][0].data.value < threshold)
-              // now percentile is used instead of raw # of reads
+              // now quantile is used instead of raw # of reads
               if (!this.isAboveThreshold(linkMap[regionID][0].data.value)) {
                 continue
               }
@@ -439,7 +440,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
     //                  stroke: this.colorSet[5],
     //                  'stroke-width': 3,
     //                  }, svgMain);
-                    if (this.percentiles) {
+                    if (this.quantiles) {
                       this.createRawPolygon(points, {id: regionID,
                         class: 'linkedRegion',
                         fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID][0].data.value))),
@@ -477,7 +478,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         isAboveThreshold: function (value, threshold) {
           threshold = threshold || this.threshold
           if (typeof (value) === 'number') {
-            if (this.percentiles) {
+            if (this.quantiles) {
               return this.valueToPercentile(value) >= threshold / 100
             } else {
               return value >= threshold
@@ -488,17 +489,17 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         },
 
         valueToPercentile: function (value, considerThreshold) {
-          if (Array.isArray(this.percentiles) && this.percentiles.length > 0) {
+          if (Array.isArray(this.quantiles) && this.quantiles.length > 0) {
             var result = 0
-            this.percentiles.every(function (percentile, index) {
+            this.quantiles.every(function (quantile, index) {
               result = index
-              return percentile < value
+              return quantile < value
             })
-            result = result / (this.percentiles.length - 1)
+            result = result / (this.quantiles.length - 1)
             return considerThreshold ? (this.threshold < 100 ? (result - this.threshold / 100) / (1 - this.threshold / 100) : 0.5) : result
           }
           // otherwise, throw exception
-          throw (new Error('Percentile data missing!'))
+          throw (new Error('Quantile data missing!'))
         },
 
         percentileToGradient: function (percentile) {
