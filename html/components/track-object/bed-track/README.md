@@ -31,7 +31,8 @@ The 9 additional optional BED fields are:
 
 > __name__ - Defines the name of the BED entry. This label is displayed to the
 > left of the BED entry if there is enough space, otherwise it will be shown at
-> the left end of the graph.  
+> the left end of the graph. See __[Display Modes](#display-modes)__ for
+> details about whether and where this will be shown in different modes.  
 > __score__ - A score between 0 and 1000. This is used for compatibility
 > purposes and is currently not used in GIVE.  
 > __strand__ - Defines the strand of the entry. Use `"+"` for positive strand,
@@ -47,6 +48,6 @@ The 9 additional optional BED fields are:
 
 ## Supported Metadata
 
-## Display Types
+## Display Modes
 
 ## Supported Settings
