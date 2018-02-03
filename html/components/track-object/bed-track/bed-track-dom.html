@@ -209,7 +209,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             return false
           }, this)) {
             // no empty lines, create a new line
-            if (this.parent.getSetting('adaptive') &&
+            if (this.parent.getSetting('adaptive', 'boolean') &&
               lineEnds.length >= this.ADAPTIVE_MAXLINES
             ) {
               // maximum number of lines exceeded
@@ -232,10 +232,11 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          * _prepareLines - prepare lines for genes in adaptive cases.
          *    This is especially useful for display modes like `pack`, where
          *      items are stacked if space allows.
-         *    When `this.parent.getSetting('adaptive') === true`, the actual
-         *      display mode needs to be determined by the code. This function
-         *      will calculate the x0 and x1 for every gene, taking text width
-         *      into consideration, and increase display density accordingly.
+         *    When `this.parent.getSetting('adaptive', 'boolean') === true`, the
+         *      actual display mode needs to be determined by the code. This
+         *      function will calculate the x0 and x1 for every gene, taking
+         *      text width into consideration, and increase display density
+         *      accordingly.
          *    This function will allocate items to their corresponding lines by
          *      setting the `lineY` property.
          *
@@ -409,7 +410,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
                   strand: transcript.strand})
                 this.drawRectangle(coor, colorRGB,
                   yCoor, height * halfHeightRatio,
-                  this.mainSvg, colorRGB
+                  this.mainSvg, colorRGB,
+                  give.TrackDOMBehaviorImpl.VALIGN_CENTER
                 )
                 blockStart = thickStart
               }
@@ -420,7 +422,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
                   end: thickEnd,
                   strand: transcript.strand})
                 this.drawRectangle(coor, colorRGB, yCoor,
-                  height, null, colorRGB
+                  height, null, colorRGB,
+                  give.TrackDOMBehaviorImpl.VALIGN_CENTER
                 )
                 blockStart = thickEnd
               }
