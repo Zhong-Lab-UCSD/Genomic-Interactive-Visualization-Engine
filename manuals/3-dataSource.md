@@ -60,8 +60,8 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`cytoBa
   `chromEnd` int(10) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `gieStain` varchar(255) NOT NULL,
-  KEY `chrom` (`chrom`(23),`chromStart`)
-);
+  KEY `chrom` (`chrom`(23), `chromStart`)
+) ENGINE=InnoDB;
 </pre>
 
 The `cytoBandIdeo` table also needs to be populated by actual data. The following SQL command can be used if the file cytoBandIdeo is already on the server:
@@ -114,12 +114,13 @@ The SQL code to create this table is shown below:
 
 <pre>
 CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`grp` (
-  `name` char(255) NOT NULL DEFAULT '',
+  `name` char(255) NOT NULL,
   `label` char(255) NOT NULL DEFAULT '',
   `priority` float NOT NULL DEFAULT '0',
   `defaultIsClosed` tinyint(2) DEFAULT NULL,
-  `singleChoice` tinyint(1) NOT NULL DEFAULT '0'
-);
+  `singleChoice` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB;
 </pre>
 
 Individual track groups can be created by adding entries in the `grp` table, using the following SQL command:
@@ -159,8 +160,11 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackD
   `html` longtext,
   `grp` varchar(255) NOT NULL,
   `settings` longtext NOT NULL,
-  PRIMARY KEY (`tableName`)
-);
+  PRIMARY KEY (`tableName`),
+  FOREIGN KEY `group_id` (`grp`) REFERENCES
+    `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`grp` (`name`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
 </pre>
 
 After this step, GIVE will be able to display the new reference genome and also data tracks within it.
@@ -215,7 +219,7 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><s
   KEY `chrom_2` (`chrom`(16),`txEnd`),
   KEY `protein` (`proteinID`(16)),
   KEY `align` (`alignID`)
-);
+) ENGINE=InnoDB;
 </pre>
 
 After the table is created, you can populate it with the actual data:
@@ -259,7 +263,7 @@ The SQL command to create such a table is shown below:
 <pre>
 CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`<em><strong>&lt;track_table_name&gt;</strong></em>` (
   `fileName` varchar(<em>255</em>) NOT NULL
-);
+) ENGINE=InnoDB;
 </pre>
 
 After the table is created, you can populate it with the actual data:
@@ -321,7 +325,7 @@ CREATE TABLE `<your_reference_database>`.`<em><strong>&lt;track_table_name&gt;</
   KEY `chrom` (`chrom`(16),`start`),
   KEY `chrom_2` (`chrom`(16),`end`),
   KEY `linkID` (`linkID`)
-);
+) ENGINE=InnoDB;
 </pre>
 
 After the table is created, you can populate it with the actual data:

@@ -31,7 +31,7 @@ To follow the tutorial, a functional MySQL-compatible instance and a PHP web ser
 *   *[cURL library](http://php.net/manual/en/book.curl.php) (a required PHP component for GIVE).*
 
 *If you haven't set up your web server, please refer to [Tutorial 1, Part "Prerequisites"](knownCodeDataSource.md#prerequisites) for instructions.*  
-*If you decide to use your own MySQL instance and PHP server, please __follow all steps__ in [GIVE Manual - 1. Installation](../manuals/1.2-system-level_installation.md), and start from __Step 5__.*
+*If you decide to use your own MySQL instance and PHP server, please __follow all steps__ in [GIVE Manual - 1. Installation](../manuals/1-installation.md), and start from __Step 5__.*
 
 ***
 
@@ -124,7 +124,7 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
       `name` varchar(255) NOT NULL,           -- Name of the band
       `gieStain` varchar(255) NOT NULL,       -- Giemsa Stain info, to identify bands, centromeres, etc.
       KEY `chrom` (`chrom`(23),`chromStart`)
-    );
+    ) ENGINE=InnoDB;
     ```
 
     The data source will now have a data structure as shown below (existing components not changed in structure are greyed out):
@@ -180,14 +180,15 @@ Tracks in GIVE belongs to track groups for better management and these groups ne
 
     ```SQL
     CREATE TABLE `<your_reference_database>`.`grp` (
-      `name` char(255) NOT NULL DEFAULT '',           -- Name of the group
+      `name` char(255) NOT NULL,                      -- Name of the group
       `label` char(255) NOT NULL DEFAULT '',          -- Long label of the group
       `priority` float NOT NULL DEFAULT '0',          
       -- Order for this group in the browser, less is upper
       `defaultIsClosed` int(11) DEFAULT NULL,         -- Whether the group will be closed by default, reserved
-      `singleChoice` tinyint(1) NOT NULL DEFAULT '0'
+      `singleChoice` tinyint(1) NOT NULL DEFAULT '0',
       -- Whether the group will only allow one track to be active at any time
-    );
+      PRIMARY KEY `name`
+    ) ENGINE=InnoDB;
     ```
 
 11. Create three track groups, one for gene annotation (`genes`), one for linear data (`linear_tracks`), and one for interactions (`interactions`):
@@ -228,8 +229,11 @@ Tracks themselves also need a place to store their annotation and data. This is 
       `html` longtext,                      -- HTML description for the track, reserved
       `grp` varchar(255) NOT NULL,          -- Group of the track, should be the same as grp.name
       `settings` longtext NOT NULL,         -- Detailed track settings, JSON format
-      PRIMARY KEY (`tableName`)
-    );
+      PRIMARY KEY (`tableName`),
+      FOREIGN KEY `group_id` (`grp`) REFERENCES
+        `<your_reference_database>`.`grp` (`name`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
     ```
 
 The updated data structure as shown below (existing components not changed in structure are greyed out):
@@ -271,7 +275,7 @@ After track groups were created, we can add tracks into the groups to display. A
           KEY `chrom_2` (`chrom`(16),`txEnd`),
           KEY `protein` (`proteinID`(16)),
           KEY `align` (`alignID`)
-        );
+        ) ENGINE=InnoDB;
         ```
     *   Populate the `GenePred` table with actual data.
         The annotation data we are going to use in this demo is at <https://sysbio.ucsd.edu/public/xcao3/UFPArchive/genepred.txt> and has already been loaded on the demo server at `/home/givdemo/UFPArchive/genepred.txt`. You may use `LOAD DATA LOCAL INFILE` to add them to the `GenePred` table.
@@ -311,7 +315,7 @@ Adding epigenetic tracks (in `bigWig` format) is actually easier than `BED` or `
         ```SQL
         CREATE TABLE `<your_reference_database>`.`Epi1` (  -- *** Replace `<your_reference_database>` with your own DB name ***
           `fileName` varchar(255) NOT NULL
-        );
+        ) ENGINE=InnoDB;
         ```
     *   For bigWig tracks, only the URL of the data file (<https://sysbio.ucsd.edu/public/xcao3/UFPArchive/vulcanCandidate.bigWig>) needs to be filled in the table.
         ```SQL
@@ -381,7 +385,7 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
           KEY `chrom` (`chrom`(16),`start`),
           KEY `chrom_2` (`chrom`(16),`end`),
           KEY `linkID` (`linkID`)
-        );
+        ) ENGINE=InnoDB;
         ```
     *   Populate the `newInteraction` table with actual data.
         The annotation data we are going to use in this demo is at <https://sysbio.ucsd.edu/public/xcao3/UFPArchive/newInteraction.txt> and has already been loaded on the demo server at `/home/givdemo/UFPArchive/newInteraction.txt`. You may use `LOAD DATA LOCAL INFILE` to add them to the `newInteraction` table.
