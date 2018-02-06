@@ -35,9 +35,9 @@ Here we start by using GIVE code base together with the data sources. With them 
   <head>
     <title>GIVE Demo</title>
     <!-- Polyfill Web Components for browsers without native support -->
-    <script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
+    <script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
     <!-- Import GIVE component -->
-    <link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+    <link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
   </head>
   <body>
     <!-- Embed the browser in your web page -->
@@ -59,9 +59,9 @@ The following code is an example of embedding:
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
-<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" coordinates='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'>
@@ -78,9 +78,9 @@ By using the `<chart-area>` element instead of `<chart-controller>` element, it 
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
-<link rel="import" href="https://www.givengine.org/lib/chart-area/chart-area.html">
+<link rel="import" href="https://www.givengine.org/components/chart-area/chart-area.html">
 <!-- Embed the browser in your web page -->
 <chart-area ref="mm10" coordinates='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'>
@@ -141,7 +141,7 @@ The data source on our server currently provides these track groups:
 ## API documentation
 The detailed attributes available for `<chart-controller>` and `<chart-area>` elements can be seen on the API documentation pages here:
 
-*   [`GIVe.ChartArea`](https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-area/index.html) for `<chart-area>`
-*   [`GIVe.ChartController`](https://beta.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/index.html) for `<chart-controller>`
+*   [`GIVe.ChartArea`](https://www.givengine.org/components/chart-area/index.html) for `<chart-area>`
+*   [`GIVe.ChartController`](https://www.givengine.org/components/chart-controller/index.html) for `<chart-controller>`
 
 > Note that the attribute names in the API document is for JavaScript codes and are in camelCase format. To use those attributes, please convert the camelCase names into name with dashes. For example, to use `numOfSubs` mentioned in API as an HTML attribute, use `num-of-subs` instead. Please see [Polymer property name to attribute name mapping](https://www.polymer-project.org/2.0/docs/devguide/properties#property-name-mapping) for details.

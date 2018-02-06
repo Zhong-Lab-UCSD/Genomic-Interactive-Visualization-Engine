@@ -163,8 +163,8 @@ To visualize a new reference genome, GIVE only needs to know 1) the names of the
     You can use the following code in CodePen or JSFiddle to see your new reference in motion:  
     (Please refer to [Tutorial 1, Part "Embedding a full-fledged genome browser in existing pages"](knownCodeDataSource.md#embedding-a-full-fledged-genome-browser-in-existing-pages) about how to embed GIVE browser in your web page.)  
     ```html
-    <script src="https://demo.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-    <link rel="import" href="https://demo.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+    <script src="https://demo.give.genemo.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="https://demo.give.genemo.org/components/chart-controller/chart-controller.html">
 
     <!-- ****** Replace `<your_reference_database>` in the next line with your own DB name ****** -->
     <chart-controller ref="<your_reference_database>" group-id-list='["genes", "epigenetics"]'>
@@ -428,8 +428,8 @@ Adding interaction tracks (in `interaction` format) is similar to adding `BED` o
 
 19. Because two panels are needed to display interactions, you will need to change the embedding HTML code a little bit:  
     ```html
-    <script src="https://demo.give.genemo.org/components/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-    <link rel="import" href="https://demo.give.genemo.org/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+    <script src="https://demo.give.genemo.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="https://demo.give.genemo.org/components/chart-controller/chart-controller.html">
 
     <!-- ****** Replace `<your_reference_database>` in the next line with your own DB name ****** -->
     <chart-controller ref="<your_reference_database>" group-id-list='["genes", "interactions"]' num-of-subs="2">
