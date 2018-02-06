@@ -68,7 +68,7 @@ var GIVe = (function (give) {
     if (this.getEnd() - this.getStart() <= this.Tree.LeafScalingFactor) {
       this.RevDepth = 0
     } else {
-      this.RevDepth = 1 + Math.ceil(
+      this.RevDepth = Math.ceil(
         (Math.log(this.getEnd() - this.getStart()) -
           Math.log(this.Tree.LeafScalingFactor)
         ) / Math.log(this.Tree.ScalingFactor))
