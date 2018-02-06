@@ -180,14 +180,14 @@ Tracks in GIVE belongs to track groups for better management and these groups ne
 
     ```SQL
     CREATE TABLE `<your_reference_database>`.`grp` (
-      `name` char(255) NOT NULL,                      -- Name of the group
+      `name` char(150) NOT NULL,                      -- Name of the group
       `label` char(255) NOT NULL DEFAULT '',          -- Long label of the group
       `priority` float NOT NULL DEFAULT '0',          
       -- Order for this group in the browser, less is upper
       `defaultIsClosed` int(11) DEFAULT NULL,         -- Whether the group will be closed by default, reserved
       `singleChoice` tinyint(1) NOT NULL DEFAULT '0',
       -- Whether the group will only allow one track to be active at any time
-      PRIMARY KEY `name`
+      PRIMARY KEY (`name`)
     ) ENGINE=InnoDB;
     ```
 
@@ -227,7 +227,7 @@ Tracks themselves also need a place to store their annotation and data. This is 
       `priority` float NOT NULL,            -- Order for the track (within group)
       `url` longblob,                       -- URL for the track, reserved
       `html` longtext,                      -- HTML description for the track, reserved
-      `grp` varchar(255) NOT NULL,          -- Group of the track, should be the same as grp.name
+      `grp` varchar(150) NOT NULL,          -- Group of the track, should be the same as grp.name
       `settings` longtext NOT NULL,         -- Detailed track settings, JSON format
       PRIMARY KEY (`tableName`),
       FOREIGN KEY `group_id` (`grp`) REFERENCES

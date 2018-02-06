@@ -114,7 +114,7 @@ The SQL code to create this table is shown below:
 
 <pre>
 CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`grp` (
-  `name` char(255) NOT NULL,
+  `name` char(150) NOT NULL,
   `label` char(255) NOT NULL DEFAULT '',
   `priority` float NOT NULL DEFAULT '0',
   `defaultIsClosed` tinyint(2) DEFAULT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE `<em><strong>&lt;your_reference_database&gt;</strong></em>`.`trackD
   `priority` float NOT NULL,
   `url` longblob,
   `html` longtext,
-  `grp` varchar(255) NOT NULL,
+  `grp` varchar(150) NOT NULL,
   `settings` longtext NOT NULL,
   PRIMARY KEY (`tableName`),
   FOREIGN KEY `group_id` (`grp`) REFERENCES
