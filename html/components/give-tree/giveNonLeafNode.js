@@ -639,7 +639,9 @@ var GIVe = (function (give) {
         // remove child at `index`
         this.Keys.splice(index, 1)
         this.Values.splice(index, 1)
-        this.getPrev().setEnd(this.getStart())
+        if (this.getPrev()) {
+          this.getPrev().setEnd(this.getStart())
+        }
         this._fixChildLinks(index > 0 ? index - 1 : index)
         merged = true
       }
