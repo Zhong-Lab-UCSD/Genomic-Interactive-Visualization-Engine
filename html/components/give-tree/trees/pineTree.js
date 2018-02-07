@@ -187,9 +187,9 @@ var GIVe = (function (give) {
       props.Rejuvenation = this.LifeSpan + 1
     }
     // wither is a flag whether to reduce life for nodes not traversed
-    if (!chrRange.chr || chrRange.chr === this.chr) {
+    if (!chrRange.chr || chrRange.chr === this.Chr) {
       var result = this._root.traverse(chrRange, callback, thisVar, filter,
-        breakOnFalse, false, props)
+        breakOnFalse, props)
       if (props.Wither) {
         this.wither()
       }

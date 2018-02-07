@@ -481,7 +481,9 @@ var GIVe = (function (give) {
         //    previous `false`s if possible.
         this.Values[currIndex] = false
         this._fixChildLinks(currIndex)
-        this._mergeChild(currIndex, true, false)
+        if (this._mergeChild(currIndex, true, false)) {
+          currIndex--
+        }
       }
 
       chrRange.start = childRange.getEnd()
@@ -550,7 +552,9 @@ var GIVe = (function (give) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
-        this._mergeChild(currIndex, false, true)
+        if (this._mergeChild(currIndex, false, true)) {
+          currIndex--
+        }
       }
 
       // Shrink `chrRange` to unprocessed range
@@ -615,7 +619,7 @@ var GIVe = (function (give) {
         }
         this.Values[i] = props.ConvertTo
         this._fixChildLinks(i)
-        this._mergeChild(i, true)
+        this._mergeChild(i, true, false)
       }
     } else {
       console.log('Data ' + data + ' is not found in the tree.')

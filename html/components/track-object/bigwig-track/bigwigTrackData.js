@@ -162,13 +162,15 @@ var GIVe = (function (give) {
   }
 
   give.BigWigTrackData.prototype._SummaryCtor.prototype.addData = function (
-    data, length
+    chromEntry, length
   ) {
     // data can be either a summary or actual components
     // TODO: if data supports data.getLength(), use data.getLength() instead
-    if (data instanceof this.constructor) {
-      this.addSummary(data)
-    } else {
+    if (chromEntry.data instanceof this.constructor) {
+      this.addSummary(chromEntry.data)
+    } else if (chromEntry.data) {
+      var data = chromEntry.data
+      length = length || chromEntry.getLength()
       this.validCount += length
       this.sumData += data.value * length
       this.sumSquares += data.value * data.value * length
