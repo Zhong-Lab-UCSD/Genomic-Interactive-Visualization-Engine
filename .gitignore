@@ -231,8 +231,8 @@ susScr2_labtracks
 samples/
 
 testData/
-*/includes/constants.*
-*/basic-func/constants.js
+/includes/constants.*
+/html/components/basic-func/constants.js
 
 #Genome Browser data files
 *.bigWig

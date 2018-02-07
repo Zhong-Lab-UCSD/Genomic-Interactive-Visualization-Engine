@@ -23,13 +23,13 @@ GIVE Web Components can be used the same way you use other HTML tags, like `<div
 Before using any GIVE Web Components, you need to put the Polyfill code for Web Components:
 
 <pre>
-&lt;script src="<em><strong>&lt;web_components_path&gt;</strong></em>bower_components/webcomponentsjs/webcomponents-lite.min.js"&gt;&lt;/script&gt;
+&lt;script src="<em><strong>&lt;bower_components_path&gt;</strong></em>/webcomponentsjs/webcomponents-lite.min.js"&gt;&lt;/script&gt;
 </pre>
 
 When you want to embed a GIVE Web Component in your HTML page (for example, `chart-controller` or `chart-area`), import the element you would like to use first if it's not already imported in the HTML file:
 
 <pre>
-&lt;link rel="import" href="<em><strong>&lt;web_components_path&gt;</strong></em>bower_components/genemo-visual-components/<em><strong>&lt;component_name&gt;</strong></em>/<em><strong>&lt;component_name&gt;</strong></em>.html"&gt;
+&lt;link rel="import" href="<em><strong>&lt;web_components_path&gt;</strong></em>/<em><strong>&lt;component_name&gt;</strong></em>/<em><strong>&lt;component_name&gt;</strong></em>.html"&gt;
 </pre>
 
 ## Embedding a GIVE Web Component
@@ -111,8 +111,8 @@ The data source on GIVE server data source currently provides these track groups
 ## API documentation
 The detailed attributes available for `<chart-controller>` and `<chart-area>` elements can be seen on the API documentation pages here:
 
-*   [`GIVe.ChartArea`](https://www.givengine.org/components/bower_components/genemo-visual-components/chart-area/index.html) for `<chart-area>`
-*   [`GIVe.ChartController`](https://www.givengine.org/components/bower_components/genemo-visual-components/chart-controller/index.html) for `<chart-controller>`
+*   [`GIVe.ChartArea`](https://www.givengine.org/components/chart-area/index.html) for `<chart-area>`
+*   [`GIVe.ChartController`](https://www.givengine.org/components/chart-controller/index.html) for `<chart-controller>`
 
 ||||
 | --- | --- | --- |

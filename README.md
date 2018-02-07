@@ -8,10 +8,10 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 ```html
 <!-- Polyfill Web Components for browsers without native support -->
-<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 
 <!-- Import GIVE component -->
-<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
 
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" title-text="My GIVE Browser"
@@ -26,6 +26,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
         *   [Without Installation](#without-installation)
         *   [With Installation](#with-installation)
     *   [Implementing A Customized Genome Browser by Embedding GIVE Components](#implementing-a-customized-genome-browser-by-embedding-give-components)
+*   [Supported Tracks](#supported-tracks)
 *   [Tutorial](#tutorial)
 *   [Credits](#credits)
 *   [License](#license)
@@ -48,16 +49,16 @@ To use GIVE components, just use HTML `import` to import Web Components polyfill
 
 All components, including Web Component polyfill, is available on our web site for direct HTML import.
 ```html
-<script src="https://www.givengine.org/libWC/webcomponents-lite.js"></script>
-<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
 ```
 
 #### With Installation
 
 Please use your own path if you already installed GIVE Web Components on your server.
 ```html
-<script src="/give/html/components/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-<link rel="import" href="/give/html/components/bower_components/genemo-visual-components/chart-controller/chart-controller.html">
+<script src="/html/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="/html/components/chart-controller/chart-controller.html">
 ```
 
 ### Implementing A Customized Genome Browser by Embedding GIVE Components
@@ -80,6 +81,13 @@ var myChart = new GIVE.ChartController({
   groupIdList: ["genes", "singleCell", "customTracks"]
 })
 ```
+
+## Supported Tracks
+
+Currently GIVE supports three types of tracks:
+*   [BED Track](components/track-object/bed-track/)
+*   [bigWig Track](components/track-object/bigwig-track/)
+*   [Interaction Track](components/track-object/interaction-track/)
 
 ## Tutorial
 
