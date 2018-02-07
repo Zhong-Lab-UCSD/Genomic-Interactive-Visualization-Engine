@@ -85,9 +85,9 @@ var myChart = new GIVE.ChartController({
 ## Supported Tracks
 
 Currently GIVE supports three types of tracks:
-*   [BED Track](components/track-object/bed-track/)
-*   [bigWig Track](components/track-object/bigwig-track/)
-*   [Interaction Track](components/track-object/interaction-track/)
+*   [BED Track](html/components/track-object/bed-track/)
+*   [bigWig Track](html/components/track-object/bigwig-track/)
+*   [Interaction Track](html/components/track-object/interaction-track/)
 
 ## Tutorial
 
