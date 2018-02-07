@@ -490,7 +490,7 @@ var GIVe = (function (give) {
     //    more
     return ((this.Values.length <= 0 || (
         this.Values.length === 1 && this.Values[0] === false)
-      ) ? this : false)
+      ) ? false : this)
   }
 
   /**
