@@ -8,7 +8,7 @@ var GIVe = (function (give) {
   give.VERBOSE_DEBUG = 4
   give.VERBOSE_DEBUG_MORE = 5
 
-  give.verboseLvl = give.VERBOSE_DEBUG
+  give.verboseLvl = give.VERBOSE_MAJ_ERROR
 
   give.Host = 'https://www.givengine.org'
   give.ServerPath = '/givdata/'

@@ -179,24 +179,26 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             }
             start = lastElem.getEnd()
           }
-          var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
-          var chrSpan = new give.ChromRegion({
-            chr: chrRange.chr,
-            start: start,
-            end: start + span
-          })
-          while (chrSpan.start < dataEntry.end &&
-            chrSpan.start < chrRange.end
-          ) {
-            // This will insert 0 in the gaps, split value in overlaps
-            // and have full value afterwards
-            var newData = chrSpan.clone()
-            newData.data = {
-              value: dataEntry.data.value * newData.overlaps(dataEntry) /
-                newData.getLength()
+          if (start < dataEntry.end) {
+            var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
+            var chrSpan = new give.ChromRegion({
+              chr: chrRange.chr,
+              start: start,
+              end: start + span
+            })
+            while (chrSpan.start < dataEntry.end &&
+              chrSpan.start < chrRange.end
+            ) {
+              // This will insert 0 in the gaps, split value in overlaps
+              // and have full value afterwards
+              var newData = chrSpan.clone()
+              newData.data = {
+                value: dataEntry.data.value * newData.overlaps(dataEntry) /
+                  newData.getLength()
+              }
+              dataPointArray.push(newData)
+              chrSpan.move(span)
             }
-            dataPointArray.push(newData)
-            chrSpan.move(span)
           }
         },
 

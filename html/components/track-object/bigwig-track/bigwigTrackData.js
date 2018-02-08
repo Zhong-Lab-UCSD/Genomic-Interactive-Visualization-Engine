@@ -73,13 +73,6 @@ var GIVe = (function (give) {
      * the format will be a ChromRegion object with
      * {data: {value: <actual value>} }
      */
-    var preConvertData = function (resEntry) {
-      return new give.ChromRegion(resEntry.regionString, this.parent.ref, {
-        data: resEntry.data.hasOwnProperty('validCount')
-          ? new this._SummaryCtor(resEntry.data) : resEntry.data
-      })
-    }.bind(this)
-
     for (var chrom in res) {
       var regionsInChrom = regions.filter(function (region) {
         return region.chr === chrom
@@ -87,10 +80,17 @@ var GIVe = (function (give) {
       if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
         Array.isArray(res[chrom])
       ) {
-        this.getData(chrom, true).insert(res[chrom].map(preConvertData, this),
-          regionsInChrom)
+        this.getData(chrom, true).insert(
+          res[chrom].map(this._convertDataEntry, this), regionsInChrom)
       }
     }
+  }
+
+  give.BigWigTrackData.prototype._convertDataEntry = function (entry) {
+    return this._SummaryCtor.testDataEntry(entry)
+      ? this._SummaryCtor.createDataEntry(entry, this)
+      : new give.ChromRegion(entry.regionString, this.parent.ref,
+        { data: entry.data })
   }
 
   /**
@@ -146,6 +146,34 @@ var GIVe = (function (give) {
       this.maxVal = Number.NEGATIVE_INFINITY
       this.value = 0
     }
+  }
+
+  give.BigWigTrackData.prototype._SummaryCtor.testDataEntry = function (entry) {
+    return entry.data.hasOwnProperty('validCount')
+  }
+
+  give.BigWigTrackData.prototype._SummaryCtor.createDataEntry = function (
+    entry, trackDataObj
+  ) {
+    return new give.ChromRegion(entry.regionString, trackDataObj.parent.ref,
+      { data: new this(entry.data) })
+  }
+
+  give.BigWigTrackData.prototype._SummaryCtor.extract = function (dataEntry) {
+    if (dataEntry.data && !(dataEntry.data instanceof this)) {
+      // summary is something with wrong type
+      give._verboseConsole(dataEntry.data + ' is not a correct summary ' +
+        'type.', give.VERBOSE_DEBUG)
+      return null
+    }
+    return dataEntry.data || null
+  }
+
+  give.BigWigTrackData.prototype._SummaryCtor.prototype.attach = function (
+    chrRegion
+  ) {
+    chrRegion.data = this
+    return chrRegion
   }
 
   give.BigWigTrackData.prototype._SummaryCtor.prototype.addSummary = function (
