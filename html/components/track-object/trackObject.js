@@ -220,6 +220,8 @@ var GIVe = (function (give) {
           default:
             return !!this.Settings[key]
         }
+      case 'string':
+        return this.Settings[key] || ''
       default:
         return this.Settings[key]
     }

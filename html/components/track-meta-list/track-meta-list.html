@@ -1,0 +1,162 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="./track-meta-entry.html">
+<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="track-meta-list">
+  <template>
+    <style include="genemo-shared-styles">
+      :host {
+        position: relative;
+        overflow-x: auto;
+        @apply(--layout-vertical);
+      }
+      .groupHeader {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: var(--default-primary-color);
+        color: var(--dark-theme-text-color);
+      }
+      #loadingBlock {
+        display: block;
+        pointer-events: none;
+        @apply(--layout-fit);
+        z-index: 1;
+        opacity: 0.8;
+        background: var(--card-background-color);
+      }
+      iron-list {
+        @apply(--layout-flex);
+        overflow-x: hidden;
+        min-width: 79em;
+      }
+    </style>
+    <div id="loadingBlock" hidden$="[[_readiness]]">
+      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
+    </div>
+    <!-- TODO: Filter bar: filter keyword and column selector -->
+    <track-meta-entry header></track-meta-entry>
+    <track-meta-entry hidden$="[[_hideGroupHeader()]]"
+      label="[[_groupHeader]]" class="groupHeader">
+    </track-meta-entry>
+    <iron-list id="trackList" items="[[trackArray]]"
+      as="trackEntry">
+      <template>
+        <track-meta-entry track="[[trackEntry.track]]"
+          label="[[trackEntry.groupLabel]]">
+        </track-meta-entry>
+      </template>
+    </iron-list>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.TrackMetaList = Polymer({
+        is: 'track-meta-list',
+
+        behaviors: [
+          give.RefEmbeddedBehavior
+        ],
+
+        properties: {
+          trackArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          _groupHeader: {
+            type: String,
+            value: ''
+          },
+
+          _readiness: {
+            type: Boolean,
+            value: false
+          },
+
+          filterKeyword: {
+            type: String,
+            value: ''
+          }
+        },
+
+        _refreshRefTrackReady: function () {
+          this.splice('trackArray', 0, this.trackArray.length)
+          for (var key in this._refObj.getGroups()) {
+            if (this._refObj.getGroups().hasOwnProperty(key)) {
+              var groupLabelEntry = {
+                groupLabel: this._refObj.getGroups()[key].label ||
+                  'Group: ' + this._refObj.getGroups()[key].id
+              }
+              this.push('trackArray', groupLabelEntry)
+              this._refObj.getGroups()[key].forEach(function (track) {
+                var trackEntry = { track: track }
+                this.push('trackArray', trackEntry)
+              }, this)
+            }
+          }
+          this.async(function () {
+            this._readiness = true
+          })
+        },
+
+        _refreshRef: function () {
+          this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
+        },
+
+        _setRefObj: function (refObj) {
+          this._refObj = refObj
+          this._readiness = false
+          if (this._refObj) {
+            this._refreshRef()
+          }
+        },
+
+        _getDisplayedItems: function (tracks) {
+          if (Array.isArray(tracks) && this.filterKeyword) {
+            return tracks.filter(this._filterTracks, this)
+          }
+          return tracks
+        },
+
+        _filterTracks: function (trackArrayElement) {
+          // TODO: implement filter process
+        },
+
+        _hideGroupHeader: function () {
+          return !this._groupHeader
+        }
+
+        // TODO: use on-scroll event of iron-list to implement group label
+        //    floating
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>

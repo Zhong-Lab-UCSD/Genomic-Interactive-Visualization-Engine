@@ -1,0 +1,159 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../genemo-styles.html">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="track-meta-entry">
+  <template>
+    <style include="genemo-shared-styles iron-flex iron-flex-alignment">
+      paper-material {
+        padding: 0.5em;
+        display: table;
+      }
+      paper-material > div {
+        padding: 0.5em;
+        word-break: break-word;
+      }
+      div.group-overlay {
+        @apply(--layout-fit);
+        @apply(--meta-entry-group-overlay-mixin);
+        margin: 0.5em;
+        background: var(--default-primary-color-lighten);
+      }
+      div.table-cell {
+        display: table-cell;
+      }
+      div#trackID {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#trackType {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#shortLabel {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#longLabel {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#dataType {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#cellType {
+        width: 10em;
+        min-width: 10em;
+      }
+      div#labName {
+        width: 10em;
+        min-width: 10em;
+      }
+    </style>
+    <paper-material elevation="1">
+      <div class="group-overlay" hidden$="[[!label]]">
+        [[label]]
+      </div>
+      <div class="table-cell" id="trackID">[[_trackID]]</div>
+      <div class="table-cell" id="trackType">[[_trackType]]</div>
+      <div class="table-cell" id="shortLabel">[[_shortLabel]]</div>
+      <div class="table-cell" id="longLabel">[[_longLabel]]</div>
+      <div class="table-cell" id="dataType">[[_dataType]]</div>
+      <div class="table-cell" id="cellType">[[_cellType]]</div>
+      <div class="table-cell" id="labName">[[_labName]]</div>
+    </paper-material>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.TrackMetaEntry = Polymer({
+        is: 'track-meta-entry',
+
+        properties: {
+          track: {
+            type: Object,
+            observer: '_trackChanged'
+          },
+
+          label: {
+            type: String,
+            value: ''
+          },
+
+          _trackID: {
+            type: String,
+            value: 'Track ID'
+          },
+
+          _trackType: {
+            type: String,
+            value: 'type'
+          },
+
+          _shortLabel: {
+            type: String,
+            value: 'Short label'
+          },
+
+          _longLabel: {
+            type: String,
+            value: 'Description'
+          },
+
+          _dataType: {
+            type: String,
+            value: 'Data type'
+          },
+
+          _cellType: {
+            type: String,
+            value: 'Cell type'
+          },
+
+          _labName: {
+            type: String,
+            value: 'Lab name'
+          }
+        },
+
+        _trackChanged: function (newValue, oldValue) {
+          if (newValue) {
+            this._trackID = newValue.getTableNames()
+            this._trackType = newValue.getTypeTrunk()
+            this._shortLabel = newValue.getSetting('shortLabel', 'string')
+            this._longLabel = newValue.getSetting('longLabel', 'string')
+            this._dataType = newValue.getTitle() || this._shortLabel
+            this._cellType = newValue.getSetting('cellType', 'string')
+            this._labName = newValue.getSetting('labName', 'string')
+          }
+        },
+
+        _isNotGroupLabel: function () {
+          return !this.label
+        }
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>

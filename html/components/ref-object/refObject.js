@@ -219,7 +219,7 @@ var GIVe = (function (give) {
     this.tracks.addTrack(newTrack)
     this.groups[groupID].addTrack(newTrack)
     if (callback) {
-      callback(this)
+      callback.call(this)
     }
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-custom-tracks-ready'})
   }
