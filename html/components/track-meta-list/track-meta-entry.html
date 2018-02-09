@@ -26,35 +26,36 @@ limitations under the License.
       paper-material {
         padding: 0.5em;
         display: table;
+        @apply(--meta-entry-paper-material-mixin);
       }
       paper-material > div {
         padding: 0.5em;
         word-break: break-word;
       }
-      div.group-overlay {
+      paper-material > div.group-overlay {
         @apply(--layout-fit);
         @apply(--meta-entry-group-overlay-mixin);
-        margin: 0.5em;
-        background: var(--default-primary-color-lighten);
+        padding: 1em;
+        background: var(--light-primary-color);
       }
       div.table-cell {
         display: table-cell;
       }
       div#trackID {
-        width: 10em;
-        min-width: 10em;
+        width: 12em;
+        min-width: 12em;
       }
       div#trackType {
-        width: 10em;
-        min-width: 10em;
+        width: 7em;
+        min-width: 7em;
       }
       div#shortLabel {
         width: 10em;
         min-width: 10em;
       }
       div#longLabel {
-        width: 10em;
-        min-width: 10em;
+        width: 30em;
+        min-width: 30em;
       }
       div#dataType {
         width: 10em;
@@ -92,6 +93,9 @@ limitations under the License.
         properties: {
           track: {
             type: Object,
+            value: function () {
+              return {}
+            },
             observer: '_trackChanged'
           },
 
@@ -101,43 +105,38 @@ limitations under the License.
           },
 
           _trackID: {
-            type: String,
-            value: 'Track ID'
+            type: String
           },
 
           _trackType: {
-            type: String,
-            value: 'type'
+            type: String
           },
 
           _shortLabel: {
-            type: String,
-            value: 'Short label'
+            type: String
           },
 
           _longLabel: {
-            type: String,
-            value: 'Description'
+            type: String
           },
 
           _dataType: {
-            type: String,
-            value: 'Data type'
+            type: String
           },
 
           _cellType: {
-            type: String,
-            value: 'Cell type'
+            type: String
           },
 
           _labName: {
-            type: String,
-            value: 'Lab name'
+            type: String
           }
         },
 
         _trackChanged: function (newValue, oldValue) {
-          if (newValue) {
+          if (this._isNotGroupLabel() &&
+            newValue && newValue.getTableNames && newValue.getTableNames()
+          ) {
             this._trackID = newValue.getTableNames()
             this._trackType = newValue.getTypeTrunk()
             this._shortLabel = newValue.getSetting('shortLabel', 'string')
@@ -145,11 +144,19 @@ limitations under the License.
             this._dataType = newValue.getTitle() || this._shortLabel
             this._cellType = newValue.getSetting('cellType', 'string')
             this._labName = newValue.getSetting('labName', 'string')
+          } else {
+            this._trackID = 'Track ID'
+            this._trackType = 'Type'
+            this._shortLabel = 'Short label'
+            this._longLabel = 'Description'
+            this._dataType = 'Data type'
+            this._cellType = 'Cell type'
+            this._labName = 'Lab name'
           }
         },
 
         _isNotGroupLabel: function () {
-          return !this.label
+          return !(this.label && this.label.length)
         }
       })
 

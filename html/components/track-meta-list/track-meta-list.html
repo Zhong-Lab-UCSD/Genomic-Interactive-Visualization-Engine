@@ -32,12 +32,17 @@ limitations under the License.
         overflow-x: auto;
         @apply(--layout-vertical);
       }
+      track-meta-entry[header] {
+        --meta-entry-paper-material-mixin: {
+          background: var(--default-primary-color);
+          color: var(--dark-theme-text-color);
+          font-weight: bold;
+        };
+      }
       .groupHeader {
         position: absolute;
         top: 0;
         left: 0;
-        background: var(--default-primary-color);
-        color: var(--dark-theme-text-color);
       }
       #loadingBlock {
         display: block;
@@ -49,8 +54,8 @@ limitations under the License.
       }
       iron-list {
         @apply(--layout-flex);
-        overflow-x: hidden;
-        min-width: 79em;
+        overflow-x: hidden !important;
+        min-width: 98em;
       }
     </style>
     <div id="loadingBlock" hidden$="[[_readiness]]">
@@ -108,14 +113,17 @@ limitations under the License.
         _refreshRefTrackReady: function () {
           this.splice('trackArray', 0, this.trackArray.length)
           for (var key in this._refObj.getGroups()) {
-            if (this._refObj.getGroups().hasOwnProperty(key)) {
+            if (this._refObj.getGroups().hasOwnProperty(key) &&
+              this._refObj.getGroups()[key].getLength() > 0
+            ) {
               var groupLabelEntry = {
                 groupLabel: this._refObj.getGroups()[key].label ||
-                  'Group: ' + this._refObj.getGroups()[key].id
+                  'Group: ' + this._refObj.getGroups()[key].id,
+                track: {}
               }
               this.push('trackArray', groupLabelEntry)
               this._refObj.getGroups()[key].forEach(function (track) {
-                var trackEntry = { track: track }
+                var trackEntry = { groupLabel: '', track: track }
                 this.push('trackArray', trackEntry)
               }, this)
             }
