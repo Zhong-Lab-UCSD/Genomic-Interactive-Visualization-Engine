@@ -67,6 +67,48 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * every - implement Array.every onto array-like objects (for example,
+   *    `window.NodeList`)
+   *
+   * @param  {object} array - array-like object, needs to have `.length` and
+   *    numbered keys.
+   * @param  {function} callback - call back function
+   * @param  {object} [thisArg] - the `this` used in `callback`
+   * @return {boolean} if all elements in the array returned `true` in
+   *    `callback`
+   */
+  give.every = function (array, callback, thisArg) {
+    // this is for window.NodeList (and other array-like objects)
+    for (var i = 0; i < array.length; i++) {
+      if (!callback.call(thisArg, array[i])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * some - implement Array.some onto array-like objects (for example,
+   *    `window.NodeList`)
+   *
+   * @param  {object} array - array-like object, needs to have `.length` and
+   *    numbered keys.
+   * @param  {function} callback - call back function
+   * @param  {object} [thisArg] - the `this` used in `callback`
+   * @return {boolean} if any element in the array returned `true` in
+   *    `callback`
+   */
+  give.some = function (array, callback, thisArg) {
+    // this is for window.NodeList (and other array-like objects)
+    for (var i = 0; i < array.length; i++) {
+      if (callback.call(thisArg, array[i])) {
+        return true
+      }
+    }
+    return false
+  }
+
   give._debounceIDList = {}
   give._timeOutFunc = function (debounceList, jobName, callbackFunc, immediate) {
     if (!immediate) {

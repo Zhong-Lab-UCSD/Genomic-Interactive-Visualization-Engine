@@ -44,6 +44,11 @@ limitations under the License.
         top: 0;
         left: 0;
       }
+      .listHolder {
+        @apply(--layout-flex);
+        @apply(--layout-relative);
+        min-width: 98em;
+      }
       #loadingBlock {
         display: block;
         pointer-events: none;
@@ -53,9 +58,7 @@ limitations under the License.
         background: var(--card-background-color);
       }
       iron-list {
-        @apply(--layout-flex);
-        overflow-x: hidden !important;
-        min-width: 98em;
+        @apply(--layout-fit);
       }
     </style>
     <div id="loadingBlock" hidden$="[[_readiness]]">
@@ -63,17 +66,18 @@ limitations under the License.
     </div>
     <!-- TODO: Filter bar: filter keyword and column selector -->
     <track-meta-entry header></track-meta-entry>
-    <track-meta-entry hidden$="[[_hideGroupHeader()]]"
-      label="[[_groupHeader]]" class="groupHeader">
-    </track-meta-entry>
-    <iron-list id="trackList" items="[[trackArray]]"
-      as="trackEntry">
-      <template>
-        <track-meta-entry track="[[trackEntry.track]]"
-          label="[[trackEntry.groupLabel]]">
-        </track-meta-entry>
-      </template>
-    </iron-list>
+    <div class="listHolder">
+      <track-meta-entry hidden$="[[_hideGroupHeader()]]" class="groupHeader">
+      </track-meta-entry>
+      <iron-list id="trackList" items="[[_dispTrackArray]]"
+        as="trackEntry" selection-enabled="[[selectionEnabled]]"
+        on-selected-items-changed="_selectedItemsChangedHandler">
+        <template>
+          <track-meta-entry track="[[trackEntry]]" selected="[[selected]]">
+          </track-meta-entry>
+        </template>
+      </iron-list>
+    </div>
   </template>
   <script>
     var GIVe = (function (give) {
@@ -87,7 +91,7 @@ limitations under the License.
         ],
 
         properties: {
-          trackArray: {
+          _dispTrackArray: {
             type: Array,
             value: function () {
               return []
@@ -104,27 +108,43 @@ limitations under the License.
             value: false
           },
 
-          filterKeyword: {
-            type: String,
-            value: ''
+          filters: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          _trackGroups: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          selectionEnabled: {
+            type: Boolean,
+            value: false
           }
         },
 
         _refreshRefTrackReady: function () {
-          this.splice('trackArray', 0, this.trackArray.length)
+          this.splice('_dispTrackArray', 0, this._dispTrackArray.length)
           for (var key in this._refObj.getGroups()) {
             if (this._refObj.getGroups().hasOwnProperty(key) &&
               this._refObj.getGroups()[key].getLength() > 0
             ) {
-              var groupLabelEntry = {
+              var groupEntry = {
+                isGroup: true,
+                groupID: this._refObj.getGroups()[key].id,
                 groupLabel: this._refObj.getGroups()[key].label ||
                   'Group: ' + this._refObj.getGroups()[key].id,
-                track: {}
+                trackCount: this._refObj.getGroups()[key].getLength()
               }
-              this.push('trackArray', groupLabelEntry)
+              this.push('_dispTrackArray', groupEntry)
+              this.push('_trackGroups', groupEntry)
               this._refObj.getGroups()[key].forEach(function (track) {
-                var trackEntry = { groupLabel: '', track: track }
-                this.push('trackArray', trackEntry)
+                this.push('_dispTrackArray', track)
               }, this)
             }
           }
@@ -146,7 +166,7 @@ limitations under the License.
         },
 
         _getDisplayedItems: function (tracks) {
-          if (Array.isArray(tracks) && this.filterKeyword) {
+          if (Array.isArray(tracks) && this.filters) {
             return tracks.filter(this._filterTracks, this)
           }
           return tracks

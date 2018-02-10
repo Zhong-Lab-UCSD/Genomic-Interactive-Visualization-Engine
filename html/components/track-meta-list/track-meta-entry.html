@@ -38,6 +38,13 @@ limitations under the License.
         padding: 1em;
         background: var(--light-primary-color);
       }
+      paper-material > div.group-overlay > span.groupTrackCount {
+        float: right;
+        font-style: italic;
+      }
+      paper-material > div.group-overlay > span.groupID {
+        font-weight: 500;
+      }
       div.table-cell {
         display: table-cell;
       }
@@ -71,8 +78,9 @@ limitations under the License.
       }
     </style>
     <paper-material elevation="1">
-      <div class="group-overlay" hidden$="[[!label]]">
-        [[label]]
+      <div class="group-overlay" hidden$="[[!_groupLabel]]">
+        [[_groupLabel]] (Group ID: <span class="groupID">[[_groupID]]</span>)
+        <span class="groupTrackCount">[[_trackCount]] [[_trackCountSuffix]]</span>
       </div>
       <div class="table-cell" id="trackID">[[_trackID]]</div>
       <div class="table-cell" id="trackType">[[_trackType]]</div>
@@ -99,9 +107,24 @@ limitations under the License.
             observer: '_trackChanged'
           },
 
-          label: {
+          _groupLabel: {
             type: String,
             value: ''
+          },
+
+          _groupID: {
+            type: String,
+            value: ''
+          },
+
+          _trackCount: {
+            type: Number,
+            value: 0
+          },
+
+          _trackCountSuffix: {
+            type: String,
+            computed: '_getTrackCountSuffix(_trackCount)'
           },
 
           _trackID: {
@@ -134,9 +157,12 @@ limitations under the License.
         },
 
         _trackChanged: function (newValue, oldValue) {
-          if (this._isNotGroupLabel() &&
-            newValue && newValue.getTableNames && newValue.getTableNames()
+          if (newValue && !newValue.isGroup &&
+            newValue.getTableNames && newValue.getTableNames()
           ) {
+            this._groupID = ''
+            this._groupLabel = ''
+            this._trackCount = 0
             this._trackID = newValue.getTableNames()
             this._trackType = newValue.getTypeTrunk()
             this._shortLabel = newValue.getSetting('shortLabel', 'string')
@@ -152,11 +178,20 @@ limitations under the License.
             this._dataType = 'Data type'
             this._cellType = 'Cell type'
             this._labName = 'Lab name'
+            if (newValue && newValue.isGroup) {
+              this._groupID = newValue.groupID
+              this._groupLabel = newValue.groupLabel
+              this._trackCount = newValue.trackCount
+            }
           }
         },
 
         _isNotGroupLabel: function () {
           return !(this.label && this.label.length)
+        },
+
+        _getTrackCountSuffix: function (trackCount) {
+          return 'track' + (trackCount > 1 ? 's' : '')
         }
       })
 

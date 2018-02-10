@@ -1,0 +1,291 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-textarea/paper-textarea.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../basic-func/basic-func.html">
+<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../gene-coor-input/gene-coor-input.html">
+<link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<dom-module id="html-builder">
+  <template>
+    <style include="genemo-shared-styles">
+      :host {
+        position: relative;
+        overflow-x: auto;
+        @apply(--layout-vertical);
+      }
+    </style>
+    <paper-dialog id="mainDialog" on-iron-overlay-canceled="cancelCheck">
+      <h2>GIVE HTML Embedding Code Generator</h2>
+      References: <span class="infoSpan">[[_calcRefLabel(_refObj)]]</span>
+      Groups Selected: <span class="infoSpan">[[_trackGroupLabel]]</span>
+      Tracks Selected: <span class="infoSpan">[[_trackLabel]]</span>
+      <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
+        <paper-menu class="dropdown-content" id="refMenu"
+          attr-for-selected="value" selected="{{selectedElement}}">
+          <paper-item value="chart-controller">
+            &lt;chart-controller&gt;
+          </paper-item>
+          <paper-item value="chart-area">
+            &lt;chart-area&gt;
+          </paper-item>
+        </paper-menu>
+      </paper-dropdown-menu>
+      <paper-toggle-button checked$="{{_isComparative}}">
+        Comparative view
+      </paper-toggle-button>
+      <gene-coor-input label="_computeLabelForCoorOne(_isComparative)"
+        value="{{_defaultCoor1}}">
+      </gene-coor-input>
+      <gene-coor-input label="_computeLabelForCoorTwo(_isComparative)"
+        hidden$="[[!_isComparative]]" value="{{_defaultCoor2}}">
+      </gene-coor-input>
+      <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
+        label="Title for the Chart Controller" value="{{customTitle}}">
+      </paper-input>
+      <paper-button raised on-tap="updateCode">Update code</paper-button>
+      <paper-textarea id="codeRegion" label="Embed Code">[[htmlCode]]</paper-textarea>
+      <div class="buttons">
+        <paper-button on-tap="copyToClipboard">Copy code to clipboard</paper-button>
+        <a href$="[[codeLink]]" download="embedGIVE.html">
+          <paper-button on-tap="saveCode">Save</paper-button>
+        </a>
+        <paper-button dialog-dismiss>Close</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.HtmlBuilder = Polymer({
+        is: 'html-builder',
+
+        behaviors: [
+          give.RefEmbeddedBehavior
+        ],
+
+        properties: {
+          dispTrackArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          dispGroupArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          selectedElement: {
+            type: String,
+            value: 'chart-controller'
+          },
+
+          customTitle: {
+            type: String,
+            value: ''
+          },
+
+          _isComparative: {
+            type: Boolean,
+            value: true
+          },
+
+          _defaultCoor1: {
+            type: String,
+            value: ''
+          },
+
+          _defaultCoor2: {
+            type: String,
+            value: ''
+          },
+
+          _trackGroupLabel: {
+            type: String,
+            value: ''
+          },
+
+          _trackLabel: {
+            type: String,
+            value: ''
+          },
+
+          htmlCode: {
+            type: String,
+            value: ''
+          }
+        },
+
+        ready: function () {
+          this._coordinatesFilled = false
+        },
+
+        _calcRefLabel: function (refObj) {
+          return refObj ? refObj.db + '(' + refObj.commonName + ')' : '(None)'
+        },
+
+        _calcGroupLabel: function () {
+          // Try to use group description first, if too long, then just use
+          // 'n group(s)'
+          var result = ''
+          this.dispGroupArray.every(function (grp, index) {
+            result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
+            if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+              result = null
+              return false
+            }
+            return true
+          }, this)
+          if (!result) {
+            result = this.dispGroupArray.length + ' group' +
+              (this.dispGroupArray.length > 1 ? 's' : '')
+          }
+        },
+
+        _calcTrackLabel: function () {
+          // Try to use track title first, if too long, then just use
+          // 'n track(s)'
+          var result = ''
+          this.dispTrackArray.every(function (track, index) {
+            result += (index > 0 ? ', ' : '') +
+              (track.getTitle() || track.getSetting('shortLabel', 'string'))
+            if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+              result = null
+              return false
+            }
+            return true
+          }, this)
+          if (!result) {
+            result = this.dispTrackArray.length + ' track' +
+              (this.dispTrackArray.length > 1 ? 's' : '')
+          }
+        },
+
+        _computeLabelForCoorOne: function (isComparative) {
+          return 'Default coordinates (or gene name)' +
+            isComparative ? ' #1' : ''
+        },
+
+        _computeLabelForCoorTwo: function (isComparative) {
+          return 'Default coordinates (or gene name) #2'
+        },
+
+        _controllerSelected: function (element) {
+          return element !== 'chart-controller'
+        },
+
+        _validateCoordinates: function () {
+          // First determine if any of the coordinates are filled
+          this._coordinatesFilled = give.some(this.$$('gene-coor-input'),
+            function (elem) {
+              return !!elem.value
+            }, this)
+
+          give.forEach(this.$$('gene-coor-input'), function (elem) {
+            if ((!!elem.value) !== this._coordinatesFilled) {
+              elem.errorMessage =
+                'Coordinates should be all blank or all filled!'
+              elem.invalid = true
+            }
+          }, this)
+
+          // Then find potential invalid coordinates
+          return give.every(this.$$('gene-coor-input'), function (elem) {
+            return !elem.invalid
+          }, this)
+        },
+
+        updateCode: function () {
+          if (this._validateCoordinates()) {
+            this.htmlCode = '<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>\n'
+            this.htmlCode += '<link rel="import" href="components/chart-controller/chart-controller.html">\n'
+            this.htmlCode += '<' + this.selectedElement + ' ref="' +
+              this._refObj.db + '" num-of-subs="' +
+              (this._isComparative ? '2' : '1') + '"\n'
+            this.htmlCode += '  group-id-list=\'["' +
+              this.dispGroupArray.map(function (group) {
+                return group.id
+              }, this).join('", "') + '"]\'\n'
+            if (this.dispTrackArray.length > 0) {
+              this.htmlCode += '  default-track-id-list=\'["' +
+                this.dispTrackArray.map(function (group) {
+                  return group.getID()
+                }, this).join('", "') + '"]\'\n'
+            }
+            if (this._coordinatesFilled) {
+              var coordinateArray = []
+              give.forEach(this.$$('gene-coor-input'), function (elem) {
+                coordinateArray.push(elem.value)
+              }, this)
+              this.htmlCode += '  coordinates=\'["' +
+                coordinateArray.join('", "') + '"]\''
+            }
+            if (this._controllerSelected && this.customTitle) {
+              this.htmlCode += '  title-text="' +
+                this.customTitle + '"'
+            }
+            this.htmlCode += '>\n</' + this.selectedElement + '>'
+          }
+          this.updateCodeLink()
+        },
+
+        copyToClipboard: function () {
+
+        },
+
+        updateCodeLink: function () {
+          if (this.codeLink !== null) {
+            window.URL.revokeObjectURL(this.codeLink)
+          }
+          if (this.htmlCode.length > 0) {
+            var codeFile = new window.Blob([this.htmlCode], {type: 'text/plain'})
+            this.codeLink = window.URL.createObjectURL(codeFile)
+          }
+        },
+
+        createDialog: function (refObj, groupArray, trackArray) {
+          if (refObj) {
+            this._setRefObj(refObj)
+            this.dispGroupArray = groupArray
+            if (Array.isArray(trackArray) && trackArray.length > 0) {
+              this.dispTrackArray = trackArray
+            }
+          }
+          this.updateCode()
+          this.$.mainDialog.open()
+        }
+      })
+
+      give.HtmlBuilder.MAX_DESC_LENGTH = 30
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>
