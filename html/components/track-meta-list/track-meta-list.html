@@ -47,7 +47,7 @@ limitations under the License.
       .listHolder {
         @apply(--layout-flex);
         @apply(--layout-relative);
-        min-width: 98em;
+        min-width: 100em;
       }
       #loadingBlock {
         display: block;
@@ -71,9 +71,11 @@ limitations under the License.
       </track-meta-entry>
       <iron-list id="trackList" items="[[_dispTrackArray]]"
         as="trackEntry" selection-enabled="[[selectionEnabled]]"
-        on-selected-items-changed="_selectedItemsChangedHandler">
+        on-selected-items-changed="_selectedItemsChangedHandler"
+        multi-selection>
         <template>
-          <track-meta-entry track="[[trackEntry]]" selected="[[selected]]">
+          <track-meta-entry track="[[trackEntry]]" selected="{{selected}}"
+            allow-selection$="[[selectionEnabled]]">
           </track-meta-entry>
         </template>
       </iron-list>
@@ -115,7 +117,7 @@ limitations under the License.
             }
           },
 
-          _trackGroups: {
+          _trackGroupEntries: {
             type: Array,
             value: function () {
               return []
@@ -125,10 +127,31 @@ limitations under the License.
           selectionEnabled: {
             type: Boolean,
             value: false
+          },
+
+          selectedTracks: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
+
+          selectedGroups: {
+            type: Array,
+            value: function () {
+              return []
+            }
           }
         },
 
+        ready: function () {
+          this._groupEntryDict = {}
+          this._inUpdatingSelection = false
+          this._isReady = true
+        },
+
         _refreshRefTrackReady: function () {
+          this._groupEntryDict = {}
           this.splice('_dispTrackArray', 0, this._dispTrackArray.length)
           for (var key in this._refObj.getGroups()) {
             if (this._refObj.getGroups().hasOwnProperty(key) &&
@@ -139,10 +162,15 @@ limitations under the License.
                 groupID: this._refObj.getGroups()[key].id,
                 groupLabel: this._refObj.getGroups()[key].label ||
                   'Group: ' + this._refObj.getGroups()[key].id,
-                trackCount: this._refObj.getGroups()[key].getLength()
+                trackCount: this._refObj.getGroups()[key].getLength(),
+                index: this._dispTrackArray.length,
+                selected: false,
+                group: this._refObj.getGroups()[key],
+                trackSelected: false
               }
+              this._groupEntryDict[groupEntry.groupID] = groupEntry
               this.push('_dispTrackArray', groupEntry)
-              this.push('_trackGroups', groupEntry)
+              this.push('_trackGroupEntries', groupEntry)
               this._refObj.getGroups()[key].forEach(function (track) {
                 this.push('_dispTrackArray', track)
               }, this)
@@ -178,8 +206,44 @@ limitations under the License.
 
         _hideGroupHeader: function () {
           return !this._groupHeader
-        }
+        },
 
+        _selectedItemsChangedHandler: function (e, detail) {
+          if (this._isReady && !this._inUpdatingSelection) {
+            this._inUpdatingSelection = true
+            this.splice('selectedGroups', 0)
+            this.splice('selectedTracks', 0)
+            this._trackGroupEntries.forEach(function (groupEntry) {
+              groupEntry.selected = false
+              groupEntry.trackSelected = false
+            }, this)
+            // Procedure: go through all selected tracks, if the tracks are
+            // selected but the groups are not, select the group.
+            var selectedItems = this.$.trackList.selectedItems
+            for (var i = 0; i < selectedItems.length; i++) {
+              var groupEntry
+              if (selectedItems[i].isGroup) {
+                groupEntry = selectedItems[i]
+              } else {
+                groupEntry = this._groupEntryDict[selectedItems[i].groupID]
+                this.push('selectedTracks', selectedItems[i])
+                if (!groupEntry.trackSelected) {
+                  groupEntry.trackSelected = true
+                }
+              }
+              if (!groupEntry.selected) {
+                /**
+                 * TODO: change this into `selectIndex` once `iron-list`
+                 * updates to v2
+                 */
+                this.$.trackList.selectItem(groupEntry.index)
+                groupEntry.selected = true
+                this.push('selectedGroups', groupEntry.group)
+              }
+            }
+            this._inUpdatingSelection = false
+          }
+        }
         // TODO: use on-scroll event of iron-list to implement group label
         //    floating
       })

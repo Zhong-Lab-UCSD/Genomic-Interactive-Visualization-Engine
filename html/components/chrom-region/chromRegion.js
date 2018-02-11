@@ -39,7 +39,7 @@ var GIVe = (function (give) {
    * @param {object} [additionalParams] - Additional parameters needed
    *   to be in the ChromRegion
    */
-  give.ChromRegion = function (mainParams, ref, additionalParams) {
+  give.ChromRegion = function (mainParams, ref, additionalParams, zeroBased) {
     // usage: new ChromRegionObject(mainParam, ref, additionalParam)
     //    mainParam:
     //      either use a string like 'chr1:12345-56789'
@@ -51,11 +51,14 @@ var GIVe = (function (give) {
 
     try {
       if (typeof mainParams === 'string') {
-        this._regionFromString(mainParams)
+        this._regionFromString(mainParams, zeroBased, ref)
       } else if (typeof mainParams === 'object') {
         this._regionFromObject(mainParams)
       } else {
         throw new Error('Must create ChromRegion with object or string!')
+      }
+      if (isNaN(this.start) || isNaN(this.end)) {
+        throw new Error('ChromRegion start and/or end number invalid!')
       }
       this.clipRegion(ref)
       var key
@@ -139,15 +142,22 @@ var GIVe = (function (give) {
     return this.end
   }
 
-  give.ChromRegion.prototype._regionFromString = function (regionString, zeroBased) {
-    var cleanedChrString = regionString.replace(/,/g, '')
-      .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
-    var elements = cleanedChrString.split(/[:\s-]+/)
+  give.ChromRegion.prototype._regionFromString = function (regionString, zeroBased, ref) {
+    if (ref && ref.chromInfo && ref.chromInfo[regionString.toLowerCase()]) {
+      this.chr = ref.chromInfo[regionString.toLowerCase()].chrRegion.chr
+      this.start = ref.chromInfo[regionString.toLowerCase()].chrRegion.start
+      this.end = ref.chromInfo[regionString.toLowerCase()].chrRegion.end
+      this.setStrand(null)
+    } else {
+      var cleanedChrString = regionString.replace(/,/g, '')
+        .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
+      var elements = cleanedChrString.split(/[:\s-]+/)
 
-    this.chr = elements[0]
-    this.start = parseInt(elements[1]) - (zeroBased ? 0 : (1 - give.ChromRegion.CHROM_BASE))
-    this.end = parseInt(elements[2])
-    this.setStrand((elements.length < 4) ? this.strand : !(elements[3] === 'NEGSTR'))
+      this.chr = elements[0]
+      this.start = parseInt(elements[1]) - (zeroBased ? 0 : (1 - give.ChromRegion.CHROM_BASE))
+      this.end = parseInt(elements[2])
+      this.setStrand((elements.length < 4) ? this.strand : !(elements[3] === 'NEGSTR'))
+    }
   }
 
   give.ChromRegion.prototype._regionFromObject = function (regionObject) {

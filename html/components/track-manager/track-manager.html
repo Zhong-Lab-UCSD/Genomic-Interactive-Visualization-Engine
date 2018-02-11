@@ -1,0 +1,89 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<link rel="import" href="../ref-selector/ref-selector.html">
+<link rel="import" href="../track-meta-list/track-meta-list.html">
+<link rel="import" href="../html-builder/html-builder.html">
+<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<dom-module id="track-manager">
+  <template>
+    <style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+      :host {
+        position: relative;
+        overflow-x: auto;
+        @apply(--layout-vertical);
+      }
+      paper-toolbar {
+
+      }
+      paper-button#generateHtml {
+        visibility: hidden;
+      }
+      paper-button#generateHtml[visible] {
+        visibility: visible;
+      }
+    </style>
+    <paper-toolbar>
+      <span class="title">GIVE Track Portal</span>
+      <ref-selector ref="{{currentRef}}"></ref-selector>
+      <paper-button raised toggles active="{{generatorMode}}">
+        HTML Generator Mode
+      </paper-button>
+      <paper-button raised id="generateHtml" visible$="[[generatorMode]]"
+        on-tap="generateHtml">
+        Generate
+      </paper-button>
+    </paper-toolbar>
+    <track-meta-list id="mainMetaList" class="flex" ref="[[currentRef]]"
+      selection-enabled$="[[generatorMode]]">
+    </track-meta-list>
+    <html-builder id="mainHtmlBuilder" ref="[[currentRef]]"></html-builder>
+  </template>
+  <script>
+    var GIVe = (function (give) {
+      'use strict'
+
+      give.TrackManager = Polymer({
+        is: 'track-manager',
+
+        properties: {
+          currentRef: {
+            type: String,
+            value: ''
+          },
+
+          generatorMode: {
+            type: Boolean,
+            value: false
+          }
+        },
+
+        generateHtml: function () {
+          this.$.mainHtmlBuilder.createDialog(null,
+            this.$.mainMetaList.selectedGroups,
+            this.$.mainMetaList.selectedTracks
+          )
+        }
+      })
+
+      return give
+    })(GIVe || {})
+  </script>
+</dom-module>

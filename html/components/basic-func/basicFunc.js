@@ -294,6 +294,23 @@ var GIVe = (function (give) {
     return Number(Math.round(number + 'e' + digits) + 'e-' + digits)
   }
 
+  give._copyTextToClipboard = function (text) {
+    var textArea = document.createElement('textarea')
+    textArea.textContent = text
+    textArea.style.position = 'fixed'
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      return document.execCommand('copy')
+    } catch (e) {
+      give._verboseConsole(e, give.VERBOSE_MIN_ERROR,
+        '(give._copyTextToClipboard) Cannot copy to clipboard.')
+      return false
+    } finally {
+      document.body.removeChild(textArea)
+    }
+  }
+
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})

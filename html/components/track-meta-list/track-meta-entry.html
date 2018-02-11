@@ -16,16 +16,17 @@ limitations under the License.
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
-<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../track-object/track-object.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="track-meta-entry">
   <template>
-    <style include="genemo-shared-styles iron-flex iron-flex-alignment">
+    <style include="genemo-shared-styles">
       paper-material {
         padding: 0.5em;
         display: table;
+        background: var(--card-background-color);
         @apply(--meta-entry-paper-material-mixin);
       }
       paper-material > div {
@@ -34,61 +35,98 @@ limitations under the License.
       }
       paper-material > div.group-overlay {
         @apply(--layout-fit);
+        @apply(--layout-horizontal);
         @apply(--meta-entry-group-overlay-mixin);
-        padding: 1em;
+        padding: 0.5em;
         background: var(--light-primary-color);
       }
-      paper-material > div.group-overlay > span.groupTrackCount {
+      paper-material > div.selection-border {
+        @apply(--layout-fit);
+        @apply(--meta-entry-selection-border-mixin);
+        box-sizing: border-box;
+        border: 0.5px var(--divider-color) solid;
+      }
+      paper-material > div.selection-border[allow-selection] {
+        border: 0.5px var(--secondary-text-color) solid;
+      }
+      paper-material > div.selection-border[allow-selection][group-selected] {
+        border: 0.5px var(--secondary-text-color) solid;
+      }
+      paper-material > div.selection-border[allow-selection][selected] {
+        border: 2px var(--default-primary-color-lighten) solid;
+      }
+      paper-material > div.group-overlay div.groupInfo {
+        @apply(--layout-flex);
+        padding: 0.5em 1.4em;
+      }
+      paper-material > div.group-overlay span.groupTrackCount {
         float: right;
         font-style: italic;
       }
-      paper-material > div.group-overlay > span.groupID {
+      paper-material > div.group-overlay span.groupID {
         font-weight: 500;
       }
       div.table-cell {
         display: table-cell;
       }
-      div#trackID {
+      div.trackID {
         width: 12em;
         min-width: 12em;
       }
-      div#trackType {
+      div.status {
+        width: 1em;
+        min-width: 1em;
+        padding: 0
+        @apply(--layout-vertical);
+      }
+      div.trackType {
         width: 7em;
         min-width: 7em;
       }
-      div#shortLabel {
+      div.shortLabel {
         width: 10em;
         min-width: 10em;
       }
-      div#longLabel {
+      div.longLabel {
         width: 30em;
         min-width: 30em;
       }
-      div#dataType {
+      div.dataType {
         width: 10em;
         min-width: 10em;
       }
-      div#cellType {
+      div.cellType {
         width: 10em;
         min-width: 10em;
       }
-      div#labName {
+      div.labName {
         width: 10em;
         min-width: 10em;
       }
     </style>
     <paper-material elevation="1">
-      <div class="group-overlay" hidden$="[[!_groupLabel]]">
-        [[_groupLabel]] (Group ID: <span class="groupID">[[_groupID]]</span>)
-        <span class="groupTrackCount">[[_trackCount]] [[_trackCountSuffix]]</span>
+      <div class="group-overlay" hidden$="[[!_groupLabel]]"
+        group-selected$="[[groupSelected]]"
+        allow-selection$="[[allowSelection]]">
+        <div class="status"></div>
+        <div class="groupInfo">
+          [[_groupLabel]] (Group ID: <span class="groupID">[[_groupID]]</span>)
+          <span class="groupTrackCount">
+            [[_trackCount]] [[_trackCountSuffix]]
+          </span>
+        </div>
       </div>
-      <div class="table-cell" id="trackID">[[_trackID]]</div>
-      <div class="table-cell" id="trackType">[[_trackType]]</div>
-      <div class="table-cell" id="shortLabel">[[_shortLabel]]</div>
-      <div class="table-cell" id="longLabel">[[_longLabel]]</div>
-      <div class="table-cell" id="dataType">[[_dataType]]</div>
-      <div class="table-cell" id="cellType">[[_cellType]]</div>
-      <div class="table-cell" id="labName">[[_labName]]</div>
+      <div class="table-cell status vertical"></div>
+      <div class="table-cell trackID">[[_trackID]]</div>
+      <div class="table-cell trackType">[[_trackType]]</div>
+      <div class="table-cell shortLabel">[[_shortLabel]]</div>
+      <div class="table-cell longLabel">[[_longLabel]]</div>
+      <div class="table-cell dataType">[[_dataType]]</div>
+      <div class="table-cell cellType">[[_cellType]]</div>
+      <div class="table-cell labName">[[_labName]]</div>
+      <div class="selection-border" selected$="[[selected]]"
+        group-selected$="[[groupSelected]]"
+        allow-selection$="[[allowSelection]]"></div>
     </paper-material>
   </template>
   <script>
@@ -153,6 +191,23 @@ limitations under the License.
 
           _labName: {
             type: String
+          },
+
+          selected: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+
+          groupSelected: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+
+          allowSelection: {
+            type: Boolean,
+            value: false
           }
         },
 

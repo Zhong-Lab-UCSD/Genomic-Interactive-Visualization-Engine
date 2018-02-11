@@ -31,8 +31,9 @@ var GIVe = (function (give) {
    *   it will be merged with `this.Settings`, while properties in
    *   `Settings.settings` take precedence in cases of conflict names
    * @param {RefObjectLiteral} ref - the reference the track is using
+   * @param {string} groupID - The group ID of the new track object
    */
-  give.NewTrack = function (ID, Settings, ref) {
+  give.NewTrack = function (ID, Settings, ref, groupID) {
     give.TrackObject.apply(this, arguments)
   }
 

@@ -1,27 +1,20 @@
 <!doctype html>
 <html>
-<head>
-<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-<!-- Import GIVE component -->
-<link rel="import" href="components/ref-selector/ref-selector.html">
-<link rel="import" href="components/track-meta-list/track-meta-list.html">
-<link rel="import" href="components/genemo-styles.html">
-<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="bower_components/paper-button/paper-button.html">
-<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
-<style is="custom-style" include="genemo-shared-styles iron-flex iron-positioning">
-  body {
-    font-family: 'Roboto';
-    font-size: 14px;
-  }
-</style>
-</head>
+  <head>
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <!-- Import GIVE component -->
+    <link rel="import" href="components/track-manager/track-manager.html">
+    <link rel="import" href="components/genemo-styles.html">
+    <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+    <style is="custom-style" include="genemo-shared-styles iron-flex iron-positioning">
+      body {
+        font-family: 'Roboto';
+        font-size: 14px;
+      }
+    </style>
+  </head>
 
-<body unresolved class="fullbleed layout vertical">
-  <template is="dom-bind">
-    <ref-selector ref={{currentRef}}></ref-selector>
-    <track-meta-list class="flex" ref={{currentRef}}></track-meta-list>
-  </template>
-</body>
+  <body unresolved class="fullbleed layout vertical">
+    <track-manager class="flex"></track-manager>
+  </body>
 </html>

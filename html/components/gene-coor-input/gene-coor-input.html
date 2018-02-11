@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="gene-coor-input">
   <template>
-    <style include="genemo-shared-styles iron-flex iron-flex-alignment">
+    <style include="genemo-shared-styles">
       :host {
         font-size: 12px;
         overflow: visible;
@@ -177,18 +177,34 @@
           invalid: {
             type: Boolean,
             value: false
+          },
+
+          allowPartialGeneName: {
+            type: Boolean,
+            value: false
+          },
+
+          required: {
+            type: Boolean,
+            value: false
           }
         },
 
         listeners: {
           'mouseover': '_mouseOverHandler',
-          'mouseout': '_mouseOutHandler'
+          'mouseout': '_mouseOutHandler',
         },
 
         ready: function () {
           this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
           this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
           this.GENE_LIST_MAX_LINES = 7
+
+          this.SET_TEXT_FOCUS_JOB_NAME = '_GCI_SetFocus'
+          this.SET_TEXT_FOCUS_DEBOUNCE = 100
+
+          this.REFOCUS_JOB_NAME = '_GCI_ReFocus'
+          this.REFOCUS_DEBOUNCE = 50
 
           this._refObj = null
           this.querySent = ''
@@ -215,6 +231,11 @@
 
         _valueIsCoordinate: function () {
           // use regex to test if this.value is a coordinate
+          if (this._refObj && this._refObj.chromInfo &&
+            this._refObj.chromInfo[this.value.toLowerCase()]
+          ) {
+            return true
+          }
           return /^chr\w+\s*(:|\s)/i.test(this.value)
         },
 
@@ -243,11 +264,11 @@
         },
 
         _textFocus: function () {
-          this._setTextFocus(true)
+          this._setTextFocusDebounced(true)
         },
 
         _textUnFocus: function () {
-          this._setTextFocus(false)
+          this._setTextFocusDebounced(false)
         },
 
         _mouseOverHandler: function () {
@@ -346,8 +367,29 @@
             this.$.geneNameDropDown.open()
             this.$.partialNameAjax.debounceDuration = 50
           } else {
-            this.$.geneNameDropDown.close()
             this.$.partialNameAjax.debounceDuration = 300
+            if (this.$.geneNameDropDown.opened) {
+              this.$.geneNameDropDown.close()
+              if (!this._inFocus) {
+                this.validate()
+              } else {
+                this.debounce(this.REFOCUS_JOB_NAME,
+                  this.$.geneName.focus.bind(this.$.geneName),
+                  this.REFOCUS_DEBOUNCE
+                )
+              }
+            }
+          }
+        },
+
+        _setTextFocusDebounced: function (flag) {
+          if (this.isDebouncerActive(this.SET_TEXT_FOCUS_JOB_NAME)) {
+            this.cancelDebouncer(this.SET_TEXT_FOCUS_JOB_NAME)
+          }
+          if (flag !== this._inFocus) {
+            this.debounce(this.SET_TEXT_FOCUS_JOB_NAME,
+              this._setTextFocus.bind(this, flag),
+              flag ? 0 : this.SET_TEXT_FOCUS_DEBOUNCE)
           }
         },
 
@@ -364,6 +406,9 @@
               this.value = this.value.replace(chrom, this._refObj.chromInfo[chrom].name)
             }
           }
+          if (!flag && !this.$.geneNameDropDown.opened) {
+            this.validate()
+          }
         },
 
         _setMouseGList: function (flag) {
@@ -379,6 +424,38 @@
             if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
               this.cancelDebouncer(this.MOUSEOUT_JOBNAME)
             }
+          }
+        },
+
+        _validate: function () {
+          var errMsg
+          this.invalid = false
+          if (!this.value && this.required) {
+            errMsg = 'Please input a value!'
+          } else if (this.value &&
+            !this._valueIsCoordinate() &&
+            !this.allowPartialGeneName
+          ) {
+            // still gene name, should either choose one or not found
+            if (this.candidates.length > 0) {
+              errMsg = 'Please select an entry from gene candidate list!'
+            } else {
+              errMsg = 'Gene name not found!'
+            }
+          } else if (this._valueIsCoordinate()) {
+            // test whether the value is within reference bounds
+            try {
+              this.value =
+                new give.ChromRegion(this.value, this._refObj).regionToString()
+            } catch (e) {
+              errMsg = 'Invalid chromosomal coordinate value!'
+            }
+          }
+          if (errMsg) {
+            this.errorMessage = errMsg
+            this.invalid = true
+          } else {
+            this.invalid = false
           }
         }
       })

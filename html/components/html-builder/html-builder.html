@@ -17,9 +17,8 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/paper-textarea/paper-textarea.html">
+<link rel="import" href="../../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -38,10 +37,12 @@ limitations under the License.
       }
     </style>
     <paper-dialog id="mainDialog" on-iron-overlay-canceled="cancelCheck">
-      <h2>GIVE HTML Embedding Code Generator</h2>
+      <h2>GIVE HTML Embed Code Generator</h2>
       References: <span class="infoSpan">[[_calcRefLabel(_refObj)]]</span>
-      Groups Selected: <span class="infoSpan">[[_trackGroupLabel]]</span>
-      Tracks Selected: <span class="infoSpan">[[_trackLabel]]</span>
+      Groups Selected:
+      <span class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</span>
+      Tracks Selected:
+      <span class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</span>
       <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
         <paper-menu class="dropdown-content" id="refMenu"
           attr-for-selected="value" selected="{{selectedElement}}">
@@ -53,20 +54,31 @@ limitations under the License.
           </paper-item>
         </paper-menu>
       </paper-dropdown-menu>
-      <paper-toggle-button checked$="{{_isComparative}}">
-        Comparative view
-      </paper-toggle-button>
-      <gene-coor-input label="_computeLabelForCoorOne(_isComparative)"
+      <paper-dropdown-menu id="displayModeDropdown" label="Display mode:">
+        <paper-menu class="dropdown-content" id="dispModeMenu"
+          attr-for-selected="value" selected="{{_numOfSubs}}">
+          <paper-item value="1">
+            Single window
+          </paper-item>
+          <paper-item value="2">
+            Dual window
+          </paper-item>
+        </paper-menu>
+      </paper-dropdown-menu>
+      <gene-coor-input ref="[[ref]]"
+        label="[[_computeLabelForCoorOne(_numOfSubs)]]"
         value="{{_defaultCoor1}}">
       </gene-coor-input>
-      <gene-coor-input label="_computeLabelForCoorTwo(_isComparative)"
-        hidden$="[[!_isComparative]]" value="{{_defaultCoor2}}">
+      <gene-coor-input ref="[[ref]]"
+        label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
+        hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
       </gene-coor-input>
-      <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
+      <paper-input hidden$="[[_controllerNotSelected(_numOfSubs)]]"
         label="Title for the Chart Controller" value="{{customTitle}}">
       </paper-input>
       <paper-button raised on-tap="updateCode">Update code</paper-button>
-      <paper-textarea id="codeRegion" label="Embed Code">[[htmlCode]]</paper-textarea>
+      <paper-textarea id="codeRegion" label="Embed Code" value="{{htmlCode}}">
+      </paper-textarea>
       <div class="buttons">
         <paper-button on-tap="copyToClipboard">Copy code to clipboard</paper-button>
         <a href$="[[codeLink]]" download="embedGIVE.html">
@@ -112,9 +124,9 @@ limitations under the License.
             value: ''
           },
 
-          _isComparative: {
-            type: Boolean,
-            value: true
+          _numOfSubs: {
+            type: Number,
+            value: 1
           },
 
           _defaultCoor1: {
@@ -123,16 +135,6 @@ limitations under the License.
           },
 
           _defaultCoor2: {
-            type: String,
-            value: ''
-          },
-
-          _trackGroupLabel: {
-            type: String,
-            value: ''
-          },
-
-          _trackLabel: {
             type: String,
             value: ''
           },
@@ -151,99 +153,131 @@ limitations under the License.
           return refObj ? refObj.db + '(' + refObj.commonName + ')' : '(None)'
         },
 
-        _calcGroupLabel: function () {
+        _calcGroupLabel: function (groupArray) {
           // Try to use group description first, if too long, then just use
           // 'n group(s)'
-          var result = ''
-          this.dispGroupArray.every(function (grp, index) {
-            result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
-            if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-              result = null
-              return false
+          var result = '(None selected)'
+          if (groupArray) {
+            result = ''
+            groupArray.every(function (grp, index) {
+              result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
+              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+                result = null
+                return false
+              }
+              return true
+            }, this)
+            if (!result) {
+              result = groupArray.length > 0
+                ? (groupArray.length + ' group' +
+                  (groupArray.length > 1 ? 's' : ''))
+                : '(None selected)'
             }
-            return true
-          }, this)
-          if (!result) {
-            result = this.dispGroupArray.length + ' group' +
-              (this.dispGroupArray.length > 1 ? 's' : '')
           }
+          return result
         },
 
-        _calcTrackLabel: function () {
+        _calcTrackLabel: function (trackArray) {
           // Try to use track title first, if too long, then just use
           // 'n track(s)'
-          var result = ''
-          this.dispTrackArray.every(function (track, index) {
-            result += (index > 0 ? ', ' : '') +
-              (track.getTitle() || track.getSetting('shortLabel', 'string'))
-            if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-              result = null
-              return false
+          var result = '(None selected)'
+          if (trackArray) {
+            trackArray.every(function (track, index) {
+              result += (index > 0 ? ', ' : '') +
+                (track.getTitle() || track.getSetting('shortLabel', 'string'))
+              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+                result = null
+                return false
+              }
+              return true
+            }, this)
+            if (!result) {
+              result = trackArray.length > 0
+                ? (trackArray.length + ' track' +
+                  (trackArray.length > 1 ? 's' : ''))
+                : '(None selected)'
             }
-            return true
-          }, this)
-          if (!result) {
-            result = this.dispTrackArray.length + ' track' +
-              (this.dispTrackArray.length > 1 ? 's' : '')
           }
+          return result
         },
 
-        _computeLabelForCoorOne: function (isComparative) {
+        _computeLabelForCoorOne: function (numOfSubs) {
           return 'Default coordinates (or gene name)' +
-            isComparative ? ' #1' : ''
+            (numOfSubs > 1 ? ' #1' : '')
         },
 
-        _computeLabelForCoorTwo: function (isComparative) {
+        _computeLabelForCoorTwo: function (numOfSubs) {
           return 'Default coordinates (or gene name) #2'
         },
 
-        _controllerSelected: function (element) {
+        _multiWindow: function (numOfSubs) {
+          return numOfSubs > 1
+        },
+
+        _controllerNotSelected: function (element) {
           return element !== 'chart-controller'
         },
 
         _validateCoordinates: function () {
           // First determine if any of the coordinates are filled
-          this._coordinatesFilled = give.some(this.$$('gene-coor-input'),
-            function (elem) {
-              return !!elem.value
-            }, this)
+          var index, elem
+          this._coordinatesFilled = false
+          for (index = 0; index < this._numOfSubs; index++) {
+            if (this.querySelectorAll('gene-coor-input')[index].value) {
+              this._coordinatesFilled = true
+              break
+            }
+          }
 
-          give.forEach(this.$$('gene-coor-input'), function (elem) {
+          for (index = 0; index < this._numOfSubs; index++) {
+            elem = this.querySelectorAll('gene-coor-input')[index]
+            elem.validate()
             if ((!!elem.value) !== this._coordinatesFilled) {
               elem.errorMessage =
                 'Coordinates should be all blank or all filled!'
               elem.invalid = true
             }
-          }, this)
+          }
 
           // Then find potential invalid coordinates
-          return give.every(this.$$('gene-coor-input'), function (elem) {
-            return !elem.invalid
-          }, this)
+          for (index = 0; index < this._numOfSubs; index++) {
+            elem = this.querySelectorAll('gene-coor-input')[index]
+            if (elem.invalid) {
+              return false
+            }
+          }
+          return true
         },
 
         updateCode: function () {
           if (this._validateCoordinates()) {
-            this.htmlCode = '<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>\n'
-            this.htmlCode += '<link rel="import" href="components/chart-controller/chart-controller.html">\n'
+            this.htmlCode = '<script src="' + window.location.protocol + '//' +
+              window.location.hostname +
+              '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
+              '<\/script>\n' +
+              '<link rel="import" href="' + window.location.protocol + '//' +
+              window.location.hostname +
+              '/components/' + this.selectedElement + '/' +
+              this.selectedElement + '.html">\n'
             this.htmlCode += '<' + this.selectedElement + ' ref="' +
               this._refObj.db + '" num-of-subs="' +
-              (this._isComparative ? '2' : '1') + '"\n'
+              this._numOfSubs + '"\n'
             this.htmlCode += '  group-id-list=\'["' +
               this.dispGroupArray.map(function (group) {
                 return group.id
               }, this).join('", "') + '"]\'\n'
             if (this.dispTrackArray.length > 0) {
               this.htmlCode += '  default-track-id-list=\'["' +
-                this.dispTrackArray.map(function (group) {
-                  return group.getID()
+                this.dispTrackArray.map(function (track) {
+                  return track.getID()
                 }, this).join('", "') + '"]\'\n'
             }
             if (this._coordinatesFilled) {
               var coordinateArray = []
-              give.forEach(this.$$('gene-coor-input'), function (elem) {
-                coordinateArray.push(elem.value)
-              }, this)
+              for (var i = 0; i < this._numOfSubs; i++) {
+                coordinateArray.push(
+                  this.querySelectorAll('gene-coor-input')[i].value)
+              }
               this.htmlCode += '  coordinates=\'["' +
                 coordinateArray.join('", "') + '"]\''
             }
@@ -257,7 +291,13 @@ limitations under the License.
         },
 
         copyToClipboard: function () {
-
+          // To prevent messing up with the selection of paper-textarea,
+          // create a new <text-area> element to do the copying.
+          if (give._copyTextToClipboard(this.htmlCode)) {
+            // TODO: indicate the copying was successful
+          } else {
+            // TODO: indicate otherwise
+          }
         },
 
         updateCodeLink: function () {
@@ -270,13 +310,22 @@ limitations under the License.
           }
         },
 
-        createDialog: function (refObj, groupArray, trackArray) {
-          if (refObj) {
-            this._setRefObj(refObj)
-            this.dispGroupArray = groupArray
-            if (Array.isArray(trackArray) && trackArray.length > 0) {
-              this.dispTrackArray = trackArray
-            }
+        createDialog: function (ref, groupArray, trackArray) {
+          if (!ref && !this._refObj) {
+            // reference not ready, nor is it provided
+            throw new Error('No reference is given!')
+          } else if (ref) {
+            this.setRef(ref, this._createDialogWithRef.bind(
+              this, groupArray, trackArray))
+          } else {
+            return this._createDialogWithRef(groupArray, trackArray)
+          }
+        },
+
+        _createDialogWithRef: function (groupArray, trackArray) {
+          this.dispGroupArray = groupArray
+          if (Array.isArray(trackArray) && trackArray.length > 0) {
+            this.dispTrackArray = trackArray
           }
           this.updateCode()
           this.$.mainDialog.open()

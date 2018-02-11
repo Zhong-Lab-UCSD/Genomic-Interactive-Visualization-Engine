@@ -23,6 +23,7 @@ var GIVe = (function (give) {
    * contains its data component and visualization component.
    * @typedef {object} TrackObjectBase
    * @property {string} id - ID of track object
+   * @property {string} groupID - ID of corresponding track group
    * @property {object} Settings - Settings of the track, in a dictionary format
    * @property {object} defaultSettings - defaultSettings upon initialization
    * @property {RefObjectLiteral} ref - Genome reference object of the track
@@ -38,9 +39,11 @@ var GIVe = (function (give) {
    *   it will be merged with `this.Settings`, while properties in
    *   `Settings.settings` take precedence in cases of conflict names
    * @param {RefObjectLiteral} ref - the reference the track is using
+   * @param {string} groupID - The group ID of the new track object
    */
-  give.TrackObject = function (ID, Settings, ref) {
+  give.TrackObject = function (ID, Settings, ref, groupID) {
     this.id = ID
+    this.groupID = groupID || ''
     Settings = Settings || {}
     // collapse settings object first
     //  (properties in Settings.settings take precedence)
@@ -537,24 +540,25 @@ var GIVe = (function (give) {
   /**
    * createTrack - Create a track object by its type
    *
-   * @param  {string} type     The type of the track
    * @param  {string} ID       ID of the track, see constructor
    * @param  {object} Settings Settings to be passed, see constructor
    * @param  {RefObjectLiteral} ref      Reference, see constructor
+   * @param  {string} type     The type of the track
+   * @param  {string} groupID     The group ID of the track
    * @returns {TrackObjectBase}          returned TrackObject
    */
-  give.TrackObject.createTrack = function (ID, Settings, ref, type) {
+  give.TrackObject.createTrack = function (ID, Settings, ref, type, groupID) {
     try {
       type = type || Settings.type || Settings.settings.type
       type = type.split(/\s+/, 2)[0].toLowerCase()
     } catch (e) {
     }
     if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
-      return new this.typeMap[type](ID, Settings, ref)
+      return new this.typeMap[type](ID, Settings, ref, groupID)
     } else {
       give._verboseConsole('Type \'' + type + '\' is not a valid type! ',
         give.VERBOSE_WARNING)
-      return new this.typeMap._default(ID, Settings, ref)
+      return new this.typeMap._default(ID, Settings, ref, groupID)
     }
   }
 
