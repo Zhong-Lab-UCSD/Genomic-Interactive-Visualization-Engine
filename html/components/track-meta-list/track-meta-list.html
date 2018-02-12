@@ -60,6 +60,16 @@ limitations under the License.
       iron-list {
         @apply(--layout-fit);
       }
+      paper-spinner {
+        position: absolute;
+        top: 50%;
+        margin-top: -12px;
+        left: 50%;
+        margin-left: -12px;
+        height: 24px;
+        width: 24px;
+        opacity: 1;
+      }
     </style>
     <div id="loadingBlock" hidden$="[[_readiness]]">
       <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
@@ -74,8 +84,11 @@ limitations under the License.
         on-selected-items-changed="_selectedItemsChangedHandler"
         multi-selection>
         <template>
-          <track-meta-entry track="[[trackEntry]]" selected="{{selected}}"
-            allow-selection$="[[selectionEnabled]]">
+          <track-meta-entry track="[[trackEntry.track]]" selected="{{selected}}"
+            allow-selection="[[selectionEnabled]]"
+            group-selected="[[trackEntry.groupSelected]]"
+            track-select-lock="[[trackEntry.trackSelected]]"
+            is-group="[[trackEntry.isGroup]]">
           </track-meta-entry>
         </template>
       </iron-list>
@@ -159,20 +172,19 @@ limitations under the License.
             ) {
               var groupEntry = {
                 isGroup: true,
-                groupID: this._refObj.getGroups()[key].id,
-                groupLabel: this._refObj.getGroups()[key].label ||
-                  'Group: ' + this._refObj.getGroups()[key].id,
-                trackCount: this._refObj.getGroups()[key].getLength(),
+                track: this._refObj.getGroups()[key],
                 index: this._dispTrackArray.length,
                 selected: false,
-                group: this._refObj.getGroups()[key],
-                trackSelected: false
+                trackSelected: false,
+                groupSelected: false
               }
-              this._groupEntryDict[groupEntry.groupID] = groupEntry
+              this._groupEntryDict[groupEntry.track.id] = groupEntry
               this.push('_dispTrackArray', groupEntry)
               this.push('_trackGroupEntries', groupEntry)
               this._refObj.getGroups()[key].forEach(function (track) {
-                this.push('_dispTrackArray', track)
+                this.push('_dispTrackArray', {
+                  track: track, groupSelected: false
+                })
               }, this)
             }
           }
@@ -215,33 +227,53 @@ limitations under the License.
             this.splice('selectedTracks', 0)
             this._trackGroupEntries.forEach(function (groupEntry) {
               groupEntry.selected = false
-              groupEntry.trackSelected = false
+              this.set('_dispTrackArray.' + groupEntry.index + '.trackSelected',
+                false)
             }, this)
             // Procedure: go through all selected tracks, if the tracks are
             // selected but the groups are not, select the group.
             var selectedItems = this.$.trackList.selectedItems
             for (var i = 0; i < selectedItems.length; i++) {
-              var groupEntry
               if (selectedItems[i].isGroup) {
-                groupEntry = selectedItems[i]
+                selectedItems[i].selected = true
               } else {
-                groupEntry = this._groupEntryDict[selectedItems[i].groupID]
-                this.push('selectedTracks', selectedItems[i])
-                if (!groupEntry.trackSelected) {
-                  groupEntry.trackSelected = true
+                this.push('selectedTracks', selectedItems[i].track)
+                if (!this._groupEntryDict[selectedItems[i].track.groupID]
+                  .trackSelected
+                ) {
+                  this.set('_dispTrackArray.' +
+                    this._groupEntryDict[selectedItems[i].track.groupID].index +
+                    '.trackSelected',
+                    true)
                 }
               }
-              if (!groupEntry.selected) {
+            }
+            this._trackGroupEntries.forEach(function (groupEntry) {
+              if (groupEntry.trackSelected && !groupEntry.selected) {
                 /**
                  * TODO: change this into `selectIndex` once `iron-list`
                  * updates to v2
                  */
-                this.$.trackList.selectItem(groupEntry.index)
+                this.$.trackList.push('selectedItems', groupEntry)
                 groupEntry.selected = true
                 this.push('selectedGroups', groupEntry.group)
               }
-            }
-            this._inUpdatingSelection = false
+            }, this)
+            this._dispTrackArray.forEach(function (dispTrackElem, index) {
+              if (!dispTrackElem.isGroup) {
+                if (
+                  this._groupEntryDict[dispTrackElem.track.groupID].selected
+                ) {
+                  this.set('_dispTrackArray.' + index + '.groupSelected', true)
+                } else {
+                  this.set('_dispTrackArray.' + index + '.groupSelected', false)
+                }
+              }
+            }, this)
+            this.$.trackList.notifyResize()
+            this.async(function () {
+              this._inUpdatingSelection = false
+            })
           }
         }
         // TODO: use on-scroll event of iron-list to implement group label

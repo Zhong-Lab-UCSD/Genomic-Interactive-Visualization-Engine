@@ -17,6 +17,8 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../track-object/track-object.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -29,7 +31,7 @@ limitations under the License.
         background: var(--card-background-color);
         @apply(--meta-entry-paper-material-mixin);
       }
-      paper-material > div {
+      paper-material > div:not(.status) {
         padding: 0.5em;
         word-break: break-word;
       }
@@ -44,20 +46,20 @@ limitations under the License.
         @apply(--layout-fit);
         @apply(--meta-entry-selection-border-mixin);
         box-sizing: border-box;
-        border: 0.5px var(--divider-color) solid;
-      }
-      paper-material > div.selection-border[allow-selection] {
         border: 0.5px var(--secondary-text-color) solid;
       }
-      paper-material > div.selection-border[allow-selection][group-selected] {
-        border: 0.5px var(--secondary-text-color) solid;
+      paper-material > div.selection-border:not([allow-selection]) {
+        opacity: 0.4;
       }
-      paper-material > div.selection-border[allow-selection][selected] {
-        border: 2px var(--default-primary-color-lighten) solid;
+      paper-material > div.selection-border[group-selected] {
+        border: 3px var(--lighter-accent-color) solid;
+      }
+      paper-material > div.selection-border[selected] {
+        border: 3px var(--accent-color) solid;
       }
       paper-material > div.group-overlay div.groupInfo {
         @apply(--layout-flex);
-        padding: 0.5em 1.4em;
+        padding: 0.5em;
       }
       paper-material > div.group-overlay span.groupTrackCount {
         float: right;
@@ -66,18 +68,22 @@ limitations under the License.
       paper-material > div.group-overlay span.groupID {
         font-weight: 500;
       }
-      div.table-cell {
+      paper-material > div.table-cell {
         display: table-cell;
-      }
-      div.trackID {
-        width: 12em;
-        min-width: 12em;
       }
       div.status {
         width: 1em;
         min-width: 1em;
-        padding: 0
+        padding: 0 0.5em;
         @apply(--layout-vertical);
+      }
+      div.status iron-icon {
+        width: 1em;
+        height: 1em;
+      }
+      div.trackID {
+        width: 12em;
+        min-width: 12em;
       }
       div.trackType {
         width: 7em;
@@ -105,7 +111,7 @@ limitations under the License.
       }
     </style>
     <paper-material elevation="1">
-      <div class="group-overlay" hidden$="[[!_groupLabel]]"
+      <div class="group-overlay" hidden$="[[!isGroup]]"
         group-selected$="[[groupSelected]]"
         allow-selection$="[[allowSelection]]">
         <div class="status"></div>
@@ -116,7 +122,19 @@ limitations under the License.
           </span>
         </div>
       </div>
-      <div class="table-cell status vertical"></div>
+      <div class="table-cell status">
+        <iron-icon icon="block"
+          hidden$="[[!_showUnavailable(_isHeader, selected, groupSelected)]]">
+        </iron-icon>
+        <iron-icon icon="check-circle"
+          hidden$="[[!_showAvailable(_isHeader, selected, groupSelected)]]">
+        </iron-icon>
+        <iron-icon icon="visibility"
+          hidden$="[[!_showDefault(_isHeader, selected, groupSelected)]]">
+        </iron-icon>
+        <iron-icon icon="lock-outline" hidden$="[[!trackSelectLock]]">
+        </iron-icon>
+      </div>
       <div class="table-cell trackID">[[_trackID]]</div>
       <div class="table-cell trackType">[[_trackType]]</div>
       <div class="table-cell shortLabel">[[_shortLabel]]</div>
@@ -126,7 +144,10 @@ limitations under the License.
       <div class="table-cell labName">[[_labName]]</div>
       <div class="selection-border" selected$="[[selected]]"
         group-selected$="[[groupSelected]]"
-        allow-selection$="[[allowSelection]]"></div>
+        allow-selection$="[[allowSelection]]">
+        <div class="status">
+        </div>
+      </div>
     </paper-material>
   </template>
   <script>
@@ -201,20 +222,45 @@ limitations under the License.
 
           groupSelected: {
             type: Boolean,
-            value: false,
-            notify: true
+            value: false
           },
 
           allowSelection: {
             type: Boolean,
             value: false
+          },
+
+          isGroup: {
+            type: Boolean,
+            value: false
+          },
+
+          trackSelectLock: {
+            type: Boolean,
+            value: false
+          },
+
+          _isHeader: {
+            type: Boolean,
+            value: false
           }
         },
 
+        _showUnavailable: function (_isHeader, selected, groupSelected) {
+          return !_isHeader && !selected && !groupSelected
+        },
+
+        _showAvailable: function (_isHeader, selected, groupSelected) {
+          return !_isHeader && (selected || groupSelected)
+        },
+
+        _showDefault: function (_isHeader, selected, groupSelected) {
+          return !_isHeader && selected && groupSelected
+        },
+
         _trackChanged: function (newValue, oldValue) {
-          if (newValue && !newValue.isGroup &&
-            newValue.getTableNames && newValue.getTableNames()
-          ) {
+          this._isHeader = false
+          if (newValue instanceof give.TrackObject) {
             this._groupID = ''
             this._groupLabel = ''
             this._trackCount = 0
@@ -233,16 +279,15 @@ limitations under the License.
             this._dataType = 'Data type'
             this._cellType = 'Cell type'
             this._labName = 'Lab name'
-            if (newValue && newValue.isGroup) {
-              this._groupID = newValue.groupID
-              this._groupLabel = newValue.groupLabel
-              this._trackCount = newValue.trackCount
+            if (newValue instanceof give.TrackGroup) {
+              this._groupID = newValue.id
+              this._groupLabel = newValue.label ||
+                'Group: ' + newValue.id
+              this._trackCount = newValue.getLength()
+            } else {
+              this._isHeader = true
             }
           }
-        },
-
-        _isNotGroupLabel: function () {
-          return !(this.label && this.label.length)
         },
 
         _getTrackCountSuffix: function (trackCount) {
