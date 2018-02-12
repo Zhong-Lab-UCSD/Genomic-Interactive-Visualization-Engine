@@ -47,7 +47,7 @@ limitations under the License.
       .listHolder {
         @apply(--layout-flex);
         @apply(--layout-relative);
-        min-width: 100em;
+        min-width: 99em;
       }
       #loadingBlock {
         display: block;
@@ -84,7 +84,8 @@ limitations under the License.
         on-selected-items-changed="_selectedItemsChangedHandler"
         multi-selection>
         <template>
-          <track-meta-entry track="[[trackEntry.track]]" selected="{{selected}}"
+          <track-meta-entry data-obj="[[trackEntry.dataObj]]"
+            selected="{{selected}}"
             allow-selection="[[selectionEnabled]]"
             group-selected="[[trackEntry.groupSelected]]"
             track-select-lock="[[trackEntry.trackSelected]]"
@@ -172,18 +173,18 @@ limitations under the License.
             ) {
               var groupEntry = {
                 isGroup: true,
-                track: this._refObj.getGroups()[key],
+                dataObj: this._refObj.getGroups()[key],
                 index: this._dispTrackArray.length,
                 selected: false,
                 trackSelected: false,
                 groupSelected: false
               }
-              this._groupEntryDict[groupEntry.track.id] = groupEntry
+              this._groupEntryDict[groupEntry.dataObj.id] = groupEntry
               this.push('_dispTrackArray', groupEntry)
               this.push('_trackGroupEntries', groupEntry)
               this._refObj.getGroups()[key].forEach(function (track) {
                 this.push('_dispTrackArray', {
-                  track: track, groupSelected: false
+                  dataObj: track, groupSelected: false
                 })
               }, this)
             }
@@ -237,13 +238,13 @@ limitations under the License.
               if (selectedItems[i].isGroup) {
                 selectedItems[i].selected = true
               } else {
-                this.push('selectedTracks', selectedItems[i].track)
-                if (!this._groupEntryDict[selectedItems[i].track.groupID]
+                this.push('selectedTracks', selectedItems[i].dataObj)
+                if (!this._groupEntryDict[selectedItems[i].dataObj.groupID]
                   .trackSelected
                 ) {
                   this.set('_dispTrackArray.' +
-                    this._groupEntryDict[selectedItems[i].track.groupID].index +
-                    '.trackSelected',
+                    this._groupEntryDict[selectedItems[i].dataObj.groupID]
+                      .index + '.trackSelected',
                     true)
                 }
               }
@@ -256,13 +257,15 @@ limitations under the License.
                  */
                 this.$.trackList.push('selectedItems', groupEntry)
                 groupEntry.selected = true
-                this.push('selectedGroups', groupEntry.group)
+              }
+              if (groupEntry.selected) {
+                this.push('selectedGroups', groupEntry.dataObj)
               }
             }, this)
             this._dispTrackArray.forEach(function (dispTrackElem, index) {
               if (!dispTrackElem.isGroup) {
                 if (
-                  this._groupEntryDict[dispTrackElem.track.groupID].selected
+                  this._groupEntryDict[dispTrackElem.dataObj.groupID].selected
                 ) {
                   this.set('_dispTrackArray.' + index + '.groupSelected', true)
                 } else {

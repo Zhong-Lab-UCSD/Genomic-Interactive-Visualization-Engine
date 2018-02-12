@@ -26,20 +26,20 @@ limitations under the License.
   <template>
     <style include="genemo-shared-styles">
       paper-material {
-        padding: 0.5em;
         display: table;
+        padding: 0;
         background: var(--card-background-color);
         @apply(--meta-entry-paper-material-mixin);
       }
       paper-material > div:not(.status) {
-        padding: 0.5em;
+        padding: 1em 0.5em;
         word-break: break-word;
       }
       paper-material > div.group-overlay {
         @apply(--layout-fit);
         @apply(--layout-horizontal);
         @apply(--meta-entry-group-overlay-mixin);
-        padding: 0.5em;
+        padding: 0;
         background: var(--light-primary-color);
       }
       paper-material > div.selection-border {
@@ -48,18 +48,30 @@ limitations under the License.
         box-sizing: border-box;
         border: 0.5px var(--secondary-text-color) solid;
       }
-      paper-material > div.selection-border:not([allow-selection]) {
+      paper-material:not([allow-selection]) > div.selection-border {
         opacity: 0.4;
       }
-      paper-material > div.selection-border[group-selected] {
+      paper-material[group-selected] > div.selection-border {
         border: 3px var(--lighter-accent-color) solid;
       }
-      paper-material > div.selection-border[selected] {
+      paper-material[selected] > div.selection-border {
         border: 3px var(--accent-color) solid;
+      }
+      paper-material:not([allow-selection]) div.status iron-icon {
+        opacity: 0;
+      }
+      paper-material[selected] div.status iron-icon {
+        color: var(--dark-theme-text-color);
+      }
+      paper-material[group-selected] div.status {
+        background: var(--lighter-accent-color);
+      }
+      paper-material[selected] div.status {
+        background: var(--accent-color);
       }
       paper-material > div.group-overlay div.groupInfo {
         @apply(--layout-flex);
-        padding: 0.5em;
+        padding: 1em 1em 1em 0.5em;
       }
       paper-material > div.group-overlay span.groupTrackCount {
         float: right;
@@ -74,12 +86,15 @@ limitations under the License.
       div.status {
         width: 1em;
         min-width: 1em;
-        padding: 0 0.5em;
-        @apply(--layout-vertical);
+        padding: 0.3em 0.5em;
+        vertical-align: top;
       }
       div.status iron-icon {
         width: 1em;
         height: 1em;
+        color: var(--primary-text-color);
+        /** reserved for Polymer 2.0 update */
+        /* opacity: var(--primary-text-opacity); */
       }
       div.trackID {
         width: 12em;
@@ -110,11 +125,20 @@ limitations under the License.
         min-width: 10em;
       }
     </style>
-    <paper-material elevation="1">
-      <div class="group-overlay" hidden$="[[!isGroup]]"
-        group-selected$="[[groupSelected]]"
-        allow-selection$="[[allowSelection]]">
-        <div class="status"></div>
+    <paper-material elevation="1" selected$="[[selected]]"
+      group-selected$="[[groupSelected]]"
+      allow-selection$="[[allowSelection]]">
+      <div class="group-overlay" hidden$="[[!isGroup]]">
+        <div class="status">
+          <iron-icon icon="block"
+            hidden$="[[!_showUnavailable(_isHeader, selected, groupSelected)]]">
+          </iron-icon>
+          <iron-icon icon="check-circle"
+            hidden$="[[!_showAvailable(_isHeader, selected, groupSelected)]]">
+          </iron-icon>
+          <iron-icon icon="lock-outline" hidden$="[[!trackSelectLock]]">
+          </iron-icon>
+        </div>
         <div class="groupInfo">
           [[_groupLabel]] (Group ID: <span class="groupID">[[_groupID]]</span>)
           <span class="groupTrackCount">
@@ -132,8 +156,6 @@ limitations under the License.
         <iron-icon icon="visibility"
           hidden$="[[!_showDefault(_isHeader, selected, groupSelected)]]">
         </iron-icon>
-        <iron-icon icon="lock-outline" hidden$="[[!trackSelectLock]]">
-        </iron-icon>
       </div>
       <div class="table-cell trackID">[[_trackID]]</div>
       <div class="table-cell trackType">[[_trackType]]</div>
@@ -142,12 +164,7 @@ limitations under the License.
       <div class="table-cell dataType">[[_dataType]]</div>
       <div class="table-cell cellType">[[_cellType]]</div>
       <div class="table-cell labName">[[_labName]]</div>
-      <div class="selection-border" selected$="[[selected]]"
-        group-selected$="[[groupSelected]]"
-        allow-selection$="[[allowSelection]]">
-        <div class="status">
-        </div>
-      </div>
+      <div class="selection-border"></div>
     </paper-material>
   </template>
   <script>
@@ -158,12 +175,12 @@ limitations under the License.
         is: 'track-meta-entry',
 
         properties: {
-          track: {
+          dataObj: {
             type: Object,
             value: function () {
               return {}
             },
-            observer: '_trackChanged'
+            observer: '_dataObjChanged'
           },
 
           _groupLabel: {
@@ -258,7 +275,7 @@ limitations under the License.
           return !_isHeader && selected && groupSelected
         },
 
-        _trackChanged: function (newValue, oldValue) {
+        _dataObjChanged: function (newValue, oldValue) {
           this._isHeader = false
           if (newValue instanceof give.TrackObject) {
             this._groupID = ''
