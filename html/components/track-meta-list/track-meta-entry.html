@@ -47,6 +47,8 @@ limitations under the License.
         @apply(--meta-entry-selection-border-mixin);
         box-sizing: border-box;
         border: 0.5px var(--secondary-text-color) solid;
+        transition: opacity 0.15s;
+        transition: border 0.15s;
       }
       paper-material:not([allow-selection]) > div.selection-border {
         opacity: 0.4;
@@ -88,11 +90,14 @@ limitations under the License.
         min-width: 1em;
         padding: 0.3em 0.5em;
         vertical-align: top;
+        transition: background 0.15s;
       }
       div.status iron-icon {
         width: 1em;
         height: 1em;
         color: var(--primary-text-color);
+        transition: color 0.15s;
+        transition: opacity 0.15s;
         /** reserved for Polymer 2.0 update */
         /* opacity: var(--primary-text-opacity); */
       }

@@ -35,14 +35,23 @@ limitations under the License.
         overflow-x: auto;
         @apply(--layout-vertical);
       }
+      div.selectedInfo {
+        @apply(--layout-vertical)
+      }
     </style>
     <paper-dialog id="mainDialog" on-iron-overlay-canceled="cancelCheck">
       <h2>GIVE HTML Embed Code Generator</h2>
-      References: <span class="infoSpan">[[_calcRefLabel(_refObj)]]</span>
-      Groups Selected:
-      <span class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</span>
-      Tracks Selected:
-      <span class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</span>
+      <div class="controllers">
+
+      </div>
+      <div class="selectedInfo">
+        <span class="anno">References: </span>
+        <span class="infoSpan">[[_calcRefLabel(_refObj)]]</span>
+        <span class="anno">Groups Selected: </span>
+        <span class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</span>
+        <span class="anno">Tracks Selected: </span>
+        <span class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</span>
+      </div>
       <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
         <paper-menu class="dropdown-content" id="refMenu"
           attr-for-selected="value" selected="{{selectedElement}}">
@@ -73,7 +82,7 @@ limitations under the License.
         label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
         hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
       </gene-coor-input>
-      <paper-input hidden$="[[_controllerNotSelected(_numOfSubs)]]"
+      <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
         label="Title for the Chart Controller" value="{{customTitle}}">
       </paper-input>
       <paper-button raised on-tap="updateCode">Update code</paper-button>
@@ -261,16 +270,16 @@ limitations under the License.
               this.selectedElement + '.html">\n'
             this.htmlCode += '<' + this.selectedElement + ' ref="' +
               this._refObj.db + '" num-of-subs="' +
-              this._numOfSubs + '"\n'
-            this.htmlCode += '  group-id-list=\'["' +
+              this._numOfSubs + '"'
+            this.htmlCode += '\n  group-id-list=\'["' +
               this.dispGroupArray.map(function (group) {
                 return group.id
-              }, this).join('", "') + '"]\'\n'
+              }, this).join('", "') + '"]\''
             if (this.dispTrackArray.length > 0) {
-              this.htmlCode += '  default-track-id-list=\'["' +
+              this.htmlCode += '\n  default-track-id-list=\'["' +
                 this.dispTrackArray.map(function (track) {
                   return track.getID()
-                }, this).join('", "') + '"]\'\n'
+                }, this).join('", "') + '"]\''
             }
             if (this._coordinatesFilled) {
               var coordinateArray = []
@@ -278,11 +287,11 @@ limitations under the License.
                 coordinateArray.push(
                   this.querySelectorAll('gene-coor-input')[i].value)
               }
-              this.htmlCode += '  coordinates=\'["' +
-                coordinateArray.join('", "') + '"]\''
+              this.htmlCode += '\n  coordinates=\'["' +
+                coordinateArray.join('", "') + '"]\'\n'
             }
             if (this._controllerSelected && this.customTitle) {
-              this.htmlCode += '  title-text="' +
+              this.htmlCode += '\n  title-text="' +
                 this.customTitle + '"'
             }
             this.htmlCode += '>\n</' + this.selectedElement + '>'

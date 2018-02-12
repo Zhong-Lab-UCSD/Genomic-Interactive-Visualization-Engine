@@ -34,6 +34,19 @@ limitations under the License.
         --paper-toolbar-background: var(--primary-background-color);
         --paper-toolbar-color: var(--primary-text-color);
       }
+      paper-toolbar div#htmlGeneratorButtons {
+        padding: 0 0.5em;
+      }
+      paper-toolbar div paper-button {
+        margin: 0 0.1em;
+        background: var(--card-background-color);
+      }
+      paper-toolbar div paper-button[toggles] {
+        transition: background-color 0.3s;
+      }
+      paper-toolbar div paper-button[toggles][active] {
+        background-color: rgba(0, 0, 0, 0.2);
+      }
       paper-button#generateHtml {
         visibility: hidden;
       }
@@ -44,13 +57,15 @@ limitations under the License.
     <paper-toolbar>
       <span class="title">GIVE Track Portal</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
-      <paper-button raised toggles active="{{generatorMode}}">
-        HTML Generator Mode
-      </paper-button>
-      <paper-button raised id="generateHtml" visible$="[[generatorMode]]"
-        on-tap="generateHtml">
-        Generate
-      </paper-button>
+      <div id="htmlGeneratorButtons">
+        <paper-button raised toggles active="{{generatorMode}}">
+          HTML Generator Mode
+        </paper-button>
+        <paper-button raised id="generateHtml" visible$="[[generatorMode]]"
+          on-tap="generateHtml">
+          Generate
+        </paper-button>
+      </div>
     </paper-toolbar>
     <track-meta-list id="mainMetaList" class="flex self-center" ref="[[currentRef]]"
       selection-enabled$="[[generatorMode]]">

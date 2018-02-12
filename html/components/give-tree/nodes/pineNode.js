@@ -458,6 +458,8 @@ var GIVe = (function (give) {
           props.ContList.some(function (entry) {
             return entry.getEnd() > childRange.getStart()
           }, this)
+        ) || (
+          
         )
       ) {
         //    If yes, create a non-leaf node on the dedicated range and call
@@ -548,7 +550,7 @@ var GIVe = (function (give) {
           End: this.Keys[currIndex + 1]
         })
         this.Values[currIndex].insert(data, chrRange, props)
-      } else {
+      } else if (this.Keys[currIndex] < chrRange.getEnd()) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
