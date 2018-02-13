@@ -47,7 +47,7 @@ limitations under the License.
       .listHolder {
         @apply(--layout-flex);
         @apply(--layout-relative);
-        min-width: 99em;
+        min-width: 100em;
       }
       #loadingBlock {
         display: block;
@@ -155,6 +155,13 @@ limitations under the License.
             value: function () {
               return []
             }
+          },
+
+          numOfGroupsSelected: {
+            type: Number,
+            value: 0,
+            readOnly: true,
+            notify: true
           }
         },
 
@@ -274,6 +281,7 @@ limitations under the License.
               }
             }, this)
             this.$.trackList.notifyResize()
+            this._setNumOfGroupsSelected(this.selectedGroups.length)
             this.async(function () {
               this._inUpdatingSelection = false
             })
