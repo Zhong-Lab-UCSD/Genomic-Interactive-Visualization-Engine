@@ -55,20 +55,22 @@ limitations under the License.
       }
     </style>
     <paper-toolbar>
-      <span class="title">GIVE Track Portal</span>
+      <span class="title">GIVE Hub</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
       <div id="htmlGeneratorButtons">
         <paper-button raised toggles active="{{generatorMode}}">
           HTML Generator Mode
         </paper-button>
         <paper-button raised id="generateHtml" visible$="[[generatorMode]]"
-          on-tap="generateHtml">
+          on-tap="generateHtml"
+          disabled$="[[!numOfGroupsSelected]]">
           Generate
         </paper-button>
       </div>
     </paper-toolbar>
-    <track-meta-list id="mainMetaList" class="flex self-center" ref="[[currentRef]]"
-      selection-enabled$="[[generatorMode]]">
+    <track-meta-list id="mainMetaList" class="flex self-center"
+      ref="[[currentRef]]" selection-enabled$="[[generatorMode]]"
+      num-of-groups-selected="{{numOfGroupsSelected}}">
     </track-meta-list>
     <html-builder id="mainHtmlBuilder" ref="[[currentRef]]"></html-builder>
   </template>
@@ -88,6 +90,13 @@ limitations under the License.
           generatorMode: {
             type: Boolean,
             value: false
+          },
+
+          numOfGroupsSelected: {
+            type: Array,
+            value: function () {
+              return []
+            }
           }
         },
 

@@ -22,6 +22,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../track-object/track-object.html">
@@ -29,63 +30,97 @@ limitations under the License.
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="html-builder">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="genemo-shared-styles iron-flex iron-flex-alignment">
       :host {
         position: relative;
         overflow-x: auto;
         @apply(--layout-vertical);
       }
-      div.selectedInfo {
-        @apply(--layout-vertical)
+      div.controllers > * {
+        margin: 0 0 0.3em 0;
+      }
+      div.controllerGroup > * {
+        margin: 0 1em 0 0;
+      }
+      div.controllerGroup > div > div {
+        display: inline-block;
+      }
+      div.anno {
+        width: 8em;
+      }
+      div.infoSpan {
+        width: 12em;
+        overflow-wrap: break-word;
+      }
+      paper-textarea#codeRegion {
+        @apply(--layout-flex);
+      }
+      paper-input#titleInput {
+        @apply(--layout-flex);
+      }
+      gene-coor-input {
+        width: 18em;
       }
     </style>
     <paper-dialog id="mainDialog" on-iron-overlay-canceled="cancelCheck">
       <h2>GIVE HTML Embed Code Generator</h2>
-      <div class="controllers">
-
+      <div class="controllers layout vertical">
+        <div class="controllerGroup layout self-start horizontal wrap">
+          <div class="layout horizontal start">
+            <div class="anno">References: </div>
+            <div class="infoSpan">[[_calcRefLabel(_refObj)]]</div>
+          </div>
+          <div class="layout horizontal start">
+            <div class="anno">Groups Selected: </div>
+            <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
+          </div>
+          <div class="layout horizontal start">
+            <div class="anno">Tracks Selected: </div>
+            <div class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</div>
+          </div>
+        </div>
+        <div class="controllerGroup layout horizontal end">
+          <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
+            <paper-menu class="dropdown-content" id="refMenu"
+              attr-for-selected="value" selected="{{selectedElement}}">
+              <paper-item value="chart-controller">
+                &lt;chart-controller&gt;
+              </paper-item>
+              <paper-item value="chart-area">
+                &lt;chart-area&gt;
+              </paper-item>
+            </paper-menu>
+          </paper-dropdown-menu>
+          <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
+            label="Title for the Chart Controller" value="{{customTitle}}"
+            id="titleInput">
+          </paper-input>
+        </div>
+        <div class="controllerGroup layout horizontal end">
+          <paper-dropdown-menu id="displayModeDropdown" label="Display mode:">
+            <paper-menu class="dropdown-content" id="dispModeMenu"
+              attr-for-selected="value" selected="{{_numOfSubs}}">
+              <paper-item value="1">
+                Single window
+              </paper-item>
+              <paper-item value="2">
+                Dual window
+              </paper-item>
+            </paper-menu>
+          </paper-dropdown-menu>
+          <gene-coor-input ref="[[ref]]"
+            label="[[_computeLabelForCoorOne(_numOfSubs)]]"
+            value="{{_defaultCoor1}}">
+          </gene-coor-input>
+          <gene-coor-input ref="[[ref]]"
+            label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
+            hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
+          </gene-coor-input>
+        </div>
+        <paper-button raised on-tap="updateCode" class="self-start">
+          Update code
+        </paper-button>
       </div>
-      <div class="selectedInfo">
-        <span class="anno">References: </span>
-        <span class="infoSpan">[[_calcRefLabel(_refObj)]]</span>
-        <span class="anno">Groups Selected: </span>
-        <span class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</span>
-        <span class="anno">Tracks Selected: </span>
-        <span class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</span>
-      </div>
-      <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
-        <paper-menu class="dropdown-content" id="refMenu"
-          attr-for-selected="value" selected="{{selectedElement}}">
-          <paper-item value="chart-controller">
-            &lt;chart-controller&gt;
-          </paper-item>
-          <paper-item value="chart-area">
-            &lt;chart-area&gt;
-          </paper-item>
-        </paper-menu>
-      </paper-dropdown-menu>
-      <paper-dropdown-menu id="displayModeDropdown" label="Display mode:">
-        <paper-menu class="dropdown-content" id="dispModeMenu"
-          attr-for-selected="value" selected="{{_numOfSubs}}">
-          <paper-item value="1">
-            Single window
-          </paper-item>
-          <paper-item value="2">
-            Dual window
-          </paper-item>
-        </paper-menu>
-      </paper-dropdown-menu>
-      <gene-coor-input ref="[[ref]]"
-        label="[[_computeLabelForCoorOne(_numOfSubs)]]"
-        value="{{_defaultCoor1}}">
-      </gene-coor-input>
-      <gene-coor-input ref="[[ref]]"
-        label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
-        hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
-      </gene-coor-input>
-      <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
-        label="Title for the Chart Controller" value="{{customTitle}}">
-      </paper-input>
-      <paper-button raised on-tap="updateCode">Update code</paper-button>
       <paper-textarea id="codeRegion" label="Embed Code" value="{{htmlCode}}">
       </paper-textarea>
       <div class="buttons">
@@ -159,7 +194,7 @@ limitations under the License.
         },
 
         _calcRefLabel: function (refObj) {
-          return refObj ? refObj.db + '(' + refObj.commonName + ')' : '(None)'
+          return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
         },
 
         _calcGroupLabel: function (groupArray) {
@@ -191,6 +226,7 @@ limitations under the License.
           // 'n track(s)'
           var result = '(None selected)'
           if (trackArray) {
+            result = ''
             trackArray.every(function (track, index) {
               result += (index > 0 ? ', ' : '') +
                 (track.getTitle() || track.getSetting('shortLabel', 'string'))
@@ -288,9 +324,11 @@ limitations under the License.
                   this.querySelectorAll('gene-coor-input')[i].value)
               }
               this.htmlCode += '\n  coordinates=\'["' +
-                coordinateArray.join('", "') + '"]\'\n'
+                coordinateArray.join('", "') + '"]\''
             }
-            if (this._controllerSelected && this.customTitle) {
+            if (!this._controllerNotSelected(this.selectedElement) &&
+              this.customTitle
+            ) {
               this.htmlCode += '\n  title-text="' +
                 this.customTitle + '"'
             }
@@ -341,7 +379,7 @@ limitations under the License.
         }
       })
 
-      give.HtmlBuilder.MAX_DESC_LENGTH = 30
+      give.HtmlBuilder.MAX_DESC_LENGTH = 100
 
       return give
     })(GIVe || {})
