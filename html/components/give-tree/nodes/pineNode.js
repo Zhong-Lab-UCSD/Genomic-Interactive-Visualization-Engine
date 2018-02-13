@@ -442,16 +442,17 @@ var GIVe = (function (give) {
       // Now the dedicated range is ready
 
       // 3. Check if the child node contains actual data (by checking
-      //    `data[currDataIndex]`).
+      //    `data[currDataIndex]`), or the (probably empty) data range falls
+      //    within child range.
       //    otherwise, use `false` to fill the dedicated range and merge with
       //    previous `false`s if possible.
       //    Note that if `props.ContList` has stuff, this should be considered
       //    as CONTAIN data, so it should still goes all the way down to
       //    `give.DataNode`
+      var fixChildFlag = false
 
       if (
         (data[0] &&
-          data[0].getStart() >= childRange.getStart() &&
           data[0].getStart() < childRange.getEnd()
         ) || (
           Array.isArray(props.ContList) &&
@@ -459,7 +460,8 @@ var GIVe = (function (give) {
             return entry.getEnd() > childRange.getStart()
           }, this)
         ) || (
-          
+          chrRange.getStart() > childRange.getStart() ||
+          chrRange.getEnd() < childRange.getEnd()
         )
       ) {
         //    If yes, create a non-leaf node on the dedicated range and call
@@ -477,8 +479,12 @@ var GIVe = (function (give) {
             LifeSpan: this.LifeSpan
           })
         }
-        this.Values[currIndex].insert(data, chrRange, props)
+        fixChildFlag = !this.Values[currIndex].insert(data, chrRange, props)
       } else {
+        fixChildFlag = true
+      }
+
+      if (fixChildFlag) {
         //    otherwise, use `false` to fill the dedicated range and merge with
         //    previous `false`s if possible.
         this.Values[currIndex] = false

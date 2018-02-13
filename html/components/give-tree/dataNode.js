@@ -158,12 +158,13 @@ var GIVe = (function (give) {
     //    (getEnd() should be greater than `this.getStart()`), remove those who
     //    don't, copy those who do to `this.ContList`;
     props.ContList = props.ContList || []
-    props.ContList = props.ContList.concat(data.slice(prevIndex, currIndex))
-    .filter(
-      function (entry) {
-        return entry.getEnd() > this.getStart()
-      }, this
-    )
+    props.ContList = this.ContList.concat(props.ContList)
+      .concat(data.slice(prevIndex, currIndex))
+      .filter(
+        function (entry) {
+          return entry.getEnd() > this.getStart()
+        }, this
+      )
     this.ContList = props.ContList.slice()
 
     // 3. Find all `data` entries that have same `getStart()` value as `this`,
@@ -282,21 +283,33 @@ var GIVe = (function (give) {
   }
 
   /**
-   * merge - merge this node with `node`
+   * mergeAfter - merge this node with `node`
    * If `node` doesn't have any data or anything in `StartList`, merge.
    * Actually because of the structure of `GIVE.DataNode`, nothing needs
    *    to be changed in `this` if merge is successful. Just return `true`
    *    to let the caller handle `node`.
    *
    * @param  {null|boolean|GiveDataNodeBase} node - node to be merged.
+   *    Note that this node has to be positioned after `this`.
    * @returns {boolean}      whether the merge is successful
    */
-  give.DataNode.prototype.merge = function (node) {
+  give.DataNode.prototype.mergeAfter = function (node) {
     return (
       node === false || (
         node instanceof this.constructor && node.StartList.length <= 0
       )
     )
+  }
+
+  /**
+   * isEmpty - return whether this node is empty
+   * If there is no entry in both `this.StartList` and `this.ContList` then the
+   *    node is considered empty.
+   *
+   * @returns {boolean}      whether the node is empty
+   */
+  give.DataNode.prototype.isEmpty = function () {
+    return this.StartList.length <= 0 && this.ContList.length <= 0
   }
 
   return give
