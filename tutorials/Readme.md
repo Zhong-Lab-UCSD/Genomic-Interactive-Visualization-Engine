@@ -1,7 +1,9 @@
 # GIVE Tutorial Index
 ### [GIVE Tutorial 0: Building a Customized Genome Browser within 2 minutes](0-short%20code%20example.md)
 This tutorial will show you the easist and simplest way to build a customized Genome Browser in HTML.
-### [GIVE Tutorial 1: Building a Customized Genome Browser with Existing Code and Data Source](1.2-knownCodeDataSource.md)
+### [GIVE Tutorial 1.1: Building a Customized Genome Browser with GIVE Hub](1.1-GIVEHub.md)
+This tutorial will show you how to use existing code base and data source to implement a customized genome browser
+### [GIVE Tutorial 1.2: Using HTML Codes to Build a Customized Genome Browser with Existing Code and Data Source](1.2-knownCodeDataSource.md)
 This tutorial will show you how to use existing code base and data source to implement a customized genome browser
 ### [GIVE Tutorial 2: Populating a reference genome with a few data tracks on a MySQL compatible data source](2-dataSource.md)
 This tutorial will show you how to use existing code base to implement a customized genome browser with your own data.

@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| [← 2. Using GIVE Web Components](2-webComponents.md) | [↑ Index](index.md) | → *None* |
+| [← 2.2. Using GIVE Web Components via HTML Code](2.2-webComponents.md) | [↑ Index](index.md) | -- |
 
 # Adding Data in GIVE Data Sources
 
@@ -395,4 +395,4 @@ __thresholdPercentile__
 
 ||||
 | --- | --- | --- |
-| [← 2. Using GIVE Web Components](2-webComponents.md) | [↑ Index](index.md) | → *None* |
+| [← 2.2. Using GIVE Web Components via HTML Code](2.2-webComponents.md) | [↑ Index](index.md) | -- |
