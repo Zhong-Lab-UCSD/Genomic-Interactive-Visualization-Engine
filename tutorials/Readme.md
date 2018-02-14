@@ -1,6 +1,8 @@
 # GIVE Tutorial
 We provide a series of tutorial to teach you how to build your own genome browser using GIVE. Please learn it step by step.
+
 "Tutorial 0" and "Tutorial 1" show you the simplist way to build genome browser using GIVE-Hub, which is a public GIVE data source. GIVE-Hub hosts hundreds of public data sets, such as ENCODE data. You can easily select data from GIVE-Hub data portal and it will automatically generate your own genome browser. In future, we will also allow users to upload their own data to GIVE-Hub.
+
 If you want to host GIVE service with your own data source, you need to learn from "Tutorial 2" and "Tutorial 3". In "Tutorial 2", you will learn how to deploy GIVE on local machine. We recommend to use the first approach, GIVE-Docker, if you don't have much more linux system administration experience. In "Tutorial 3", you will learn how to use GIVE-ToolBox to easily managing data tracks without MySQL knowledge.
 "Tutorial 4" is a gallery showing you several beautifully customized demo genome browsers.
 
@@ -8,6 +10,7 @@ If you want to host GIVE service with your own data source, you need to learn fr
 This tutorial will show you the easist way to build a genome growser using GIVE-Hub data source.
 ### [GIVE Tutorial 1: Building and tweaking a genome browser with GIVE-Hub data source](1-GIVE-Hub.md)
 This tutorial is an enhanced version of "Tutorial 0". It will show you more detail of using GIVE-Hub data source to build and tweak a customized genome browser.
+
 ### [GIVE Tutorial 2: Deploy GIVE to you local machine](2-deploy.md)
 This tutorial will introduce you the two approaches of deploying GIVE service on your local machine. Then you can learn each approach in "Tutorial 2.1" and "Tutorial 2.2".
 #### [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
