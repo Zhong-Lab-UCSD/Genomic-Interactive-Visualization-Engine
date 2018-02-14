@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-# GIVE Tutorial Index
-### [GIVE Tutorial 0: Building a Customized Genome Browser within 2 minutes](0-short%20code%20example.md)
-This tutorial will show you the easist and simplest way to build a customized Genome Browser in HTML.
-### [GIVE Tutorial 1.1: Building a Customized Genome Browser with GIVE Data Hub](1.1-GIVEHub.md)
-This tutorial will show you how to use existing code base and data source to implement a customized genome browser
-### [GIVE Tutorial 1.2: Using HTML Codes to Build a Customized Genome Browser with Existing Code and Data Source](1.2-knownCodeDataSource.md)
-This tutorial will show you how to use existing code base and data source to implement a customized genome browser
-### [GIVE Tutorial 2: Populating a reference genome with a few data tracks on a MySQL compatible data source](2-dataSource.md)
-This tutorial will show you how to use existing code base to implement a customized genome browser with your own data.
-### [GIVE Tutorial 3: Easy local deployment of GIVE with GIVE-Docker](GIVE-Docker.md)
-This tutorial will show you how to deploy GIVE to your own machines with GIVE-Docker. It's so easy to set up a complete GIVE in minutes without any affects to you host system.
-### [GIVE Tutorial 4.1: Building a Genome Browser of Long-range promoter contacts with capture Hi-C](../gallery/Demo1-captureHiC_promoter_contacts)
-=======
 # GIVE Tutorial
 We provide a series of tutorial to teach you how to build your own genome browser using GIVE. Please learn it step by step.
 
@@ -21,9 +7,9 @@ If you want to host GIVE service with your own data source, you need to learn fr
 "Tutorial 4" is a gallery showing you several beautifully customized demo genome browsers.
 
 ### [GIVE Tutorial 0: Start from a 2 minutes example](0-shortexample.md)
-This tutorial will show you the easist way to build a genome growser using GIVE-Hub data source.
+This tutorial will show you the easist way to build a genome growser using GIVE Data Hub.
 
-### [GIVE Tutorial 1: Building and tweaking a genome browser with GIVE-Hub data source](1-GIVE-Hub.md)
+### [GIVE Tutorial 1: Building and tweaking a genome browser with GIVE Data Hub](1-GIVE-Hub.md)
 This tutorial is an enhanced version of "Tutorial 0". It will show you more detail of using GIVE-Hub data source to build and tweak a customized genome browser.
 
 ### [GIVE Tutorial 2: Deploy GIVE to you local machine](2-deploy.md)
@@ -41,7 +27,6 @@ After deloying GIVE service to your local machine, you can use GIVE-Toolbox to b
 ### GIVE Tutorial 4: Gallery of demo genome browsers
 
 #### [GIVE Tutorial 4.1: Building a Genome Browser of Long-range promoter contacts with capture Hi-C](../gallery/Demo1-captureHiC_promoter_contacts)
->>>>>>> 69903122d1b86766be71856cf987e70fd9b6d930
 This tutorial will show you how to prepare capture Hi-C data for building a Genome Browser with GIVE.
 
 #### [GIVE Tutorial 4.2: Building a Genome Browser of ChIA-PET long-range chromatin interactions](../gallery/Demo2-ENCODE2_ChIA-PET)
@@ -49,4 +34,3 @@ This tutorial will show you how to prepare ChIA-PET data for building a Genome B
 
 #### [GIVE Tutorial 4.3: An example genome browser with superimposed wiggle and genomic interaction tracks](https://mcf7.givengine.org/)
 This example website shows a GIVE genome browser superimposes epigenomic wiggle tracks and HiC genomic interaction track.
-
