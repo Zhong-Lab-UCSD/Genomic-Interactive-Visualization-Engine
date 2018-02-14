@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| -- | [↑ Index](Readme.md) | [1. Local Deployment of GIVE →](1-Local_deployment_of_GIVE.md) |
+| -- | [↑ Index](Readme.md) | [1.1. GIVE-Docker →](../tutorials/GIVE-Docker.md) |
 
 # Annotations in the Manual
 
@@ -30,4 +30,4 @@ Special notes will be shown in blocks separated by horizontal lines and written 
 
 ||||
 | --- | --- | --- |
-| -- | [↑ Index](Readme.md) | [1. Local Deployment of GIVE →](1-Local_deployment_of_GIVE.md) |
+| -- | [↑ Index](Readme.md) | [1.1. GIVE-Docker →](../tutorials/GIVE-Docker.md) |

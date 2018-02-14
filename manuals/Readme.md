@@ -4,7 +4,9 @@
 ### [1. Local deployment of GIVE](1-Local_deployment_of_GIVE.md)
 #### [1.1. GIVE-Docker (recommended)](../tutorials/GIVE-Docker.md)
 #### [1.2. Custom Installation](1.2-system-level_installation.md)
-### [2. Using GIVE Web Components](2-webComponents.md)
+### [2. Using GIVE Web Components](2-webComponentsOverview.md)
+#### [2.1. Using GIVE Web Components via GIVE Hub](2.1-GIVE-Hub.md)
+#### [2.2. Using GIVE Web Components via HTML Code](2.2-webComponents.md)
 ### [3. Adding Data in GIVE Data Sources](3-dataSource.md)
 
 ### [GIVE Tutorial 4.3: How to prepare Hi-C data for GIVE from raw data](Generate%20Hi-C%20bed%20file%20from%20raw%20data%20based%20on%20HiCtool.md)
