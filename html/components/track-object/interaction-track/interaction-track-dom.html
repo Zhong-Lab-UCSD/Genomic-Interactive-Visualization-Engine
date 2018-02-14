@@ -136,6 +136,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               '_subSvg' + i)
             Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
             this.subSvgs.push(newSubSvg)
+            this._pendingVWs[i] = null
           }
           this.subSvgs.forEach(this.initSvgHolder, this)
         },

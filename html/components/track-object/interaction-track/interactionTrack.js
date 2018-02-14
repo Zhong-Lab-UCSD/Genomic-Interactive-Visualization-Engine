@@ -38,8 +38,6 @@ var GIVe = (function (give) {
    */
   give.InteractionTrack = function (ID, Settings, ref, groupID) {
     give.TrackObject.apply(this, arguments)
-    this.windowSpan = this.windowSpan ||
-      give.InteractionTrack.INTERACTION_WINDOW_SPAN
   }
 
   give.extend(give.TrackObject, give.InteractionTrack)
@@ -51,6 +49,16 @@ var GIVe = (function (give) {
   give.InteractionTrack.prototype._DataObjCtor = give.InteractionTrackData
 
   give.InteractionTrack.prototype._DomObjCtor = give.InteractionTrackDOM
+
+  /**
+   * _getWindowSpan - Get the number of windows for the track to span across
+   * @memberof InteractionTrack.prototype
+   *
+   * @return {number} number of windows this track will span across
+   */
+  give.InteractionTrack.prototype._getWindowSpan = function () {
+    return give.InteractionTrack.INTERACTION_WINDOW_SPAN
+  }
 
   give.TrackObject.registerTrack(give.InteractionTrack)
 

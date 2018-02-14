@@ -57,7 +57,7 @@ var GIVe = (function (give) {
     this._initSettings()
 
     this.ref = ref
-    this.windowSpan = 1
+    this.windowSpan = this.getSetting('windowSpan') || this._getWindowSpan()
     this._dataObj = (typeof this._DataObjCtor === 'function')
       ? new this._DataObjCtor(this)
       : null
@@ -86,6 +86,16 @@ var GIVe = (function (give) {
     if (this.getSetting('visibility')) {
       this.setVisibility(this.getSetting('visibility'))
     } // otherwise leave it to DOM
+  }
+
+  /**
+   * _getWindowSpan - Get the number of windows for the track to span across
+   * @memberof TrackObjectBase.prototype
+   *
+   * @return {number} number of windows this track will span across
+   */
+  give.TrackObject.prototype._getWindowSpan = function () {
+    return 1
   }
 
   /**
