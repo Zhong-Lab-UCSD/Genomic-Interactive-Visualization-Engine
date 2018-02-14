@@ -13,7 +13,7 @@ GIVE manual includes several documentations of specific topics of GIVE. More tec
 ### 5. Data Format
 #### [5.1. Bed Format](5.1-bed.md)
 #### [5.2. BigWig Format](5.2-bigwig.md)
-#### [5.3. Interaction Format](5.3-interaction.md
+#### [5.3. Interaction Format](5.3-interaction.md)
 #### [5.4. How to prepare GIVE interacion format data from raw Hi-C data using HiCtool](5.4-HiCtool.md)
 #### [5.5. How to convert different Hi-C contact matrix data to GIVE interaction format](5.5-HiC-conversion.md)
 
