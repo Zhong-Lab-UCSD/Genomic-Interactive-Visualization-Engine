@@ -18,6 +18,8 @@ limitations under the License.
 <link rel="import" href="../track-meta-list/track-meta-list.html">
 <link rel="import" href="../html-builder/html-builder.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
@@ -53,6 +55,28 @@ limitations under the License.
       paper-button#generateHtml[visible] {
         visibility: visible;
       }
+      div.intro {
+        font-size: 16px;
+        overflow: auto;
+      }
+      div.contentHolder {
+        width: 50em;
+        padding: 1em 2em;
+      }
+      div.normalText {
+        line-height: 1.7em;
+        margin: 1.5em 0;
+      }
+      div.icon-row {
+        width: 100%;
+        margin: 1em 0;
+      }
+      div.icon-row > iron-icon {
+        margin-right: 2em;
+      }
+      div.icon-desc {
+        line-height: 1.7em;
+      }
     </style>
     <paper-toolbar>
       <span class="title">GIVE Hub</span>
@@ -68,9 +92,66 @@ limitations under the License.
         </paper-button>
       </div>
     </paper-toolbar>
+    <div class="layout vertical intro"
+      hidden$="[[_calcIntroHidden(currentRef)]]">
+      <div class="flex self-center contentHolder">
+        <div class="normalText">
+          GIVE Hub lists all references available on the GIVE instance and allows you to pick and choose your track groups and/or tracks in your customized genome browser. To start, use <strong>Reference genome</strong> drop-down on the right side of the top toolbar to select your reference.
+        </div>
+        <div class="normalText">
+          HTML Generator Mode can be activated via the button on the toolbar. When it is active, track groups and tracks are selectable and icons will appear to indicate their status in the resulting customized browser.
+        </div>
+        <div class="normalText">
+          The following icons may appear before a track group:
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="block"></iron-icon>
+            <div class="icon-desc flex">
+              This group is not selected and will not be available in the resulting browser.
+            </div>
+          </div>
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="check-circle"></iron-icon>
+            <div class="icon-desc flex">
+              This group has been selected. Its tracks will be available to be chosen in the resulting browser. However, the tracks of this group are not shown by default unless they have the <iron-icon icon="visibility"></iron-icon> icon (see below).
+            </div>
+          </div>
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="lock-outline"></iron-icon>
+            <div class="icon-desc flex">
+              One or more tracks from this group has been selected to be shown by default (with a <iron-icon icon="visibility"></iron-icon> icon). The group will not be able to be deselected until all its tracks are deselected.
+            </div>
+          </div>
+        </div>
+        <div class="normalText">
+          The following icons may appear before an individual track entry:
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="block"></iron-icon>
+            <div class="icon-desc flex">
+              This track is not selected, nor is its group selected. It will not be available in the resulting browser.
+            </div>
+          </div>
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="check-circle"></iron-icon>
+            <div class="icon-desc flex">
+              The group of this track has been selected. It will be available to be chosen in the resulting browser. However, it will not be shown by default unless it also have the <iron-icon icon="visibility"></iron-icon> icon.
+            </div>
+          </div>
+          <div class="icon-row layout horizontal">
+            <iron-icon icon="visibility"></iron-icon>
+            <div class="icon-desc flex">
+              This track has been selected to be shown by default. It will be directly shown in the resulting browser.
+            </div>
+          </div>
+        </div>
+        <div class="normalText">
+          Note that selecting a track (thus giving it a <iron-icon icon="visibility"></iron-icon> icon) will cause its track group selected as well.
+        </div>
+      </div>
+    </div>
     <track-meta-list id="mainMetaList" class="flex self-center"
       ref="[[currentRef]]" selection-enabled$="[[generatorMode]]"
-      num-of-groups-selected="{{numOfGroupsSelected}}">
+      num-of-groups-selected="{{numOfGroupsSelected}}"
+      hidden$="[[!currentRef]]">
     </track-meta-list>
     <html-builder id="mainHtmlBuilder" ref="[[currentRef]]"></html-builder>
   </template>
@@ -105,6 +186,10 @@ limitations under the License.
             this.$.mainMetaList.selectedGroups,
             this.$.mainMetaList.selectedTracks
           )
+        },
+
+        _calcIntroHidden: function (currentRef) {
+          return !!currentRef
         }
       })
 
