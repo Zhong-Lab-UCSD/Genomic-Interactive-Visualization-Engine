@@ -1,4 +1,4 @@
-# GIVE Tutorial 0: Building a Customized Genome Browser within 2 minutes
+# GIVE Tutorial 0: Start from a 2 minutes example
 
 Just copy paste the two following lines to jsfiddle (https://jsfiddle.net), an online HTML testing website for testing of your own HTML codes.
 1) Go to  jsfiddle;

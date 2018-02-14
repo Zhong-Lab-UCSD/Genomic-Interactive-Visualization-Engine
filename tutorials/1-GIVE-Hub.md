@@ -1,4 +1,4 @@
-# GIVE Tutorial 1.1: Building a Customized Genome Browser with GIVE Hub
+# GIVE Tutorial 1: Building and tweaking a genome browser with GIVE-Hub
 
 This tutorial will show you how to use the GIVE Hub page of Public GIVE Server (or installed code base and data source) to implement a customized genome browser.
 
