@@ -321,12 +321,13 @@ limitations under the License.
 
         updateCode: function () {
           if (this._validateCoordinates()) {
-            this.htmlCode = '<script src="' + window.location.protocol + '//' +
+            var baseURL = window.location.protocol + '//' +
               window.location.hostname +
+              (window.location.port ? ':' + window.location.port : '')
+            this.htmlCode = '<script src="' + baseURL +
               '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
               '<\/script>\n' +
-              '<link rel="import" href="' + window.location.protocol + '//' +
-              window.location.hostname +
+              '<link rel="import" href="' + baseURL +
               '/components/' + this.selectedElement + '/' +
               this.selectedElement + '.html">\n'
             this.htmlCode += '<' + this.selectedElement + ' ref="' +
