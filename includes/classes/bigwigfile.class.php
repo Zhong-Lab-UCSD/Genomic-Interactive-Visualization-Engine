@@ -472,7 +472,7 @@ class BigWigFile  {
     return $result;
   }
 
-  function getSummaryOrRaw($regions, $params, $paramIsResolution = FALSE) {
+  function getSummaryOrRaw($regions, $params, $paramIsResolution = FALSE, $regionStringAsKey = FALSE) {
     // $regions is an array of ChromRegion, the return value will also be an array of summary stats
     // (maybe more, like an array of array to enable fine-grained summary, not exactly sure now)
     // notice that need to translate every region into chromIx
@@ -483,8 +483,9 @@ class BigWigFile  {
       if(!array_key_exists(strtolower(trim($region->chr)), $this->chromNameID)) {
         throw new Exception("Chromosome " . $region->chr . " is invalid.");
       }
-      if(!array_key_exists($region->chr, $result)) {
-        $result[$region->chr] = [];
+      $regionKey = $regionStringAsKey ? $region->regionToString() : $region->chr;
+      if(!array_key_exists($regionKey, $result)) {
+        $result[$regionKey] = [];
       }
       $zoom = NULL;
       if(isset($params) && isset($params[$index])) {
@@ -503,14 +504,14 @@ class BigWigFile  {
         foreach($summary as $summaryEntry) {
           if($summaryEntry->validCount > 0) {
             $summaryEntry->chr = $this->chromNameID[$summaryEntry->chr][ChromBPT::NAME];
-            $result[$summaryEntry->chr][] = array(
+            $result[$regionKey][] = array(
               'regionString' => $summaryEntry->regionToString(),
               'data' => $summaryEntry,
             );
           }
         }
       } else {
-        $result[$region->chr] = array_merge($result[$region->chr], $this->getRawDataInSingleRegion($region));
+        $result[$regionKey] = array_merge($result[$regionKey], $this->getRawDataInSingleRegion($region));
       }
     }
     return $result;

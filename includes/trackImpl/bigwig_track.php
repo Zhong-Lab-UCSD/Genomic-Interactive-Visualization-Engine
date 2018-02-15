@@ -31,7 +31,7 @@ function _loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $p
         return ChromRegion::newFromRegionText($regionStr);
       };
       if(isset($params) && isset($params['resolutions'])) {
-        $result = $bwFile->getSummaryOrRaw(array_map($strToChrRegion, $chrRegion), $params['resolutions'], TRUE);
+        $result = $bwFile->getSummaryOrRaw(array_map($strToChrRegion, $chrRegion), $params['resolutions'], TRUE, TRUE);
       } else {
         $result = $bwFile->getRawDataInRegions(array_map($strToChrRegion, $chrRegion));
       }

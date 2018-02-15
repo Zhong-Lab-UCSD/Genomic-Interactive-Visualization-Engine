@@ -73,17 +73,13 @@ var GIVe = (function (give) {
      * the format will be a ChromRegion object with
      * {data: {value: <actual value>} }
      */
-    for (var chrom in res) {
-      var regionsInChrom = regions.filter(function (region) {
-        return region.chr === chrom
-      }, this)
-      if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
-        Array.isArray(res[chrom])
-      ) {
-        this.getData(chrom, true).insert(
-          res[chrom].map(this._convertDataEntry, this), regionsInChrom)
+    regions.forEach(function (region, index) {
+      if (Array.isArray(res[region.regionToString()])) {
+        this.getData(region.chr, true).insert(
+          res[region.regionToString()].map(this._convertDataEntry, this),
+          region)
       }
-    }
+    }, this)
   }
 
   give.BigWigTrackData.prototype._convertDataEntry = function (entry) {

@@ -782,7 +782,8 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.isEmpty = function () {
     return this.Values.length <= 0 || (this.Values.length === 1 &&
-      (this.Values[0] === false || this.Values[0].isEmpty()))
+      (this.Values[0] === false ||
+        (this.Values[0] && this.Values[0].isEmpty())))
   }
 
   return give
