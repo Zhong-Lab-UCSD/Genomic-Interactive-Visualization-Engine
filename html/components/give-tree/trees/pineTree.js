@@ -68,7 +68,8 @@ var GIVe = (function (give) {
       parseInt(props.LifeSpan) !== props.LifeSpan ||
       props.LifeSpan < 0
     ) {
-      console.log('Default life span is chosen instead of ' + props.LifeSpan)
+      give._verboseConsole('Default life span is chosen instead of ' +
+        props.LifeSpan, give.VERBOSE_DEBUG)
       props.LifeSpan = give.PineTree._DEFAULT_LIFESPAN
     }
     this.LifeSpan = props.LifeSpan
@@ -76,8 +77,8 @@ var GIVe = (function (give) {
     if (
       !Number.isInteger(props.ScalingFactor) || props.ScalingFactor <= 2
     ) {
-      console.log('Default scaling factor is chosen instead of ' +
-        props.ScalingFactor)
+      give._verboseConsole('Default scaling factor is chosen instead of ' +
+        props.ScalingFactor, give.VERBOSE_DEBUG)
       this.ScalingFactor = give.PineTree._DEFAULT_S_FACTOR
     } else {
       this.ScalingFactor = props.ScalingFactor
@@ -87,8 +88,8 @@ var GIVe = (function (give) {
     if (
       !Number.isInteger(props.LeafScalingFactor) || props.LeafScalingFactor <= 2
     ) {
-      console.log('Non-leaf scaling factor is chosen for leaves instead of ' +
-        props.LeafScalingFactor)
+      give._verboseConsole('Non-leaf scaling factor is chosen for leaves ' +
+        'instead of ' + props.LeafScalingFactor, give.VERBOSE_DEBUG)
       this.LeafScalingFactor = give.PineTree._DEFAULT_LS_FACTOR
     } else {
       this.LeafScalingFactor = props.LeafScalingFactor

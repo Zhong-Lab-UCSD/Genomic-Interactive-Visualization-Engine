@@ -85,9 +85,11 @@ var GIVe = (function (give) {
         }
       }
     } catch (e) {
-      console.log(e.message + '\nThrown when creating chromosomal regions with:')
-      console.log(mainParams)
-      console.log(e.stack)
+      give._verboseConsole(e.message +
+        '\nThrown when creating chromosomal regions with:',
+        give.VERBOSE_DEBUG)
+      give._verboseConsole(mainParams, give.VERBOSE_DEBUG)
+      give._verboseConsole(e.stack, give.VERBOSE_DEBUG)
       throw (e)
     }
   }

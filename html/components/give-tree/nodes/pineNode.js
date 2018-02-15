@@ -630,7 +630,8 @@ var GIVe = (function (give) {
         this._mergeChild(i, true, false)
       }
     } else {
-      console.log('Data ' + data + ' is not found in the tree.')
+      give._verboseConsole('Data ' + data + ' is not found in the tree.',
+        give.VERBOSE_DEBUG)
     }
     return (this.Values.length > 1 || (
       this.getFirstChild() !== null && this.getFirstChild() !== false

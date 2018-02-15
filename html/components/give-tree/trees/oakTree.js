@@ -55,8 +55,8 @@ var GIVe = (function (give) {
     if (
       !Number.isInteger(props.BranchingFactor) || props.BranchingFactor <= 2
     ) {
-      console.log('Default branching factor is chosen instead of ' +
-        props.BranchingFactor)
+      give._verboseConsole('Default branching factor is chosen instead of ' +
+        props.BranchingFactor, give.VERBOSE_DEBUG)
       this.BranchingFactor = give.OakTree._DEFAULT_B_FACTOR
     } else {
       this.BranchingFactor = props.BranchingFactor
