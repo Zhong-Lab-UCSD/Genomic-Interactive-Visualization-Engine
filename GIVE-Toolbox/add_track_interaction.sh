@@ -90,5 +90,5 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
 
 EOF
 
-echo $mysql_query |  mysql -u$mysqlu -p$mysqlp 
+echo $mysql_query |  mysql --local-infile  -u$mysqlu -p$mysqlp 
 

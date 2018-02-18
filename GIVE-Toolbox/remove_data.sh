@@ -38,20 +38,20 @@ done
 if [ -n "$track_name" ]; then
     echo "Try to remove track $track_name in ref genome database $ref"
     mysql -u$mysqlu -p$mysqlp -e "DROP TABLE IF EXISTS \`$ref\`.\`$track_name\`"
-    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`trackDb\` WHERE tableName = $track_name"
+    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`trackDb\` WHERE tableName = '$track_name'"
     exit 1
 fi
 
 if [ -n "$group_name" ]; then 
     echo "Try to remove track group $group_name in ref genome database $ref"
-    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`grp\` WHERE name = $group_name"
+    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`grp\` WHERE name = '$group_name'"
     exit 1
 fi
 
 if [ "$a" = "CONFIRM" ]; then
     echo "Try to remove the whole ref genome database $ref"
     mysql -u$mysqlu -p$mysqlp -e "DROP DATABASE IF EXISTS $ref"
-    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`compbrowser\`.\`ref\` WHERE dbname = $ref"
+    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`compbrowser\`.\`ref\` WHERE dbname = '$ref'"
     exit 1
 fi
 

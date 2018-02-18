@@ -57,8 +57,6 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   docker pull zhonglab/give
   # run a GIVE container named as "give"
   docker run -d -it -p 40080:80 -p 40443:443 --name give zhonglab/give
-  # set server domain name, if your local machine is web accessible
-  bash config_host.sh -r /var/www/give -d "https://give.genemo.org"
   ```
   
   The following commandline will lead you to the internal of "give" container with a bash terminal. Then you can excute the commands of the step 2-7 in it. 
@@ -67,11 +65,18 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   # log into "give" container 
   docker exec -it give /bin/bash 
   ```
+  
+  If your host server is web accessible, then you can use GIVE genome browser remotly by setting the host domain name using `config_host.sh` tool. In this example, the domain of our server is "http://sysbio.ucsd.edu". As we are using GIVE-Docker container with HTTP port 40080 and HTTPS port 40443, so we need to set the domain name as "http://sysbio.ucsd.edu:40080" or "https://sysbio.ucsd.edu:40443".
+
+  ```
+  # set server domain name, if your local machine is web accessible
+  bash config_host.sh -r /var/www/give -d "http://give.genemo.org"
+  ```
 ### Step 2: Initialization and Create Reference Genome
 
   There is already a built-in reference genome `hg19`. Hence, here we initialize a new genome reference `hg38`. Just one command is enough. It uses the cytoBandIdeo file of hg38 in the `/tmp/example_data` folder, which was downloaded from [UCSC genome annotation database](http://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/).
   ```bash
-  initial_ref.sh -u root -p Admin2015 -r hg38 -s "Homo sapiens" -c human  -f /tmp/example_data/cytoBandIdeo.txt
+  bash initial_ref.sh -u root -p Admin2015 -r hg38 -s "Homo sapiens" -c human  -f /tmp/example_data/cytoBandIdeo.txt
   ```
   Now you have a `hg38` reference genome. You can add data tracks on this reference genome.
 ### Step 3: Create Track Groups
@@ -88,7 +93,7 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   
   This command will creat a data track named as `knownGene` from `knownGenes.txt` file. 
   ```
-    bash add_track_geneAnnot.sh  -u root -p Admin2015 -r hg38 -g "genes" -l "UCSC known genes annotation" -s "UCSC Genes" -o 1 -v full -a true -f /tmp/knownGenes.txt
+    bash add_geneAnnot.sh  -u root -p Admin2015 -r hg38 -t "knownGene" -g "genes" -l "UCSC known genes annotation" -s "UCSC Genes" -o 1 -v full  -f /tmp/example_data/knownGene.txt
   ```
   
 ### Step 5: Create Data Track from `bed` File
@@ -96,14 +101,14 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   This command will creat a data track named as `exampleBed` in the `peak_region` track group from `example.bed` file. 
 
   ```
-  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "peak_region" -l "An example bed track from MACS calling peaks" -s "Sequencing Peak Region" -o 2 -v pack -f /tmp/example.bed
+  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "peak_region" -l "An example bed track from MACS calling peaks" -s "Sequencing Peak Region" -o 2 -v pack -f /tmp/example_data/example.bed
   ```
 ### Step 6: Create Data Track from `bigWig` File
   
   This command will creat a data track named as `exampleBW` in the `RNA_seq` track group from `example.bigWig` file. 
   
   ```
-  bash add_track_bigWig.sh -u root -p Admin2015 -r hg38 -t exampleBW -g "RNA_seq" -l "An example bigWig from single cell RNAseq" -s "Gene Expression" -o 3 -v full -a true -f /tmp/example.bigWig
+  bash add_track_bigWig.sh -u root -p Admin2015 -r hg38 -t exampleBW -g "RNA_seq" -l "An example bigWig from single cell RNAseq" -s "Gene Expression" -o 3 -v full -a true -f /tmp/example_data/example.bigWig
   ```
   
 ### Step 7: Create Data Track from `interaction` File
@@ -111,7 +116,7 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   This command will creat a data track named as `exampleInteractions` in the `genomic_interactions` track group from `example.interacion` file.
   
   ```
-  bash add_track_interaction.sh -u root -p Admin2015 -r hg38 -t "exampleInteractions" -g "genomic_interactions" -l "An example genomic interacions from ChIA-PET data" -s "ChIA-PET Interacions" -o 1 -v full -q "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" -f /tmp/example.interaction
+  bash add_track_interaction.sh -u root -p Admin2015 -r hg38 -t "exampleInteractions" -g "genomic_interactions" -l "An example genomic interacions from ChIA-PET data" -s "ChIA-PET Interacions" -o 1 -v full -q "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" -f /tmp/example_data/example.interaction
   ```
 
 ### Using the customized GIVE genome browser
