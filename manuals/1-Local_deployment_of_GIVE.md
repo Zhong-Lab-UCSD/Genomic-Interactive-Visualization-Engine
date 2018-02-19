@@ -1,6 +1,6 @@
 ||||
 | --- | --- | --- |
-| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2. Using GIVE Web Components via GIVE-Hub →](2.1-GIVE-Hub.md) |
+| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2.1.  Using GIVE Web Components via GIVE Data Hub →](2.1-GIVE-Hub.md) |
 
 # Local Deployment of GIVE
 We provide two approaches for deploying GIVE to local machines or cloud services, which are **system-level installation** and **GIVE-Docker**. 
@@ -15,4 +15,4 @@ We documented both approaches of deployment in GIVE tutorial. The following link
 
 ||||
 | --- | --- | --- |
-| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2. Using GIVE Web Components via GIVE-Hub →](2.1-GIVE-Hub.md) |
+| [← 0. Annotations in the Manual](0-annotation.md) | [↑ Index](Readme.md) | [2.1.  Using GIVE Web Components via GIVE Data Hub →](2.1-GIVE-Hub.md) |

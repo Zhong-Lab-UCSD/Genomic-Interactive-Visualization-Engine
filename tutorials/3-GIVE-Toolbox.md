@@ -11,7 +11,8 @@
     * [Step 5: Create Data Track from bed File](#step-5-create-data-track-from-bed-file)
     * [Step 6: Create Data Track from bigWig File](#step-6-create-data-track-from-bigwig-file)
     * [Step 7: Create Data Track from interaction File](#step-7-create-data-track-from-interaction-file)
-    * [Using the customized GIVE genome browser](#using-the-customized-give-genome-browser)
+    * [List and Remove Data Tracks](#list-and-remove-data-tracks)
+    * [Using The Customized GIVE Genome Browser](#using-the-customized-give-genome-browser)
 
 
 ## Introduction
@@ -70,7 +71,7 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
 
   ```
   # set server domain name, if your local machine is web accessible
-  bash config_host.sh -r /var/www/give -d "http://give.genemo.org"
+  bash config_host.sh -r /var/www/give -d "http://give.genemo.org:40080"
   ```
 ### Step 2: Initialization and Create Reference Genome
 
@@ -79,21 +80,22 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   bash initial_ref.sh -u root -p Admin2015 -r hg38 -s "Homo sapiens" -c human  -f /tmp/example_data/cytoBandIdeo.txt
   ```
   Now you have a `hg38` reference genome. You can add data tracks on this reference genome.
+
 ### Step 3: Create Track Groups
   
-  Every data track in GIVE needs to be assigned to a unique track group. The `add_trackGroup.sh` is designed for creating track group. The following command lines will creat three track groups `genes`, `RNA_seq`, `peak_region` and `genomic_interactions`. 
+  Every data track in GIVE needs to be assigned to a unique track group. The `add_trackGroup.sh` is designed for creating track group. The following command lines will creat three track groups `genes`, `RNA_seq`, `TAD` and `genomic_interactions`. 
   ```
-  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "genes" -l "Genes and Gene Predictions" -o 1 -s 0
-  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "RNA_seq" -l "Gene expression from RNA-seq" -o 2 -s 0
-  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "peak_region" -l "Sequencing Peak Region" -o 3 -s 0
-  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "genomic_interactions" -l "Genomic interactions from HiC-seq, ChIA-PET and others" -o 3 -s 0
+  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "genes" -l "Known Genes" -o 1 -s 0
+  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "RNA_seq" -l "Gene Expression" -o 2 -s 0
+  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "TAD" -l "Topologically Associating Domain" -o 3 -s 0
+  bash add_trackGroup.sh  -u root -p Admin2015 -r hg38 -g "genomic_interactions" -l "Genomic interactions from ChIA-PET" -o 3 -s 0
   ```
   Now you can add data tracks to these track groups.
 ### Step 4: Create Gene Annotation Track
   
   This command will creat a data track named as `knownGene` from `knownGenes.txt` file. 
   ```
-    bash add_geneAnnot.sh  -u root -p Admin2015 -r hg38 -t "knownGene" -g "genes" -l "UCSC known genes annotation" -s "UCSC Genes" -o 1 -v full  -f /tmp/example_data/knownGene.txt
+  bash add_geneAnnot.sh  -u root -p Admin2015 -r hg38 -t "knownGene" -g "genes" -l "UCSC known genes annotation" -s "UCSC Genes" -o 1 -v full  -f /tmp/example_data/knownGene.txt
   ```
   
 ### Step 5: Create Data Track from `bed` File
@@ -101,7 +103,7 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   This command will creat a data track named as `exampleBed` in the `peak_region` track group from `example.bed` file. 
 
   ```
-  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "peak_region" -l "An example bed track from MACS calling peaks" -s "Sequencing Peak Region" -o 2 -v pack -f /tmp/example_data/example.bed
+  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "TAD" -l "An example bed track from MACS calling peaks" -s "Sequencing Peak Region" -o 2 -v pack -f /tmp/example_data/example.bed
   ```
 ### Step 6: Create Data Track from `bigWig` File
   
@@ -119,25 +121,43 @@ For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 
   bash add_track_interaction.sh -u root -p Admin2015 -r hg38 -t "exampleInteractions" -g "genomic_interactions" -l "An example genomic interacions from ChIA-PET data" -s "ChIA-PET Interacions" -o 1 -v full -q "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" -f /tmp/example_data/example.interaction
   ```
 
-### Using the customized GIVE genome browser
+### List and Remove Data Tracks
+
+  We also provide tools for listing and removing data tracks, which are `list_tracks.sh` and `remove_data.sh`. 
+
+  With the following command, we can see the tree structure of all the data tracks in reference genome `hg38`.
+
+  ```bash
+  bash list_tracks.sh -u root -p Admin2015 -r hg38
+  ```
+  ![](figures/list_tracks.PNG)
+
+  Using `remove_data.sh`, you can remove data track, group or the whole reference genome. The following command will remove the `TAD` track group. After removing, you can use `list_tracks.sh` to view the result.
+  ```bash
+  bash remove_data.sh -u root -p Admin2015 -r hg38 -g TAD
+  ```
+
+### Using The Customized GIVE Genome Browser
 
   Finally, in only 7 steps, you have built a full customized genome browser with 3 data tracks built from 3 kinds of supported data formats. You can use the genome browser with several lines of HTML code as below. 
   ```html
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="components/chart-controller/chart-controller.html">
-  <chart-controller ref="hg38" num-of-subs="1"
-    group-id-list='["genes", "peak_region",  "RNA_seq", "genomic_interactions"]'
+  <chart-controller ref="hg38" num-of-subs="2"
+    group-id-list='["genes", "TAD",  "RNA_seq", "genomic_interactions"]'
     default-track-id-list='["knownGene", "exampleBed", "exampleBW", "exampleInteractions"]'>
   </chart-controller>
   ```
-  We have creat the HTML file `example.html` in the `example_data` folder. You can copy it to `/var/www/give/html` folder in the "give" container. Then you can check URL [http://localhost:40080/example.html](http://localhost:40080/example.html).  
-  If your local machine is web accessible, you can use the genome browser remotely. You can also using JSfiddle or CodePen to view your achievements with the following HTML code. Also you can copy the code to html file and use it anywhere. The server domain name is "http://give.genemo.org:40080" in the example code, you need to change the code based on your server settings.
+  We have creat the HTML file `example.html` in the `example_data` folder. You can copy it to `/var/www/give/html` folder in the "give" container. Then you can check it using URL [http://localhost:40080/example.html](http://localhost:40080/example.html).  
+  If your local machine is web accessible, you can use the genome browser remotely. You can copy the following code into a html file and use it anywhere. The server domain name is "http://give.genemo.org:40080" in the example code, you need to replace it with your server settings.
 
-```html
-  <script src="http://give.genemo.org:40080/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link rel="import" href="http://give.genemo.org:40080/components/chart-controller/chart-controller.html">
-  <chart-controller ref="hg38" num-of-subs="1"
-    group-id-list='["genes", "peak_region",  "RNA_seq", "genomic_interactions"]'
-    default-track-id-list='["knownGene", "exampleBed", "exampleBW", "exampleInteractions"]'>
+  ```html
+  <script   src="http://give.genemo.org:40080/bower_components/webcomponentsjs/webcomponents-lite.min.js"></sc  ript>
+  <link   rel="import"href="http://give.genemo.org:40080/components/chart-controller/chart-controller.html">
+  <chart-controller ref="hg38" num-of-subs="2"
+    group-id-list='["genes", "TAD",  "RNA_seq", "genomic_interactions"]'
+    default-track-id-list='["knownGene", "exampleBed", "exampleBW", "exampleInteractions"]'>
   </chart-controller>
-```
+  ```
+![](figures/example_html_toolbox.PNG)
+
