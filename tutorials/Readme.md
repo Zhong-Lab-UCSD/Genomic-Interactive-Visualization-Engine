@@ -1,7 +1,7 @@
 # GIVE Tutorial
 We provide a series of tutorials to teach you how to build your own genome browser using GIVE. Please learn it step by step.
 
-"Tutorial 0" and "Tutorial 1" show you the easiest way to build a genome browser using #the super link at here did not change color [GIVE Data Hub](https://www.givengine.org/give-hub.html) and tweak it in HTML code. GIVE Data Hub is a public GIVE data source, which hosts hundreds of public/customer data sets, such as ENCODE data. You can easily select data from GIVE Data Hub and it will automatically generate your own genome browser in HTML code. You can edit the HTML code to tweak your genome browser.
+"Tutorial 0" and "Tutorial 1" show you the easiest way to build a genome browser using [GIVE Data Hub](https://www.givengine.org/give-hub.html) and tweak it in HTML code. GIVE Data Hub is a public GIVE data source, which hosts hundreds of public/customer data sets, such as ENCODE data. You can easily select data from GIVE Data Hub and it will automatically generate your own genome browser in HTML code. You can edit the HTML code to tweak your genome browser.
 
 If you want to host GIVE service with your own data source, you need to learn from "Tutorial 2" and "Tutorial 3". In "Tutorial 2", you will learn how to deploy GIVE on local machine. We recommend to use the first approach, which is GIVE-Docker, if you don't have much linux system administration experience. In "Tutorial 3", you will learn how to use GIVE-Toolbox to easily manage data tracks without MySQL knowledge.
 
