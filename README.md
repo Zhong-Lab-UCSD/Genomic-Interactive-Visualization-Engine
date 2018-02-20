@@ -93,7 +93,7 @@ We have compiled a series of tutorials for different GIVE functionalities and co
 
 ## Manual
 
-GIVE Manual is available under the [Manual Homepage](manuals/Readme.md)
+GIVE Manual is available under the [Manual Homepage](manuals/Readme.md).
 
 ## Credits
 
