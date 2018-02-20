@@ -54,7 +54,7 @@ echo "OK! GIVE root directory \"$give_root\" is correct!"
 
 tmp_dir="$give_root/includes/classes/"
 tmp_dir=${tmp_dir//\//\\\/}
-
+host_domain=${host_domain//\//\\\/}
 sed -i "s/'CLASS_DIR', '.\+');/'CLASS_DIR', '$tmp_dir');/g" $php_file
 
 if [ ! -z "$mysqlu" ]; then

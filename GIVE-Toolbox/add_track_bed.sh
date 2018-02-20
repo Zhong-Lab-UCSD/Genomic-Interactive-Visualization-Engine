@@ -85,9 +85,9 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
         }'
     );
 EOF
+echo $mysql_query |  mysql --local-infile  -u$mysqlu -p$mysqlp
 
-
-awk 'BEGIN{OFS="\t"}{split($12, starts,"," ); split($11, sizes, ","); exonStarts=""; exonEnds=""; for(i=1;i<=$10;i++){starts[i]+=$2; ends[i]=starts[i]+sizes[i]; exonStarts=exonStarts""starts[i]","; exonEnds=exonEnds""ends[i]",";};exonStarts=substr(exonStarts, 1, length(exonStarts)-1); exonEnds=substr(exonEnds, 1, length(exonEnds)-1); print $4,$1,$6,$2,$3,$7,$8,$10,exonStarts,exonEnds,$5,$9; }' $file| mysql --local-infile=1 -u$mysqlu -p$mysqlp -e "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE \`$ref\`.\`$track_name\`;" 
+awk 'BEGIN{OFS="\t"}{split($12, starts,"," ); split($11, sizes, ","); exonStarts=""; exonEnds=""; for(i=1;i<=$10;i++){starts[i]+=$2; ends[i]=starts[i]+sizes[i]; exonStarts=exonStarts""starts[i]","; exonEnds=exonEnds""ends[i]",";};exonStarts=substr(exonStarts, 1, length(exonStarts)-1); exonEnds=substr(exonEnds, 1, length(exonEnds)-1); print $4,$1,$6,$2,$3,$7,$8,$10,exonStarts,exonEnds,$5,$9; }' $file| mysql --local-infile -u$mysqlu -p$mysqlp -e "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE \`$ref\`.\`$track_name\`;" 
 
 
 
