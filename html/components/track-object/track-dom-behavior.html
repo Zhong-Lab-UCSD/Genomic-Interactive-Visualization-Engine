@@ -427,7 +427,9 @@ limitations under the License.
           if (!this.mainSvg || !this.mainSvg.viewWindow) {
             return
           }
-          newViewWindow = this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
+          newViewWindow = (newViewWindow === false)
+            ? this.mainSvg.viewWindow
+            : this.mainSvg.viewWindow.getExtension((newWindowWidth - this.windowWidth) / this.windowWidth,
             null, true, this.parent.ref)
         }
         this.updateTrack(newViewWindow)

@@ -83,7 +83,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         overflow-y: auto;
       }
       div.scrollingParts svg {
-        width: 100%;
       }
       #loadingBlock {
         display: block;
@@ -947,7 +946,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             divElem._svgWidth = svgWidth || divElem.clientWidth
           }
           var _setDomIndHeight = function (divElem, trackDOM, index) {
-            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth)
+            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, false)
             divElem._currY += trackDOM.getHeight() + this._trackGap * this._textSize
           }.bind(this)
           var _setSvgWidthHeight = function (divElem) {
@@ -964,13 +963,16 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
             _prepareSvgHeight.bind(this, this._svgWidth),
             _setSvgWidthHeight, domInWindowEntry, index)
-          this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+          this._svgWidth = this._svgWidth ||
+            domInWindowEntry.scrolling.divElem.clientWidth
+          if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
+            this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+          }
           if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
             // scrolling happened, needs to shrink pinned track width
-            this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-              _prepareSvgHeight.bind(this, this._svgWidth),
-              _setSvgWidthHeight, domInWindowEntry, index)
+            return false
           }
+          return true
         },
 
         populateDOM: function (noRefreshContent) {
