@@ -23,11 +23,10 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 *   [Installation](#installation)
 *   [Usage](#usage)
     *   [Importing GIVE Components](#importing-give-components)
-        *   [Without Installation](#without-installation)
-        *   [With Installation](#with-installation)
     *   [Implementing A Customized Genome Browser by Embedding GIVE Components](#implementing-a-customized-genome-browser-by-embedding-give-components)
 *   [Supported Tracks](#supported-tracks)
 *   [Tutorial](#tutorial)
+*   [Manual](#manual)
 *   [Credits](#credits)
 *   [License](#license)
 
@@ -45,20 +44,16 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 
 To use GIVE components, just use HTML `import` to import Web Components polyfill and the required Web Components.
 
-#### Without Installation
-
-All components, including Web Component polyfill, is available on our web site for direct HTML import.
+All components, including Web Component polyfill, is available on our web site, the public GIVE instance, for direct HTML import without any installation.
 ```html
 <script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 <link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
 ```
 
-#### With Installation
-
-Please use your own path if you already installed GIVE Web Components on your server.
+If you already installed GIVE Web Components on your server, please use your own path.
 ```html
-<script src="/html/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-<link rel="import" href="/html/components/chart-controller/chart-controller.html">
+<script src="/bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="/components/chart-controller/chart-controller.html">
 ```
 
 ### Implementing A Customized Genome Browser by Embedding GIVE Components
@@ -68,7 +63,9 @@ After you have imported the components in your HTML page, you can use them in se
 <chart-controller ref="mm10" title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
-Or to use `Document.createElement()` to create the element in your JavaScript code:
+Or to use GIVE-HUG (HTML Universal Generator) on GIVE Data Hub page to build the HTML code needed for embedding. GIVE Data Hub is accessible on the public GIVE instance at <https://www.givengine.org/data-hub.html> and will be at the same relative location after you install your own GIVE instance.
+
+You can also use `Document.createElement()` to create the element in your JavaScript code:
 ```JavaScript
 var myChart = document.createElement('chart-controller')
 myChart.titleText = "My First GIVE Browser"
@@ -91,10 +88,11 @@ Currently GIVE supports three types of tracks:
 
 ## Tutorial
 
-Please visit the following tutorial pages to see how to use the engine:
-*   [Use GIVE to build a customized genome browser with existing code and data source](tutorials/1-knownCodeDataSource.md)
-*   [Populating a reference genome with a few data tracks on a MySQL compatible data source](tutorials/2-dataSource.md)
-*   [Easy local deployment of GIVE with GIVE-Docker](tutorials/GIVE-Docker.md)
+We have compiled a series of tutorials for different GIVE functionalities and components. Please check out the [Tutorial Homepage](tutorials/Readme.md).
+
+## Manual
+
+GIVE Manual is available under the [Manual Homepage](manuals/Readme.md)
 
 ## Credits
 
