@@ -36,13 +36,15 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 GIVE consists of two major parts: GIVE Web Components, the client-side codes running in browsers, implemented by HTML5; and GIVE server, including bare server codes, implemented by PHP, and data sources.
 
-To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Tutorial 2.2: Custom Installation of GIVE](tutorials/2.2-custom-installation.md) for detailed instructions. Alternatively, you can use GIVE-Docker (_**recommended**_), a Docker image delivering an already configured GIVE server and GIVE Web Components. Please refer to [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](tutorials/2.1-GIVE-Docker.md)
+To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Tutorial 2.2: Custom Installation of GIVE](tutorials/2.2-custom-installation.md) for detailed instructions. Alternatively, you can use GIVE-Docker (__*recommended*__), a Docker image delivering an already configured GIVE server and GIVE Web Components. Please refer to [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](tutorials/2.1-GIVE-Docker.md)
 
 ## Usage
 
-### Importing GIVE Components
+You may use __GIVE-HUG (HTML Universal Generator)__ on GIVE Data Hub page to generate the HTML code needed for embedding. GIVE Data Hub is accessible on the public GIVE instance at <https://www.givengine.org/data-hub.html> and will be at the same relative location after you install your own GIVE instance. If you would like to code the HTML files by yourself, you can use GIVE Web Components by importing the component and using the tags directly.
 
-To use GIVE components, just use HTML `import` to import Web Components polyfill and the required Web Components.
+### Importing GIVE Web Components
+
+To use GIVE Web Components, just use HTML `import` to import Web Components polyfill and the required Web Components.
 
 All components, including Web Component polyfill, is available on our web site, the public GIVE instance, for direct HTML import without any installation.
 ```html
@@ -63,7 +65,6 @@ After you have imported the components in your HTML page, you can use them in se
 <chart-controller ref="mm10" title-text="My First GIVE Browser"
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
-Or to use GIVE-HUG (HTML Universal Generator) on GIVE Data Hub page to build the HTML code needed for embedding. GIVE Data Hub is accessible on the public GIVE instance at <https://www.givengine.org/data-hub.html> and will be at the same relative location after you install your own GIVE instance.
 
 You can also use `Document.createElement()` to create the element in your JavaScript code:
 ```JavaScript
