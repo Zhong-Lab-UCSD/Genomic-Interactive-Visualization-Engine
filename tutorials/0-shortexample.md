@@ -20,13 +20,13 @@ So you have enough time to learn some essential tips for customizing your genome
 
 ![2-minute code illustration](figures/2-minute_code.png)
 
-This genome browser is using GIVE-Hub data source. There are already hundreds of public data sets available in GIVE-Hub. You can go to the [GIVE-Hub Data Portal](https://beta.give.genemo.org/data-portal.html) to look for other reference genomes and data track groups you can use. In the GIVE-Hub data portal, you can find the values that can be used for `ref` and `group-id-list` in you genome browser HTML codes. For example, the screenshot below shows that you can add `interaction` to the `group-id-list` with `hg19` reference genome.
+This genome browser is using the data source of GIVE Data Hub. There are already hundreds of public data sets available in GIVE Data Hub. You can go to the [GIVE Data Hub](https://beta.give.genemo.org/data-portal.html) to look for other reference genomes and data track groups you can use. In the GIVE-Hub data portal, you can find the values that can be used for `ref` and `group-id-list` in you genome browser HTML codes. For example, the screenshot below shows that you can add `interaction` to the `group-id-list` with `hg19` reference genome.
 
-![2-minute GIVE-Hub info](figures/2-minute_GIVE-Hub.png)
+![2-minute GIVE Data Hub info](figures/2-minute_GIVE-Hub.png)
 
 The following GIF animation shows the whole process of the 2 minute tutorial. It's so easy.
 
 ![2 minute show](figures/2-minutes-show.gif)
 
-After the 2 minute example, I am sure that you want to learn more. We have prepared a comprehensive series of [GIVE tutorials](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/tutorials). Please enjoy it!
+After the 2 minute example, I am sure that you want to learn more. We have prepared a comprehensive series of [GIVE tutorials](../tutorials). Please enjoy it!
 
