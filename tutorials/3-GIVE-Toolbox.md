@@ -19,15 +19,15 @@
 
 The current version of GIVE needs MySQL for managing backend data source. It might be too complicated for users who are not familiar with MySQL to build data tracks from their own data. So we integrate and package all those backend data source related operations into a bundle of shell(bash) script tools, which is named as GIVE-Toolbox. GIVE-Toolbox greatly simplifies the operations for configuring and initializing data source, building and managing data tracks. Users can complete a task with only one line of shell command. Here with a walkthrough example, we want to teach you how to use GIVE-Toolbox. You will learn how to build a customized genome browser from zero just in 7 steps. It has never been easier!
 
-If you would like to know the actual operations in MySQL, please refere to [GIVE Tutorial 2: Populating a reference genome with a few data tracks on a MySQL compatible data source](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md) and [Mannual 3: Adding Data in GIVE Data Sources](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/3-dataSource.md#creating-a-new-reference-genome-database).
+If you would like to know the actual operations in MySQL, please refere to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
-GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` data format. You may want to read the following documents of the format definitions and related visulizing options in GIVE: 
+GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. You may want to read the following documents of the format definitions and related visulizing options in GIVE: 
 - [`UCSC gene table` format](https://genome.ucsc.edu/cgi-bin/hgTables): knownGene annotation files can be download from UCSC Genome Browser (GENCODE track) 
-- [`bed` format](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/TrackDocs/html/components/track-object/bed-track#display-modes)
-- [`bigWig` format](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/TrackDocs/html/components/track-object/bigwig-track#display-modes)
-- [`interaction` format](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/TrackDocs/html/components/track-object/interaction-track/README.md).
+- [`bed` Trakcs](../manuals/4.1-bed.md)
+- [`bigWig` Trakcs](../manuals/4.2-bigwig.md)
+- [`interaction` Trakcs](../manuals/4.3-interaction.md)
 
-The current version of GIVE-Toolbox includes 9 script tools. These tools can meet all the needs of configuring and managing GIVE data source. Please also read [Manual of script tools in GIVE-Toolbox]((https://github.com/Zhong-Lab-UCSD/GIVE-Toolbox/blob/master/manual_of_GIVE-Toolbox.md) for the detail of usage nad arguments of each script tool.
+The current version of GIVE-Toolbox includes 9 script tools. These tools can meet all the needs of configuring and managing GIVE data source. Please also read [manual 3.1 GIVE-Toolbox usages for managing data in GIVE data source](../manuals/3.1-GIVE-Toolbox-usages.md) for the detail of usage nad arguments of each script tool.
 
 - `config_host.sh`: set configurations for GIVE service
 - `initial_ref.sh`: initialize MySQL database structure and build reference genome database
@@ -43,15 +43,15 @@ The current version of GIVE-Toolbox includes 9 script tools. These tools can mee
 
 This walkthrough example will show you how to use GIVE-Toolbox to easily build a customized GIVE genome browser. It starts from zero and  includes only 7 steps. In each step, you just need to run one or two bash command lines. All the data in the example can be found in the `example_data` folder.
 
-For utilizing GIVE-Toolbox with [different GIVE deployment approaches](tutorial 2):
+For utilizing GIVE-Toolbox with [different GIVE deployment approaches](2-deploy.md):
 - GIVE-Docker: GIVE-Toolbox is integrated in the GIVE-Docker. When you run a GIVE container and log into the container system (bash terminal), all the script tools can be directly excuted with their names, which are located in system path `/usr/local/bin` (the container system). The `example_data` is in the `/tmp` path (the container system). 
-- Custom installation: You need to clone the GIVE GitHub repo and correctly install it. `GIVE-Toolbox` folder is included in the cloned GIVE repo. You can use these tools with their directory like `bash ~/GIVE/GIVE-Toolbox/add_track_bed.sh -u ...`. For convenience (you need has administration authority), you can set all these tools excutable (using `chmod +x` command to them) and copy them to a system path folder (such as `/usr/bin` or `/usr/local/bin`). Then you can directly run these tools.
+- Custom installation: You need to clone the GIVE GitHub repo and correctly install it. `GIVE-Toolbox` folder is included in the cloned GIVE repo. You can use these tools with their directory like `bash ~/GIVE/GIVE-Toolbox/add_track_bed.sh -u ...`. For convenience, you can set all these tools excutable (using `chmod +x` command to them) and copy them to a system path folder (such as `/usr/local/bin` or declare some path in your `.bashrc` file). Then you can directly run these tools.
 
 ### Step 1: Deployment of GIVE
   
-  First of all, you need to deploy GIVE on your local machine, which is documented in [Tutorial 2]. You can use [GIVE-Docker](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/GIVE-Docker.md)(recommended) or [custom install GIVE](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/manuals/1.2-system-level_installation.md).
+  First of all, you need to deploy GIVE on your local machine. You can use [GIVE-Docker](./2.1-GIVE-Docker.md) (recommended) or [custom install GIVE](./2.2-custom-installation.md).
   
-  **TO ensure the consistency of systeom environment, this walkthrough example is based on GIVE-Docker.** We can use only two commandlines to deploy GIVE on your local machine using GIVE-Docker. Please learn how to use GIVE-Docker from [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/GIVE-Docker.md). 
+  **TO ensure the consistency of systeom environment, this walkthrough example is based on GIVE-Docker.** We can use only two commandlines to deploy GIVE on your local machine using GIVE-Docker. Please learn how to use GIVE-Docker from [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](./2.1-GIVE-Docker.md). 
   
   ```bash
   # pull GIVE-Docker image from Docker-Hub
