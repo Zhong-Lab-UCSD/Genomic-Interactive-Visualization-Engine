@@ -15,10 +15,8 @@ This tutorial inlcudes two sub-tutorials. GIVE Tutorial 1.1 will teach you how t
 
 ### [GIVE Tutorial 1.1: Build a genome browser with GIVE Data Hub](1.1-GIVE-Hub.md)
 
+### [GIVE Tutorial 1.2: HTML code detail of tweaking a genome browser](1.2-html-tweak.md)
 
-### [GIVE Tutorial 1.2: HTML code detail of tweaking a genome browser]
-
-[test](teste.md)
 ## [GIVE Tutorial 2: Deploy GIVE to you local machine](2-deploy.md)
 This tutorial will introduce you the two approaches of deploying GIVE service on your local machine. Then you can learn each approach in "Tutorial 2.1" and "Tutorial 2.2".
 
