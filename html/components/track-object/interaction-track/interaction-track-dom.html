@@ -159,17 +159,24 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           newWindowWidth, newViewWindow
         ) {
           // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
+          var newVWindowArr = new Array(this.subSvgs.length)
+          newVWindowArr = Array.isArray(newViewWindow)
+            ? newViewWindow : newVWindowArr.fill(newViewWindow)
           try {
-            if (!newViewWindow || !Array.isArray(newViewWindow)) {
-              // no new window (or new window is not an array), need to calculate
-              this.subSvgs.forEach(function (subSvg, index) {
-                this.updateTracks(
-                  subSvg.viewWindow.getExtension(
-                    (newWindowWidth - this.windowWidth) / this.windowWidth,
-                    null, true, this.parent.ref
-                  ), index)
-              }, this)
-            }
+            newVWindowArr.forEach(
+              function (newVWindow, index) {
+                var subSvg = this.subSvgs[index]
+                if (!newVWindow) {
+                  newVWindow = (newVWindow === false)
+                    ? subSvg.viewWindow
+                    : subSvg.viewWindow.getExtension(
+                        (newWindowWidth - this.windowWidth) / this.windowWidth,
+                        null, true, this.parent.ref
+                      )
+                }
+                this.updateTrack(newVWindow, index)
+              }, this
+            )
           } catch (err) {
           }
         },

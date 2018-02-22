@@ -316,8 +316,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         created: function () {
           this.svgNS = 'http://www.w3.org/2000/svg'
-          this.resizeDebounceInt = 100
-          this.resizeJobName = 'RESIZE'
+          this.resizeDebounceInt = 400
+          // this.resizeJobName = 'RESIZE'
+          this.resizeAsyncProcess = null
         },
 
         ready: function () {
@@ -456,16 +457,27 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          *
          * @param  {number} width - Width of the current area
          */
-        updateHeightLocation: function () {
+        updateHeightLocation: function (changeWindow) {
           // calculate the heights for all tracks
           // note that by the time this is called, all tracks should be ready
           // (this is handled in track-ready event handler)
           // this will also rearrange the y value for all tracks as well
-          if (!this._trackDOMsByWindow.every(this._updateDomHeightInWindow, this)) {
+          give._verboseConsole('UpdateHeightLocation(' + changeWindow +
+            ')', give.VERBOSE_DEBUG)
+          if (!this._trackDOMsByWindow.every(
+            this._updateDomHeightInWindow.bind(this, changeWindow), this)
+          ) {
             // resizing is needed for all the windows
             // note that new width is already stored in `this._svgWidth`
-            this._trackDOMsByWindow.forEach(this._updateDomHeightInWindow, this)
+            this._trackDOMsByWindow.forEach(
+              this._updateDomHeightInWindow.bind(this, changeWindow), this)
           }
+          if (changeWindow) {
+            this.fire('update-coordinate', {
+              newWindow: this.getViewWindowStrings()
+            })
+          }
+          delete this.resizeAsyncProcess
         },
 
         /**
@@ -662,11 +674,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          * @returns {Array<string>} The ranges, converted to `string`.
          */
         getViewWindowStrings: function () {
-          var result = []
-          this._viewWindows.forEach(function (vwindow, index) {
-            result.push(vwindow.regionToString(false))
+          return this._viewWindows.map(function (vwindow, index) {
+            return vwindow.regionToString(false)
           }, this)
-          return result
         },
 
         /**
@@ -931,6 +941,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         /**
          * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
          *
+         * @param  {boolean} changeWindow - index of domInWindowEntry in the array
          * @param  {[
          *   pinAbove: Array.<GIVe.TrackDomBehavior>,
          *   scrolling: Array.<GIVe.TrackDomBehavior>,
@@ -940,13 +951,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
          * ]} domInWindowEntry - viewWindow Array
          * @param  {number} index - index of domInWindowEntry in the array
          */
-        _updateDomHeightInWindow: function (domInWindowEntry, index) {
+        _updateDomHeightInWindow: function (changeWindow, domInWindowEntry, index) {
           var _prepareSvgHeight = function (svgWidth, divElem) {
             divElem._currY = 0
             divElem._svgWidth = svgWidth || divElem.clientWidth
           }
           var _setDomIndHeight = function (divElem, trackDOM, index) {
-            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, false)
+            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
             divElem._currY += trackDOM.getHeight() + this._trackGap * this._textSize
           }.bind(this)
           var _setSvgWidthHeight = function (divElem) {
@@ -1003,12 +1014,19 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           // update the windows by events bubbled up from bottom tracks
           try {
             if (e.detail.newWindow instanceof give.ChromRegion ||
-              typeof e.detail.newWindow === 'string') {
-              this.changeViewWindow(e.detail.newWindow,
-                (!isNaN(parseInt(e.detail.windowIndex)) && parseInt(e.detail.windowIndex) >= 0)
+              typeof e.detail.newWindow === 'string'
+            ) {
+              var windowIndex =
+                (!isNaN(parseInt(e.detail.windowIndex)) &&
+                  parseInt(e.detail.windowIndex) >= 0)
                   ? parseInt(e.detail.windowIndex)
-                  : 0, !!(e.detail.tracks)
-              )
+                  : 0
+              this.changeViewWindow(e.detail.newWindow, windowIndex,
+                !!(e.detail.tracks))
+              this.fire('update-coordinate', {
+                windowIndex: windowIndex,
+                newWindow: e.detail.newWindow
+              })
             }
           } catch (err) {
             console.log(err.message)
@@ -1050,9 +1068,15 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         },
 
         _onIronResize: function (e, detail) {
-          delete this._svgWidth
           if (this._domsReady) {
-            this.debounce(this.resizeJobName, this.updateHeightLocation.bind(this), this.resizeDebounceInt)
+            give._verboseConsole('_onIronResize()', give.VERBOSE_DEBUG)
+            if (!this.resizeAsyncProcess) {
+              delete this._svgWidth
+              this.resizeAsyncProcess = this.async(
+                this.updateHeightLocation.bind(this, false),
+                this.resizeDebounceInt
+              )
+            }
           }
         }
 

@@ -78,18 +78,26 @@
           }
         },
 
-        trackToDOM: function () {
+        trackToDOM: function (scrollToSelected) {
           // this is used when resetting selection
           // DOM means this.$.groupList.selectedItems
           if (this.group && this.group.every) {
             this.$.groupList.clearSelection()
+            var firstSelected = null
             this.group.every(function (track, index) {
               if (track.getSetting(this.settingKey)) {
+                if (firstSelected === null) {
+                  firstSelected = index
+                }
                 this.$.groupList.selectItem(index)
                 return this.$.groupList.multiSelection
               }
               return true
             }, this)
+            if (scrollToSelected && firstSelected !== null) {
+              // scroll to first selected item
+              this.$.groupList.scrollToIndex(firstSelected)
+            }
           }
         },
 

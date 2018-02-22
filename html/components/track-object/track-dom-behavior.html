@@ -470,9 +470,10 @@ limitations under the License.
 
         if (newWidth !== this.totalWidth || widthChanged) {
           // needs to change totalWidth as well
+          var newWindowWidth = newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+          this.changeViewWindowAfterResize(newWindowWidth, newViewWindow)
           this.totalWidth = newWidth
           this.windowWidth = this.totalWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
-          this.changeViewWindowAfterResize(this.windowWidth, newViewWindow)
         }
       },
 

@@ -560,7 +560,7 @@ var GIVe = (function (give) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
-        if (this._mergeChild(currIndex, false, true)) {
+        if (this._mergeChild(currIndex, false, false)) {
           currIndex--
         }
       }

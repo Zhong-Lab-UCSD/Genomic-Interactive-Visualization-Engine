@@ -13,7 +13,7 @@ var GIVe = (function (give) {
     var isReady = false
     var result = {}      // all meta properties
     while (strArray.length > 0) {
-      var line = strArray.shift()
+      var line = strArray.shift().trim()
       if (line && !line.startsWith('#')) {
         // not empty line or comment
         var tokens = line.split(/\s+/)
