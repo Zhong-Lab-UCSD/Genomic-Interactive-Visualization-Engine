@@ -96,17 +96,32 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           /**
            * The upper bound for the track display. Any values above this will be displayed as a overflow line.
            */
-          this.windowMax = 20
+          this.windowMax = track.getSetting('windowMax', 'float') ||
+            give.BigWigTrackDOM._DEFAULT_MAX
 
           /**
            * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
            */
-          this.windowMin = 0
+          this.windowMin = track.getSetting('windowMin', 'float') ||
+            give.BigWigTrackDOM._DEFAULT_MIN
+
+          if (!(this.windowMax > this.windowMin)) {
+            give._verboseConsole('Window Range Error: windowMax = ' +
+              this.windowMax + '; windowMin = ' + this.windowMin,
+              give.VERBOSE_WARNING
+            )
+            this.windowMax = give.BigWigTrackDOM._DEFAULT_MAX
+            this.windowMin = give.BigWigTrackDOM._DEFAULT_MIN
+          }
 
           /**
            * The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.
            */
-          this._setTrackHeight(80)
+          try {
+            this.setHeight(track.getSetting('height', 'integer'))
+          } catch (e) {
+            this.setHeight(give.BigWigTrackDOM._DEFAULT_HEIGHT)
+          }
 
           /**
            * to be explained
@@ -126,7 +141,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           /**
            * Whether or not to automatically scale the window bounds according to the data displayed.
            */
-          this.autoScale = true
+          this.autoScale = track.getSetting('autoScale', 'boolean')
 
           /**
            * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
@@ -164,24 +179,26 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             }
             start = lastElem.getEnd()
           }
-          var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
-          var chrSpan = new give.ChromRegion({
-            chr: chrRange.chr,
-            start: start,
-            end: start + span
-          })
-          while (chrSpan.start < dataEntry.end &&
-            chrSpan.start < chrRange.end
-          ) {
-            // This will insert 0 in the gaps, split value in overlaps
-            // and have full value afterwards
-            var newData = chrSpan.clone()
-            newData.data = {
-              value: dataEntry.data.value * newData.overlaps(dataEntry) /
-                newData.getLength()
+          if (start < dataEntry.end) {
+            var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
+            var chrSpan = new give.ChromRegion({
+              chr: chrRange.chr,
+              start: start,
+              end: start + span
+            })
+            while (chrSpan.start < dataEntry.end &&
+              chrSpan.start < chrRange.end
+            ) {
+              // This will insert 0 in the gaps, split value in overlaps
+              // and have full value afterwards
+              var newData = chrSpan.clone()
+              newData.data = {
+                value: dataEntry.data.value * newData.overlaps(dataEntry) /
+                  newData.getLength()
+              }
+              dataPointArray.push(newData)
+              chrSpan.move(span)
             }
-            dataPointArray.push(newData)
-            chrSpan.move(span)
           }
         },
 
@@ -245,7 +262,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         },
 
         _findAutoScale: function () {
-          this.windowMax = Number.NEGATIVE_INFINITY
+          this.windowMax = this.includeZero ? 0 : Number.NEGATIVE_INFINITY
           this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
           try {
             var extremities = give._findPercentile(this.dataPoints.map(
@@ -260,7 +277,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             }
           } catch (ignore) {
           }
-          if (this.windowMax === Number.NEGATIVE_INFINITY) {
+          if (!(this.windowMax > this.windowMin)) {
             this.windowMax = 1
             this.windowMin = 0
           }
@@ -810,6 +827,11 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         }
 
       })
+
+      give.BigWigTrackDOM._DEFAULT_HEIGHT = 80
+      give.BigWigTrackDOM._DEFAULT_MAX = 20
+      give.BigWigTrackDOM._DEFAULT_MIN = 0
+
 
       return give
     })(GIVe || {})

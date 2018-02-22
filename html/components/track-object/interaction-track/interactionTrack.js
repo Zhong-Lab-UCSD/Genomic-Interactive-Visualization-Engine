@@ -23,6 +23,9 @@ var GIVe = (function (give) {
    * @typedef {object} InteractionTrack
    * @class give.InteractionTrack
    *
+   * @property {number} windowSpan - how many windows this track will show
+   *    across.
+   *
    * @constructor
    * @implements give.TrackObject
    * @param {string} ID - The ID of the new track object
@@ -31,10 +34,10 @@ var GIVe = (function (give) {
    *   it will be merged with `this.Settings`, while properties in
    *   `Settings.settings` take precedence in cases of conflict names
    * @param {RefObjectLiteral} ref - the reference the track is using
+   * @param {string} groupID - The group ID of the new track object
    */
-  give.InteractionTrack = function (ID, Settings, ref) {
+  give.InteractionTrack = function (ID, Settings, ref, groupID) {
     give.TrackObject.apply(this, arguments)
-    this.windowSpan = give.InteractionTrack.INTERACTION_WINDOW_SPAN
   }
 
   give.extend(give.TrackObject, give.InteractionTrack)
@@ -46,6 +49,16 @@ var GIVe = (function (give) {
   give.InteractionTrack.prototype._DataObjCtor = give.InteractionTrackData
 
   give.InteractionTrack.prototype._DomObjCtor = give.InteractionTrackDOM
+
+  /**
+   * _getWindowSpan - Get the number of windows for the track to span across
+   * @memberof InteractionTrack.prototype
+   *
+   * @return {number} number of windows this track will span across
+   */
+  give.InteractionTrack.prototype._getWindowSpan = function () {
+    return give.InteractionTrack.INTERACTION_WINDOW_SPAN
+  }
 
   give.TrackObject.registerTrack(give.InteractionTrack)
 

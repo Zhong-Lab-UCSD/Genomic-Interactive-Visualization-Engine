@@ -82,6 +82,15 @@ style this element.
         display: none !important;
       }
 
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        @apply(--paper-input-container-input-webkit-spinner);
+      }
+
+      input::-webkit-clear-button {
+        @apply(--paper-input-container-input-webkit-clear);
+      }
+
       input::-webkit-input-placeholder {
         color: var(--paper-input-container-color, --secondary-text-color);
       }
@@ -92,6 +101,10 @@ style this element.
 
       input::-moz-placeholder {
         color: var(--paper-input-container-color, --secondary-text-color);
+      }
+
+      input::-ms-clear {
+        @apply(--paper-input-container-ms-clear);
       }
 
       input:-ms-input-placeholder {
@@ -107,9 +120,11 @@ style this element.
 
       <content select="[prefix]"></content>
 
-      <label hidden$="[[!label]]" aria-hidden="true" for="input">[[label]]</label>
+      <label hidden$="[[!label]]" aria-hidden="true" for$="[[_inputId]]">[[label]]</label>
 
-      <input is="iron-input" id="input"
+      <input is="iron-input"
+        id$="[[_inputId]]"
+        class="input-element"
         aria-labelledby$="[[_ariaLabelledBy]]"
         aria-describedby$="[[_ariaDescribedBy]]"
         disabled$="[[disabled]]"

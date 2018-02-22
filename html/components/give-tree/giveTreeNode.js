@@ -254,5 +254,16 @@ var GIVe = (function (give) {
       this.constructor.name + '`!')
   }
 
+  /**
+   * isEmpty - return whether this node is empty (meaning no data is covered
+   *    by the tree, and the entire range is already loaded)
+   *
+   * @returns {boolean}      whether the node is empty
+   */
+  give.GiveTreeNode.prototype.isEmpty = function () {
+    throw new Error('GiveTreeNode.isEmpty not implemented in `' +
+      this.constructor.name + '`!')
+  }
+
   return give
 })(GIVe || {})

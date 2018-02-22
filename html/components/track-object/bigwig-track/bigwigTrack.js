@@ -31,8 +31,9 @@ var GIVe = (function (give) {
    *   it will be merged with `this.Settings`, while properties in
    *   `Settings.settings` take precedence in cases of conflict names
    * @param {RefObjectLiteral} ref - the reference the track is using
+   * @param {string} groupID - The group ID of the new track object
    */
-  give.BigWigTrack = function (ID, Settings, ref) {
+  give.BigWigTrack = function (ID, Settings, ref, groupID) {
     give.TrackObject.apply(this, arguments)
   }
 
@@ -54,7 +55,7 @@ var GIVe = (function (give) {
   give.BigWigTrack.prototype._DataObjCtor = give.BigWigTrackData
 
   // specify the visualization object used in this track
-  give.BigWigTrack.prototype._DomObjCtor = give.BigWigDOM
+  give.BigWigTrack.prototype._DomObjCtor = give.BigWigTrackDOM
 
   // __IMPORTANT:__ register this new track type
   give.TrackObject.registerTrack(give.BigWigTrack)

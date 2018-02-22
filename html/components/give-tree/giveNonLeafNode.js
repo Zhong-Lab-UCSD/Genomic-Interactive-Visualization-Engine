@@ -488,9 +488,12 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._restructuring = function () {
     // for non-auto-balancing trees, return false if this node has no data any
     //    more
+    if (this.Values[0] && this.Values[0].isEmpty()) {
+      this.Values[0] = false
+    }
     return ((this.Values.length <= 0 || (
         this.Values.length === 1 && this.Values[0] === false)
-      ) ? this : false)
+      ) ? false : this)
   }
 
   /**
@@ -611,8 +614,8 @@ var GIVe = (function (give) {
     return (
       childFront === childBack && (childFront === null || childFront === false)
     ) || (
-      childFront && (typeof childFront.merge === `function`) &&
-      childFront.merge(childBack)
+      childFront && (typeof childFront.mergeAfter === `function`) &&
+      childFront.mergeAfter(childBack)
     )
   }
 
@@ -626,12 +629,14 @@ var GIVe = (function (give) {
    *    borders. If so, the children nodes in siblings of this may be expanded.
    *    (The number of children will not be affected in sibling nodes, so that
    *    the structure of neighboring nodes are not messed up.)
-   * @returns {boolean} whether merge happened
+   * @returns {boolean} whether merge happened to the previous child (this is
+   *    used for calling function to correct indices when merging during
+   *    traversing.)
    */
   give.GiveNonLeafNode.prototype._mergeChild = function (
     index, mergeNext, crossBorder
   ) {
-    var merged = false
+    var mergedFront = false
     if ((crossBorder && this.Values.length > 1) || index > 0) {
       // merge previous child first
       var prevChild = this._getChildPrev(index)
@@ -639,9 +644,11 @@ var GIVe = (function (give) {
         // remove child at `index`
         this.Keys.splice(index, 1)
         this.Values.splice(index, 1)
-        this.getPrev().setEnd(this.getStart())
+        if (this.getPrev()) {
+          this.getPrev().setEnd(this.getStart())
+        }
         this._fixChildLinks(index > 0 ? index - 1 : index)
-        merged = true
+        mergedFront = true
       }
     }
 
@@ -656,7 +663,6 @@ var GIVe = (function (give) {
         this.Keys.splice(index + 1, 1)
         this.Values.splice(index + 1, 1)
         this._fixChildLinks(index)
-        merged = true
       } else if (crossBorder && index === this.Values.length - 1 &&
         this.getNext() && this.Values.length > 1 &&
         give.GiveNonLeafNode._childMergable(
@@ -670,10 +676,9 @@ var GIVe = (function (give) {
         // needs to change the boundary of sibling node
         this.setEnd(this.getNext().getStart())
         this.getNext()._fixChildLinks(0)
-        merged = true
       }
     }
-    return merged
+    return mergedFront
   }
 
   give.GiveNonLeafNode.prototype.traverse = function (
@@ -766,6 +771,19 @@ var GIVe = (function (give) {
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }
+  }
+
+  /**
+   * isEmpty - return whether this node is empty
+   * If there is no entry in both `this.StartList` and `this.ContList` then the
+   *    node is considered empty.
+   *
+   * @returns {boolean}      whether the node is empty
+   */
+  give.GiveNonLeafNode.prototype.isEmpty = function () {
+    return this.Values.length <= 0 || (this.Values.length === 1 &&
+      (this.Values[0] === false ||
+        (this.Values[0] && this.Values[0].isEmpty())))
   }
 
   return give

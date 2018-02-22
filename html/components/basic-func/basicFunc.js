@@ -67,6 +67,48 @@ var GIVe = (function (give) {
     }
   }
 
+  /**
+   * every - implement Array.every onto array-like objects (for example,
+   *    `window.NodeList`)
+   *
+   * @param  {object} array - array-like object, needs to have `.length` and
+   *    numbered keys.
+   * @param  {function} callback - call back function
+   * @param  {object} [thisArg] - the `this` used in `callback`
+   * @return {boolean} if all elements in the array returned `true` in
+   *    `callback`
+   */
+  give.every = function (array, callback, thisArg) {
+    // this is for window.NodeList (and other array-like objects)
+    for (var i = 0; i < array.length; i++) {
+      if (!callback.call(thisArg, array[i])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * some - implement Array.some onto array-like objects (for example,
+   *    `window.NodeList`)
+   *
+   * @param  {object} array - array-like object, needs to have `.length` and
+   *    numbered keys.
+   * @param  {function} callback - call back function
+   * @param  {object} [thisArg] - the `this` used in `callback`
+   * @return {boolean} if any element in the array returned `true` in
+   *    `callback`
+   */
+  give.some = function (array, callback, thisArg) {
+    // this is for window.NodeList (and other array-like objects)
+    for (var i = 0; i < array.length; i++) {
+      if (callback.call(thisArg, array[i])) {
+        return true
+      }
+    }
+    return false
+  }
+
   give._debounceIDList = {}
   give._timeOutFunc = function (debounceList, jobName, callbackFunc, immediate) {
     if (!immediate) {
@@ -250,6 +292,23 @@ var GIVe = (function (give) {
 
   give._maxDecimalDigits = function (number, digits) {
     return Number(Math.round(number + 'e' + digits) + 'e-' + digits)
+  }
+
+  give._copyTextToClipboard = function (text) {
+    var textArea = document.createElement('textarea')
+    textArea.textContent = text
+    textArea.style.position = 'fixed'
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      return document.execCommand('copy')
+    } catch (e) {
+      give._verboseConsole(e, give.VERBOSE_MIN_ERROR,
+        '(give._copyTextToClipboard) Cannot copy to clipboard.')
+      return false
+    } finally {
+      document.body.removeChild(textArea)
+    }
   }
 
   window.addEventListener('WebComponentsReady', function (e) {

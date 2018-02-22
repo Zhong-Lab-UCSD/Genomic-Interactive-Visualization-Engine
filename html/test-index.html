@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<!-- Import GIVE component -->
+<link rel="import" href="components/chart-controller/chart-controller.html">
+<link rel="import" href="components/genemo-styles.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="components/ref-link-dialog/ref-link-dialog.html">
+</head>
+
+<body unresolved>
+<chart-controller title-text="ChIA-PET long-range chromatin interactions" ref="hg19" num-of-subs="2"
+  coordinates='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
+  group-id-list='["genes", "ENCODE2_ChIA-PET", "customTracks"]'>
+
+    <paper-button raised noink class="toolBarCtrls" id="chiapetShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET';">
+     GO TO CODE
+    </paper-button>
+
+    <paper-button raised noink class="toolBarCtrls" id="chiapetShowRef">
+      References
+    </paper-button>
+
+
+</chart-controller>
+
+
+<paper-dialog id="chiapetRefDialog" with-backdrop>
+    <h2>long-range promoter contacts with capture Hi-C</h2>
+    <paper-dialog-scrollable>
+        <p>
+	This genome browser presents 15 datasets of ChIA-PET long-range chromatin interactions along with human genome assembly GRCh37 (hg19) for comparative studies. ChIA-PET data were generated from <a href="https://www.encodeproject.org/matrix/?type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2" target="_blank" ><strong>ENCODE Phase 2</strong></a>. Fifteen long-range chromatin interaction bed.gz files (bed 12) were downloaded, which were generated from 8 experiments in 5 celllines (K562, MCF-7, HeLa-S3, HCT116 and NB4) with 3 kinds of target genes (POLR2A, CTCF and ESR1).
+        </p>
+      <p>
+        For questions, please contact Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).
+      </p>
+    </paper-dialog-scrollable>
+    <div class="buttons">
+      <paper-button id="chiapetDoNotShow" hidden>Do not show automatically in the future</paper-button>
+      <paper-button dialog-dismiss>Close</paper-button>
+    </div>
+</paper-dialog>
+
+
+<script>
+
+var GIVe = (function (give) {
+  'use strict'
+
+  var scDialog, scShowRefBtn, scDoNotShowBtn,
+    scLocalStorage
+
+  window.addEventListener('WebComponentsReady', function (e) {
+    give.fireCoreSignal('content-dom-ready', null)
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
+    scDialog = Polymer.dom(document).querySelector('#chiapetRefDialog')
+    scShowRefBtn = Polymer.dom(document).querySelector('#chiapetShowRef')
+    scDoNotShowBtn = Polymer.dom(document).querySelector('#chiapetDoNotShow')
+
+    scLocalStorage = document.createElement('iron-localstorage')
+    scLocalStorage.autoSaveDisabled = true
+    scLocalStorage.name = '_chiapetDoNotShowRef'
+    scLocalStorage.reload()
+    if (!scLocalStorage.value) {
+      // Reference should be displayed for the first time
+      scDoNotShowBtn.removeAttribute('hidden')
+      scDialog.open()
+    }
+
+    scShowRefBtn.addEventListener('tap', scDialog.open.bind(scDialog))
+    scDoNotShowBtn.addEventListener('tap', function (e) {
+      if (scLocalStorage && scLocalStorage.save) {
+        scLocalStorage.value = true
+        scLocalStorage.save()
+        scDoNotShowBtn.setAttribute('hidden', '')
+      } else {
+        console.log('Error: scLocalStorage is not available.')
+      }
+      scDialog.close()
+    })
+  })
+
+  return give
+})(GIVe || {})
+</script>
+
+</body>
+</html>

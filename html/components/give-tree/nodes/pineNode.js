@@ -68,7 +68,7 @@ var GIVe = (function (give) {
     if (this.getEnd() - this.getStart() <= this.Tree.LeafScalingFactor) {
       this.RevDepth = 0
     } else {
-      this.RevDepth = 1 + Math.ceil(
+      this.RevDepth = Math.ceil(
         (Math.log(this.getEnd() - this.getStart()) -
           Math.log(this.Tree.LeafScalingFactor)
         ) / Math.log(this.Tree.ScalingFactor))
@@ -186,10 +186,10 @@ var GIVe = (function (give) {
    *    to `requiredRes`.
    */
   give.PineNode.prototype._getClosestRes = function (requiredRes) {
-    if (requiredRes >= this.LeafScalingFactor) {
-      return parseInt(Math.floor(Math.pow(this.ScalingFactor,
-        Math.floor((Math.log(requiredRes / this.LeafScalingFactor)) /
-          Math.log(this.ScalingFactor))) * this.LeafScalingFactor
+    if (requiredRes >= this.Tree.LeafScalingFactor) {
+      return parseInt(Math.floor(Math.pow(this.Tree.ScalingFactor,
+        Math.floor((Math.log(requiredRes / this.Tree.LeafScalingFactor)) /
+          Math.log(this.Tree.ScalingFactor))) * this.Tree.LeafScalingFactor
       ))
     }
     return 1
@@ -225,12 +225,16 @@ var GIVe = (function (give) {
   /**
    * updateSummary - Update the summary data within this node
    *
-   * @param  {SummaryCtor} summary - if known summaries are there, replace
-   *    directly
+   * @param  {ChromRegionLiteral} dataEntry - if known summaries exist in the
+   *    data entry, replace current summary with the new one.
    * @returns {boolean} - return `true` if summary has been updated.
    */
-  give.PineNode.prototype.updateSummary = function (summary) {
+  give.PineNode.prototype.updateSummary = function (dataEntry) {
     if (typeof this.Tree.SummaryCtor === 'function') {
+      var summary
+      if (dataEntry) {
+        summary = this.Tree.SummaryCtor.extract(dataEntry)
+      }
       if (summary instanceof this.Tree.SummaryCtor) {
         // summary provided, just replace
         this.Summary = summary
@@ -253,8 +257,8 @@ var GIVe = (function (give) {
           if (this.RevDepth > 0) {
             newSummary.addSummary(this, entry.getSummaryData())
           } else {
-            entry.traverse(null, function (dataEntry) {
-              newSummary.addData(this, dataEntry)
+            entry.traverse(null, function (dataEntryInDataNode) {
+              newSummary.addData(this, dataEntryInDataNode)
             }, this, null, false, { NotFirstCall: true })
           }
           return true
@@ -285,12 +289,13 @@ var GIVe = (function (give) {
    * @returns {ChromRegionLiteral|null}  the `ChromRegion` object, or `null`
    */
   give.PineNode.prototype.getSummaryChromRegion = function (chr) {
-    return this.Summary ? new give.ChromRegion({
-      chr: chr,
-      start: this.getStart(),
-      end: this.getEnd()
-    }, null, { Summary: this.getSummaryData() })
-    : null
+    return this.getSummaryData()
+      ? this.getSummaryData().attach(new give.ChromRegion({
+        chr: chr || this.Tree.Chr,
+        start: this.getStart(),
+        end: this.getEnd()
+      }, null))
+      : null
   }
 
   /**
@@ -367,7 +372,7 @@ var GIVe = (function (give) {
           )
         }
         // ***** This should fit Summary definition *****
-        this.updateSummary(data[0].Summary)
+        this.updateSummary(data[0])
         if (typeof props.Callback === 'function') {
           props.Callback.call(props.ThisVar, data[0])
         }
@@ -442,22 +447,26 @@ var GIVe = (function (give) {
       // Now the dedicated range is ready
 
       // 3. Check if the child node contains actual data (by checking
-      //    `data[currDataIndex]`).
+      //    `data[currDataIndex]`), or the (probably empty) data range falls
+      //    within child range.
       //    otherwise, use `false` to fill the dedicated range and merge with
       //    previous `false`s if possible.
       //    Note that if `props.ContList` has stuff, this should be considered
       //    as CONTAIN data, so it should still goes all the way down to
       //    `give.DataNode`
+      var fixChildFlag = false
 
       if (
         (data[0] &&
-          data[0].getStart() >= childRange.getStart() &&
           data[0].getStart() < childRange.getEnd()
         ) || (
           Array.isArray(props.ContList) &&
           props.ContList.some(function (entry) {
             return entry.getEnd() > childRange.getStart()
           }, this)
+        ) || (
+          chrRange.getStart() > childRange.getStart() ||
+          chrRange.getEnd() < childRange.getEnd()
         )
       ) {
         //    If yes, create a non-leaf node on the dedicated range and call
@@ -475,13 +484,19 @@ var GIVe = (function (give) {
             LifeSpan: this.LifeSpan
           })
         }
-        this.Values[currIndex].insert(data, childRange, props)
+        fixChildFlag = !this.Values[currIndex].insert(data, chrRange, props)
       } else {
+        fixChildFlag = true
+      }
+
+      if (fixChildFlag) {
         //    otherwise, use `false` to fill the dedicated range and merge with
         //    previous `false`s if possible.
         this.Values[currIndex] = false
         this._fixChildLinks(currIndex)
-        this._mergeChild(currIndex, true, false)
+        if (this._mergeChild(currIndex, true, false)) {
+          currIndex--
+        }
       }
 
       chrRange.start = childRange.getEnd()
@@ -545,7 +560,7 @@ var GIVe = (function (give) {
           Start: this.Keys[currIndex]
         })
         this.Values[currIndex].insert(data, chrRange, props)
-      } else {
+      } else if (this.Keys[currIndex] < chrRange.getEnd()) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = props.ContList.length <= 0
@@ -553,7 +568,9 @@ var GIVe = (function (give) {
             Start: this.Keys[currIndex],
             ContList: props.ContList.slice()
           })
-        this._mergeChild(currIndex, false, true)
+        if (this._mergeChild(currIndex, false, false)) {
+          currIndex--
+        }
       }
 
       // Shrink `chrRange` to unprocessed range
@@ -618,10 +635,11 @@ var GIVe = (function (give) {
         }
         this.Values[i] = props.ConvertTo
         this._fixChildLinks(i)
-        this._mergeChild(i, true)
+        this._mergeChild(i, true, false)
       }
     } else {
-      console.log('Data ' + data + ' is not found in the tree.')
+      give._verboseConsole('Data ' + data + ' is not found in the tree.',
+        give.VERBOSE_DEBUG)
     }
     return (this.Values.length > 1 || (
       this.getFirstChild() !== null && this.getFirstChild() !== false
@@ -679,11 +697,9 @@ var GIVe = (function (give) {
       // `this.getSummaryChromRegion()`
       if (this.resEnough(resolution) && this.hasData()) {
         // Resolution enough
-        if (!this._callFuncOnDataEntry(chrRange, callback, thisVar, filter,
+        return this._callFuncOnDataEntry(chrRange, callback, thisVar, filter,
           breakOnFalse, this.getSummaryChromRegion()
-        )) {
-          return false
-        }
+        )
       } else {
         // call `GIVE.GiveNonLeafNode.prototype.traverse`
         return give.GiveNonLeafNode.prototype.traverse.call(

@@ -3,34 +3,34 @@
 <link rel="import" href="../../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../genemo-styles.html">
 <!-- Note that cell line info card can have two states:
-	1. A "hovering" state, showing a summarized version of the annotations, and will be dismissed upon clicking other places
+  1. A "hovering" state, showing a summarized version of the annotations, and will be dismissed upon clicking other places
     2. A "complete" state, showing a complete version of all annotations in a MODAL dialog
 -->
 
 <dom-module id="cell-line-info-card">
   <template>
     <style include="genemo-shared-styles">
-		:host {
-		}
-		paper-dialog {
-			text-align: left;
-		}
-		.tableRow {
-			width: 100%;
-		}
-		.tableRow > * {
-			display: inline-block;
-			padding: 0 0.3em;
-			vertical-align: top;
-		}
-		.tableRow > .anno {
-			width: 5.5em;
-		}
-		.tableRow > .annoContent {
-			max-width: 30em;
-			word-wrap: break-word;
-		}
-	</style>
+      :host {
+      }
+      paper-dialog {
+        text-align: left;
+      }
+      .tableRow {
+        width: 100%;
+      }
+      .tableRow > * {
+        display: inline-block;
+        padding: 0 0.3em;
+        vertical-align: top;
+      }
+      .tableRow > .anno {
+        width: 5.5em;
+      }
+      .tableRow > .annoContent {
+        max-width: 30em;
+        word-break: break-word;
+      }
+    </style>
     <paper-dialog id="mainDialog" on-iron-overlay-canceled="cancelCheck">
       <h2>{{metaEntry.term}} properties</h2>
       <paper-dialog-scrollable>
@@ -55,99 +55,109 @@
     </paper-dialog>
   </template>
   <script>
-    Polymer({
+    var GIVe = (function (give) {
+      'use strict'
 
-		is: "cell-line-info-card",
+      give.CellLineInfoCard = Polymer({
 
-		properties: {
-			metaEntry: {
-				type: Object,
-				value: function() {
-					return {};
-				},
-			},
+        is: 'cell-line-info-card',
 
-			confirmString: {
-				type: String,
-				value: 'More info...',
-			},
+        properties: {
+          metaEntry: {
+            type: Object,
+            value: function () {
+              return {}
+            }
+          },
 
-			metaEntries: {
-				type: Object,
-			},
+          confirmString: {
+            type: String,
+            value: 'More info...'
+          },
 
-			isDetail: {
-				type: Boolean,
-				value: false,
-			},
-		},
+          metaEntries: {
+            type: Object
+          },
 
-		created: function() {
-			this.summaryKeys = { term: true, tissue: true, description: true, lineage: true };
-			this.hiddenKeys = { color: true, category: true, protocol: true };
-			this.metaLink = null;
-		},
+          isDetail: {
+            type: Boolean,
+            value: false
+          }
+        },
 
-		generateDialog: function(metaEntries, term, ref, isDetail) {
-			// notice that whether this is a detailed one depends on the current dialog state
-			if(metaEntries && metaEntries.entries &&
-				metaEntries.entries[ref] && metaEntries.entries[ref][term]) {
-					this.metaEntries = metaEntries;
-					this.isDetail = (typeof(isDetail) === 'boolean'? isDetail: (this.$.mainDialog.opened &&
-						this.metaEntry.ref === ref &&
-						this.metaEntry.term === term));	// display detailed version
-					this.set('metaEntry.term', term);
-					this.set('metaEntry.ref', ref);
-					this.set('metaEntry.arr', []);		// initialize meta entries
-					var keyList = metaEntries.entries[ref][term];
-					var metaText = '';
-					for(key in keyList) {
-						if(keyList.hasOwnProperty(key)) {
-							if((this.isDetail || this.summaryKeys[key]) && !this.hiddenKeys[key]) {
-								var newEntry = {key: key, value: keyList[key].replace("%3A", ":")};
-								if(keyList[key].startsWith('http://') || keyList[key].startsWith('https://')) {
-									newEntry.isLink = true;
-								};
-								this.push('metaEntry.arr', newEntry);
-								metaText += key + '\t' + keyList[key] + '\n';
-							}
-						}
-					}
-					if(this.isDetail) {
-						this.confirmString = 'Download meta data';
-						if(this.metaLink !== null) {
-							window.URL.revokeObjectURL(this.metaLink);
-						}
-						var metaBlob = new Blob([metaText], {type: 'text/plain'});
-						this.metaLink = window.URL.createObjectURL(metaBlob);
-					} else {
-						this.confirmString = 'More info...';
-					}
-			}
-			this.async(function() {
-				this.$.mainDialog.refit();
-			}, 50);
-			if(!this.$.mainDialog.opened) {
-				this.$.mainDialog.open();
-			}
-		},
+        created: function () {
+          this.summaryKeys = { term: true, tissue: true, description: true, lineage: true }
+          this.hiddenKeys = { color: true, category: true, protocol: true }
+          this.metaLink = null
+        },
 
-		cancelCheck: function(e, detail) {
-			if(detail.target.tagName === 'SPAN' &&
-				detail.target.classList.contains('metaLink')) {
-					e.preventDefault();
-			}
-		},
+        generateDialog: function (metaEntries, term, ref, isDetail) {
+          // notice that whether this is a detailed one depends on the current dialog state
+          if (metaEntries && metaEntries.entries &&
+            metaEntries.entries[ref] && metaEntries.entries[ref][term]
+          ) {
+            this.metaEntries = metaEntries
+            this.isDetail = (typeof (isDetail) === 'boolean'
+              ? isDetail
+              : (this.$.mainDialog.opened &&
+                this.metaEntry.ref === ref &&
+                this.metaEntry.term === term))  // display detailed version
+            this.set('metaEntry.term', term)
+            this.set('metaEntry.ref', ref)
+            this.set('metaEntry.arr', [])    // initialize meta entries
+            var keyList = metaEntries.entries[ref][term]
+            var metaText = ''
+            for (var key in keyList) {
+              if (keyList.hasOwnProperty(key)) {
+                if ((this.isDetail || this.summaryKeys[key]) && !this.hiddenKeys[key]) {
+                  var newEntry = {key: key, value: keyList[key].replace('%3A', ':')}
+                  if (keyList[key].startsWith('http://') || keyList[key].startsWith('https://')) {
+                    newEntry.isLink = true
+                  }
+                  this.push('metaEntry.arr', newEntry)
+                  metaText += key + '\t' + keyList[key] + '\n'
+                }
+              }
+            }
+            if (this.isDetail) {
+              this.confirmString = 'Download meta data'
+              if (this.metaLink !== null) {
+                window.URL.revokeObjectURL(this.metaLink)
+              }
+              var metaBlob = new window.Blob([metaText], {type: 'text/plain'})
+              this.metaLink = window.URL.createObjectURL(metaBlob)
+            } else {
+              this.confirmString = 'More info...'
+            }
+          }
+          this.async(function () {
+            this.$.mainDialog.refit()
+          }, 50)
+          if (!this.$.mainDialog.opened) {
+            this.$.mainDialog.open()
+          }
+        },
 
-		confirmCheck: function(e, detail) {
-			if(this.isDetail) {
-				// download meta
-				window.open(this.metaLink);
-			} else {
-				this.generateDialog(this.metaEntries, this.metaEntry.term, this.metaEntry.ref, true);
-			}
-		},
+        cancelCheck: function (e, detail) {
+          if (detail.target.tagName === 'SPAN' &&
+            detail.target.classList.contains('metaLink')
+          ) {
+            e.preventDefault()
+          }
+        },
 
-	});
+        confirmCheck: function (e, detail) {
+          if (this.isDetail) {
+            // download meta
+            window.open(this.metaLink)
+          } else {
+            this.generateDialog(this.metaEntries, this.metaEntry.term, this.metaEntry.ref, true)
+          }
+        }
+
+      })
+
+      return give
+    })(GIVe || {})
   </script>
 </dom-module>

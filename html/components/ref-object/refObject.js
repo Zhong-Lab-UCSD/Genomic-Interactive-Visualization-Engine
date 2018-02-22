@@ -121,8 +121,8 @@ var GIVe = (function (give) {
       this.reverseLookupTable = {}
     }
     var loadTrackFromRemoteData = function (groupID, track) {
-      var newTrack = give.TrackObject.createTrack(track.tableName, track, this)
-      newTrack.groupID = groupID
+      var newTrack = give.TrackObject.createTrack(track.tableName, track, this,
+        null, groupID)
       if (requestUrl && !newTrack.requestUrl) {
         newTrack.requestUrl = requestUrl
       }
@@ -211,7 +211,7 @@ var GIVe = (function (give) {
       this.groups[groupID].removeTrack(track.tableName)
       this.tracks.removeTrack(track.tableName)
     }
-    var newTrack = new give.TrackObject(track.tableName, track, this)
+    var newTrack = new give.TrackObject(track.tableName, track, this, groupID)
     newTrack.groupID = groupID
     if (!newTrack.remoteUrl) {
       newTrack.remoteUrl = give.TrackObject.fetchCustomTarget
@@ -219,7 +219,7 @@ var GIVe = (function (give) {
     this.tracks.addTrack(newTrack)
     this.groups[groupID].addTrack(newTrack)
     if (callback) {
-      callback(this)
+      callback.call(this)
     }
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.getCleanID() + '-custom-tracks-ready'})
   }

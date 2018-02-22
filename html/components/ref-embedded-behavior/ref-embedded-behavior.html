@@ -73,11 +73,11 @@
        * after they are ready.
        *
        * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
-       * @param  {number} numOfSubs - number of sub views
        */
-      setRef: function (ref) {
+      setRef: function (ref, callback) {
         if (ref) {
-          give.RefObject.callOnRefReady(this._setRefAfterReadyCheck.bind(this, ref))
+          give.RefObject.callOnRefReady(this._setRefAfterReadyCheck.bind(
+            this, ref, callback))
         }
       },
 
@@ -87,17 +87,22 @@
        *
        * @param  {string|GIVe.RefObject} ref - the reference name or reference object
        */
-      _setRefAfterReadyCheck: function (ref) {
+      _setRefAfterReadyCheck: function (ref, callback) {
         try {
           var refObj = give.RefObject.findRefByDb(ref)
           if (!this._refObj || this._refObj.db !== refObj.db) {
             if (!this.needsChromInfo || refObj.chromInfo) {
               // reference has been changed, needs to switch
               this._setRefObj(refObj)
+              if (typeof callback === 'function') {
+                callback.call(this)
+              }
             } else {
               this.ref = ''
               throw new Error()
             }
+          } else if (typeof callback === 'function') {
+            callback.call(this)
           }
         } catch (err) {
           give._verboseConsole(err, give.VERBOSE_DEBUG, 'RefEmbeddedBehavior(' +

@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
@@ -190,7 +191,7 @@
             }
           }
           this.async(function () {
-            this.trackToDOM()
+            this.trackToDOM(true)
             this.setReady(true)
           })
         },
@@ -226,10 +227,10 @@
           }
         },
 
-        trackToDOM: function () {
+        trackToDOM: function (scrollToSelected) {
           // this is used when resetting selection
           Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
-            elem.trackToDOM()
+            elem.trackToDOM(scrollToSelected)
           }, this)
         },
 

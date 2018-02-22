@@ -9,7 +9,6 @@
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
-<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../track-control/track-mini-control.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -79,18 +78,26 @@
           }
         },
 
-        trackToDOM: function () {
+        trackToDOM: function (scrollToSelected) {
           // this is used when resetting selection
           // DOM means this.$.groupList.selectedItems
           if (this.group && this.group.every) {
             this.$.groupList.clearSelection()
+            var firstSelected = null
             this.group.every(function (track, index) {
               if (track.getSetting(this.settingKey)) {
+                if (firstSelected === null) {
+                  firstSelected = index
+                }
                 this.$.groupList.selectItem(index)
                 return this.$.groupList.multiSelection
               }
               return true
             }, this)
+            if (scrollToSelected && firstSelected !== null) {
+              // scroll to first selected item
+              this.$.groupList.scrollToIndex(firstSelected)
+            }
           }
         },
 
