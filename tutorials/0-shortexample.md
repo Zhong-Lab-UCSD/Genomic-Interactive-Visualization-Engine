@@ -1,7 +1,7 @@
 # GIVE Tutorial 0: Start from a 2 minutes example
 
 Just copy paste the following HTML codes to [jsfiddle](https://jsfiddle.net/), an online HTML testing website for testing of your own HTML codes. 1) Go to  [jsfiddle](https://jsfiddle.net), 2) copy paste the following lines to the HTML panel (top left), 3) hit "run" button.
-Congratulations! You have built your first genome browser webpage using GIVE-Hub data source in less than 1 minute. 
+Congratulations! You have built your first genome browser webpage using data source from GIVE Data Hub in less than 1 minute. 
 ```html
 <!-- header source -->
 <script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script> 
@@ -20,9 +20,9 @@ So you have enough time to learn some essential tips for customizing your genome
 
 ![2-minute code illustration](figures/2-minute_code.png)
 
-This genome browser used GIVE-Hub data source. There are already hundreds of public data sets available in GIVE-Hub. You can go to the [GIVE-Hub Data Portal](https://beta.give.genemo.org/data-portal.html) to look for other reference genomes and data track groups. In the GIVE-Hub data portal, you can find the values that can be used for `ref` and `group-id-list` in you genome browser HTML codes. For example, the screenshot below shows that you can add `interaction` to the `group-id-list` with `hg19` reference genome.
+This genome browser used data source from GIVE Data Hub. There are already hundreds of public data sets available in GIVE Data Hub. You can go to the [GIVE Data Hub](https://www.givengine.org/data-hub.html) to look for other reference genomes and data track groups. You can find the values that can be used for `ref` and `group-id-list` in you genome browser HTML codes. For example, the screenshot below shows that you can add `interaction` to the `group-id-list` with `hg19` reference genome.
 
-![2-minute GIVE-Hub info](figures/2-minute_GIVE-Hub.png)
+![2-minute GIVE Data Hub info](figures/2-minute_GIVE-Hub.png)
 
 The following GIF animation shows the whole process of the 2 minute tutorial. It's so easy.
 
