@@ -41,7 +41,7 @@ After deploying GIVE service to your local machine, you can use GIVE-Toolbox to 
 
 ### [GIVE Tutorial 4.1: Building a Genome Browser of Long-range promoter contacts with capture Hi-C](../gallery/Demo1-captureHiC_promoter_contacts)
 
-This tutorial will show you how to prepare and capture Hi-C data for building a Genome Browser with GIVE.
+This tutorial will show you how to prepare capture Hi-C data for building a Genome Browser with GIVE.
 
 ### [GIVE Tutorial 4.2: Building a Genome Browser of ChIA-PET long-range chromatin interactions](../gallery/Demo2-ENCODE2_ChIA-PET)
 
