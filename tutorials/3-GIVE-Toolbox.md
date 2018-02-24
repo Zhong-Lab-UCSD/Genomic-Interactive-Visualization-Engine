@@ -16,12 +16,11 @@
 
 
 ## Introduction
-
-The current version of GIVE needs MySQL for managing back end data source. It might be too complicated for users who are not familiar with MySQL to build data tracks from their own data. So we integrate and package all those back end data source related operations into a bundle of shell(bash) script tools, which is named as GIVE-Toolbox. GIVE-Toolbox greatly simplifies the operations for configuring and initializing data source, building and managing data tracks. Users can complete a task with only one line of shell command. Here with a walk-through example, we want to teach you how to use GIVE-Toolbox. You will learn how to build a customized genome browser from zero just in 7 steps. It has never been easier!
+The current version of GIVE needs MySQL for managing back end data source. It might be complicated for users who are not familiar with MySQL to build data tracks from their own data. So we integrated all the back end operations into a bundle of shell(bash) script tools, which is GIVE-Toolbox. GIVE-Toolbox greatly simplifies the operations for configuring and initializing data source, as well as building and managing data tracks. Here is a walk-through example, you will learn how to build a customized genome browser from zero just in 7 steps. It has never been easier!
 
 If you would like to know the actual operations in MySQL, please refer to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
-GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. You may want to read the following documents of the format definitions and related visualizing options in GIVE: 
+GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. Here are documents of the format definitions and related visualizing options in GIVE: 
 - [`UCSC gene table` format](https://genome.ucsc.edu/cgi-bin/hgTables): knownGene annotation files can be download from UCSC Genome Browser (GENCODE track) 
 - [`bed` Tracks](../manuals/4.1-bed.md)
 - [`bigWig` Tracks](../manuals/4.2-bigwig.md)
@@ -41,11 +40,11 @@ The current version of GIVE-Toolbox includes 9 script tools. These tools can mee
 
 ## Walkthrough Example
 
-This walk-through example will show you how to use GIVE-Toolbox to easily build a customized GIVE genome browser. It starts from zero and  includes only 7 steps. In each step, you just need to run one or two bash command lines. All the data in the example can be found in the `example_data` folder.
+This walk-through example will show you how to use GIVE-Toolbox to easily build a customized GIVE genome browser. It includes 7 steps. In each step, you just need to run one or two bash command lines. All the data in the example can be found in the `example_data` folder.
 
 For utilizing GIVE-Toolbox with [different GIVE deployment approaches](2-deploy.md):
-- GIVE-Docker: GIVE-Toolbox is integrated in the GIVE-Docker. When you run a GIVE container and log into the container system (bash terminal), all the script tools can be directly execute with their names, which are located in system path `/usr/local/bin` (the container system). The `example_data` is in the `/tmp` path (the container system). 
-- Custom installation: You need to clone the GIVE GitHub repository and correctly install it. `GIVE-Toolbox` folder is included in the cloned GIVE repo. You can use these tools with their directory like `bash ~/GIVE/GIVE-Toolbox/add_track_bed.sh -u ...`. For convenience, you can set all these tools excutable (using `chmod +x` command to them) and copy them to a system path folder (such as `/usr/local/bin` or declare some path in your `.bashrc` file). Then you can directly run these tools.
+- GIVE-Docker: GIVE-Toolbox is integrated in the GIVE-Docker. When you run a GIVE container and log into the container system (bash terminal), all the script tools can be directly executed with their names, which are located in system path `/usr/local/bin` (the container system). The `example_data` is in the `/tmp` path (the container system). 
+- Custom installation: You need to clone the GIVE GitHub repository and install it correctly . `GIVE-Toolbox` folder is included in the cloned GIVE repo. You can use these tools with their directory like `bash ~/GIVE/GIVE-Toolbox/add_track_bed.sh -u ...`. For convenience, you can set all these tools excutable (using `chmod +x` command to them) and copy them to a system path folder (such as `/usr/local/bin` or declare some path in your `.bashrc` file). Then you can directly run these tools.
 
 ### Step 1: Deployment of GIVE
   
