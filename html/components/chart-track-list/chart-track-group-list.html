@@ -191,7 +191,7 @@
             }
           }
           this.async(function () {
-            this.trackToDOM()
+            this.trackToDOM(true)
             this.setReady(true)
           })
         },
@@ -227,10 +227,10 @@
           }
         },
 
-        trackToDOM: function () {
+        trackToDOM: function (scrollToSelected) {
           // this is used when resetting selection
           Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
-            elem.trackToDOM()
+            elem.trackToDOM(scrollToSelected)
           }, this)
         },
 

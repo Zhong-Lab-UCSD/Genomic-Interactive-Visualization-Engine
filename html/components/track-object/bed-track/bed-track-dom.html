@@ -399,6 +399,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           var _processSingleBlock = function (
             blockStart, blockEnd, thickStart, thickEnd
           ) {
+            var isThick = false
             if (typeof thickStart === 'number' ||
               typeof thickEnd === 'number'
             ) {
@@ -442,7 +443,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           }.bind(this)
 
           var coor, blockStart, blockEnd
-          var isThick = false
 
           if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
             // Have different blocks

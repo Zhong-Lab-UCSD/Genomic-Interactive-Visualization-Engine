@@ -173,6 +173,7 @@ var GIVe = (function (give) {
                   var newGUIRange = GUIRange.clone()
                   newGUIRange.end = queryRange.getStart()
                   mergedGUIRanges.splice(j, 0, newGUIRange)
+                  GUIRange.start = queryRange.getEnd()
                 } else {
                   // queryRange has something at the end
                   GUIRange.end = queryRange.getStart()

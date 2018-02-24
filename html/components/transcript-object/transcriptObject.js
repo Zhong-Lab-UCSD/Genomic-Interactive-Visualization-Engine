@@ -40,7 +40,7 @@ var GIVe = (function (give) {
 
   give.TranscriptObject.prototype._regionFromString = function (regionString) {
     var elements = regionString.split(/ +|\t/)
-    give.ChromRegion.prototype._regionFromBed.call(this, regionString)
+    this._regionFromBed(regionString)
     if (elements[4]) {
       this.score = parseInt(elements[4])
     }

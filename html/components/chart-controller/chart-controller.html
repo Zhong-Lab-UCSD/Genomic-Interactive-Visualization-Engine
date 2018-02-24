@@ -240,8 +240,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             value: function () {
               return ['chr10:30000000-50000000']
             },
-            notify: true,
-            observer: '_coorChanged'
+            notify: true
           },
 
           _threshold: {
@@ -289,11 +288,15 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         },
 
         listeners: {
-          'update-window': '_updateWindowHandler',
+          'update-coordinate': '_updateCoordinateHandler',
           'update-track-structure': 'updateTrackstructureHandler',
           'show-track-filter': '_showTrackFilterHandler',
           'filter-tracks': '_filterTracksHandler'
         },
+
+        observers: [
+          '_coorChanged(coordinates.splices)'
+        ],
 
         ready: function () {
           if (this.coordinates.length > this.numOfSubs) {
@@ -423,8 +426,14 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           }
         },
 
-        _updateWindowHandler: function (e) {
-          if (e.detail.windowIndex >= 0 && e.detail.windowIndex < this.coordinates.length) {
+        _updateCoordinateHandler: function (e) {
+          if (Array.isArray(e.detail.newWindow)) {
+            e.detail.newWindow.forEach(function (newCoor, index) {
+              this.splice('coordinates', index, 1, newCoor)
+            }, this)
+          } else if (e.detail.windowIndex >= 0 &&
+            e.detail.windowIndex < this.coordinates.length
+          ) {
             this.splice('coordinates', e.detail.windowIndex, 1, e.detail.newWindow)
           }
         },
@@ -433,14 +442,16 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           this.updateTrackstructure()
         },
 
-        _coorChanged: function (newValue, oldValue) {
-          this.splice('_coorObjs', 0)
-          this.coordinates.forEach(function (coorText) {
-            this.push('_coorObjs', {
-              coor: coorText,
-              invalid: false
-            })
-          }, this)
+        _coorChanged: function (spliceStatus) {
+          if (this._coorObjs) {
+            this.splice('_coorObjs', 0)
+            this.coordinates.forEach(function (coorText) {
+              this.push('_coorObjs', {
+                coor: coorText,
+                invalid: false
+              })
+            }, this)
+          }
         }
 
       })

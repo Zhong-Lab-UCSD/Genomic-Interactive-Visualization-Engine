@@ -239,7 +239,12 @@ var GIVe = (function (give) {
         // summary provided, just replace
         this.Summary = summary
       } else if (!this.getSummaryData()) {
-        var newSummary = new this.Tree.SummaryCtor()
+        if (summary) {
+          // summary is something with wrong type
+          give._verboseConsole(summary + ' is not a correct summary type. ' +
+            'Will be regenerated from tree data.', give.VERBOSE_DEBUG)
+        }
+        var newSummary = new this.Tree.SummaryCtor(this)
         if (this.Values.every(function (entry, index) {
           if (entry === false) {
             // Child is zero, just return true
@@ -250,11 +255,11 @@ var GIVe = (function (give) {
             return false
           }
           if (this.RevDepth > 0) {
-            newSummary.addSummary(entry.getSummaryData())
+            newSummary.addSummary(this, entry.getSummaryData())
           } else {
             entry.traverse(null, function (dataEntryInDataNode) {
-              newSummary.addData(dataEntryInDataNode)
-            }, null, this, false, { NotFirstCall: true })
+              newSummary.addData(this, dataEntryInDataNode)
+            }, this, null, false, { NotFirstCall: true })
           }
           return true
         }, this)) {
@@ -552,15 +557,18 @@ var GIVe = (function (give) {
       ) {
         // there are actual data at this location, create a new leaf node
         this.Values[currIndex] = new props.LeafNodeCtor({
-          Start: this.Keys[currIndex],
-          End: this.Keys[currIndex + 1]
+          Start: this.Keys[currIndex]
         })
         this.Values[currIndex].insert(data, chrRange, props)
       } else if (this.Keys[currIndex] < chrRange.getEnd()) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
-        this.Values[currIndex] = false
-        if (this._mergeChild(currIndex, false, true)) {
+        this.Values[currIndex] = props.ContList.length <= 0
+          ? false : new props.LeafNodeCtor({
+            Start: this.Keys[currIndex],
+            ContList: props.ContList.slice()
+          })
+        if (this._mergeChild(currIndex, false, false)) {
           currIndex--
         }
       }
