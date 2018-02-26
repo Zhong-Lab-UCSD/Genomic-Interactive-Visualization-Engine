@@ -34,7 +34,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 *Installation of GIVE is optional and not required for the use of any of the Web Components of GIVE. By installing GIVE components, you can serve codes and/or data sources directly from your own server.*
 
-GIVE consists of two major parts: GIVE Web Components, the client-side codes running in browsers, implemented by HTML5, and GIVE server, including bare server codes, implemented by PHP, and data sources.
+GIVE consists of three major parts: GIVE Web Components, the client-side codes running in browsers, implemented by HTML5, GIVE server, including bare server codes, implemented by PHP, and GIVE Data Source.
 
 To install any part of GIVE, a web-hosting environment is needed on your server. Please refer to [GIVE Tutorial 2.2: Custom Installation of GIVE](tutorials/2.2-custom-installation.md) for detailed instructions. Alternatively, you can use GIVE-Docker (__*recommended*__), a Docker image delivering an already configured GIVE server and GIVE Web Components. Please refer to [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](tutorials/2.1-GIVE-Docker.md)
 
