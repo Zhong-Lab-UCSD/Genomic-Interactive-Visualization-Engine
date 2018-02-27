@@ -16,6 +16,6 @@ zcat $1 |
             b[a[1]]
         }}' |
     awk 'BEGIN{FS="\t";OFS="\t"}{
-        print 2*(NR-1)+1,$1,$2,$3,NR,$7,0;
-        print 2*(NR-1)+2,$4,$5,$6,NR,$7,0;
+        print 2*(NR-1)+1,$1,$2,$3,NR,$7,-1;
+        print 2*(NR-1)+2,$4,$5,$6,NR,$7,-1;
     }'  >"$2/give_x_$name.bed"

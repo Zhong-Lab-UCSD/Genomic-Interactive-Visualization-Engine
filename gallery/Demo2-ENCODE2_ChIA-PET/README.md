@@ -52,12 +52,12 @@ The following table shows the GIVE interaction bed format. These datasets can be
 
 |ID|chrom|Start|End|linkID|value|dirFlag|
 | --- | --- | --- | --- | --- | --- | --- |
-|1|chr20|47889560|47895795|1|16.026310742063|0|
-|2|chr20|47896527|47898203|1|16.026310742063|0|
-|3|chr17|79827812|79838989|2|15.548584214411|0|
-|4|chr17|79848037|79871266|2|15.548584214411|0|
-|5|chr17|27046828|27048611|3|15.5357777367182|0|
-|6|chr17|27048612|27049990|3|15.5357777367182|0|
+|1|chr20|47889560|47895795|1|16.026310742063|-1|
+|2|chr20|47896527|47898203|1|16.026310742063|-1|
+|3|chr17|79827812|79838989|2|15.548584214411|-1|
+|4|chr17|79848037|79871266|2|15.548584214411|-1|
+|5|chr17|27046828|27048611|3|15.5357777367182|-1|
+|6|chr17|27048612|27049990|3|15.5357777367182|-1|
 
 ## Build track in MariaDB
 You need a server to build a genome browser with GIVE. Please read the [prerequisites and configuration of GIVE server](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#prerequisites). In that tutorial page, you will also learn how to [prepare MariaDB database](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#optional-preparation-for-give) and [build reference genome for GIVE](https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/blob/master/tutorials/2-dataSource.md#preparation-for-reference-genome). When you have prepared MariaDB and build a `hg19` database, you can use [`GIVE_chiapetTrack.sql`](./GIVE_chiapetTrack.sql) file and following command template to load all the datasets to MariaDB and build 15 tracks.
