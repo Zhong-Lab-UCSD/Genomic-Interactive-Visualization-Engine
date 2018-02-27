@@ -16,11 +16,11 @@
 
 
 ## Introduction
-The current version of GIVE needs MySQL for managing back end data source. It might be complicated for users who are not familiar with MySQL to build data tracks from their own data. So we integrated all the back end operations into a bundle of shell(bash) script tools, which is GIVE-Toolbox. GIVE-Toolbox greatly simplifies the operations for configuring and initializing data source, as well as building and managing data tracks. Here is a walk-through example, you will learn how to build a customized genome browser from zero just in 7 steps. It has never been easier!
+The current version of GIVE needs MySQL for managing back end data source. It might be complicated for users who are not familiar with MySQL to build data tracks from their own data. So we integrated all the back end operations into a bundle of shell(bash) script tools, which is GIVE-Toolbox. GIVE-Toolbox greatly simplifies the operations for configuring and initializing the data source, as well as building and managing data tracks. Here is a walk-through example, you will learn how to build a customized genome browser from zero just in 7 steps. It has never been easier!
 
 If you would like to know the actual operations in MySQL, please refer to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
-GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. Here are documents of the format definitions and related visualizing options in GIVE: 
+GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. Here are some documents of the format definitions and related visualizing options in GIVE: 
 - [`UCSC gene table` format](https://genome.ucsc.edu/cgi-bin/hgTables): knownGene annotation files can be download from UCSC Genome Browser (GENCODE track) 
 - [`bed` Tracks](../manuals/4.1-bed.md)
 - [`bigWig` Tracks](../manuals/4.2-bigwig.md)
