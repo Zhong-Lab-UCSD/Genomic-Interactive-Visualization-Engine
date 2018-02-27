@@ -3,7 +3,7 @@ We provide a series of tutorials to teach you how to build your own genome brows
 
 "Tutorial 0" and "Tutorial 1" show you the easiest way to build a genome browser using [GIVE Data Hub](https://www.givengine.org/data-hub.html) and tweak it in HTML code. GIVE Data Hub links to a public GIVE data source, which hosts hundreds of public/custom data sets, such as ENCODE data. You can easily select data from GIVE Data Hub and it will automatically generate your own genome browser in HTML code. You can edit the HTML code later to tweak your genome browser.
 
-If you want to host GIVE service with your own data source, you need to learn from "Tutorial 2" and "Tutorial 3". In "Tutorial 2", you will learn how to deploy GIVE on a local machine. We recommend to use the first approach, which is GIVE-Docker, if you don't have much linux system administration experience. In "Tutorial 3", you will learn how to use GIVE-Toolbox to easily manage data tracks without MySQL knowledge.
+If you want to host GIVE service with your own data source, you need to learn from "Tutorial 2" and "Tutorial 3". In "Tutorial 2", you will learn how to deploy GIVE on a local machine. We recommend to use the first approach, which is GIVE-Docker, if you don't have much Linux system administration experience. In "Tutorial 3", you will learn how to use GIVE-Toolbox to easily manage data tracks without MySQL knowledge.
 
 "Tutorial 4" is a gallery showing you several nicely customized genome browsers as demos.
 
@@ -27,7 +27,7 @@ We documented both approaches of deployment in GIVE Tutorial 2.1 and 2.2. The fo
 
 ### [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
 
-This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without any affects to you host system.
+This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without any affects to your host system.
 
 ### [GIVE Tutorial 2.2: Custom installation of GIVE](2.2-custom-installation.md)
 
