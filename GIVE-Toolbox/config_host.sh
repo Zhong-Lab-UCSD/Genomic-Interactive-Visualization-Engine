@@ -58,7 +58,7 @@ host_domain=${host_domain//\//\\\/}
 sed -i "s/'CLASS_DIR', '.\+');/'CLASS_DIR', '$tmp_dir');/g" $php_file
 
 if [ ! -z "$mysqlu" ]; then
-    sed -i "s/'CPB_USER', '.\+');/'CPB_HOST', '$mysqlu');/g" $php_file
+    sed -i "s/'CPB_USER', '.\+');/'CPB_USER', '$mysqlu');/g" $php_file
 fi
 
 if [ ! -z "$mysqlp" ]; then
