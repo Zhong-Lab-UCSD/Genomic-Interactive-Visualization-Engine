@@ -27,7 +27,7 @@ We documented both approaches of deployment in GIVE Tutorial 2.1 and 2.2. The fo
 
 ### [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
 
-This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without any affects to your host system.
+This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without affecting your host system.
 
 ### [GIVE Tutorial 2.2: Custom installation of GIVE](2.2-custom-installation.md)
 
