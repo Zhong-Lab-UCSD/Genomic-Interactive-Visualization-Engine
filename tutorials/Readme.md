@@ -12,7 +12,7 @@ If you want to host GIVE service with your own data source, you need to learn fr
 This tutorial will show you a simple example of building a genome browser using data source from GIVE Data Hub.
 
 ## GIVE Tutorial 1: Build and tweak a genome browser
-This tutorial includes two sub-tutorials. GIVE Tutorial 1.1 will teach you how to build a customized genome browser using GIVE Data Hub. GIVE Tutorial 1.2 will illustrate the HTML code detail of tweaking a GIVE genome browser.
+This tutorial includes two sub-tutorials. GIVE Tutorial 1.1 will teach you how to build a customized genome browser using GIVE Data Hub. GIVE Tutorial 1.2 will illustrate the HTML code details of tweaking a GIVE genome browser.
 
 ### [GIVE Tutorial 1.1: Build a genome browser with GIVE Data Hub](1.1-GIVE-Hub.md)
 
