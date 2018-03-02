@@ -3,24 +3,91 @@ require_once(realpath(dirname(__FILE__) . "/track_base.php"));
 
 define('LINK_ID', 'kgID');    // this is the ID UCSC used to link knownGene to kgXref
 
-function _BedFromAssoc($assoc) {
+function _BedFromAssoc(&$assoc, $attrAs13thColumn = FALSE) {
   // get BED string from associate array (name is par UCSC database naming convention)
-
+  $resultArr = [];
   // BED 3
-  $result = $assoc['chrom'] . "\t" . $assoc['txStart'] . "\t" . $assoc['txEnd'];
+  $resultArr []= $assoc['chrom'];
+  unset($assoc['chrom']);
+  $resultArr []= $assoc['txStart'];
+  unset($assoc['txStart']);
+  $resultArr []= $assoc['txEnd'];
+  unset($assoc['txEnd']);
 
   // add additional columns as needed, notice that for additional stuff count
   //    '.' needs to be filled for previous fields
   if (!is_null($assoc['name'])) {
-    $result .= $assoc['name'];
-    if (!is_null()) {
-
-    }
+    // BED 4 (optional)
+    $resultArr []= $assoc['name'];
+    unset($assoc['name']);
   }
 
+  if (!is_null($assoc['score'])) {
+    // BED 5 (optional)
+    $resultArr = array_pad($resultArr, 4, ".");
+    $resultArr []= $assoc['score'];
+    unset($assoc['score']);
+  }
+
+  if (!is_null($assoc['strand'])) {
+    // BED 6 (optional)
+    $resultArr = array_pad($resultArr, 5, ".");
+    $resultArr []= ((isset($assoc['strand']) && $assoc['strand'] !== "")
+      ? $itor['strand'] : ".");
+    unset($assoc['strand']);
+  }
+
+  if (!is_null($assoc['cdsEnd'])) {
+    // BED 8 (optional)
+    $resultArr = array_pad($resultArr, 6, ".");
+    $resultArr []= $assoc['cdsStart'];
+    $resultArr []= $assoc['cdsEnd'];
+    unset($assoc['cdsStart']);
+    unset($assoc['cdsEnd']);
+  }
+
+  if (!is_null($assoc['itemRGB'])) {
+    // BED 9 (optional)
+    $resultArr = array_pad($resultArr, 8, ".");
+    $resultArr []= $assoc['itemRGB'];
+    unset($assoc['itemRGB']);
+  }
+
+  if (!is_null($assoc['exonCount'])) {
+    // BED 12 (optional)
+    $resultArr = array_pad($resultArr, 9, ".");
+    $resultArr []= $assoc['exonCount'];
+    unset($assoc['exonCount']);
+    // convert UCSC format to BED12
+    $exonStartsArr = explode(',', $assoc['exonStarts']);
+    $exonEndsArr = explode(',', $assoc['exonEnds']);
+    if (intval($exonStartsArr[0]) !== 0){
+      $exonLengths = '';
+      $exonStarts = '';
+      for($i = 0; $i < intval($assoc['exonCount']); $i++) {
+        $exonStarts .= strval(intval($exonStartsArr[$i]) - intval($resultArr[1])) . ',';
+        $exonLengths .= strval(intval($exonEndsArr[$i]) - intval($exonStartsArr[$i])) . ',';
+      }
+      $resultArr []= $exonLengths;
+      $resultArr []= $exonStarts;
+    } else {
+      // it's already BED 12 format
+      $resultArr []= $assoc['exonEnds'];
+      $resultArr []= $assoc['exonStarts'];
+    }
+    unset($assoc['exonEnds']);
+    unset($assoc['exonStarts']);
+  }
+
+  if ($attrAs13thColumn && !empty($assoc)) {
+    $resultArr = array_pad($resultArr, 12, ".");
+    $resultArr []= json_encode($assoc);
+  }
+
+  return implode("\t", $resultArr);
 }
 
-function _loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
+function _loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $linkedKey = NULL, $params = NULL) {
   // if chrRegion is provided (as an array of ChromRegion class object)
   // then filtering will be carried out (results needs to be overlapping with at least one region)
   // otherwise (unlikely situation) no filtering will be done
@@ -37,7 +104,8 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $para
       // need to link the table via the following: 'name' = LINK_ID
       $sqlstmt .= " LEFT JOIN `" . $mysqli->real_escape_string($linkedTable) . "` ON `"
             . $mysqli->real_escape_string($tableName) . "`.`name` = `"
-            . $mysqli->real_escape_string($linkedTable) . "`.`" . LINK_ID . "`";
+            . $mysqli->real_escape_string($linkedTable) . "`.`"
+            . $mysqli->real_escape_string($linkedKey) . "`";
     }
     if(!is_null($chrRegion)) {
       // add filtering part
@@ -76,18 +144,10 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $para
         $exonLengths .= strval(intval($exonEndsArr[$i]) - intval($exonStartsArr[$i])) . ',';
       }
       $newGene = array();
-      $newGene['geneBed'] = $itor['chrom']
-                . "\t" . $itor['txStart']
-                . "\t" . $itor['txEnd']
-                . "\t" . $itor['name']
-                . "\t1\t"
-                . ((isset($itor['strand']) && $itor['strand'] !== "")
-                  ? $itor['strand'] : ".")
-                . "\t" . $itor['cdsStart']
-                . "\t" . $itor['cdsEnd']
-                . "\t0,0,0\t" . $itor['exonCount']
-                . "\t" . $exonLengths
-                . "\t" . $exonStarts;
+      $newGene['geneBed'] = _BedFromAssoc($itor);
+      if (!empty($itor)) {
+        $newGene['attr'] = $itor;
+      }
       if(isset($itor['geneSymbol'])) {
         $newGene['geneSymbol'] = $itor['geneSymbol'];
       }

@@ -3,7 +3,7 @@ require_once(realpath(dirname(__FILE__) . "/../common_func.php"));
 
 $trackMap = array();
 
-function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTable = NULL, $params = NULL) {
+function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTable = NULL, $linkedKey = NULL, $params = NULL) {
 
   global $trackMap;   // may need to be rewritten to use class instead
   // this is the map mapping different track types
@@ -18,8 +18,13 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
     $stmt->execute();
     $tracks = $stmt->get_result();
     while($itor = $tracks->fetch_assoc()) {
-      $type = strtolower(strtok($itor['type'], " \n\t"));
-      strtok('', '');
+      if(is_null($type)) {
+        $type = strtolower(strtok($itor['type'], " \n\t"));
+        strtok('', '');
+      }
+      if(is_null($linkedTable)) {
+
+      }
       $linkedTableSettings = json_decode($itor['settings'], JSON_FORCE_OBJECT);
       if(isset($linkedTableSettings['defaultLinkedTables'])) {
         $linkedTable = $linkedTableSettings['defaultLinkedTables'];
@@ -29,7 +34,7 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
     $mysqli->close();
   }
   // otherwise, directly use the corresponding function
-  return $trackMap[$type]['loadTrack']($db, $tableName, $chrRegion, $linkedTable, $params);
+  return $trackMap[$type]['loadTrack']($db, $tableName, $chrRegion, $linkedTable, $linkedKey, $params);
 }
 
 function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $params = NULL) {

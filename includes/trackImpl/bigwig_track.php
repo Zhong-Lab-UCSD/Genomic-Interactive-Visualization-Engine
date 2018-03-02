@@ -1,7 +1,7 @@
 <?php
 require_once(realpath(dirname(__FILE__) . "/track_base.php"));
 
-function _loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
+function _loadBigwig($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $linkedKey = NULL, $params = NULL) {
   // bigwig tracks does not have any database entries,
   //    all files will be either locally on the server, or on some remote server
   $mysqli = connectCPB($db);
