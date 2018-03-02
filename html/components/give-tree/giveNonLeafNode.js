@@ -337,21 +337,34 @@ var GIVe = (function (give) {
    * _fixChildLinks - fix sibling links for a specific child.
    *
    * @param  {number} index - the index of the child
+   * @param  {boolean} doNotFixBack - if `true`, the links after this child will
+   *    not be fixed.
+   * @param  {boolean} doNotFixFront - if `true`, the links before this child
+   *    will not be fixed.
    */
-  give.GiveNonLeafNode.prototype._fixChildLinks = function (index) {
+  give.GiveNonLeafNode.prototype._fixChildLinks = function (
+    index, doNotFixBack, doNotFixFront
+  ) {
     if (this.RevDepth > 0) {
-      var prevChild = this._getChildPrev(index)
-      var nextChild = this._getChildNext(index)
-      if (this.Values[index]) {
-        this.Values[index].setNext(nextChild)
-        this.Values[index].setPrev(prevChild)
-      } else {
-        try {
-          prevChild.setNext(this.Values[index])
-        } catch (ignore) { }
-        try {
-          nextChild.setPrev(this.Values[index])
-        } catch (ignore) { }
+      if (!doNotFixBack) {
+        var nextChild = this._getChildNext(index)
+        if (this.Values[index]) {
+          this.Values[index].setNext(nextChild)
+        } else {
+          try {
+            nextChild.setPrev(this.Values[index])
+          } catch (ignore) { }
+        }
+      }
+      if (!doNotFixFront) {
+        var prevChild = this._getChildPrev(index)
+        if (this.Values[index]) {
+          this.Values[index].setPrev(prevChild)
+        } else {
+          try {
+            prevChild.setNext(this.Values[index])
+          } catch (ignore) { }
+        }
       }
     }
   }
@@ -578,24 +591,35 @@ var GIVe = (function (give) {
 
   /**
    * _splitChild - split a child into two
+   * If the old child at `index` is not `null` or `false`, both `newLatterChild`
+   *    and `newFormerChild` will be needed (otherwise the tree structure may
+   *    be corrupted).
    *
    * @param  {number} index - index of the child to be split.
    * @param  {number} newKey - the new key separating the two children
-   * @param  {give.GiveTreeNode|} newLatterChild - the new latter child.
-   *    If `null`, use the old child.
-   * @param  {give.GiveTreeNode|null} newFormerChild - the new former child.
-   *    If `null`, use the old child.
+   * @param  {give.GiveTreeNode|false|null} [newLatterChild] - the new latter
+   *    child. If `undefined`, use the old child.
+   * @param  {give.GiveTreeNode|false|null} [newFormerChild] - the new former
+   *    child. If `undefined`, use the old child.
    */
   give.GiveNonLeafNode.prototype._splitChild = function (
     index, newKey, newLatterChild, newFormerChild
   ) {
+    if (this.Values[index] &&
+      (newLatterChild === undefined || newFormerChild === undefined)
+    ) {
+      throw new Error('Cannot split an existing child without providing both' +
+        ' resulting siblings!')
+    }
     this.Keys.splice(index + 1, 0, newKey)
     this.Values.splice(index + 1, 0,
       newLatterChild === undefined ? this.Values[index] : newLatterChild)
-    this._fixChildLinks(index + 1)
+    if (newLatterChild !== undefined) {
+      this._fixChildLinks(index + 1, false, true)
+    }
     if (newFormerChild !== undefined) {
       this.Value[index] = newFormerChild
-      this._fixChildLinks(index)
+      this._fixChildLinks(index, newLatterChild === undefined, false)
     }
   }
 
@@ -647,7 +671,7 @@ var GIVe = (function (give) {
         if (this.getPrev()) {
           this.getPrev().setEnd(this.getStart())
         }
-        this._fixChildLinks(index > 0 ? index - 1 : index)
+        this._fixChildLinks(index > 0 ? index - 1 : index, true)
         mergedFront = true
       }
     }
@@ -662,7 +686,7 @@ var GIVe = (function (give) {
         // remove child at `index + 1`
         this.Keys.splice(index + 1, 1)
         this.Values.splice(index + 1, 1)
-        this._fixChildLinks(index)
+        this._fixChildLinks(index, false, true)
       } else if (crossBorder && index === this.Values.length - 1 &&
         this.getNext() && this.Values.length > 1 &&
         give.GiveNonLeafNode._childMergable(
@@ -675,7 +699,7 @@ var GIVe = (function (give) {
         this.Values.splice(index, 1)
         // needs to change the boundary of sibling node
         this.setEnd(this.getNext().getStart())
-        this.getNext()._fixChildLinks(0)
+        this.getNext()._fixChildLinks(0, false, true)
       }
     }
     return mergedFront
