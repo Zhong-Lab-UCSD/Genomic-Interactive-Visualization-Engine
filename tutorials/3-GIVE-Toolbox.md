@@ -16,7 +16,7 @@
 
 
 ## Introduction
-GIVE-Toolbox is a set of shell(bash) scripts that reliefs users from writing MySQL commands. GIVE uses MySQL in the back end for data management. Users who do not want to directly work with MySQL can choose to use GIVE-Toolbox. GIVE-Toolbox offers all the equivalent functions and capabilities as directly writing MySQL commands. GIVE-Toolbox simplifies the operations for configuring and initializing data sources, as well as building and managing data tracks. In the following walk-through example, we will build a customized genome browser in 7 steps. 
+GIVE-Toolbox is a set of shell(bash) scripts that relieves users from writing MySQL commands. GIVE uses MySQL in the back end for data management. Users who do not want to directly work with MySQL can choose to use GIVE-Toolbox. GIVE-Toolbox offers all the equivalent functions and capabilities as directly writing MySQL commands. GIVE-Toolbox simplifies the operations for configuring and initializing data sources, as well as building and managing data tracks. In the following walk-through example, we will build a customized genome browser in 7 steps. 
 
 If you would like to know the actual operations in MySQL, please refer to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
