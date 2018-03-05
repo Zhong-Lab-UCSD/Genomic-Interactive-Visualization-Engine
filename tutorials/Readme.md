@@ -25,7 +25,7 @@ We provide two approaches for deploying GIVE to local machines or cloud services
 
 We documented both approaches of deployment in GIVE Tutorial 2.1 and 2.2. The following links will lead you to them.
 
-### [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
+### [GIVE Tutorial 2.1: Local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
 
 This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without affecting your host system.
 
