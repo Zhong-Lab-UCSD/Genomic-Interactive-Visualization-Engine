@@ -177,7 +177,7 @@ var GIVe = (function (give) {
     this.start = parseInt(tokens[1])
     this.end = parseInt(tokens[2])
     this.setStrand((tokens.length < 6) ? this.strand : tokens[5])
-    this.name = tokens[3] || this.name || ''
+    this.name = (tokens[3] && tokens[3] !== '.') ? tokens[3] : (this.name || '')
   }
 
   give.ChromRegion.prototype.regionToString = function (includeStrand) {

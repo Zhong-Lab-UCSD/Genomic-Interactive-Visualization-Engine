@@ -18,23 +18,23 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
     $stmt->execute();
     $tracks = $stmt->get_result();
     while($itor = $tracks->fetch_assoc()) {
-      if(is_null($type)) {
+      if (is_null($type)) {
         $type = strtolower(strtok($itor['type'], " \n\t"));
         strtok('', '');
       }
-      if(is_null($linkedTable)) {
-
-      }
-      $linkedTableSettings = json_decode($itor['settings'], JSON_FORCE_OBJECT);
-      if(isset($linkedTableSettings['defaultLinkedTables'])) {
-        $linkedTable = $linkedTableSettings['defaultLinkedTables'];
+      if (is_null($linkedTable)) {
+        $linkedTableSettings = json_decode($itor['settings'], JSON_FORCE_OBJECT);
+        if(isset($linkedTableSettings['defaultLinkedTables'])) {
+          $linkedTable = $linkedTableSettings['defaultLinkedTables'];
+          $linkedKey = $linkedTableSettings['defaultLinkedKeys'];
+        }
       }
     }
     $tracks->free();
     $mysqli->close();
   }
   // otherwise, directly use the corresponding function
-  return $trackMap[$type]['loadTrack']($db, $tableName, $chrRegion, $linkedTable, $linkedKey, $params);
+  return $trackMap[$type]['loadTrack']($db, $tableName, $chrRegion, $type, $linkedTable, $linkedKey, $params);
 }
 
 function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $params = NULL) {
