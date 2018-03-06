@@ -226,6 +226,13 @@ var GIVe = (function (give) {
       // Now all data entries with `.getStart()` before `nextRangeStart` should
       // be already in `props.ContList`
 
+      if (this.Keys[currIndex] < chrRange.getStart()) {
+        // The new rangeStart appears between windows.
+        // Shorten the previous data record by inserting the key,
+        // and use `false` to fill the rest
+        this._splitChild(currIndex++, chrRange.getStart(), false)
+      }
+
       if (
         props.DataIndex < data.length &&
         data[props.DataIndex].getStart() === this.Keys[currIndex]
