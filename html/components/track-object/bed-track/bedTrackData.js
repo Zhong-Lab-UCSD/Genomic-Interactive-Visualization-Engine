@@ -244,7 +244,7 @@ var GIVe = (function (give) {
    * @constructor
    * @memberof TrackDataObjectBase.prototype
    */
-  give.BedTrackData.prototype._DataStructure = give.PineTree
+  // give.BedTrackData.prototype._DataStructure = give.PineTree
 
   return give
 })(GIVe || {})
