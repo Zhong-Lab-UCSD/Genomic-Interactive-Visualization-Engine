@@ -186,6 +186,26 @@ var GIVe = (function (give) {
         '` is not a constructor for a tree node!')
     }
 
+    while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+      currIndex++
+    }
+
+    if (this.Keys[currIndex] < chrRange.getStart()) {
+      // The new rangeStart appears between windows.
+      // Shorten the previous data record by inserting the key,
+      // and use this.Values[currIndex] to fill the rest
+      // (normally it should be `null`)
+      this._splitChild(currIndex++, chrRange.getStart())
+    }
+
+    if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
+      // The new rangeEnd appears between windows.
+      // Shorten the previous data record by inserting the key,
+      // and use this.Values[currIndex] to fill the rest
+      // (normally it should be `null`)
+      this._splitChild(currIndex, chrRange.getEnd())
+    }
+
     while (chrRange.getStart() < chrRange.getEnd()) {
       while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
         currIndex++
@@ -206,14 +226,6 @@ var GIVe = (function (give) {
       // Now all data entries with `.getStart()` before `nextRangeStart` should
       // be already in `props.ContList`
 
-      if (this.Keys[currIndex] < chrRange.getStart()) {
-        // The new rangeStart appears between windows.
-        // Shorten the previous data record by inserting the key,
-        // and use this.Values[currIndex] to fill the rest
-        // (normally it should be `null`)
-        this._splitChild(currIndex++, chrRange.getStart())
-      }
-
       if (
         props.DataIndex < data.length &&
         data[props.DataIndex].getStart() === this.Keys[currIndex]
@@ -228,7 +240,7 @@ var GIVe = (function (give) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
-        if (this._mergeChild(currIndex, false, true)) {
+        if (this._mergeChild(currIndex, !data.length, true)) {
           currIndex--
         }
       }
