@@ -606,7 +606,7 @@ var GIVe = (function (give) {
     index, newKey, newLatterChild, newFormerChild
   ) {
     if (this.Values[index] &&
-      (newLatterChild === undefined || newFormerChild === undefined)
+      (newLatterChild === undefined && newFormerChild === undefined)
     ) {
       throw new Error('Cannot split an existing child without providing both' +
         ' resulting siblings!')
