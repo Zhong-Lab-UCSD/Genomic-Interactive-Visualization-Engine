@@ -655,14 +655,13 @@ var GIVe = (function (give) {
   }
 
   /**
-   * _dataFromChromEntry - extract data or summary from `give.ChromRegion`.
+   * _dataFromChromEntry - extract data from `give.ChromRegion`.
    *    This is almost the reverse function of `this._chromEntryFromResponse`
    *
    * @memberof TrackDataObjectBase.prototype
    * @param  {ChromRegionLiteral} dataEntry - the `give.ChromRegion` object to
    *    extract data from.
-   * @returns {object|BigWigTrackData._SummaryCtor} either the data object,
-   *    or the (properly constructed) summary object from the response.
+   * @returns {object} the data object.
    */
   give.TrackDataObject.prototype._dataFromChromEntry = function (dataEntry) {
     if (!dataEntry.data) {
@@ -693,6 +692,16 @@ var GIVe = (function (give) {
    * @memberof TrackDataObjectBase.prototype
    */
   give.TrackDataObject.prototype._SummaryCtor = null
+
+  /**
+   * _setSummaryCtor - description
+   *
+   * @param  {type} SummaryCtor description
+   * @returns {type}             description
+   */
+  give.TrackDataObject.prototype._setSummaryCtor = function (SummaryCtor) {
+
+  }
 
   /**
    * _DataStructure - Constructor for underlying data structure used in
@@ -757,6 +766,18 @@ var GIVe = (function (give) {
   }
 
   /**
+   * extract - extract the summary data from a chromosomal region.
+   * This is the reverse operation of `SummaryCtorBase.attach`.
+   *
+   * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to extract
+   *    summary data from.
+   * @returns {SummaryCtorBase} extracted summary data.
+   */
+  give.SummaryCtorBase.extract = function (chrRegion) {
+    return chrRegion.data
+  }
+
+  /**
    * addSummary - add summary data to this summary.
    *    This is mainly used to summarize over a series of summaries.
    *
@@ -774,6 +795,18 @@ var GIVe = (function (give) {
    * @param  {object} data - the raw data object to be added
    */
   give.SummaryCtorBase.prototype.addData = function (node, data) {
+  }
+
+  /**
+   * addData - add raw data entry to this summary
+   *    This is mainly used to summarize over raw data entries.
+   *
+   * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+   * @param  {ChromRegionLiteral} chromEntry - the raw data object to be added
+   */
+  give.SummaryCtorBase.prototype.addDataFromChromEntry = function (
+    node, chromEntry
+  ) {
   }
 
   /**

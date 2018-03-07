@@ -25,6 +25,8 @@ var GIVe = (function (give) {
    * @property {number} start - Starting coordinate
    * @property {number} end - Ending coordinate (not included in the region)
    * @property {boolean|null} strand - The strand of the region
+   * @property {object|null} data - any general data that needs to be attached
+   *    to this chromosomal region
    *
    * @class give.ChromRegion
    * Data structure for chromosomal region

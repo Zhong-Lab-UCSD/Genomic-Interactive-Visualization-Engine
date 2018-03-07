@@ -233,7 +233,7 @@ var GIVe = (function (give) {
     if (typeof this.Tree.SummaryCtor === 'function') {
       var summary
       if (chromEntry) {
-        summary = this.Tree._dataFromChromEntry(chromEntry)
+        summary = this.Tree.SummaryCtor.extract(chromEntry)
       }
       if (summary instanceof this.Tree.SummaryCtor) {
         // summary provided, just replace
@@ -258,8 +258,7 @@ var GIVe = (function (give) {
             newSummary.addSummary(this, nodeEntry.getSummaryData())
           } else {
             nodeEntry.traverse(null, function (chromEntryInDataNode) {
-              newSummary.addData(this,
-                this.Tree._dataFromChromEntry(chromEntryInDataNode))
+              newSummary.addDataFromChromEntry(this, chromEntryInDataNode)
             }, this, null, false, { NotFirstCall: true })
           }
           return true
