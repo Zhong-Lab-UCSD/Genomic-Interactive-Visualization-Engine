@@ -133,8 +133,8 @@ var GIVe = (function (give) {
 
   give.extend(give.SummaryCtorBase, give.BigWigSummaryCtor)
 
-  give.BigWigSummaryCtor.testRespEntry = function (entry) {
-    return (entry.data && entry.data.hasOwnProperty('validCount'))
+  give.BigWigSummaryCtor.testRespEntry = function (respEntry) {
+    return (respEntry.data && respEntry.data.hasOwnProperty('validCount'))
   }
 
   give.BigWigSummaryCtor.createFromResp = function (respEntry, trackDataObj) {

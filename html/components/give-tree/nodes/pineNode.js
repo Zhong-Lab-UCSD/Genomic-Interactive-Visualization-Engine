@@ -225,15 +225,15 @@ var GIVe = (function (give) {
   /**
    * updateSummary - Update the summary data within this node
    *
-   * @param  {ChromRegionLiteral} dataEntry - if known summaries exist in the
+   * @param  {ChromRegionLiteral} chromEntry - if known summaries exist in the
    *    data entry, replace current summary with the new one.
    * @returns {boolean} - return `true` if summary has been updated.
    */
-  give.PineNode.prototype.updateSummary = function (dataEntry) {
+  give.PineNode.prototype.updateSummary = function (chromEntry) {
     if (typeof this.Tree.SummaryCtor === 'function') {
       var summary
-      if (dataEntry) {
-        summary = this.Tree.SummaryCtor.extract(dataEntry)
+      if (chromEntry) {
+        summary = this.Tree._dataFromChromEntry(chromEntry)
       }
       if (summary instanceof this.Tree.SummaryCtor) {
         // summary provided, just replace
@@ -245,20 +245,21 @@ var GIVe = (function (give) {
             'Will be regenerated from tree data.', give.VERBOSE_DEBUG)
         }
         var newSummary = new this.Tree.SummaryCtor(this)
-        if (this.Values.every(function (entry, index) {
-          if (entry === false) {
+        if (this.Values.every(function (nodeEntry, index) {
+          if (nodeEntry === false) {
             // Child is zero, just return true
             return true
           }
-          if (entry === null ||
-             (this.RevDepth > 0 && entry.getSummaryData() === null)) {
+          if (nodeEntry === null ||
+             (this.RevDepth > 0 && nodeEntry.getSummaryData() === null)) {
             return false
           }
           if (this.RevDepth > 0) {
-            newSummary.addSummary(this, entry.getSummaryData())
+            newSummary.addSummary(this, nodeEntry.getSummaryData())
           } else {
-            entry.traverse(null, function (dataEntryInDataNode) {
-              newSummary.addData(this, dataEntryInDataNode)
+            nodeEntry.traverse(null, function (chromEntryInDataNode) {
+              newSummary.addData(this,
+                this.Tree._dataFromChromEntry(chromEntryInDataNode))
             }, this, null, false, { NotFirstCall: true })
           }
           return true

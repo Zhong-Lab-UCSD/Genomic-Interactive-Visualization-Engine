@@ -655,7 +655,7 @@ var GIVe = (function (give) {
   }
 
   /**
-   * _dataFromChromEntry - extract data from `give.ChromRegion`.
+   * _dataFromChromEntry - extract data or summary from `give.ChromRegion`.
    *    This is almost the reverse function of `this._chromEntryFromResponse`
    *
    * @memberof TrackDataObjectBase.prototype
