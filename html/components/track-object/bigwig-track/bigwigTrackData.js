@@ -161,8 +161,8 @@ var GIVe = (function (give) {
     this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
   }
 
-  give.BigWigTrackData.prototype._DataStructure = give.PineTree
-  give.BigWigTrackData.prototype._SummaryCtor = give.BigWigSummaryCtor
+  give.BigWigTrackData._DataStructure = give.PineTree
+  give.BigWigTrackData._SummaryCtor = give.BigWigSummaryCtor
 
   return give
 })(GIVe || {})
