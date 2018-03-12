@@ -55,12 +55,10 @@ limitations under the License.
       paper-button#generateHtml[visible] {
         visibility: visible;
       }
-      div.intro {
-        overflow: auto;
-      }
     </style>
     <paper-toolbar>
-      <span class="title">GIVE Data Hub</span>
+      <content id="logo" select=".logo"></content>
+      <span class="title">[[titleText]]</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
       <div id="htmlGeneratorButtons">
         <paper-button raised toggles active="{{generatorMode}}">
@@ -73,7 +71,7 @@ limitations under the License.
         </paper-button>
       </div>
     </paper-toolbar>
-    <div class="layout vertical intro"
+    <div class="layout vertical flex"
       hidden$="[[_calcIntroHidden(currentRef)]]">
       <content id="introDiv" select=".managerIntro"></content>
     </div>
@@ -107,6 +105,11 @@ limitations under the License.
             value: function () {
               return []
             }
+          },
+
+          titleText: {
+            type: String,
+            value: 'Data Hub'
           }
         },
 
