@@ -13,7 +13,7 @@ var GIVe = (function (give) {
     if (this.thickEnd && this.thickEnd > this.end) {
       this.thickEnd = this.end
     }
-    this.geneName = this.geneName || this.name
+    this.geneSymbol = this.geneSymbol || this.name
   }
 
   give.extend(give.ChromRegion, give.TranscriptObject)
@@ -162,7 +162,7 @@ var GIVe = (function (give) {
   }
 
   give.TranscriptObject.prototype.getGeneName = function (withTransNums) {
-    return this.geneName
+    return this.geneSymbol
   }
 
   return give

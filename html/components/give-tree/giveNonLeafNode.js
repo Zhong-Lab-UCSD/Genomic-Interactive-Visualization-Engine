@@ -504,9 +504,7 @@ var GIVe = (function (give) {
     if (this.Values[0] && this.Values[0].isEmpty()) {
       this.Values[0] = false
     }
-    return ((this.Values.length <= 0 || (
-      this.Values.length === 1 && this.Values[0] === false)
-    ) ? false : this)
+    return (!this.IsRoot && this.isEmpty()) ? false : this
   }
 
   /**

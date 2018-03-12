@@ -72,7 +72,6 @@ function _BedFromAssoc(&$assoc, $isGenePred = FALSE, $attrAs13thColumn = FALSE) 
     // BED 12 (optional)
     $resultArr = array_pad($resultArr, 9, ".");
     $resultArr []= $assoc['exonCount'];
-    unset($assoc['exonCount']);
     // convert UCSC format to BED12
     $exonStartsArr = explode(',', $assoc['exonStarts']);
     $exonEndsArr = explode(',', $assoc['exonEnds']);
@@ -84,6 +83,7 @@ function _BedFromAssoc(&$assoc, $isGenePred = FALSE, $attrAs13thColumn = FALSE) 
     }
     $resultArr []= $exonLengths;
     $resultArr []= $exonStarts;
+    unset($assoc['exonCount']);
     unset($assoc['exonEnds']);
     unset($assoc['exonStarts']);
   } elseif (!$isGenePred && isset($assoc['blockCount'])) {
@@ -162,8 +162,9 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
       $genes = $mysqli->query($sqlstmt);
     }
     while($itor = $genes->fetch_assoc()) {
-      if(!isset($result[$itor['chrom']])) {
-        $result[$itor['chrom']] = array();
+      $chrom = $itor['chrom'];
+      if(!isset($result[$chrom])) {
+        $result[$chrom] = array();
       }
       $newGene = array();
       $newGene['geneBed'] = _BedFromAssoc($itor, $isGenePred);
@@ -178,7 +179,7 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
           }
         }
       }
-      $result[$itor['chrom']] [] = $newGene;
+      $result[$chrom] [] = $newGene;
 
     }
     $genes->free();

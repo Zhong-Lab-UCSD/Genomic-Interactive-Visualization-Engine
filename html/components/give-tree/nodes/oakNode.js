@@ -129,9 +129,7 @@ var GIVe = (function (give) {
         return siblings
       }
     } else { // !(this.Values.length > this.Tree.BranchingFactor)
-      return ((this.Values.length <= 0 || (
-          this.Values.length === 1 && this.Values[0] === false)
-        ) ? false : this)
+      return (!this.IsRoot && this.isEmpty()) ? false : this
     }
   }
 
