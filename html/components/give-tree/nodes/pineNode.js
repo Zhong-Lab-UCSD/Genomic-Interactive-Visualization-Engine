@@ -299,8 +299,37 @@ var GIVe = (function (give) {
   }
 
   /**
+   * _restructure - The function to be called after adding/removing data to
+   *    the node.
+   *    This is used in implementations that involve post-insertion processes
+   *    of the tree (for example, rebalancing in B+ tree derivatives).
+   *    If this node should be remove for any reason, return the value
+   *    For trees that do not implement post-insertion processes, return `this`.
+   * @memberof PineNode.prototype
+   *
+   * @returns {give.PineNode|Array<give.PineNode>|false}
+   *    This shall reflect whether there are any changes in the tree structure.
+   *    for root and non-root nodes:
+   *    * For root nodes, always return `this` (cannot delete root even without
+   *      any children).
+   *    * for inner nodes (or leaf), if the node should be removed (being merged
+   *      with its sibling(s) or becoming an empty node, for example), return
+   *      `false`. Return `this` in all other cases.
+   */
+  give.PineNode.prototype._restructure = function () {
+    // for non-auto-balancing trees, return false if this node has no data any
+    //    more (no summary data or member data)
+    if (this.Values[0] && this.Values[0].isEmpty()) {
+      this.Values[0] = false
+    }
+    return (!this.hasData() && (this.Values.length <= 0 || (
+      this.Values.length === 1 && this.Values[0] === false)
+    )) ? false : this
+  }
+
+  /**
    * insert - Insert data under this node
-   * @memberof GiveNonLeafNode.prototype
+   * @memberof PineNode.prototype
    *
    * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries
    *    (each should be an extension of `GIVe.ChromRegion`).
@@ -336,7 +365,7 @@ var GIVe = (function (give) {
    *    leaf nodes if they are not the same as the non-leaf nodes.
    * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
    *    This shall reflect whether auto-balancing is supported for the tree.
-   *    See `give.GiveNonLeafNode.prototype._restructuring` for details.
+   *    See `give.GiveNonLeafNode.prototype._restructure` for details.
    */
   give.PineNode.prototype.insert = function (data, chrRange, props) {
     props = props || {}
@@ -389,7 +418,7 @@ var GIVe = (function (give) {
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
     this.rejuvenate(props.LifeSpan)
-    return this._restructuring()
+    return this._restructure()
   }
 
   give.PineNode.prototype._addNonLeafRecords = function (
@@ -818,6 +847,17 @@ var GIVe = (function (give) {
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }
+  }
+
+  /**
+   * isEmpty - return whether this node is empty
+   * If there is no entry in both `this.StartList` and `this.ContList` then the
+   *    node is considered empty.
+   *
+   * @returns {boolean}      whether the node is empty
+   */
+  give.PineNode.prototype.isEmpty = function () {
+    return this.hasData() || give.GiveNonLeafNode.prototype.isEmpty.call(this)
   }
 
   give.PineNode._DEFAULT_S_FACTOR = 10

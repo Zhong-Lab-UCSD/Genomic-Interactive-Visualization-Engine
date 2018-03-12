@@ -76,7 +76,7 @@ var GIVe = (function (give) {
     localFile, regions
   ) {
     var reader = new window.FileReader()
-      // should use bigWig.readSection()
+    // should use bigWig.readSection()
     var datapoints = {}
 
     reader.onload = function () {
@@ -108,7 +108,7 @@ var GIVe = (function (give) {
    * @property {number} value - the 'value' of this summary data, should be
    *    `this.sumData / this.validCount`
    */
-  give.BigWigSummaryCtor = function (node, oldSummary) {
+  give.BigWigSummaryCtor = function (chrRegion, oldSummary) {
     give.SummaryCtorBase.apply(this, arguments)
     if (oldSummary) {
       this.validCount = oldSummary.validCount || 0
@@ -133,12 +133,8 @@ var GIVe = (function (give) {
 
   give.extend(give.SummaryCtorBase, give.BigWigSummaryCtor)
 
-  give.BigWigSummaryCtor.testRespEntry = function (respEntry) {
+  give.BigWigSummaryCtor._testRespEntry = function (respEntry) {
     return (respEntry.data && respEntry.data.hasOwnProperty('validCount'))
-  }
-
-  give.BigWigSummaryCtor.createFromResp = function (respEntry, trackDataObj) {
-    return give.SummaryCtorBase.createFromResp.apply(this, arguments)
   }
 
   give.BigWigSummaryCtor.prototype.addSummary = function (node, summary) {

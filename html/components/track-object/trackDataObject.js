@@ -319,8 +319,8 @@ var GIVe = (function (give) {
       this._callbackMgr.add(callback, callerID)
     }
     give.debounce(this._getDataJobName,
-            this._queryAndRetrieveData.bind(this),
-            this.getDataDebounceInt)
+      this._queryAndRetrieveData.bind(this),
+      this.getDataDebounceInt)
   }
 
   /**
@@ -340,7 +340,7 @@ var GIVe = (function (give) {
     if (!this._data || !this._data.hasOwnProperty(chrom)) {
       if (createIfNotExist) {
         this._data = this._data || {}
-        this._data[chrom] = this.constructor._createNewDataStructure(chrom)
+        this._data[chrom] = this._createNewDataStructure(chrom)
       } else {
         throw new Error('Data not ready for track \'' +
           this.parent.getID() + '\'' + ', chromosome \'' + chrom + '\'.')
@@ -407,7 +407,7 @@ var GIVe = (function (give) {
    * @returns {this.constructor._DataStructure} - a new data structure for the
    *    chromosome.
    */
-  give.TrackDataObject._createNewDataStructure = function (chrom) {
+  give.TrackDataObject.prototype._createNewDataStructure = function (chrom) {
     return new this.constructor._DataStructure(
       this.parent.ref.chromInfo[chrom].chrRegion,
       {
@@ -616,14 +616,12 @@ var GIVe = (function (give) {
    * @returns {ChromRegionLiteral} a `give.ChromRegion` object.
    */
   give.TrackDataObject._chromEntryFromResponse = function (entry) {
-    return new give.ChromRegion(entry.regionString, this.parent.ref,
-      {
-        data:
-          ((this.constructor._SummaryCtor &&
-            this.constructor._SummaryCtor._testRespEntry(entry))
-          ? this.constructor._SummaryCtor.createFromResp(entry, this)
-          : this.constructor._dataFromResponse(entry))
-      })
+    var chrRegion = new give.ChromRegion(entry.regionString, this.parent.ref)
+    chrRegion.data = ((this.constructor._SummaryCtor &&
+      this.constructor._SummaryCtor._testRespEntry(entry))
+      ? this.constructor._SummaryCtor.createFromResp(chrRegion, entry)
+      : this.constructor._dataFromResponse(entry))
+    return chrRegion
   }
 
   /**
@@ -711,7 +709,7 @@ var GIVe = (function (give) {
    *
    * @class SummaryCtorBase
    */
-  give.SummaryCtorBase = function (node, oldSummary) {
+  give.SummaryCtorBase = function (chrRegion, oldSummary) {
   }
 
   /**
@@ -733,9 +731,8 @@ var GIVe = (function (give) {
    *    (or the corresponding `TrackDataObject`).
    *
    * @static
-   * @param  {ChromRegionLiteral} entry - the response entry object converted from JSON
-   * @returns {object} `true` if the response entry is a summary, `false`
-   *    otherwise.
+   * @param  {ChromRegionLiteral} entry - the `give.ChromRegion` object
+   * @returns {object} returns the data contained within `entry`.
    */
   give.SummaryCtorBase._dataFromChromEntry = function (entry) {
     return give.TrackDataObject._dataFromChromEntry(entry)
@@ -745,11 +742,12 @@ var GIVe = (function (give) {
    * createFromResp - create a summary object from a response entry.
    *
    * @static
-   * @param  {object} entry - the response entry object converted from JSON
+   * @param  {ChromRegionLiteral} chrRegion - The region this summary is for.
+   * @param  {object} respEntry - the response entry object converted from JSON
    * @returns {SummaryCtorBase} the properly constructed summary object.
    */
-  give.SummaryCtorBase.createFromResp = function (respEntry, trackDataObj) {
-    return new this(respEntry.data)
+  give.SummaryCtorBase.createFromResp = function (chrRegion, respEntry) {
+    return new this(chrRegion, respEntry.data)
   }
 
   /**

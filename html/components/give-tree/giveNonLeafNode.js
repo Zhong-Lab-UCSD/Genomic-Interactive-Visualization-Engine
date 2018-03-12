@@ -447,7 +447,7 @@ var GIVe = (function (give) {
    *    leaf nodes if they are not the same as the non-leaf nodes.
    * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
    *    This shall reflect whether auto-balancing is supported for the tree.
-   *    See `give.GiveNonLeafNode.prototype._restructuring` for details.
+   *    See `give.GiveNonLeafNode.prototype._restructure` for details.
    */
   give.GiveNonLeafNode.prototype.insert = function (data, chrRange, props) {
     props = props || {}
@@ -478,11 +478,11 @@ var GIVe = (function (give) {
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
-    return this._restructuring()
+    return this._restructure()
   }
 
   /**
-   * _restructuring - The function to be called after adding/removing data to
+   * _restructure - The function to be called after adding/removing data to
    *    the node.
    *    This is used in implementations that involve post-insertion processes
    *    of the tree (for example, rebalancing in B+ tree derivatives).
@@ -498,15 +498,15 @@ var GIVe = (function (give) {
    *      with its sibling(s) or becoming an empty node, for example), return
    *      `false`. Return `this` in all other cases.
    */
-  give.GiveNonLeafNode.prototype._restructuring = function () {
+  give.GiveNonLeafNode.prototype._restructure = function () {
     // for non-auto-balancing trees, return false if this node has no data any
     //    more
     if (this.Values[0] && this.Values[0].isEmpty()) {
       this.Values[0] = false
     }
     return ((this.Values.length <= 0 || (
-        this.Values.length === 1 && this.Values[0] === false)
-      ) ? false : this)
+      this.Values.length === 1 && this.Values[0] === false)
+    ) ? false : this)
   }
 
   /**

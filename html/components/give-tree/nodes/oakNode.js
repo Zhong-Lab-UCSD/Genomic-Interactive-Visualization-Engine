@@ -58,7 +58,7 @@ var GIVe = (function (give) {
   give.extend(give.GiveNonLeafNode, give.OakNode)
 
   /**
-   * _restructuring - The function to be called after adding/removing data to
+   * _restructure - The function to be called after adding/removing data to
    *    the node.
    *    In OakNodes, auto-balancing is implemented according to B+ tree specs.
    * @memberof OakNode.prototype
@@ -73,7 +73,7 @@ var GIVe = (function (give) {
    *      If the node should be merged with its sibling(s), return `false`.
    *      Return `this` in all other cases.
    */
-  give.OakNode.prototype._restructuring = function () {
+  give.OakNode.prototype._restructure = function () {
     if (this.Values.length > this.Tree.BranchingFactor) {
       // Node is over-capacity, split into sibling nodes
       // Calculate the number of siblings this node will split into
