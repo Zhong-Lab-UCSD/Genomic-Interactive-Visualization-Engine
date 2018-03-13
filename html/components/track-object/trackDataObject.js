@@ -319,8 +319,8 @@ var GIVe = (function (give) {
       this._callbackMgr.add(callback, callerID)
     }
     give.debounce(this._getDataJobName,
-            this._queryAndRetrieveData.bind(this),
-            this.getDataDebounceInt)
+      this._queryAndRetrieveData.bind(this),
+      this.getDataDebounceInt)
   }
 
   /**
@@ -404,26 +404,16 @@ var GIVe = (function (give) {
    *    necessary parameters based on `this`.
    *
    * @param  {string} chrom - chromosomal name of the new data structure.
-   * @returns {this._DataStructure} - a new data structure for the chromosome.
+   * @returns {this.constructor._DataStructure} - a new data structure for the
+   *    chromosome.
    */
   give.TrackDataObject.prototype._createNewDataStructure = function (chrom) {
-    return new this._DataStructure(
+    return new this.constructor._DataStructure(
       this.parent.ref.chromInfo[chrom].chrRegion,
       {
-        SummaryCtor: this._SummaryCtor
+        SummaryCtor: this.constructor._SummaryCtor
       }
     )
-  }
-
-  /**
-   * _getDataStructure - create a new data structure and pass in
-   *    necessary parameters based on `this`.
-   *
-   * @param  {string} chrom - chromosomal name of the new data structure.
-   * @returns {this._DataStructure} - current data structure for the chromosome.
-   */
-  give.TrackDataObject.prototype._getDataStructure = function (chrom) {
-
   }
 
   /**
@@ -556,17 +546,121 @@ var GIVe = (function (give) {
 
   /**
    * _dataHandler - This should be the detailed implementation about how to
-   *   handle the responses from server
+   *    handle the responses from server
+   *
+   *    When implementing this method, use `this.getData` to get the `GiveTree`
+   *    object storing all necessary data corresponding to the correct
+   *    chromosome. Then use `.insert` to insert the new data entries.
+   *
+   *    See documentation for `GIVe.TrackDataObject` for references to
+   *    `this.getData`, and `GIVe.GiveTree` for references to `.insert`.
    *
    * @memberof TrackDataObjectBase.prototype
-   * @param  {object} response - The response from server, see
-   *   `this._responseHandler`
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
+   * @param  {object} response - Responses from remote servers.
+   *   The object should contain chromosomal region strings as its
+   *   property names, and an array of data entries as the property value.
+   *   For example:
+   *   ```
+   *   {
+   *     'chr10:1-1000000': [
+   *       <response entry>,
+   *       ...
+   *     ]
+   *   }
+   *   ```
+   *   See `this._chromEntryFromResponse` for details of `<response entry>`.
+   * @param  {Array<ChromRegionLiteral>} queryRegions - Query regions,
+   *   including potential resolutions
    */
   give.TrackDataObject.prototype._dataHandler = function (
     response, queryRegions
   ) {
+    queryRegions.forEach(function (region, index) {
+      if (Array.isArray(response[region.regionToString()])) {
+        this.getData(region.chr, true).insert(
+          response[region.regionToString()].map(
+            this.constructor._chromEntryFromResponse, this
+          ), region)
+      }
+    }, this)
+  }
+
+  /**
+   * _chromEntryFromResponse - convert remote responses into `give.ChromRegion`
+   *    entries with actual data.
+   *    This is needed because `give.DataNode` takes only `give.ChromRegion`
+   *    objects, so if the actual data object __is not a chromosomal region__,
+   *    conversion between the data object and a `give.ChromRegion` object will
+   *    be needed.
+   *    This conversion should match `this._dataFromChromEntry`, which
+   *    provides conversion from the other end if needed.
+   *
+   * @memberof TrackDataObjectBase.prototype
+   * @param  {object} entry - Responses from remote servers.
+   *   The object should contain chromosomal names as its
+   *   property names, and an array of data entries as the property value.
+   *   If using the default methods from the base class, all
+   *   entries should contain a `regionString` property saying its coverage,
+   *   and a `data` object for actual data:
+   *   ```
+   *   {
+   *     'regionString': 'chr10:12345-67890',
+   *     'data': { <data_object> }
+   *   },
+   *   ```
+   *   Actual `data` structure will depend on implementations. See
+   *   `this._dataFromResponse` for details.
+   *
+   *   The whole structure of `entry` can be rewritten if
+   *   `this._dataFromResponse` or this method is overriden.
+   * @returns {ChromRegionLiteral} a `give.ChromRegion` object.
+   */
+  give.TrackDataObject._chromEntryFromResponse = function (entry) {
+    var chrRegion = new give.ChromRegion(entry.regionString, this.parent.ref)
+    chrRegion.data = ((this.constructor._SummaryCtor &&
+      this.constructor._SummaryCtor._testRespEntry(entry))
+      ? this.constructor._SummaryCtor.createFromResp(chrRegion, entry)
+      : this.constructor._dataFromResponse(entry))
+    return chrRegion
+  }
+
+  /**
+   * _dataFromResponse - return the data object from response (JSON) entry.
+   *
+   * @param  {object} entry - Responses from remote servers.
+   *   The object should contain chromosomal names as its
+   *   property names, and an array of data entries as the property value.
+   *   If using the default methods from the base class, all
+   *   entries should contain a `regionString` property saying its coverage,
+   *   and a `data` object for actual data:
+   *   ```
+   *   {
+   *     'regionString': 'chr10:12345-67890',
+   *     'data': { <data_object> }
+   *   },
+   *   ```
+   * @returns {object} return the data object.
+   */
+  give.TrackDataObject._dataFromResponse = function (entry) {
+    return entry.data
+  }
+
+  /**
+   * _dataFromChromEntry - extract data from `give.ChromRegion`.
+   *    This is almost the reverse function of `this._chromEntryFromResponse`
+   *
+   * @memberof TrackDataObjectBase.prototype
+   * @param  {ChromRegionLiteral} dataEntry - the `give.ChromRegion` object to
+   *    extract data from.
+   * @returns {object} the data object.
+   */
+  give.TrackDataObject._dataFromChromEntry = function (dataEntry) {
+    if (!dataEntry.data) {
+      give._verboseConsole('No data in the ChromEntry. Get "' +
+        dataEntry.data + '".', give.VERBOSE_DEBUG)
+      return null
+    }
+    return dataEntry.data
   }
 
   /**
@@ -586,17 +680,148 @@ var GIVe = (function (give) {
   /**
    * _SummaryCtor - Constructor of summary data
    * @constructor
-   * @memberof TrackDataObjectBase.prototype
+   * @memberof TrackDataObjectBase
+   * @static
    */
-  give.TrackDataObject.prototype._SummaryCtor = null
+  give.TrackDataObject._SummaryCtor = null
 
   /**
    * _DataStructure - Constructor for underlying data structure used in
    *   `this._data`. Default value is `GIVE.OakTree`
    * @constructor
-   * @memberof TrackDataObjectBase.prototype
+   * @memberof TrackDataObjectBase
+   * @static
    */
-  give.TrackDataObject.prototype._DataStructure = give.OakTree
+  give.TrackDataObject._DataStructure = give.OakTree
+
+  /**
+   * **************************************************************************
+   * The following are implementation basis for a summary object if the track
+   * needs to support such features.
+   * A data summary object will be needed to handle summaries and will be
+   * responsible for some basic data operations.
+   * **************************************************************************
+   */
+
+  /**
+   * SummaryCtorBase - Constructor of summary data
+   * @constructor
+   *
+   * @class SummaryCtorBase
+   */
+  give.SummaryCtorBase = function (chrRegion, oldSummary) {
+  }
+
+  /**
+   * testDataEntry - test whether the response entry is a summary or not.
+   *    Because responses may contain raw data or summaries, this is needed
+   *    to distinguish the two types.
+   *
+   * @static
+   * @param  {object} entry - the response entry object converted from JSON
+   * @returns {boolean} `true` if the response entry is a summary, `false`
+   *    otherwise.
+   */
+  give.SummaryCtorBase._testRespEntry = function (entry) {
+  }
+
+  /**
+   * dataFromChromEntry - extract data object from `give.ChromRegion`.
+   *    This should be the same as `give.TrackDataObject._dataFromChromEntry`
+   *    (or the corresponding `TrackDataObject`).
+   *
+   * @static
+   * @param  {ChromRegionLiteral} entry - the `give.ChromRegion` object
+   * @returns {object} returns the data contained within `entry`.
+   */
+  give.SummaryCtorBase._dataFromChromEntry = function (entry) {
+    return give.TrackDataObject._dataFromChromEntry(entry)
+  }
+
+  /**
+   * createFromResp - create a summary object from a response entry.
+   *
+   * @static
+   * @param  {ChromRegionLiteral} chrRegion - The region this summary is for.
+   * @param  {object} respEntry - the response entry object converted from JSON
+   * @returns {SummaryCtorBase} the properly constructed summary object.
+   */
+  give.SummaryCtorBase.createFromResp = function (chrRegion, respEntry) {
+    return new this(chrRegion, respEntry.data)
+  }
+
+  /**
+   * attach - attach the summary itself to a chromosomal region.
+   *
+   * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to be
+   *    attached to.
+   * @returns {ChromRegionLiteral} the chromosomal region with summary attached.
+   */
+  give.SummaryCtorBase.prototype.attach = function (chrRegion) {
+    chrRegion.data = this
+    return chrRegion
+  }
+
+  /**
+   * extract - extract the summary data from a chromosomal region.
+   * This is the reverse operation of `SummaryCtorBase.attach`.
+   *
+   * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to extract
+   *    summary data from.
+   * @returns {SummaryCtorBase} extracted summary data.
+   */
+  give.SummaryCtorBase.extract = function (chrRegion) {
+    return chrRegion.data
+  }
+
+  /**
+   * addSummary - add summary data to this summary.
+   *    This is mainly used to summarize over a series of summaries.
+   *
+   * @param  {GiveNonLeafNode} node    - the non-leaf node this summary is for
+   * @param  {SummaryCtorBase} summary - the summary to be added
+   */
+  give.SummaryCtorBase.prototype.addSummary = function (node, summary) {
+  }
+
+  /**
+   * addData - add raw data entry to this summary
+   *    This is mainly used to summarize over raw data entries.
+   *
+   * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+   * @param  {object} data - the raw data object to be added
+   */
+  give.SummaryCtorBase.prototype.addData = function (node, data) {
+  }
+
+  /**
+   * addData - add raw data entry to this summary
+   *    This is mainly used to summarize over raw data entries.
+   *
+   * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+   * @param  {ChromRegionLiteral} chromEntry - the raw data object to be added
+   */
+  give.SummaryCtorBase.prototype.addDataFromChromEntry = function (
+    node, chromEntry
+  ) {
+    return this.addData(this.constructor.dataFromChromEntry(chromEntry))
+  }
+
+  /**
+   * addDataOrSummary - add summary or raw data to this summary.
+   *    This is mainly used to summarize over its children.
+   *
+   * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+   * @param  {SummaryCtorBase|object} entry - the data to be added
+   */
+  give.SummaryCtorBase.prototype.addDataOrSummary = function (node, entry) {
+    // entry can be either a summary or actual components
+    if (entry instanceof this.constructor) {
+      return this.addSummary(node, entry)
+    } else {
+      return this.addData(node, entry)
+    }
+  }
 
   return give
 })(GIVe || {})

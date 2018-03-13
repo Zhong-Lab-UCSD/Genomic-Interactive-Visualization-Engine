@@ -6,15 +6,107 @@
     <link rel="import" href="components/track-manager/track-manager.html">
     <link rel="import" href="components/genemo-styles.html">
     <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-    <style is="custom-style" include="genemo-shared-styles iron-flex iron-positioning">
+    <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
       body {
         font-family: 'Roboto';
         font-size: 14px;
+      }
+      track-manager div {
+        font-size: 16px;
+      }
+      div.managerIntro {
+        overflow: auto;
+      }
+      div.contentHolder {
+        width: 50em;
+        padding: 1em;
+      }
+      div.normalText {
+        line-height: 1.6em;
+        margin: 0.5em 0;
+        padding: 0.5em 1em;
+      }
+      div.icon-row {
+        width: 100%;
+        margin: 0.5em 0;
+      }
+      div.icon-row > iron-icon {
+        margin: 0.3em 2em 0 0;
+      }
+      iron-icon {
+        width: 1.2em;
+        height: 1.2em;
+      }
+      div.icon-desc {
+        line-height: 1.6em;
+      }
+      div.toStart {
+        border: 1px solid var(--divider-color);
+        background: var(--lighter-accent-color);
       }
     </style>
   </head>
 
   <body unresolved class="fullbleed layout vertical">
-    <track-manager class="flex"></track-manager>
+    <track-manager class="flex">
+      <div class="managerIntro flex layout vertical">
+        <div class="flex self-center contentHolder">
+          <div class="normalText">
+            The Data Hub page lists all references available on this GIVE instance and allows you to pick and choose your track groups and/or tracks in your customized genome browser.
+          </div>
+          <div class="normalText toStart">
+            To start, use the <strong>Reference genome</strong> drop-down on the right side of the top toolbar to select your reference.
+          </div>
+          <div class="normalText">
+            <strong>HTML Generator Mode</strong> can be activated via the button on the toolbar. When it is active, track groups and tracks are selectable and icons will appear to indicate their status in the resulting customized browser.
+          </div>
+          <div class="normalText">
+            The following icons may appear before a track group:
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="block"></iron-icon>
+              <div class="icon-desc flex">
+                This group is not selected and will not be available in the resulting browser.
+              </div>
+            </div>
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="check-circle"></iron-icon>
+              <div class="icon-desc flex">
+                This group has been selected. Its tracks will be available to be chosen in the resulting browser. However, the tracks of this group are not shown by default unless they have the <iron-icon icon="visibility"></iron-icon> icon (see below).
+              </div>
+            </div>
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="lock-outline"></iron-icon>
+              <div class="icon-desc flex">
+                One or more tracks from this group has been selected to be shown by default (with a <iron-icon icon="visibility"></iron-icon> icon). The group will not be able to be deselected until all its tracks are deselected.
+              </div>
+            </div>
+          </div>
+          <div class="normalText">
+            The following icons may appear before an individual track entry:
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="block"></iron-icon>
+              <div class="icon-desc flex">
+                This track is not selected, nor is its group selected. It will not be available in the resulting browser.
+              </div>
+            </div>
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="check-circle"></iron-icon>
+              <div class="icon-desc flex">
+                The group of this track has been selected. It will be available to be chosen in the resulting browser. However, it will not be shown by default unless it also have the <iron-icon icon="visibility"></iron-icon> icon.
+              </div>
+            </div>
+            <div class="icon-row layout horizontal">
+              <iron-icon icon="visibility"></iron-icon>
+              <div class="icon-desc flex">
+                This track has been selected to be shown by default. It will be directly shown in the resulting browser.
+              </div>
+            </div>
+          </div>
+          <div class="normalText">
+            Note that selecting a track (thus giving it a <iron-icon icon="visibility"></iron-icon> icon) will cause its track group selected as well.
+          </div>
+        </div>
+      </div>
+    </track-manager>
   </body>
 </html>

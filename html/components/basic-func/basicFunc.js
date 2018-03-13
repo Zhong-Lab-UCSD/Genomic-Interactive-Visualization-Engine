@@ -27,6 +27,13 @@ var GIVe = (function (give) {
   give.extend = function (base, sub) {
     sub.prototype = Object.create(base.prototype)
     sub.prototype.constructor = sub
+    for (var key in base) {
+      if (base.hasOwnProperty(key) && typeof base[key] === 'function') {
+        if (!sub.hasOwnProperty(key) || typeof sub[key] !== 'function') {
+          sub[key] = base[key]
+        }
+      }
+    }
   }
 
   /**

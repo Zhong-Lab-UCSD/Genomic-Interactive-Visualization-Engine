@@ -1,7 +1,7 @@
 <?php
 require_once(realpath(dirname(__FILE__) . "/track_base.php"));
 
-function _loadInteraction($db, $tableName, $chrRegion = NULL, $linkedTable = NULL, $params = NULL) {
+function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interaction", $linkedTable = NULL, $linkedKey = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
   $mysqli = connectCPB($db);
   $result = array();

@@ -21,10 +21,41 @@ var GIVe = (function (give) {
   /**
    * Object representing a BiwWig track data object,
    * see `GIVe.TrackDataObject` for details.
+   *
+   * ## Response entries from remote servers for bigWig tracks
+   *
+   * All entries should contain a `regionString` property saying its coverage,
+   * and a `data` object for actual data.
+   * For raw data, only `value` is needed (for actual signal strength over
+   * the region of `regionString`):
+   * ```
+   * {
+   *   'regionString': 'chr10:12345-67890',
+   *   'data': {
+   *     `value`: <value>
+   *   }
+   * },
+   * ```
+   * For summary data, it should contain all properties of a summary, see
+   * `give.BigWigSummaryCtor` for details:
+   * ```
+   * {
+   *   'regionString': 'chr10:12345-67890',
+   *   'data': {
+   *     `validCount`: <valid_count>,
+   *     `sumData`: <sum_data>,
+   *     `sumSquares`: <sum_of_data_squares>,
+   *     `minVal`: <minimum_value>,
+   *     `maxVal`: <maximum_value>
+   *   }
+   * },
+   * ```
+   *
    * @typedef {object} BigWigTrackData
    * @class give.BigWigTrackData
    *
    * @constructor
+   * @implements TrackDataObjectBase
    * @param {TrackObjectBase} parent - The track object parent
    */
   give.BigWigTrackData = function (parent) {
@@ -32,62 +63,6 @@ var GIVe = (function (give) {
   }
 
   give.extend(give.TrackDataObject, give.BigWigTrackData)
-
-  /**
-   * _dataHandler - This should be the detailed implementation about how to
-   *    handle the responses from server
-   *
-   *    When implementing this method, use `this.getData` to get the `GiveTree`
-   *    object storing all necessary data corresponding to the correct
-   *    chromosome. Then use `.insert` to insert the new data entries.
-   *
-   *    See documentation for `GIVe.TrackDataObject` for references to
-   *    `this.getData`, and `GIVe.GiveTree` for references to `.insert`.
-   *
-   *    An example is given in the code as comments.
-   *
-   * @param  {object} res - Responses from remote servers.
-   *   The object should contain chromosomal names as its
-   *   property names, and an array of data entries as the property value.
-   *   For example:
-   *   ```
-   *   {
-   *     'chr10': [
-   *       {
-   *         'genebed': 'chr10 12345 67890 somegene 120 + ...' // BED format
-   *         'geneSymbol': 'someSymbol'
-   *       },
-   *       ...
-   *     ]
-   *   }
-   *   ```
-   *   The detailed format requirements will depend on the implementation of
-   *   both the server-side code and `this._dataHandler`
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
-   */
-  give.BigWigTrackData.prototype._dataHandler = function (res, regions) {
-    /**
-     * Returned data will be made up of different entries
-     * Each entry will be a flat part of the bigWig file,
-     * the format will be a ChromRegion object with
-     * {data: {value: <actual value>} }
-     */
-    regions.forEach(function (region, index) {
-      if (Array.isArray(res[region.regionToString()])) {
-        this.getData(region.chr, true).insert(
-          res[region.regionToString()].map(this._convertDataEntry, this),
-          region)
-      }
-    }, this)
-  }
-
-  give.BigWigTrackData.prototype._convertDataEntry = function (entry) {
-    return this._SummaryCtor.testDataEntry(entry)
-      ? this._SummaryCtor.createDataEntry(entry, this)
-      : new give.ChromRegion(entry.regionString, this.parent.ref,
-        { data: entry.data })
-  }
 
   /**
    * _localFileHandler - This should be the detailed implementation about how to
@@ -101,7 +76,7 @@ var GIVe = (function (give) {
     localFile, regions
   ) {
     var reader = new window.FileReader()
-      // should use bigWig.readSection()
+    // should use bigWig.readSection()
     var datapoints = {}
 
     reader.onload = function () {
@@ -118,11 +93,11 @@ var GIVe = (function (give) {
   }
 
   /**
-   * _SummaryCtor - Constructor of summary data
+   * BigWigSummaryCtor - Constructor of summary data for bigWig tracks
    * @constructor
-   * @memberof BigWigTrackData.prototype
    *
-   * @class BigWigTrackData.prototype._SummaryCtor
+   * @class BigWigSummaryCtor
+   * @implements SummaryCtorBase
    *
    * @property {number} validCount - the number of valid counts (nucleotides)
    *    with signal
@@ -133,7 +108,8 @@ var GIVe = (function (give) {
    * @property {number} value - the 'value' of this summary data, should be
    *    `this.sumData / this.validCount`
    */
-  give.BigWigTrackData.prototype._SummaryCtor = function (node, oldSummary) {
+  give.BigWigSummaryCtor = function (chrRegion, oldSummary) {
+    give.SummaryCtorBase.apply(this, arguments)
     if (oldSummary) {
       this.validCount = oldSummary.validCount || 0
       this.sumData = oldSummary.sumData || 0
@@ -155,37 +131,13 @@ var GIVe = (function (give) {
     }
   }
 
-  give.BigWigTrackData.prototype._SummaryCtor.testDataEntry = function (entry) {
-    return entry.data.hasOwnProperty('validCount')
+  give.extend(give.SummaryCtorBase, give.BigWigSummaryCtor)
+
+  give.BigWigSummaryCtor._testRespEntry = function (respEntry) {
+    return (respEntry.data && respEntry.data.hasOwnProperty('validCount'))
   }
 
-  give.BigWigTrackData.prototype._SummaryCtor.createDataEntry = function (
-    entry, trackDataObj
-  ) {
-    return new give.ChromRegion(entry.regionString, trackDataObj.parent.ref,
-      { data: new this(entry.data) })
-  }
-
-  give.BigWigTrackData.prototype._SummaryCtor.extract = function (dataEntry) {
-    if (dataEntry.data && !(dataEntry.data instanceof this)) {
-      // summary is something with wrong type
-      give._verboseConsole(dataEntry.data + ' is not a correct summary ' +
-        'type.', give.VERBOSE_DEBUG)
-      return null
-    }
-    return dataEntry.data || null
-  }
-
-  give.BigWigTrackData.prototype._SummaryCtor.prototype.attach = function (
-    chrRegion
-  ) {
-    chrRegion.data = this
-    return chrRegion
-  }
-
-  give.BigWigTrackData.prototype._SummaryCtor.prototype.addSummary = function (
-    node, summary
-  ) {
+  give.BigWigSummaryCtor.prototype.addSummary = function (node, summary) {
     this.validCount += summary.validCount
     this.sumData += summary.sumData
     this.sumSquares += summary.sumSquares
@@ -196,31 +148,17 @@ var GIVe = (function (give) {
     this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
   }
 
-  give.BigWigTrackData.prototype._SummaryCtor.prototype.addData = function (
-    node, chromEntry
-  ) {
-    // data can be either a summary or actual components
-    // TODO: if data supports data.getLength(), use data.getLength() instead
-    var data = chromEntry.data
-    if (data instanceof this.constructor) {
-      this.addSummary(node, data)
-    } else {
-      this.validCount += node.getLength()
-      this.sumData += data.value * node.getLength()
-      this.sumSquares += data.value * data.value * node.getLength()
-      this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
-      this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
-      this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
-    }
+  give.BigWigSummaryCtor.prototype.addData = function (node, data) {
+    this.validCount += node.getLength()
+    this.sumData += data.value * node.getLength()
+    this.sumSquares += data.value * data.value * node.getLength()
+    this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
+    this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
+    this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
   }
 
-  /**
-   * _DataStructure - Constructor for underlying data structure used in
-   *   `this._data`. Default value is `GIVE.OakTree`
-   * @constructor
-   * @memberof TrackDataObjectBase.prototype
-   */
-  give.BigWigTrackData.prototype._DataStructure = give.PineTree
+  give.BigWigTrackData._DataStructure = give.PineTree
+  give.BigWigTrackData._SummaryCtor = give.BigWigSummaryCtor
 
   return give
 })(GIVe || {})

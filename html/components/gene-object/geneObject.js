@@ -6,7 +6,7 @@ var GIVe = (function (give) {
     give.TranscriptObject.apply(this, arguments)
     this.transcripts = []
     this.transcripts.push(new give.TranscriptObject(mainParams, ref, additionalParams))
-    this.name = this.geneName
+    this.name = this.geneSymbol
   }
 
   give.extend(give.TranscriptObject, give.GeneObject)

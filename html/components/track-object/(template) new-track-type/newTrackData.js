@@ -46,37 +46,117 @@ var GIVe = (function (give) {
    *
    *    An example is given in the code as comments.
    *
+   * @memberof TrackDataObjectBase.prototype
    * @param  {object} response - Responses from remote servers.
-   *   The object should contain chromosomal names as its
+   *   The object should contain chromosomal region strings as its
    *   property names, and an array of data entries as the property value.
    *   For example:
    *   ```
    *   {
-   *     'chr10': [
-   *       {
-   *         'genebed': 'chr10 12345 67890 somegene 120 + ...' // BED format
-   *         'geneSymbol': 'someSymbol'
-   *       },
+   *     'chr10:1-1000000': [
+   *       <response entry>,
    *       ...
    *     ]
    *   }
    *   ```
-   *   The detailed format requirements will depend on the implementation of
-   *   both the server-side code and `this._dataHandler`
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
+   *   See `this._chromEntryFromResponse` for details of `<response entry>`.
+   * @param  {Array<ChromRegionLiteral>} queryRegions - Query regions,
+   *   including potential resolutions
    */
-  give.NewTrackData.prototype._dataHandler = function (res, regions) {
-    // for (var chrom in res) {
-    //   var regionsInChrom = regions.filter(function (region) {
-    //     return region.chr === chrom
-    //   }, this)
-    //   if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
-    //       Array.isArray(res[chrom])) {
-    //     this.getData(chrom, true).insert(res[chrom], regionsInChrom)
-    //   }
-    // }
-  }
+  // give.NewTrackData.prototype._dataHandler = function (res, regions) {
+  //   for (var chrom in res) {
+  //     var regionsInChrom = regions.filter(function (region) {
+  //       return region.chr === chrom
+  //     }, this)
+  //     if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
+  //         Array.isArray(res[chrom])) {
+  //       this.getData(chrom, true).insert(res[chrom], regionsInChrom)
+  //     }
+  //   }
+  // }
+
+  /**
+   * _chromEntryFromResponse - convert remote responses into `give.ChromRegion`
+   *    entries with actual data.
+   *    This is needed because `give.DataNode` takes only `give.ChromRegion`
+   *    objects, so if the actual data object __is not a chromosomal region__,
+   *    conversion between the data object and a `give.ChromRegion` object will
+   *    be needed.
+   *    This conversion should match `this._dataFromChromEntry`, which
+   *    provides conversion from the other end if needed.
+   *
+   *    An example is given in the code as comments.
+   *
+   * @memberof TrackDataObjectBase.prototype
+   * @param  {object} entry - Responses from remote servers.
+   *   The object should contain chromosomal names as its
+   *   property names, and an array of data entries as the property value.
+   *   If using the default methods from the base class, all
+   *   entries should contain a `regionString` property saying its coverage,
+   *   and a `data` object for actual data:
+   *   ```
+   *   {
+   *     'regionString': 'chr10:12345-67890',
+   *     'data': { <data_object> }
+   *   },
+   *   ```
+   *   Actual `data` structure will depend on implementations. See
+   *   `this._dataFromResponse` for details.
+   *
+   *   The whole structure of `entry` can be rewritten if
+   *   `this._dataFromResponse` or this method is overriden.
+   *
+   * @returns {ChromRegionLiteral} a `give.ChromRegion` object.
+   */
+  // give.NewTrackData.prototype._chromEntryFromResponse = function (entry) {
+  //   return new give.ChromRegion(entry.regionString, this.parent.ref,
+  //     { data: ((this._SummaryCtor && this._SummaryCtor.testRespEntry(entry))
+  //       ? this._SummaryCtor.createFromResp(entry, this)
+  //       : this._dataFromResponse(entry))
+  //     })
+  // }
+
+  /**
+   * _dataFromResponse - return the data object from response
+   *
+   *    An example is given in the code as comments.
+   *
+   * @param  {object} entry - Responses from remote servers.
+   *   The object should contain chromosomal names as its
+   *   property names, and an array of data entries as the property value.
+   *   If using the default methods from the base class, all
+   *   entries should contain a `regionString` property saying its coverage,
+   *   and a `data` object for actual data:
+   *   ```
+   *   {
+   *     'regionString': 'chr10:12345-67890',
+   *     'data': { <data_object> }
+   *   },
+   *   ```
+   * @returns {object} return the data object.
+   */
+  // give.NewTrackData.prototype._dataFromResponse = function (entry) {
+  //   return entry.data
+  // }
+
+  /**
+   * _dataFromChromEntry - extract data from `give.ChromRegion`.
+   *    This is almost the reverse function of `this._chromEntryFromResponse`
+   *
+   * @memberof TrackDataObjectBase.prototype
+   * @param  {ChromRegionLiteral} dataEntry - the `give.ChromRegion` object to
+   *    extract data from.
+   * @returns {object|BigWigTrackData._SummaryCtor} either the data object,
+   *    or the (properly constructed) summary object from the response.
+   */
+  // give.NewTrackData.prototype._dataFromChromEntry = function (dataEntry) {
+  //   if (!dataEntry.data) {
+  //     give._verboseConsole('No data in the ChromEntry. Get "' +
+  //       dataEntry.data + '".', give.VERBOSE_DEBUG)
+  //     return null
+  //   }
+  //   return dataEntry.data
+  // }
 
   /**
    * _localFileHandler - This should be the detailed implementation about how to
@@ -109,6 +189,82 @@ var GIVe = (function (give) {
     // }.bind(this)
     // reader.readAsText(localFile)
   }
+
+  /**
+   * _SummaryCtor - Constructor of summary data
+   * @constructor
+   * @memberof TrackDataObjectBase.prototype
+   */
+  // give.NewTrackData.prototype._SummaryCtor = null
+
+  /**
+   * _DataStructure - Constructor for underlying data structure used in
+   *   `this._data`. Default value is `GIVE.OakTree`
+   * @constructor
+   */
+  // give.NewTrackData.prototype._DataStructure = give.OakTree
+
+  /**
+   * **************************************************************************
+   * The following are implementation basis for a summary object if the track
+   * needs to support such features.
+   * A data summary object will be needed to handle summaries and will be
+   * responsible for some basic data operations.
+   * **************************************************************************
+   */
+
+  /**
+   * NewTrackSummaryCtor - Constructor of summary data for the new track
+   * @constructor
+   *
+   * @class SummaryCtorBase
+   */
+  // give.NewTrackSummaryCtor = function (node, oldSummary) {
+  // }
+
+  /**
+   * testDataEntry - test whether the response entry is a summary or not.
+   *    Because responses may contain raw data or summaries, this is needed
+   *    to distinguish the two types.
+   *
+   * @static
+   * @param  {object} entry - the response entry object converted from JSON
+   * @returns {boolean} `true` if the response entry is a summary, `false`
+   *    otherwise.
+   */
+  // give.NewTrackSummaryCtor.testRespEntry = function (entry) {
+  // }
+
+  /**
+   * createFromResp - create a summary object from a response entry.
+   *
+   * @static
+   * @param  {object} entry - the response entry object converted from JSON
+   * @returns {SummaryCtorBase} the properly constructed summary object.
+   */
+  // give.NewTrackSummaryCtor.createFromResp = function (respEntry, trackDataObj) {
+  //   return new this(respEntry.data)
+  // }
+
+  /**
+   * addSummary - add summary data to this summary.
+   *    This is mainly used to summarize over a series of summaries.
+   *
+   * @param  {GiveNonLeafNode} node    - the non-leaf node this summary is for
+   * @param  {SummaryCtorBase} summary - the summary to be added
+   */
+  // give.NewTrackSummaryCtor.prototype.addSummary = function (node, summary) {
+  // }
+
+  /**
+   * addData - add raw data entry to this summary
+   *    This is mainly used to summarize over raw data entries.
+   *
+   * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+   * @param  {object} data - the raw data object to be added
+   */
+  // give.NewTrackSummaryCtor.prototype.addData = function (node, data) {
+  // }
 
   return give
 })(GIVe || {})

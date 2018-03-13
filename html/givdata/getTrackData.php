@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
         $result = loadTrack($req['db'], $req['trackID'], $req['window'],
                   isset($req['type'])? $req['type']: NULL,
                   isset($req['linkedTable'])? $req['linkedTable']: NULL,
+                  isset($req['linkedKey'])? $req['linkedKey']: NULL,
                   isset($req['params'])? $req['params']: NULL);
       } else {
         // is custom track with a remote file
