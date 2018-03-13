@@ -27,11 +27,11 @@ We documented both approaches of deployment in GIVE Tutorial 2.1 and 2.2. The fo
 
 ### [GIVE Tutorial 2.1: Local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
 
-This tutorial shows deployment of GIVE to your local machines using GIVE-Docker. This is the recommendated approach for deploying GIVE. No system configuration is required.  
+This tutorial shows deployment of GIVE to your local machines using GIVE-Docker. This is the recommended approach for deploying GIVE. No system configuration is required.  
 
 ### [GIVE Tutorial 2.2: Custom installation of GIVE](2.2-custom-installation.md) (optional)
 
-This optional tutorial is for system administrators who want full control to install GIVE on a Linux system on a local machine. In this tutorial, instead of using GIVE-Docker, we will install and configure Apache2, PHP5, MySQL and other softwares and packages. 
+This optional tutorial is for system administrators who want full control to install GIVE on a Linux system on a local machine. In this tutorial, instead of using GIVE-Docker, we will install and configure Apache2, PHP5, MySQL and other software and packages. 
 
 ## [GIVE Tutorial 3: Use GIVE-Toolbox to manage data tracks](3-GIVE-Toolbox.md)
 
