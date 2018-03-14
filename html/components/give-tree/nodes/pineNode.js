@@ -225,15 +225,15 @@ var GIVe = (function (give) {
   /**
    * updateSummary - Update the summary data within this node
    *
-   * @param  {ChromRegionLiteral} dataEntry - if known summaries exist in the
+   * @param  {ChromRegionLiteral} chromEntry - if known summaries exist in the
    *    data entry, replace current summary with the new one.
    * @returns {boolean} - return `true` if summary has been updated.
    */
-  give.PineNode.prototype.updateSummary = function (dataEntry) {
+  give.PineNode.prototype.updateSummary = function (chromEntry) {
     if (typeof this.Tree.SummaryCtor === 'function') {
       var summary
-      if (dataEntry) {
-        summary = this.Tree.SummaryCtor.extract(dataEntry)
+      if (chromEntry) {
+        summary = this.Tree.SummaryCtor.extract(chromEntry)
       }
       if (summary instanceof this.Tree.SummaryCtor) {
         // summary provided, just replace
@@ -245,20 +245,20 @@ var GIVe = (function (give) {
             'Will be regenerated from tree data.', give.VERBOSE_DEBUG)
         }
         var newSummary = new this.Tree.SummaryCtor(this)
-        if (this.Values.every(function (entry, index) {
-          if (entry === false) {
+        if (this.Values.every(function (nodeEntry, index) {
+          if (nodeEntry === false) {
             // Child is zero, just return true
             return true
           }
-          if (entry === null ||
-             (this.RevDepth > 0 && entry.getSummaryData() === null)) {
+          if (nodeEntry === null ||
+             (this.RevDepth > 0 && nodeEntry.getSummaryData() === null)) {
             return false
           }
           if (this.RevDepth > 0) {
-            newSummary.addSummary(this, entry.getSummaryData())
+            newSummary.addSummary(this, nodeEntry.getSummaryData())
           } else {
-            entry.traverse(null, function (dataEntryInDataNode) {
-              newSummary.addData(this, dataEntryInDataNode)
+            nodeEntry.traverse(null, function (chromEntryInDataNode) {
+              newSummary.addDataFromChromEntry(this, chromEntryInDataNode)
             }, this, null, false, { NotFirstCall: true })
           }
           return true
@@ -300,7 +300,7 @@ var GIVe = (function (give) {
 
   /**
    * insert - Insert data under this node
-   * @memberof GiveNonLeafNode.prototype
+   * @memberof PineNode.prototype
    *
    * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries
    *    (each should be an extension of `GIVe.ChromRegion`).
@@ -336,7 +336,7 @@ var GIVe = (function (give) {
    *    leaf nodes if they are not the same as the non-leaf nodes.
    * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
    *    This shall reflect whether auto-balancing is supported for the tree.
-   *    See `give.GiveNonLeafNode.prototype._restructuring` for details.
+   *    See `give.GiveNonLeafNode.prototype._restructure` for details.
    */
   give.PineNode.prototype.insert = function (data, chrRange, props) {
     props = props || {}
@@ -389,7 +389,7 @@ var GIVe = (function (give) {
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
     this.rejuvenate(props.LifeSpan)
-    return this._restructuring()
+    return this._restructure()
   }
 
   give.PineNode.prototype._addNonLeafRecords = function (
@@ -818,6 +818,17 @@ var GIVe = (function (give) {
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }
+  }
+
+  /**
+   * isEmpty - return whether this node is empty
+   * If there is no entry in both `this.StartList` and `this.ContList` then the
+   *    node is considered empty.
+   *
+   * @returns {boolean}      whether the node is empty
+   */
+  give.PineNode.prototype.isEmpty = function () {
+    return !this.hasData() && give.GiveNonLeafNode.prototype.isEmpty.call(this)
   }
 
   give.PineNode._DEFAULT_S_FACTOR = 10

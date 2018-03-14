@@ -12,7 +12,7 @@ If you want to host GIVE service with your own data source, you need to learn fr
 This tutorial will show you a simple example of building a genome browser using data source from GIVE Data Hub.
 
 ## GIVE Tutorial 1: Build and tweak a genome browser
-This tutorial includes two sub-tutorials. GIVE Tutorial 1.1 will teach you how to build a customized genome browser using GIVE Data Hub. GIVE Tutorial 1.2 will illustrate the HTML code detail of tweaking a GIVE genome browser.
+This tutorial includes two sub-tutorials. GIVE Tutorial 1.1 will teach you how to build a customized genome browser using GIVE Data Hub. GIVE Tutorial 1.2 will illustrate the HTML code details of tweaking a GIVE genome browser.
 
 ### [GIVE Tutorial 1.1: Build a genome browser with GIVE Data Hub](1.1-GIVE-Hub.md)
 
@@ -25,13 +25,13 @@ We provide two approaches for deploying GIVE to local machines or cloud services
 
 We documented both approaches of deployment in GIVE Tutorial 2.1 and 2.2. The following links will lead you to them.
 
-### [GIVE Tutorial 2.1: Easy local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
+### [GIVE Tutorial 2.1: Local deployment of GIVE with GIVE-Docker](2.1-GIVE-Docker.md)
 
-This tutorial will show you how to deploy GIVE to your local machines with GIVE-Docker. It's easy to set up a complete GIVE in minutes without affecting your host system.
+This tutorial shows deployment of GIVE to your local machines using GIVE-Docker. This is the recommended approach for deploying GIVE. No system configuration is required.  
 
-### [GIVE Tutorial 2.2: Custom installation of GIVE](2.2-custom-installation.md)
+### [GIVE Tutorial 2.2: Custom installation of GIVE](2.2-custom-installation.md) (optional)
 
-This tutorial will teach you how to install GIVE into your Linux system on the local machine. You need to install and configure Apache2, PHP5, MySQL and other softwares and packages. You will need some experience of Linux administration to follow this tutorial.
+This optional tutorial is for system administrators who want full control to install GIVE on a Linux system on a local machine. In this tutorial, instead of using GIVE-Docker, we will install and configure Apache2, PHP5, MySQL and other software and packages. 
 
 ## [GIVE Tutorial 3: Use GIVE-Toolbox to manage data tracks](3-GIVE-Toolbox.md)
 

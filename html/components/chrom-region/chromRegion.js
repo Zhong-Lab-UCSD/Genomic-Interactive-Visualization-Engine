@@ -25,6 +25,8 @@ var GIVe = (function (give) {
    * @property {number} start - Starting coordinate
    * @property {number} end - Ending coordinate (not included in the region)
    * @property {boolean|null} strand - The strand of the region
+   * @property {object|null} data - any general data that needs to be attached
+   *    to this chromosomal region
    *
    * @class give.ChromRegion
    * Data structure for chromosomal region
@@ -177,7 +179,7 @@ var GIVe = (function (give) {
     this.start = parseInt(tokens[1])
     this.end = parseInt(tokens[2])
     this.setStrand((tokens.length < 6) ? this.strand : tokens[5])
-    this.name = tokens[3] || this.name || ''
+    this.name = (tokens[3] && tokens[3] !== '.') ? tokens[3] : (this.name || '')
   }
 
   give.ChromRegion.prototype.regionToString = function (includeStrand) {

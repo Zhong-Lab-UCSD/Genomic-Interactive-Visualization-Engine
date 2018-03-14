@@ -48,7 +48,7 @@ var GIVe = (function (give) {
       var newGene = new give.GeneObject(
         new give.TranscriptObject(resChromEntry.geneBed,
           this.parent.ref,
-          { geneName: resChromEntry.geneSymbol }
+          resChromEntry.attr
         )
       )
       if (this.parent.getTypeTrunk().indexOf('gene') > -1) {
@@ -244,7 +244,7 @@ var GIVe = (function (give) {
    * @constructor
    * @memberof TrackDataObjectBase.prototype
    */
-  give.BedTrackData.prototype._DataStructure = give.PineTree
+  // give.BedTrackData.prototype._DataStructure = give.PineTree
 
   return give
 })(GIVe || {})

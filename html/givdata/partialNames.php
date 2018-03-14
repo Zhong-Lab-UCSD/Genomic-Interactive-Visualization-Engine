@@ -32,8 +32,6 @@
         . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
         . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
         . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`");
-      error_log($queryStmt);
-      error_log($req['name']);
       $queryStmt->bind_param('s', $req['name']);
       $queryStmt->execute();
       $generesult = $queryStmt->get_result();

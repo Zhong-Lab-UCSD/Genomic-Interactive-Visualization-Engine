@@ -137,7 +137,7 @@ var GIVe = (function (give) {
    *    `props.Callback`.
    * @returns {give.GiveTreeNode|boolean}
    *    This shall reflect whether auto-balancing is supported for the tree.
-   *    See `give.GiveNonLeafNode.prototype._restructuring` for details.
+   *    See `give.GiveNonLeafNode.prototype._restructure` for details.
    *    If `this` gets deleted and is not root, return `false` and let the
    *    caller (likely the parent node) handle the upper structure.
    */

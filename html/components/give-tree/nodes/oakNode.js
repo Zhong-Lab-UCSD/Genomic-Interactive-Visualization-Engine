@@ -58,7 +58,7 @@ var GIVe = (function (give) {
   give.extend(give.GiveNonLeafNode, give.OakNode)
 
   /**
-   * _restructuring - The function to be called after adding/removing data to
+   * _restructure - The function to be called after adding/removing data to
    *    the node.
    *    In OakNodes, auto-balancing is implemented according to B+ tree specs.
    * @memberof OakNode.prototype
@@ -73,7 +73,7 @@ var GIVe = (function (give) {
    *      If the node should be merged with its sibling(s), return `false`.
    *      Return `this` in all other cases.
    */
-  give.OakNode.prototype._restructuring = function () {
+  give.OakNode.prototype._restructure = function () {
     if (this.Values.length > this.Tree.BranchingFactor) {
       // Node is over-capacity, split into sibling nodes
       // Calculate the number of siblings this node will split into
@@ -129,9 +129,7 @@ var GIVe = (function (give) {
         return siblings
       }
     } else { // !(this.Values.length > this.Tree.BranchingFactor)
-      return ((this.Values.length <= 0 || (
-          this.Values.length === 1 && this.Values[0] === false)
-        ) ? false : this)
+      return (!this.IsRoot && this.isEmpty()) ? false : this
     }
   }
 
@@ -186,6 +184,26 @@ var GIVe = (function (give) {
         '` is not a constructor for a tree node!')
     }
 
+    while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+      currIndex++
+    }
+
+    if (this.Keys[currIndex] < chrRange.getStart()) {
+      // The new rangeStart appears between windows.
+      // Shorten the previous data record by inserting the key,
+      // and use this.Values[currIndex] to fill the rest
+      // (normally it should be `null`)
+      this._splitChild(currIndex++, chrRange.getStart())
+    }
+
+    if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
+      // The new rangeEnd appears between windows.
+      // Shorten the previous data record by inserting the key,
+      // and use this.Values[currIndex] to fill the rest
+      // (normally it should be `null`)
+      this._splitChild(currIndex, chrRange.getEnd())
+    }
+
     while (chrRange.getStart() < chrRange.getEnd()) {
       while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
         currIndex++
@@ -209,9 +227,8 @@ var GIVe = (function (give) {
       if (this.Keys[currIndex] < chrRange.getStart()) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
-        // and use this.Values[currIndex] to fill the rest
-        // (normally it should be `null`)
-        this._splitChild(currIndex++, chrRange.getStart())
+        // and use `false` to fill the rest
+        this._splitChild(currIndex++, chrRange.getStart(), false)
       }
 
       if (
@@ -228,7 +245,7 @@ var GIVe = (function (give) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
-        if (this._mergeChild(currIndex, false, true)) {
+        if (this._mergeChild(currIndex, !data.length, true)) {
           currIndex--
         }
       }

@@ -13,7 +13,7 @@ var GIVe = (function (give) {
     if (this.thickEnd && this.thickEnd > this.end) {
       this.thickEnd = this.end
     }
-    this.geneName = this.geneName || this.name
+    this.geneSymbol = this.geneSymbol || this.name
   }
 
   give.extend(give.ChromRegion, give.TranscriptObject)
@@ -41,17 +41,17 @@ var GIVe = (function (give) {
   give.TranscriptObject.prototype._regionFromString = function (regionString) {
     var elements = regionString.split(/ +|\t/)
     this._regionFromBed(regionString)
-    if (elements[4]) {
+    if (elements[4] && elements[4] !== '.') {
       this.score = parseInt(elements[4])
     }
-    if (elements[6]) {
+    if (elements[6] && elements[6] !== '.') {
       this.thickStart = parseInt(elements[6])
       this.thickEnd = parseInt(elements[7])
     }
-    if (elements[8]) {
+    if (elements[8] && elements[8] !== '.') {
       this.setRGB(elements[8])
     }
-    if (elements[9]) {
+    if (elements[9] && elements[9] !== '.') {
       this._setBlocksFromString(elements[10], elements[11])
     }
   }
@@ -162,7 +162,7 @@ var GIVe = (function (give) {
   }
 
   give.TranscriptObject.prototype.getGeneName = function (withTransNums) {
-    return this.geneName
+    return this.geneSymbol
   }
 
   return give
