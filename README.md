@@ -40,7 +40,7 @@ To install any part of GIVE, a web-hosting environment is needed on your server.
 
 ## Usage
 
-You may use __GIVE-HUG (HTML Universal Generator)__ on the GIVE Data Hub page to generate the HTML code needed for embedding. The GIVE Data Hub is accessible on the public GIVE instance at <https://www.givengine.org/data-hub.html> and will be at the same relative location after you install your own GIVE instance. If you would like to code the HTML files by yourself, you can use GIVE Web Components by importing the component and using the tags directly.
+You may use __GIVE-HUG (HTML Universal Generator)__ on the GIVE Data Hub page to generate the HTML code needed for embedding. The GIVE Data Hub is accessible on the public GIVE instance at <https://www.givengine.org/give-data-hub.html> and will be at the same relative location after you install your own GIVE instance. If you would like to code the HTML files by yourself, you can use GIVE Web Components by importing the component and using the tags directly.
 
 ### Importing GIVE Web Components
 
