@@ -411,5 +411,45 @@ var GIVe = (function (give) {
     return this
   }
 
+  give.OakNode.prototype.traverse = function (
+    chrRange, callback, thisVar, filter, breakOnFalse, props
+  ) {
+    // Implementation without resolution support
+    // Because this is a non-leaf node, it always descends to its children
+    // until some leaf node is reached.
+
+    if (chrRange) {
+      // clip chrRegion first
+      // (should never happen, also the end is not truncated)
+      chrRange = this.truncateChrRange(chrRange, true, false)
+
+      var currIndex = 0
+
+      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+        currIndex++
+      }
+
+      while (
+        this.Keys[currIndex] < chrRange.getEnd() &&
+        currIndex < this.Values.length
+      ) {
+        if (
+          this.Values[currIndex] &&
+          !this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
+            breakOnFalse, props
+          )
+        ) {
+          return false
+        }
+        props.NotFirstCall = true
+        currIndex++
+      }
+      return true
+    } else { // !chrRange
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+    } // end if(chrRange)
+    return null
+  }
+
   return give
 })(GIVe || {})

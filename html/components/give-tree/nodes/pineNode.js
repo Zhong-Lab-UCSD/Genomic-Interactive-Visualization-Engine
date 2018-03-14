@@ -478,8 +478,6 @@ var GIVe = (function (give) {
             Start: childRange.getStart(),
             End: childRange.getEnd(),
             RevDepth: this.RevDepth - 1,
-            PrevNode: this._getChildPrev(currIndex),
-            NextNode: this._getChildNext(currIndex),
             Tree: this.Tree,
             LifeSpan: this.LifeSpan
           })
@@ -493,7 +491,6 @@ var GIVe = (function (give) {
         //    otherwise, use `false` to fill the dedicated range and merge with
         //    previous `false`s if possible.
         this.Values[currIndex] = false
-        this._fixChildLinks(currIndex)
         if (this._mergeChild(currIndex, true, false)) {
           currIndex--
         }
@@ -623,18 +620,7 @@ var GIVe = (function (give) {
       if (!this.Values[i].remove(
         data, removeExactMatch, props)
       ) {
-        if (this.RevDepth > 0) {
-          // Severe the links among the child and its siblings
-          // (potential memory leak problem).
-          try {
-            this.Values[i].getPrev().setNext(props.ConvertTo)
-          } catch (ignore) {}
-          try {
-            this.Values[i].getNext().setPrev(props.ConvertTo)
-          } catch (ignore) {}
-        }
         this.Values[i] = props.ConvertTo
-        this._fixChildLinks(i)
         this._mergeChild(i, true, false)
       }
     } else {
@@ -682,28 +668,25 @@ var GIVe = (function (give) {
     chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
     if (chrRange) {
-      // Clip chrRegion first
-      // (should never happen, also the end is not truncated)
       var resolution = chrRange.Resolution || props.Resolution || 1
-      chrRange = this.truncateChrRange(chrRange, true, false)
-      // Then rejuvenate `this`
+      // Rejuvenate `this`
       if (this.getStart() < chrRange.getEnd() &&
         this.getEnd() > chrRange.getStart()
       ) {
         this.rejuvenate(props.Rejuvenation)
-      }
-      // Resolution support: check if the resolution is already enough in this
-      // node. If so, call `this._callFuncOnDataEntry` on
-      // `this.getSummaryChromRegion()`
-      if (this.resEnough(resolution) && this.hasData()) {
-        // Resolution enough
-        return this._callFuncOnDataEntry(chrRange, callback, thisVar, filter,
-          breakOnFalse, this.getSummaryChromRegion()
-        )
-      } else {
-        // call `GIVE.GiveNonLeafNode.prototype.traverse`
-        return give.GiveNonLeafNode.prototype.traverse.call(
-          this, chrRange, callback, thisVar, filter, breakOnFalse, props)
+        // Resolution support: check if the resolution is already enough in this
+        // node. If so, call `this._callFuncOnDataEntry` on
+        // `this.getSummaryChromRegion()`
+        if (this.resEnough(resolution) && this.hasData()) {
+          // Resolution enough
+          return this._callFuncOnDataEntry(chrRange, callback, thisVar, filter,
+            breakOnFalse, this.getSummaryChromRegion()
+          )
+        } else {
+          // call `GIVE.GiveNonLeafNode.prototype.traverse`
+          return give.GiveNonLeafNode.prototype.traverse.call(
+            this, chrRange, callback, thisVar, filter, breakOnFalse, props)
+        }
       }
     } else { // !chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
@@ -727,7 +710,6 @@ var GIVe = (function (give) {
       ) {
         // replace the node with null (nothing)
         this.Values[i] = null
-        this._fixChildLinks(i)
         if (this._mergeChild(i, true, false)) {
           i--
         }
@@ -773,30 +755,36 @@ var GIVe = (function (give) {
     }
 
     if (chrRange) {
-      // clip chrRegion first
-      var currRange = this.truncateChrRange(chrRange, true, true)
       var result = []
       var currIndex = 0
-      while (this.Keys[currIndex + 1] <= currRange.getStart()) {
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
+      ) {
         currIndex++
       }
-      while (currRange.getStart() < currRange.getEnd()) {
+      var childRange = new give.ChromRegion({
+        chr: chrRange.chr,
+        start: this.Keys[currIndex],
+        end: this.Keys[currIndex + 1]})
+      while (childRange.getStart() < chrRange.getEnd() &&
+        currIndex < this.Values.length
+      ) {
         var newResult = []
         if (this.Values[currIndex] &&
           !this.childResEnough(resolution, currIndex)
         ) {
           // child has not enough resolution
-          newResult = this.Values[currIndex].getUncachedRange(currRange, props)
+          newResult = this.Values[currIndex].getUncachedRange(chrRange, props)
         } else if (!this.childHasData(currIndex)) {
           // either no child at all or child does not have summary data
           // calculate the closest range needed for the resolution
           // first normalize resolution to branchingFactor
           var retrieveStart, retrieveEnd, res
           res = this._getClosestRes(resolution / props.BufferingRatio)
-          retrieveStart = Math.max(this.Keys[currIndex],
-            give.PineNode.fitRes(currRange.getStart(), res, Math.floor))
-          retrieveEnd = Math.min(this.Keys[currIndex + 1],
-            give.PineNode.fitRes(currRange.getEnd(), res, Math.ceil))
+          retrieveStart = Math.max(childRange.getStart(),
+            give.PineNode.fitRes(chrRange.getStart(), res, Math.floor))
+          retrieveEnd = Math.min(childRange.getEnd(),
+            give.PineNode.fitRes(chrRange.getEnd(), res, Math.ceil))
           newResult.push(new give.ChromRegion({
             chr: chrRange.chr,
             start: retrieveStart,
@@ -812,7 +800,8 @@ var GIVe = (function (give) {
         }
         result = result.concat(newResult)
         currIndex++
-        currRange.start = this.Keys[currIndex]
+        childRange.start = this.Keys[currIndex]
+        childRange.end = this.Keys[currIndex + 1]
       }
       return result
     } else { // chrRange

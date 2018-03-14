@@ -68,6 +68,39 @@ var GIVe = (function (give) {
 
   give.extend(give.GiveTree, give.OakTree)
 
+  /**
+   * traverse - traverse given chromosomal range to apply functions to all
+   * overlapping data entries.
+   * @memberof GiveTreeBase.prototype
+   *
+   * @param {ChromRegionLiteral} chrRanges - the chromosomal range to traverse
+   * @param {function} callback - the callback function to be used (with the
+   *    data entry as its sole parameter) on all overlapping data entries
+   *    (that pass `filter` if it exists).
+   * @param {Object} thisVar - `this` element to be used in `callback` and
+   *    `filter`.
+   * @param {function} filter - the filter function to be used (with the data
+   *    entry as its sole parameter), return `false` to exclude the entry from
+   *    being called with `callback`.
+   * @param {boolean} breakOnFalse - whether the traversing should break if
+   *    `false` has been returned from `callback`
+   * @param {object|null} props - additional properties being passed onto nodes
+   * @returns {boolean} If the traverse breaks on `false`, returns `false`,
+   *    otherwise `true`
+   */
+  give.OakTree.prototype.traverse = function (
+    chrRange, callback, thisVar, filter, breakOnFalse, props
+  ) {
+    props = props || {}
+    if (!chrRange.chr || chrRange.chr === this.Chr) {
+      var currNode = this._root
+      while (currNode) {
+        currNode = currNode.traverse(chrRange, callback, thisVar, filter,
+          breakOnFalse, props)
+      }
+    }
+  }
+
   give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked
 
   return give
