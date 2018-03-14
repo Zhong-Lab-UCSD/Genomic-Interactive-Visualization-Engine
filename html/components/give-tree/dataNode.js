@@ -266,14 +266,9 @@ var GIVe = (function (give) {
       this, chrRange, callback, thisVar, filter, breakOnFalse)
     // needs to traverse on ContList if `!props.NotFirstCall`
     if (!props.NotFirstCall) {
-      if (!this.ContList.every(callFunc, this)) {
-        return false
-      }
+      this.ContList.forEach(callFunc, this)
     }
-    if (!this.StartList.every(callFunc, this)
-    ) {
-      return false
-    }
+    this.StartList.forEach(callFunc, this)
     props.NotFirstCall = true
     return true
   }

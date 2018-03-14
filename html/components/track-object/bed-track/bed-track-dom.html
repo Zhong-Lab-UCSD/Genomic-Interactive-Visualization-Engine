@@ -98,8 +98,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          */
 
         trackImpl: function (track, prop) {
-          if (prop.hasOwnProperty('honorItemRGB')) {
-            this.honorItemRGB = prop.honorItemRGB
+          if (track.getSetting('honorItemRGB')) {
+            this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
           }
         },
 
@@ -129,11 +129,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           // resize the heights
           this.updateLocationSize(null, null, null,
             this._calcHeight(numOfLines))
-
-          // add labels
-          if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE) {
-            this.drawShortLabel()
-          }
         },
 
         /**

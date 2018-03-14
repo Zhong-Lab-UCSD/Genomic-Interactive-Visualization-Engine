@@ -749,20 +749,18 @@ var GIVe = (function (give) {
     // until some leaf node is reached.
     if (chrRange) {
       var currIndex = 0
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
+      ) {
         currIndex++
       }
       while (
         this.Keys[currIndex] < chrRange.getEnd() &&
         currIndex < this.Values.length
       ) {
-        if (
-          this.Values[currIndex] &&
-          !this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props
-          )
-        ) {
-          return false
+        if (this.Values[currIndex]) {
+          this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
+            breakOnFalse, props)
         }
         props.NotFirstCall = true
         currIndex++

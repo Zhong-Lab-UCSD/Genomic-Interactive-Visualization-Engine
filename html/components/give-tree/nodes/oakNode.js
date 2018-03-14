@@ -419,36 +419,33 @@ var GIVe = (function (give) {
     // until some leaf node is reached.
 
     if (chrRange) {
-      // clip chrRegion first
-      // (should never happen, also the end is not truncated)
-      chrRange = this.truncateChrRange(chrRange, true, false)
-
       var currIndex = 0
-
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
-        currIndex++
-      }
-
-      while (
-        this.Keys[currIndex] < chrRange.getEnd() &&
-        currIndex < this.Values.length
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
       ) {
-        if (
-          this.Values[currIndex] &&
-          !this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props
-          )
-        ) {
-          return false
-        }
-        props.NotFirstCall = true
         currIndex++
       }
-      return true
+      if (this.RevDepth) {
+        return (this.Keys[currIndex] < chrRange.getEnd() &&
+          currIndex < this.Values.length) ? this.Values[currIndex] : null
+      } else {
+        while (
+          this.Keys[currIndex] < chrRange.getEnd() &&
+          currIndex < this.Values.length
+        ) {
+          if (this.Values[currIndex]) {
+            this.Values[currIndex].traverse(chrRange, callback, thisVar,
+              filter, breakOnFalse, props)
+          }
+          props.NotFirstCall = true
+          currIndex++
+        }
+        return (this.Keys[currIndex] < chrRange.getEnd())
+          ? this.getNext() : null
+      }
     } else { // !chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
-    return null
   }
 
   return give

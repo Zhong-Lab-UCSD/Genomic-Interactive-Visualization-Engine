@@ -42,7 +42,7 @@ var GIVe = (function (give) {
    */
   give.GiveTree = function (chrRange, NonLeafNodeCtor, props) {
     this.Chr = chrRange.chr
-    this.NeighboringLinks = false
+    this.NeighboringLinks = this.NeighboringLinks || false
     props = props || {}
     props.Start = chrRange.getStart()
     props.End = chrRange.getEnd()
@@ -169,10 +169,15 @@ var GIVe = (function (give) {
   ) {
     props = props || {}
     if (!chrRange.chr || chrRange.chr === this.Chr) {
-      chrRange = this._root.truncateChrRange(chrRange, true, false)
-      return this._root.traverse(chrRange, callback, thisVar, filter,
-        breakOnFalse, props)
+      try {
+        chrRange = this._root.truncateChrRange(chrRange, true, false)
+        this._root.traverse(chrRange, callback, thisVar, filter,
+          breakOnFalse, props)
+      } catch (err) {
+        return false
+      }
     }
+    return true
   }
 
   /**

@@ -61,6 +61,7 @@ var GIVe = (function (give) {
     } else {
       this.BranchingFactor = props.BranchingFactor
     }
+    this.NeighboringLinks = true
     give.GiveTree.call(
       this, chrRange, props.NonLeafNodeCtor || give.OakNode, props
     )
@@ -93,12 +94,18 @@ var GIVe = (function (give) {
   ) {
     props = props || {}
     if (!chrRange.chr || chrRange.chr === this.Chr) {
-      var currNode = this._root
-      while (currNode) {
-        currNode = currNode.traverse(chrRange, callback, thisVar, filter,
-          breakOnFalse, props)
+      try {
+        chrRange = this._root.truncateChrRange(chrRange, true, false)
+        var currNode = this._root
+        while (currNode) {
+          currNode = currNode.traverse(chrRange, callback, thisVar, filter,
+            breakOnFalse, props)
+        }
+      } catch (exception) {
+        return false
       }
     }
+    return true
   }
 
   give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked

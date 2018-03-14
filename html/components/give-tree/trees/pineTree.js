@@ -189,12 +189,17 @@ var GIVe = (function (give) {
     }
     // wither is a flag whether to reduce life for nodes not traversed
     if (!chrRange.chr || chrRange.chr === this.Chr) {
-      var result = this._root.traverse(chrRange, callback, thisVar, filter,
-        breakOnFalse, props)
-      if (props.Wither) {
-        this.wither()
+      try {
+        chrRange = this._root.truncateChrRange(chrRange, true, false)
+        this._root.traverse(chrRange, callback, thisVar, filter,
+          breakOnFalse, props)
+        if (props.Wither) {
+          this.wither()
+        }
+      } catch (exception) {
+        return false
       }
-      return result
+      return true
     }
   }
 
