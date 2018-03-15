@@ -777,52 +777,47 @@ var GIVe = (function (give) {
    *
    * @param  {GIVE.ChromRegion} chrRange - The range of query.
    * @param  {object|null} props - additional properties being passed onto nodes
+   * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
+   *    regions. This will be appended to the front of returned value.
+   *    This array will be updated if it gets appended to reduce memory usage
+   *    and GC.
    * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
    *    does not have the data at the current resolution requirement.
    *    If no non-data ranges are found, return []
    */
   give.GiveNonLeafNode.prototype.getUncachedRange = function (chrRange, props) {
     if (chrRange) {
-      var result = []
+      props._Result = props._Result || []
       var currIndex = 0
       while (currIndex < this.Values.length &&
         this.Keys[currIndex + 1] <= chrRange.getStart()
       ) {
         currIndex++
       }
-      var childRange = new give.ChromRegion({
-        chr: chrRange.chr,
-        start: this.Keys[currIndex],
-        end: this.Keys[currIndex + 1]})
-      while (childRange.getStart() < chrRange.getEnd() &&
-        currIndex < this.Values.length
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex] < chrRange.getEnd()
       ) {
         if (this.Values[currIndex]) {
           // there is a child node here, descend
-          var newRanges =
-            this.Values[currIndex].getUncachedRange(chrRange, props)
-          if (result[result.length - 1] && newRanges[0] &&
-            result[result.length - 1].concat(newRanges[0])
-          ) {
-            newRanges.splice(0, 1)
-          }
-          result = result.concat(newRanges)
+          this.Values[currIndex].getUncachedRange(chrRange, props)
         } else if (this.Values[currIndex] === null) {
-          var newRange = childRange.clone()
-          if (
-            newRange.intersect(chrRange) && (
-              !result[result.length - 1] ||
-              !result[result.length - 1].concat(newRange)
-            )
+          var newStart = Math.max(this.Keys[currIndex], chrRange.getStart())
+          var newEnd = Math.min(this.Keys[currIndex + 1], chrRange.getEnd())
+          if (props._Result[props._Result.length - 1] &&
+            props._Result[props._Result.length - 1].getEnd() === newStart
           ) {
-            result.push(newRange)
+            props._Result[props._Result.length - 1].end = newEnd
+          } else {
+            props._Result.push(new give.ChromRegion({
+              chr: chrRange.chr,
+              start: newStart,
+              end: newEnd
+            }))
           }
         }
         currIndex++
-        childRange.start = this.Keys[currIndex]
-        childRange.end = this.Keys[currIndex + 1]
       }
-      return result
+      return props._Result
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }

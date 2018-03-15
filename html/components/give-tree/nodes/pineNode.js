@@ -733,6 +733,10 @@ var GIVe = (function (give) {
    * @param  {number|null} props.BufferingRatio - Ratio of desired resolution if
    *    the data is not available. This would allow a "resolution buffering" by
    *    requesting data at a slightly finer resolution than currently required.
+   * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
+   *    regions. This will be appended to the front of returned value.
+   *    This array will be updated if it gets appended to reduce memory usage
+   *    and GC.
    * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
    *    does not have the data at the current resolution requirement.
    *    __Regions will have a `.Resolution` property indicating their intended
@@ -745,6 +749,7 @@ var GIVe = (function (give) {
     // if no non-data ranges are found, return []
 
     var resolution = chrRange.Resolution || props.Resolution || 1
+    props._Result = props._Result || []
     props.BufferingRatio = props.BufferingRatio || 1
     if (props.BufferingRatio < 1) {
       give._verboseConsole(
@@ -755,55 +760,47 @@ var GIVe = (function (give) {
     }
 
     if (chrRange) {
-      var result = []
       var currIndex = 0
       while (currIndex < this.Values.length &&
         this.Keys[currIndex + 1] <= chrRange.getStart()
       ) {
         currIndex++
       }
-      var childRange = new give.ChromRegion({
-        chr: chrRange.chr,
-        start: this.Keys[currIndex],
-        end: this.Keys[currIndex + 1]})
-      while (childRange.getStart() < chrRange.getEnd() &&
-        currIndex < this.Values.length
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex] < chrRange.getEnd()
       ) {
-        var newResult = []
         if (this.Values[currIndex] &&
           !this.childResEnough(resolution, currIndex)
         ) {
           // child has not enough resolution
-          newResult = this.Values[currIndex].getUncachedRange(chrRange, props)
+          this.Values[currIndex].getUncachedRange(chrRange, props)
         } else if (!this.childHasData(currIndex)) {
           // either no child at all or child does not have summary data
           // calculate the closest range needed for the resolution
           // first normalize resolution to branchingFactor
           var retrieveStart, retrieveEnd, res
           res = this._getClosestRes(resolution / props.BufferingRatio)
-          retrieveStart = Math.max(childRange.getStart(),
+          retrieveStart = Math.max(this.Keys[currIndex],
             give.PineNode.fitRes(chrRange.getStart(), res, Math.floor))
-          retrieveEnd = Math.min(childRange.getEnd(),
+          retrieveEnd = Math.min(this.Keys[currIndex + 1],
             give.PineNode.fitRes(chrRange.getEnd(), res, Math.ceil))
-          newResult.push(new give.ChromRegion({
-            chr: chrRange.chr,
-            start: retrieveStart,
-            end: retrieveEnd,
-            Resolution: res
-          }))
+          if (props._Result[props._Result.length - 1] &&
+            props._Result[props._Result.length - 1].Resolution === res &&
+            props._Result[props._Result.length - 1].getEnd() === retrieveStart
+          ) {
+            props._Result[props._Result.length - 1].end = retrieveEnd
+          } else {
+            props._Result.push(new give.ChromRegion({
+              chr: chrRange.chr,
+              start: retrieveStart,
+              end: retrieveEnd,
+              Resolution: res
+            }))
+          }
         }
-
-        if (result[result.length - 1] && newResult[0] &&
-          result[result.length - 1].concat(newResult[0])) {
-          // newResult[0] has been assimilated
-          newResult.splice(0, 1)
-        }
-        result = result.concat(newResult)
         currIndex++
-        childRange.start = this.Keys[currIndex]
-        childRange.end = this.Keys[currIndex + 1]
       }
-      return result
+      return props._Result
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }

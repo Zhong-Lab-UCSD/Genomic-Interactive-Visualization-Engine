@@ -274,7 +274,7 @@ var GIVe = (function (give) {
   }
 
   give.DataNode.prototype.getUncachedRange = function (chrRange, props) {
-    return []
+    return props._result || []
   }
 
   /**
