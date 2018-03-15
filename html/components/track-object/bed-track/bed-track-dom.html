@@ -91,6 +91,19 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
            * the color index for fore color
            */
           this.FORECOLOR_INDEX = 0
+
+          /**
+           * @property {number} RASTER_SIZE
+           * The size of raster in `DENSE` view in pixel.
+           */
+          this.RASTER_SIZE = 1
+
+          this.RASTER_STATES = {
+            EMPTY: 0,
+            LINE: 1,
+            THIN: 2,
+            THICK: 3
+          }
         },
 
         /**
@@ -101,6 +114,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           if (track.getSetting('honorItemRGB')) {
             this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
           }
+
+          this._resetRaster()
         },
 
         drawData: function () {
@@ -113,17 +128,22 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           this.clear()
 
           this.changeVisibility(this.parent.getSetting('visibility'), false)
-          var numOfLines
+          var numOfLines = 1
           var data = this._getDataObject(this.mainSvg.viewWindow.chr)
 
-          while (!(numOfLines = this._prepareLines(data)) &&
-            this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
-
+          this._resetRaster()
           if (data) {
+            while (!(numOfLines = this._prepareLines(data)) &&
+              this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
             data.traverse(
               this.mainSvg.viewWindow, this._drawSingleGene,
               this, null, false
             )
+
+            if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
+            ) {
+              this._drawRaster()
+            }
           }
 
           // resize the heights
@@ -147,13 +167,55 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             this.lineGapRatio) * this.textSize
         },
 
+        _resetRaster: function () {
+          this._Raster = null
+          this._RasterizedInfo = null
+        },
+
+        _prepareRaster: function () {
+          var rasterCount = parseInt(this.windowWidth / this.RASTER_SIZE)
+          if (rasterCount < 1) {
+            rasterCount = 1
+          }
+          if (this.mainSvg.viewWindow.getLength() > rasterCount
+          ) {
+            var currCoor = this.mainSvg.viewWindow.getStart()
+            this._Raster = [currCoor]
+            do {
+              currCoor += parseInt(
+                (this.mainSvg.viewWindow.getEnd() - currCoor) / rasterCount +
+                0.5
+              )
+              rasterCount--
+              this._Raster.push(currCoor)
+            } while (currCoor < this.mainSvg.viewWindow.getEnd())
+          }
+        },
+
+        _prepareRasterizedInfo: function (index) {
+          if (this._Raster.length > 1) {
+            this._RasterizedInfo = this._RasterizedInfo || {}
+            for (var key in this.RASTER_STATES) {
+              this._RasterizedInfo[key] = 0
+            }
+            this._RasterizedInfo._RasterIndex = index || 0
+          }
+        },
+
         /**
          * _allocateLineToTrans - test and allocate line number to a single
          *    transcript.
          *    Allocated line number will be written into `transcript` via its
          *    `lineY` property.
+         *    Also, if the current visibility is at `DENSE`, fill the
+         *    rasterized information.
          *
          * @param  {Array<object>} lineEnds - An array of objects depicting
+         *    existing line ends for collision detection., object can have two
+         *    properties:
+         *    * end: the end coordinate of the line;
+         *    * textAtLeft: whether this line has text at left (in text column).
+         * @param  {object} raster - An array of objects depicting
          *    existing line ends for collision detection., object can have two
          *    properties:
          *    * end: the end coordinate of the line;
@@ -165,9 +227,12 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          *    (This will happen when adaptive display is on and current active
          *    setting cannot hold all transcripts.)
          */
-        _allocateLineToTrans: function (lineEnds, transcript) {
+        _allocateLineToTrans: function (lineEnds, raster, transcript) {
           // calculate x0 and x1 for the gene
           if (!this.regionInWindow(transcript)) {
+            return true
+          }
+          if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE) {
             return true
           }
           var x0 = this.transformXCoordinate(transcript.getStartCoor(), true)
@@ -180,11 +245,10 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP,
               this.Y_HIDDEN, transcript.getGeneName(true), 'end')
             // move text to textMargin if out of bounds
-            if (this.textMargin && newLabel.getBBox().x < 0) {
+            x0 = newLabel.getBBox().x
+            if (this.textMargin && x0 < 0) {
               x0 = 0
               textAtLeft = true
-            } else {
-              x0 = newLabel.getBBox().x
             }
             this.removeElement(newLabel)
           }
@@ -240,19 +304,25 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          */
         _prepareLines: function (data) {
           var lineEnds = []    // arrays of line end coordinates
-          if (data) {
-            if (data.traverse(
-              this.mainSvg.viewWindow,
-              this._callTransFuncOnGene.bind(this,
-                this._allocateLineToTrans.bind(this, lineEnds)
-              ), this, null, true)
+          if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_NOTEXT) {
+            // Raster is needed
+            this._prepareRaster()
+            if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
             ) {
-              return lineEnds.length > 0 ? lineEnds.length : 1
-            } else {
-              return false
+              this._prepareRasterizedInfo()
+              return 1
             }
           }
-          return 1
+          if (data.traverse(
+            this.mainSvg.viewWindow,
+            this._callTransFuncOnGene.bind(this,
+              this._allocateLineToTrans.bind(this, lineEnds)
+            ), this, null, true)
+          ) {
+            return lineEnds.length > 0 ? lineEnds.length : 1
+          } else {
+            return false
+          }
         },
 
         /**
@@ -312,6 +382,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
          * @param  {function} transcriptCallback - call back functions for
          *    each transcript (taking only the transcript as )
          * @param  {GeneObject} gene - the gene to be called upon.
+         * @return {boolean} Whether the function call returns `true`
          */
         _callTransFuncOnGene: function (transcriptCallback, gene) {
           var transcripts
@@ -334,11 +405,15 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         _drawSingleGene: function (gene) {
           this._callTransFuncOnGene(function (transcript) {
             if (this.regionInWindow(transcript)) {
-              this._drawSingleTranscript(transcript,
+              if (
                 this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
-                  ? null : 0.5 * this.fullHeightRatio * this.textSize,
-                (this.honorItemRGB && gene.itemRGB !== undefined)
-                  ? gene.itemRGB : null)
+              ) {
+                this._drawSingleTranscript(transcript, null,
+                  (this.honorItemRGB && gene.itemRGB !== undefined)
+                    ? gene.itemRGB : null)
+              } else {
+
+              }
             }
           }, gene)
         },
@@ -363,10 +438,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         _drawSingleTranscript: function (
            transcript, yCoor, colorRGB, height, halfHeightRatio, lineHeight
         ) {
-          if (!this.regionInWindow(transcript)) {
-            return
-          }
-
           height = height ||
             this.fullHeightRatio * this.textSize * this.GENE_HEIGHT
           halfHeightRatio = halfHeightRatio || this.halfHeightRatio
@@ -381,6 +452,51 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               lineHeight / 2
           }
 
+          if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_NOTEXT) {
+            this._drawSingleTranscriptBodyFullRes(transcript, yCoor, colorRGB,
+              height, halfHeightRatio, lineHeight)
+            // draw text
+            var newLabel = this.drawText(
+              this.transformXCoordinate(transcript.getStartCoor(), true) -
+                this.TEXT_MARGIN_GAP,
+              yCoor, transcript.getGeneName(true), 'end',
+              {style: 'fill: ' + this.rgbToHex(colorRGB)}
+            )
+
+            // move text to textMargin if out of bounds
+            if (this.textMargin && newLabel.getBBox().x < 0) {
+              newLabel.setAttributeNS(null, 'x', this.textMargin)
+              this.addElement(newLabel, this.textSvg)
+            }
+          } else {
+            this._drawSingleTranscriptBodyRaster(transcript, yCoor, colorRGB,
+              height, halfHeightRatio, lineHeight)
+          }
+
+          this._drawOverflowTriangles(transcript, colorRGB, height, yCoor)
+        },
+
+        /**
+         * _drawSingleTranscriptBodyFullRes - draw a single transcript in the
+         *    track SVG at full resolution
+         *
+         * @param  {TranscriptObject} transcript - the transcript to be
+         *    drawn. Only the entry provided here will be drawn, so if a gene
+         *    is provided, only the gene, not its transcript(s) will be drawn.
+         * @param  {number} yCoor - the y coordinate from the top to draw this
+         *    transcript. __Notice that genes drawn are vertically-aligned
+         *    to the center so yCoor should be the coordinates at the center.__
+         * @param  {number} colorRGB - RGB value of the color for the gene
+         * @param  {number} height - full height for drawing (CDS for
+         *    example).
+         * @param  {number} halfHeightRatio - Ratio for lower height values in
+         *    some regions (for example, UTRs). __This should be normalized by
+         *    `height`.__
+         * @param  {number} lineHeight - unit for all height values.
+         */
+        _drawSingleTranscriptBodyFullRes: function (
+           transcript, yCoor, colorRGB, height, halfHeightRatio, lineHeight
+        ) {
           /**
            * _processSingleBlock - helper function to draw only one block
            *
@@ -390,20 +506,24 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
            *    portions, which may overlap with the block.
            * @param  {number} [thickEnd] - the end coordinate of thick
            *    portions, which may overlap with the block.
+           * @param  {ChromRegionLiteral} [coor] - chromosomal region object.
+           *    Used to cut back GC.
            */
           var _processSingleBlock = function (
-            blockStart, blockEnd, thickStart, thickEnd
+            blockStart, blockEnd, thickStart, thickEnd, coor
           ) {
+            coor = coor || new give.ChromRegion({chr: transcript.chr,
+              start: blockStart,
+              end: blockEnd,
+              strand: transcript.strand})
             var isThick = false
             if (typeof thickStart === 'number' ||
               typeof thickEnd === 'number'
             ) {
               if (thickStart < blockEnd && thickStart > blockStart) {
                 // CDS start is in this block
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockStart,
-                  end: thickStart,
-                  strand: transcript.strand})
+                coor.start = blockStart
+                coor.end = thickStart
                 this.drawRectangle(coor, colorRGB,
                   yCoor, height * halfHeightRatio,
                   this.mainSvg, colorRGB,
@@ -413,10 +533,8 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
               }
               if (thickEnd < blockEnd && thickEnd > blockStart) {
                 // CDS end is in this block
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockStart,
-                  end: thickEnd,
-                  strand: transcript.strand})
+                coor.start = blockStart
+                coor.end = thickEnd
                 this.drawRectangle(coor, colorRGB, yCoor,
                   height, null, colorRGB,
                   give.TrackDOMBehaviorImpl.VALIGN_CENTER
@@ -427,17 +545,19 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             } else {
               isThick = true
             }
-            coor = new give.ChromRegion({chr: transcript.chr,
-              start: blockStart,
-              end: blockEnd,
-              strand: transcript.strand})
+            coor.start = blockStart
+            coor.end = blockEnd
             this.drawRectangle(coor, colorRGB,
               yCoor, height * (isThick ? 1 : halfHeightRatio),
               this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
             )
           }.bind(this)
 
-          var coor, blockStart, blockEnd
+          var coor = new give.ChromRegion({chr: transcript.chr,
+            start: transcript.getStart(),
+            end: transcript.getEnd(),
+            strand: transcript.strand})
+          var blockStart, blockEnd
 
           if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
             // Have different blocks
@@ -448,21 +568,186 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
                 transcript.getBlockStarts()[i]
               // first draw connecting lines (intron, if any)
               if (blockEnd < blockStart) {
-                coor = new give.ChromRegion({chr: transcript.chr,
-                  start: blockEnd,
-                  end: blockStart,
-                  strand: transcript.strand})
+                coor.start = blockEnd
+                coor.end = blockStart
                 this._drawSpanningLine(coor, colorRGB, yCoor, height)
               }
               blockEnd = blockStart + transcript.getBlockSizes()[i]
               _processSingleBlock(blockStart, blockEnd,
-                transcript.thickStart, transcript.thickEnd
+                transcript.thickStart, transcript.thickEnd, coor
               )
             }
           } else {
             // no blocks
             _processSingleBlock(transcript.getStart(), transcript.getEnd(),
-              transcript.thickStart, transcript.thickEnd
+              transcript.thickStart, transcript.thickEnd, coor
+            )
+          }
+        },
+
+        /**
+         * _drawSingleTranscriptBodyRaster - draw a single transcript in the
+         *    track SVG, rasterized by provided raster or `this._Raster`
+         *
+         * @param  {TranscriptObject} transcript - the transcript to be
+         *    drawn. Only the entry provided here will be drawn, so if a gene
+         *    is provided, only the gene, not its transcript(s) will be drawn.
+         * @param  {number} yCoor - the y coordinate from the top to draw this
+         *    transcript. __Notice that genes drawn are vertically-aligned
+         *    to the center so yCoor should be the coordinates at the center.__
+         * @param  {number} colorRGB - RGB value of the color for the gene
+         * @param  {number} height - full height for drawing (CDS for
+         *    example).
+         * @param  {number} halfHeightRatio - Ratio for lower height values in
+         *    some regions (for example, UTRs). __This should be normalized by
+         *    `height`.__
+         * @param  {number} lineHeight - unit for all height values.
+         * @returns {}
+         */
+        _drawSingleTranscriptBodyRaster: function (transcript, yCoor, colorRGB,
+          height, halfHeightRatio, lineHeight
+        ) {
+          /**
+           * Steps:
+           * 1. Find the raster index for the transcript;
+           * 2. Fill RasterizedInfo for the current raster until coordinate
+           *    shifts away. Old RasterizedInfo may be used if available;
+           * 3. Use RasterizedInfo to assign RasterizationState, the actual
+           *    value to draw for current raster;
+           * 4. Draw bodies based on RasterizationState
+           */
+
+          var currRasterIndex = give.locationOf(
+            transcript.getStart(), this._Raster)
+          var rasterDrawIndex
+          if (this._RasterizedInfo._RasterIndex < currRasterIndex) {
+            // nothing to be added to rightmost raster
+            this._prepareRasterizedInfo(currRasterIndex)
+          }
+          currRasterIndex = this._RasterizedInfo._RasterIndex
+          rasterDrawIndex = this._RasterizedInfo._RasterIndex
+          var rasterFlags = []
+
+          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+            // Have different blocks
+            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
+            // draw thick blocks and connecting lines
+            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+              blockStart = transcript.getStart() +
+                transcript.getBlockStarts()[i]
+              // first draw connecting lines (intron, if any)
+              if (blockEnd < blockStart) {
+                coor.start = blockEnd
+                coor.end = blockStart
+                this._drawSpanningLine(coor, colorRGB, yCoor, height)
+              }
+              blockEnd = blockStart + transcript.getBlockSizes()[i]
+              _processSingleBlock(blockStart, blockEnd,
+                transcript.thickStart, transcript.thickEnd, coor
+              )
+            }
+          } else {
+            // no blocks
+            if (transcript.getEnd() > this._Raster[currRasterIndex]) {
+              _processSingleBlock(transcript.getStart(), transcript.getEnd(),
+                transcript.thickStart, transcript.thickEnd, rasterFlags
+              )
+            }
+          }
+
+
+
+
+
+
+
+
+
+
+          /**
+           * _processSingleBlock - helper function to draw only one block
+           *
+           * @param  {number} blockStart - the start coordinate of the block.
+           * @param  {number} blockEnd - the end coordinate of the block.
+           * @param  {number} [thickStart] - the start coordinate of thick
+           *    portions, which may overlap with the block.
+           * @param  {number} [thickEnd] - the end coordinate of thick
+           *    portions, which may overlap with the block.
+           * @param  {ChromRegionLiteral} [coor] - chromosomal region object.
+           *    Used to cut back GC.
+           */
+          var _processSingleBlock = function (
+            blockStart, blockEnd, thickStart, thickEnd, coor
+          ) {
+            coor = coor || new give.ChromRegion({chr: transcript.chr,
+              start: blockStart,
+              end: blockEnd,
+              strand: transcript.strand})
+            var isThick = false
+            if (typeof thickStart === 'number' ||
+              typeof thickEnd === 'number'
+            ) {
+              if (thickStart < blockEnd && thickStart > blockStart) {
+                // CDS start is in this block
+                coor.start = blockStart
+                coor.end = thickStart
+                this.drawRectangle(coor, colorRGB,
+                  yCoor, height * halfHeightRatio,
+                  this.mainSvg, colorRGB,
+                  give.TrackDOMBehaviorImpl.VALIGN_CENTER
+                )
+                blockStart = thickStart
+              }
+              if (thickEnd < blockEnd && thickEnd > blockStart) {
+                // CDS end is in this block
+                coor.start = blockStart
+                coor.end = thickEnd
+                this.drawRectangle(coor, colorRGB, yCoor,
+                  height, null, colorRGB,
+                  give.TrackDOMBehaviorImpl.VALIGN_CENTER
+                )
+                blockStart = thickEnd
+              }
+              isThick = (thickStart < blockEnd) && (thickEnd > blockStart)
+            } else {
+              isThick = true
+            }
+            coor.start = blockStart
+            coor.end = blockEnd
+            this.drawRectangle(coor, colorRGB,
+              yCoor, height * (isThick ? 1 : halfHeightRatio),
+              this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
+            )
+          }.bind(this)
+
+          var coor = new give.ChromRegion({chr: transcript.chr,
+            start: transcript.getStart(),
+            end: transcript.getEnd(),
+            strand: transcript.strand})
+          var blockStart, blockEnd
+
+          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+            // Have different blocks
+            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
+            // draw thick blocks and connecting lines
+            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+              blockStart = transcript.getStart() +
+                transcript.getBlockStarts()[i]
+              // first draw connecting lines (intron, if any)
+              if (blockEnd < blockStart) {
+                coor.start = blockEnd
+                coor.end = blockStart
+                this._drawSpanningLine(coor, colorRGB, yCoor, height)
+              }
+              blockEnd = blockStart + transcript.getBlockSizes()[i]
+              _processSingleBlock(blockStart, blockEnd,
+                transcript.thickStart, transcript.thickEnd, coor
+              )
+            }
+          } else {
+            // no blocks
+            _processSingleBlock(transcript.getStart(), transcript.getEnd(),
+              transcript.thickStart, transcript.thickEnd, coor
             )
           }
 

@@ -155,6 +155,10 @@ var GIVe = (function (give) {
     return give._debounceIDList.hasOwnProperty(jobName)
   }
 
+  give.compareNumbers = give.compareNumbers || function (x1, x2) {
+    return x1 < x2 ? -1 : (x1 > x2 ? 1 : 0)
+  }
+
   give.locationOf = give.locationOf || function (element, array, start, end, compareFunc) {
     // this is to return the index that element will be put AFTER
     // so if the element needs to be put to the top, it will return start-1
@@ -164,6 +168,7 @@ var GIVe = (function (give) {
 
     start = start || 0
     end = end || array.length
+    compareFunc = compareFunc || give.compareNumbers
     var pivot = parseInt((start + end) / 2)  // = parseInt((start + end) / 2)
 
     var comp = compareFunc(element, array[pivot])
