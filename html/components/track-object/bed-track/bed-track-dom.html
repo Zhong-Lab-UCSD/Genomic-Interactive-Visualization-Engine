@@ -38,6 +38,133 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
     var GIVe = (function (give) {
       'use strict'
 
+      give.RasInfo = function (start, end, rasterSize) {
+        this.prepareRaster(start, end, rasterSize)
+        this.prepareInfo(0)
+      }
+
+      give.RasInfo.prototype.prepareInfo = function (index, callback) {
+        if (this._Raster.length > 1) {
+          if (this._Info && typeof callback === 'function') {
+            callback(this.getFlag(), this.getCurrIndex())
+          }
+          if (index < 0 || index > this._Raster.length - 1) {
+            // index out of bounds
+            throw new Error('Index out of bounds for raster! Raster length: ' +
+              this._Raster.length + ', index: ' + index)
+          }
+          this._Info = this._Info || []
+          for (const value of this.constructor.RASTER_STATES) {
+            this._Info[value] = 0
+          }
+          this._RasIndex = index || 0
+        }
+      }
+
+      give.RasInfo.prototype.getFlag = function () {
+        var maxFlag = this.constructor.RASTER_STATES.EMPTY
+        this._Info.every(function (entry, index) {
+          if (entry >= parseInt((this._Raster[this._RasIndex + 1] -
+            this._Raster[this._RasIndex]) / 2)
+          ) {
+            maxFlag = index
+            return true
+          }
+          return false
+        }, this)
+        return maxFlag
+      }
+
+      give.RasInfo.prototype.getRasterStart = function () {
+        return this._Raster[this._RasIndex]
+      }
+
+      give.RasInfo.prototype.getRasterEnd = function () {
+        return this._Raster[this._RasIndex + 1]
+      }
+
+      give.RasInfo.prototype.next = function (callback) {
+        this.prepareInfo(this._RasIndex + 1, callback)
+        return this._RasIndex
+      }
+
+      give.RasInfo.prototype.addData = function (length, flag) {
+        for (let i = this.constructor.RASTER_STATES.EMPTY; i <= flag; i++) {
+          this._Info[i] += length
+        }
+      }
+
+      give.RasInfo.prototype.prepareRaster = function (start, end, rasterSize) {
+        var rasterCount = parseInt((end - start) / this.RASTER_SIZE)
+        if (rasterCount < 1) {
+          rasterCount = 1
+        }
+        if (end - start > rasterCount) {
+          let currCoor = start
+          this._Raster = [currCoor]
+          do {
+            currCoor += parseInt((end - currCoor) / rasterCount + 0.5)
+            rasterCount--
+            this._Raster.push(currCoor)
+          } while (currCoor < end)
+        }
+      }
+
+      give.RasInfo.prototype.findRasIndex = function (coordinate) {
+        // bring this._RasterizedInfo._RasterIndex up to date
+        return give.locationOf(coordinate, this._Raster)
+      }
+
+      give.RasInfo.prototype.getCurrIndex = function () {
+        return this._RasIndex
+      }
+
+      /**
+       * genRasOutput - generate a series of consolidated non-empty rasterized
+       *    region.
+       *
+       * @param  {Array<number>} RasFlags   description
+       * @param  {number} startIndex description
+       * @returns {Array<object>}  return consolidated non-empty objects.
+       *    For example:
+       *    '''
+       *    [
+       *      {
+       *        'start': 123456,
+       *        'end': 234567,
+       *        'flag': 1 (=== give.RasInfo.RASTER_STATES.LINE)
+       *      },
+       *      ...
+       *    ]
+       *    '''
+       */
+      give.RasInfo.prototype.genRasOutput = function (RasFlags, startIndex) {
+        var results = []
+        var lastFlag
+        var lastIndex = startIndex
+        RasFlags.forEach(function (flag, index) {
+          if (flag !== lastFlag) {
+            if (lastFlag) {
+              results.push({
+                start: this._Raster[lastIndex],
+                end: this._Raster[lastIndex + index],
+                flag: lastFlag
+              })
+            }
+            lastIndex = startIndex + index
+            lastFlag = flag
+          }
+        }, this)
+        return results
+      }
+
+      give.RasInfo.RASTER_STATES = {
+        EMPTY: 0,
+        LINE: 1,
+        THIN: 2,
+        THICK: 3
+      }
+
       give.BedTrackDOM = Polymer({
         is: 'bed-track-dom',
 
@@ -97,13 +224,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
            * The size of raster in `DENSE` view in pixel.
            */
           this.RASTER_SIZE = 1
-
-          this.RASTER_STATES = {
-            EMPTY: 0,
-            LINE: 1,
-            THIN: 2,
-            THICK: 3
-          }
         },
 
         /**
@@ -115,7 +235,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
           }
 
-          this._resetRaster()
+          this._RasInfo = null
         },
 
         drawData: function () {
@@ -131,19 +251,30 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           var numOfLines = 1
           var data = this._getDataObject(this.mainSvg.viewWindow.chr)
 
-          this._resetRaster()
+          this._RasInfo = null
+          this._MegaGenes = null
           if (data) {
             while (!(numOfLines = this._prepareLines(data)) &&
               this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
-            data.traverse(
-              this.mainSvg.viewWindow, this._drawSingleGene,
-              this, null, false
-            )
-
-            if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
+            if (this.activeVisibility <=
+              give.TrackObject.StatusEnum.VIS_NOTEXT
             ) {
-              this._drawRaster()
+              // Raster is needed
+              this._RasInfo = new give.RasInfo(
+                this.mainSvg.viewWindow.getStart(),
+                this.mainSvg.viewWindow.getEnd(), this.RASTER_SIZE)
             }
+            if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
+            ) {
+              data.traverse(
+                this.mainSvg.viewWindow, this._drawSingleGene,
+                this, null, false
+              )
+            } else {
+              // TODO: create a series of "megagenes" with all overlapping genes
+              // then draw the "megagenes" instead
+            }
+            // TODO: if there are still information in this._RasInfo, draw it
           }
 
           // resize the heights
@@ -165,41 +296,6 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           numOfLines = numOfLines || 1
           return (numOfLines * (this.fullHeightRatio + this.lineGapRatio) -
             this.lineGapRatio) * this.textSize
-        },
-
-        _resetRaster: function () {
-          this._Raster = null
-          this._RasterizedInfo = null
-        },
-
-        _prepareRaster: function () {
-          var rasterCount = parseInt(this.windowWidth / this.RASTER_SIZE)
-          if (rasterCount < 1) {
-            rasterCount = 1
-          }
-          if (this.mainSvg.viewWindow.getLength() > rasterCount
-          ) {
-            var currCoor = this.mainSvg.viewWindow.getStart()
-            this._Raster = [currCoor]
-            do {
-              currCoor += parseInt(
-                (this.mainSvg.viewWindow.getEnd() - currCoor) / rasterCount +
-                0.5
-              )
-              rasterCount--
-              this._Raster.push(currCoor)
-            } while (currCoor < this.mainSvg.viewWindow.getEnd())
-          }
-        },
-
-        _prepareRasterizedInfo: function (index) {
-          if (this._Raster.length > 1) {
-            this._RasterizedInfo = this._RasterizedInfo || {}
-            for (var key in this.RASTER_STATES) {
-              this._RasterizedInfo[key] = 0
-            }
-            this._RasterizedInfo._RasterIndex = index || 0
-          }
         },
 
         /**
@@ -306,10 +402,10 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           var lineEnds = []    // arrays of line end coordinates
           if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_NOTEXT) {
             // Raster is needed
-            this._prepareRaster()
+            this._RasInfo = new give.RasInfo(this.mainSvg.viewWindow.getStart(),
+              this.mainSvg.viewWindow.getEnd(), this.RASTER_SIZE)
             if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
             ) {
-              this._prepareRasterizedInfo()
               return 1
             }
           }
@@ -405,15 +501,9 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
         _drawSingleGene: function (gene) {
           this._callTransFuncOnGene(function (transcript) {
             if (this.regionInWindow(transcript)) {
-              if (
-                this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
-              ) {
-                this._drawSingleTranscript(transcript, null,
-                  (this.honorItemRGB && gene.itemRGB !== undefined)
-                    ? gene.itemRGB : null)
-              } else {
-
-              }
+              this._drawSingleTranscript(transcript, null,
+                (this.honorItemRGB && gene.itemRGB !== undefined)
+                  ? gene.itemRGB : null)
             }
           }, gene)
         },
@@ -448,7 +538,9 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
           }
 
           if (typeof (yCoor) !== 'number' || isNaN(yCoor)) {
-            yCoor = (parseInt(transcript.lineY) + 0.5) * lineHeight ||
+            yCoor = (parseInt(
+              this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
+                ? transcript.lineY : 0) + 0.5) * lineHeight ||
               lineHeight / 2
           }
 
@@ -563,7 +655,7 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
             // Have different blocks
             blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
             // draw thick blocks and connecting lines
-            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+            for (let i = 0; i < transcript.getNumOfBlocks(); i++) {
               blockStart = transcript.getStart() +
                 transcript.getBlockStarts()[i]
               // first draw connecting lines (intron, if any)
@@ -617,43 +709,101 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
            * 4. Draw bodies based on RasterizationState
            */
 
-          var currRasterIndex = give.locationOf(
-            transcript.getStart(), this._Raster)
-          var rasterDrawIndex
-          if (this._RasterizedInfo._RasterIndex < currRasterIndex) {
-            // nothing to be added to rightmost raster
-            this._prepareRasterizedInfo(currRasterIndex)
-          }
-          currRasterIndex = this._RasterizedInfo._RasterIndex
-          rasterDrawIndex = this._RasterizedInfo._RasterIndex
           var rasterFlags = []
+          var addRasToFlags = (flag, index) => rasterFlags.push(flag)
 
-          if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
-            // Have different blocks
-            blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
-            // draw thick blocks and connecting lines
-            for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
-              blockStart = transcript.getStart() +
-                transcript.getBlockStarts()[i]
-              // first draw connecting lines (intron, if any)
-              if (blockEnd < blockStart) {
-                coor.start = blockEnd
-                coor.end = blockStart
-                this._drawSpanningLine(coor, colorRGB, yCoor, height)
+          /**
+           * _processSingleBlock - helper function to draw only one block
+           *
+           * @param  {number} blockStart - the start coordinate of the block.
+           * @param  {number} blockEnd - the end coordinate of the block.
+           * @param  {number} [thickStart] - the start coordinate of thick
+           *    portions, which may overlap with the block.
+           * @param  {number} [thickEnd] - the end coordinate of thick
+           *    portions, which may overlap with the block.
+           */
+          var _processSingleBlock = function (
+            blockStart, blockEnd, thickStart, thickEnd
+          ) {
+            var isThick = false
+            if (blockStart < this._RasInfo.getRasterStart()) {
+              blockStart = this._RasInfo.getRasterStart()
+            }
+            while (blockStart < blockEnd) {
+              var segEnd = Math.min(blockEnd, this._RasInfo.getRasterEnd())
+              if (typeof thickStart === 'number' ||
+                typeof thickEnd === 'number'
+              ) {
+                if (thickStart < segEnd && thickStart > blockStart) {
+                  // CDS start is in this segment
+                  this._RasInfo.addData(thickStart - blockStart,
+                    give.RasInfo.RASTER_STATES.THIN)
+                  blockStart = thickStart
+                }
+                if (thickEnd < segEnd && thickEnd > blockStart) {
+                  // CDS end is in this block
+                  this._RasInfo.addData(thickEnd - blockStart,
+                    give.RasInfo.RASTER_STATES.THICK)
+                  blockStart = thickEnd
+                }
+                isThick = (thickStart < segEnd) && (thickEnd > blockStart)
+              } else {
+                isThick = true
               }
-              blockEnd = blockStart + transcript.getBlockSizes()[i]
-              _processSingleBlock(blockStart, blockEnd,
-                transcript.thickStart, transcript.thickEnd, coor
-              )
+              this._RasInfo.addData(segEnd - blockStart,
+                isThick ? give.RasInfo.RASTER_STATES.THICK
+                  : give.RasInfo.RASTER_STATES.THIN)
+
+              blockStart = segEnd
+              if (blockStart >= this._RasInfo.getRasterEnd()) {
+                // moved past the current raster, finish it and append to
+                // rasterFlags
+                this._RasInfo.next(addRasToFlags)
+              }
             }
-          } else {
-            // no blocks
-            if (transcript.getEnd() > this._Raster[currRasterIndex]) {
+            return blockStart
+          }.bind(this)
+
+          var currCoor = transcript.getStart()
+          var rasterDrawIndex = this._RasInfo.getCurrIndex()
+          try {
+            {
+              let targetIndex = this._RasInfo.findRasIndex(currCoor)
+              while (this._RasInfo.getCurrIndex() < targetIndex &&
+                this._RasInfo.next(addRasToFlags) !== null);
+            }
+            
+            if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+              // Have different blocks
+              while (currCoor < transcript.getEnd()) {
+              }
+
+              blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
+              // draw thick blocks and connecting lines
+              for (var i = 0; i < transcript.getNumOfBlocks(); i++) {
+                blockStart = transcript.getStart() +
+                  transcript.getBlockStarts()[i]
+                // first draw connecting lines (intron, if any)
+                if (blockEnd < blockStart) {
+                  coor.start = blockEnd
+                  coor.end = blockStart
+                  this._drawSpanningLine(coor, colorRGB, yCoor, height)
+                }
+                blockEnd = blockStart + transcript.getBlockSizes()[i]
+                _processSingleBlock(blockStart, blockEnd,
+                  transcript.thickStart, transcript.thickEnd, coor
+                )
+              }
+            } else {
+              // no blocks
               _processSingleBlock(transcript.getStart(), transcript.getEnd(),
-                transcript.thickStart, transcript.thickEnd, rasterFlags
-              )
+                transcript.thickStart, transcript.thickEnd)
             }
+          } catch (ignore) {
+          } finally {
+            // finish rasterFlags
           }
+
 
 
 
