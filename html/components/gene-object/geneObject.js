@@ -18,14 +18,16 @@ var GIVe = (function (give) {
     // and it is not possible to add a transcript with less information to the gene
     // (adding a BED4 transcript to a BED12 gene will generate error)
 
-    give.AggregatedTranscript.prototype.merge.apply(this, arguments)
-
-    // add the new transcript to this.transcripts
-    if (newRegion.transcripts) {
-      this.transcripts = this.transcripts.concat(newRegion.transcripts)
-    } else {
-      this.transcripts.push(newRegion)
+    if (give.AggregatedTranscript.prototype.merge.apply(this, arguments)) {
+      // add the new transcript to this.transcripts
+      if (newRegion.transcripts) {
+        this.transcripts = this.transcripts.concat(newRegion.transcripts)
+      } else {
+        this.transcripts.push(newRegion)
+      }
+      return this
     }
+    return false
   }
 
   give.GeneObject.prototype.getGeneName = function (withTransNums) {

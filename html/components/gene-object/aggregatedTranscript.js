@@ -16,7 +16,9 @@ var GIVe = (function (give) {
     // (adding a BED4 transcript to a BED12 gene will generate error)
 
     // TODO: complete potential error handling code
-
+    if (!this.overlaps(newRegion)) {
+      return false
+    }
     // first, put all the blocks into one ordered array
     if (this.getNumOfBlocks()) {
       var newStart = Math.min(this.start, newRegion.start)
@@ -35,9 +37,10 @@ var GIVe = (function (give) {
       for (i = 0; i < this.blockStarts.length - 1; i++) {
         if (this.blockStarts[i] + this.blockSizes[i] >= this.blockStarts[i + 1]) {
           // merge this block with the next one
-          this.blockSizes[i] = Math.max(this.blockStarts[i] + this.blockSizes[i],
-                          this.blockStarts[i + 1] + this.blockSizes[i + 1]) -
-                     this.blockStarts[i]
+          this.blockSizes[i] = Math.max(
+            this.blockStarts[i] + this.blockSizes[i],
+            this.blockStarts[i + 1] + this.blockSizes[i + 1]) -
+            this.blockStarts[i]
           this.blockStarts.splice(i + 1, 1)
           this.blockSizes.splice(i + 1, 1)
           i--
@@ -53,6 +56,8 @@ var GIVe = (function (give) {
     if (this.thickEnd) {
       this.thickEnd = Math.max(this.thickEnd, newRegion.thickEnd)
     }
+
+    return this
   }
 
   return give

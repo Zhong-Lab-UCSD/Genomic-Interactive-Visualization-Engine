@@ -53,15 +53,13 @@ var GIVe = (function (give) {
       )
       if (this.parent.getTypeTrunk().indexOf('gene') > -1) {
         // is some gene oriented type
-        if (geneNameMap.hasOwnProperty(newGene.name) &&
-          geneNameMap[newGene.name].overlaps(newGene)
+        // check if it overlaps with existing gene(s)
+        // because the gene list is sorted by start,
+        //    whenever it doesn't overlap with the current gene
+        //    it will become a new gene entry.
+        if (!geneNameMap.hasOwnProperty(newGene.name) ||
+          !geneNameMap[newGene.name].merge(newGene)
         ) {
-          // check if it overlaps with existing gene(s)
-          // because the gene list is sorted by start,
-          //    whenever it doesn't overlap with the current gene
-          //    it will become a new gene entry.
-          geneNameMap[newGene.name].merge(newGene)
-        } else {
           geneArray.push(newGene)
           geneNameMap[newGene.name] = newGene
         }
