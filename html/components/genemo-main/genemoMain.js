@@ -250,8 +250,8 @@ var GIVe = (function (give) {
           // use "Region " + number here
           regionName = 'Region ' + (regionList.length + 1)
         }
-        chrRegionRaw.start = parseInt(chrRegionRaw.start || chrRegionRaw.genestart)
-        chrRegionRaw.end = parseInt(chrRegionRaw.end || chrRegionRaw.geneend)
+        chrRegionRaw.setStart(parseInt(chrRegionRaw.start || chrRegionRaw.genestart))
+        chrRegionRaw.setEnd(parseInt(chrRegionRaw.end || chrRegionRaw.geneend))
         chrRegionRaw.name = (chrRegionRaw.name || regionName).replace(/[\s()+/]/g, '')
         var newChrRegion = new give.ChromRegionDisp(chrRegionRaw, ref)
         regionList.push(newChrRegion)

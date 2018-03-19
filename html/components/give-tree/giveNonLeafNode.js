@@ -101,8 +101,10 @@ var GIVe = (function (give) {
     }
     this.RevDepth = (Number.isInteger(props.RevDepth) && props.RevDepth > 0)
       ? props.RevDepth : 0
-    this.setNext(props.NextNode)
-    this.setPrev(props.PrevNode)
+    if (this.Tree.NeighboringLinks) {
+      this.setNext(props.NextNode)
+      this.setPrev(props.PrevNode)
+    }
   }
 
   give.extend(give.GiveTreeNode, give.GiveNonLeafNode)
@@ -129,12 +131,12 @@ var GIVe = (function (give) {
     if (truncStart && newRegion.getStart() < this.getStart()) {
       give._verboseConsole('Start truncated, get ' + newRegion.getStart() +
         ', truncated to ' + this.getStart() + '.', give.VERBOSE_DEBUG_MORE)
-      newRegion.start = this.getStart()
+      newRegion.setStart(this.getStart(), doNotThrow)
     }
     if (truncEnd && newRegion.getEnd() > this.getEnd()) {
       give._verboseConsole('End truncated, get ' + newRegion.getEnd() +
         ', truncated to ' + this.getEnd() + '.', give.VERBOSE_DEBUG_MORE)
-      newRegion.end = this.getEnd()
+      newRegion.setEnd(this.getEnd(), doNotThrow)
     }
 
     if ((newRegion.getStart() >= newRegion.getEnd() ||
@@ -170,6 +172,16 @@ var GIVe = (function (give) {
   }
 
   /**
+   * getLength - get the length of the region covered by this node
+   * @memberof GiveNonLeafNode.prototype
+   *
+   * @returns {number}  The length of the node
+   */
+  give.GiveNonLeafNode.prototype.getLength = function () {
+    return this.getEnd() - this.getStart()
+  }
+
+  /**
    * setStart - set the start coordinate of the region covered by this node
    * @memberof GiveNonLeafNode.prototype
    *
@@ -195,6 +207,9 @@ var GIVe = (function (give) {
    * @returns {GiveNonLeafNode|null}  the next node
    */
   give.GiveNonLeafNode.prototype.getNext = function () {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('Cannot get the next sibling in an unlinked tree!')
+    }
     return this.Next
   }
 
@@ -204,6 +219,9 @@ var GIVe = (function (give) {
    * @returns {GiveNonLeafNode|null}  the previous node
    */
   give.GiveNonLeafNode.prototype.getPrev = function () {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('Cannot get the previous sibling in an unlinked tree!')
+    }
     return this.Prev
   }
 
@@ -214,6 +232,9 @@ var GIVe = (function (give) {
    *    node
    */
   give.GiveNonLeafNode.prototype.setNext = function (nextNode) {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('Cannot set the next sibling in an unlinked tree!')
+    }
     this.Next = nextNode || null
     if (nextNode) {
       nextNode.Prev = this
@@ -246,6 +267,9 @@ var GIVe = (function (give) {
    *    previous node
    */
   give.GiveNonLeafNode.prototype.setPrev = function (prevNode) {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('Cannot set the previous sibling in an unlinked tree!')
+    }
     this.Prev = prevNode || null
     if (prevNode) {
       prevNode.Next = this
@@ -282,6 +306,9 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._severeSelfLinks = function (
     convertTo, noPrev, noNext
   ) {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('No sibling links to severe in an unlinked tree!')
+    }
     if (!noPrev) {
       try {
         this.getPrev().setNext(convertTo)
@@ -305,6 +332,9 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._severeChildLinks = function (
     convertTo, noPrev, noNext
   ) {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('No child links to severe in an unlinked tree!')
+    }
     if (!noPrev) {
       try {
         this.getFirstChild()._severeLinks(convertTo, false, true)
@@ -345,6 +375,9 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._fixChildLinks = function (
     index, doNotFixBack, doNotFixFront
   ) {
+    if (!this.Tree.NeighboringLinks) {
+      throw new Error('No child links to fix in an unlinked tree!')
+    }
     if (this.RevDepth > 0) {
       if (!doNotFixBack) {
         var nextChild = this._getChildNext(index)
@@ -613,11 +646,15 @@ var GIVe = (function (give) {
     this.Values.splice(index + 1, 0,
       newLatterChild === undefined ? this.Values[index] : newLatterChild)
     if (newLatterChild !== undefined) {
-      this._fixChildLinks(index + 1, false, true)
+      if (this.Tree.NeighboringLinks) {
+        this._fixChildLinks(index + 1, false, true)
+      }
     }
     if (newFormerChild !== undefined) {
       this.Value[index] = newFormerChild
-      this._fixChildLinks(index, newLatterChild === undefined, false)
+      if (this.Tree.NeighboringLinks) {
+        this._fixChildLinks(index, newLatterChild === undefined, false)
+      }
     }
   }
 
@@ -651,6 +688,12 @@ var GIVe = (function (give) {
    *    borders. If so, the children nodes in siblings of this may be expanded.
    *    (The number of children will not be affected in sibling nodes, so that
    *    the structure of neighboring nodes are not messed up.)
+   *    __Note:__ `crossBorder` can only be used when
+   *    `this.Tree.NeighboringLinks === true`.
+   *    If `this.Tree.NeighboringLinks === false`, this argument will be
+   *    ignored, because `this` has no way of knowing its own siblings, thus
+   *    unable to merge children across sibling
+   *    borders.
    * @returns {boolean} whether merge happened to the previous child (this is
    *    used for calling function to correct indices when merging during
    *    traversing.)
@@ -659,17 +702,22 @@ var GIVe = (function (give) {
     index, mergeNext, crossBorder
   ) {
     var mergedFront = false
-    if ((crossBorder && this.Values.length > 1) || index > 0) {
+    if (
+      index > 0 ||
+      (this.Tree.NeighboringLinks && crossBorder && this.Values.length > 1)
+    ) {
       // merge previous child first
       var prevChild = this._getChildPrev(index)
-      if (give.GiveNonLeafNode._childMergable(prevChild, this.Values[index])) {
+      if (this.constructor._childMergable(prevChild, this.Values[index])) {
         // remove child at `index`
         this.Keys.splice(index, 1)
         this.Values.splice(index, 1)
-        if (this.getPrev()) {
-          this.getPrev().setEnd(this.getStart())
+        if (this.Tree.NeighboringLinks) {
+          if (this.getPrev()) {
+            this.getPrev().setEnd(this.getStart())
+          }
+          this._fixChildLinks(index > 0 ? index - 1 : index, true)
         }
-        this._fixChildLinks(index > 0 ? index - 1 : index, true)
         mergedFront = true
       }
     }
@@ -677,17 +725,21 @@ var GIVe = (function (give) {
     // if `mergeNext` is `true`, do the same to the next node
     if (mergeNext) {
       if (index < this.Values.length - 1 &&
-        give.GiveNonLeafNode._childMergable(
+        this.constructor._childMergable(
           this.Values[index], this.Values[index + 1]
         )
       ) {
         // remove child at `index + 1`
         this.Keys.splice(index + 1, 1)
         this.Values.splice(index + 1, 1)
-        this._fixChildLinks(index, false, true)
-      } else if (crossBorder && index === this.Values.length - 1 &&
+        if (this.Tree.NeighboringLinks) {
+          this._fixChildLinks(index, false, true)
+        }
+      } else if (
+        this.Tree.NeighboringLinks &&
+        crossBorder && index === this.Values.length - 1 &&
         this.getNext() && this.Values.length > 1 &&
-        give.GiveNonLeafNode._childMergable(
+        this.constructor._childMergable(
           this.Values[index], this._getChildNext(index)
         )
       ) {
@@ -709,29 +761,20 @@ var GIVe = (function (give) {
     // Implementation without resolution support
     // Because this is a non-leaf node, it always descends to its children
     // until some leaf node is reached.
-
     if (chrRange) {
-      // clip chrRegion first
-      // (should never happen, also the end is not truncated)
-      chrRange = this.truncateChrRange(chrRange, true, false)
-
       var currIndex = 0
-
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
+      ) {
         currIndex++
       }
-
       while (
         this.Keys[currIndex] < chrRange.getEnd() &&
         currIndex < this.Values.length
       ) {
-        if (
-          this.Values[currIndex] &&
-          !this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props
-          )
-        ) {
-          return false
+        if (this.Values[currIndex]) {
+          this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
+            breakOnFalse, props)
         }
         props.NotFirstCall = true
         currIndex++
@@ -748,48 +791,47 @@ var GIVe = (function (give) {
    *
    * @param  {GIVE.ChromRegion} chrRange - The range of query.
    * @param  {object|null} props - additional properties being passed onto nodes
+   * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
+   *    regions. This will be appended to the front of returned value.
+   *    This array will be updated if it gets appended to reduce memory usage
+   *    and GC.
    * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
    *    does not have the data at the current resolution requirement.
    *    If no non-data ranges are found, return []
    */
   give.GiveNonLeafNode.prototype.getUncachedRange = function (chrRange, props) {
+    props._Result = props._Result || []
     if (chrRange) {
-      // clip chrRegion first (should never happen)
-      var currRange = this.truncateChrRange(chrRange, true, true)
-      var result = []
       var currIndex = 0
-      while (this.Keys[currIndex + 1] <= currRange.getStart()) {
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
+      ) {
         currIndex++
       }
-      while (currRange.getStart() < currRange.getEnd()) {
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex] < chrRange.getEnd()
+      ) {
         if (this.Values[currIndex]) {
           // there is a child node here, descend
-          var newRanges =
-            this.Values[currIndex].getUncachedRange(currRange, props)
-          if (result[result.length - 1] && newRanges[0] &&
-            result[result.length - 1].concat(newRanges[0])
-          ) {
-            newRanges.splice(0, 1)
-          }
-          result = result.concat(newRanges)
+          this.Values[currIndex].getUncachedRange(chrRange, props)
         } else if (this.Values[currIndex] === null) {
-          var childRange = new give.ChromRegion({
-            chr: chrRange.chr,
-            start: this.Keys[currIndex],
-            end: this.Keys[currIndex + 1]})
-          if (
-            childRange.intersect(currRange) && (
-              !result[result.length - 1] ||
-              !result[result.length - 1].concat(childRange)
-            )
+          let newStart = Math.max(this.Keys[currIndex], chrRange.getStart())
+          let newEnd = Math.min(this.Keys[currIndex + 1], chrRange.getEnd())
+          if (props._Result[props._Result.length - 1] &&
+            props._Result[props._Result.length - 1].getEnd() === newStart
           ) {
-            result.push(childRange)
+            props._Result[props._Result.length - 1].setEnd(newEnd)
+          } else {
+            props._Result.push(new give.ChromRegion({
+              chr: chrRange.chr,
+              start: newStart,
+              end: newEnd
+            }))
           }
         }
         currIndex++
-        currRange.start = this.Keys[currIndex]
       }
-      return result
+      return props._Result
     } else { // chrRange
       throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }

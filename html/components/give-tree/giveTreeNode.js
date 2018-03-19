@@ -203,7 +203,7 @@ var GIVe = (function (give) {
       (typeof filter !== 'function' || filter.call(thisVar, dataEntry))
     ) {
       if (!callback.call(thisVar, dataEntry) && breakOnFalse) {
-        return false
+        throw new Error('False returned. Break traverse procedure.')
       }
     }
     return true

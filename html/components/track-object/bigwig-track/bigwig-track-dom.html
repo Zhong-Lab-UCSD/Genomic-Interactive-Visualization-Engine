@@ -123,6 +123,8 @@ var GIVe = (function (give) {
         this.setHeight(give.BigWigTrackDOM._DEFAULT_HEIGHT)
       }
 
+      this.labelMarginRight = this.MARGIN + this.TEXT_MARGIN_GAP
+
       /**
        * to be explained
        */
@@ -305,10 +307,6 @@ var GIVe = (function (give) {
         }
       }
       this.drawScale()
-      if (this.textSvg) {
-        this.drawShortLabel(null,
-          this.textMargin - this.MARGIN - this.TEXT_MARGIN_GAP)
-      }
     },
 
     /**

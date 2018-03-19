@@ -175,6 +175,7 @@ var GIVe = (function (give) {
       return dataEntry.getStart() === this.getStart()
     }, this, props.Callback, props.ThisVar)
     this.StartList = data.slice(prevIndex, currIndex)
+    props.ContList = props.ContList.concat(this.StartList)
 
     if (typeof props.DataIndex !== 'number') {
       // remove data if props.currIndex is not specified
@@ -266,20 +267,15 @@ var GIVe = (function (give) {
       this, chrRange, callback, thisVar, filter, breakOnFalse)
     // needs to traverse on ContList if `!props.NotFirstCall`
     if (!props.NotFirstCall) {
-      if (!this.ContList.every(callFunc, this)) {
-        return false
-      }
+      this.ContList.forEach(callFunc, this)
     }
-    if (!this.StartList.every(callFunc, this)
-    ) {
-      return false
-    }
+    this.StartList.forEach(callFunc, this)
     props.NotFirstCall = true
     return true
   }
 
   give.DataNode.prototype.getUncachedRange = function (chrRange, props) {
-    return []
+    return props._Result || []
   }
 
   /**

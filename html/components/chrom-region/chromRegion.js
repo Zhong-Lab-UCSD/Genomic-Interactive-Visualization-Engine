@@ -146,6 +146,20 @@ var GIVe = (function (give) {
     return this.end
   }
 
+  give.ChromRegion.prototype.setStart = function (newStart, forced) {
+    if (!forced && (isNaN(newStart) || newStart >= this.end)) {
+      throw (new Error('Invalid new start value: ' + newStart))
+    }
+    this.start = newStart
+  }
+
+  give.ChromRegion.prototype.setEnd = function (newEnd, forced) {
+    if (!forced && (isNaN(newEnd) || newEnd <= this.start)) {
+      throw (new Error('Invalid new end value: ' + newEnd))
+    }
+    this.end = newEnd
+  }
+
   give.ChromRegion.prototype._regionFromString = function (regionString, zeroBased, ref) {
     if (ref && ref.chromInfo && ref.chromInfo[regionString.toLowerCase()]) {
       this.chr = ref.chromInfo[regionString.toLowerCase()].chrRegion.chr

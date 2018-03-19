@@ -23,9 +23,11 @@ var GIVe = (function (give) {
    * @typedef {object} GiveTreeBase
    * @property {string} chr - Chromosome that this data storage unit is for
    * @property {GiveTreeNode} _root - Root node object
-   * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
+   * @property {function} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes
-   * @property {GiveTreeNode} _LeafNodeCtor - Constructor for all leaf nodes,
+   * @property {function} _LeafNodeCtor - Constructor for all leaf nodes,
+   * @property {boolean} NeighboringLinks - Whether nodes in the tree will have
+   *    links to their siblings
    *
    * @class give.GiveTree
    *
@@ -40,6 +42,7 @@ var GIVe = (function (give) {
    */
   give.GiveTree = function (chrRange, NonLeafNodeCtor, props) {
     this.Chr = chrRange.chr
+    this.NeighboringLinks = this.NeighboringLinks || false
     props = props || {}
     props.Start = chrRange.getStart()
     props.End = chrRange.getEnd()
@@ -166,9 +169,15 @@ var GIVe = (function (give) {
   ) {
     props = props || {}
     if (!chrRange.chr || chrRange.chr === this.Chr) {
-      return this._root.traverse(chrRange, callback, thisVar, filter,
-        breakOnFalse, props)
+      try {
+        chrRange = this._root.truncateChrRange(chrRange, true, false)
+        this._root.traverse(chrRange, callback, thisVar, filter,
+          breakOnFalse, props)
+      } catch (err) {
+        return false
+      }
     }
+    return true
   }
 
   /**
@@ -186,6 +195,7 @@ var GIVe = (function (give) {
   give.GiveTree.prototype.getUncachedRange = function (chrRange, props) {
     props = props || {}
     if (!chrRange.chr || chrRange.chr === this.Chr) {
+      chrRange = this._root.truncateChrRange(chrRange, true, true)
       return this._root.getUncachedRange(chrRange, props)
     } else {
       return []

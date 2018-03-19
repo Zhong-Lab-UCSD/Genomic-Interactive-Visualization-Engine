@@ -188,6 +188,7 @@ limitations under the License.
         this.callbackAfterDraw = null
 
         this.narrowMode = false
+        this.labelMarginRight = 0
       },
 
       factoryImpl: function (track, properties) {
@@ -862,11 +863,14 @@ limitations under the License.
         this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw)
       },
 
-      drawWordWrappedText: function (x, y, text, textAnchor, extendDirection, params, svgToDraw, maxWidth, maxHeight, avoidCollision) {
+      createWordWrappedText: function (text, textAnchor, params, svgToDraw, maxWidth, maxHeight) {
         // notice that all whitespaces in text will be subsituted by ' ' and consecutive spaces will be collapsed
         // extendDirection ('up' | 'both' | 'down') determine how extra text will be extended
         // when avoidCollision is true, no text will be drawn
         //    if any of the text component is overlapping with existing text elements
+        if (!text) {
+          return null
+        }
         var textArray = text.split(/\s+/)
         var results = []
         var resultWidths = []
@@ -927,6 +931,10 @@ limitations under the License.
           } while (currWord.length > 0)
         }, this)
 
+        return results
+      },
+
+      drawWordWrappedText: function (x, y, textArr, textAnchor, extendDirection, params, svgToDraw, avoidCollision) {
         // calculate the top line y based on number of lines and everything
         var vertParam = 0.5    // this is for default value ('middle')
         switch (extendDirection) {
@@ -937,15 +945,16 @@ limitations under the License.
             vertParam = 0
             break
         }
-        // then draw everything in results
+
+        // then draw everything in textArr
         // get all text elements in the svg in case collision detection is needed
         var textList = Polymer.dom(svgToDraw).querySelectorAll('text')
         var oldTextArray = Array.prototype.slice.call(textList)
         // then store all new labels in newTextArray for collision detection
         var newTextArray = []
-        var currY = y - (results.length - 1) * vertParam *
+        var currY = y - (textArr.length - 1) * vertParam *
           (this.lineGapRatio + this.fullHeightRatio) * this.textSize
-        results.forEach(function (line, index) {
+        textArr.forEach(function (line, index) {
           newTextArray.push(this.drawText(
             x, currY, line, textAnchor, params, svgToDraw
           ))
@@ -972,10 +981,16 @@ limitations under the License.
         }
       },
 
-      drawShortLabel: function (label, maxX) {
-        maxX = maxX || this.textMargin
-        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, label || this.getTrackSetting('shortLabel'),
-                    'end', 'both', null, this.textSvg, maxX, this.trackHeight, true)
+      createShortLabelArr: function (label, maxX) {
+        maxX = maxX || this.textMargin - this.labelMarginRight
+        return this.createWordWrappedText(label || this.getTrackSetting('shortLabel'),
+                    'end', null, this.textSvg, maxX, this.trackHeight)
+      },
+
+      drawShortLabelArr: function (labelArr, maxX) {
+        maxX = maxX || this.textMargin - this.labelMarginRight
+        this.drawWordWrappedText(maxX, this.trackHeight * 0.5, labelArr,
+                    'end', 'both', null, this.textSvg, true)
       },
 
       // ** Track event handling and functions **
@@ -983,7 +998,14 @@ limitations under the License.
       drawDataFireWrapper: function (newVWindow) {
         // fire track-ready event to its container (to calculate size and do other stuff)
         this.changeViewWindow(newVWindow)
+        var shortLabelArr
+        if (this.textSvg) {
+          shortLabelArr = this.createShortLabelArr()
+        }
         this.drawData()
+        if (this.textSvg && shortLabelArr) {
+          this.drawShortLabelArr(shortLabelArr)
+        }
         // draw a rectangle over the coordinate track to handle mouse events
 
         if (!Polymer.dom(this.getMainSvg()).querySelector('.pointerHandler')) {

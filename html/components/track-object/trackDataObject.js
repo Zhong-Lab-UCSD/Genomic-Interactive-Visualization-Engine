@@ -136,10 +136,11 @@ var GIVe = (function (give) {
                 if (queryRange.getEnd() > GUIRange.getEnd()) {
                   // queryRange is split into two
                   var newQueryRange = queryRange.clone()
-                  newQueryRange.start = GUIRange.getEnd()
+                  newQueryRange.setStart(GUIRange.getEnd())
                   mergedGUIRanges.splice(j + 1, 0, newQueryRange)
                 }
-                queryRange.end = GUIRange.getStart()
+                queryRange.setEnd(GUIRange.getStart())
+                j++
               } else {
                 if (queryRange.getEnd() <= GUIRange.getEnd()) {
                   // queryRange is completely covered by GUIRange,
@@ -147,9 +148,8 @@ var GIVe = (function (give) {
                   mergedGUIRanges.splice(j, 1)
                 } else {
                   // queryRange has something at the end
-                  queryRange.start = GUIRange.getEnd()
+                  queryRange.setStart(GUIRange.getEnd())
                 }
-                j--
               }
             } else if (typeof GUIRange.Resolution === 'number' &&
               (typeof queryRange.Resolution !== 'number' ||
@@ -164,20 +164,21 @@ var GIVe = (function (give) {
                   GUIRange = null
                 } else {
                   // GUIRange still has something at the end
-                  GUIRange.start = queryRange.getEnd()
+                  GUIRange.setStart(queryRange.getEnd())
+                  j++
                 }
               } else {
                 if (queryRange.getEnd() < GUIRange.getEnd()) {
                   // GUIRange will be split into two
                   // push the earlier GUIRange into mergedGUIRanges
                   var newGUIRange = GUIRange.clone()
-                  newGUIRange.end = queryRange.getStart()
+                  newGUIRange.setEnd(queryRange.getStart())
                   mergedGUIRanges.splice(j, 0, newGUIRange)
-                  GUIRange.start = queryRange.getEnd()
+                  GUIRange.setStart(queryRange.getEnd())
+                  j++
                 } else {
                   // queryRange has something at the end
-                  GUIRange.end = queryRange.getStart()
-                  j--
+                  GUIRange.setEnd(queryRange.getStart())
                 }
               }
             } else {
@@ -185,7 +186,6 @@ var GIVe = (function (give) {
               GUIRange.assimilate(queryRange)
               mergedGUIRanges.splice(j, 1)
             }
-            j++
           }
 
           if (GUIRange) {
@@ -804,7 +804,7 @@ var GIVe = (function (give) {
   give.SummaryCtorBase.prototype.addDataFromChromEntry = function (
     node, chromEntry
   ) {
-    return this.addData(this.constructor.dataFromChromEntry(chromEntry))
+    return this.addData(node, this.constructor._dataFromChromEntry(chromEntry))
   }
 
   /**

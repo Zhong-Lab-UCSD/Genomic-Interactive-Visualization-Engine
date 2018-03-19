@@ -162,7 +162,7 @@ var GIVe = (function (give) {
         currIndex += potentialSibs.length
       }
 
-      chrRange.start = section.getEnd()
+      chrRange.setStart(section.getEnd())
       currIndex++
     } // end while(rangeStart < rangeEnd);
   }
@@ -198,8 +198,8 @@ var GIVe = (function (give) {
 
     if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
       // The new rangeEnd appears between windows.
-      // Shorten the previous data record by inserting the key,
-      // and use this.Values[currIndex] to fill the rest
+      // Shorten the next data record by inserting the key,
+      // and use this.Values[currIndex] to fill the current region
       // (normally it should be `null`)
       this._splitChild(currIndex, chrRange.getEnd())
     }
@@ -251,10 +251,10 @@ var GIVe = (function (give) {
       }
 
       // Shrink `chrRange` to unprocessed range
-      chrRange.start = (
+      chrRange.setStart((
         props.DataIndex < data.length &&
         data[props.DataIndex].getStart() < chrRange.getEnd()
-      ) ? data[props.DataIndex].getStart() : chrRange.getEnd()
+      ) ? data[props.DataIndex].getStart() : chrRange.getEnd(), true)
     }
 
     // Process `props.ContList` for one last time
@@ -409,6 +409,43 @@ var GIVe = (function (give) {
     }
     // This have number of children that match B+ tree requirements
     return this
+  }
+
+  give.OakNode.prototype.traverse = function (
+    chrRange, callback, thisVar, filter, breakOnFalse, props
+  ) {
+    // Implementation without resolution support
+    // Because this is a non-leaf node, it always descends to its children
+    // until some leaf node is reached.
+
+    if (chrRange) {
+      var currIndex = 0
+      while (currIndex < this.Values.length &&
+        this.Keys[currIndex + 1] <= chrRange.getStart()
+      ) {
+        currIndex++
+      }
+      if (this.RevDepth) {
+        return (this.Keys[currIndex] < chrRange.getEnd() &&
+          currIndex < this.Values.length) ? this.Values[currIndex] : null
+      } else {
+        while (
+          this.Keys[currIndex] < chrRange.getEnd() &&
+          currIndex < this.Values.length
+        ) {
+          if (this.Values[currIndex]) {
+            this.Values[currIndex].traverse(chrRange, callback, thisVar,
+              filter, breakOnFalse, props)
+          }
+          props.NotFirstCall = true
+          currIndex++
+        }
+        return (this.Keys[currIndex] < chrRange.getEnd())
+          ? this.getNext() : null
+      }
+    } else { // !chrRange
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+    } // end if(chrRange)
   }
 
   return give
