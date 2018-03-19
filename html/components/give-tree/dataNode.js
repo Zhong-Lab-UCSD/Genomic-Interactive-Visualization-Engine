@@ -175,6 +175,7 @@ var GIVe = (function (give) {
       return dataEntry.getStart() === this.getStart()
     }, this, props.Callback, props.ThisVar)
     this.StartList = data.slice(prevIndex, currIndex)
+    props.ContList = props.ContList.concat(this.StartList)
 
     if (typeof props.DataIndex !== 'number') {
       // remove data if props.currIndex is not specified

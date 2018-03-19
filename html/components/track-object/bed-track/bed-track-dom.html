@@ -521,6 +521,7 @@ var GIVe = (function (give) {
             (this.honorItemRGB && gene.itemRGB !== undefined)
               ? gene.itemRGB : null)
         }
+        return true
       }, gene)
     },
 
@@ -715,7 +716,6 @@ var GIVe = (function (give) {
      *    some regions (for example, UTRs). __This should be normalized by
      *    `height`.__
      * @param  {number} lineHeight - unit for all height values.
-     * @returns {}
      */
     _drawSingleTranscriptBodyRaster: function (transcript, lastTrans, yCoor,
       colorRGB, height, halfHeightRatio, lineHeight
