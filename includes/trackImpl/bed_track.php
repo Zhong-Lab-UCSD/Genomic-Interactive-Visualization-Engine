@@ -41,7 +41,7 @@ function _BedFromAssoc(&$assoc, $isGenePred = FALSE, $attrAs13thColumn = FALSE) 
     // BED 6 (optional)
     $resultArr = array_pad($resultArr, 5, ".");
     $resultArr []= ((isset($assoc['strand']) && $assoc['strand'] !== "")
-      ? $itor['strand'] : ".");
+      ? $assoc['strand'] : ".");
     unset($assoc['strand']);
   }
 
