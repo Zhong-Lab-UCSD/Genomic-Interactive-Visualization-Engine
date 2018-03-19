@@ -162,7 +162,7 @@ var GIVe = (function (give) {
         currIndex += potentialSibs.length
       }
 
-      chrRange.start = section.getEnd()
+      chrRange.setStart(section.getEnd())
       currIndex++
     } // end while(rangeStart < rangeEnd);
   }
@@ -198,8 +198,8 @@ var GIVe = (function (give) {
 
     if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
       // The new rangeEnd appears between windows.
-      // Shorten the previous data record by inserting the key,
-      // and use this.Values[currIndex] to fill the rest
+      // Shorten the next data record by inserting the key,
+      // and use this.Values[currIndex] to fill the current region
       // (normally it should be `null`)
       this._splitChild(currIndex, chrRange.getEnd())
     }
@@ -251,10 +251,10 @@ var GIVe = (function (give) {
       }
 
       // Shrink `chrRange` to unprocessed range
-      chrRange.start = (
+      chrRange.setStart((
         props.DataIndex < data.length &&
         data[props.DataIndex].getStart() < chrRange.getEnd()
-      ) ? data[props.DataIndex].getStart() : chrRange.getEnd()
+      ) ? data[props.DataIndex].getStart() : chrRange.getEnd(), true)
     }
 
     // Process `props.ContList` for one last time

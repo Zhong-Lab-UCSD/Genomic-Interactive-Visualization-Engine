@@ -131,12 +131,12 @@ var GIVe = (function (give) {
     if (truncStart && newRegion.getStart() < this.getStart()) {
       give._verboseConsole('Start truncated, get ' + newRegion.getStart() +
         ', truncated to ' + this.getStart() + '.', give.VERBOSE_DEBUG_MORE)
-      newRegion.start = this.getStart()
+      newRegion.setStart(this.getStart(), doNotThrow)
     }
     if (truncEnd && newRegion.getEnd() > this.getEnd()) {
       give._verboseConsole('End truncated, get ' + newRegion.getEnd() +
         ', truncated to ' + this.getEnd() + '.', give.VERBOSE_DEBUG_MORE)
-      newRegion.end = this.getEnd()
+      newRegion.setEnd(this.getEnd(), doNotThrow)
     }
 
     if ((newRegion.getStart() >= newRegion.getEnd() ||
@@ -169,6 +169,16 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.getEnd = function () {
     return this.Keys[this.Keys.length - 1]
+  }
+
+  /**
+   * getLength - get the length of the region covered by this node
+   * @memberof GiveNonLeafNode.prototype
+   *
+   * @returns {number}  The length of the node
+   */
+  give.GiveNonLeafNode.prototype.getLength = function () {
+    return this.getEnd() - this.getStart()
   }
 
   /**
@@ -636,11 +646,15 @@ var GIVe = (function (give) {
     this.Values.splice(index + 1, 0,
       newLatterChild === undefined ? this.Values[index] : newLatterChild)
     if (newLatterChild !== undefined) {
-      this._fixChildLinks(index + 1, false, true)
+      if (this.Tree.NeighboringLinks) {
+        this._fixChildLinks(index + 1, false, true)
+      }
     }
     if (newFormerChild !== undefined) {
       this.Value[index] = newFormerChild
-      this._fixChildLinks(index, newLatterChild === undefined, false)
+      if (this.Tree.NeighboringLinks) {
+        this._fixChildLinks(index, newLatterChild === undefined, false)
+      }
     }
   }
 
@@ -786,8 +800,8 @@ var GIVe = (function (give) {
    *    If no non-data ranges are found, return []
    */
   give.GiveNonLeafNode.prototype.getUncachedRange = function (chrRange, props) {
+    props._Result = props._Result || []
     if (chrRange) {
-      props._Result = props._Result || []
       var currIndex = 0
       while (currIndex < this.Values.length &&
         this.Keys[currIndex + 1] <= chrRange.getStart()
@@ -801,12 +815,12 @@ var GIVe = (function (give) {
           // there is a child node here, descend
           this.Values[currIndex].getUncachedRange(chrRange, props)
         } else if (this.Values[currIndex] === null) {
-          var newStart = Math.max(this.Keys[currIndex], chrRange.getStart())
-          var newEnd = Math.min(this.Keys[currIndex + 1], chrRange.getEnd())
+          let newStart = Math.max(this.Keys[currIndex], chrRange.getStart())
+          let newEnd = Math.min(this.Keys[currIndex + 1], chrRange.getEnd())
           if (props._Result[props._Result.length - 1] &&
             props._Result[props._Result.length - 1].getEnd() === newStart
           ) {
-            props._Result[props._Result.length - 1].end = newEnd
+            props._Result[props._Result.length - 1].setEnd(newEnd)
           } else {
             props._Result.push(new give.ChromRegion({
               chr: chrRange.chr,

@@ -38,9 +38,10 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
 var GIVe = (function (give) {
   'use strict'
 
-  give.RasInfo = function (start, end, rasterSize) {
-    this.prepareRaster(start, end, rasterSize)
+  give.RasInfo = function (start, end, rasterCount, rasterFillThreshold) {
+    this.prepareRaster(start, end, rasterCount)
     this.prepareInfo(0)
+    this.RasterFillThreshold = rasterFillThreshold || 0.0001
   }
 
   give.RasInfo.prototype.prepareInfo = function (index, callback) {
@@ -48,11 +49,10 @@ var GIVe = (function (give) {
       if (this._Info && typeof callback === 'function') {
         callback(this.getFlag(), this.getCurrIndex())
       }
-      this._Info = this._Info || []
-      for (const value of this.constructor.RASTER_STATES) {
-        this._Info[value] = 0
-      }
-      if (index < 0 || index > this._Raster.length - 1) {
+      this._Info = this._Info ||
+        new Array(this.constructor.RASTER_STATES.TotalNumOfStates)
+      this._Info.fill(0)
+      if (index < 0 || index >= this._Raster.length - 1) {
         // index out of bounds
         this._RasIndex = null
         throw new Error('Index out of bounds for raster! Raster length: ' +
@@ -65,7 +65,8 @@ var GIVe = (function (give) {
   give.RasInfo.prototype.getFlag = function () {
     var maxFlag = this.constructor.RASTER_STATES.EMPTY
     this._Info.every(function (entry, index) {
-      if (entry >= parseInt((this.getRasterEnd() - this.getRasterStart()) / 2)
+      if (entry > parseInt((this.getRasterEnd() - this.getRasterStart()) *
+        this.RasterFillThreshold)
       ) {
         maxFlag = index
         return true
@@ -94,10 +95,12 @@ var GIVe = (function (give) {
     }
   }
 
-  give.RasInfo.prototype.prepareRaster = function (start, end, rasterSize) {
-    var rasterCount = parseInt((end - start) / this.RASTER_SIZE)
-    if (rasterCount < 1) {
+  give.RasInfo.prototype.prepareRaster = function (start, end, rasterCount) {
+    if (isNaN(rasterCount) || rasterCount < 1) {
       rasterCount = 1
+    }
+    if (end - start < rasterCount) {
+      rasterCount = end - start
     }
     if (end - start > rasterCount) {
       let currCoor = start
@@ -147,7 +150,7 @@ var GIVe = (function (give) {
         if (lastFlag) {
           results.push({
             start: this._Raster[lastIndex],
-            end: this._Raster[lastIndex + index],
+            end: this._Raster[startIndex + index],
             flag: lastFlag
           })
         }
@@ -155,10 +158,18 @@ var GIVe = (function (give) {
         lastFlag = flag
       }
     }, this)
+    if (lastFlag) {
+      results.push({
+        start: this._Raster[lastIndex],
+        end: this._Raster[startIndex + RasFlags.length],
+        flag: lastFlag
+      })
+    }
     return results
   }
 
   give.RasInfo.RASTER_STATES = {
+    TotalNumOfStates: 4,
     EMPTY: 0,
     LINE: 1,
     THIN: 2,
@@ -262,7 +273,8 @@ var GIVe = (function (give) {
           // Raster is needed
           this._RasInfo = new give.RasInfo(
             this.mainSvg.viewWindow.getStart(),
-            this.mainSvg.viewWindow.getEnd(), this.RASTER_SIZE)
+            this.mainSvg.viewWindow.getEnd(),
+            this.windowWidth / this.RASTER_SIZE)
         }
         if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
         ) {
@@ -323,11 +335,6 @@ var GIVe = (function (give) {
      *    properties:
      *    * end: the end coordinate of the line;
      *    * textAtLeft: whether this line has text at left (in text column).
-     * @param  {object} raster - An array of objects depicting
-     *    existing line ends for collision detection., object can have two
-     *    properties:
-     *    * end: the end coordinate of the line;
-     *    * textAtLeft: whether this line has text at left (in text column).
      * @param  {TranscriptObject} transcript - the transcript to be
      *    allocated.
      * @returns {boolean} return `true` if allocation succeeds, `false` if
@@ -335,7 +342,7 @@ var GIVe = (function (give) {
      *    (This will happen when adaptive display is on and current active
      *    setting cannot hold all transcripts.)
      */
-    _allocateLineToTrans: function (lineEnds, raster, transcript) {
+    _allocateLineToTrans: function (lineEnds, transcript) {
       // calculate x0 and x1 for the gene
       if (!this.regionInWindow(transcript)) {
         return true
@@ -412,14 +419,9 @@ var GIVe = (function (give) {
      */
     _prepareLines: function (data) {
       var lineEnds = [] // arrays of line end coordinates
-      if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_NOTEXT) {
-        // Raster is needed
-        this._RasInfo = new give.RasInfo(this.mainSvg.viewWindow.getStart(),
-          this.mainSvg.viewWindow.getEnd(), this.RASTER_SIZE)
-        if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
-        ) {
-          return 1
-        }
+      if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
+      ) {
+        return 1
       }
       if (data.traverse(
         this.mainSvg.viewWindow,
@@ -510,10 +512,12 @@ var GIVe = (function (give) {
      *
      * @param  {GeneObject} gene - the gene to be drawn.
      */
-    _drawSingleGene: function (gene, index) {
+    _drawSingleGene: function (gene, index, arr) {
       this._callTransFuncOnGene(function (transcript) {
         if (this.regionInWindow(transcript)) {
-          this._drawSingleTranscript(transcript, null,
+          this._drawSingleTranscript(transcript,
+            Array.isArray(arr) ? index === arr.length - 1 : false,
+            null,
             (this.honorItemRGB && gene.itemRGB !== undefined)
               ? gene.itemRGB : null)
         }
@@ -629,8 +633,8 @@ var GIVe = (function (give) {
         ) {
           if (thickStart < blockEnd && thickStart > blockStart) {
             // CDS start is in this block
-            coor.start = blockStart
-            coor.end = thickStart
+            coor.setStart(blockStart, true)
+            coor.setEnd(thickStart)
             this.drawRectangle(coor, colorRGB,
               yCoor, height * halfHeightRatio,
               this.mainSvg, colorRGB,
@@ -640,8 +644,8 @@ var GIVe = (function (give) {
           }
           if (thickEnd < blockEnd && thickEnd > blockStart) {
             // CDS end is in this block
-            coor.start = blockStart
-            coor.end = thickEnd
+            coor.setStart(blockStart, true)
+            coor.setEnd(thickEnd)
             this.drawRectangle(coor, colorRGB, yCoor,
               height, null, colorRGB,
               give.TrackDOMBehaviorImpl.VALIGN_CENTER
@@ -652,8 +656,8 @@ var GIVe = (function (give) {
         } else {
           isThick = true
         }
-        coor.start = blockStart
-        coor.end = blockEnd
+        coor.setStart(blockStart, true)
+        coor.setEnd(blockEnd)
         this.drawRectangle(coor, colorRGB,
           yCoor, height * (isThick ? 1 : halfHeightRatio),
           this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
@@ -675,8 +679,8 @@ var GIVe = (function (give) {
             transcript.getBlockStarts()[i]
           // first draw connecting lines (intron, if any)
           if (blockEnd < blockStart) {
-            coor.start = blockEnd
-            coor.end = blockStart
+            coor.setStart(blockEnd, true)
+            coor.setEnd(blockStart)
             this._drawSpanningLine(coor, colorRGB, yCoor, height)
           }
           blockEnd = blockStart + transcript.getBlockSizes()[i]
@@ -813,7 +817,9 @@ var GIVe = (function (give) {
                 let segEnd = Math.min(blockStart, this._RasInfo.getRasterEnd())
                 this._RasInfo.addData(segEnd - blockEnd,
                   give.RasInfo.RASTER_STATES.LINE)
-                this._RasInfo.next(addRasToFlags)
+                if (segEnd === this._RasInfo.getRasterEnd()) {
+                  this._RasInfo.next(addRasToFlags)
+                }
                 blockEnd = segEnd
               }
             }
@@ -834,7 +840,7 @@ var GIVe = (function (give) {
       } finally {
         // finish rasterFlags
         if (rasterFlags.length > 0) {
-          let rasOutput = this._RasInfo.getRasOutput(
+          let rasOutput = this._RasInfo.genRasOutput(
             rasterFlags, rasterDrawIndex)
           let coor
           rasOutput.forEach(function (rasObj, index) {
@@ -845,8 +851,8 @@ var GIVe = (function (give) {
                 end: rasObj.end,
                 strand: transcript.strand
               })
-              coor.start = rasObj.start
-              coor.end = rasObj.end
+              coor.setStart(rasObj.start, true)
+              coor.setEnd(rasObj.end)
               if (rasObj.flag === give.RasInfo.RASTER_STATES.LINE) {
                 // draw spanning line
                 this._drawSpanningLine(coor, colorRGB, yCoor, height)
@@ -854,7 +860,7 @@ var GIVe = (function (give) {
                 this.drawRectangle(coor, colorRGB,
                   yCoor, (rasObj.flag === give.RasInfo.RASTER_STATES.THICK
                     ? 1 : halfHeightRatio) * height, this.mainSvg,
-                  colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
+                  null, give.TrackDOMBehaviorImpl.VALIGN_CENTER
                 )
               }
             }
