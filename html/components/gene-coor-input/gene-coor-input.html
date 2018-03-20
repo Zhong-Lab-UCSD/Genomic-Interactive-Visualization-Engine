@@ -1,12 +1,18 @@
-<!-- GIVe.GeneCoorInput: Input control for gene name / alias / coordinates
-  This component contains a paper-input component and will do the following:
-  1. Hint gene names / aliases when partial names are given
-  2. Find coordinates and substitute the value correspondingly
-  3. Fix cases for genomic region coordinates (basically chrX and chrY)
+<!--
+@license
+Copyright 2017 GIVe Authors
 
-  Function 1 and 2 of this component will depend on a dataset generated from
-    NCBI https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/
-    (A python script will be used to update this database monthly.)
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
@@ -17,6 +23,59 @@
 <link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
+<!--
+
+### Overview
+
+`<gene-coor-input> provides a material design input field implemented by
+Polymer for gene names / aliases / genomic coordinates. This component contains a paper-input component and will do the following:
+
+1.  Fix cases for genomic region coordinates (basically chrX and chrY)
+2.  Hint gene names / aliases when partial names are given
+3.  Find coordinates and substitute the value correspondingly
+
+### Reference support in data sources
+
+Function 1 is supported as long as the reference is supported in the data
+source. Please refer to [GIVE Manual 3.1 GIVE-Toolbox Usage](../../../manuals/3.1-GIVE-Toolbox-usages.md) for details.
+
+Functions 2 and 3 require a table / tables converting gene names / aliases to
+coordinates. Such table(s) can be provided by either of the following (text in
+pointy brackets "`<>`" can be substituted by any alphanumerical string):
+
+1.  A gene coordinate table (referred below as `<gene-coordinate-table>`) with
+    at least the following columns:
+    *   `geneSymbol` for gene names;
+    *   `chrom` for chromosome name of the gene;
+    *   `chromStart` for chromosomal start coordinates;
+    *   `chromEnd` for chromosomal end coordinates;
+    `chromStart` and `chromEnd` can be replaced by `txStart` and `txEnd`.
+2.  A gene description table (referred below as `<gene-desc-table>`) with at
+    least the following columns:
+    *   `<desc-symbol-column>` for gene symbols (corresponding to `geneSymbol`
+        in `<gene-coordinate-table>`);
+    *   `description` for gene description;
+3.  An alias table (referred below as `<alias-table>`) with at least the
+    following columns:
+    *   `alias` for gene aliases;
+    *   `<alias-symbol-column>` for gene symbols (corresponding to `geneSymbol`
+        in `<gene-coordinate-table>`);
+    *   `isSymbol` indicating whether this alias is the same as `geneSymbol`,
+        1 if the alias is the same, 0 if not;
+4.  In `ref` table of `compbrowser` database, the entry for the reference needs
+    to have the following property in its `settings` column:
+    *   `geneCoorTable: <gene-coordinate-table>`
+    *   `geneDescTable: <gene-desc-table>`
+    *   `descSymbolColumn: <desc-symbol-column>`
+        (default column name: `Symbol`)
+    *   `aliasTable: <alias-table>`
+    *   `aliasSymbolColumn: <alias-symbol-column>`
+        (default column name: `Symbol`)
+
+  Function 1 and 2 of this component will depend on a dataset generated from
+    NCBI https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/
+    (A python script will be used to update this database monthly.)
+-->
 <dom-module id="gene-coor-input">
   <template>
     <style include="genemo-shared-styles">

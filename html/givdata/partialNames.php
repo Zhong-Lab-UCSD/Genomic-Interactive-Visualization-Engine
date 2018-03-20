@@ -10,17 +10,25 @@
   function testRefPartialName($ref) {
     $refInfo = getRefInfoFromArray();
     if (!$refInfo) {
-      
+      throw(new Exception("References not ready!"));
     }
+    if (!isset($refInfo[$ref])) {
+      throw(new Exception("No reference named " . $ref . "."));
+    }
+    
   }
 
-  if (isset($req['db']) && testRefPartialName($req['db'])) {
+  if (isset($req['db']) && $refInfo = testRefPartialName($req['db'])) {
     // First read reference information from `ref` table to see if partial
     // gene name feature is supported in the reference
 
     if (isset($req['name'])) {
 
+    } else {
+      // testing purpose only, return "supported" flag
     }
+  } else {
+    // return "unsupported" flag
   }
 
   if(isset($req['db']) && isset($req['name'])) {

@@ -7,10 +7,9 @@ ini_set('max_execution_time', 300);
 function connectCPB($db = 'compbrowser') {
   $mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
   if($mysqli->connect_errno) {
-    die("Connect failed:" . $mysqli->connect_error);
+    throw(new Exception("Connect failed:" . $mysqli->connect_error));
   }
   if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-    error_log("(ConnectCPB) DB does not exist: " . $db);
     throw(new Exception("(ConnectCPB) DB does not exist: " . $db));
   }
   return $mysqli;
@@ -19,11 +18,10 @@ function connectCPB($db = 'compbrowser') {
 function connectCPBWriter($db) {
   $mysqli = new mysqli(CPB_EDIT_HOST, CPB_EDIT_USER, CPB_EDIT_PASS);
   if($mysqli->connect_errno) {
-    die("Connect failed:" . $mysqli->connect_error);
+    throw(new Exception("Connect failed:" . $mysqli->connect_error));
   }
   if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-    error_log("(ConnectCPBWriter) DB does not exist: " . $db);
-    die();
+    throw(new Exception("(ConnectCPBWriter) DB does not exist: " . $db));
   }
   return $mysqli;
 }
@@ -40,6 +38,7 @@ function requestRefHgsID($spc) {
   }
   return $_SESSION['hgsIDs'][$spc];
 }
+
 function byteSwap32($data) {
   $arr = unpack("V", pack("N", $data));
   return $arr[1];
