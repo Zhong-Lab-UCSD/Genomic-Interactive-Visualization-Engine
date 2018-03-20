@@ -7,6 +7,22 @@
 
   define('MAX_JSON_NAME_ITEMS', 100);
 
+  function testRefPartialName($ref) {
+    $refInfo = getRefInfoFromArray();
+    if (!$refInfo) {
+      
+    }
+  }
+
+  if (isset($req['db']) && testRefPartialName($req['db'])) {
+    // First read reference information from `ref` table to see if partial
+    // gene name feature is supported in the reference
+
+    if (isset($req['name'])) {
+
+    }
+  }
+
   if(isset($req['db']) && isset($req['name'])) {
     if (!isset($req['maxCandidates'])) {
       $req['maxCandidates'] = MAX_JSON_NAME_ITEMS;
