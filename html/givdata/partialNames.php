@@ -15,7 +15,27 @@
     if (!isset($refInfo[$ref])) {
       throw(new Exception("No reference named " . $ref . "."));
     }
-    
+    $settings = json_decode($refInfo[$ref]['settings']);
+    if (isset($settings['geneCoorTable'])) {
+      # verify if the table is there
+      $mysqli = connectCPB($ref);
+
+      $stmt = $mysqli->query("SHOW COLUMNS FROM `" .
+        $mysqli->real_escape_string(trim($settings['geneCoorTable'])) .
+        "` WHERE `Field` = 'geneSymbol' OR `Field` = 'chrom' OR " .
+        "`Field` = 'txStart' OR `Field` = 'txEnd'");
+      $res = $stmt->get_result();
+      if ($res->num_rows < 4) {
+        // does not pass this test
+      }
+    } else {
+      return false;
+    }
+    return $refInfo[$ref];
+  }
+
+  function findPartialName($ref, $partialName, $refInfo = NULL) {
+
   }
 
   if (isset($req['db']) && $refInfo = testRefPartialName($req['db'])) {

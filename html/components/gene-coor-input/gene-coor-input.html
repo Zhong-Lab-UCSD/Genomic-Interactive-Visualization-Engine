@@ -30,32 +30,35 @@ limitations under the License.
 `<gene-coor-input> provides a material design input field implemented by
 Polymer for gene names / aliases / genomic coordinates. This component contains a paper-input component and will do the following:
 
-1.  Fix cases for genomic region coordinates (basically chrX and chrY)
-2.  Hint gene names / aliases when partial names are given
-3.  Find coordinates and substitute the value correspondingly
+1.  Fix cases (`chrX`, `chrY`, *etc.*) and truncate ranges for genomic region
+    coordinates.
+2.  Hint gene names / aliases when partial names are given.
+3.  Find coordinates and substitute the value correspondingly.
 
 ### Reference support in data sources
 
 Function 1 is supported as long as the reference is supported in the data
-source. Please refer to [GIVE Manual 3.1 GIVE-Toolbox Usage](../../../manuals/3.1-GIVE-Toolbox-usages.md) for details.
+source. Please refer to GIVE Manual
+[3.1 GIVE-Toolbox Usage](../../../manuals/3.1-GIVE-Toolbox-usages.md)
+for details.
 
 Functions 2 and 3 require a table / tables converting gene names / aliases to
 coordinates. Such table(s) can be provided by either of the following (text in
-pointy brackets "`<>`" can be substituted by any alphanumerical string):
+pointy brackets "`<>`" can be substituted by any alphanumeric string):
 
-1.  A gene coordinate table (referred below as `<gene-coordinate-table>`) with
-    at least the following columns:
+1.  A __gene coordinate table__ (referred below as `<gene-coordinate-table>`)
+    with at least the following columns:
     *   `geneSymbol` for gene names;
     *   `chrom` for chromosome name of the gene;
     *   `chromStart` for chromosomal start coordinates;
     *   `chromEnd` for chromosomal end coordinates;
     `chromStart` and `chromEnd` can be replaced by `txStart` and `txEnd`.
-2.  A gene description table (referred below as `<gene-desc-table>`) with at
+2.  A __gene description table__ (referred below as `<gene-desc-table>`) with at
     least the following columns:
     *   `<desc-symbol-column>` for gene symbols (corresponding to `geneSymbol`
         in `<gene-coordinate-table>`);
     *   `description` for gene description;
-3.  An alias table (referred below as `<alias-table>`) with at least the
+3.  An __alias table__ (referred below as `<alias-table>`) with at least the
     following columns:
     *   `alias` for gene aliases;
     *   `<alias-symbol-column>` for gene symbols (corresponding to `geneSymbol`
@@ -72,9 +75,17 @@ pointy brackets "`<>`" can be substituted by any alphanumerical string):
     *   `aliasSymbolColumn: <alias-symbol-column>`
         (default column name: `Symbol`)
 
-  Function 1 and 2 of this component will depend on a dataset generated from
-    NCBI https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/
-    (A python script will be used to update this database monthly.)
+#### Implementation for the public GIVE instance
+
+In the public GIVE instance at <https://www.givengine.org/>, the __gene
+coordinate table__ is generated from UCSC Known Genes on the fly (from
+`knownGenes` and `kgXref`).
+
+The __gene description table__ (named `_NcbiGeneInfo`) and the __alias table__
+(named `_AliasTable`) are generated from the NCBI database at
+<https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/>. A python script to
+generate these tables are provided at
+[scripts/geneNamesUpdate.py](../../../scripts/geneNamesUpdate.py).
 -->
 <dom-module id="gene-coor-input">
   <template>
