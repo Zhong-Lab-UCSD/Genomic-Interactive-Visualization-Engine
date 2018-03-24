@@ -8,30 +8,42 @@
   define('MAX_JSON_NAME_ITEMS', 100);
 
   function testRefPartialName($ref) {
-    $refInfo = getRefInfoFromArray();
-    if (!$refInfo) {
-      throw(new Exception("References not ready!"));
-    }
-    if (!isset($refInfo[$ref])) {
-      throw(new Exception("No reference named " . $ref . "."));
-    }
-    $settings = json_decode($refInfo[$ref]['settings']);
-    if (isset($settings['geneCoorTable'])) {
-      # verify if the table is there
-      $mysqli = connectCPB($ref);
-
-      $stmt = $mysqli->query("SHOW COLUMNS FROM `" .
-        $mysqli->real_escape_string(trim($settings['geneCoorTable'])) .
-        "` WHERE `Field` = 'geneSymbol' OR `Field` = 'chrom' OR " .
-        "`Field` = 'txStart' OR `Field` = 'txEnd'");
-      $res = $stmt->get_result();
-      if ($res->num_rows < 4) {
-        // does not pass this test
+    try {
+      $refInfo = getRefInfoFromArray();
+      if (!$refInfo) {
+        throw(new Exception("References not ready!"));
       }
-    } else {
-      return false;
+      if (!isset($refInfo[$ref])) {
+        throw(new Exception("No reference named " . $ref . "."));
+      }
+      $refInfo = $refInfo[$ref];
+      $settings = json_decode($refInfo['settings']);
+      if (isset($settings['geneCoorTable'])) {
+        // verify if the table is there
+        $mysqli = connectCPB($ref);
+        $geneCoorTable = $mysqli->real_escape_string(
+          trim($settings['geneCoorTable']));
+
+        $stmt = $mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
+          "` WHERE `Field` = 'geneSymbol'");
+        $res = $stmt->get_result();
+        if (!$res->num_rows) {
+          // does not pass this test
+          // test for linked tables
+
+
+          return false;
+        }
+      } else {
+        return false;
+      }
+    } catch (Exception $e) {
+
+      $refInfo = false;
+    } finally {
+
     }
-    return $refInfo[$ref];
+    return $refInfo;
   }
 
   function findPartialName($ref, $partialName, $refInfo = NULL) {

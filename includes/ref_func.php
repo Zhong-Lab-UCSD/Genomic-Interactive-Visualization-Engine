@@ -8,6 +8,12 @@
 // JSON format: {chr10: {chrRegion: "chr10:1-135374737", cent: "chr10: 38800000-42100000"}}
 require_once(realpath(dirname(__FILE__) . "/common_func.php"));
 
+// error codes
+define('REF_DB_NOT_READY', 1);
+define('NO_REF_NAMED', 10);
+define('REF_', 100);
+define('MAX_JSON_NAME_ITEMS', 100);
+
 function getChromInfo($db) {
   if (version_compare(phpversion(), '7.0.0', '<')) {
     define('PHP_INT_MIN', ~PHP_INT_MAX);    // this should be remove by PHP 7.0
@@ -154,31 +160,40 @@ function getRefDbNames() {
 
 function getRefInfoFromArray($spcDbNameList = NULL) {
   // return everything about ref from db indicated by spcDbNameList
-  $mysqli = connectCPB();
-  $spcinfo = array();
-  $sqlstmt = "SELECT * FROM ref";
-  if(!empty($spcDbNameList)) {
-    $sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
-    $stmt = $mysqli->prepare($sqlstmt);
-    $sqltype = str_repeat('s', count($spcDbNameList));
-    $a_params = array();
-    $a_params []= & $sqltype;
-    for($i = 0; $i < count($spcDbNameList); $i++) {
-      $a_params []= & $spcDbNameList[$i];
+  try {
+    $mysqli = connectCPB();
+    $spcinfo = array();
+    $sqlstmt = "SELECT * FROM ref";
+    if(!empty($spcDbNameList)) {
+      $sqlstmt .= " WHERE dbname IN ('hg19'" . str_repeat(', ?', count($spcDbNameList)) . ")";
+      $stmt = $mysqli->prepare($sqlstmt);
+      $sqltype = str_repeat('s', count($spcDbNameList));
+      $a_params = array();
+      $a_params []= & $sqltype;
+      for($i = 0; $i < count($spcDbNameList); $i++) {
+        $a_params []= & $spcDbNameList[$i];
+      }
+      call_user_func_array(array($stmt, 'bind_param'), $a_params);
+      if (!$stmt->execute()) {
+        throw new Exception("Ref db not ready!", REF_DB_NOT_READY);
+      }
+      $ref = $stmt->get_result();
+    } else {
+      $ref = $mysqli->query($sqlstmt);
     }
-    call_user_func_array(array($stmt, 'bind_param'), $a_params);
-    $stmt->execute();
-    $ref = $stmt->get_result();
-  } else {
-    $ref = $mysqli->query($sqlstmt);
+    while($spcitor = $ref->fetch_assoc()) {
+      $spcitor['settings'] = json_decode($spcitor['settings']);
+      $spcinfo[] = $spcitor;
+    }
+    return $spcinfo;
+  } finally {
+    if ($ref) {
+      $ref->free();
+    }
+    if ($mysqli) {
+      $mysqli->close();
+    }
   }
-  while($spcitor = $ref->fetch_assoc()) {
-    $spcitor['settings'] = json_decode($spcitor['settings']);
-    $spcinfo[] = $spcitor;
-  }
-  $ref->free();
-  $mysqli->close();
-  return $spcinfo;
 }
 
 function getRefDatabaseFromGapInfo($gap, $spcDbName) {
