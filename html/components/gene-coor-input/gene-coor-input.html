@@ -49,6 +49,8 @@ pointy brackets "`<>`" can be substituted by any alphanumeric string):
 1.  A __gene coordinate table__ (referred below as `<gene-coordinate-table>`)
     with at least the following columns:
     *   `geneSymbol` for gene names;
+        (if `geneSymbol` does not exist in the table and any other linked
+        tables, `name` will be used.)
     *   `chrom` for chromosome name of the gene;
     *   `chromStart` for chromosomal start coordinates;
     *   `chromEnd` for chromosomal end coordinates;

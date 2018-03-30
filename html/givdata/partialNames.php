@@ -1,6 +1,6 @@
 <?php
   // First get an array of posts, showing the database and trackDb name
-  require_once(realpath(dirname(__FILE__) . "/../../includes/common_func.php"));
+  require_once(realpath(dirname(__FILE__) . "/../../includes/ref_func.php"));
   // notice that this needs to be commented out after debug to improve performance
 
   $req = getRequest();
@@ -10,11 +10,8 @@
   function testRefPartialName($ref) {
     try {
       $refInfo = getRefInfoFromArray();
-      if (!$refInfo) {
-        throw(new Exception("References not ready!"));
-      }
       if (!isset($refInfo[$ref])) {
-        throw(new Exception("No reference named " . $ref . "."));
+        throw(new Exception("No reference named " . $ref . ".", NO_REF_NAMED));
       }
       $refInfo = $refInfo[$ref];
       $settings = json_decode($refInfo['settings']);
@@ -23,16 +20,30 @@
         $mysqli = connectCPB($ref);
         $geneCoorTable = $mysqli->real_escape_string(
           trim($settings['geneCoorTable']));
-
-        $stmt = $mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
+        $res = $mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
           "` WHERE `Field` = 'geneSymbol'");
-        $res = $stmt->get_result();
         if (!$res->num_rows) {
-          // does not pass this test
-          // test for linked tables
+          // No 'geneSymbol' column for `geneCoorTable`
+          // test for linked tables, if not use `name` instead
+          $res->free();
+          $res = $mysqli->query("SELECT * FROM `trackDb` WHERE" .
+            " `tableName` = '" . $geneCoorTable . "'");
+          if ($itor = $res->fetch_assoc()) {
+            $settings = json_decode($itor['settings']);
+            if ($settings['defaultLinkedTables'] &&
+              $settings['defaultLinkedKeys']
+            ) {
 
-
-          return false;
+            } else {
+              throw new Exception("Reference db format incorrect: " .
+                "no track named '" . $geneCoorTable . "' was found in table " .
+                "`trackDb`.", LINKED_TABLE_NOT_READY);
+            }
+          } else {
+            throw new Exception("Reference db format incorrect: " .
+              "no track named '" . $geneCoorTable . "' was found in table " .
+              "`trackDb`.", TABLE_NOT_READY);
+          }
         }
       } else {
         return false;
@@ -41,7 +52,15 @@
 
       $refInfo = false;
     } finally {
-
+      if ($res) {
+        $res->free();
+      }
+      if ($stmt) {
+        $stmt->close();
+      }
+      if ($mysqli) {
+        $mysqli->close();
+      }
     }
     return $refInfo;
   }

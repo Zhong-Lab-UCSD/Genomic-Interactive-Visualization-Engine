@@ -4,15 +4,26 @@ require_once(realpath(dirname(__FILE__) . "/constants.php"));
 ini_set("memory_limit", "2048M");
 ini_set('max_execution_time', 300);
 
+// error codes
+define('REF_DB_NOT_READY', 1);
+define('NO_REF_NAMED', 10);
+define('TABLE_NOT_READY', 100);
+define('LINKED_TABLE_NOT_READY', 101);
+define('MAX_JSON_NAME_ITEMS', 100);
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 function connectCPB($db = 'compbrowser') {
-  $mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
-  if($mysqli->connect_errno) {
-    throw(new Exception("Connect failed:" . $mysqli->connect_error));
+  try {
+    return new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
+  } catch (Exception $e) {
+    if($mysqli->connect_errno) {
+      throw(new Exception("Connect failed:" . $mysqli->connect_error));
+    }
+    if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
+      throw(new Exception("(ConnectCPB) DB does not exist: " . $db));
+    }
   }
-  if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-    throw(new Exception("(ConnectCPB) DB does not exist: " . $db));
-  }
-  return $mysqli;
 }
 
 function connectCPBWriter($db) {
