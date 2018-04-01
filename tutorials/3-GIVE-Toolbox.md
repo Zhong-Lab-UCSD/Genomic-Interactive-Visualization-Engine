@@ -20,8 +20,8 @@ GIVE-Toolbox is a set of shell(bash) scripts that relieves users from writing My
 
 If you would like to know the actual operations in MySQL, please refer to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
-GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. Here are some documents regarding the format definitions and related visualizing options in GIVE: 
-- [`UCSC gene table` format](https://genome.ucsc.edu/cgi-bin/hgTables): knownGene annotation files can be download from UCSC Genome Browser (GENCODE track) 
+GIVE support `gene annotation`, `bed`, `bigWig` and `interaction` data tracks. Here are some documents regarding the format definitions and related visualizing options in GIVE: 
+- [gene annotation](../manuals/4.4-geneAnnotation.md): Gene annotation files in UCSC gene table format can be download from UCSC Table Browser.
 - [`bed` Tracks](../manuals/4.1-bed.md)
 - [`bigWig` Tracks](../manuals/4.2-bigwig.md)
 - [`interaction` Tracks](../manuals/4.3-interaction.md)
