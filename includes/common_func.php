@@ -9,6 +9,8 @@ define('REF_DB_NOT_READY', 1);
 define('NO_REF_NAMED', 10);
 define('TABLE_NOT_READY', 100);
 define('LINKED_TABLE_NOT_READY', 101);
+define('NO_GENE_SYMBOL_COLUMN', 102);
+
 define('MAX_JSON_NAME_ITEMS', 100);
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);

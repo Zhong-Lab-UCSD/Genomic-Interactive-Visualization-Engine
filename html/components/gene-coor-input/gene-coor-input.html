@@ -48,28 +48,30 @@ pointy brackets "`<>`" can be substituted by any alphanumeric string):
 
 1.  A __gene coordinate table__ (referred below as `<gene-coordinate-table>`)
     with at least the following columns:
-    *   `geneSymbol` for gene names;
-        (if `geneSymbol` does not exist in the table and any other linked
-        tables, `name` will be used.)
+    *   `<gene-symbol-column>` for gene names
+        (this can be a column of the table itself, or a column in the linked
+        table(s));
     *   `chrom` for chromosome name of the gene;
     *   `chromStart` for chromosomal start coordinates;
     *   `chromEnd` for chromosomal end coordinates;
     `chromStart` and `chromEnd` can be replaced by `txStart` and `txEnd`.
-2.  A __gene description table__ (referred below as `<gene-desc-table>`) with at
-    least the following columns:
-    *   `<desc-symbol-column>` for gene symbols (corresponding to `geneSymbol`
-        in `<gene-coordinate-table>`);
+2.  (Optional) A __gene description table__ (referred below as
+    `<gene-desc-table>`) with at least the following columns:
+    *   `<desc-symbol-column>` for gene symbols (corresponding to
+        `<gene-symbol-column>` in `<gene-coordinate-table>`);
     *   `description` for gene description;
-3.  An __alias table__ (referred below as `<alias-table>`) with at least the
-    following columns:
+3.  (Optional) An __alias table__ (referred below as `<alias-table>`) with at
+    least the following columns:
     *   `alias` for gene aliases;
-    *   `<alias-symbol-column>` for gene symbols (corresponding to `geneSymbol`
-        in `<gene-coordinate-table>`);
-    *   `isSymbol` indicating whether this alias is the same as `geneSymbol`,
-        1 if the alias is the same, 0 if not;
+    *   `<alias-symbol-column>` for gene symbols (corresponding to
+        `<gene-symbol-column>` in `<gene-coordinate-table>`);
+    *   `isSymbol` indicating whether this alias is the same as
+        `<gene-symbol-column>`, 1 if the alias is the same, 0 if not;
 4.  In `ref` table of `compbrowser` database, the entry for the reference needs
     to have the following property in its `settings` column:
     *   `geneCoorTable: <gene-coordinate-table>`
+    *   `geneSymbolColumn: <gene-symbol-column>`
+        (default column name: `name`)
     *   `geneDescTable: <gene-desc-table>`
     *   `descSymbolColumn: <desc-symbol-column>`
         (default column name: `Symbol`)
@@ -83,8 +85,8 @@ In the public GIVE instance at <https://www.givengine.org/>, the __gene
 coordinate table__ is generated from UCSC Known Genes on the fly (from
 `knownGenes` and `kgXref`).
 
-The __gene description table__ (named `_NcbiGeneInfo`) and the __alias table__
-(named `_AliasTable`) are generated from the NCBI database at
+The __gene description table__ (named `\_NcbiGeneInfo`) and the __alias table__
+(named `\_AliasTable`) are generated from the NCBI database at
 <https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/>. A python script to
 generate these tables are provided at
 [scripts/geneNamesUpdate.py](../../../scripts/geneNamesUpdate.py).

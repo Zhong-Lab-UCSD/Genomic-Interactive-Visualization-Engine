@@ -14,42 +14,89 @@
         throw(new Exception("No reference named " . $ref . ".", NO_REF_NAMED));
       }
       $refInfo = $refInfo[$ref];
-      $settings = json_decode($refInfo['settings']);
+      $refInfo['settings'] = json_decode($refInfo['settings']);
+      $settings =& $refInfo['settings'];
       if (isset($settings['geneCoorTable'])) {
         // verify if the table is there
         $mysqli = connectCPB($ref);
+        $geneSymbolCol = $mysqli->real_escape_string(
+          (!isset($settings['geneSymbolColumn']) ||
+          is_null($settings['geneSymbolColumn']))
+            ? 'name' : $settings['geneSymbolColumn']
+        );
         $geneCoorTable = $mysqli->real_escape_string(
           trim($settings['geneCoorTable']));
-        $res = $mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
-          "` WHERE `Field` = 'geneSymbol'");
-        if (!$res->num_rows) {
+        if (!($mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
+          "` WHERE `Field` = '" . $geneSymbolCol . "'")->num_rows)
+        ) {
           // No 'geneSymbol' column for `geneCoorTable`
-          // test for linked tables, if not use `name` instead
-          $res->free();
+          // test for linked tables
           $res = $mysqli->query("SELECT * FROM `trackDb` WHERE" .
             " `tableName` = '" . $geneCoorTable . "'");
           if ($itor = $res->fetch_assoc()) {
-            $settings = json_decode($itor['settings']);
-            if ($settings['defaultLinkedTables'] &&
-              $settings['defaultLinkedKeys']
+            $trackSettings = json_decode($itor['settings']);
+            if (!$trackSettings['defaultLinkedTables'] ||
+              !$trackSettings['defaultLinkedKeys'] ||
+              !($mysqli->query("SHOW COLUMNS FROM `" .
+                $mysqli->real_escape_string(
+                  $trackSettings['defaultLinkedTables']
+                ) . "` WHERE `Field` = '" .
+                $geneSymbolCol . "'")->num_rows
+              )
             ) {
-
-            } else {
+              // Either there is no linked table, or the column is not in the
+              // linked table.
               throw new Exception("Reference db format incorrect: " .
-                "no track named '" . $geneCoorTable . "' was found in table " .
-                "`trackDb`.", LINKED_TABLE_NOT_READY);
+                "no column named '" . $geneSymbolCol . "' was found in table " .
+                "`" . $geneCoorTable . "` or linked table(s).",
+                NO_GENE_SYMBOL_COLUMN);
             }
           } else {
             throw new Exception("Reference db format incorrect: " .
               "no track named '" . $geneCoorTable . "' was found in table " .
               "`trackDb`.", TABLE_NOT_READY);
           }
+          $res->free();
+        }
+        // Now `geneSymbol` column is definitely there.
+        // Test the other two tables
+        if (isset($settings['geneDescTable'])) {
+          // verify if the table is there
+          $descSymbolCol = $mysqli->real_escape_string(
+            (!isset($settings['descSymbolColumn']) ||
+            is_null($settings['descSymbolColumn']))
+              ? 'Symbol' : $settings['descSymbolColumn']
+          );
+          if (!($mysqli->query("SHOW COLUMNS FROM `" .
+            $mysqli->real_escape_string(trim($settings['geneDescTable'])) .
+            "` WHERE `Field` = '" . $descSymbolCol . "'")->num_rows)
+          ) {
+            unset($settings['geneDescTable']);
+            unset($settings['descSymbolColumn']);
+          }
+        }
+        if (isset($settings['aliasTable'])) {
+          // verify if the table is there
+          $aliasSymbolCol = $mysqli->real_escape_string(
+            (!isset($settings['aliasSymbolColumn']) ||
+            is_null($settings['aliasSymbolColumn']))
+              ? 'Symbol' : $settings['aliasSymbolColumn']
+          );
+          if (!($mysqli->query("SHOW COLUMNS FROM `" .
+            $mysqli->real_escape_string(trim($settings['aliasTable'])) .
+            "` WHERE `Field` = '" . $aliasSymbolCol . "'")->num_rows)
+          ) {
+            unset($settings['aliasTable']);
+            unset($settings['aliasSymbolColumn']);
+          }
         }
       } else {
-        return false;
+        $refInfo = false;
       }
     } catch (Exception $e) {
-
+      if ($e->getCode() !== NO_GENE_SYMBOL_COLUMN) {
+        throw $e;
+      }
       $refInfo = false;
     } finally {
       if ($res) {
