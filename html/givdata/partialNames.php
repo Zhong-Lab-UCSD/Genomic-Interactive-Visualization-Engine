@@ -34,12 +34,12 @@
           $res = $mysqli->query("SELECT * FROM `trackDb` WHERE" .
             " `tableName` = '" . $geneCoorTable . "'");
           if ($itor = $res->fetch_assoc()) {
-            $trackSettings = json_decode($itor['settings']);
-            if (!$trackSettings['defaultLinkedTables'] ||
-              !$trackSettings['defaultLinkedKeys'] ||
+            $trSettings = json_decode($itor['settings']);
+            if (!$trSettings['defaultLinkedTables'] ||
+              !$trSettings['defaultLinkedKeys'] ||
               !($mysqli->query("SHOW COLUMNS FROM `" .
                 $mysqli->real_escape_string(
-                  $trackSettings['defaultLinkedTables']
+                  $trSettings['defaultLinkedTables']
                 ) . "` WHERE `Field` = '" .
                 $geneSymbolCol . "'")->num_rows
               )
@@ -50,6 +50,9 @@
                 "no column named '" . $geneSymbolCol . "' was found in table " .
                 "`" . $geneCoorTable . "` or linked table(s).",
                 NO_GENE_SYMBOL_COLUMN);
+            } else {
+              $refInfo['linkedCoorTable'] = $trSettings['defaultLinkedTables'];
+              $refInfo['linkedCoorKeys'] = $trSettings['defaultLinkedKeys'];
             }
           } else {
             throw new Exception("Reference db format incorrect: " .
@@ -59,6 +62,24 @@
           $res->free();
         }
         // Now `geneSymbol` column is definitely there.
+        // Test for `chromStart` / `txStart`
+        if ($mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
+          "` WHERE `Field` IN ('chromStart', 'chromEnd')")->num_rows < 2
+        ) {
+          // No `chromStart` and `chromEnd` column, test for `txStart`
+          if ($mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
+            "` WHERE `Field` IN ('txStart', 'txEnd')")->num_rows < 2
+          ) {
+            throw new Exception("Reference table format incorrect: " .
+              "no start and/or end column specified in '" . $geneCoorTable .
+              "'.", TABLE_FORMAT_ERROR);
+          }
+          $refInfo['startCol'] = 'txStart';
+          $refInfo['endCol'] = 'txEnd';
+        } else {
+          $refInfo['startCol'] = 'chromStart';
+          $refInfo['endCol'] = 'chromEnd';
+        }
         // Test the other two tables
         if (isset($settings['geneDescTable'])) {
           // verify if the table is there
@@ -93,11 +114,6 @@
       } else {
         $refInfo = false;
       }
-    } catch (Exception $e) {
-      if ($e->getCode() !== NO_GENE_SYMBOL_COLUMN) {
-        throw $e;
-      }
-      $refInfo = false;
     } finally {
       if ($res) {
         $res->free();
@@ -112,8 +128,85 @@
     return $refInfo;
   }
 
-  function findPartialName($ref, $partialName, $refInfo = NULL) {
+  function findPartialName($ref, $partialName, $refInfo) {
+    // $partialName should be already there and has a length greater than
+    // MIN_JSON_QUERY_LENGTH
+    // $refInfo should have valid value (otherwise `testRefPartialName` won't
+    // pass).
+    try {
+      $mysqli = connectCPB($ref);
+      $result = [];
+      // TODO: try to implement codes for multi-ref lookup
 
+      // Build query strings based on $refInfo
+      // coordinate field
+      $stmtString = "SELECT CONCAT(`geneFilter`.`chrom`, ':', " .
+        "MIN(`geneFilter`.`" . $refInfo['startCol'] . "`), '-', " .
+        "MAX(`geneFilter`.`" . $refInfo['endCol'] . "`)) AS `coor`, " .
+        "`geneFilter`.`" . $refInfo['geneSymbolColumn'] . "` AS `name`";
+      $stmtTable = "(SELECT * FROM `" . $refInfo['geneCoorTable'] . "` WHERE " .
+        "`chrom` NOT LIKE '%\_%')";
+      if ($refInfo['linkedCoorTable']) {
+        $stmtTable = "(" . $stmtTable . " LEFT JOIN `" .
+          $refInfo['linkedCoorTable'] . "` ON `" .
+          $refInfo['geneCoorTable'] . "`.`name` = `" .
+          $refInfo['linkedCoorTable'] . "`.`" .
+          $refInfo['linkedCoorKeys'] . "`)";
+      }
+      $stmtTable .= " AS `geneFilter`";
+
+      // gene symbol field
+      if ($refInfo['geneDescTable']) {
+        $stmtString .= ""
+      }
+      "SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
+        . "`_NcbiGeneInfo`.`description` AS `description`, "
+        . "CONCAT(`kGFilter`.`chrom`, ':', "
+        . "MIN(`kGFilter`.`txStart`), '-', MAX(`kGFilter`.`txEnd`)) AS `coor` "
+        . "FROM ((SELECT * FROM `_AliasTable` WHERE `alias` LIKE ? "
+        . "ORDER BY `isSymbol` DESC, `Symbol`) AS `T` "
+        . "INNER JOIN `_NcbiGeneInfo` ON `T`.`Symbol` = `_NcbiGeneInfo`.`Symbol`) "
+        . "CROSS JOIN "
+        . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
+        . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
+        . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`";
+      if(strlen($mysqli->real_escape_string(trim($req['name']))) >= MIN_JSON_QUERY_LENGTH) {
+        $queryStmt = $mysqli->prepare("SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
+          . "`_NcbiGeneInfo`.`description` AS `description`, "
+          . "CONCAT(`kGFilter`.`chrom`, ':', "
+          . "MIN(`kGFilter`.`txStart`), '-', MAX(`kGFilter`.`txEnd`)) AS `coor` "
+          . "FROM ((SELECT * FROM `_AliasTable` WHERE `alias` LIKE ? "
+          . "ORDER BY `isSymbol` DESC, `Symbol`) AS `T` "
+          . "INNER JOIN `_NcbiGeneInfo` ON `T`.`Symbol` = `_NcbiGeneInfo`.`Symbol`) "
+          . "CROSS JOIN "
+          . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
+          . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
+          . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`");
+        $queryStmt->bind_param('s', $req['name']);
+        $queryStmt->execute();
+        $generesult = $queryStmt->get_result();
+        if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
+          while($row = $generesult->fetch_assoc()) {
+            $result[$row["name"]] = $row;
+          }
+        } else {
+          // too many results
+          $result["(max_exceeded)"] = TRUE;
+        }
+        $generesult->free();
+      }
+      return $result;
+    } finally {
+      if ($generesult) {
+        $generesult->free();
+      }
+      if ($queryStmt) {
+        $queryStmt->close();
+      }
+      if ($mysqli) {
+        $mysqli->close();
+      }
+    }
   }
 
   if (isset($req['db']) && $refInfo = testRefPartialName($req['db'])) {
