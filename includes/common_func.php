@@ -4,27 +4,95 @@ require_once(realpath(dirname(__FILE__) . "/constants.php"));
 ini_set("memory_limit", "2048M");
 ini_set('max_execution_time', 300);
 
-// error codes
-define('REF_DB_NOT_READY', 1);
+// Error codes
+// Server-wide issue
+define('CONNECTION_FAILED', 1);
+define('REF_NOT_READY', 2);
+
+// Reference-wide issue
 define('NO_REF_NAMED', 10);
 define('TABLE_NOT_READY', 100);
 define('LINKED_TABLE_NOT_READY', 101);
 define('NO_GENE_SYMBOL_COLUMN', 102);
 define('TABLE_FORMAT_ERROR', 103);
 
-define('MAX_JSON_NAME_ITEMS', 100);
+class GIVEException extends Exception {
+  protected $userInputRelated;
+
+  public function __construct($message, $code = 0, Exception $previous = null,
+    $userInputRelated = false
+  ) {
+    $this->userInputRelated = $userInputRelated;
+    parent::__construct($message, $code, $previous);
+  }
+
+  // custom string representation of object
+  public function __toString() {
+      return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+  }
+
+  public function getJSON() {
+    return json_encode(get_object_vars($this));
+  }
+
+  public function getSuppressedJSON() {
+    $result = $this->userInputRelated ? get_object_vars($this) : [
+      'message' => 'Error in GIVE parameters. " .
+        "If you believe your parameter is correct, " .
+        "please contact the admin of the server for details.'
+    ];
+    return json_encode($result);
+  }
+}
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+function giveExceptionHandler(Exception $e) {
+  header('Content-Type: application/json');
+  $result = [];
+  // log error
+  error_log($e);
+  if (SUPPRESS_SERVER_ERRORS) {
+    // Need to do some conversion
+    if ($e instanceof GIVEException) {
+      http_response_code(400);
+      echo $e->getSuppressedJSON();
+    } else {
+      http_response_code(500);
+      if ($e instanceof mysqli_sql_exception) {
+        $result['message'] = "Database error happened. " .
+          "Please contact the admin of the server for details.";
+      } else {
+        $result['message'] = "Server error happened. " .
+          "Please contact the admin of the server for details.";
+      }
+      echo json_encode($result);
+    }
+  } else {
+    // return a 400 error
+    if ($e instanceof GIVEException) {
+      http_response_code(400);
+      echo $e->getJSON();
+    } else {
+      http_response_code(500);
+      echo json_encode(get_object_vars($e));
+    }
+  }
+}
+
+set_exception_handler('giveExceptionHandler');
 
 function connectCPB($db = 'compbrowser') {
   try {
     return new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
   } catch (Exception $e) {
     if($mysqli->connect_errno) {
-      throw(new Exception("Connect failed:" . $mysqli->connect_error));
+      throw(new Exception("Connect failed:" . $mysqli->connect_error,
+        CONNECTION_FAILED));
     }
     if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-      throw(new Exception("(ConnectCPB) DB does not exist: " . $db));
+      throw(new Exception("(ConnectCPB) DB does not exist: " . $db,
+        REF_NOT_READY));
     }
   }
 }
@@ -32,10 +100,12 @@ function connectCPB($db = 'compbrowser') {
 function connectCPBWriter($db) {
   $mysqli = new mysqli(CPB_EDIT_HOST, CPB_EDIT_USER, CPB_EDIT_PASS);
   if($mysqli->connect_errno) {
-    throw(new Exception("Connect failed:" . $mysqli->connect_error));
+    throw(new Exception("Connect failed:" . $mysqli->connect_error,
+      CONNECTION_FAILED));
   }
   if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-    throw(new Exception("(ConnectCPBWriter) DB does not exist: " . $db));
+    throw(new Exception("(ConnectCPBWriter) DB does not exist: " . $db,
+      REF_NOT_READY));
   }
   return $mysqli;
 }

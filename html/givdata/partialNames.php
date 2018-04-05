@@ -3,9 +3,12 @@
   require_once(realpath(dirname(__FILE__) . "/../../includes/ref_func.php"));
   // notice that this needs to be commented out after debug to improve performance
 
-  $req = getRequest();
-
   define('MAX_JSON_NAME_ITEMS', 100);
+  define('MIN_JSON_QUERY_LENGTH', 2);
+
+  /**
+   * Helper functions
+   */
 
   function testRefPartialName($ref) {
     try {
@@ -133,67 +136,81 @@
     // MIN_JSON_QUERY_LENGTH
     // $refInfo should have valid value (otherwise `testRefPartialName` won't
     // pass).
+    $partialName .= '%';
     try {
       $mysqli = connectCPB($ref);
       $result = [];
       // TODO: try to implement codes for multi-ref lookup
 
+      // Construct SQL components separately
       // Build query strings based on $refInfo
       // coordinate field
-      $stmtString = "SELECT CONCAT(`geneFilter`.`chrom`, ':', " .
+      $selectExpr = "CONCAT(`geneFilter`.`chrom`, ':', " .
         "MIN(`geneFilter`.`" . $refInfo['startCol'] . "`), '-', " .
-        "MAX(`geneFilter`.`" . $refInfo['endCol'] . "`)) AS `coor`, " .
-        "`geneFilter`.`" . $refInfo['geneSymbolColumn'] . "` AS `name`";
-      $stmtTable = "(SELECT * FROM `" . $refInfo['geneCoorTable'] . "` WHERE " .
-        "`chrom` NOT LIKE '%\_%')";
+        "MAX(`geneFilter`.`" . $refInfo['endCol'] . "`)) AS `coor`, `" .
+        ($refInfo['linkedCoorTable'] ?
+        $refInfo['linkedCoorTable'] : "geneFilter") . "`.`" .
+        $refInfo['geneSymbolColumn'] . "` AS `name`";
+
+      $tableReference = "(SELECT * FROM `" . $refInfo['geneCoorTable'] .
+        "` WHERE `chrom` NOT LIKE '%\_%') AS `geneFilter`";
       if ($refInfo['linkedCoorTable']) {
-        $stmtTable = "(" . $stmtTable . " LEFT JOIN `" .
-          $refInfo['linkedCoorTable'] . "` ON `" .
-          $refInfo['geneCoorTable'] . "`.`name` = `" .
+        $tableReference = "(" . $tableReference . " LEFT JOIN `" .
+          $refInfo['linkedCoorTable'] . "` ON `geneFilter`.`name` = `" .
           $refInfo['linkedCoorTable'] . "`.`" .
           $refInfo['linkedCoorKeys'] . "`)";
       }
-      $stmtTable .= " AS `geneFilter`";
 
-      // gene symbol field
+      $whereCondition = "`" . ($refInfo['linkedCoorTable'] ?
+        $refInfo['linkedCoorTable'] : "geneFilter") . "`.`" .
+        $refInfo['geneSymbolColumn'] . "` LIKE ?";
+
+      $groupByExpr = "`" .
+        ($refInfo['linkedCoorTable'] ? $refInfo['linkedCoorTable'] :
+        "geneFilter") .  "`.`" . $refInfo['geneSymbolColumn'] . "`";
+
+      $orderByExpr = "`name`";
+
+      // gene description field
       if ($refInfo['geneDescTable']) {
-        $stmtString .= ""
+        $selectExpr .= ", `" . $refInfo['geneDescTable'] .
+          "`.`description` AS `description`";
+        $tableReference .= " INNER JOIN `" . $refInfo['geneDescTable'] .
+          "` ON `" . ($refInfo['linkedCoorTable'] ?
+          $refInfo['linkedCoorTable'] : "geneFilter") . "`.`" .
+          $refInfo['geneSymbolColumn'] . "` = `" .
+          $refInfo['geneDescTable'] . "`.`" .
+          $refInfo['descSymbolColumn'] . "`) ";
       }
-      "SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
-        . "`_NcbiGeneInfo`.`description` AS `description`, "
-        . "CONCAT(`kGFilter`.`chrom`, ':', "
-        . "MIN(`kGFilter`.`txStart`), '-', MAX(`kGFilter`.`txEnd`)) AS `coor` "
-        . "FROM ((SELECT * FROM `_AliasTable` WHERE `alias` LIKE ? "
-        . "ORDER BY `isSymbol` DESC, `Symbol`) AS `T` "
-        . "INNER JOIN `_NcbiGeneInfo` ON `T`.`Symbol` = `_NcbiGeneInfo`.`Symbol`) "
-        . "CROSS JOIN "
-        . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
-        . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
-        . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`";
-      if(strlen($mysqli->real_escape_string(trim($req['name']))) >= MIN_JSON_QUERY_LENGTH) {
-        $queryStmt = $mysqli->prepare("SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
-          . "`_NcbiGeneInfo`.`description` AS `description`, "
-          . "CONCAT(`kGFilter`.`chrom`, ':', "
-          . "MIN(`kGFilter`.`txStart`), '-', MAX(`kGFilter`.`txEnd`)) AS `coor` "
-          . "FROM ((SELECT * FROM `_AliasTable` WHERE `alias` LIKE ? "
-          . "ORDER BY `isSymbol` DESC, `Symbol`) AS `T` "
-          . "INNER JOIN `_NcbiGeneInfo` ON `T`.`Symbol` = `_NcbiGeneInfo`.`Symbol`) "
-          . "CROSS JOIN "
-          . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
-          . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
-          . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`");
-        $queryStmt->bind_param('s', $req['name']);
-        $queryStmt->execute();
-        $generesult = $queryStmt->get_result();
-        if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
-          while($row = $generesult->fetch_assoc()) {
-            $result[$row["name"]] = $row;
-          }
-        } else {
-          // too many results
-          $result["(max_exceeded)"] = TRUE;
+
+      // alias field
+      if ($refInfo['aliasTable']) {
+        $selectExpr .= ", `" . $refInfo['aliasTable'] . "`.`alias` AS `alias`";
+        $tableReference .= " INNER JOIN `" . $refInfo['aliasTable'] . "` ON `" .
+          ($refInfo['linkedCoorTable'] ?
+          $refInfo['linkedCoorTable'] : "geneFilter") . "`.`" .
+          $refInfo['geneSymbolColumn'] . "` = `" .
+          $refInfo['aliasTable'] . "`.`" .
+          $refInfo['aliasSymbolColumn'] . "`";
+        $whereCondition = "`" . $refInfo['aliasTable'] . "`.`alias` LIKE ?";
+        $orderByExpr = "`" . $refInfo['aliasTable'] . "`.`isSymbol` DESC " .
+          $orderByExpr;
+      }
+
+      $queryStmt = $mysqli->prepare("SELECT " . $selectExpr .
+        " FROM " . $tableReference . " WHERE " . $whereCondition .
+        " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
+      );
+      $queryStmt->bind_param('s', $partialName);
+      $queryStmt->execute();
+      $generesult = $queryStmt->get_result();
+      if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
+        while($row = $generesult->fetch_assoc()) {
+          $result[$row["name"]] = $row;
         }
-        $generesult->free();
+      } else {
+        // too many results
+        $result["(max_exceeded)"] = TRUE;
       }
       return $result;
     } finally {
@@ -209,60 +226,30 @@
     }
   }
 
-  if (isset($req['db']) && $refInfo = testRefPartialName($req['db'])) {
+
+  /**
+   * Formal processing procedures here.
+   */
+
+  $req = getRequest();
+  $db = trim($req['db']);
+  $partialName = trim($req['name']);
+
+  $result = [];
+
+  header('Content-Type: application/json');
+  if ($db && $refInfo = testRefPartialName($db)) {
     // First read reference information from `ref` table to see if partial
     // gene name feature is supported in the reference
 
-    if (isset($req['name'])) {
-
+    if ($partialName && strlen($partialName) >= MIN_JSON_QUERY_LENGTH) {
+      $result = findPartialName($db, $partialName, $refInfo);
     } else {
       // testing purpose only, return "supported" flag
+      $result['supported'] = true;
     }
   } else {
     // return "unsupported" flag
+    $result['supported'] = false;
   }
-
-  if(isset($req['db']) && isset($req['name'])) {
-    if (!isset($req['maxCandidates'])) {
-      $req['maxCandidates'] = MAX_JSON_NAME_ITEMS;
-    }
-    $req['name'] = trim($req['name']) . '%';
-    $db = trim($req['db']);
-
-    define('MIN_JSON_QUERY_LENGTH', 2);
-
-    $mysqli = connectCPB($db);
-    $result = array();
-    // open the genome browser database
-    // TODO: try to implement codes for multi-ref lookup
-    if(strlen($mysqli->real_escape_string(trim($req['name']))) >= MIN_JSON_QUERY_LENGTH) {
-      $queryStmt = $mysqli->prepare("SELECT `T`.`alias` AS `alias`, `T`.`Symbol` AS `name`, "
-        . "`_NcbiGeneInfo`.`description` AS `description`, "
-        . "CONCAT(`kGFilter`.`chrom`, ':', "
-        . "MIN(`kGFilter`.`txStart`), '-', MAX(`kGFilter`.`txEnd`)) AS `coor` "
-        . "FROM ((SELECT * FROM `_AliasTable` WHERE `alias` LIKE ? "
-        . "ORDER BY `isSymbol` DESC, `Symbol`) AS `T` "
-        . "INNER JOIN `_NcbiGeneInfo` ON `T`.`Symbol` = `_NcbiGeneInfo`.`Symbol`) "
-        . "CROSS JOIN "
-        . "((SELECT * FROM `knownGene` WHERE `chrom` NOT LIKE '%\_%') AS `kGFilter`"
-        . " LEFT JOIN `kgXref` ON `kGFilter`.`name` = `kgXref`.`kgID`) "
-        . "ON `T`.`Symbol` = `kgXref`.`geneSymbol` GROUP BY `kgXref`.`geneSymbol`");
-      $queryStmt->bind_param('s', $req['name']);
-      $queryStmt->execute();
-      $generesult = $queryStmt->get_result();
-      if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
-        while($row = $generesult->fetch_assoc()) {
-          $result[$row["name"]] = $row;
-        }
-      } else {
-        // too many results
-        $result["(max_exceeded)"] = TRUE;
-      }
-      $generesult->free();
-    }
-
-    $mysqli->close();
-    echo json_encode($result);
-  }
-
-?>
+  echo json_encode($result);
