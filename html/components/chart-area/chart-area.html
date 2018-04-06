@@ -710,13 +710,18 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             var defaultWindows = this._refObj.settings.defaultViewWindows
             for (var i = 0; i < newValue; i++) {
               if (this.coordinates[i] !== false &&
-                !give.ChromRegion.isValidChromRegion(this.coordinates[i]) &&
-                Array.isArray(this._refObj.settings.defaultViewWindows)
+                !give.ChromRegion.isValidChromRegion(this.coordinates[i],
+                  this._refObj
+                ) && Array.isArray(this._refObj.settings.defaultViewWindows)
               ) {
-                this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
+                this.splice('coordinates', i, 1,
+                  defaultWindows[i % defaultWindows.length])
               }
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('_viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
+              if (give.ChromRegion.isValidChromRegion(this.coordinates[i],
+                this._refObj)
+              ) {
+                this.splice('_viewWindows', i, 1,
+                  new give.ChromRegion(this.coordinates[i], this._refObj))
               } else {
                 this.splice('_viewWindows', i, 1, null)
               }
