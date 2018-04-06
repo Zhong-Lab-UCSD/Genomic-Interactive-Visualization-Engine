@@ -3,14 +3,14 @@ PROGNAME=$0
 
 usage() {
     cat << EOF >&2
-    Usage: $PROGNAME [-r <give_root>] [-u <mysqlu>] [-p <mysqlp>] [-d <host_domain>]
+    Usage: $PROGNAME [-r <give_root>] [-u <mysqlu>] [-p <mysqlp>] [-d <host_url>]
     
     This script tool will configure the "<give_root>/includes/constants.php" and "<give_root>/html/components/basic-func/constants.js" with user supplied arguments. Please make sure that you have the authority to write these files.
     
     -r <give_root>: (Required) The root directory of GIVE. The default dir in our tutorial is "/var/www/give".
     -u <mysqlu>: (Optional) MySQL account name. It must be correctly set or you will not get any track data. If supplied, it will change the file "<give_root>/includes/constants.php"
-    -p <mysqlp>: (Optional) MySQL account passwd. It must be correctly set or you will not get any track data. If supplied, it will change the file "<give_root>/html/components/basic-func/constants.js"
-    -d <host_domain>: (Optional) If the local machine has web service and you want to access GIVE through web service, you need to set <host_domain> in the file "<give_root>/html/components/basic-func/constants.js". <host_domain> such as "https://www.givengine.org" we set in the GIVE-Hub.
+    -p <mysqlp>: (Optional) MySQL account passwd. It must be correctly set or you will not get any track data. If supplied, it will change the file "<give_root>/includes/constants.php"
+    -d <host_url>: (Optional) If the local machine has a web service and you want to access GIVE through said web service, you need to set <host_url> in the file "<give_root>/html/components/basic-func/constants.js" to the URL pointing to your GIVE server. The value for <host_url> in the GIVE Data Hub is "https://www.givengine.org".
     -h : show usage help
 EOF
     exit 1

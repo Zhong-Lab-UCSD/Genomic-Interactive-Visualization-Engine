@@ -9,7 +9,7 @@ usage() {
     -r <ref>: (Required) ref genome database name. The ref genome database must has been initialized. If not, please use initial_ref.sh to do it. 
     -t <track_name>: (Required for removing a track) The first priority of removing data. If -t argument was supplied, only the track will be removed. -g and -a arguments will be ignored.
     -g <group_name>: (Required for removing a track group) The second priority of removing data. If -t was not used and -g was supplied, then the track group will be removed. -a arguments will be ignored.
-    -a <TRUE>: (Required for removing the whole ref genome database) The third priority of removing data. If -t and -g were not used, and "-a CONFIRM" was set, then the whole ref genome database (the name is provided with -r argument) will be removed, including all the tracks belong to it. It's dangerous, be careful.
+    -a <CONFIRM>: (Required for removing the whole ref genome database) The third priority of removing data. If -t and -g were not used, and "-a CONFIRM" was set, then the whole ref genome database (the name is provided with -r argument) will be removed, including all the tracks belong to it. It's dangerous, be careful.
     -h : show usage help
 EOF
     exit 1

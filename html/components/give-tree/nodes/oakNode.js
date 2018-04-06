@@ -162,7 +162,7 @@ var GIVe = (function (give) {
         currIndex += potentialSibs.length
       }
 
-      chrRange.setStart(section.getEnd())
+      chrRange.setStart(section.getEnd(), true)
       currIndex++
     } // end while(rangeStart < rangeEnd);
   }

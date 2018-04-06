@@ -20,8 +20,8 @@ GIVE-Toolbox is a set of shell(bash) scripts that relieves users from writing My
 
 If you would like to know the actual operations in MySQL, please refer to [GIVE manual 3.2: MySQL commands for managing data in GIVE data source](../manuals/3.2-dataSource.md).
 
-GIVE support `UCSC gene table`, `bed`, `bigWig` and `interaction` format data tracks. Here are some documents regarding the format definitions and related visualizing options in GIVE: 
-- [`UCSC gene table` format](https://genome.ucsc.edu/cgi-bin/hgTables): knownGene annotation files can be download from UCSC Genome Browser (GENCODE track) 
+GIVE support `gene annotation`, `bed`, `bigWig` and `interaction` data tracks. Here are some documents regarding the format definitions and related visualizing options in GIVE: 
+- [gene annotation](../manuals/4.4-geneAnnotation.md): Gene annotation files in UCSC gene table format can be download from UCSC Table Browser.
 - [`bed` Tracks](../manuals/4.1-bed.md)
 - [`bigWig` Tracks](../manuals/4.2-bigwig.md)
 - [`interaction` Tracks](../manuals/4.3-interaction.md)
@@ -66,10 +66,10 @@ For utilizing GIVE-Toolbox with different GIVE deployment approaches:
   docker exec -it give /bin/bash 
   ```
   
-  If your host server is web accessible, then you can use GIVE genome browser remotely by setting the host domain name using `config_host.sh` tool. In this example, the domain of our server is "http://sysbio.ucsd.edu". As we are using GIVE-Docker container with HTTP port 40080 and HTTPS port 40443, so we need to set the domain name as "http://sysbio.ucsd.edu:40080" or "https://sysbio.ucsd.edu:40443".
+  Only if your host server is web accessible (Apache2 or other web server installed), then you can set the host domain name using `config_host.sh` tool to use GIVE genome browser remotely through internet. In this example, the domain of our host server is "http://give.genemo.org". As we are using GIVE-Docker container with HTTP port 40080, so we need to set the host domain name as "http://give.genemo.org:40080".
 
   ```
-  # set server domain name, if your local machine is web accessible
+  # set host domain name, only if your local machine is web accessible
   bash config_host.sh -r /var/www/give -d "http://give.genemo.org:40080"
   ```
 ### Step 2: Initialization and Create Reference Genome
@@ -140,23 +140,16 @@ For utilizing GIVE-Toolbox with different GIVE deployment approaches:
 
   Finally, in only 7 steps, you have built a full customized genome browser with 3 data tracks built from 3 kinds of supported data formats. You can use the genome browser with several lines of HTML code as below. 
   ```html
-  <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link rel="import" href="components/chart-controller/chart-controller.html">
+  <script src="http://localhost:40080/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="http://localhost:40080/components/chart-controller/chart-controller.html">
   <chart-controller ref="hg38" num-of-subs="2"
     group-id-list='["genes", "TAD",  "RNA_seq", "genomic_interactions"]'
     default-track-id-list='["knownGene", "exampleBed", "exampleBW", "exampleInteractions"]'>
   </chart-controller>
   ```
-  We have create the HTML file `example.html` in the `example_data` folder. You can copy it to `/var/www/give/html` folder in the "give" container. Then you can check it using URL [http://localhost:40080/example.html](http://localhost:40080/example.html).  
-  If your local machine is web accessible, you can use the genome browser remotely. You can copy the following code into a html file and use it anywhere. The server domain name is "http://give.genemo.org:40080" in the example code, you need to replace it with your server settings.
-
-  ```html
-  <script   src="http://give.genemo.org:40080/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link   rel="import"href="http://give.genemo.org:40080/components/chart-controller/chart-controller.html">
-  <chart-controller ref="hg38" num-of-subs="2"
-    group-id-list='["genes", "TAD",  "RNA_seq", "genomic_interactions"]'
-    default-track-id-list='["knownGene", "exampleBed", "exampleBW", "exampleInteractions"]'>
-  </chart-controller>
-  ```
+  Copy, paste and save the code into a HTML file, then open it with your web browser to view the genome browser you just built.
+  If your local machine is web accessible and the you have correctly set the host domain name in [step 1](#step-1-deployment-of-give), you can use the genome browser remotely. Just modify `http://localhost:40080/` with your host server domain name in the HTML file, such as `http://give.genemo.org:40080` for our host server. Anyone can view your customized genome browser using the HTML file through internet.
+  With GIVE-HUG, you can generate HTML file of your customized genome browser much easier. Open the URL `http://localhost:40080/data-hub.html` on local machine or `http://<host domain name>:40080/data-hub.html` in web access mode, you will find your data hub, which lists all the existing data tracks. In HTML generator mode, it can generate a HTML file according to your customization. Please check the tutorial of [GIVE Data Hub](1.1-GIVE-Hub.md) and [GIVE-Docker](2.1-GIVE-Docker.md#use-give-hug-in-give-docker) to learn more.
+   
 ![](figures/example_html_toolbox.PNG)
 
