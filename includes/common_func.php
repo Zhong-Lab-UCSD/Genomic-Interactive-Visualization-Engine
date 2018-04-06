@@ -16,6 +16,8 @@ define('LINKED_TABLE_NOT_READY', 101);
 define('NO_GENE_SYMBOL_COLUMN', 102);
 define('TABLE_FORMAT_ERROR', 103);
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 class GIVEException extends Exception {
   protected $userInputRelated;
 
@@ -45,9 +47,7 @@ class GIVEException extends Exception {
   }
 }
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-function giveExceptionHandler(Exception $e) {
+function giveExceptionHandler(Throwable $e) {
   header('Content-Type: application/json');
   $result = [];
   // log error
@@ -75,7 +75,9 @@ function giveExceptionHandler(Exception $e) {
       echo $e->getJSON();
     } else {
       http_response_code(500);
-      echo json_encode(get_object_vars($e));
+      $result['message'] = $e->getMessage();
+      $result['trace'] = $e->getTrace();
+      echo json_encode($result);
     }
   }
 }
@@ -84,30 +86,28 @@ set_exception_handler('giveExceptionHandler');
 
 function connectCPB($db = 'compbrowser') {
   try {
-    return new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
+    $mysqli = new mysqli(CPB_HOST, CPB_USER, CPB_PASS);
+    $mysqli->select_db($mysqli->real_escape_string($db));
+    return $mysqli;
   } catch (Exception $e) {
-    if($mysqli->connect_errno) {
-      throw(new Exception("Connect failed:" . $mysqli->connect_error,
-        CONNECTION_FAILED));
+    if ($mysqli) {
+      $mysqli->close();
     }
-    if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-      throw(new Exception("(ConnectCPB) DB does not exist: " . $db,
-        REF_NOT_READY));
-    }
+    throw $e;
   }
 }
 
 function connectCPBWriter($db) {
-  $mysqli = new mysqli(CPB_EDIT_HOST, CPB_EDIT_USER, CPB_EDIT_PASS);
-  if($mysqli->connect_errno) {
-    throw(new Exception("Connect failed:" . $mysqli->connect_error,
-      CONNECTION_FAILED));
+  try {
+    $mysqli = new mysqli(CPB_EDIT_HOST, CPB_EDIT_USER, CPB_EDIT_PASS);
+    $mysqli->select_db($mysqli->real_escape_string($db));
+    return $mysqli;
+  } catch (Exception $e) {
+    if ($mysqli) {
+      $mysqli->close();
+    }
+    throw $e;
   }
-  if(!$mysqli->select_db($mysqli->real_escape_string($db))) {
-    throw(new Exception("(ConnectCPBWriter) DB does not exist: " . $db,
-      REF_NOT_READY));
-  }
-  return $mysqli;
 }
 
 function requestRefHgsID($spc) {

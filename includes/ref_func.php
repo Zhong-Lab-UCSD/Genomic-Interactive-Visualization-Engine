@@ -84,6 +84,8 @@ function getChromInfo($db) {
 function getTracks($db, $grp = NULL) {
   $result = [];
   $mysqli = connectCPB($db);
+  $tracks = null;
+  $stmt = null;
   // first get group information
   try {
     $sqlstmt = "SELECT * FROM grp";
@@ -159,6 +161,7 @@ function getTracks($db, $grp = NULL) {
 function getRefDbNames() {
   // return a full list of ref db names
   $mysqli = connectCPB();
+  $ref = null;
   $result = [];
   try {
     $ref = $mysqli->query("SELECT dbname FROM ref");
@@ -179,6 +182,7 @@ function getRefDbNames() {
 function getRefInfoFromArray($spcDbNameList = NULL) {
   // return everything about ref from db indicated by spcDbNameList
   try {
+    $stmt = null;
     $mysqli = connectCPB();
     $spcinfo = array();
     $sqlstmt = "SELECT * FROM ref";
@@ -201,6 +205,7 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
     while($spcitor = $ref->fetch_assoc()) {
       $spcitor['settings'] = json_decode($spcitor['settings']);
       $spcinfo[] = $spcitor;
+      $spcinfo[$spcitor['dbname']] = $spcitor;
     }
     return $spcinfo;
   } finally {
