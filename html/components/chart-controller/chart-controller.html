@@ -167,296 +167,296 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     </paper-drawer-panel>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.ChartController = Polymer({
-        is: 'chart-controller',
+  give.ChartController = Polymer({
+    is: 'chart-controller',
 
-        behaviors: [
-          give.RefEmbeddedBehavior
-        ],
+    behaviors: [
+      give.RefEmbeddedBehavior
+    ],
 
-        properties: {
-          /**
-           * Number of sub views in this controller.
-           * Notice that if this setting is different from `coordinates.length`,
-           * adjustments will be made to `coordinates` (truncating excessive
-           * items or padding with default values).
-           * @type {number}
-           */
-          numOfSubs: {
-            type: Number,
-            value: 1,
-            notify: true,
-            observer: '_numOfSubsChanged'
-          },
+    properties: {
+      /**
+       * Number of sub views in this controller.
+       * Notice that if this setting is different from `coordinates.length`,
+       * adjustments will be made to `coordinates` (truncating excessive
+       * items or padding with default values).
+       * @type {number}
+       */
+      numOfSubs: {
+        type: Number,
+        value: 1,
+        notify: true,
+        observer: '_numOfSubsChanged'
+      },
 
-          /**
-           * Objects being passed into the text fields
-           */
-          _coorObjs: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      /**
+       * Objects being passed into the text fields
+       */
+      _coorObjs: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          /**
-           * The track groups included in the embedded browser. Group IDs are
-           * specified in the data source. The data source on our server currently
-           * provides these track groups:
-           * *  `'genes'`: gene annotation tracks, for all available references
-           * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
-           * *  `'interaction'`: genomic interaction data sets, including those
-           * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-           * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-           * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-           * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-           * for `mm10` only
-           * @type {Array<string>}
-           */
-          groupIdList: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      /**
+       * The track groups included in the embedded browser. Group IDs are
+       * specified in the data source. The data source on our server currently
+       * provides these track groups:
+       * *  `'genes'`: gene annotation tracks, for all available references
+       * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
+       * *  `'interaction'`: genomic interaction data sets, including those
+       * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
+       * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
+       * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
+       * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
+       * for `mm10` only
+       * @type {Array<string>}
+       */
+      groupIdList: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          defaultTrackIdList: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      defaultTrackIdList: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          /**
-           * Coordinates of every view.
-           * This is the value that can be specified by HTML attributes.
-           * @type {Array<string>}
-           */
-          coordinates: {
-            type: Array,
-            value: function () {
-              return ['chr10:30000000-50000000']
-            },
-            notify: true
-          },
+      /**
+       * Coordinates of every view.
+       * This is the value that can be specified by HTML attributes.
+       * @type {Array<string>}
+       */
+      coordinates: {
+        type: Array,
+        value: function () {
+          return ['chr10:30000000-50000000']
+        },
+        notify: true
+      },
 
-          _threshold: {
-            type: Number,
-            value: 0.1
-          },
+      _threshold: {
+        type: Number,
+        value: 0.1
+      },
 
-          /**
-           * The title text that will appear in the embedded browser.
-           * @type {string}
-           */
-          titleText: {
-            type: String,
-            value: 'GIVe (Genomic Interaction Visualizer)'
-          },
+      /**
+       * The title text that will appear in the embedded browser.
+       * @type {string}
+       */
+      titleText: {
+        type: String,
+        value: 'GIVe (Genomic Interaction Visualizer)'
+      },
 
-          /**
-           * Whether the track controller will support filter function
-           * @type {boolean}
-           */
-          withFilter: {
-            type: Boolean,
-            value: false
-          },
+      /**
+       * Whether the track controller will support filter function
+       * @type {boolean}
+       */
+      withFilter: {
+        type: Boolean,
+        value: false
+      },
 
-          /**
-           * Whether the track controller will reflect change immediately
-           * without calling this.DOMToTrack().
-           * This is always false if hasControls === true
-           * @type {boolean}
-           */
-          instantChange: {
-            type: Boolean,
-            value: false
-          },
+      /**
+       * Whether the track controller will reflect change immediately
+       * without calling this.DOMToTrack().
+       * This is always false if hasControls === true
+       * @type {boolean}
+       */
+      instantChange: {
+        type: Boolean,
+        value: false
+      },
 
-          /**
-           * Whether the track controller will not show OK/Cancel controls
-           * @type {boolean}
-           */
-          hasControls: {
-            type: Boolean,
-            value: false
+      /**
+       * Whether the track controller will not show OK/Cancel controls
+       * @type {boolean}
+       */
+      hasControls: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    listeners: {
+      'update-coordinate': '_updateCoordinateHandler',
+      'update-track-structure': 'updateTrackstructureHandler',
+      'show-track-filter': '_showTrackFilterHandler',
+      'filter-tracks': '_filterTracksHandler'
+    },
+
+    observers: [
+      '_coorChanged(coordinates.splices)'
+    ],
+
+    ready: function () {
+      if (this.coordinates.length > this.numOfSubs) {
+        // truncate excessive coordinates
+        this.splice('coordinates', this.numOfSubs)
+      }
+    },
+
+    attached: function () {
+      if (this._refObj) {
+        this.updateSvg()
+      }
+      this._isAttached = true
+    },
+
+    /**
+     * _calcGeneCoorLabel - calculate the label for `<gene-coor-input>`
+     *
+     * @param  {number} index - The index of view window
+     * @returns {string} The returned label
+     */
+    _calcGeneCoorLabel: function (index) {
+      return 'Coordinate or gene name' +
+        ((this._coorObjs && this._coorObjs.length > 1)
+          ? ' for view #' + (index + 1) : '')
+    },
+
+    /**
+     * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
+     *
+     * @param  {number} newValue new `numOfSubs` value
+     * @param  {number} oldValue old `numOfSubs` value
+     */
+    _numOfSubsChanged: function (newValue, oldValue) {
+      if (this._refObj) {
+        var defaultWindows = this._refObj.settings.defaultViewWindows
+        for (var i = 0; i < newValue; i++) {
+          if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
+            this.splice('_coorObjs', i, 1, {
+              coor: defaultWindows[i % defaultWindows.length],
+              invalid: false
+            })
           }
-        },
+        }
+      }
+    },
 
-        listeners: {
-          'update-coordinate': '_updateCoordinateHandler',
-          'update-track-structure': 'updateTrackstructureHandler',
-          'show-track-filter': '_showTrackFilterHandler',
-          'filter-tracks': '_filterTracksHandler'
-        },
+    /**
+     * Set the reference of embedded browser to `ref`, all the views in the
+     * browser will be reverted to reference default values
+     *
+     * @param {GIVe.RefObject|string} Reference - The GIVe.RefObject or string of the new reference.
+     */
+    _setRefObj: function (refObj) {
+      this._refObj = refObj
+      this._numOfSubsChanged(this.numOfSubs)
+      if (this._isAttached) {
+        this.updateSvg()
+      }
+      this._threshold = 1
+    },
 
-        observers: [
-          '_coorChanged(coordinates.splices)'
-        ],
-
-        ready: function () {
-          if (this.coordinates.length > this.numOfSubs) {
-            // truncate excessive coordinates
-            this.splice('coordinates', this.numOfSubs)
-          }
-        },
-
-        attached: function () {
-          if (this._refObj) {
-            this.updateSvg()
-          }
-          this._isAttached = true
-        },
-
-        /**
-         * _calcGeneCoorLabel - calculate the label for `<gene-coor-input>`
-         *
-         * @param  {number} index - The index of view window
-         * @returns {string} The returned label
-         */
-        _calcGeneCoorLabel: function (index) {
-          return 'Coordinate or gene name' +
-            ((this._coorObjs && this._coorObjs.length > 1)
-              ? ' for view #' + (index + 1) : '')
-        },
-
-        /**
-         * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
-         *
-         * @param  {number} newValue new `numOfSubs` value
-         * @param  {number} oldValue old `numOfSubs` value
-         */
-        _numOfSubsChanged: function (newValue, oldValue) {
-          if (this._refObj) {
-            var defaultWindows = this._refObj.settings.defaultViewWindows
-            for (var i = 0; i < newValue; i++) {
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('_coorObjs', i, 1, {
-                  coor: defaultWindows[i % defaultWindows.length],
-                  invalid: false
-                })
+    /**
+     * Update the SVG component.
+     *
+     * Although all chart-controller properties are observed via Polymer and will trigger updates in the views, imperative changes will not be observed. Use this method to update all the views in the browser for those changes manually.
+     *
+     */
+    updateSvg: function () {
+      if (this.$.mainChartArea) {
+        try {
+          var correctedVWindows = this.$.mainChartArea.refreshAll(
+            this._coorObjs.map(function (coorObj) {
+              return coorObj.coor
+            }, this), this._threshold
+          )
+          this.coordinates = correctedVWindows
+        } catch (e) {
+          // This will happen if the value is not valid
+          // TODO: Show the paper-input elements as invalid
+          if (e.data.updatedCoors) {
+            // update the coordinates that are changed
+            e.data.updatedCoors.forEach(function (coor, index) {
+              if (coor) {
+                this._coorObjs[index].coor = coor
+                this.coordinates[index] = coor
+                this.notifyPath(['_coorObjs', index, 'coor'])
+              } else {
+                this._coorObjs[index].invalid = true
+                this.notifyPath(['_coorObjs', index, 'invalid'])
               }
-            }
-          }
-        },
-
-        /**
-         * Set the reference of embedded browser to `ref`, all the views in the
-         * browser will be reverted to reference default values
-         *
-         * @param {GIVe.RefObject|string} Reference - The GIVe.RefObject or string of the new reference.
-         */
-        _setRefObj: function (refObj) {
-          this._refObj = refObj
-          this._numOfSubsChanged(this.numOfSubs)
-          if (this._isAttached) {
-            this.updateSvg()
-          }
-          this._threshold = 1
-        },
-
-        /**
-         * Update the SVG component.
-         *
-         * Although all chart-controller properties are observed via Polymer and will trigger updates in the views, imperative changes will not be observed. Use this method to update all the views in the browser for those changes manually.
-         *
-         */
-        updateSvg: function () {
-          if (this.$.mainChartArea) {
-            try {
-              var correctedVWindows = this.$.mainChartArea.refreshAll(
-                this._coorObjs.map(function (coorObj) {
-                  return coorObj.coor
-                }, this), this._threshold
-              )
-              this.coordinates = correctedVWindows
-            } catch (e) {
-              // This will happen if the value is not valid
-              // TODO: Show the paper-input elements as invalid
-              if (e.data.updatedCoors) {
-                // update the coordinates that are changed
-                e.data.updatedCoors.forEach(function (coor, index) {
-                  if (coor) {
-                    this._coorObjs[index].coor = coor
-                    this.coordinates[index] = coor
-                    this.notifyPath(['_coorObjs', index, 'coor'])
-                  } else {
-                    this._coorObjs[index].invalid = true
-                    this.notifyPath(['_coorObjs', index, 'invalid'])
-                  }
-                }, this)
-              }
-            }
-          }
-        },
-
-        updateTracks: function () {
-          // remove the invalid marks
-          this._coorObjs.forEach(function (coorObj, index) {
-            coorObj.invalid = false
-            // notify Polymer
-            this.notifyPath(['_coorObjs', index, 'invalid'])
-          }, this)
-          if (this.$.mainTrackList) {
-            this.$.mainTrackList.DOMToTrack()
-            this.$.mainChartArea.updateDOM(true)
-            this.updateSvg()
-          }
-        },
-
-        updateTrackstructure: function () {
-        // almost same thing as updateTracks, only needs to update trackSelect
-          if (this.$.mainTrackList) {
-            this.$.mainTrackList.updateAllGroupDOM()
-            this.$.mainChartArea.updateDOM(true)
-            this.updateSvg()
-          }
-        },
-
-        _resetTracks: function () {
-          if (this.$.mainTrackList) {
-            this.$.mainTrackList.trackToDOM()
-            var correctedVWindows = this.$.mainChartArea.getViewWindowStrings()
-            this.coordinates = correctedVWindows
-            this._threshold = this.$.mainChartArea.threshold
-          }
-        },
-
-        _updateCoordinateHandler: function (e) {
-          if (Array.isArray(e.detail.newWindow)) {
-            e.detail.newWindow.forEach(function (newCoor, index) {
-              this.splice('coordinates', index, 1, newCoor)
-            }, this)
-          } else if (e.detail.windowIndex >= 0 &&
-            e.detail.windowIndex < this.coordinates.length
-          ) {
-            this.splice('coordinates', e.detail.windowIndex, 1, e.detail.newWindow)
-          }
-        },
-
-        updateTrackstructureHandler: function (e) {
-          this.updateTrackstructure()
-        },
-
-        _coorChanged: function (spliceStatus) {
-          if (this._coorObjs) {
-            this.splice('_coorObjs', 0)
-            this.coordinates.forEach(function (coorText) {
-              this.push('_coorObjs', {
-                coor: coorText,
-                invalid: false
-              })
             }, this)
           }
         }
+      }
+    },
 
-      })
+    updateTracks: function () {
+      // remove the invalid marks
+      this._coorObjs.forEach(function (coorObj, index) {
+        coorObj.invalid = false
+        // notify Polymer
+        this.notifyPath(['_coorObjs', index, 'invalid'])
+      }, this)
+      if (this.$.mainTrackList) {
+        this.$.mainTrackList.DOMToTrack()
+        this.$.mainChartArea.updateDOM(true)
+        this.updateSvg()
+      }
+    },
 
-      return give
-    })(GIVe || {})
+    updateTrackstructure: function () {
+    // almost same thing as updateTracks, only needs to update trackSelect
+      if (this.$.mainTrackList) {
+        this.$.mainTrackList.updateAllGroupDOM()
+        this.$.mainChartArea.updateDOM(true)
+        this.updateSvg()
+      }
+    },
+
+    _resetTracks: function () {
+      if (this.$.mainTrackList) {
+        this.$.mainTrackList.trackToDOM()
+        var correctedVWindows = this.$.mainChartArea.getViewWindowStrings()
+        this.coordinates = correctedVWindows
+        this._threshold = this.$.mainChartArea.threshold
+      }
+    },
+
+    _updateCoordinateHandler: function (e) {
+      if (Array.isArray(e.detail.newWindow)) {
+        e.detail.newWindow.forEach(function (newCoor, index) {
+          this.splice('coordinates', index, 1, newCoor)
+        }, this)
+      } else if (e.detail.windowIndex >= 0 &&
+        e.detail.windowIndex < this.coordinates.length
+      ) {
+        this.splice('coordinates', e.detail.windowIndex, 1, e.detail.newWindow)
+      }
+    },
+
+    updateTrackstructureHandler: function (e) {
+      this.updateTrackstructure()
+    },
+
+    _coorChanged: function (spliceStatus) {
+      if (this._coorObjs) {
+        this.splice('_coorObjs', 0)
+        this.coordinates.forEach(function (coorText) {
+          this.push('_coorObjs', {
+            coor: coorText,
+            invalid: false
+          })
+        }, this)
+      }
+    }
+
+  })
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>
