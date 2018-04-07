@@ -32,53 +32,53 @@ done
 echo "Updating GIVE components:\n------------------"
 echo "Check directories of installed GIVE, GIVE-Toolbox, example data and tmp."
 if [ -z "$give_root" ]; then
-    echo "\tGIVE root directory is not set! Use default value '/var/www/give'."
+    echo "GIVE root directory is not set! Use default value '/var/www/give'."
     give_root="/var/www/give"
 else
-    echo "\tGIVE root directory is set as $give_root."
+    echo "GIVE root directory is set as $give_root."
 fi 
 if [ ! -w "$give_root" ]; then
-    echo "\tWrite permission denied to the $give_root directory.\nExit!"
+    echo "Write permission denied to the $give_root directory.\nExit!"
     exit 1
 fi
 
 if [ -z "$toolbox_dir" ]; then
-    echo "\tGIVE-Toolbox directory is not set! Use default value '/usr/local/bin'."
+    echo "GIVE-Toolbox directory is not set! Use default value '/usr/local/bin'."
     toolbox_dir="/usr/local/bin"
 else
-    echo "\tGIVE-Toolbox directory is set as $toolbox_dir."
+    echo "GIVE-Toolbox directory is set as $toolbox_dir."
 fi 
 if [ ! -w "$toolbox_dir" ]; then
-    echo "\tWrite permission denied to the $toolbox_dir directory.\nExit!"
+    echo "Write permission denied to the $toolbox_dir directory.\nExit!"
     exit 1
 fi
 
 if [ -z "$example_dir" ]; then
-    echo "\tDirectory of GIVE-Toolbox example data is not set! Use default value '/tmp/example_data'."
+    echo "Directory of GIVE-Toolbox example data is not set! Use default value '/tmp/example_data'."
     toolbox_dir="/tmp/example_data"
 else
-    echo "\tExample data directory is set as $example_dir."
+    echo "Example data directory is set as $example_dir."
 fi 
 if [ ! -w "$example_dir" ]; then
-    echo "\tWrite permission denied to the $example_dir directory.\nExit!"
+    echo "Write permission denied to the $example_dir directory.\nExit!"
     exit 1
 fi
 
 if [ -z "$tmp_dir" ]; then
-    echo "\tTmp directory is not set! Use default value '/tmp'."
-    toolbox_dir="/tmp"
+    echo "Tmp directory is not set! Use default value '/tmp'."
+    tmp_dir="/tmp"
 else
-    echo "\Tmp directory is set as $tmp_dir."
+    echo "mp directory is set as $tmp_dir."
 fi 
 if [ ! -w "$tmp_dir" ]; then
-    echo "\tWrite permission denied to the $tmp_dir directory.\nExit!"
+    echo "Write permission denied to the $tmp_dir directory.\nExit!"
     exit 1
 fi
 
 echo "------------------\nCheck git for cloning the GIVE GitHub repo."
 
 if ! [ -x "$(command -v git)" ]; then
-    echo "\tgit is not installed. Try to install it:\n\tapt-get install git"
+    echo "git is not installed. Try to install it:\napt-get install git"
     apt-get update
     apt-get install git
 
@@ -91,7 +91,7 @@ if ! [ -x "$(command -v git)" ]; then
 else
     echo "git is OK."
 fi
-echo "\tClone GIVE GitHub repo (master branch) ... "
+echo "Clone GIVE GitHub repo (master branch) ... "
 git clone https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine.git $tmp_dir/GIVE_update_clone
 
 echo "------------------\nUpdate 'html' and 'includes'."
