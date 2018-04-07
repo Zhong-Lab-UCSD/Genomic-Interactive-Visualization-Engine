@@ -418,9 +418,9 @@ var GIVe = (function (give) {
           this.emptyCandidatesString = '(Type more for candidates)'
         } else if (data.list) {
           this.emptyCandidatesString = '(No results)'
-          for (var key in data) {
+          for (var key in data.list) {
             if (data.hasOwnProperty(key)) {
-              var val = data[key]
+              var val = data.list[key]
               var entry = {
                 name: key,
                 coor: val.coor,
