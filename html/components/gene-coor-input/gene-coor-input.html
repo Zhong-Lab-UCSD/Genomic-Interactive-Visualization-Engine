@@ -157,7 +157,7 @@ generate these tables are provided at
       </div>
     </iron-dropdown>
     <iron-ajax id="partialNameAjax" url="[[geneNameUrl]]"
-      handle-as="json" on-response="_updatePartialQuery"></iron-ajax>
+      handle-as="json"></iron-ajax>
   </template>
 
   <script>
@@ -250,6 +250,9 @@ var GIVe = (function (give) {
         value: false
       },
 
+      /**
+       * Whether a partial gene name is allowed as the final value
+       */
       allowPartialGeneName: {
         type: Boolean,
         value: false
@@ -258,6 +261,16 @@ var GIVe = (function (give) {
       required: {
         type: Boolean,
         value: false
+      },
+
+      _partialNameSupported: {
+        type: Boolean,
+        value: false
+      },
+
+      _ajaxDebounceDuration: {
+        type: Number,
+        value: 200
       }
     },
 
@@ -287,10 +300,35 @@ var GIVe = (function (give) {
 
       this.$.geneNameDropDown.positionTarget = this.$.geneName
       this.$.geneNameDropDown.focusTarget = this.$.geneName
+
+      this.AJAX_JOBNAME = '_GCI_AJAX'
     },
 
     attached: function () {
-      this.$.partialNameAjax.auto = true
+      this._ajaxDebounceDuration = 200
+    },
+
+    _setRefObj: function (refObj) {
+      this._refObj = refObj
+      this.partialNameSupported = false
+      if (this._refObj) {
+        // Test whether reference support partial name filling.
+        this.$.partialNameAjax.params = {
+          'db': this._refObj.db
+        }
+        let request = this.$.partialNameAjax.generateRequest()
+        request.completes.then(function (req) {
+          if (req.response && req.response.supported) {
+            this._partialNameSupported = true
+          } else {
+            this._partialNameSupported = false
+          }
+        }.bind(this)).catch(function (rejectedObj) {
+          // TODO: change this part after upgrading to Polymer 2.0
+          // to pass the error messages if needed.
+          this._partialNameSupported = false
+        }.bind(this))
+      }
     },
 
     _partialInputHandler: function () {
@@ -314,11 +352,13 @@ var GIVe = (function (give) {
         // value is coupled with input field
         this.coorSuffix = ''
         this.inputValue = newValue
-        if (newValue !== this.querySent) {
+        if (this._partialNameSupported && newValue !== this.querySent) {
           if (newValue.length > 1 && !this._valueIsCoordinate()) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
-            this._sendPartialQuery(newValue)
+            this.debounce(this.AJAX_JOBNAME,
+              this._sendPartialQuery().bind(this),
+              this._ajaxDebounceDuration)
           } else {
             this._toggleGList(false)
           }
@@ -349,32 +389,34 @@ var GIVe = (function (give) {
       this._setMouseGList(false)
     },
 
-    _sendPartialQuery: function (queryText) {
-      // $("#waiting").html($.trim($("#geneName").val()).length);
-      if (queryText.length > 1 && queryText !== this.querySent) {
+    _sendPartialQuery: function () {
+      if (this.inputValue.length > 1 && this.inputValue !== this.querySent) {
         // send Ajax
-        this.querySent = queryText
-        var params = {
+        this.querySent = this.inputValue
+        this.$.partialNameAjax.params = {
           'name': this.querySent,
-          'maxCandidates': this.MAX_CANDIDATES
+          'maxCandidates': this.MAX_CANDIDATES,
+          'db': this._refObj.db
         }
-        if (this._refObj) {
-          params.db = this._refObj.db
-          params.spcName = this._refObj.name
-        }
-        this.$.partialNameAjax.params = params
+        let request = this.$.partialNameAjax.generateRequest()
+        request.completes.then(this._updatePartialQuery.bind(this))
+          .catch(function (rejectedObj) {
+            // TODO: change this part after upgrading to Polymer 2.0
+            // to pass the error messages if needed.
+            this._toggleGList.bind(this, false)
+          })
       }
     },
 
-    _updatePartialQuery: function (e, detail) {
+    _updatePartialQuery: function (req) {
       // $('#geneName').removeClass('searchFieldBusy');
       this.splice('candidates', 0, this.candidates.length)
-      var data = detail.response
-      if (data) {
+      var data = req.response
+      if (data && data.input === this.inputValue) {
         if (data['(max_exceeded)']) {
           // max number of candidates has been reached
           this.emptyCandidatesString = '(Type more for candidates)'
-        } else {
+        } else if (data.list) {
           this.emptyCandidatesString = '(No results)'
           for (var key in data) {
             if (data.hasOwnProperty(key)) {
@@ -435,9 +477,9 @@ var GIVe = (function (give) {
         this.$.candidatesList.notifyResize()
         this.$.geneNameDropDown.refit()
         this.$.geneNameDropDown.open()
-        this.$.partialNameAjax.debounceDuration = 50
+        this._ajaxDebounceDuration = 50
       } else {
-        this.$.partialNameAjax.debounceDuration = 300
+        this._ajaxDebounceDuration = 200
         if (this.$.geneNameDropDown.opened) {
           this.$.geneNameDropDown.close()
           if (!this._inFocus) {

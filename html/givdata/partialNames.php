@@ -131,7 +131,9 @@
     return $refInfo;
   }
 
-  function findPartialName($ref, $partialName, $refInfo) {
+  function findPartialName($ref, $partialName, $refInfo,
+    $maxCandidates = MAX_JSON_NAME_ITEMS
+  ) {
     // $partialName should be already there and has a length greater than
     // MIN_JSON_QUERY_LENGTH
     // $refInfo should have valid value (otherwise `testRefPartialName` won't
@@ -204,7 +206,7 @@
       $queryStmt->bind_param('s', $partialName);
       $queryStmt->execute();
       $generesult = $queryStmt->get_result();
-      if($generesult->num_rows <= MAX_JSON_NAME_ITEMS) {
+      if($generesult->num_rows <= $maxCandidates) {
         while($row = $generesult->fetch_assoc()) {
           $result[$row["name"]] = $row;
         }
@@ -234,6 +236,11 @@
   $req = getRequest();
   $db = trim($req['db']);
   $partialName = trim($req['name']);
+  $maxCandidates = is_int(trim($req['maxCandidates']))
+    ? intval(trim($req['maxCandidates'])) : MAX_JSON_NAME_ITEMS;
+  if ($maxCandidates <= 0) {
+    $maxCandidates = MAX_JSON_NAME_ITEMS;
+  }
 
   $result = [];
 
@@ -243,7 +250,9 @@
     // gene name feature is supported in the reference
 
     if ($partialName && strlen($partialName) >= MIN_JSON_QUERY_LENGTH) {
-      $result = findPartialName($db, $partialName, $refInfo);
+      $result['input'] = $req['name'];
+      $result['list'] =
+        findPartialName($db, $partialName, $refInfo, $maxCandidates);
     } else {
       // testing purpose only, return "supported" flag
       $result['supported'] = true;
