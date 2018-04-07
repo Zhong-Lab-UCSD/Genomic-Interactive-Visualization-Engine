@@ -76,7 +76,7 @@ For utilizing GIVE-Toolbox with different GIVE deployment approaches:
 
   There is already a built-in reference genome `hg19`. Hence, here we initialize a new genome reference `hg38`. Just one command is enough. It uses the cytoBandIdeo file of hg38 in the `/tmp/example_data` folder, which was downloaded from [UCSC genome annotation database](http://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/).
   ```bash
-  bash initial_ref.sh -u root -p Admin2015 -r hg38 -s "Homo sapiens" -c human  -f /tmp/example_data/cytoBandIdeo.txt
+  bash initial_ref.sh -u root -p Admin2015 -r hg38 -s "Homo sapiens" -c human  -f /tmp/example_data/cytoBandIdeo.txt -w '["chr10:30000000-50000000", "chr10:35000000-60000000"]'
   ```
   Now you have a `hg38` reference genome. You can add data tracks on this reference genome.
 
