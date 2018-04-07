@@ -403,8 +403,8 @@ var GIVe = (function (give) {
           .catch(function (rejectedObj) {
             // TODO: change this part after upgrading to Polymer 2.0
             // to pass the error messages if needed.
-            this._toggleGList.bind(this, false)
-          })
+            this._toggleGList(false)
+          }.bind(this))
       }
     },
 
