@@ -95,19 +95,19 @@ echo "\tClone GIVE GitHub repo (master branch) ... "
 git clone https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine.git $tmp_dir/GIVE_update_clone
 
 echo "------------------\nUpdate 'html' and 'includes'."
-cp $give_root/includes/constants.php $tmp_dir
-cp $give_root/html/components/basic-func/constants.js $tmp_dir
-cp -r $tmp_dir/GIVE_update_clone/includes $give_root/
-cp -r $tmp_dir/GIVE_update_clone/html $give_root/
-cp $tmp_dir/constants.php $give_root/includes
-cp $tmp_dir/constants.js $give_root/html/components/basic-func/
+mv $give_root/includes/constants.php $tmp_dir
+mv $give_root/html/components/basic-func/constants.js $tmp_dir
+mv -r $tmp_dir/GIVE_update_clone/includes $give_root/
+mv -r $tmp_dir/GIVE_update_clone/html $give_root/
+mv $tmp_dir/constants.php $give_root/includes
+mv $tmp_dir/constants.js $give_root/html/components/basic-func/
 
 echo "------------------\nUpdate GIVE-Toolbox."
 chmod +x $tmp_dir/GIVE_update_clone/GIVE-Toolbox/*.sh
-cp $tmp_dir/GIVE_update_clone/GIVE-Toolbox/*.sh $toolbox_dir
+mv $tmp_dir/GIVE_update_clone/GIVE-Toolbox/*.sh $toolbox_dir
 
 echo "------------------\nUpdate example data of GIVE-Toolbox."
-cp $tmp_dir/GIVE_update_clone/GIVE-Toolbox/example_data/* $example_dir
+mv $tmp_dir/GIVE_update_clone/GIVE-Toolbox/example_data/* $example_dir
 
 echo "------------------\nClean the tmp dir."
 rm -rf $tmp_dir/GIVE_update_clone 
