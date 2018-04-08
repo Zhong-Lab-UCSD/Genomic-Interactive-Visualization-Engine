@@ -45,6 +45,18 @@ fi
 if [ -n "$group_name" ]; then 
     echo "Try to remove track group $group_name in ref genome database $ref"
     mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`grp\` WHERE name = '$group_name'"
+    while read line
+    do 
+        track_array+=("$line")
+    done < <(mysql -u$mysqlu -p$mysqlp -Bs -e "select tableName from \`$ref\`.\`trackDb\` where grp=\"$j\"")
+            
+    for track_name in "${track_array[@]}"
+    do
+        mysql -u$mysqlu -p$mysqlp -e "DROP TABLE IF EXISTS \`$ref\`.\`$track_name\`"
+    done
+
+    mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`$ref\`.\`trackDb\` WHERE grp = '$group_name'"
+
     exit 1
 fi
 
@@ -54,5 +66,3 @@ if [ "$a" = "CONFIRM" ]; then
     mysql -u$mysqlu -p$mysqlp -e "DELETE FROM \`compbrowser\`.\`ref\` WHERE dbname = '$ref'"
     exit 1
 fi
-
-

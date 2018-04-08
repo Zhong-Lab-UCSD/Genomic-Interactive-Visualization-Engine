@@ -10,11 +10,12 @@ usage() {
     -s <species_name>: (Required) species name of the ref genome. If it contains space or other special character, please quote it, such as "Homo sapiens". 
     -c <species_cname>: (Required) common name of the species. If it contains space or other special character, please quote it.
     -f <file>: (Required) cytoBandIdeo file path. It must be a system absolute path.
+    -w <default_window>: (Optional) Set the default view window of this ref genome. The value must be quoted as '["chrX:100000-200000"]' or '["chr1:100000-200000", "chrX:10000-20000"]' for dual chromosome view window.  
     -h : show usage help
 EOF
     exit 1
 }
-while getopts u:p:r:s:c:f:h: opt; do
+while getopts u:p:r:s:c:f:w:h: opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
         p) mysqlp=$OPTARG;;
@@ -22,6 +23,7 @@ while getopts u:p:r:s:c:f:h: opt; do
         s) species_name=$OPTARG;;
         c) species_cname=$OPTARG;;
         f) file=$OPTARG;;
+        w) default_window=$OPTARG;;
         h) usage;;
         *) usage;;
     esac
@@ -33,6 +35,12 @@ done
 [  -z "$species_name" ] && echo "Error: -s <species_name> is empty" && usage && exit 1 
 [  -z "$species_cname" ] && echo "Error: -c <species_cname> is empty" && usage && exit 1 
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
+
+if [ -z "$default_window" ];then
+    settings='"browserActive": true'
+else
+    settings='"browserActive": true, "defaultViewWindows":'"$default_window"
+fi
 
 read -r -d '' mysql_query <<EOF
     CREATE DATABASE IF NOT EXISTS compbrowser; 
@@ -56,7 +64,7 @@ read -r -d '' mysql_query <<EOF
             '$species_cname',
             1,
             '{
-                "browserActive": true
+                $settings
             }'
         );
     CREATE DATABASE IF NOT EXISTS $ref;
