@@ -3,7 +3,7 @@ PROGNAME=$0
 
 usage() {
     cat << EOF >&2
-    Replace the kgID in the known gene table format gene annotation file downloaded from UCSC table browser.
+    Replace the known gene name in the 1st column of the known gene table format gene annotation file downloaded from UCSC table browser.
     Usage: $PROGNAME [-i <input_file>] [-r <replace_column_number>] [-o <output_file>] 
     -i <input_file>: (Required) Gene annotation file in UCSC known gene table format.
     -r <replace_column_number>: (Optional) The column number in file for replcing the 1st column, UCSC kgID. 
@@ -32,4 +32,4 @@ if [ -z "$replace_column_number" ]; then
     replace_column_number=13;
 fi
 
-awk -v r=$replace_column_number 'BEGIN{FS="\t";OFS="\t"}NR>1{printf $r; for(i=2;i<=12;i++){printf "\t"$i}; printf "\n" $input_file >$output_file
+awk -v r=$replace_column_number 'BEGIN{FS="\t";OFS="\t"}NR>1{printf $r; for(i=2;i<=12;i++){printf "\t"$i}; printf "\n";}' $input_file >$output_file
