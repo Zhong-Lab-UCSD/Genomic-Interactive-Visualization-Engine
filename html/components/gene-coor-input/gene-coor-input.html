@@ -357,7 +357,7 @@ var GIVe = (function (give) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
             this.debounce(this.AJAX_JOBNAME,
-              this._sendPartialQuery().bind(this),
+              this._sendPartialQuery.bind(this),
               this._ajaxDebounceDuration)
           } else {
             this._toggleGList(false)
@@ -413,13 +413,13 @@ var GIVe = (function (give) {
       this.splice('candidates', 0, this.candidates.length)
       var data = req.response
       if (data && data.input === this.inputValue) {
-        if (data['(max_exceeded)']) {
+        if (data.list['(max_exceeded)']) {
           // max number of candidates has been reached
           this.emptyCandidatesString = '(Type more for candidates)'
         } else if (data.list) {
           this.emptyCandidatesString = '(No results)'
           for (var key in data.list) {
-            if (data.hasOwnProperty(key)) {
+            if (data.list.hasOwnProperty(key)) {
               var val = data.list[key]
               var entry = {
                 name: key,

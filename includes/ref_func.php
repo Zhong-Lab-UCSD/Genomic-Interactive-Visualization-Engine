@@ -71,10 +71,10 @@ function getChromInfo($db) {
       $result[$chromName] = $chrom;
     }
   } finally {
-    if ($chromIdeos) {
+    if (!empty($chromIdeos)) {
       $chromIdeos->free();
     }
-    if ($mysqli) {
+    if (!empty($mysqli)) {
       $mysqli->close();
     }
   }
@@ -111,10 +111,10 @@ function getTracks($db, $grp = NULL) {
     }
   } catch (Exception $e) {
   } finally {
-    if ($groups) {
+    if (!empty($groups)) {
       $groups->free();
     }
-    if ($stmt) {
+    if (!empty($stmt)) {
       $stmt->close();
     }
   }
@@ -145,13 +145,13 @@ function getTracks($db, $grp = NULL) {
       }
     }
   } finally {
-    if ($tracks) {
+    if (!empty($tracks)) {
       $tracks->free();
     }
-    if ($stmt) {
+    if (!empty($stmt)) {
       $stmt->close();
     }
-    if ($mysqli) {
+    if (!empty($mysqli)) {
       $mysqli->close();
     }
   }
@@ -170,10 +170,10 @@ function getRefDbNames() {
     }
     return $result;
   } finally {
-    if ($ref) {
+    if (!empty($ref)) {
       $ref->free();
     }
-    if ($mysqli) {
+    if (!empty($mysqli)) {
       $mysqli->close();
     }
   }
@@ -208,13 +208,13 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
     }
     return $spcinfo;
   } finally {
-    if ($ref) {
+    if (!empty($ref)) {
       $ref->free();
     }
-    if ($stmt) {
+    if (!empty($stmt)) {
       $stmt->close();
     }
-    if ($mysqli) {
+    if (!empty($mysqli)) {
       $mysqli->close();
     }
   }
@@ -231,10 +231,10 @@ function getRefDatabaseFromGapInfo($gap, $spcDbName) {
     }
     return $bb;
   } finally {
-    if ($spcinfo) {
+    if (!empty($spcinfo)) {
       $spcinfo->free();
     }
-    if ($mysqli) {
+    if (!empty($mysqli)) {
       $mysqli->close();
     }
   }
