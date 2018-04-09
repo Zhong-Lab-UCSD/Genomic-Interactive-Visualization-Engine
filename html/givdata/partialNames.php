@@ -199,10 +199,10 @@
           $orderByExpr;
       }
 
-      error_log("SELECT " . $selectExpr .
-        " FROM " . $tableReference . " WHERE " . $whereCondition .
-        " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
-      );
+      // error_log("SELECT " . $selectExpr .
+      //   " FROM " . $tableReference . " WHERE " . $whereCondition .
+      //   " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
+      // );
       $queryStmt = $mysqli->prepare("SELECT " . $selectExpr .
         " FROM " . $tableReference . " WHERE " . $whereCondition .
         " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
