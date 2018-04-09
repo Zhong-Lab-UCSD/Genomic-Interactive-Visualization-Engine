@@ -47,23 +47,18 @@ done
 
 read -r -d '' mysql_query <<EOF
 CREATE TABLE IF NOT EXISTS \`$ref\`.\`$track_name\` ( 
-        \`name\` varchar(255) NOT NULL DEFAULT '',
         \`chrom\` varchar(255) NOT NULL DEFAULT '',
+        \`chromStart\` int(10) unsigned NOT NULL DEFAULT '0',
+        \`chromEnd\` int(10) unsigned NOT NULL DEFAULT '0',
+        \`name\` varchar(255) NOT NULL DEFAULT '',
+        \`score\` int(10) unsigned DEFAULT NULL,
         \`strand\` char(1) NOT NULL DEFAULT '',
-        \`txStart\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`txEnd\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`cdsStart\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`cdsEnd\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`exonCount\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`exonStarts\` longblob NOT NULL,
-        \`exonEnds\` longblob NOT NULL,
-        \`proteinID\` varchar(40) NOT NULL DEFAULT '',
-        \`alignID\` varchar(255) NOT NULL DEFAULT '',
-        KEY \`name\` (\`name\`),
-        KEY \`chrom\` (\`chrom\`(16),\`txStart\`),
-        KEY \`chrom_2\` (\`chrom\`(16),\`txEnd\`),
-        KEY \`protein\` (\`proteinID\`(16)),
-        KEY \`align\` (\`alignID\`)
+        \`thickStart\` int(10) unsigned DEFAULT NULL,
+        \`thickEnd\` int(10) unsigned DEFAULT NULL,
+        \`itemRGB\` longblob DEFAULT NULL,
+        \`blockCount\` int(10) unsigned DEFAULT NULL,
+        \`blockSizes\` longblob DEFAULT NULL,
+        \`blockStarts\` longblob DEFAULT NULL
     );
 
 INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
@@ -87,8 +82,6 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
 EOF
 echo $mysql_query |  mysql --local-infile  -u$mysqlu -p$mysqlp
 
-awk 'BEGIN{OFS="\t"}{split($12, starts,"," ); split($11, sizes, ","); exonStarts=""; exonEnds=""; for(i=1;i<=$10;i++){starts[i]+=$2; ends[i]=starts[i]+sizes[i]; exonStarts=exonStarts""starts[i]","; exonEnds=exonEnds""ends[i]",";};exonStarts=substr(exonStarts, 1, length(exonStarts)-1); exonEnds=substr(exonEnds, 1, length(exonEnds)-1); print $4,$1,$6,$2,$3,$7,$8,$10,exonStarts,exonEnds,$5,$9; }' $file| mysql --local-infile -u$mysqlu -p$mysqlp -e "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE \`$ref\`.\`$track_name\`;" 
-
-
+mysql --local-infile -u$mysqlu -p$mysqlp -e "LOAD DATA LOCAL INFILE '$file' INTO TABLE \`$ref\`.\`$track_name\`;" 
 
 
