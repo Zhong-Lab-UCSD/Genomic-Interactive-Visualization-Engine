@@ -10,7 +10,7 @@ if(isset($req['db'])) {
 } else {
   // get all db names
   $result = array();
-  $dblist = getRefInfoFromArray()['array'];
+  $dblist = getRefInfoFromArray();
   foreach ($dblist as $dbName => $dbEntry) {
     if($dbEntry['browserActive']) {
       try {
