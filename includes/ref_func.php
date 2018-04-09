@@ -184,7 +184,7 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
   try {
     $stmt = null;
     $mysqli = connectCPB();
-    $spcinfo = array();
+    $spcinfo = [];
     $sqlstmt = "SELECT * FROM ref";
     if(!empty($spcDbNameList)) {
       $sqlstmt .= " WHERE dbname IN (?" .
@@ -204,7 +204,6 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
     }
     while($spcitor = $ref->fetch_assoc()) {
       $spcitor['settings'] = json_decode($spcitor['settings']);
-      $spcinfo[] = $spcitor;
       $spcinfo[$spcitor['dbname']] = $spcitor;
     }
     return $spcinfo;
