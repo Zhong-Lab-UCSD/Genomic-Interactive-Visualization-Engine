@@ -7,12 +7,11 @@ usage() {
     Usage: $PROGNAME [-r <give_root>] [-b <toolbox_dir>] [-e <example_dir>] [-t <tmp_dir>] [-g <git_branch>]
     
     This script tool will update the GIVE components according to the master branch of GIVE GitHub repo. 
-    It will replace the files in directories `<give_root>/includes`,  `<give_root>/html`, `<toolbox_dir>` and `<example_dir>`. 
+    It will replace the files in directories `<give_root>/includes`,  `<give_root>/html`, and `<toolbox_dir>`. 
     Please make sure that you have the authority to write those files. 
 
     -r <give_root>: (required) The root directory of GIVE. The default value is `/var/www/give`, the same as the settings in GIVE-Docker.
     -b <toolbox_dir>: (required) The directory of the bash scripts of GIVE-Toolbox. The default value is `/usr/local/bin`, the same as the settings in GIVE-Docker.
-    -e <example_dir>: (required) The directory of the example data for GIVE-Toolbox. The default value is `/tmp/example_data`, the same as the settings in GIVE-Docker.
     -t <tmp_dir>: (required) A directory for storing temporary files during update. The default value is `/tmp`, the same as the settings in GIVE-Docker.
     -g <git_branch>: (required) The branch of GIVE GitHub repo. The default value is "master".
     -h : show usage help
@@ -23,7 +22,6 @@ while getopts r:b:e:t:g:h: opt; do
     case $opt in
         r) give_root=$OPTARG;;
         b) toolbox_dir=$OPTARG;;
-        e) example_dir=$OPTARG;;
         t) tmp_dir=$OPTARG;;
         g) git_branch=$OPTARG;; 
         h) usage;;
@@ -32,7 +30,7 @@ while getopts r:b:e:t:g:h: opt; do
 done
 
 echo "Updating GIVE components:------------------"
-echo "Check directories of installed GIVE, GIVE-Toolbox, example data and tmp."
+echo "Check directories of installed GIVE, GIVE-Toolbox, and tmp."
 if [ -z "$give_root" ]; then
     echo "GIVE root directory is not set! Use default value '/var/www/give'."
     give_root="/var/www/give"
@@ -52,17 +50,6 @@ else
 fi 
 if [ ! -w "$toolbox_dir" ]; then
     echo "Write permission denied to the $toolbox_dir directory. Exit!"
-    exit 1
-fi
-
-if [ -z "$example_dir" ]; then
-    echo "Directory of GIVE-Toolbox example data is not set! Use default value '/tmp/example_data'."
-    example_dir="/tmp/example_data"
-else
-    echo "Example data directory is set as $example_dir."
-fi 
-if [ ! -w "$example_dir" ]; then
-    echo "Write permission denied to the $example_dir directory. Exit!"
     exit 1
 fi
 
@@ -115,9 +102,6 @@ cp $tmp_dir/constants.js $give_root/html/components/basic-func/
 echo "------------------ Update GIVE-Toolbox."
 chmod +x $tmp_dir/GIVE_update_clone/GIVE-Toolbox/*.sh
 mv $tmp_dir/GIVE_update_clone/GIVE-Toolbox/*.sh $toolbox_dir
-
-echo "------------------ Update example data files of GIVE-Toolbox."
-cp $tmp_dir/GIVE_update_clone/GIVE-Toolbox/example_data/* $example_dir
 
 echo "------------------ Clean the tmp dir."
 rm -rf $tmp_dir/GIVE_update_clone 

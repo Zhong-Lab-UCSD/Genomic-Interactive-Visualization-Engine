@@ -40,10 +40,10 @@ The current version of GIVE-Toolbox includes 9 script tools. These tools can mee
 
 ## Walkthrough Example
 
-This walk-through example will show you how to use GIVE-Toolbox to easily build a customized GIVE genome browser. It includes 7 steps. In each step, you just need to run one or two bash command lines. All the data in the example can be found in the `example_data` folder.
+This walk-through example will show you how to use GIVE-Toolbox to easily build a customized GIVE genome browser. It includes 7 steps. In each step, you just need to run one or two bash command lines. All the data in the example can be found in [the `example_data` folder in GIVE-Docker repo](https://github.com/Zhong-Lab-UCSD/GIVE-Docker/tree/master/import/example_data).
 
 For utilizing GIVE-Toolbox with different GIVE deployment approaches:
-- [GIVE-Docker](./2.1-GIVE-Docker.md): GIVE-Toolbox is integrated in the GIVE-Docker. When you run a GIVE container and log into the container system (bash terminal), all the script tools can be directly executed with their names, which are located in system path `/usr/local/bin` (the container system). The `example_data` is in the `/tmp` path (the container system). 
+- [GIVE-Docker](./2.1-GIVE-Docker.md): GIVE-Toolbox is integrated in the GIVE-Docker. When you run a GIVE container and log into the container system (bash terminal), all the script tools can be directly executed with their names, which are located in system path `/usr/local/bin` (the container system). The `example_data` is already in the `/tmp` path (the container system). 
 - [Custom installation](./2.2-custom-installation.md): You need to clone the GIVE GitHub repository and install it correctly . `GIVE-Toolbox` folder is included in the cloned GIVE repo. You can use these tools with their directory like `bash ~/GIVE/GIVE-Toolbox/add_track_bed.sh -u ...`. For convenience, you can set all these tools executable (using `chmod +x` command to them) and copy them to a system path folder (such as `/usr/local/bin` or declare some path in your `.bashrc` file). Then you can directly run these tools.
 
 ### Step 1: Deployment of GIVE
