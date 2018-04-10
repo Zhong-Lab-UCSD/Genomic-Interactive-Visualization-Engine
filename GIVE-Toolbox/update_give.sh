@@ -4,7 +4,7 @@ PROGNAME=$0
 
 usage() {
     cat << EOF >&2
-    Usage: $PROGNAME [-r <give_root>] [-b <toolbox_dir>] [-e <example_dir>] [-t <tmp_dir>] [-g <git_branch>]
+    Usage: $PROGNAME [-r <give_root>] [-b <toolbox_dir>] [-t <tmp_dir>] [-g <git_branch>]
     
     This script tool will update the GIVE components according to the master branch of GIVE GitHub repo. 
     It will replace the files in directories `<give_root>/includes`,  `<give_root>/html`, and `<toolbox_dir>`. 
