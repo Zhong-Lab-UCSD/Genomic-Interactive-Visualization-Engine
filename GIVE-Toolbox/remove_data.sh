@@ -48,7 +48,7 @@ if [ -n "$group_name" ]; then
     while read line
     do 
         track_array+=("$line")
-    done < <(mysql -u$mysqlu -p$mysqlp -Bs -e "select tableName from \`$ref\`.\`trackDb\` where grp=\"$j\"")
+    done < <(mysql -u$mysqlu -p$mysqlp -Bs -e "select tableName from \`$ref\`.\`trackDb\` where grp=\"$group_name\"")
             
     for track_name in "${track_array[@]}"
     do
