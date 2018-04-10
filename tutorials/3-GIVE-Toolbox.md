@@ -102,7 +102,7 @@ For utilizing GIVE-Toolbox with different GIVE deployment approaches:
   This command will create a data track named as `exampleBed` in the `peak_region` track group from `example.bed` file. 
 
   ```
-  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "TAD" -l "An example bed track from MACS calling peaks" -s "Sequencing Peak Region" -o 2 -v pack -f /tmp/example_data/example.bed
+  bash add_track_bed.sh -u root -p Admin2015 -r hg38 -t exampleBed -g "TAD" -l "An example bed track of TAD from HiC" -s "TAD" -o 2 -v pack -f /tmp/example_data/example.bed
   ```
 ### Step 6: Create Data Track from `bigWig` File
   

@@ -52,7 +52,7 @@ read -r -d '' mysql_query <<EOF
             \`settings\` longtext NOT NULL, 
             PRIMARY KEY (\`dbname\`) 
         );
-    INSERT IGNORE INTO \`compbrowser\`.\`ref\` (
+    INSERT INTO \`compbrowser\`.\`ref\` (
             \`dbname\`,
             \`name\`,
             \`commonname\`,
@@ -67,8 +67,8 @@ read -r -d '' mysql_query <<EOF
                 $settings
             }'
         );
-    CREATE DATABASE IF NOT EXISTS $ref;
-    CREATE TABLE IF NOT EXISTS  \`$ref\`.\`cytoBandIdeo\` (
+    CREATE DATABASE $ref;
+    CREATE TABLE \`$ref\`.\`cytoBandIdeo\` (
             \`chrom\` varchar(255) NOT NULL,
             \`chromStart\` int(10) unsigned NOT NULL,
             \`chromEnd\` int(10) unsigned NOT NULL,
@@ -78,7 +78,7 @@ read -r -d '' mysql_query <<EOF
         );
     LOAD DATA LOCAL INFILE "$file" INTO TABLE \`$ref\`.\`cytoBandIdeo\`;
 
-    CREATE TABLE IF NOT EXISTS \`$ref\`.\`grp\` (
+    CREATE TABLE \`$ref\`.\`grp\` (
             \`name\` char(150) NOT NULL,
             \`label\` char(255) NOT NULL DEFAULT '', 
             \`priority\` float NOT NULL DEFAULT '0',          
@@ -87,7 +87,7 @@ read -r -d '' mysql_query <<EOF
             PRIMARY KEY (\`name\`) 
         ) ENGINE=InnoDB;
 
-    CREATE TABLE IF NOT EXISTS \`$ref\`.\`trackDb\` (
+    CREATE TABLE \`$ref\`.\`trackDb\` (
             \`tableName\` varchar(150) NOT NULL,
             \`type\` varchar(255) NOT NULL,
             \`priority\` float NOT NULL,

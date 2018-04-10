@@ -46,7 +46,7 @@ done
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 read -r -d '' mysql_query <<EOF
-CREATE TABLE IF NOT EXISTS \`$ref\`.\`$track_name\` ( 
+CREATE TABLE \`$ref\`.\`$track_name\` ( 
         \`chrom\` varchar(255) NOT NULL DEFAULT '',
         \`chromStart\` int(10) unsigned NOT NULL DEFAULT '0',
         \`chromEnd\` int(10) unsigned NOT NULL DEFAULT '0',
@@ -79,9 +79,8 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
             "adaptive":true
         }'
     );
+
+LOAD DATA LOCAL INFILE "$file" INTO TABLE \`$ref\`.\`$track_name\`; 
 EOF
+
 echo $mysql_query |  mysql --local-infile  -u$mysqlu -p$mysqlp
-
-mysql --local-infile -u$mysqlu -p$mysqlp -e "LOAD DATA LOCAL INFILE '$file' INTO TABLE \`$ref\`.\`$track_name\`;" 
-
-
