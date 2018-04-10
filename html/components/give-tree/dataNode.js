@@ -147,9 +147,9 @@ var GIVe = (function (give) {
 
     // 1. Push everything in `data` that has `getStart()` value smaller than
     //    `this.getStart()` into `contList`
+    props = props || {}
     var currIndex = (typeof props.DataIndex === 'number' ? props.DataIndex : 0)
     var prevIndex = currIndex
-    props = props || {}
     currIndex = give._traverseData(data, currIndex, function (dataEntry) {
       return dataEntry.getStart() < this.getStart()
     }, this, props.Callback, props.ThisVar)
@@ -157,8 +157,7 @@ var GIVe = (function (give) {
     // 2. Check all `contList` to ensure they still overlap with `this`
     //    (getEnd() should be greater than `this.getStart()`), remove those who
     //    don't, copy those who do to `this.ContList`;
-    props.ContList = props.ContList || []
-    props.ContList = this.ContList.concat(props.ContList)
+    props.ContList = (props.ContList || [])
       .concat(data.slice(prevIndex, currIndex))
       .filter(
         function (entry) {
