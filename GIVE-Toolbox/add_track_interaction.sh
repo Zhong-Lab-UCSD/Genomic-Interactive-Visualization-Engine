@@ -13,7 +13,7 @@ usage() {
     -s <short_label>: (Required) The label that will be shown in the label region.
     -o <priority>: (Required) The order of the track in the browser. Smaller value means the the track will be shown in a higher location.
     -v <visibility>: (Required) "full" or "none". The display mode of the track. If "full", signals will be plotted against the genome in a line graph. If "none", this track is not shown at all.
-    -q <quantiles>: (Optional) The quantile values used for scaling. If not supplied, it will be in mono color mode. If color gradient based on quantile is desired, an array of quantile values should be provided here. value will be scaled by quantiles before being mapped onto the color gradient. An example: "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" 
+    -q <quantiles>: (Optional) The quantile values used for scaling. If not supplied, it will be in mono color autoscale mode. If color gradient based on quantile is desired, an array of quantile values should be provided here. Value will be scaled by quantiles before being mapped onto the color gradient. The quantile value used in the GIVE-Toolbox example: -q "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" 
     -f <file>: (Required) interaction file path. It must be a system absolute path. Make sure MySQL can access this file.
     -h : show usage help
 EOF
@@ -47,7 +47,7 @@ done
 [  -z "$short_label" ] && echo "Error: -s <short_label> is empty" && usage && exit 1 
 [  -z "$priority" ] && echo "Error: -o <priority> is empty" && usage && exit 1 
 [  -z "$visibility" ] && echo "Error: -v <visibility> is empty" && usage && exit 1 
-[  -z "$quantiles" ] && echo "Error: -a <autoscale> is empty" && usage && exit 1 
+[  -z "$quantiles" ] && quantiles="autoscale"
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 read -r -d '' mysql_query <<EOF
