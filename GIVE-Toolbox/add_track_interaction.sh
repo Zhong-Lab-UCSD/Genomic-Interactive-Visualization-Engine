@@ -3,7 +3,7 @@ PROGNAME=$0
 
 usage() {
     cat << EOF >&2
-    Usage: $PROGNAME [-u <mysqlu>] [-p <mysqlp>] [-r <ref>] [-t <track_name>] [-g <group_name>] [-l <long_label>] [-s <short_label>] [-o <priority>] [-v <visibility>] [-q <quantile>] [-f <file>]
+    Usage: $PROGNAME [-u <mysqlu>] [-p <mysqlp>] [-r <ref>] [-t <track_name>] [-g <group_name>] [-l <long_label>] [-s <short_label>] [-o <priority>] [-v <visibility>] [-q <quantiles>] [-f <file>]
     -u <mysqlu>: (Required) MySQL account name
     -p <mysqlp>: (Optional) MySQL account passwd. Without '-p', the promot will ask you to input password.
     -r <ref>: (Required) ref genome database name. The ref genome database must has been initialized. If not, please use initial_ref.sh to do it. 
