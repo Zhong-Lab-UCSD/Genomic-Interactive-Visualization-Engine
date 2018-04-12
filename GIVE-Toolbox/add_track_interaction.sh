@@ -50,6 +50,41 @@ done
 [  -z "$quantiles" ] && quantiles="autoscale"
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
+[ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+echo
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from \`$ref\`.\`grp\` where name='$group_name';") -eq 0 ]; then
+    echo "Warning! There is NOT '$group_name' record in 'grp' in ref genome database '$ref'. If you continue to add the '$track_name' track, you can fix the missing group using add_trackGroup.sh later. Or you can exit now. Do you want to continue?"
+
+    read -p "Input y or Y to continue. Press other key to exit.   " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Continue to add the $track_name track ignoring the missing group record ..."
+    else
+        echo "Exit with nothing changed."
+        exit 1
+    fi
+fi
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from \`$ref\`.\`trackDb\` where tableName = '$track_name';") -eq 1 ]; then
+    echo "Error! There is already a '$track_name' track record or data table in the ref genome database '$ref'."
+    echo "Please use remove_data.sh tool to remove it first."
+    echo "Exit with nothing changed."
+    exit 1
+fi
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from information_schema.tables where \
+    table_schema='$ref' and table_name='$track_name';") -eq 1 ]; then
+    echo "Error! There is already a '$track_name' track record or data table in the ref genome database '$ref'."
+    echo "Please use remove_data.sh tool to remove it first."
+    echo "Exit with nothing changed."
+    exit 1
+fi
+
 read -r -d '' mysql_query <<EOF
 CREATE TABLE \`$ref\`.\`$track_name\` (
         \`ID\` int(10) unsigned NOT NULL AUTO_INCREMENT,
