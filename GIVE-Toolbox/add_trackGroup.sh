@@ -39,9 +39,12 @@ done
 [  -z "$priority" ] && echo "Error: -p <priority> is empty" && usage && exit 1 
 [  -z "$single_choice" ] && echo "Error: -s <single_choice> is empty" && usage && exit 1 
 
-
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo
+done
 
 if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     "select count(*) from \`$ref\`.\`grp\` where name='$group_name';") -eq 1 ]; then

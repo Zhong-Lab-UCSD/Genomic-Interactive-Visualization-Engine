@@ -33,8 +33,12 @@ while getopts u:p:a:r:g:t:h opt; do
 done
 [ -z "$mysqlu" ] && echo "Error: -u <mysqlu> is empty" && usage && exit 1 
 
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo
+done
 
 has_element () {
     local e

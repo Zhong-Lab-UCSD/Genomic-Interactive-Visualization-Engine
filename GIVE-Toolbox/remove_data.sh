@@ -33,8 +33,14 @@ done
 [ -z "$ref" ] && echo "Error: -r <ref> is empty" && usage && exit 1 
 #[  -z "$group_name" ] && echo "Error: -g <group_name> is empty" && usage && exit 1 
 #[  -z "$long_label" ] && echo "Error: -l <long_label> is empty" && usage && exit 1 
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo
+done
+
 if [ -n "$track_name" ]; then
     echo "Try to remove track '$track_name' in ref genome database '$ref' ..."
     if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
