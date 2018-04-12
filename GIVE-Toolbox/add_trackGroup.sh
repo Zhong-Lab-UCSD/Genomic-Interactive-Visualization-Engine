@@ -39,6 +39,19 @@ done
 [  -z "$priority" ] && echo "Error: -p <priority> is empty" && usage && exit 1 
 [  -z "$single_choice" ] && echo "Error: -s <single_choice> is empty" && usage && exit 1 
 
+
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+echo
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from \`$ref\`.\`grp\` where name='$group_name';") -eq 1 ]; then
+    echo "Error! There is already a group record '$group_name' in 'grp' in ref genome database '$ref'."
+    echo "Please use remove_data.sh tool to remove it first."
+    echo "Exit with nothing changed."
+    exit 1
+fi
+
+
 read -r -d '' mysql_query <<EOF
 INSERT INTO \`$ref\`.\`grp\` VALUES ( 
         '$group_name',
@@ -50,4 +63,4 @@ INSERT INTO \`$ref\`.\`grp\` VALUES (
 EOF
 
 echo $mysql_query |  mysql -u$mysqlu -p$mysqlp 
-
+echo "Finished. $group_name has been added."

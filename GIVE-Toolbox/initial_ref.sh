@@ -29,12 +29,33 @@ while getopts u:p:r:s:c:f:w:h: opt; do
     esac
 done
 
-[  -z "$mysqlu" ] && echo "Error: -u <mysqlu> is empty" && usage && exit 1 
-#[  -z "$mysqlp" ] && echo "Error: -p <mysqlp> is empty" && usage && exit 1 
-[  -z "$ref" ] && echo "Error: -r <ref> is empty" && usage && exit 1 
-[  -z "$species_name" ] && echo "Error: -s <species_name> is empty" && usage && exit 1 
-[  -z "$species_cname" ] && echo "Error: -c <species_cname> is empty" && usage && exit 1 
-[  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
+[ -z "$mysqlu" ] && echo "Error: -u <mysqlu> is empty" && usage && exit 1 
+#[ -z "$mysqlp" ] && echo "Error: -p <mysqlp> is empty" && usage && exit 1 
+[ -z "$ref" ] && echo "Error: -r <ref> is empty" && usage && exit 1 
+[ -z "$species_name" ] && echo "Error: -s <species_name> is empty" && usage && exit 1 
+[ -z "$species_cname" ] && echo "Error: -c <species_cname> is empty" && usage && exit 1 
+[ -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
+
+[ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+echo
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from \`compbrowser\`.\`ref\` where dbname='$ref';") -eq 1 ]; then
+    echo "Error! There is already a '$ref' ref genome record in 'compbrowser'."
+    echo "Please use remove_data.sh tool to remove it first."
+    echo "Exit with nothing changed."
+    exit 1
+fi
+
+if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
+    "select count(*) from INFORMATION_SCHEMA.SCHEMATA where SCHEMA_NAME ='$ref';") -eq 1 ]; then
+    echo "Error! There is already a '$ref' ref genome database (but without ref genome record in 'compbrowser')."
+    echo "Please use remove_data.sh tool to remove it first."
+    echo "Exit with nothing changed."
+    exit 1
+fi 
+
 
 if [ -z "$default_window" ];then
     settings='"browserActive": true'
@@ -100,4 +121,4 @@ read -r -d '' mysql_query <<EOF
 EOF
 
 echo $mysql_query |  mysql --local-infile  -u$mysqlu -p$mysqlp 
-
+echo "Finished. $ref ref genome has been initialized."
