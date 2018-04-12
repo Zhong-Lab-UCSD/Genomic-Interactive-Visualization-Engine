@@ -46,7 +46,7 @@ done
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 read -r -d '' mysql_query <<EOF
-CREATE TABLE IF NOT EXISTS \`$ref\`.\`$track_name\` ( 
+CREATE TABLE \`$ref\`.\`$track_name\` ( 
         \`name\` varchar(255) NOT NULL DEFAULT '',
         \`chrom\` varchar(255) NOT NULL DEFAULT '',
         \`strand\` char(1) NOT NULL DEFAULT '',

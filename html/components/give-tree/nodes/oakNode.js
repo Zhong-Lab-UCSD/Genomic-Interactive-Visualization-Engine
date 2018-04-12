@@ -208,22 +208,6 @@ var GIVe = (function (give) {
       while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
         currIndex++
       }
-      // First get data that should belong to ContList done.
-      prevDataIndex = props.DataIndex
-      props.DataIndex = give._traverseData(data, props.DataIndex,
-        function (dataEntry) {
-          return dataEntry.getStart() < chrRange.getStart()
-        }, this, props.Callback, props.ThisVar
-      )
-      props.ContList = props.ContList.concat(
-        data.slice(prevDataIndex, props.DataIndex)
-      ).filter(function (entry) {
-        return entry.getEnd() > chrRange.getStart()
-      })
-
-      // Now all data entries with `.getStart()` before `nextRangeStart` should
-      // be already in `props.ContList`
-
       if (this.Keys[currIndex] < chrRange.getStart()) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
@@ -232,8 +216,9 @@ var GIVe = (function (give) {
       }
 
       if (
-        props.DataIndex < data.length &&
-        data[props.DataIndex].getStart() === this.Keys[currIndex]
+        props.ContList.length > 0 ||
+        (props.DataIndex < data.length &&
+        data[props.DataIndex].getStart() <= this.Keys[currIndex])
       ) {
         // there are actual data at this location, create a new leaf node
         this.Values[currIndex] = new props.LeafNodeCtor({
@@ -241,13 +226,16 @@ var GIVe = (function (give) {
           End: this.Keys[currIndex + 1]
         })
         this.Values[currIndex].insert(data, chrRange, props)
+        if (this.Values[currIndex].isEmpty()) {
+          this.Values[currIndex] = false
+        }
       } else {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = false
-        if (this._mergeChild(currIndex, !data.length, true)) {
-          currIndex--
-        }
+      }
+      if (this._mergeChild(currIndex, false, true)) {
+        currIndex--
       }
 
       // Shrink `chrRange` to unprocessed range
@@ -256,6 +244,8 @@ var GIVe = (function (give) {
         data[props.DataIndex].getStart() < chrRange.getEnd()
       ) ? data[props.DataIndex].getStart() : chrRange.getEnd(), true)
     }
+
+    this._mergeChild(currIndex, true, true)
 
     // Process `props.ContList` for one last time
     props.ContList = props.ContList.concat(
