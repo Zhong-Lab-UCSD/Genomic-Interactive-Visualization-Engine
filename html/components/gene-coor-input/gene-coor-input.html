@@ -21,6 +21,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../give-icons/give-icons.html">
 <link rel="import" href="../genemo-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
@@ -48,25 +49,31 @@ pointy brackets "`<>`" can be substituted by any alphanumeric string):
 
 1.  A __gene coordinate table__ (referred below as `<gene-coordinate-table>`)
     with at least the following columns:
-    *   `<gene-symbol-column>` for gene names
+    | Column name | type | Description |
+    | --- | --- | --- |
+    | `<gene-symbol-column>` | `VARCHAR` | Gene names/symbols
         (this can be a column of the table itself, or a column in the linked
-        table(s));
-    *   `chrom` for chromosome name of the gene;
-    *   `chromStart` for chromosomal start coordinates;
-    *   `chromEnd` for chromosomal end coordinates;
+        table(s)) |
+    | `chrom` | `VARCHAR` | The name of the chromosome the gene is on |
+    | `chromStart` | INT | Chromosomal start coordinates |
+    | `chromEnd` | INT | Chromosomal end coordinates |
     `chromStart` and `chromEnd` can be replaced by `txStart` and `txEnd`.
 2.  (Optional) A __gene description table__ (referred below as
     `<gene-desc-table>`) with at least the following columns:
-    *   `<desc-symbol-column>` for gene symbols (corresponding to
-        `<gene-symbol-column>` in `<gene-coordinate-table>`);
-    *   `description` for gene description;
+    | Column name | type | Description |
+    | --- | --- | --- |
+    | `<desc-symbol-column>` | `VARCHAR` | Gene symbols (corresponding to
+        `<gene-symbol-column>` in `<gene-coordinate-table>`) |
+    | `description` | `VARCHAR` | Gene description |
 3.  (Optional) An __alias table__ (referred below as `<alias-table>`) with at
     least the following columns:
-    *   `<alias-symbol-column>` for gene symbols (corresponding to
-        `<gene-symbol-column>` in `<gene-coordinate-table>`);
-    *   `alias` for gene aliases;
-    *   `isSymbol` indicating whether this alias is the same as
-        `<gene-symbol-column>`, 1 if the alias is the same, 0 if not;
+    | Column name | type | Description |
+    | --- | --- | --- |
+    | `<alias-symbol-column>` | `VARCHAR` | gene symbols (corresponding to
+        `<gene-symbol-column>` in `<gene-coordinate-table>`) |
+    | `alias` | `VARCHAR` | Gene aliases, each alias shall occupy one row |
+    | `isSymbol` | `BIT` | indicating whether this alias is the same as
+        `<gene-symbol-column>`, 1 if the alias is the same, 0 if not |
 4.  In `ref` table of `compbrowser` database, the entry for the reference needs
     to have the following property in its `settings` column:
     *   `geneCoorTable: <gene-coordinate-table>`
@@ -135,6 +142,14 @@ generate these tables are provided at
       invalid="[[invalid]]">
       <div suffix>
         [[coorSuffix]]
+        <template is="dom-if" if="[[!noGeneNameSearch]]" restamp="true">
+          <span hidden$="[[_partialNameSupported]]">
+            <iron-icon icon="give-iconset:search-unavailable"></iron-icon>
+          </span>
+          <span hidden$="[[!_partialNameSupported]]">
+            <iron-icon icon="give-iconset:search-available"></iron-icon>
+          </span>
+        </template>
       </div>
     </paper-input>
     <iron-dropdown id="geneNameDropDown" no-overlap>
@@ -251,6 +266,14 @@ var GIVe = (function (give) {
       },
 
       /**
+       * Set this to false to disable partial gene name features.
+       */
+      noGeneNameSearch: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
        * Whether a partial gene name is allowed as the final value
        */
       allowPartialGeneName: {
@@ -311,7 +334,7 @@ var GIVe = (function (give) {
     _setRefObj: function (refObj) {
       this._refObj = refObj
       this.partialNameSupported = false
-      if (this._refObj) {
+      if (this._refObj && !this.noGeneNameSearch) {
         // Test whether reference support partial name filling.
         this.$.partialNameAjax.params = {
           'db': this._refObj.db
@@ -352,7 +375,9 @@ var GIVe = (function (give) {
         // value is coupled with input field
         this.coorSuffix = ''
         this.inputValue = newValue
-        if (this._partialNameSupported && newValue !== this.querySent) {
+        if (!this.noGeneNameSearch &&
+          this._partialNameSupported && newValue !== this.querySent
+        ) {
           if (newValue.length > 1 && !this._valueIsCoordinate()) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
