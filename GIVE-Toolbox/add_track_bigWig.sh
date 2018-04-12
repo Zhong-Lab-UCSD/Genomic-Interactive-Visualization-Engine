@@ -56,8 +56,15 @@ done
 
 
 #[ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo    
+done
+
+
 
 if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     "select count(*) from \`$ref\`.\`grp\` where name='$group_name';") -eq 0 ]; then

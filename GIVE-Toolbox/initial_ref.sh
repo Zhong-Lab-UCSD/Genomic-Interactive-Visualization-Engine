@@ -37,8 +37,15 @@ done
 [ -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 [ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo    
+done
+
+
 
 if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     "select count(*) from \`compbrowser\`.\`ref\` where dbname='$ref';") -eq 1 ]; then
