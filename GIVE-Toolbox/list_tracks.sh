@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGNAME=$0
-
+set -e
 usage() {
     cat << EOF >&2
     Usage: $PROGNAME [-u <mysqlu>] [-p <mysqlp>] [-a <true>] [-r <ref>] [-g <group_name>] [-t <track_name>]
@@ -19,6 +19,29 @@ EOF
 }
 
 
+arg_array=("$@")
+for((i=0;i<$#;i++));
+do
+    if [ $((i%2)) -eq 0 ]; then
+        if ! [[ ${arg_array[$i]} =~ ^- ]]; then
+            echo "Option error! Invalid option '${arg_array[$i]}'. It doesn't start with '-'. Please check your commandline." && echo "Exit with nothing changed." && exit 1
+        fi
+    else
+        if [[ ${arg_array[$i]} =~ ^- ]]; then
+            echo "Option value warning! The value of option ${arg_array[$(($i-1))]}' was set as '${arg_array[$i]}'. Please check your command whether some option value was missed, which caused the incorrect parse."
+            echo "If you are sure the value is correct and it's quoted by \"\" in your commandline, please press Y/y to continue. Any other key to exit."
+            read -p "Continue (Y/y) or not?   " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                echo "Continue with option value '${arg_array[$(($i-1))]} ${arg_array[$i]}'..."
+            else
+                echo "Exit with nothing changed." && exit 1
+            fi
+        fi
+    fi
+done
+
+
 while getopts u:p:a:r:g:t:h opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
@@ -28,6 +51,7 @@ while getopts u:p:a:r:g:t:h opt; do
         g) group_name=$OPTARG;;
         t) track_name=$OPTARG;;
         h) usage;;
+        \?) usage && exit 1;;
         *) usage;;
     esac
 done
