@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGNAME=$0
-
+set -e 
 usage() {
     cat << EOF >&2
     Usage: $PROGNAME [-u <mysqlu>] [-p <mysqlp>] [-r <ref>] [-s <species_name>] [-c <species_cname>] [-f <file>]
@@ -15,6 +15,29 @@ usage() {
 EOF
     exit 1
 }
+
+arg_array=("$@")
+for((i=0;i<$#;i++));
+do
+    if [ $((i%2)) -eq 0 ]; then
+        if ! [[ ${arg_array[$i]} =~ ^- ]]; then
+            echo "Option error! Invalid option '${arg_array[$i]}'. It doesn't start with '-'. Please check your commandline." && echo "Exit with nothing changed." && exit 1
+        fi
+    else
+        if [[ ${arg_array[$i]} =~ ^- ]]; then
+            echo "Option value warning! The value of option ${arg_array[$(($i-1))]}' was set as '${arg_array[$i]}'. Please check your command whether some option value was missed, which caused the incorrect parse."
+            echo "If you are sure the value is correct and it's quoted by \"\" in your commandline, please press Y/y to continue. Any other key to exit."
+            read -p "Continue with this option value? (y/N)   " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                echo "Continue with option value '${arg_array[$(($i-1))]} ${arg_array[$i]}'..."
+            else
+                echo "Exit with nothing changed." && exit 1
+            fi
+        fi
+    fi
+done
+
 while getopts u:p:r:s:c:f:w:h: opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
@@ -25,6 +48,7 @@ while getopts u:p:r:s:c:f:w:h: opt; do
         f) file=$OPTARG;;
         w) default_window=$OPTARG;;
         h) usage;;
+        \?) usage && exit 1;;
         *) usage;;
     esac
 done
@@ -37,8 +61,15 @@ done
 [ -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 [ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
-[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password: " mysqlp
+
+[ -z "$mysqlp" ] &&  echo "Please input the password of GIVE MySQL database" && read -s -p "Password:" mysqlp
 echo
+while [ -z "$mysqlp" ]; do
+    echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
+    echo    
+done
+
+
 
 if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     "select count(*) from \`compbrowser\`.\`ref\` where dbname='$ref';") -eq 1 ]; then
