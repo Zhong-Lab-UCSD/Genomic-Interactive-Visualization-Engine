@@ -31,7 +31,7 @@ do
         if [[ ${arg_array[$i]} =~ ^- ]]; then
             echo "Option value warning! The value of option ${arg_array[$(($i-1))]}' was set as '${arg_array[$i]}'. Please check your command whether some option value was missed, which caused the incorrect parse."
             echo "If you are sure the value is correct and it's quoted by \"\" in your commandline, please press Y/y to continue. Any other key to exit."
-            read -p "Continue (Y/y) or not?   " -n 1 -r
+            read -p "Continue with this option value? (y/N)   " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
                 echo "Continue with option value '${arg_array[$(($i-1))]} ${arg_array[$i]}'..."
