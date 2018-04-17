@@ -53,19 +53,22 @@ alphanumeric string):
 
     | Column name | type | Description |
     | --- | --- | --- |
-    | `<alias-symbol-column>` | `VARCHAR` | gene symbols (corresponding to `<gene-symbol-column>` in `<gene-coordinate-table>`) |
+    | `<alias-symbol-column>` | `VARCHAR` | Gene symbols (corresponding to `<gene-symbol-column>` in `<gene-coordinate-table>`) |
     | `alias` | `VARCHAR` | Gene aliases, each alias shall occupy one row |
-    | `isSymbol` | `BIT` | indicating whether this alias is the same as `<gene-symbol-column>`, 1 if the alias is the same, 0 if not |
+    | `isSymbol` | `BIT` | Indicating whether this alias is the same as `<gene-symbol-column>`, 1 if the alias is the same, 0 if not |
 
 In `ref` table of `compbrowser` database, the entry for the reference needs to
 have the following properties in its `settings` column:
 
 *   `geneCoorTable`: `<gene-coordinate-table>`
-*   `geneSymbolColumn`: `<gene-symbol-column>` (default column name: `name`)
+*   `geneSymbolColumn`: `<gene-symbol-column>` (default column name: `'name'`)
 *   (Optional) `geneDescTable`: `<gene-desc-table>`
-*   (Optional) `descSymbolColumn`: `<desc-symbol-column>` (default column name: `Symbol`)
+*   (Optional) `descSymbolColumn`: `<desc-symbol-column>` (default column name: `'Symbol'`)
 *   (Optional) `aliasTable`: `<alias-table>`
-*   (Optional) `aliasSymbolColumn`: `<alias-symbol-column>` (default column name: `Symbol`)
+*   (Optional) `aliasSymbolColumn`: `<alias-symbol-column>` (default column name: `'Symbol'`)
+
+Please see [3.1 MySQL commands for managing data in GIVE data source](../../../manuals/3.2-dataSource.md)
+for more details on available properties of references.
 
 #### Implementation for the public GIVE instance
 
