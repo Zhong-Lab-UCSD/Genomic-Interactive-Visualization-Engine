@@ -4,7 +4,7 @@
   // notice that this needs to be commented out after debug to improve performance
 
   define('MAX_JSON_NAME_ITEMS', 100);
-  define('MIN_JSON_QUERY_LENGTH', 2);
+  define('MIN_JSON_QUERY_LENGTH', 1);
 
   /**
    * Helper functions
@@ -137,7 +137,6 @@
     // MIN_JSON_QUERY_LENGTH
     // $refInfo should have valid value (otherwise `testRefPartialName` won't
     // pass).
-    $partialName .= '%';
     try {
       $mysqli = connectCPB($ref);
       $result = [];
@@ -171,7 +170,8 @@
         ((!empty($settings->linkedCoorTable)) ? $settings->linkedCoorTable :
         "geneFilter") .  "`.`" . $settings->geneSymbolColumn . "`";
 
-      $orderByExpr = "`name`";
+      $orderByExpr = "`name` = '" . $mysqli->real_escape_string($partialName) .
+        "', `name`";
 
       // gene description field
       if (!empty($settings->geneDescTable)) {
@@ -195,8 +195,10 @@
           $settings->aliasTable . "`.`" .
           $settings->aliasSymbolColumn . "`";
         $whereCondition = "`" . $settings->aliasTable . "`.`alias` LIKE ?";
-        $orderByExpr = "`" . $settings->aliasTable . "`.`isSymbol` DESC, " .
-          $orderByExpr;
+        $orderByExpr = "`name` = '" .
+          $mysqli->real_escape_string($partialName) .
+          "' DESC, `alias` = '" . $mysqli->real_escape_string($partialName) .
+          "' DESC, `" . $settings->aliasTable . "`.`isSymbol` DESC, `name`";
       }
 
       // error_log("SELECT " . $selectExpr .
@@ -207,10 +209,24 @@
         " FROM " . $tableReference . " WHERE " . $whereCondition .
         " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
       );
-      $queryStmt->bind_param('s', $partialName);
+      $partialNameToBind = '%' . $partialName;
+      $queryStmt->bind_param('s', $partialNameToBind);
       $queryStmt->execute();
       $generesult = $queryStmt->get_result();
+      while($row = $generesult->fetch_assoc()) {
+        if (strtolower(trim($row["name"])) === strtolower(trim($partialName)) ||
+          $settings->aliasTable &&
+          strtolower(trim($row["alias"])) === strtolower(trim($partialName))
+        ) {
+          $result[$row["name"]] = $row;
+        } else {
+          break;
+        }
+      }
       if($generesult->num_rows <= $maxCandidates) {
+        if ($row) {
+          $result[$row["name"]] = $row;
+        }
         while($row = $generesult->fetch_assoc()) {
           $result[$row["name"]] = $row;
         }

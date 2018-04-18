@@ -54,6 +54,9 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         font-size: 12px;
         overflow: visible;
       }
+      paper-input {
+        margin-bottom: 0.6em;
+      }
       paper-input div[suffix] {
         font-size: 11px;
         color: var(--secondary-text-color);
@@ -66,7 +69,7 @@ __Note:__ this function needs additional back-end support. Please see <https://g
       iron-dropdown {
         background: var(--primary-background-color);
       }
-      iron-dropdown div em {
+      iron-dropdown div div.emptyMsg {
         display: block;
         padding: 0.5em 2em;
         min-height: 20px;
@@ -108,7 +111,6 @@ __Note:__ this function needs additional back-end support. Please see <https://g
     </paper-input>
     <iron-dropdown id="geneNameDropDown" no-overlap>
       <div class="dropdown-content">
-        <em hidden$="[[!isCandidatesEmpty]]">[[emptyCandidatesString]]</em>
         <iron-list class="autoText"
           items="[[candidates]]" as="gene" selection-enabled id="candidatesList"
           selected-item="{{selectedCandidate}}" hidden$="[[isCandidatesEmpty]]">
@@ -123,6 +125,9 @@ __Note:__ this function needs additional back-end support. Please see <https://g
             </paper-item>
           </template>
         </iron-list>
+        <div class="emptyMsg" hidden$="[[!_showMsgInList]]">
+          <em>[[emptyCandidatesString]]</em>
+        </div>
       </div>
     </iron-dropdown>
     <iron-ajax id="partialNameAjax" url="[[geneNameUrl]]"
@@ -193,6 +198,11 @@ var GIVe = (function (give) {
         value: true
       },
 
+      _showMsgInList: {
+        type: Boolean,
+        value: false
+      },
+
       coorSuffix: {
         type: String,
         value: ''
@@ -258,6 +268,7 @@ var GIVe = (function (give) {
 
     ready: function () {
       this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
+      this.MIN_JSON_QUERY_LENGTH = 1 // minimum length of query
       this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
       this.GENE_LIST_MAX_LINES = 7
 
@@ -332,7 +343,9 @@ var GIVe = (function (give) {
         if (!this.noGeneNameSearch &&
           this._partialNameSupported && newValue !== this.querySent
         ) {
-          if (newValue.length > 1 && !this._valueIsCoordinate()) {
+          if (newValue.length >= this.MIN_JSON_QUERY_LENGTH &&
+            !this._valueIsCoordinate()
+          ) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
             this.debounce(this.AJAX_JOBNAME,
@@ -369,7 +382,9 @@ var GIVe = (function (give) {
     },
 
     _sendPartialQuery: function () {
-      if (this.inputValue.length > 1 && this.inputValue !== this.querySent) {
+      if (this.inputValue.length >= this.MIN_JSON_QUERY_LENGTH &&
+        this.inputValue !== this.querySent
+      ) {
         // send Ajax
         this.querySent = this.inputValue
         this.$.partialNameAjax.params = {
@@ -392,44 +407,45 @@ var GIVe = (function (give) {
       this.splice('candidates', 0, this.candidates.length)
       var data = req.response
       if (data && data.input === this.inputValue) {
-        if (data.list['(max_exceeded)']) {
-          // max number of candidates has been reached
-          this.emptyCandidatesString = '(Type more for candidates)'
-        } else if (data.list) {
-          this.emptyCandidatesString = '(No results)'
-          for (var key in data.list) {
-            if (data.list.hasOwnProperty(key)) {
-              var val = data.list[key]
-              var entry = {
-                name: key,
-                coor: val.coor,
-                description: val.description,
-                contentBefore: '',
-                contentBold: '',
-                contentAfter: ''
-              }
-              if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
-                // gene has an alias that is actually matching
-                if (val.alias.toLowerCase().indexOf(this.querySent.toLowerCase()) === 0) {
-                  // has a matching alias
-                  entry.contentBefore = entry.name + ' ('
-                  entry.contentBold = val.alias.substr(0, this.querySent.length)
-                  entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
-                } else {
-                  // no matching alias (shouldn't happen)
-                  entry.contentBefore = entry.name
-                  console.log(this.querySent)
-                  console.log(entry)
-                }
-              } else {
-                entry.contentBold = key.substr(0, this.querySent.length)
-                entry.contentAfter = key.substr(this.querySent.length)
-              }
-              this.push('candidates', entry)
+        this.emptyCandidatesString = '(No results)'
+        this._showMsgInList = false
+        for (var key in data.list) {
+          if (key === '(max_exceeded)' && data.list[key]) {
+            // max number of candidates has been reached
+            this.emptyCandidatesString = '(Type more for candidates)'
+            this._showMsgInList = true
+          } else if (data.list.hasOwnProperty(key)) {
+            var val = data.list[key]
+            var entry = {
+              name: key,
+              coor: val.coor,
+              description: val.description,
+              contentBefore: '',
+              contentBold: '',
+              contentAfter: ''
             }
+            if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
+              // gene has an alias that is actually matching
+              if (val.alias.toLowerCase().indexOf(this.querySent.toLowerCase()) === 0) {
+                // has a matching alias
+                entry.contentBefore = entry.name + ' ('
+                entry.contentBold = val.alias.substr(0, this.querySent.length)
+                entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
+              } else {
+                // no matching alias (shouldn't happen)
+                entry.contentBefore = entry.name
+                console.log(this.querySent)
+                console.log(entry)
+              }
+            } else {
+              entry.contentBold = key.substr(0, this.querySent.length)
+              entry.contentAfter = key.substr(this.querySent.length)
+            }
+            this.push('candidates', entry)
           }
         }
         this.isCandidatesEmpty = (!this.candidates || this.candidates.length <= 0)
+        this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty
         this._toggleGList(true)
       } else {
         this._toggleGList(false)
@@ -529,9 +545,13 @@ var GIVe = (function (give) {
       ) {
         // still gene name, should either choose one or not found
         if (this.candidates.length > 0) {
-          errMsg = 'Please select an entry from gene candidate list!'
+          errMsg = 'Please select from gene candidates!'
         } else {
-          errMsg = 'Gene name not found!'
+          if (this._partialNameSupported) {
+            errMsg = 'Gene name not found!'
+          } else {
+            errMsg = 'Please use coordinates!'
+          }
         }
       } else if (this._valueIsCoordinate()) {
         // test whether the value is within reference bounds
