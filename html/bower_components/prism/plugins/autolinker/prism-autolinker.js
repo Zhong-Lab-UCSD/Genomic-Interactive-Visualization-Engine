@@ -7,7 +7,7 @@ if (
 	return;
 }
 
-var url = /\b([a-z]{3,7}:\/\/|tel:)[\w\-+%~/.:#=?&amp;]+/,
+var url = /\b([a-z]{3,7}:\/\/|tel:)[\w\-+%~/.:=&]+(?:\?[\w\-+%~/.:#=?&!$'()*,;]*)?(?:#[\w\-+%~/.:#=?&!$'()*,;]*)?/,
     email = /\b\S+@[\w.]+[a-z]{2}/,
     linkMd = /\[([^\]]+)]\(([^)]+)\)/,
     
@@ -71,6 +71,11 @@ Prism.hooks.add('wrap', function(env) {
 		
 		env.attributes.href = href;
 	}
+
+	// Silently catch any error thrown by decodeURIComponent (#1186)
+	try {
+		env.content = decodeURIComponent(env.content);
+	} catch(e) {}
 });
 
 })();

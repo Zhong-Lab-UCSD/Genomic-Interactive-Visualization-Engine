@@ -28,10 +28,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="trivialProgress">
     <template>
       <paper-scroll-header-panel>
-        <paper-toolbar>
+        <paper-toolbar slot="header">
         </paper-toolbar>
-        <div class="content">
-        <sample-content size="100"></sample-content>
+        <div slot="content">
+          <sample-content size="100"></sample-content>
         </div>
       </paper-scroll-header-panel>
     </template>
@@ -72,7 +72,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         scrollHeaderPanel.condensedHeaderHeight = 50;
         scrollHeaderPanel.scroller.scrollTop = 300;
 
-        flush(function() {
+        Polymer.dom.flush();
+        requestAnimationFrame(function() {
+          scrollHeaderPanel.measureHeaderHeight();
           assert.notEqual(top1, toolbar.getBoundingClientRect().top)
           done();
         });

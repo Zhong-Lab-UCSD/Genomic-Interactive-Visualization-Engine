@@ -14,7 +14,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <title>iron-localstorage-basic</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-  <script src="../../webcomponentsjs/webcomponents.js"></script>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <script src="../../web-component-tester/browser.js"></script>
   <link rel="import" href="../iron-localstorage.html">
 
@@ -27,18 +27,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
-  <template id="boundTemplate" is="dom-bind">
-    <iron-localstorage id="boundLocal" name="iron-localstorage-test" value="{{value}}"></iron-localstorage>
-  </template>
+  <test-fixture id="nameless">
+    <template>
+      <iron-localstorage id="localstorage"></iron-localstorage>
+    </template>
+  </test-fixture>
+
+  <dom-bind>
+    <template id="boundTemplate" is="dom-bind">
+      <iron-localstorage id="boundLocal" name="iron-localstorage-test" value="{{value}}"></iron-localstorage>
+    </template>
+  </dom-bind>
 
   <script>
     var storage;
+    var nameless;
 
     suite('basic', function() {
 
       setup(function() {
         window.localStorage.setItem('iron-localstorage-test', '{"foo":"bar"}');
         storage = document.getElementById('fixture').create();
+        nameless = document.getElementById('nameless').create();
+        document.getElementById('nameless').restore();
         storage.flushDebouncer('reload');
       });
 
@@ -72,31 +83,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       });
 
       test('event iron-localstorage-load', function(done) {
-        var ls = document.createElement('iron-localstorage');
-        ls.addEventListener('iron-localstorage-load', function() {
+        nameless.addEventListener('iron-localstorage-load', function() {
           done();
         });
-        ls.name = 'iron-localstorage-test';
+        nameless.name = 'iron-localstorage-test';
       });
 
       test('event iron-localstorage-load-empty', function(done) {
         window.localStorage.removeItem('iron-localstorage-test');
 
-        var ls = document.createElement('iron-localstorage');
-        ls.addEventListener('iron-localstorage-load-empty', function() {
+        nameless.addEventListener('iron-localstorage-load-empty', function() {
           // testing recommended way to initialize localstorage
-          ls.value = "Yo";
-          ls.flushDebouncer('save');
+          nameless.value = "Yo";
+          nameless.flushDebouncer('save');
           assert.equal("Yo", JSON.parse( window.localStorage.getItem('iron-localstorage-test')));
           done();
         });
-        ls.name = 'iron-localstorage-test';
+        nameless.name = 'iron-localstorage-test';
       });
 
       test('auto-save sub-properties', function() {
         var t = document.querySelector('#boundTemplate');
         var ls = document.querySelector('#boundLocal');
         var value = { foo: 'FOO', bar: 'BAR' };
+
+        // this is needed for 2.x hybrid compatibility where values are set on the dom-bind element
+        // rather than on the template[is="dom-bind"]
+        if (Polymer.Element) {
+          t.value = value;
+          t = t.parentNode;
+        }
+
         t.value = value;
         assert.equal('FOO', ls.value.foo); // value has propagated from template to storage
 

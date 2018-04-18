@@ -17,8 +17,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <script src="../../web-component-tester/browser.js"></script>
 
-  <link rel="import" href="helpers.html">
-  <link rel="import" href="o-list.html">
+  <link rel="import" href="fixtures/helpers.html">
+  <link rel="import" href="fixtures/o-list.html">
 
 </head>
 <body>
@@ -40,7 +40,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </test-fixture>
 
   <script>
-
+    'use strict';
     suite('template overloading', function() {
       var list;
 
@@ -62,7 +62,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         list.items = buildDataSet(1);
 
         flush(function() {
-          assert.equal(list.$.list.$.items.querySelectorAll('.overloaded-template').length, 1);
+          assert.isNotNull(Polymer.dom(list).querySelector('.overloaded-template'));
           done();
         });
       });

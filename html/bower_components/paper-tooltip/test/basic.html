@@ -22,6 +22,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="../../test-fixture/test-fixture.html">
   <link rel="import" href="../paper-tooltip.html">
   <link rel="import" href="test-button.html">
+  <link rel="import" href="test-icon.html">
 
 </head>
 <style>
@@ -37,6 +38,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   paper-tooltip {
     width: 70px;
     height: 30px;
+    /*
+       Added as hidden attribute is only set after duration in.  Thus if tested
+       too quickly after loss of focus tooltip will not be hidden.  Rather than
+       delaying tests, making the delay 0ms will hide immediately.
+    */
+    --paper-tooltip-duration-in: 0ms;
+    --paper-tooltip-duration-out: 0ms;
+    --paper-tooltip-delay-in: 0ms;
+    --paper-tooltip-delay-out: 0ms;
   }
 
   .wide {
@@ -92,6 +102,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
 
+  <test-fixture id="custom-with-content">
+    <template>
+      <test-icon>Tooltip text</test-icon>
+    </template>
+  </test-fixture>
+
   <test-fixture id="no-offset-parent">
     <template>
       <div>
@@ -100,7 +116,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </div>
     </template>
   </test-fixture>
-  
+
   <test-fixture id="manual-mode">
     <template>
       <div>
@@ -114,6 +130,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     function isHidden(element) {
       var rect = element.getBoundingClientRect();
       return (rect.width == 0 && rect.height == 0);
+    }
+    // Short sleep function
+    function sleep (time) {
+        return new Promise((resolve) => setTimeout(resolve, time));
     }
 
     suite('basic', function() {
@@ -139,6 +159,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         MockInteractions.focus(target);
         assert.isFalse(isHidden(actualTooltip));
+      });
+
+      test('tooltip responds to playAnimation and cancelAnimation', function() {
+          var f = fixture('basic');
+          var target = f.querySelector('#target');
+          var tooltip = f.querySelector('paper-tooltip');
+
+          var actualTooltip = Polymer.dom(tooltip.root).querySelector('#tooltip');
+          assert.isTrue(isHidden(actualTooltip));
+
+          // This function is called by some applications directly - check it works
+          tooltip.playAnimation();
+          // Tooltip should now be shown
+          assert.isTrue(isHidden(actualTooltip));
+
+          // This function is called by some applications directly - check it works.
+          tooltip.cancelAnimation();
+          // Tooltip should now be hidden
+          assert.isTrue(isHidden(actualTooltip));
       });
 
       test('tooltip doesn\'t throw an exception if it has no offsetParent', function() {
@@ -334,7 +373,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         expect(contentRect.top).to.be.equal(20 + 14);
       });
 
-      test('tooltip is hidden after target is blurred', function(done) {
+      test('tooltip is hidden after target is blurred', function() {
         var f = fixture('basic');
         var target = f.querySelector('#target');
         var tooltip = f.querySelector('paper-tooltip');
@@ -344,13 +383,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // Simulate but don't actually run the entry animation.
         tooltip.toggleClass('hidden', false, actualTooltip);
         tooltip._showing = true;
+        // This would also normally be set when used in the normal way
+        tooltip._animationPlaying = true;
         assert.isFalse(isHidden(actualTooltip));
 
-        tooltip.addEventListener('neon-animation-finish', function() {
-          assert.isTrue(isHidden(actualTooltip));
-          done();
-        });
         MockInteractions.blur(target);
+        assert.isTrue(isHidden(actualTooltip));
       });
 
       test('tooltip unlistens to target on detach', function(done) {
@@ -375,27 +413,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           done();
         }, 200);
       });
-      
+
       test('tooltip ignores events in manual-mode', function() {
         var f = fixture('manual-mode');
-        
+
         var tooltip = f.querySelector('paper-tooltip');
         assert.isTrue(tooltip.manualMode);
-        
+
         tooltip.show();
         assert.isTrue(tooltip._showing);
-        
+
         sinon.spy(tooltip, 'hide');
-        
+
         tooltip.fire('mouseenter');
-        
+
         var target = f.querySelector('#target');
         target.dispatchEvent(new CustomEvent('mouseenter'));
         target.dispatchEvent(new CustomEvent('focus'));
         target.dispatchEvent(new CustomEvent('mouseleave'));
         target.dispatchEvent(new CustomEvent('blur'));
         target.dispatchEvent(new CustomEvent('tap'));
-        
+
         expect(tooltip.hide.callCount).to.be.equal(0);
       });
 
@@ -443,6 +481,50 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         f = fixture('custom');
         target = f.$.button;
         tooltip = f.$.buttonTooltip;
+      });
+
+      test('tooltip is shown when target is focused', function() {
+        var actualTooltip = Polymer.dom(tooltip.root).querySelector('#tooltip');
+        assert.isTrue(isHidden(actualTooltip));
+
+        MockInteractions.focus(target);
+        assert.isFalse(isHidden(actualTooltip));
+      });
+
+      test('tooltip is positioned correctly', function() {
+        var actualTooltip = Polymer.dom(tooltip.root).querySelector('#tooltip');
+        assert.isTrue(isHidden(actualTooltip));
+
+        MockInteractions.focus(target);
+        assert.isFalse(isHidden(actualTooltip));
+
+        var divRect = target.getBoundingClientRect();
+        expect(divRect.width).to.be.equal(100);
+        expect(divRect.height).to.be.equal(20);
+
+        var contentRect = tooltip.getBoundingClientRect();
+        expect(contentRect.width).to.be.equal(70);
+        expect(contentRect.height).to.be.equal(30);
+
+        // The target div width is 100, and the tooltip width is 70, and
+        // it's centered. The height of the target div is 20, and the
+        // tooltip is 14px below.
+        expect(contentRect.left).to.be.equal((100 - 70)/2);
+        expect(contentRect.top).to.be.equal(20 + 14);
+
+        // Also check the math, just in case.
+        expect(contentRect.left).to.be.equal((divRect.width - contentRect.width)/2);
+        expect(contentRect.top).to.be.equal(divRect.height + tooltip.offset);
+      });
+    });
+
+    suite('tooltip is inside a custom element with content', function() {
+      var f, tooltip, target;
+
+      setup(function() {
+        f = fixture('custom-with-content');
+        target = f.$.icon;
+        tooltip = f.$.iconTooltip;
       });
 
       test('tooltip is shown when target is focused', function() {

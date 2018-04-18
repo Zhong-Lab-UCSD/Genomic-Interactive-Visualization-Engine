@@ -4,37 +4,67 @@
   <head>
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
     <title>google-youtube Basic Tests</title>
-    <script src="../../platform/platform.js"></script>
-    <link rel="import" href="../../polymer-test-tools/tools.html">
-    <script src="../../polymer-test-tools/htmltest.js"></script>
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../../polymer/polymer.html">
+    <link rel="import" href="../../test-fixture/test-fixture.html">
     <link rel="import" href="../google-youtube.html">
   </head>
   <body>
-    <google-youtube thumbnail="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIHWP4z8DwHwyBNJDN8B8AQNEG+t5Ik2kAAAAASUVORK5CYII="></google-youtube>
+    <test-fixture id="GoogleYoutube">
+      <template>
+        <google-youtube
+          thumbnail="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIHWP4z8DwHwyBNJDN8B8AQNEG+t5Ik2kAAAAASUVORK5CYII=">
+        </google-youtube>
+      </template>
+    </test-fixture>
 
     <script>
-      function testThumbnailImgPresent(googleYouTube) {
-        assert.ok(googleYouTube.shadowRoot.querySelector('img'), 'thumbnail <img> is present.');
-      }
+      'use strict'
 
-      function testTapHandlerLoadsEmbed(googleYouTube) {
-        googleYouTube.addEventListener('google-youtube-ready', function(e) {
-          assert.notOk(googleYouTube.shadowRoot.querySelector('img'), 'thumbnail <img> is no longer present.');
+      // uses the correct dom flush based on version of Polymer
+      var flushDom = function() {
+        if (Polymer.Templatizer.flush) {
+          Polymer.Templatizer.flush();
+        } else {
+          Polymer.dom.flush();
+        }
+      };
 
-          assert.ok(googleYouTube.shadowRoot.querySelector('iframe'), 'YouTube embed <iframe> is present.');
-
-          done();
+      suite('thumbnail tests', function() {
+        var googleYouTube;
+        setup(function() {
+          googleYouTube = fixture('GoogleYoutube');
         });
 
-        // Trigger the on-tap handler.
-        googleYouTube.handleThumbnailTap();
-      }
+        test('Thumbnail image present', function() {
+          flushDom();
+          assert.ok(googleYouTube.$$('img'), 'thumbnail <img> is present.');
+        });
 
-      document.addEventListener('polymer-ready', function() {
-        var googleYouTube = document.querySelector('google-youtube');
+        test('Tap handler loads embed', function(done) {
+          var thumbnail;
 
-        testThumbnailImgPresent(googleYouTube);
-        testTapHandlerLoadsEmbed(googleYouTube);
+          googleYouTube.addEventListener('google-youtube-state-change', function(e) {
+            if (!googleYouTube.state || googleYouTube.state === -1) {
+              return;
+            }
+
+            expect(getComputedStyle(thumbnail).display).to.be.eql('none');
+
+            assert.ok(googleYouTube.$$('iframe'), 'YouTube embed <iframe> is present.');
+
+            done();
+          });
+
+          googleYouTube.videoId = 'eORqFaf_QzM';
+
+          flushDom();
+
+          thumbnail = googleYouTube.$$('#thumbnail');
+          googleYouTube._handleThumbnailTap();
+        });
       });
     </script>
   </body>

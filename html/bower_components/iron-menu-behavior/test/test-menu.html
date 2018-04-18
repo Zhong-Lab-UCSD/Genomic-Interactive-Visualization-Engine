@@ -15,7 +15,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <template>
 
-    <content></content>
+    <slot></slot>
 
     <div id="extraContent" tabindex="-1">focusable extra content</div>
 
@@ -24,23 +24,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 </dom-module>
 
 <script>
-
-(function() {
+  (function() {
 
   Polymer({
 
     is: 'test-menu',
 
-    behaviors: [
-      Polymer.IronMenuBehavior
-    ],
+    behaviors: [Polymer.IronMenuBehavior],
 
     get extraContent() {
       return this.$.extraContent;
     }
 
   });
-
-})();
-
+  })();
 </script>
