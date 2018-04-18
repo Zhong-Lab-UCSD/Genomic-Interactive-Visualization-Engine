@@ -62,7 +62,7 @@
     <div id="highlighter" hidden$="[[isHidden]]">
       <div>
         <div id="dialogBox">
-          <content></content>
+          <slot></slot>
           <paper-button on-tap="_permCloseTutorial">Okay, got it</paper-button>
           <template is="dom-if" if="[[!disableRemindLater]]">
             <paper-button on-tap="_tempCloseTutorial">Remind me later</paper-button>
@@ -140,7 +140,7 @@
           Polymer.dom.flush()
           var insideRect = this.$$('#highlighter > div').getBoundingClientRect()
 
-          // find the largest region to put <content></content>
+          // find the largest region to put <slot></slot>
           if (rect.left + rect.right > window.innerWidth) {
             // put content to the left
             this.$.dialogBox.style.right = '20px'

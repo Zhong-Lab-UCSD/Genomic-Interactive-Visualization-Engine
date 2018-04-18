@@ -86,12 +86,12 @@
           on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
         <div id="cardHeadContent" class="vertCenterElement"></div>
         <div id="cardHeadHolder">
-          <content id="cardhead" select=".genemoHead"></content>
+          <slot id="cardhead" name="genemoHead"></slot>
         </div>
       </div>
       <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
         hidden$="[[disableFolding]]">
-        <content id="cardbody" select=".genemoBody"></content>
+        <slot id="cardbody" name="genemoBody"></slot>
       </iron-collapse>
       <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
     </paper-material>

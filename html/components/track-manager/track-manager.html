@@ -57,7 +57,7 @@ limitations under the License.
       }
     </style>
     <paper-toolbar>
-      <content id="logo" select=".logo"></content>
+      <slot id="logo" name="logo"></slot>
       <span class="title">[[titleText]]</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
       <div id="htmlGeneratorButtons">
@@ -73,7 +73,7 @@ limitations under the License.
     </paper-toolbar>
     <div class="layout vertical flex"
       hidden$="[[_calcIntroHidden(currentRef)]]">
-      <content id="introDiv" select=".managerIntro"></content>
+      <slot id="introDiv" name="managerIntro"></slot>
     </div>
     <track-meta-list id="mainMetaList" class="flex self-center"
       ref="[[currentRef]]" selection-enabled$="[[generatorMode]]"

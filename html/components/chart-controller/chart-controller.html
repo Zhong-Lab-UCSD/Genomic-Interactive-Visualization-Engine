@@ -124,7 +124,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
         <genemo-card disable-folding class="flex flexFillGenemoCard">
-          <chart-track-group-list ref="[[ref]]" class="genemoBody" id="mainTrackList"
+          <chart-track-group-list ref="[[ref]]" slot="genemoBody" id="mainTrackList"
             group-id-list='[[groupIdList]]' setting-key="visibility"
             has-controls='[[hasControls]]' with-filter='[[withFilter]]'
             instant-change='[[instantChange]]'
@@ -149,7 +149,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               <li>Move mouse cursor <strong>onto the coordinates</strong> and <em>use mouse wheel</em> to zoom in / out.</li>
             </ul>
           </paper-tooltip>
-          <content id="additionalCtrls" select=".toolBarCtrls"></content>
+          <slot id="additionalCtrls" name="toolBarCtrls"></slot>
         </paper-toolbar>
         <div class="content flex layout vertical">
           <div class="flex relative">
@@ -160,7 +160,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             </chart-area>
           </div>
           <div class="dataReference">
-            <content id="reference" select=".chartReference"></content>
+            <slot id="reference" name="chartReference"></slot>
           </div>
         </div>
       </div>

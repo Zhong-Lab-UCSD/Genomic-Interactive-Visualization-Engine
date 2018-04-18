@@ -44,7 +44,7 @@
       attr-for-selected='id' class="flex layout vertical center self-stretch">
       <div id="genemoSearchPanel" class="layout vertical">
         <genemo-card disable-folding>
-          <search-card-content class="genemoBody" id='searchCard'></search-card-content>
+          <search-card-content slot="genemoBody" id='searchCard'></search-card-content>
         </genemo-card>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
           <paper-button raised noink>
@@ -58,7 +58,7 @@
         </paper-button>
       </div>
       <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
-        <chart-track-group-list class="genemoBody" id="mainChartTrackList"
+        <chart-track-group-list slot="genemoBody" id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected"
           has-controls with-filter>
         </chart-track-group-list>
@@ -95,7 +95,7 @@
       </paper-toolbar>
       <div class="flex layout horizontal">
         <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
-          <chrom-region-list class="genemoBody" id='mainRegionList'></chrom-region-list>
+          <chrom-region-list slot="genemoBody" id='mainRegionList'></chrom-region-list>
         </genemo-card>
         <div class="flex self-stretch relative">
           <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"
