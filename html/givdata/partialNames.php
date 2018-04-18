@@ -209,7 +209,7 @@
         " FROM " . $tableReference . " WHERE " . $whereCondition .
         " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
       );
-      $partialNameToBind = '%' . $partialName;
+      $partialNameToBind = $partialName . '%';
       $queryStmt->bind_param('s', $partialNameToBind);
       $queryStmt->execute();
       $generesult = $queryStmt->get_result();

@@ -468,10 +468,13 @@ var GIVe = (function (give) {
         this.$.candidatesList.style.height = Math.min(this.candidates.length,
           this.GENE_LIST_MAX_LINES) *
           this.GENE_LIST_PX_PER_LINE + 'px'
-        this.$.candidatesList.clearSelection()
-        this.$.candidatesList.notifyResize()
         this.$.geneNameDropDown.refit()
         this.$.geneNameDropDown.open()
+        this.$.candidatesList.clearSelection()
+        this.async(function () {
+          this.$.candidatesList.updateViewportBoundaries()
+        })
+        this.$.candidatesList.notifyResize()
         this._ajaxDebounceDuration = 50
       } else {
         this._ajaxDebounceDuration = 200
