@@ -51,14 +51,14 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         font-family: 'Roboto', Arial, Helvetica, sans-serif;
         display: block;
         margin: 0;
-        @apply(--layout-fit);
+        @apply --layout-fit;
       }
       #trackDOMHolder {
         display: none;
       }
       paper-material {
-        @apply(--layout-fit);
-        @apply(--layout-vertical);
+        @apply --layout-fit;
+        @apply --layout-vertical;
         padding: 0.8em;
         overflow-x: hidden;
         overflow-y: auto;
@@ -66,19 +66,19 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       div#chartHolding {
         padding: 0;
         width: 100%;
-        @apply(--layout-vertical);
-        @apply(--layout-flex);
+        @apply --layout-vertical;
+        @apply --layout-flex;
       }
       div#chartHolding div {
         margin: 0;
         padding: 0;
       }
       div.pinnedParts {
-        @apply(--layout-start);
+        @apply --layout-start;
         overflow: hidden;
       }
       div.scrollingParts {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         overflow-x: hidden;
         overflow-y: auto;
       }
@@ -87,7 +87,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       #loadingBlock {
         display: block;
         pointer-events: none;
-        @apply(--layout-fit);
+        @apply --layout-fit;
         z-index: 1;
         opacity: 0.8;
         background: var(--card-background-color);

@@ -30,7 +30,7 @@ limitations under the License.
       :host {
         position: relative;
         overflow-x: auto;
-        @apply(--layout-vertical);
+        @apply --layout-vertical;
       }
       track-meta-entry[header] {
         --meta-entry-paper-material-mixin: {
@@ -45,20 +45,20 @@ limitations under the License.
         left: 0;
       }
       .listHolder {
-        @apply(--layout-flex);
-        @apply(--layout-relative);
+        @apply --layout-flex;
+        @apply --layout-relative;
         min-width: 99em;
       }
       #loadingBlock {
         display: block;
         pointer-events: none;
-        @apply(--layout-fit);
+        @apply --layout-fit;
         z-index: 1;
         opacity: 0.8;
         background: var(--card-background-color);
       }
       iron-list {
-        @apply(--layout-fit);
+        @apply --layout-fit;
       }
       paper-spinner {
         position: absolute;

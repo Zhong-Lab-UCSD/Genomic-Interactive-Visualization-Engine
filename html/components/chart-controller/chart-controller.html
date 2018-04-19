@@ -74,7 +74,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     <style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
       :host {
         font-size: 12px;
-        @apply(--layout-fit);
+        @apply --layout-fit;
       }
       gene-coor-input {
         margin: 0.5em;
@@ -84,7 +84,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         display: block;
         margin-left: 0.5em;
       }
-      div.dataReference ::content > * {
+      div.dataReference ::slotted(*) {
         margin: 1em;
       }
       div#navigationHelp {

@@ -38,12 +38,12 @@
     #highlighter > div::before {
       content: '';
       outline: solid var(--highlighter-border-width, 9999px) var(--highlighter-color, var(--default-primary-color));
-      @apply(--layout-fit);
+      @apply --layout-fit;
       opacity: 0.9;
     }
     #highlighter > div::after {
       content: '';
-      @apply(--layout-fit);
+      @apply --layout-fit;
       border: solid 1px rgba(0, 0, 0, 0.3);
       box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.3);
     }
