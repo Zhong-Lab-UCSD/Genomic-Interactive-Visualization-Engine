@@ -1074,7 +1074,11 @@ var GIVe = (function (give) {
     },
 
     _onIronResize: function (e, detail) {
-      if (this._domsReady) {
+      if (this._domsReady && this._trackDOMsByWindow.every(
+        this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
+          return trackDOM.isReady
+        }), this)
+      ) {
         give._verboseConsole('_onIronResize()', give.VERBOSE_DEBUG)
         if (!this.resizeAsyncProcess) {
           delete this._svgWidth
