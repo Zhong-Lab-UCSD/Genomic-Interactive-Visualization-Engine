@@ -113,7 +113,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     </style>
     <!-- TODO: add paper-dropmenu for ref -->
     <paper-drawer-panel>
-      <div drawer class="layout vertical">
+      <div slot="drawer" class="layout vertical">
         <template is="dom-repeat" items="{{_coorObjs}}">
           <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
             floatingLabel="true" value="{{item.coor}}" invalid="[[item.invalid]]">
@@ -133,7 +133,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         </genemo-card>
         <custom-track-controller ref="[[ref]]" id="mainCTController"></custom-track-controller>
       </div>
-      <div main class="layout vertical">
+      <div slot="main" class="layout vertical">
         <paper-toolbar id='mainToolbar'>
           <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
           <div class="title">[[titleText]]
