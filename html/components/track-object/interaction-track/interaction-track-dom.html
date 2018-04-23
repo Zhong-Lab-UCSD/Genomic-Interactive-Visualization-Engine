@@ -130,7 +130,7 @@ var GIVe = (function (give) {
         this._pendingVWs[i] = null
       }
       this.subSvgs.forEach(this.initSvgHolder, this)
-    },
+    }
 
     setSvgComponentsSizeLocation () {
       this.subSvgs.forEach(function (subSvg, index) {
@@ -144,7 +144,7 @@ var GIVe = (function (give) {
         subSvg.setAttribute('viewBox', '0 0 ' +
           this.windowWidth + ' ' + this.fullHeightRatio * this.textSize)
       }, this)
-    },
+    }
 
     changeViewWindowAfterResize (
       newWindowWidth, newViewWindow
@@ -170,7 +170,7 @@ var GIVe = (function (give) {
         )
       } catch (err) {
       }
-    },
+    }
 
     // ****** customized methods below ******
 
@@ -182,7 +182,7 @@ var GIVe = (function (give) {
         ))
       }, this)
       return result
-    },
+    }
 
     drawData () {
       // this is to draw everything from this.data to the svg
@@ -204,7 +204,7 @@ var GIVe = (function (give) {
       // draw interaction track for main svg
       this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs,
         this.svgMain)
-    },
+    }
 
     clear () {
       give.TrackDOMBehaviorImpl.clear.call(this)
@@ -213,7 +213,7 @@ var GIVe = (function (give) {
         Polymer.dom(this.mainSvg.holder).appendChild,
         Polymer.dom(this.mainSvg.holder)
       )
-    },
+    }
 
     updateTrack (viewWindow, index, threshold) {
       // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
@@ -249,12 +249,12 @@ var GIVe = (function (give) {
 //          this.set('viewWindowString', this.oldViewWindowString);
 //        }
       }
-    },
+    }
 
     updateThreshold (threshold) {
       this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
       this.checkDataAndUpdate()
-    },
+    }
 
     changeViewWindow (viewWindow, index) {
       if (Array.isArray(viewWindow)) {
@@ -267,7 +267,7 @@ var GIVe = (function (give) {
         }
         this._pendingVWs[index] = this.subSvgs[index].viewWindow
       }
-    },
+    }
 
     drawBoxTrack (
       regions, linkMap, y, height, svgToDraw, index
@@ -340,7 +340,7 @@ var GIVe = (function (give) {
           this.drawLine(qX, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
         }
       }
-    },
+    }
 
     /**
      * _generatePerm - generate permutation for neighboring svgs
@@ -360,7 +360,7 @@ var GIVe = (function (give) {
       } else {
         // console.log(length);
       }
-    },
+    }
 
     _drawConnectionBetweenNeighboringTracks (linkMap, svgNeighbors, svgMain) {
       // linkMap is an object with regionID as key and regions as value (array)
@@ -462,7 +462,7 @@ var GIVe = (function (give) {
           }, this)
         }
       }
-    },
+    }
 
     drawConnectionBetweenTracks (linkMap, svgChildren, svgMain) {
       svgMain = svgMain || this.mainSvg
@@ -471,7 +471,7 @@ var GIVe = (function (give) {
         this._drawConnectionBetweenNeighboringTracks(linkMap,
           [svgChildren[i - 1], svgChildren[i]], svgMain)
       }
-    },
+    }
 
     isAboveThreshold (value, threshold) {
       threshold = threshold || this.threshold
@@ -484,7 +484,7 @@ var GIVe = (function (give) {
       } else {
         return true
       }
-    },
+    }
 
     valueToPercentile (value, considerThreshold) {
       if (Array.isArray(this.quantiles) && this.quantiles.length > 0) {
@@ -498,7 +498,7 @@ var GIVe = (function (give) {
       }
       // otherwise, throw exception
       throw (new Error('Quantile data missing!'))
-    },
+    }
 
     percentileToGradient (percentile) {
       // return the gradient value from this.gradient
@@ -515,7 +515,7 @@ var GIVe = (function (give) {
       rightColor = this.gradient[colorIndex]
       return this.getColorBetween(leftColor.color, rightColor.color,
         (percentile - leftColor.percent) / (rightColor.percent - leftColor.percent))
-    },
+    }
 
     getColorBetween (lColor, rColor, weight) {
       return (parseInt((rColor & 0xFF0000) * weight + (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000) +
