@@ -52,7 +52,7 @@ var GIVe = (function (give) {
   }
 
   // specify the visualization object used in this track
-  give.CoorTrack.prototype._DomObjCtor = give.CoorTrackDOM
+  give.CoorTrack.prototype._DomObjCtor = give.CoorTrackDom
 
   // __IMPORTANT:__ register this new track type
   give.TrackObject.registerTrack(give.CoorTrack)
