@@ -207,7 +207,7 @@ var GIVe = (function (give) {
     }
 
     clear () {
-      give.TrackDOMBehaviorImpl.clear.call(this)
+      super.clear()
       this.subSvgs.forEach(this.clearSvg, this)
       this.subSvgs.forEach(
         Polymer.dom(this.mainSvg.holder).appendChild,
