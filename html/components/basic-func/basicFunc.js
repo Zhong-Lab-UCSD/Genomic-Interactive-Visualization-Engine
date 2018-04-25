@@ -169,7 +169,7 @@ var GIVe = (function (give) {
     start = start || 0
     end = end || array.length
     compareFunc = compareFunc || give.compareNumbers
-    var pivot = parseInt((start + end) / 2)  // = parseInt((start + end) / 2)
+    var pivot = parseInt((start + end) / 2) // = parseInt((start + end) / 2)
 
     var comp = compareFunc(element, array[pivot])
     if (end - start <= 1) {
@@ -183,7 +183,9 @@ var GIVe = (function (give) {
     }
   }
 
-  give.postAjax = give.postAjax || function (target, params, responseFunc, responseType, method, errorFunc, thisVar) {
+  give.postAjaxLegacy = give.postAjaxLegacy || function (
+    target, params, responseFunc, responseType, method, errorFunc, thisVar
+  ) {
     // this is a wrapper for Ajax calls throughout GIVe
     method = method || 'POST'
     var xhr = new window.XMLHttpRequest()
@@ -207,26 +209,68 @@ var GIVe = (function (give) {
         responseFunc.call(thisVar, responses, xhr.status)
       } else {
         if (errorFunc) {
-          errorFunc.call(thisVar, xhr.status)  // handle 404, 500 or other errors
+          errorFunc.call(thisVar, xhr.status) // handle 404, 500 or other errors
         } else {
-          // TODO: put default error handling here
         }
       }
     }
     xhr.onerror = function () {
       if (errorFunc) {
-        errorFunc.call(thisVar, xhr.status)  // handle 404, 500 or other errors
+        errorFunc.call(thisVar, xhr.status) // handle 404, 500 or other errors
       } else {
-        // TODO: put default error handling here
+      }
+      xhr.open(method, target)
+      if (params instanceof window.FormData) {
+        xhr.send(params)
+      } else {
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify(params))
       }
     }
-    xhr.open(method, target)
-    if (params instanceof window.FormData) {
-      xhr.send(params)
-    } else {
-      xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.send(JSON.stringify(params))
-    }
+  }
+
+  give.postAjax = give.postAjax || function (
+    target, params, responseType, method
+  ) {
+    // this is a wrapper for Ajax calls throughout
+    return new Promise((resolve, reject) => {
+      method = method || 'POST'
+      var xhr = new window.XMLHttpRequest()
+      xhr.responseType = responseType || ''
+      xhr.onload = function () {
+        var responses = this.response
+        if (this.status >= 200 && this.status < 400) {
+          if (this.responseType.toLowerCase() === 'json' &&
+             (navigator.appName === 'Microsoft Internet Explorer' ||
+            !!(navigator.userAgent.match(/Trident/) ||
+               navigator.userAgent.match(/rv 11/)))) {
+            // IE detected (should be IE 11), fix the json return issue
+            give._verboseConsole(
+              'You are currently using IE 11 to visit this site. Some part ' +
+              'of the site may behave differently and if you encounter ' +
+              'any problems, please use the info on \'About us\' page to ' +
+              'contact us.', give.VERBOSE_MAJ_ERROR
+            )
+            responses = JSON.parse(responses)
+          }
+          resolve(responses)
+        } else {
+          reject(new Error('Connection error (' + this.status + ')' +
+            this.response ? ': ' + this.response : ''))
+        }
+      }
+      xhr.onerror = function () {
+        reject(new Error('Connection error (' + this.status + ')' +
+          this.response ? ': ' + this.response : ''))
+      }
+      xhr.open(method, target)
+      if (params instanceof window.FormData) {
+        xhr.send(params)
+      } else {
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify(params))
+      }
+    })
   }
 
   give.fireCoreSignal = function (signame, sigdata) {

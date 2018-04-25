@@ -108,9 +108,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
     </style>
     <style include="genemo-track-styles"></style>
-    <div id="loadingBlock" hidden$="[[_readiness]]">
-      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
-    </div>
+    <template is="dom-if" if="[[!_readiness]]">
+      <div id="loadingBlock">
+        <paper-spinner id="loadingSpinner" alt="Loading card content"
+          active$="[[!_readiness]]"></paper-spinner>
+      </div>
+    </template>
     <paper-material>
       <div id="chartHolding" hidden$="[[!_initialized]]">
         <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
@@ -447,7 +450,7 @@ var GIVe = (function (give) {
           }
           return newTrackDOM
         } catch (err) {
-          give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+          give._verboseConsole(err, give.VERBOSE_DEBUG)
           return null
         }
       }
@@ -822,13 +825,13 @@ var GIVe = (function (give) {
         this._viewWindows.forEach(function (vwindow, windowIndex) {
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
-              if (this._refObj.getGroups().hasOwnProperty(groupID)) {
-                this._refObj.getGroups()[groupID].forEach(
+              if (this._refObj.groups.hasOwnProperty(groupID)) {
+                this._refObj.groups[groupID].forEach(
                   showTrack.bind(this, windowIndex), this)
               }
             }, this)
           } else {
-            this._refObj.getTracks().forEach(
+            this._refObj.tracks.forEach(
               showTrack.bind(this, windowIndex), this)
           }
         }, this)
@@ -837,7 +840,8 @@ var GIVe = (function (give) {
     },
 
     addAllTrackDOMs: function (noRefreshContent) {
-      this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent, this.ref))
+      this._refObj.initTracks().then(
+        () => this._addAllTrackDOMsTracksReady(noRefreshContent, this.ref))
     },
 
     _removeInvisibleTrackDOMs: function () {

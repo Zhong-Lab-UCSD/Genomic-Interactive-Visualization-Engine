@@ -123,7 +123,7 @@ var GIVe = (function (give) {
     initSvgComponents () {
       for (var i = 0; i < this.parent.windowSpan; i++) {
         var newSubSvg = document.createElementNS(this.svgNS, 'svg')
-        newSubSvg.setAttribute('id', this.parent.getCleanID() +
+        newSubSvg.setAttribute('id', this.parent.cleanId +
           '_subSvg' + i)
         Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
         this.subSvgs.push(newSubSvg)
