@@ -692,7 +692,7 @@ var GIVe = (function (give) {
         this._refObj.setTrackSettings('visibility', false, null)
         this.defaultTrackIdList.forEach(function (id) {
           try {
-            this._refObj.getTracks().get(id).setSetting('visibility', true)
+            this._refObj.tracks.get(id).setSetting('visibility', true)
           } catch (e) {
             give._verbConsole.warn('Track `' + id + '` does not exist!\n' + e)
             give.fireSignal('warning',
