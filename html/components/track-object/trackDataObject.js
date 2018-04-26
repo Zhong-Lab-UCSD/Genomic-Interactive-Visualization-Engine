@@ -30,8 +30,6 @@ var GIVe = (function (give) {
    *   to requests (remote or local)
    * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
-   * @property {CallbackManager} _callbackMgr - A `give.CallbackManager` object
-   *   that handles all callback operations.
    *
    * @class give.TrackDataObject
    *
@@ -53,12 +51,9 @@ var GIVe = (function (give) {
     this._pendingQueryRegions = []
     this._data = {}
 
-    this._callbackMgr = new give.CallbackManager(
-      give.TrackDataObject._getDataQueueCallbackID
-    )
-
     this._initSettings()
     this.isRetrivingData = false
+    this._fetchPromise = null
   }
 
   give.TrackDataObject.prototype.getTrackSetting = function (key) {
@@ -295,17 +290,17 @@ var GIVe = (function (give) {
    * @memberof TrackDataObjectBase.prototype
    * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges - The range to
    *   be queried
-   * @param  {function} callback - Callback function after the data are ready
    * @param  {string} callerID - ID of the caller elements, to group consecutive
    *   calls together
    */
-  give.TrackDataObject.prototype.fetchData = function (ranges, callback, callerID) {
-    if (this.isRetrivingData) {
-      this._callbackMgr.add(this.fetchData.bind(this, ranges, callback, callerID))
-      return true
-    }
-
+  give.TrackDataObject.prototype.fetchData = function (ranges, callerID) {
     callerID = callerID || give.TrackDataObject._NO_CALLERID_KEY
+
+    if (this._fetchPromise) {
+      return (this._fetchPromise = this._fetchPromise.then(
+        () => this.fetchData(ranges, callerID)
+      ))
+    }
 
     if (!Array.isArray(ranges)) {
       ranges = [ranges]
@@ -315,9 +310,10 @@ var GIVe = (function (give) {
 
     this._unmergedGUIRangesFromID[callerID] = ranges
 
-    if (callback) {
-      this._callbackMgr.add(callback, callerID)
-    }
+    return new Promise((resolve, reject) => {
+
+    })
+
     give.debounce(this._getDataJobName,
       this._queryAndRetrieveData.bind(this),
       this.getDataDebounceInt)

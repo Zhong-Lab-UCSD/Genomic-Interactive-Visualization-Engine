@@ -97,7 +97,7 @@ var GIVe = (function (give) {
 
       this.windowIndex = this.windowIndex || properties.windowIndex || 0
 
-      this.cacheRegionSpan = TrackDom.CacheRangeSpanProportion
+      this.cacheRegionSpan = TrackDom.CacheRangeSpanProp
 
       this.windowWidth = properties.width -
                 (properties.textMargin ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
@@ -106,6 +106,8 @@ var GIVe = (function (give) {
       if (properties.pin) {
         this.pin = properties.pin
       }
+
+      this._cacheDebouncer = null
 
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
@@ -991,7 +993,7 @@ var GIVe = (function (give) {
 
     // ** Track event handling and functions **
 
-    drawDataFireWrapper (newVWindow) {
+    drawDataWrapper (newVWindow) {
       // fire track-ready event to its container (to calculate size and do other stuff)
       this.changeViewWindow(newVWindow)
       var shortLabelArr
@@ -1012,18 +1014,16 @@ var GIVe = (function (give) {
         this.listen(this.getMainSvg(), 'track', 'dragHandler')
         this.listen(this.getMainSvg(), 'wheel', 'wheelHandler')
       }
-      this._setIsReady(true)
-      this.fire('track-ready', {ID: this.parent.getID()})
-      if (this.callbackAfterDraw) {
-        this.callbackAfterDraw()
-        delete this.callbackAfterDraw
-      }
+      return newVWindow
     }
 
-    drawDataDebounceWrapper (newVWindow) {
-      // debounce wrapper for drawData()
-      this.debounce(this.updateJobName, this.drawDataFireWrapper.bind(
-        this, newVWindow), this._drawDebounceInt)
+    loadCache (newVWArr) {
+      this._cacheDebouncer = Polymer.Debouncer.debounce(
+        this._cacheDebouncer,
+        Polymer.Async.timeOut.after(this._cacheDebounceInt),
+        this.parent.fetchData(newVWArr.map(range => range.getExtension(
+          TrackDom.CacheRangeSpanProp, null, true, this.parent.ref)), this.id)
+      )
     }
 
     checkDataAndUpdate (newVWindow) {
@@ -1034,37 +1034,25 @@ var GIVe = (function (give) {
       //    * Otherwise, run fetch data with drawData (debounced) as callback
       //    * Also, convert all new ranges into arrays first
 
-      if (this.isDebouncerActive(this.cacheUpdateJobName)) {
-        this.cancelDebouncer(this.cacheUpdateJobName)
+      if (this._cacheDebouncer && this._cacheDebouncer.isActive()) {
+        this._cacheDebouncer.cancel()
       }
 
-      var newVWArr = Array.isArray(newVWindow) ? newVWindow : [newVWindow]
-      newVWArr.forEach(function (range) {
+      let newVWArr = Array.isArray(newVWindow) ? newVWindow : [newVWindow]
+      newVWArr.forEach(range => {
         range.Resolution = this.getResolution(range) || 1
-      }, this)
+      })
 
-      // this is to set up cache loading functions as call back after draw
-      this.callbackAfterDraw = this.debounce.bind(
-        this, this.cacheUpdateJobName, this.parent.fetchData.bind(
-          this.parent,
-          newVWArr.map(function (range) {
-            return range.getExtension(
-              TrackDom.CacheRangeSpanProportion,
-              null, true, this.parent.ref
-            )
-          }, this), null, this.id
-        ), this._cacheDebounceInt)
-      this.parent.fetchData(
-        newVWArr.map(function (range) {
-          return range.getExtension(
-            TrackDom.DefaultRangeSpanProportion,
-            null, true, this.parent.ref
-          )
-        }, this),
-        this.drawDataDebounceWrapper.bind(
-          this, newVWindow
-        ), this.id
-      )
+      // call this.parent.fetchData and chain drawing functions
+      // return a Promise so that parent dom objects will know it's ready
+      return this.parent.fetchData(newVWArr.map(range => range.getExtension(
+        TrackDom.DefaultRangeSpanProp, null, true, this.parent.ref)), this.id)
+        .then(this.drawDataWrapper.bind(this, newVWindow))
+        .then(
+          // Note that the new promise cannot be returned here
+          // since drawing is already complete by this time point
+          this.loadCache.bind(this, newVWArr)
+        )
     }
 
     updateTrack (viewWindow, index, threshold) {
@@ -1073,28 +1061,13 @@ var GIVe = (function (give) {
       // if both are omitted, just refresh the track
 
       viewWindow = this._verifyViewWindow(viewWindow)
-
-      try {
-        // Steps:
-        // Change view window by calling changeViewWindow()
-        //    May clip viewwindow by ref
-        this._setIsReady(false)
-        // this.oldViewWindow = this.mainSvg.viewWindow;
-
-        // Get data clipped by viewWindow by calling fetchData()
-        //    May also include data preparation
-        this.checkDataAndUpdate(viewWindow)
-
-        // Update detailed content by calling drawData()
-        //    Will be debounced to prevent lagging
-      } catch (e) {
-        console.log(e.message)
-        console.log(e.stack)
-        // if(this.oldViewWindowString) {
-        //   this.set('viewWindowString', this.oldViewWindowString);
-        // }
-      }
-      return viewWindow
+      this._setIsReady(false)
+      return this.checkDataAndUpdate(viewWindow)
+        .catch((e) => {
+          give._verbConsole.warn(e)
+          give.fireSignal('warning', { msg: e.message })
+        })
+        .finally(() => { this._setIsReady(true) })
     }
 
     setTrackVisibility (visString) {
@@ -1240,8 +1213,8 @@ var GIVe = (function (give) {
   TrackDom.VALIGN_TOP = 0
   TrackDom.VALIGN_CENTER = 1
   TrackDom.VALIGN_BOTTOM = 2
-  TrackDom.CacheRangeSpanProportion = 0.5
-  TrackDom.DefaultRangeSpanProportion = 0.1 // this is used for smoothing purposes
+  TrackDom.CacheRangeSpanProp = 0.5
+  TrackDom.DefaultRangeSpanProp = 0.1 // this is used for smoothing purposes
 
   give.TrackDom = TrackDom
 
