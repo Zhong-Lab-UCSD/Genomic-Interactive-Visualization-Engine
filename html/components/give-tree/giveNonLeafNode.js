@@ -129,24 +129,24 @@ var GIVe = (function (give) {
   ) {
     var newRegion = chrRange.clone()
     if (truncStart && newRegion.getStart() < this.getStart()) {
-      give._verboseConsole('Start truncated, get ' + newRegion.getStart() +
-        ', truncated to ' + this.getStart() + '.', give.VERBOSE_DEBUG_MORE)
+      give._verbConsole.log('Start truncated, get ' + newRegion.getStart() +
+        ', truncated to ' + this.getStart() + '.')
       newRegion.setStart(this.getStart(), doNotThrow)
     }
     if (truncEnd && newRegion.getEnd() > this.getEnd()) {
-      give._verboseConsole('End truncated, get ' + newRegion.getEnd() +
-        ', truncated to ' + this.getEnd() + '.', give.VERBOSE_DEBUG_MORE)
+      give._verbConsole.log('End truncated, get ' + newRegion.getEnd() +
+        ', truncated to ' + this.getEnd() + '.')
       newRegion.setEnd(this.getEnd(), doNotThrow)
     }
 
     if ((newRegion.getStart() >= newRegion.getEnd() ||
       this.getStart() >= newRegion.getEnd() ||
       this.getEnd() <= newRegion.getStart()) && !doNotThrow) {
-      throw (new Error(chrRange + ' is not a valid chrRegion or ' +
-            'not overlapping with the current node. \nRange start: ' +
-            newRegion.getStart() + ', end: ' + newRegion.getEnd() +
-            '\nCurrent node start: ' + this.getStart() +
-            ', end: ' + this.getEnd()))
+      throw (new give.GiveError(chrRange + ' is not a valid chrRegion or ' +
+        'not overlapping with the current node. \nRange start: ' +
+        newRegion.getStart() + ', end: ' + newRegion.getEnd() +
+        '\nCurrent node start: ' + this.getStart() +
+        ', end: ' + this.getEnd()))
     }
     return newRegion
   }

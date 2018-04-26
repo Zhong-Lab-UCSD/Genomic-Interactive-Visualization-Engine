@@ -101,15 +101,14 @@ var GIVe = (function (give) {
             this._setRefObj(refObj)
           } else {
             this.ref = ''
-            throw new Error('No ChromInfo available for ref "' +
+            throw new give.GiveError('No ChromInfo available for ref "' +
               refObj.db + '"!')
           }
         }
       } catch (err) {
-        give._verboseConsole(err, give.VERBOSE_DEBUG, 'RefEmbeddedBehavior(' +
-          this.id + ')')
+        give._verbConsole.warn(err)
         // call UI warning procedures in the future
-        give.fireSignal('warning', { msg: err.message || err })
+        give.fireSignal('warning', { msg: err.message })
       }
     },
 

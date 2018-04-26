@@ -50,7 +50,7 @@ var GIVe = (function (give) {
         }
       }
     }
-    give._verboseConsole('Meta data loaded.', give.VERBOSE_DEBUG)
+    give._verbConsole.info('Meta data loaded.')
     return this
   }
 

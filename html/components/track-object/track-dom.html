@@ -107,7 +107,7 @@ var GIVe = (function (give) {
         this.pin = properties.pin
       }
 
-      give._verboseConsole(this.id + ' created. Calling trackImpl().', give.VERBOSE_DEBUG)
+      give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
 
     static get properties () {
@@ -293,7 +293,7 @@ var GIVe = (function (give) {
 
         this.setSvgSizeLocation()
       }
-      give._verboseConsole(this.id + '.getTrackSvg() called.', give.VERBOSE_DEBUG)
+      give._verbConsole.info(this.id + '.getTrackSvg() called.')
       return this.trackSvg
     }
 
@@ -586,10 +586,9 @@ var GIVe = (function (give) {
      *    methods.
      */
     drawData () {
-      give._verboseConsole(
+      throw new give.GiveError(
         'TrackDOMBehavior.drawData gets called but has' +
-        ' not been implemented in `' + this.constructor.name + '`.',
-        give.VERBOSE_WARNING
+        ' not been implemented in `' + this.constructor.name + '`.'
       )
     }
 
@@ -681,7 +680,7 @@ var GIVe = (function (give) {
         try {
           svgElem.removeChild(svgElem.holder)
         } catch (err) {
-          give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+          give._verbConsole.info(err)
         }
         this.initSvgHolder(svgElem)
       } else {

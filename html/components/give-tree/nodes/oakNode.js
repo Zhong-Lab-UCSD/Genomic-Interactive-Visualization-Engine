@@ -379,8 +379,7 @@ var GIVe = (function (give) {
         this._mergeChild(i, true, true)
       }
     } else {
-      give._verboseConsole('Data ' + data + ' is not found in the tree.',
-        give.VERBOSE_WARNING)
+      give._verbConsole.warn('Data ' + data + ' is not found in the tree.')
     }
 
     if (this.IsRoot && this.RevDepth > 0 && this.Values.length < 2) {

@@ -504,7 +504,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
               }
               return newTrackDOM
             } catch (err) {
-              give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+              give._verbConsole.warn(err)
+              give.fireSignal('warning', { msg: err.message })
               return null
             }
           }
@@ -576,7 +577,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
               }
               this._firstRun = false
             } catch (e) {
-              give._verboseConsole(e, give.VERBOSE_WARNING)
+              give._verbConsole.warn(e)
+              give.fireSignal('warning', { msg: e.message })
             } finally {
               this._readiness = true
             }

@@ -195,7 +195,7 @@ var GIVe = (function (give) {
       }
     }
 
-    give._verboseConsole(mergedGUIRanges, give.VERBOSE_DEBUG)
+    give._verbConsole.info(mergedGUIRanges)
 
     return mergedGUIRanges
   }
@@ -310,8 +310,8 @@ var GIVe = (function (give) {
     if (!Array.isArray(ranges)) {
       ranges = [ranges]
     }
-    give._verboseConsole('fetchData()', give.VERBOSE_DEBUG)
-    give._verboseConsole(ranges.map(function (range) { return range.regionToString() }), give.VERBOSE_DEBUG)
+    give._verbConsole.info('fetchData()')
+    give._verbConsole.info(ranges.map(range => range.regionToString()))
 
     this._unmergedGUIRangesFromID[callerID] = ranges
 
@@ -656,8 +656,8 @@ var GIVe = (function (give) {
    */
   give.TrackDataObject._dataFromChromEntry = function (dataEntry) {
     if (!dataEntry.data) {
-      give._verboseConsole('No data in the ChromEntry. Get "' +
-        dataEntry.data + '".', give.VERBOSE_DEBUG)
+      give._verbConsole.info('No data in the ChromEntry. Get "' +
+        dataEntry.data + '".')
       return null
     }
     return dataEntry.data

@@ -241,8 +241,8 @@ var GIVe = (function (give) {
       } else if (!this.getSummaryData()) {
         if (summary) {
           // summary is something with wrong type
-          give._verboseConsole(summary + ' is not a correct summary type. ' +
-            'Will be regenerated from tree data.', give.VERBOSE_DEBUG)
+          give._verbConsole.info(summary + ' is not a correct summary type. ' +
+            'Will be regenerated from tree data.')
         }
         var newSummary = new this.Tree.SummaryCtor(this)
         if (this.Values.every(function (nodeEntry, index) {
@@ -643,8 +643,7 @@ var GIVe = (function (give) {
         this._mergeChild(i, true, false)
       }
     } else {
-      give._verboseConsole('Data ' + data + ' is not found in the tree.',
-        give.VERBOSE_DEBUG)
+      give._verbConsole.warn('Data ' + data + ' is not found in the tree.')
     }
     return (this.Values.length > 1 || (
       this.getFirstChild() !== null && this.getFirstChild() !== false
@@ -771,10 +770,9 @@ var GIVe = (function (give) {
     props._Result = props._Result || []
     props.BufferingRatio = props.BufferingRatio || 1
     if (props.BufferingRatio < 1) {
-      give._verboseConsole(
+      give._verbConsole.warn(
         'Invalid bufferingRatio: ' + props.BufferingRatio +
-        '. Should be greater than 1. Changed to 1 instead.',
-        give.VERBOSE_WARNING)
+        '. Should be greater than 1. Changed to 1 instead.')
       props.BufferingRatio = 1
     }
 

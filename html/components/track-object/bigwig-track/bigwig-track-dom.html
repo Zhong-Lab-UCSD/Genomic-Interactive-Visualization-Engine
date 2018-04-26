@@ -75,11 +75,13 @@ var GIVe = (function (give) {
         BigWigTrackDom._DEFAULT_MIN
 
       if (!(this.windowMax > this.windowMin)) {
-        give._verboseConsole(
+        give._verbConsole.warn(
           'Window Range Error: windowMax = ' +
-          this.windowMax + '; windowMin = ' + this.windowMin,
-          give.VERBOSE_WARNING
+          this.windowMax + '; windowMin = ' + this.windowMin
         )
+        give.fireSignal('warning',
+          { msg: 'Window Range Error: windowMax = ' +
+          this.windowMax + '; windowMin = ' + this.windowMin })
         this.windowMax = BigWigTrackDom._DEFAULT_MAX
         this.windowMin = BigWigTrackDom._DEFAULT_MIN
       }

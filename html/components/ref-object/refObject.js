@@ -90,7 +90,8 @@ var GIVe = (function (give) {
           }
         } catch (err) {
           this.ChromInfo = null
-          give._verboseConsole(err, give.VERBOSE_DEBUG, 'initChromInfo')
+          give._verbConsole.warn(err)
+          give.fireSignal('warning', { msg: err.message })
         }
         return this.ChromInfo
       } else {
@@ -158,8 +159,8 @@ var GIVe = (function (give) {
           target || give.RefObject.initTrackTarget, {db: this.db},
           'json'
         ).then(data => {
-          give._verboseConsole('Tracks not initialized for ref ' +
-            this.name + '.', give.VERBOSE_DEBUG)
+          give._verbConsole.info('Tracks not initialized for ref ' +
+            this.name + '.')
           this.fillTracks(data, false, give.TrackObject.fetchDataTarget)
           return this
         })
@@ -241,8 +242,7 @@ var GIVe = (function (give) {
           }
           this.metaFilter.tissueMap[tissueType].push(track.id)
         } else {
-          give._verboseConsole(cellType + ' does not have a tissue type.',
-            give.VERBOSE_DEBUG)
+          give._verbConsole.info(cellType + ' does not have a tissue type.')
         }
       }, this)
       this.metaFilterInitialized = true

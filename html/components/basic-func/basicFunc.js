@@ -198,12 +198,12 @@ var GIVe = (function (give) {
           !!(navigator.userAgent.match(/Trident/) ||
              navigator.userAgent.match(/rv 11/)))) {
           // IE detected (should be IE 11), fix the json return issue
-          give._verboseConsole(
-            'You are currently using IE 11 to visit this site. ' +
-            'Some part of the site may behave differently and if you encounter ' +
-            'any problems, please use the info on \'About us\' page to ' +
-            'contact us.', give.VERBOSE_MAJ_ERROR
-          )
+          let errorMsg = 'You are currently using IE 11 to visit this site. ' +
+            'Some part of the site may behave differently and if you ' +
+            'encounter any problems, please use the info on \'About us\' ' +
+            'page to contact us.'
+          give._verbConsole.error(errorMsg)
+          give.fireSignal('warning', { msg: errorMsg })
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)
@@ -245,12 +245,12 @@ var GIVe = (function (give) {
             !!(navigator.userAgent.match(/Trident/) ||
                navigator.userAgent.match(/rv 11/)))) {
             // IE detected (should be IE 11), fix the json return issue
-            give._verboseConsole(
-              'You are currently using IE 11 to visit this site. Some part ' +
-              'of the site may behave differently and if you encounter ' +
-              'any problems, please use the info on \'About us\' page to ' +
-              'contact us.', give.VERBOSE_MAJ_ERROR
-            )
+            let errorMsg = 'You are currently using IE 11 to visit this site. ' +
+              'Some part of the site may behave differently and if you ' +
+              'encounter any problems, please use the info on \'About us\' ' +
+              'page to contact us.'
+            give._verbConsole.error(errorMsg)
+            give.fireSignal('warning', { msg: errorMsg })
             responses = JSON.parse(responses)
           }
           resolve(responses)
@@ -309,17 +309,6 @@ var GIVe = (function (give) {
     }
   }
 
-  give._verboseConsole = function (message, verboseLvl, moreMsg) {
-    if (give.verboseLvl >= verboseLvl) {
-      if (message instanceof Error) {
-        console.log((moreMsg ? moreMsg + ' | ' : '') + message.message)
-        console.log(message.stack)
-      } else {
-        console.log(message)
-      }
-    }
-  }
-
   give._traverseData = function (
     data, currIndex, critFunc, thisVarCriteria, callback, thisVar
   ) {
@@ -359,13 +348,53 @@ var GIVe = (function (give) {
     try {
       return document.execCommand('copy')
     } catch (e) {
-      give._verboseConsole(e, give.VERBOSE_MIN_ERROR,
-        '(give._copyTextToClipboard) Cannot copy to clipboard.')
+      give._verbConsole.warn(e)
+      give.fireSignal('warning', { msg: 'Cannot copy code to clipboard.' })
       return false
     } finally {
       document.body.removeChild(textArea)
     }
   }
+
+  give._initDebug = function (isInDebug) {
+    if (isInDebug || give.DEBUG) {
+      /**
+       * Provide _verbConsole support
+       */
+      give._verbConsole = {
+        log: window.console.log.bind(window.console),
+        error: window.console.error.bind(window.console),
+        info: window.console.info.bind(window.console),
+        warn: window.console.warn.bind(window.console)
+      }
+
+      /**
+       * Create a customized error object
+       */
+      give.GiveError = class GiveError extends Error {
+        constructor () {
+          super(...arguments)
+          if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, GiveError)
+          }
+        }
+        toString () {
+          return super.toString() + '\n' + this.stack
+        }
+      }
+    } else {
+      var _emptyFunc = () => {}
+      give._verbConsole = {
+        log: _emptyFunc,
+        error: window.console.error.bind(window.console),
+        info: _emptyFunc,
+        warn: window.console.warn.bind(window.console)
+      }
+      give.GiveError = Error
+    }
+  }
+
+  give._initDebug()
 
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)

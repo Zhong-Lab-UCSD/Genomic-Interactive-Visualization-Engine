@@ -159,8 +159,9 @@ var GIVe = (function (give) {
           try {
             this._refObj.getTracks().get(id).setSetting(this.settingKey, true)
           } catch (e) {
-            give._verboseConsole('Track `' + id + '` does not exist!',
-              give.VERBOSE_WARNING)
+            give._verbConsole.warn('Track `' + id + '` does not exist!' + e)
+            give.fireSignal('warning',
+              { msg: 'Track `' + id + '` does not exist!' })
           }
         }, this)
       }

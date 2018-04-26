@@ -48,7 +48,7 @@ var GIVe = (function (give) {
    * @returns {number}  The start coordinate.
    */
   give.GiveTreeNode.prototype.getStart = function () {
-    throw new Error('GiveTreeNode.getStart not implemented in `' +
+    throw new give.GiveError('GiveTreeNode.getStart not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -59,8 +59,8 @@ var GIVe = (function (give) {
    * @param {number} newStart - The new start coordinate.
    */
   give.GiveTreeNode.prototype.setStart = function (newStart) {
-    give._verboseConsole('GiveTreeNode.setStart gets called but has not been ' +
-      'implemented in `' + this.constructor.name + '`.', give.VERBOSE_WARNING)
+    throw new give.GiveError('GiveTreeNode.setStart gets called but has not ' +
+      'been implemented in `' + this.constructor.name + '`.')
   }
 
   /**

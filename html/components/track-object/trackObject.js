@@ -566,8 +566,9 @@ var GIVe = (function (give) {
     if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
       return new this.typeMap[type](ID, Settings, ref, groupID)
     } else {
-      give._verboseConsole('Type \'' + type + '\' is not a valid type! ',
-        give.VERBOSE_WARNING)
+      give._verbConsole.warn('Type \'' + type + '\' is not a valid type! ')
+      give.fireSignal('warning',
+        { msg: 'Type \'' + type + '\' is not a valid type! ' })
       return new this.typeMap._default(ID, Settings, ref, groupID)
     }
   }

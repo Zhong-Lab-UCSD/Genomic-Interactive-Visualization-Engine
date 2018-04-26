@@ -133,10 +133,12 @@ var GIVe = (function (give) {
         if (track instanceof give.TrackObject) {
           return this.map.hasOwnProperty(track.id)
         }
-      default:  // eslint-disable-line no-fallthrough
+      default: // eslint-disable-line no-fallthrough
         // this will also handle situations where track is not a give.TrackObject object
-        give._verboseConsole('Track ' + track +
-          ' is not a give.TrackObject Object.', give.VERBOSE_WARNING)
+        give._verbConsole.warn('Track ' + track +
+          ' is not a give.TrackObject Object.')
+        give.fireSignal('warning', { msg: 'Track ' + track +
+          ' is not a give.TrackObject Object.' })
         return false
     }
   }

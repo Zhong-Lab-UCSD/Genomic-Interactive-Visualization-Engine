@@ -11,7 +11,7 @@ GIVE manual includes several documentations of specific topics of GIVE. More tec
 ## 3. Managing Data in GIVE Data Source
 ### [3.1. GIVE-Toolbox usages for Managing Data in GIVE Data Source](3.1-GIVE-Toolbox-usages.md)
 ### [3.2. MySQL Commands for Managing Data in GIVE Data Source](3.2-dataSource.md)
-## 4. Data Format
+## [4. Data Format](4-dataFormat.md)
 ### [4.1. BED Tracks](4.1-bed.md)
 ### [4.2. bigWig Tracks](4.2-bigwig.md)
 ### [4.3. Interaction Tracks](4.3-interaction.md)

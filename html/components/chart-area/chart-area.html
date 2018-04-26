@@ -450,7 +450,8 @@ var GIVe = (function (give) {
           }
           return newTrackDOM
         } catch (err) {
-          give._verboseConsole(err, give.VERBOSE_DEBUG)
+          give._verbConsole.warn(err)
+          give.fireSignal('warning', { msg: err.message })
           return null
         }
       }
@@ -466,8 +467,7 @@ var GIVe = (function (give) {
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
       // this will also rearrange the y value for all tracks as well
-      give._verboseConsole('UpdateHeightLocation(' + changeWindow +
-        ')', give.VERBOSE_DEBUG)
+      give._verbConsole.info('UpdateHeightLocation(' + changeWindow + ')')
       if (!this._trackDOMsByWindow.every(
         this._updateDomHeightInWindow.bind(this, changeWindow), this)
       ) {
@@ -536,7 +536,8 @@ var GIVe = (function (give) {
           }
           this._firstRun = false
         } catch (e) {
-          give._verboseConsole(e, give.VERBOSE_WARNING)
+          give._verbConsole.warn(e)
+          give.fireSignal('warning', { msg: e.message })
         } finally {
           this._readiness = true
         }
@@ -1063,10 +1064,11 @@ var GIVe = (function (give) {
     },
 
     _domChangeHandler: function () {
-      this._domsReady = false
-      this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-        this._initTrackDOMContainers.bind(this),
-        give.ChartArea.DOM_CHANGE_DEBOUNCE)
+      if (!this._domsReady) {
+        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
+          this._initTrackDOMContainers.bind(this),
+          give.ChartArea.DOM_CHANGE_DEBOUNCE)
+      }
     },
 
     _getElemId: function (divId, suffix) {
@@ -1083,7 +1085,7 @@ var GIVe = (function (give) {
           return trackDOM.isReady
         }), this)
       ) {
-        give._verboseConsole('_onIronResize()', give.VERBOSE_DEBUG)
+        give._verbConsole.info('_onIronResize()')
         if (!this.resizeAsyncProcess) {
           delete this._svgWidth
           this.resizeAsyncProcess = this.async(
