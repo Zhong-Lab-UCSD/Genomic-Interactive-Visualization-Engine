@@ -152,14 +152,14 @@ var GIVe = (function (give) {
 
   give.ChromRegion.prototype.setStart = function (newStart, forced) {
     if (!forced && (isNaN(newStart) || newStart >= this.end)) {
-      throw (new Error('Invalid new start value: ' + newStart))
+      throw (new give.GiveError('Invalid new start value: ' + newStart))
     }
     this.start = newStart
   }
 
   give.ChromRegion.prototype.setEnd = function (newEnd, forced) {
     if (!forced && (isNaN(newEnd) || newEnd <= this.start)) {
-      throw (new Error('Invalid new end value: ' + newEnd))
+      throw (new give.GiveError('Invalid new end value: ' + newEnd))
     }
     this.end = newEnd
   }

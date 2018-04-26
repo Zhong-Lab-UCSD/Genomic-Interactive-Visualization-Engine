@@ -180,7 +180,7 @@ var GIVe = (function (give) {
     if (!(give.GiveTreeNode.prototype.isPrototypeOf(
       props.LeafNodeCtor.prototype
     ))) {
-      throw new Error('LeafNodeCtor `' + props.LeafNodeCtor +
+      throw new give.GiveError('LeafNodeCtor `' + props.LeafNodeCtor +
         '` is not a constructor for a tree node!')
     }
 
@@ -433,7 +433,7 @@ var GIVe = (function (give) {
           ? this.getNext() : null
       }
     } else { // !chrRange
-      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
   }
 

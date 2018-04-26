@@ -386,7 +386,7 @@ var GIVe = (function (give) {
     createDialog: function (ref, groupArray, trackArray) {
       if (!ref && !this._refObj) {
         // reference not ready, nor is it provided
-        throw new Error('No reference is given!')
+        throw new give.GiveError('No reference is given!')
       } else if (ref) {
         this.setRef(ref).then(
           () => this._createDialogWithRef(groupArray, trackArray)

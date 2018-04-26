@@ -127,7 +127,7 @@
           if (!this.target) {
             this._setTarget()
             if (!this.target) {
-              throw new Error('Target not set for tutorial-highlight element.')
+              throw new give.GiveError('Target not set for tutorial-highlight element.')
             }
           }
           var rect = this.target.getBoundingClientRect()

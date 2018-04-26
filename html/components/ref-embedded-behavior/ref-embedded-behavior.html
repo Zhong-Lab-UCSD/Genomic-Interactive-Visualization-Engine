@@ -82,7 +82,7 @@ var GIVe = (function (give) {
         return give.RefObject.AllRefPromise.then(
           () => this._setRefAfterReadyCheck(ref))
       } else {
-        return Promise.reject(new Error('No ref value supplied!'))
+        return Promise.reject(new give.GiveError('No ref value supplied!'))
       }
     },
 

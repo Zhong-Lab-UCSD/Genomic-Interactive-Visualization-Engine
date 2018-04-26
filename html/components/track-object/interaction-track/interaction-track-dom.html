@@ -497,7 +497,7 @@ var GIVe = (function (give) {
         return considerThreshold ? (this.threshold < 100 ? (result - this.threshold / 100) / (1 - this.threshold / 100) : 0.5) : result
       }
       // otherwise, throw exception
-      throw (new Error('Quantile data missing!'))
+      throw (new give.GiveError('Quantile data missing!'))
     }
 
     percentileToGradient (percentile) {

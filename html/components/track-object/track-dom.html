@@ -510,7 +510,7 @@ var GIVe = (function (give) {
       if (newHeight > 0) {
         this._setTrackHeight(newHeight)
       } else {
-        throw new Error('Invalid height value: ' + newHeight)
+        throw new give.GiveError('Invalid height value: ' + newHeight)
       }
     }
 

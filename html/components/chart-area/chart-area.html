@@ -621,7 +621,7 @@ var GIVe = (function (give) {
         // some exception has happended during the conversion
         // throw an exception telling calling procedures
         if (this.passExceptions) {
-          var error = new Error('Exception occured during ChromRegion' +
+          var error = new give.GiveError('Exception occured during ChromRegion' +
             ' conversion.')
           error.data = error.data || {}
           error.data.exceptionList = exceptionList

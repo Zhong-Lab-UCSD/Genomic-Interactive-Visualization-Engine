@@ -81,7 +81,7 @@ var GIVe = (function (give) {
     give.saveSession(sessionDataObj, function (saveSessionResp) {
       try {
         if (saveSessionResp.error) {
-          throw new Error(saveSessionResp.error)
+          throw new give.GiveError(saveSessionResp.error)
         }
         tableNameQuery.append('id', saveSessionResp.id)
         // add custom track (here on the browser) then send to compute

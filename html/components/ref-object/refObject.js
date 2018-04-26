@@ -180,7 +180,7 @@ var GIVe = (function (give) {
         }
         return this._MetaPromise
       } else {
-        return Promise.reject(new Error('No main meta data entries available!'))
+        return Promise.reject(new give.GiveError('No main meta data entries available!'))
       }
     }
 
@@ -322,7 +322,7 @@ var GIVe = (function (give) {
     static findRefByDb (db) {
       if (typeof db === 'string' && !this.refArray) {
         // not ready yet, push to task scheduler
-        throw (new Error('refArray is not initialized yet! Please use ' +
+        throw (new give.GiveError('refArray is not initialized yet! Please use ' +
           'GIVe.RefObject.AllRefPromise.then() to wrap your function.'))
       } else {
         if (typeof db === 'string' &&
@@ -332,7 +332,7 @@ var GIVe = (function (give) {
         } else if (db instanceof give.RefObject) {
           return db
         } else {
-          throw (new Error('Invalid RefObject was given: ' + db))
+          throw (new give.GiveError('Invalid RefObject was given: ' + db))
         }
       }
     }

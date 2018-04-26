@@ -55,7 +55,7 @@ var GIVe = (function (give) {
         if (index < 0 || index >= this._Raster.length - 1) {
           // index out of bounds
           this._RasIndex = null
-          throw new Error('Index out of bounds for raster! Raster length: ' +
+          throw new give.GiveError('Index out of bounds for raster! Raster length: ' +
             this._Raster.length + ', index: ' + index)
         }
         this._RasIndex = index || 0

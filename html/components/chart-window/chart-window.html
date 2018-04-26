@@ -435,7 +435,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
         _createInteractionTrackProp: function (viewWindowIndex, properties) {
           if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this._viewWindows.length) {
-            throw new Error('Not enough viewWindows for this interaction.')
+            throw new give.GiveError('Not enough viewWindows for this interaction.')
           }
           return this._mergeProperty({
             x: 0,
@@ -662,7 +662,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             // some exception has happended during the conversion
             // throw an exception telling calling procedures
             if (this.passExceptions) {
-              var error = new Error('Exception occured during ChromRegion' +
+              var error = new give.GiveError('Exception occured during ChromRegion' +
                 ' conversion.')
               error.data = error.data || {}
               error.data.exceptionList = exceptionList

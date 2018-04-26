@@ -40,7 +40,7 @@ var GIVe = (function (give) {
    */
   give.TrackDataObject = function (parent) {
     if (!(parent instanceof give.TrackObject)) {
-      throw new Error('Parent ' + parent + ' is not a proper GIVE.TrackObject!')
+      throw new give.GiveError('Parent ' + parent + ' is not a proper GIVE.TrackObject!')
     }
     this.parent = parent
 
@@ -342,7 +342,7 @@ var GIVe = (function (give) {
         this._data = this._data || {}
         this._data[chrom] = this._createNewDataStructure(chrom)
       } else {
-        throw new Error('Data not ready for track \'' +
+        throw new give.GiveError('Data not ready for track \'' +
           this.parent.getID() + '\'' + ', chromosome \'' + chrom + '\'.')
       }
     }

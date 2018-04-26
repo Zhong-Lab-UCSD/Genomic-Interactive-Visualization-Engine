@@ -345,7 +345,7 @@ var GIVe = (function (give) {
     }
 
     if (data && !Array.isArray(data)) {
-      throw (new Error('Data is not an array! ' +
+      throw (new give.GiveError('Data is not an array! ' +
         'This will cause problems in ContList.'))
     }
 
@@ -366,7 +366,7 @@ var GIVe = (function (give) {
           this.getStart() !== data[0].getStart() ||
           this.getEnd() !== data[0].getEnd()
         ) {
-          throw new Error('Summary range does not match! `this`: ' +
+          throw new give.GiveError('Summary range does not match! `this`: ' +
             this.getStart() + ' - ' + this.getEnd() + '; data: ' +
             data[0].getStart() + ' - ' + data[0].getEnd()
           )
@@ -386,7 +386,7 @@ var GIVe = (function (give) {
       }
       this.updateSummary()
     } else { // chrRange
-      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
     this.rejuvenate(props.LifeSpan)
     return this._restructure()
@@ -516,7 +516,7 @@ var GIVe = (function (give) {
     if (!(give.GiveTreeNode.prototype.isPrototypeOf(
       props.LeafNodeCtor.prototype
     ))) {
-      throw new Error('LeafNodeCtor `' + props.LeafNodeCtor +
+      throw new give.GiveError('LeafNodeCtor `' + props.LeafNodeCtor +
         '` is not a constructor for a tree node!')
     }
 
@@ -707,7 +707,7 @@ var GIVe = (function (give) {
         }
       }
     } else { // !chrRange
-      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
   }
 
@@ -818,7 +818,7 @@ var GIVe = (function (give) {
       }
       return props._Result
     } else { // chrRange
-      throw (new Error(chrRange + ' is not a valid chrRegion.'))
+      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
     }
   }
 

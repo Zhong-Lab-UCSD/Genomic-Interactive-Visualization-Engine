@@ -255,12 +255,12 @@ var GIVe = (function (give) {
           }
           resolve(responses)
         } else {
-          reject(new Error('Connection error (' + this.status + ')' +
+          reject(new give.GiveError('Connection error (' + this.status + ')' +
             this.response ? ': ' + this.response : ''))
         }
       }
       xhr.onerror = function () {
-        reject(new Error('Connection error (' + this.status + ')' +
+        reject(new give.GiveError('Connection error (' + this.status + ')' +
           this.response ? ': ' + this.response : ''))
       }
       xhr.open(method, target)
