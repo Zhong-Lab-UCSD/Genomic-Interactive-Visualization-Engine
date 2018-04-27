@@ -129,13 +129,9 @@ var GIVe = (function (give) {
   ) {
     var newRegion = chrRange.clone()
     if (truncStart && newRegion.getStart() < this.getStart()) {
-      give._verbConsole.log('Start truncated, get ' + newRegion.getStart() +
-        ', truncated to ' + this.getStart() + '.')
       newRegion.setStart(this.getStart(), doNotThrow)
     }
     if (truncEnd && newRegion.getEnd() > this.getEnd()) {
-      give._verbConsole.log('End truncated, get ' + newRegion.getEnd() +
-        ', truncated to ' + this.getEnd() + '.')
       newRegion.setEnd(this.getEnd(), doNotThrow)
     }
 

@@ -57,8 +57,6 @@ var GIVe = (function (give) {
       this.updateJobName = 'UPDATE'
       this.cacheUpdateJobName = 'UPDATECACHE'
 
-      this.callbackAfterDraw = null
-
       this.narrowMode = false
       this.labelMarginRight = 0
 
@@ -108,6 +106,13 @@ var GIVe = (function (give) {
       }
 
       this._cacheDebouncer = null
+
+      this._dataPromise = null
+      this._nextDataPromise = null
+      this._debouncePromise = null
+      this._drawingPromise = null
+
+      this.__pendingNewVWArr = null
 
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
@@ -178,7 +183,7 @@ var GIVe = (function (give) {
          */
         _drawDebounceInt: {
           type: Number,
-          value: 100
+          value: 0
         },
 
         /**
@@ -187,7 +192,7 @@ var GIVe = (function (give) {
          */
         _cacheDebounceInt: {
           type: Number,
-          value: 300
+          value: 200
         },
 
         colorSet: {
@@ -434,7 +439,7 @@ var GIVe = (function (give) {
             (newWindowWidth - this.windowWidth) / this.windowWidth,
             null, true, this.parent.ref)
       }
-      this.updateTrack(newViewWindow)
+      return this.updateTrack(newViewWindow)
     }
 
     /**
@@ -473,9 +478,10 @@ var GIVe = (function (give) {
       if (newWidth !== this.totalWidth || widthChanged) {
         // needs to change totalWidth as well
         var newWindowWidth = newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
-        this.changeViewWindowAfterResize(newWindowWidth, newViewWindow)
+        let promise = this.changeViewWindowAfterResize(newWindowWidth, newViewWindow)
         this.totalWidth = newWidth
         this.windowWidth = this.totalWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+        return promise
       }
     }
 
@@ -499,7 +505,7 @@ var GIVe = (function (give) {
         this.switchNarrowMode(true)
         // TODO: complete narrow mode codes
       } else {
-        this.setWideModeWidthParameters(newWidth, newTxtMargin, newWindow)
+        return this.setWideModeWidthParameters(newWidth, newTxtMargin, newWindow)
       }
     }
 
@@ -599,7 +605,7 @@ var GIVe = (function (give) {
     }
 
     getCurrentViewWindowExt (extension) {
-      return this.mainSvg.viewWindow.getExtension(extension, null, true, this.parent.ref)
+      return [this.mainSvg.viewWindow.getExtension(extension, null, true, this.parent.ref)]
     }
 
     // ****** common methods used by all tracks ******
@@ -702,12 +708,13 @@ var GIVe = (function (give) {
         // this.trackSvg.setAttributeNS(null, 'y', this.y);
       }
       if (typeof (width) === 'number') {
-        this.setWidthParameters(width, newTxtWidth, newWindow) // may involve narrowMode
+        var promise = this.setWidthParameters(width, newTxtWidth, newWindow) // may involve narrowMode
       }
       if (typeof (height) === 'number') {
         this.setHeight(height) // may also involve narrowMode?
       }
       this.setSvgSizeLocation()
+      return promise
     }
 
     drawLine (x1, y1, x2, y2, colorRGB, svgToDraw) {
@@ -993,9 +1000,14 @@ var GIVe = (function (give) {
 
     // ** Track event handling and functions **
 
-    drawDataWrapper (newVWindow) {
+    drawDataWrapper () {
       // fire track-ready event to its container (to calculate size and do other stuff)
-      this.changeViewWindow(newVWindow)
+      let windowToDraw = this._committedNewVWArr
+      this._committedNewVWArr = this._pendingNewVWArr
+      this._pendingNewVWArr = null
+      this._dataPromise = this._nextDataPromise
+      this._nextDataPromise = null
+      this.changeViewWindow(windowToDraw)
       var shortLabelArr
       if (this.textSvg) {
         shortLabelArr = this.createShortLabelArr()
@@ -1014,19 +1026,26 @@ var GIVe = (function (give) {
         this.listen(this.getMainSvg(), 'track', 'dragHandler')
         this.listen(this.getMainSvg(), 'wheel', 'wheelHandler')
       }
-      return newVWindow
+      if (!this._dataPromise) {
+        this._drawingPromise = null
+      }
+      return windowToDraw
     }
 
-    loadCache (newVWArr) {
-      this._cacheDebouncer = Polymer.Debouncer.debounce(
-        this._cacheDebouncer,
-        Polymer.Async.timeOut.after(this._cacheDebounceInt),
-        this.parent.fetchData(newVWArr.map(range => range.getExtension(
-          TrackDom.CacheRangeSpanProp, null, true, this.parent.ref)), this.id)
-      )
+    loadCache () {
+      if (!this._drawingPromise) {
+        // there is no future redrawing queued
+        this._cacheDebouncer = Polymer.Debouncer.debounce(
+          this._cacheDebouncer,
+          Polymer.Async.timeOut.after(this._cacheDebounceInt),
+          () => this.parent.fetchData(
+            this.getCurrentViewWindowExt(this.constructor.CacheRangeSpanProp),
+            this.id)
+        )
+      }
     }
 
-    checkDataAndUpdate (newVWindow) {
+    checkDataAndUpdateDebounced (newVWindow) {
       // Steps:
       //    * run this.parent.fetchData with drawData (debounced) as callback
       //    * whenever drawData (debounced) is done, run updateCache
@@ -1036,23 +1055,55 @@ var GIVe = (function (give) {
 
       if (this._cacheDebouncer && this._cacheDebouncer.isActive()) {
         this._cacheDebouncer.cancel()
+        this._cacheDebouncer = null
       }
 
-      let newVWArr = Array.isArray(newVWindow) ? newVWindow : [newVWindow]
-      newVWArr.forEach(range => {
+      this._pendingNewVWArr = Array.isArray(newVWindow)
+        ? newVWindow.slice() : [newVWindow]
+      this._pendingNewVWArr.forEach(range => {
         range.Resolution = this.getResolution(range) || 1
       })
 
+      if (!this._debouncePromise) {
+        if (this._drawDebounceInt) {
+          this._debouncePromise = new Promise((resolve, reject) => {
+            setTimeout(resolve, this._drawDebounceInt)
+          })
+        } else {
+          this._debouncePromise = Promise.resolve()
+        }
+        this._drawingPromise = this._debouncePromise
+          .then(() => this.checkDataAndUpdate())
+      }
+      return this._drawingPromise
+    }
+
+    checkDataAndUpdate () {
       // call this.parent.fetchData and chain drawing functions
       // return a Promise so that parent dom objects will know it's ready
-      return this.parent.fetchData(newVWArr.map(range => range.getExtension(
-        TrackDom.DefaultRangeSpanProp, null, true, this.parent.ref)), this.id)
-        .then(this.drawDataWrapper.bind(this, newVWindow))
-        .then(
-          // Note that the new promise cannot be returned here
-          // since drawing is already complete by this time point
-          this.loadCache.bind(this, newVWArr)
-        )
+      this._debouncePromise = null
+      let newDataPromise = this.parent.fetchData(
+        this._pendingNewVWArr.map(range => range.getExtension(
+          TrackDom.DefaultRangeSpanProp, null, true, this.parent.ref)
+        ), this.id)
+      let lastPromise
+      if (!this._dataPromise || newDataPromise === this._dataPromise) {
+        this._committedNewVWArr = this._pendingNewVWArr
+        this._pendingNewVWArr = null
+        if (!this._dataPromise) {
+          this._dataPromise = newDataPromise
+        }
+        lastPromise = this._dataPromise
+      } else if (!this._nextDataPromise) {
+        this._nextDataPromise = newDataPromise
+        lastPromise = Promise.all([this._drawingPromise, newDataPromise])
+      } else {
+        return this._drawingPromise
+      }
+      return lastPromise.then(() => this.drawDataWrapper())
+        // Note that the new promise cannot be returned here
+        // since drawing is already complete by this time point
+        .then(() => this.loadCache())
     }
 
     updateTrack (viewWindow, index, threshold) {
@@ -1062,12 +1113,15 @@ var GIVe = (function (give) {
 
       viewWindow = this._verifyViewWindow(viewWindow)
       this._setIsReady(false)
-      return this.checkDataAndUpdate(viewWindow)
+      return this.checkDataAndUpdateDebounced(viewWindow)
         .catch((e) => {
           give._verbConsole.warn(e)
           give.fireSignal('warning', { msg: e.message })
         })
-        .finally(() => { this._setIsReady(true) })
+        .finally(() => {
+          this._setIsReady(true)
+          this.fire('track-ready', {ID: this.parent.getID()})
+        })
     }
 
     setTrackVisibility (visString) {
@@ -1100,6 +1154,9 @@ var GIVe = (function (give) {
       //   this.mainSvg.viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
       // }
       // this.set('viewWindowString', newValue);
+      if (Array.isArray(viewWindow)) {
+        viewWindow = viewWindow[0]
+      }
       this.mainSvg.viewWindow = viewWindow
     }
 

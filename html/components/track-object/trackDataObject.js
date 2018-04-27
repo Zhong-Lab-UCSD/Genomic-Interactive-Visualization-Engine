@@ -24,9 +24,9 @@ var GIVe = (function (give) {
    * @property {TrackObjectBase} parent - Track object as parent
    * @property {string} _getDataJobName - The job name of debouncing purposes
    * @property {number} getDataDebounceInt - Debouncing interval
-   * @property {object} _unmergedGUIRangesFromID - Regions requested by GUI elements
+   * @property {object} _pendingRangesById - Regions requested by GUI elements
    *   that have not been merged yet
-   * @property {Array<ChromRegionLiteral>} _pendingQueryRegions - Regions submitted
+   * @property {Array<ChromRegionLiteral>} _committedRegions - Regions submitted
    *   to requests (remote or local)
    * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
@@ -47,13 +47,15 @@ var GIVe = (function (give) {
       : (Math.random().toString(36) + '0000000').slice(2, 7)) + '_GETDATA'
     this.getDataDebounceInt = this.parent.getSetting('debounceInterval') ||
       give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
-    this._unmergedGUIRangesFromID = {}
-    this._pendingQueryRegions = []
+    this._debouncePromise = null
+    this._pendingRangesById = {}
+    this._committedRegions = []
+
+    this._fetchPromise = null
+    this._ongoingFetchPromise = null
     this._data = {}
 
     this._initSettings()
-    this.isRetrivingData = false
-    this._fetchPromise = null
   }
 
   give.TrackDataObject.prototype.getTrackSetting = function (key) {
@@ -277,7 +279,7 @@ var GIVe = (function (give) {
    * @returns {Array<ChromRegionLiteral>} The array of query regions
    */
   give.TrackDataObject.prototype._prepareCustomQuery = function () {
-    return this._pendingQueryRegions
+    return this._committedRegions
   }
 
   /**
@@ -296,27 +298,26 @@ var GIVe = (function (give) {
   give.TrackDataObject.prototype.fetchData = function (ranges, callerID) {
     callerID = callerID || give.TrackDataObject._NO_CALLERID_KEY
 
-    if (this._fetchPromise) {
-      return (this._fetchPromise = this._fetchPromise.then(
-        () => this.fetchData(ranges, callerID)
-      ))
-    }
-
     if (!Array.isArray(ranges)) {
       ranges = [ranges]
     }
     give._verbConsole.info('fetchData()')
     give._verbConsole.info(ranges.map(range => range.regionToString()))
 
-    this._unmergedGUIRangesFromID[callerID] = ranges
+    this._pendingRangesById[callerID] = ranges
 
-    return new Promise((resolve, reject) => {
-
-    })
-
-    give.debounce(this._getDataJobName,
-      this._queryAndRetrieveData.bind(this),
-      this.getDataDebounceInt)
+    if (!this._debouncePromise) {
+      if (this.getDataDebounceInt) {
+        this._debouncePromise = new Promise((resolve, reject) => {
+          setTimeout(resolve, this.getDataDebounceInt)
+        })
+      } else {
+        this._debouncePromise = Promise.resolve()
+      }
+      this._fetchPromise = this._debouncePromise
+        .then(() => this._queryAndRetrieveData())
+    }
+    return this._fetchPromise
   }
 
   /**
@@ -347,23 +348,26 @@ var GIVe = (function (give) {
 
   /**
    * _queryAndRetrieveData - Merge all unmerged query in
-   *   `this._unmergedGUIRangesFromID`, filter out the cached
-   *   portion, store the results in `this._pendingQueryRegions`,
+   *   `this._pendingRangesById`, filter out the cached
+   *   portion, store the results in `this._committedRegions`,
    *   then proceed with data retrieval
    * @memberof TrackDataObjectBase.prototype
    */
   give.TrackDataObject.prototype._queryAndRetrieveData = function () {
-    this.isRetrivingData = true
-    this._pendingQueryRegions = this._getTrackUncachedRange(
-      this._mergeGUIRegionsByResolution(this._unmergedGUIRangesFromID)
+    if (this._ongoingFetchPromise === this._fetchPromise) {
+      // this will only happen when debounce interval is shorter than fetch
+      // extend the debounce to fetch completion and queue another fetch
+      return this._fetchPromise.then(() => this._queryAndRetrieveData())
+    }
+
+    this._debouncePromise = null
+    this._committedRegions = this._getTrackUncachedRange(
+      this._mergeGUIRegionsByResolution(this._pendingRangesById)
     )
-    this._unmergedGUIRangesFromID = {}
-    if (this._pendingQueryRegions && this._pendingQueryRegions.length > 0) {
-      this._retrieveData(this._pendingQueryRegions)
-    } else {
-      // nothing really needs to be done to get data, so just call callback function
-      this.isRetrivingData = false
-      this._callbackMgr.clear(true)
+    this._pendingRangesById = {}
+    if (this._committedRegions && this._committedRegions.length > 0) {
+      this._ongoingFetchPromise = this._fetchPromise
+      return this._retrieveData(this._committedRegions)
     }
   }
 
@@ -386,12 +390,12 @@ var GIVe = (function (give) {
 
     if (this.getTrackSetting('isCustom') && this.getTrackSetting('localFile')) {
       // if track has its own getLocalData function, then get local data instead of getting remote data
-      this._readLocalFile(regions)
+      return this._readLocalFile(regions)
       // afterwards it's this.dataHandler()'s job.
     } else if (this.getTrackSetting('requestUrl')) {
-      give.postAjax(this.getTrackSetting('requestUrl'),
-        this._prepareRemoteQuery(regions),
-        this._responseHandler, 'json', null, null, this)
+      return give.postAjax(this.getTrackSetting('requestUrl'),
+        this._prepareRemoteQuery(regions), 'json')
+        .then((response) => this._responseHandler(response))
     }
   }
 
@@ -435,10 +439,12 @@ var GIVe = (function (give) {
    *   both the server-side code and `this._dataHandler`
    */
   give.TrackDataObject.prototype._responseHandler = function (response) {
-    this._dataHandler(response, this._pendingQueryRegions)
-    this._pendingQueryRegions.length = 0
-    this.isRetrivingData = false
-    this._callbackMgr.clear(true)
+    this._dataHandler(response, this._committedRegions)
+    if (this._ongoingFetchPromise === this._fetchPromise) {
+      this._fetchPromise = null
+    }
+    this._ongoingFetchPromise = null
+    this._committedRegions.length = 0
   }
 
   /**
@@ -451,8 +457,10 @@ var GIVe = (function (give) {
   give.TrackDataObject.prototype._readLocalFile = function (regions) {
     this._localFileHandler(this.localFile, regions)
     regions.length = 0
-    this.isRetrivingData = false
-    this._callbackMgr.clear(true)
+    if (this._ongoingFetchPromise === this._fetchPromise) {
+      this._fetchPromise = null
+    }
+    this._ongoingFetchPromise = null
   }
 
   /**

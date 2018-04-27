@@ -238,7 +238,7 @@ var GIVe = (function (give) {
         }, this)) {
           // Get data clipped by viewWindow by calling fetchData()
           //    May also include data preparation
-          this.checkDataAndUpdate(this._pendingVWs)
+          this.checkDataAndUpdateDebounced(this._pendingVWs)
           // Update detailed content by calling drawData()
           //    Will be debounced to prevent lagging
         }
@@ -253,7 +253,7 @@ var GIVe = (function (give) {
 
     updateThreshold (threshold) {
       this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
-      this.checkDataAndUpdate()
+      this.checkDataAndUpdateDebounced()
     }
 
     changeViewWindow (viewWindow, index) {

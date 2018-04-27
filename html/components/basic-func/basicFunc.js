@@ -117,36 +117,37 @@ var GIVe = (function (give) {
   }
 
   give._debounceIDList = {}
-  give._timeOutFunc = function (debounceList, jobName, callbackFunc, immediate) {
-    if (!immediate) {
-      callbackFunc()
+  give._timeOutFunc = function (debounceList, jobName) {
+    if (typeof debounceList[jobName].callbackFunc === 'function') {
+      debounceList[jobName].callbackFunc()
     }
     delete debounceList[jobName]
   }
 
-  give._addDebouncer = function (debounceList, jobName, callbackFunc, interval, immediate) {
-    if (immediate) {
-      callbackFunc()
+  give._addDebouncer = function (debounceList, jobName, callbackFunc, interval) {
+    debounceList[jobName] = {
+      timeOutHandle: window.setTimeout(
+        give._timeOutFunc.bind(this, debounceList, jobName), interval),
+      callbackFunc: callbackFunc
     }
-    debounceList[jobName] = window.setTimeout(
-      give._timeOutFunc.bind(this, debounceList, jobName, callbackFunc, immediate),
-      interval)
   }
 
   give.debounce = function (jobName, callback, interval, immediate) {
     if (give._debounceIDList.hasOwnProperty(jobName)) {
-      if (!immediate) {
-        give.cancelDebouncer(jobName)
-        give._addDebouncer(give._debounceIDList, jobName, callback, interval, immediate)
-      }
+      give._debounceIDList[jobName].callbackFunc = callback
     } else {
-      give._addDebouncer(give._debounceIDList, jobName, callback, interval, immediate)
+      if (immediate) {
+        callback()
+        give._addDebouncer(give._debounceIDList, jobName, null, interval)
+      } else {
+        give._addDebouncer(give._debounceIDList, jobName, callback, interval)
+      }
     }
   }
 
   give.cancelDebouncer = function (jobName) {
     if (give._debounceIDList.hasOwnProperty(jobName)) {
-      window.clearTimeout(give._debounceIDList[jobName])
+      window.clearTimeout(give._debounceIDList[jobName].timeOutHandle)
       delete give._debounceIDList[jobName]
     }
   }

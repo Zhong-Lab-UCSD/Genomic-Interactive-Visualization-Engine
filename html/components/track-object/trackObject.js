@@ -403,14 +403,11 @@ var GIVe = (function (give) {
    * @param  {string} callerID    The element ID calling `this.fetchData`, this is
    *   used to collapse multiple calls from the same element.
    */
-  give.TrackObject.prototype.fetchData = function (ranges, callback, callerID) {
+  give.TrackObject.prototype.fetchData = function (ranges, callerID) {
     if (this._dataObj && this._dataObj.fetchData) {
-      return this._dataObj.fetchData(ranges, callback, callerID)
+      return this._dataObj.fetchData(ranges, callerID)
     } else {
-      // There is no data in this track, get the callback done and return
-      if (typeof callback === 'function') {
-        callback()
-      }
+      return Promise.resolve()
     }
   }
 
