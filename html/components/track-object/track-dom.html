@@ -112,7 +112,7 @@ var GIVe = (function (give) {
       this._debouncePromise = null
       this._drawingPromise = null
 
-      this.__pendingNewVWArr = null
+      this._pendingNewVWArr = null
 
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
@@ -225,13 +225,12 @@ var GIVe = (function (give) {
         },
 
         /**
-         * The flag indicating whether this trackDOM is ready
-         * @type {boolean}
+         * Promise resolved when the entire `chart-window` is ready
+         * @type {object}
          */
-        isReady: {
-          type: Boolean,
-          value: false,
-          readOnly: true
+        readyPromise: {
+          type: Object,
+          value: null
         },
 
         pin: {
@@ -1111,17 +1110,17 @@ var GIVe = (function (give) {
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
 
-      viewWindow = this._verifyViewWindow(viewWindow)
-      this._setIsReady(false)
-      return this.checkDataAndUpdateDebounced(viewWindow)
+      this.readyPromise = Promise.resolve(viewWindow)
+        .then(this._verifyViewWindow.bind(this))
+        .then(this.checkDataAndUpdateDebounced.bind(this))
         .catch((e) => {
           give._verbConsole.warn(e)
           give.fireSignal('warning', { msg: e.message })
         })
         .finally(() => {
-          this._setIsReady(true)
           this.fire('track-ready', {ID: this.parent.getID()})
         })
+      return this.readyPromise
     }
 
     setTrackVisibility (visString) {
