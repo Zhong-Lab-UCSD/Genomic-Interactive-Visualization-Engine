@@ -54,9 +54,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         @apply --layout-vertical;
         @apply --layout-flex;
       }
-      #trackDOMHolder {
-        display: none;
-      }
       div {
         margin: 0;
         padding: 0;
@@ -70,12 +67,11 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         overflow-x: hidden;
         overflow-y: auto;
       }
-      div.scrollingParts svg {
-      }
     </style>
     <style include="genemo-track-styles"></style>
     <div id="chartHolding" hidden$="[[!_initialized]]">
       <div class="pinnedParts" id="_PinTop">
+        <div class="trackDOMHolder"></div>
         <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
@@ -87,11 +83,10 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
-      <template is="dom-if" if="[[_hasPinBetween()]]">
-        <div class="pinnedParts" id="PinBetween">
-          <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-          </svg>
-        </div>
+      <div class="pinnedParts" id="PinBetween">
+        <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+      </div>
     </div>
     <template is="dom-if" if="[[showTutorial]]">
       <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
@@ -100,7 +95,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         </div>
       </tutorial-highlight>
     </template>
-    <div id="trackDOMHolder"></div>
   </template>
   <script>
 var GIVe = (function (give) {
@@ -127,35 +121,24 @@ var GIVe = (function (give) {
           notify: true,
         },
 
-        _pinAbove: {
+        index: {
+          type: Number,
+          value: 0
+        },
+
+        isLastWindow: {
+          type: Boolean,
+          value: true
+        },
+
+        _trackDomHolder: {
           type: Array,
           value: function () {
             return []
           }
         },
 
-        _scrolling: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        _pinBelow: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        _pinInBetween: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        _pinInBetween: {
+        _hiddenTrackDomHolder: {
           type: Array,
           value: function () {
             return []
@@ -340,7 +323,7 @@ var GIVe = (function (give) {
       return props
     },
 
-    _addTrackDOM: function (trackDOM, viewWindowIndex) {
+    _addTrackDOM: function (trackDOM, totalViewWindowIndex) {
       if (trackDOM.parent.windowSpan > 1) {
         // this track involves multiple windows for display
         // (e.g. interaction tracks)

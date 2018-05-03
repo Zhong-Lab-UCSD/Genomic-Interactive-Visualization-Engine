@@ -287,9 +287,9 @@ var GIVe = (function (give) {
            navigator.userAgent.match(/rv 11/))) {
       newEvent = document.createEvent('CustomEvent')
       newEvent.initCustomEvent(evName,
-                   sigParams && sigParams.bubbles,
-                   sigParams && sigParams.cancelable,
-                   sigDetail || null)
+        sigParams && sigParams.bubbles,
+        sigParams && sigParams.cancelable,
+        sigDetail || null)
     } else {
       if (sigDetail) {
         sigParams = sigParams || {}

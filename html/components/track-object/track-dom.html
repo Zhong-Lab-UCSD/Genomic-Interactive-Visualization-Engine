@@ -30,11 +30,8 @@ var GIVe = (function (give) {
    *
    * @polymerBehavior TrackDOMBehavior
    */
-  class TrackDom extends Polymer.mixinBehaviors(
-    [Polymer.IronResizableBehavior], Polymer.Element
-  ) {
+  class TrackDom {
     constructor (track, properties) {
-      super()
       this.ARROW_HEIGHT_PROP = 0.5 // percentage of arrow (to height of gene)
       this.ARROW_MAX_HEIGHT_PROP = 0.9 // max percentage of arrow
       this.ARROW_MIN_HEIGHT = 4 // minimum height required for arrow
@@ -398,18 +395,22 @@ var GIVe = (function (give) {
      * @param  {DOMelement} svgToDraw The SVG element to attach listeners to
      */
     initSvgReceiver (svgToDraw) {
+      if (!svgToDraw) {
+        give._verbConsole.warn('SvgToDraw is empty!')
+        return
+      }
       if (!svgToDraw.gestureReceiver) {
         // draw a rectangle over the coordinate track to handle mouse events
-
         svgToDraw.gestureReceiver = this.createRawRectangle(0, 0,
           svgToDraw.getAttributeNS(null, 'width'),
           svgToDraw.getAttributeNS(null, 'height'),
           {fill: 'none', class: 'pointerHandler'}, svgToDraw)
         svgToDraw.appendChild(svgToDraw.gestureReceiver)
       }
-      Polymer.dom.flush()
-      this.listen(svgToDraw, 'track', 'dragHandler')
-      this.listen(svgToDraw, 'wheel', 'wheelHandler')
+      Polymer.RenderStatus.afterNextRender(() => {
+        svgToDraw.addEventListener('track', 'dragHandler')
+        svgToDraw.addEventListener('wheel', 'wheelHandler')
+      })
     }
 
     /**
@@ -1016,15 +1017,7 @@ var GIVe = (function (give) {
         this.drawShortLabelArr(shortLabelArr)
       }
       // draw a rectangle over the coordinate track to handle mouse events
-
-      if (!this.getMainSvg().querySelector('.pointerHandler')) {
-        var newRegion = this.createRawRectangle(0, 0, this.windowWidth,
-          this.trackHeight, {fill: 'none', class: 'pointerHandler'})
-        this.getMainSvg().appendChild(newRegion)
-        Polymer.dom.flush()
-        this.listen(this.getMainSvg(), 'track', 'dragHandler')
-        this.listen(this.getMainSvg(), 'wheel', 'wheelHandler')
-      }
+      this.initSvgReceiver(this.getMainSvg())
       if (!this._dataPromise) {
         this._drawingPromise = null
       }
@@ -1118,7 +1111,7 @@ var GIVe = (function (give) {
           give.fireSignal('warning', { msg: e.message })
         })
         .finally(() => {
-          this.fire('track-ready', {ID: this.parent.getID()})
+          give.fireSignal('track-ready', {ID: this.parent.getID()})
         })
       return this.readyPromise
     }
@@ -1234,15 +1227,15 @@ var GIVe = (function (give) {
           }
           break
         case 'track':
-        // update track coordinates on the fly
-        // also update window text
+          // update track coordinates on the fly
+          // also update window text
           if (this.dragData) {
-            this.fire('update-window', {
+            give.fireSignal('update-window', {
               windowIndex: this.windowIndex,
               newWindow: this.dragData.oldWindow.getShift(
                 detail.dx * this.dragData.ratio, true,
                 this.parent.ref).regionToString(false)
-            })
+            }, null, e.target)
           // this.setViewWindowString(this.dragData.oldWindow.getShift(
           //  detail.dx * this.dragData.ratio, true, this.parent.ref).regionToString(false));
           }
@@ -1251,6 +1244,14 @@ var GIVe = (function (give) {
         // update window content
           e.target.classList.remove('grabbing')
           Polymer.dom.flush()
+          if (this.dragData) {
+            give.fireSignal('update-window', {
+              windowIndex: this.windowIndex,
+              newWindow: this.dragData.oldWindow.getShift(
+                detail.dx * this.dragData.ratio, true,
+                this.parent.ref).regionToString(false)
+            }, null, e.target)
+          }
           delete (this.dragData)
           window.getSelection().removeAllRanges()
           break
