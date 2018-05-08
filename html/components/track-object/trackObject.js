@@ -209,12 +209,12 @@ var GIVe = (function (give) {
    * @returns {object} The value of the setting entry
    */
   give.TrackObject.prototype.getSetting = function (key, type) {
-//    if(!this.Settings.settings.hasOwnProperty(key)) {
-//      if(this.Settings.hasOwnProperty(key)) {
-//        this.Settings.settings[key] = this.Settings[key];
-//      }
-//    }
-//    delete this.Settings[key];
+    // if(!this.Settings.settings.hasOwnProperty(key)) {
+    //  if(this.Settings.hasOwnProperty(key)) {
+    //    this.Settings.settings[key] = this.Settings[key];
+    //  }
+    // }
+    // delete this.Settings[key];
     switch (type) {
       case 'integer':
         return parseInt(this.Settings[key])
@@ -370,7 +370,7 @@ var GIVe = (function (give) {
   }
 
   /**
-   * getPriority - Get the priority value of the track
+   * getPriorities - Get the priority value of the track
    *   This value is changable at runtime and will affect the order of the track
    *     in `chart-area` element **within the same group**.
    *   Tracks with smaller priority will be put closer to the top of the view
@@ -381,11 +381,15 @@ var GIVe = (function (give) {
    * @memberof TrackObjectBase.prototype
    * @returns {number}  The priority value
    */
-  give.TrackObject.prototype.getPriority = function () {
-    // TODO:
-    //  1. implement group priority
-    //   2. implement customized temporary priority
-    return this.priority
+  give.TrackObject.prototype.getPriorities = function () {
+    var priorities = []
+    try {
+      priorities.push(this.ref.groups[this.groupID].priority)
+    } catch (e) {
+      priorities.push(0)
+    }
+    priorities.push(this.priority ? this.priority : 0)
+    return priorities
   }
 
   /**
@@ -491,41 +495,41 @@ var GIVe = (function (give) {
    */
   give.TrackObject.DEFAULT_PRIORITY = 100.0
 
-  /**
-   * comparePriorities - compare the priority values between two tracks
-   *   The group priority will take precedence and be compared first, then
-   *   individual track priority will be compared.
-   *   `undefined` is larger than any numeric value.
-   *
-   * @static
-   * @memberof TrackObjectBase
-   * @param  {TrackObjectBase} track1 The first track object
-   * @param  {TrackObjectBase} track2 The second track object
-   * @param  {object} groups Dictionary for groups (key is `group.id`)
-   * @returns {number}  Compare results:
-   *   1 if track1's priority is larger than track2's;
-   *   0 if both priorities are equal;
-   *   -1 if track1's priority is smaller than track2's.
-   */
-  give.TrackObject.comparePriorities = function (track1, track2, groups) {
-    // compare group priorities first, then local priorities
-    // tracks without groups will be considered as top priority (for now)
-    var group1Prior = 0
-    var group2Prior = 0
-    try {
-      group1Prior = groups[track1.groupID].priority
-    } catch (e) {
-    }
-    try {
-      group2Prior = groups[track2.groupID].priority
-    } catch (e) {
-    }
-    return group1Prior !== group2Prior
-      ? (group1Prior < group2Prior ? -1 : 1)
-      : (track1.getPriority() < track2.getPriority() ? -1
-        : track1.getPriority() > track2.getPriority() ? 1 : 0)
-  }
-
+  // /**
+  //  * comparePriorities - compare the priority values between two tracks
+  //  *   The group priority will take precedence and be compared first, then
+  //  *   individual track priority will be compared.
+  //  *   `undefined` is larger than any numeric value.
+  //  *
+  //  * @static
+  //  * @memberof TrackObjectBase
+  //  * @param  {TrackObjectBase} track1 The first track object
+  //  * @param  {TrackObjectBase} track2 The second track object
+  //  * @param  {object} groups Dictionary for groups (key is `group.id`)
+  //  * @returns {number}  Compare results:
+  //  *   1 if track1's priority is larger than track2's;
+  //  *   0 if both priorities are equal;
+  //  *   -1 if track1's priority is smaller than track2's.
+  //  */
+  // give.TrackObject.comparePriorities = function (track1, track2, groups) {
+  //   // compare group priorities first, then local priorities
+  //   // tracks without groups will be considered as top priority (for now)
+  //   var group1Prior = 0
+  //   var group2Prior = 0
+  //   try {
+  //     group1Prior = groups[track1.groupID].priority
+  //   } catch (e) {
+  //   }
+  //   try {
+  //     group2Prior = groups[track2.groupID].priority
+  //   } catch (e) {
+  //   }
+  //   return group1Prior !== group2Prior
+  //     ? (group1Prior < group2Prior ? -1 : 1)
+  //     : (track1.getPriority() < track2.getPriority() ? -1
+  //       : track1.getPriority() > track2.getPriority() ? 1 : 0)
+  // }
+  //
   /**
    * createCoorTrack - Create a coordinate track for given reference
    *
@@ -536,12 +540,8 @@ var GIVe = (function (give) {
    * @returns {TrackObjectBase}     The resulting track object
    */
   give.TrackObject.createCoorTrack = function (ref, id) {
-    var newTrack = new give.TrackObject(id || 'coor_' + ref.db,
+    return new give.TrackObject(id || 'coor_' + ref.db,
       { type: 'coordinate', priority: 0, noData: true }, ref)
-    newTrack.setSetting('type', 'coordinate')
-    newTrack.priority = 0
-    newTrack.noData = true
-    return newTrack
   }
 
   /**

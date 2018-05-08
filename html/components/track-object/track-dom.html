@@ -75,6 +75,9 @@ var GIVe = (function (give) {
       // this._setTrackType(track.getTypeTrunk())
       this.id = this.parent.getTypeTrunk() + '_' + give._trackCounter++
 
+      this._DispPriority = properties.subPriority || 0
+      this._OverriddenPriority = null
+
       // this is the type of visibility values that are allowed in a particular track
       this.allowedVisibilities = [
         give.TrackObject.StatusEnum.VIS_NONE,
@@ -298,6 +301,12 @@ var GIVe = (function (give) {
       }
       give._verbConsole.info(this.id + '.getTrackSvg() called.')
       return this.trackSvg
+    }
+
+    get Priorities () {
+      var priorities = this.parent.getPriorities()
+      priorities.push(this._DispPriority)
+      return priorities
     }
 
     /**

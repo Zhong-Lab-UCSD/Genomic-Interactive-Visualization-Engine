@@ -357,6 +357,19 @@ var GIVe = (function (give) {
     }
   }
 
+  give.comparePriorities = function (priorities1, priorities2) {
+    for (let i = 0; i < priorities1.length; i++) {
+      if (priorities2.length > i) {
+        if (priorities1[i] !== priorities2[i]) {
+          return Math.sign(priorities1[1] - priorities2[i])
+        }
+      } else {
+        return 1
+      }
+    }
+    return priorities2.length > priorities1.length ? -1 : 0
+  }
+
   give._initDebug = function (isInDebug) {
     if (isInDebug || give.DEBUG) {
       /**

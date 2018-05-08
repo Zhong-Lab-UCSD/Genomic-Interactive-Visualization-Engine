@@ -145,6 +145,13 @@ var GIVe = (function (give) {
           }
         },
 
+        _addedSvgMap: {
+          type: Object,
+          value: function () {
+            return {}
+          }
+        },
+
         /**
          * The array holding trackDoms for every view window.
          * The member of the array should be Objects with the following properties:
@@ -324,25 +331,27 @@ var GIVe = (function (give) {
     },
 
     _addTrackDomSvg: function (trackDom, totalViewWindowIndex) {
-      var hiddenTrackDom = null
-      var slotId = '_Scroll'
-      var reverseDom = (this.index > 0 && this.index === this.totalWindows - 1)
-      if (trackDom.parent.windowSpan > 1) {
-        if (this.index + trackDom.parent.windowSpan > this.totalWindows) {
-          return null
+      if (!this._addedSvgMap[trackDom.parent.getID()]) {
+        let slotId = '_Scroll'
+        let reverseDom = (this.index > 0 && this.index === this.totalWindows - 1)
+        if (trackDom.parent.windowSpan > 1) {
+          if (this.index + trackDom.parent.windowSpan > this.totalWindows) {
+            return null
+          }
+          slotId = '_PinBetween'
+        } else {
+          if (trackDom.pin === 'top') {
+            slotId = reverseDom ? '_PinBottom' : '_PinTop'
+          } else if (trackDom.pin === 'bottom') {
+            slotId = reverseDom ? '_PinTop': '_PinBottom'
+          }
         }
-        slotId = '_PinBetween'
-      } else {
-        if (trackDom.pin === 'top') {
-          slotId = reverseDom ? '_PinBottom' : '_PinTop'
-        } else if (trackDom.pin === 'bottom') {
-          slotId = reverseDom ? '_PinTop': '_PinBottom'
-        }
+        this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
+          .appendChild(trackDom.TrackSvg)
+        return slotId
+        this._addedSvgMap[trackDom.parent.getID()] = slotId
       }
-      this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
-        .appendChild(trackDom.TrackSvg)
-      this._trackDomsByWindow[viewWindowIndex]
-        .map[trackDom.parent.getID()] = true
+      return null
     },
 
     _pushSingleWindowTrackDom: function (trackDom, viewWindowIndex) {
@@ -754,24 +763,27 @@ var GIVe = (function (give) {
         if (this._needOverrideDefault) {
           this._overrideTrackDefaultVis()
         }
-        var showTrack = function (wIndex, track, index) {
-          // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
-          if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
-            this._addVisibleTrack(track, wIndex)
+        let showTrack = (track, index) => {
+          // notice that if track type is 'interaction',
+          // it needs to be 'unshifted' to later windows
+          if (track.getSetting('visibility') >
+            give.TrackObject.StatusEnum.VIS_NONE
+          ) {
+            this._trackDomHolder.push(new track._DomObjCtor(track), {
+              subPriority: index
+            })
           }
         }
+        if (this.groupIdList && this.groupIdList.length > 0) {
+          this.groupIdList.forEach(groupID => {
+            if (this._refObj.groups.hasOwnProperty(groupID)) {
+              this._refObj.groups[groupID].forEach(showTrack)
+            }
+          })
+        } else {
+          this._refObj.tracks.forEach(showTrack)
+        }
         this._viewWindows.forEach(function (vwindow, windowIndex) {
-          if (this.groupIdList && this.groupIdList.length > 0) {
-            this.groupIdList.forEach(function (groupID) {
-              if (this._refObj.groups.hasOwnProperty(groupID)) {
-                this._refObj.groups[groupID].forEach(
-                  showTrack.bind(this, windowIndex), this)
-              }
-            }, this)
-          } else {
-            this._refObj.tracks.forEach(
-              showTrack.bind(this, windowIndex), this)
-          }
         }, this)
         this.populateDOM(noRefreshContent)
       }
