@@ -130,9 +130,7 @@ settings='"group":"'$group_name'",
             "track":"'$track_name'",
             "type":"bigwig",
             "visibility":"'$visibility'",
-            "autoScale":'$autoscale',
-            "windowMax":'$windowMax',
-            "windowMin":'$windowMin
+            "autoScale":'$autoscale
 
 if [[ $windowMax != "" ]]; then
     settings+=', "windowMax":'$windowMax
