@@ -1,6 +1,7 @@
 #!/bin/bash
+#set -e
 PROGNAME=$0
-set -e
+
 usage() {
     cat << EOF >&2
     Usage: $PROGNAME [-r <give_root>] [-u <mysqlu>] [-p <mysqlp>] [-d <host_url>]
