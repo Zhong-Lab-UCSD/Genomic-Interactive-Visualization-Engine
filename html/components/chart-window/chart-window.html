@@ -145,12 +145,24 @@ var GIVe = (function (give) {
           }
         },
 
-        _addedSvgMap: {
+        _addedSvgOrderMap: {
           type: Object,
           value: function () {
             return {}
           }
         },
+
+        _svgSizes: {
+          type: Object,
+          value: function () {
+            return {
+              '_PinTop': 0,
+              '_Scroll': 0,
+              '_PinBottom': 0,
+              '_PinBetween': 0
+            }
+          }
+        }
 
         /**
          * The array holding trackDoms for every view window.
@@ -330,26 +342,36 @@ var GIVe = (function (give) {
       return props
     },
 
-    _addTrackDomSvg: function (trackDom, totalViewWindowIndex) {
-      if (!this._addedSvgMap[trackDom.parent.getID()]) {
-        let slotId = '_Scroll'
-        let reverseDom = (this.index > 0 && this.index === this.totalWindows - 1)
-        if (trackDom.parent.windowSpan > 1) {
-          if (this.index + trackDom.parent.windowSpan > this.totalWindows) {
-            return null
-          }
-          slotId = '_PinBetween'
-        } else {
-          if (trackDom.pin === 'top') {
-            slotId = reverseDom ? '_PinBottom' : '_PinTop'
-          } else if (trackDom.pin === 'bottom') {
-            slotId = reverseDom ? '_PinTop': '_PinBottom'
-          }
+    _getSlotId: function (trackDom) {
+      let slotId = '_Scroll'
+      let reverseDom =
+        (this.index > 0 && this.index === this.totalWindows - 1)
+      if (trackDom.parent.windowSpan > 1) {
+        if (this.index + trackDom.parent.windowSpan > this.totalWindows) {
+          return null
         }
-        this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
-          .appendChild(trackDom.TrackSvg)
+        slotId = '_PinBetween'
+      } else {
+        if (trackDom.pin === 'top') {
+          slotId = reverseDom ? '_PinBottom' : '_PinTop'
+        } else if (trackDom.pin === 'bottom') {
+          slotId = reverseDom ? '_PinTop': '_PinBottom'
+        }
+      }
+      return slotId
+    }
+
+    _addTrackDomSvg: function (trackDom) {
+      if (!this._addedSvgMap.hasOwnProperty(trackDom.parent.getID()) {
+        let slotId = this._getSlotId(trackDom)
+        if (slotId) {
+          this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
+            .appendChild(trackDom.TrackSvg)
+          this._addedSvgOrderMap[trackDom.parent.getID()]
+            = this._svgSizes[slotId]
+          this._svgSizes[slotId]++
+        }
         return slotId
-        this._addedSvgMap[trackDom.parent.getID()] = slotId
       }
       return null
     },
@@ -388,8 +410,7 @@ var GIVe = (function (give) {
         viewWindowIndex + track.windowSpan <= this._viewWindows.length
       )) {
         try {
-          var newTrackDom = new track._DomObjCtor(track,
-            this._createTrackProp(viewWindowIndex, props))
+          let newTrackDom = new track._DomObjCtor(track)
           if (newTrackDom) {
             this._addTrackDom(newTrackDom, viewWindowIndex)
           }
@@ -566,8 +587,8 @@ var GIVe = (function (give) {
         // some exception has happended during the conversion
         // throw an exception telling calling procedures
         if (this.passExceptions) {
-          var error = new give.GiveError('Exception occured during ChromRegion' +
-            ' conversion.')
+          var error = new give.GiveError('Exception occured during' +
+            ' ChromRegion conversion.')
           error.data = error.data || {}
           error.data.exceptionList = exceptionList
           error.data.updatedCoors = viewWindowObjs.map(
@@ -756,9 +777,9 @@ var GIVe = (function (give) {
       }
     },
 
-    _addAllTrackDomsTracksReady: function (noRefreshContent, ref) {
+    _addAllTrackDomsTracksReady: function (noRefreshContent, refObj) {
       // function called when tracks are ready for this._refObj
-      if (ref === this.ref) {
+      if (refObj.db === this.ref) {
         // Only respond to this call if ref has not been changed
         if (this._needOverrideDefault) {
           this._overrideTrackDefaultVis()
@@ -783,7 +804,10 @@ var GIVe = (function (give) {
         } else {
           this._refObj.tracks.forEach(showTrack)
         }
-        this._viewWindows.forEach(function (vwindow, windowIndex) {
+        // sort trackDomBy priorities
+        this._trackDomHolder.sort(
+          (a, b) => give.comparePriorities(a.Priorities, b.Priorities))
+        this._trackDomHolder.forEach(function (vwindow, windowIndex) {
         }, this)
         this.populateDOM(noRefreshContent)
       }
@@ -791,7 +815,7 @@ var GIVe = (function (give) {
 
     addAllTrackDoms: function (noRefreshContent) {
       this._refObj.initTracks().then(
-        () => this._addAllTrackDomsTracksReady(noRefreshContent, this.ref))
+        refObj => this._addAllTrackDomsTracksReady(noRefreshContent, refObj))
     },
 
     _removeInvisibleTrackDoms: function () {

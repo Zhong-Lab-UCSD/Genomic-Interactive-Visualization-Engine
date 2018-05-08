@@ -73,7 +73,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.forEachByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray) {
+    if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
     return IDList.forEach(function (id) {
@@ -82,7 +82,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.someByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray) {
+    if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
     return IDList.some(function (id) {
@@ -91,7 +91,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.everyByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray) {
+    if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
     return IDList.every(function (id) {
