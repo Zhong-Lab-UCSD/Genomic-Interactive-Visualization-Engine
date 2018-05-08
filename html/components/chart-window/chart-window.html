@@ -362,7 +362,7 @@ var GIVe = (function (give) {
     }
 
     _addTrackDomSvg: function (trackDom) {
-      if (!this._addedSvgMap.hasOwnProperty(trackDom.parent.getID()) {
+      if (!this._addedSvgOrderMap.hasOwnProperty(trackDom.parent.getID()) {
         let slotId = this._getSlotId(trackDom)
         if (slotId) {
           this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
@@ -781,7 +781,23 @@ var GIVe = (function (give) {
       // function called when tracks are ready for this._refObj
       if (refObj.db === this.ref) {
         // Only respond to this call if ref has not been changed
-        if (this._needOverrideDefault) {
+        if (!this._needOverrideDefault) {
+          // no default tracks supplied, use groupIdList filter and
+          // visibility settings
+          // sort by priorities defined in database
+          if (this.groupIdList && this.groupIdList.length > 0) {
+            this.groupIdList.forEach(groupID => {
+              if (this._refObj.groups.hasOwnProperty(groupID)) {
+                this._refObj.groups[groupID].forEach(showTrack)
+              }
+            })
+          } else {
+            this._refObj.tracks.forEach(showTrack)
+          }
+        } else {
+          // use this.defaultTrackIdList to directly fill in the DOM array
+          // without sorting by priority (use the defaultTrackIdList order)
+          // then populate SVG
           this._overrideTrackDefaultVis()
         }
         let showTrack = (track, index) => {
@@ -807,8 +823,6 @@ var GIVe = (function (give) {
         // sort trackDomBy priorities
         this._trackDomHolder.sort(
           (a, b) => give.comparePriorities(a.Priorities, b.Priorities))
-        this._trackDomHolder.forEach(function (vwindow, windowIndex) {
-        }, this)
         this.populateDOM(noRefreshContent)
       }
     },
