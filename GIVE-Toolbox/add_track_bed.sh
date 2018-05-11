@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 PROGNAME=$0
 
 usage() {
@@ -15,6 +15,7 @@ usage() {
     -o <priority>: (Required) The order of the track in the browser. Smaller value means the the track will be shown in a higher location.
     -v <visibility>: (Required) "full", "pack", "collapsed", "notext", "dense", "none". Usually use "pack". Please read GIVE-Toolbox docs for more information.
     -f <file>: (Required) bed format file. It must be a system absolute path.
+    -m <meta_info>: (Optional) Check GIVE mannual of data format to know supported metainfo, such as cellType and labName. The value of '-m' paramter must be json name/value pair list quoted in single quotations, such as: -m '"cellType":"H1", "labName":"Zhong Lab"'
     -h : show usage help
 EOF
     exit 1
@@ -42,8 +43,7 @@ do
     fi
 done
 
-
-while getopts u:p:r:t:g:l:s:o:v:f:h: opt; do
+while getopts u:p:r:t:g:l:s:o:v:f:m:h: opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
         p) mysqlp=$OPTARG;;
@@ -55,6 +55,7 @@ while getopts u:p:r:t:g:l:s:o:v:f:h: opt; do
         o) priority=$OPTARG;;
         v) visibility=$OPTARG;;
         f) file=$OPTARG;;
+        m) meta_info=$OPTARG;;
         h) usage;;
         \?) usage && exit;;
         *) usage;;
@@ -110,6 +111,19 @@ if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     exit 1
 fi
 
+settings='"group":"'$group_name'",
+            "longLabel":"'$long_label'",
+            "priority":'$priority',
+            "shortLabel":"'$short_label'",
+            "track":"'$track_name'",
+            "type":"bed",
+            "visibility":"'$visibility'",
+            "adaptive":true'
+
+if [[ $meta_info != "" ]]; then
+    settings+=', '$meta_info
+fi
+
 read -r -d '' mysql_query <<EOF
 INSERT INTO \`$ref\`.\`trackDb\` VALUES (
         '$track_name',
@@ -118,16 +132,7 @@ INSERT INTO \`$ref\`.\`trackDb\` VALUES (
         NULL,
         NULL,
         '$group_name',
-        '{
-            "group":"$group_name",
-            "longLabel":"$long_label",
-            "priority":$priority,
-            "shortLabel":"$short_label",
-            "track":"$track_name",
-            "type":"bed",
-            "visibility":"$visibility",
-            "adaptive":true
-        }'
+        '{ $settings } '
     );
 
 CREATE TABLE \`$ref\`.\`$track_name\` ( 
