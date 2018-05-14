@@ -141,6 +141,7 @@ var GIVe = (function (give) {
     },
 
     _refreshRef: function () {
+      this._key = null
       this._refObj.callOnTracksReady(this._buildMetaValueTables.bind(this))
     },
 
@@ -159,7 +160,7 @@ var GIVe = (function (give) {
       })
       this._refObj.getTracks().forEach(track => {
         this._keyArray.forEach(fieldObj => {
-          let value = track.getSetting(fieldObj.keyId)
+          let value = track.getSetting(fieldObj.keyId, 'string')
           if (value && !this._keyValueDict[fieldObj.keyId].has(value)) {
             this._keyValueDict[fieldObj.keyId].add(value)
           }
@@ -176,6 +177,13 @@ var GIVe = (function (give) {
           Array.from(this._keyValueDict[newValue].values()).sort().map(
             entry => ({ valueId: entry, value: entry })
           )
+      } else {
+        this._valueArray = [
+          {
+            valueId: '((n/a))',
+            value: '(Field required)'
+          }
+        ]
       }
     },
 

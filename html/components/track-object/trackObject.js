@@ -237,7 +237,7 @@ var GIVe = (function (give) {
             return !!this.Settings[key]
         }
       case 'string':
-        return this.Settings[key] || ''
+        return (this.Settings[key] || '').toString()
       default:
         return this.Settings[key]
     }

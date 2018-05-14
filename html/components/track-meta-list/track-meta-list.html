@@ -47,7 +47,7 @@ limitations under the License.
       .listHolder {
         @apply(--layout-flex);
         @apply(--layout-relative);
-        min-width: 99em;
+        min-width: 99.5em;
       }
       #loadingBlock {
         display: block;
@@ -372,7 +372,6 @@ var GIVe = (function (give) {
             }
           }, this)
           this.$.trackList.notifyResize()
-          this._setNumOfGroupsSelected(this.selectedGroups.length)
         } else {
           // filterObj is active, no group entries will be shown
           // first, select all tracks and groups with tracks in selectedItems
@@ -396,6 +395,7 @@ var GIVe = (function (give) {
             }
           }, this)
         }
+        this._setNumOfGroupsSelected(this.selectedGroups.length)
         this.async(function () {
           this._inUpdatingSelection = false
         })

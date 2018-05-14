@@ -53,10 +53,9 @@ limitations under the License.
         background-color: rgba(0, 0, 0, 0.2);
       }
       paper-button#clearFilterBtn {
-        padding: 0.5em;
+        padding: 0.1em;
         min-width: 0;
-        margin-left: -0.2em;
-        vertical-align: middle;
+        margin: -0.3em 0 -0.3em 0.5em;
       }
       paper-button#clearFilterBtn iron-icon {
         width: 1.5em;
@@ -77,11 +76,11 @@ limitations under the License.
         <paper-button id="filterBtn" raised toggles active="{{_filterDialogOn}}"
           on-tap="toggleFilter" disabled$="[[!_calcIntroHidden(currentRef)]]">
           [[filterText]]
-        </paper-button>
-        <paper-button class="placeHoldingBtn" raised id="clearFilterBtn"
-          visible$="[[_filterActive]]"
-          on-tap="clearFilter">
-          <iron-icon icon="clear"></iron-icon>
+          <paper-button raised id="clearFilterBtn"
+            hidden$="[[!_filterActive]]"
+            on-tap="clearFilter">
+            <iron-icon icon="clear"></iron-icon>
+          </paper-button>
         </paper-button>
       </div>
       <div id="htmlGeneratorButtons">
@@ -131,7 +130,8 @@ var GIVe = (function (give) {
     properties: {
       currentRef: {
         type: String,
-        value: ''
+        value: '',
+        observer: '_refChanged'
       },
 
       generatorMode: {
@@ -182,6 +182,10 @@ var GIVe = (function (give) {
       )
     },
 
+    _refChanged: function (newRef, oldRef) {
+      this.clearFilter()
+    },
+
     _calcIntroHidden: function (currentRef) {
       return !!currentRef
     },
@@ -204,7 +208,10 @@ var GIVe = (function (give) {
       this._filterDialogOn = this.$.filterDialog.opened
     },
 
-    clearFilter: function () {
+    clearFilter: function (e) {
+      if (e) {
+        e.stopPropagation()
+      }
       this._trackFilter = null
       this.filterText = 'Filter'
     }
