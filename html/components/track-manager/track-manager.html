@@ -39,7 +39,7 @@ limitations under the License.
         --paper-toolbar-background: var(--primary-background-color);
         --paper-toolbar-color: var(--primary-text-color);
       }
-      paper-toolbar div#htmlGeneratorButtons {
+      paper-toolbar > div#htmlGeneratorButtons {
         padding: 0 0.5em;
       }
       paper-toolbar div paper-button {
@@ -51,6 +51,16 @@ limitations under the License.
       }
       paper-toolbar div paper-button[toggles][active] {
         background-color: rgba(0, 0, 0, 0.2);
+      }
+      paper-button#clearFilterBtn {
+        padding: 0.5em;
+        min-width: 0;
+        margin-left: -0.2em;
+        vertical-align: middle;
+      }
+      paper-button#clearFilterBtn iron-icon {
+        width: 1.5em;
+        height: 1.5em;
       }
       paper-button.placeHoldingBtn {
         visibility: hidden;
@@ -65,13 +75,13 @@ limitations under the License.
       <ref-selector ref="{{currentRef}}"></ref-selector>
       <div id="filterButtons">
         <paper-button id="filterBtn" raised toggles active="{{_filterDialogOn}}"
-          on-tap="toggleFilter">
+          on-tap="toggleFilter" disabled$="[[!_calcIntroHidden(currentRef)]]">
           [[filterText]]
         </paper-button>
         <paper-button class="placeHoldingBtn" raised id="clearFilterBtn"
           visible$="[[_filterActive]]"
           on-tap="clearFilter">
-          Generate
+          <iron-icon icon="clear"></iron-icon>
         </paper-button>
       </div>
       <div id="htmlGeneratorButtons">
@@ -96,14 +106,12 @@ limitations under the License.
       hidden$="[[!currentRef]]" filter-obj="[[_trackFilter]]">
     </track-meta-list>
     <html-builder id="mainHtmlBuilder" ref="[[currentRef]]"></html-builder>
-    <paper-dialog id="filterDialog" on-iron-overlay-closed="_filterClosed"
-      opened="{{_filterDialogOn}}">
+    <paper-dialog id="filterDialog" on-iron-overlay-closed="_filterClosed">
       <track-filter id="mainTrackFilter" ref="[[currentRef]]"
         has-value="{{_filterHasValue}}">
       </track-filter>
       <div class="buttons">
-        <paper-button dialog-confirm on-tap="filterTracks"
-          disabled$="[[!_filterHasValue]]">
+        <paper-button dialog-confirm disabled$="[[!_filterHasValue]]">
           <iron-icon icon="filter-list"></iron-icon>
           Filter
         </paper-button>
@@ -159,6 +167,11 @@ var GIVe = (function (give) {
       _trackFilter: {
         type: Object,
         value: null
+      },
+
+      filterText: {
+        type: String,
+        value: 'Filter'
       }
     },
 
@@ -180,15 +193,20 @@ var GIVe = (function (give) {
     _filterClosed: function (e, detail) {
       if (this.$.filterDialog.closingReason.confirmed) {
         this._trackFilter = this.$.mainTrackFilter.createFilter()
+        this.filterText = 'Filter: ' + this.$.mainTrackFilter.getFilterDesc()
+        this.$.filterDialog.closingReason.confirmed = false
       }
+      this._filterDialogOn = this.$.filterDialog.opened
     },
 
     toggleFilter: function () {
       this.$.filterDialog.toggle()
+      this._filterDialogOn = this.$.filterDialog.opened
     },
 
     clearFilter: function () {
       this._trackFilter = null
+      this.filterText = 'Filter'
     }
   })
 

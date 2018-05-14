@@ -185,13 +185,16 @@ var GIVe = (function (give) {
     },
 
     _clearDispArray: function () {
-      this.splice('_dispTrackArray', 0)
+      this._inUpdatingSelection = true
+      this._dispTrackArray = []
       this.splice('_trackGroupEntries', 0)
       this._groupEntryDict = {}
+      this._inUpdatingSelection = false
     },
 
     _updateDispTrackArrayFull: function () {
       this._clearDispArray()
+      let newArray = []
       for (var key in this._refObj.getGroups()) {
         if (this._refObj.getGroups().hasOwnProperty(key) &&
           this._refObj.getGroups()[key].getLength() > 0
@@ -205,26 +208,25 @@ var GIVe = (function (give) {
             groupSelected: false
           }
           this._groupEntryDict[groupEntry.dataObj.id] = groupEntry
-          this.push('_dispTrackArray', groupEntry)
+          newArray.push(groupEntry)
           this.push('_trackGroupEntries', groupEntry)
           this._refObj.getGroups()[key].forEach(function (track) {
-            this.push('_dispTrackArray', {
-              dataObj: track, groupSelected: false
-            })
+            newArray.push({ dataObj: track, groupSelected: false })
           }, this)
         }
       }
+      this._dispTrackArray = newArray
       this.async(() => this._syncSelection())
     },
 
     _updateDispTrackArrayFiltered: function () {
       this._clearDispArray()
+      let newArray = []
       this._refObj.getTracks().filter(track => this.filterObj.filter(track))
         .forEach(track => {
-          this.push('_dispTrackArray', {
-            dataObj: track, groupSelected: false
-          })
+          newArray.push({ dataObj: track, groupSelected: false })
         })
+      this._dispTrackArray = newArray
       this.async(() => this._syncSelection())
     },
 
@@ -256,6 +258,7 @@ var GIVe = (function (give) {
 
     _restoreSelectionArrays: function () {
       if (this._savedExtraSelectedTracks) {
+        this._selectedSet.clear()
         this.selectedTracks = this._savedExtraSelectedTracks.slice()
         this.selectedGroups = this._savedSelectedGroups.slice()
         this.selectedTracks.reduce(
@@ -282,6 +285,7 @@ var GIVe = (function (give) {
 
     _filterObjChanged: function (newValue, oldValue) {
       if (this._isReady) {
+        this._readiness = false
         if (oldValue && !newValue) {
           // filterObj has been removed
           // restore all display and restore selection status
@@ -301,6 +305,9 @@ var GIVe = (function (give) {
           )
           this._updateDispTrackArrayFiltered()
         }
+        this.async(function () {
+          this._readiness = true
+        })
       }
     },
 
@@ -366,14 +373,12 @@ var GIVe = (function (give) {
           }, this)
           this.$.trackList.notifyResize()
           this._setNumOfGroupsSelected(this.selectedGroups.length)
-          this.async(function () {
-            this._inUpdatingSelection = false
-          })
         } else {
           // filterObj is active, no group entries will be shown
           // first, select all tracks and groups with tracks in selectedItems
           for (let i = 0; i < selectedItems.length; i++) {
             this.push('selectedTracks', selectedItems[i].dataObj)
+            this._selectedSet.add(selectedItems[i].dataObj.id)
             if (!this._selectedSet.has(selectedItems[i].dataObj.groupID)) {
               this.push('selectedGroups',
                 this._refObj.getGroups()[selectedItems[i].dataObj.groupID])
@@ -391,6 +396,9 @@ var GIVe = (function (give) {
             }
           }, this)
         }
+        this.async(function () {
+          this._inUpdatingSelection = false
+        })
       }
     }
     // TODO: use on-scroll event of iron-list to implement group label

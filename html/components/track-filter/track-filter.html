@@ -17,6 +17,7 @@ limitations under the License.
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../track-object/track-object.html">
 <link rel="import" href="../ref-object/ref-object.html">
+<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
@@ -26,6 +27,9 @@ limitations under the License.
 <dom-module id="track-filter">
   <template>
     <style include="genemo-shared-styles">
+      paper-dropdown-menu {
+        margin: 1em
+      }
     </style>
     <paper-dropdown-menu id="keyDropdown" label="[[fieldLabel]]">
       <paper-menu class="dropdown-content" id="keyMenu"
@@ -35,9 +39,9 @@ limitations under the License.
         </template>
       </paper-menu>
     </paper-dropdown-menu>
-    <div>
+    <span>
       is
-    </div>
+    </span>
     <paper-dropdown-menu id="valueDropdown" label="[[valueLabel]]">
       <paper-menu class="dropdown-content" id="valueMenu"
         attr-for-selected="value" selected="{{_value}}">
@@ -72,12 +76,13 @@ var GIVe = (function (give) {
       },
 
       _value: {
-        type: String,
+        type: String
       },
 
       hasValue: {
         type: Boolean,
-        computed: '_hasValue(value)',
+        value: false,
+        computed: '_hasValue(_value)',
         notify: true
       },
 
@@ -129,7 +134,7 @@ var GIVe = (function (give) {
     ready: function () {
       this._valueArray = [
         {
-          valueId: 'n/a',
+          valueId: '((n/a))',
           value: '(Field required)'
         }
       ]
@@ -166,7 +171,7 @@ var GIVe = (function (give) {
     },
 
     _keyChanged: function (newValue, oldValue) {
-      if (newValue) {
+      if (this._refObj && newValue) {
         this._valueArray =
           Array.from(this._keyValueDict[newValue].values()).sort().map(
             entry => ({ valueId: entry, value: entry })
@@ -175,14 +180,19 @@ var GIVe = (function (give) {
     },
 
     _hasValue: function (value) {
-      return !!value
+      return !!value && value !== '((n/a))'
     },
 
     createFilter: function () {
-      return new give.MetadataFilter(this.key, this.value,
+      return new give.MetadataFilter(this._key,
+        this._value === '((n/a))' ? null : this._value,
         (hay, needle) => (hay.toLowerCase() === needle.toLowerCase()),
-        (track, key) => track.getSetting(key)
+        (track, key) => track.getSetting(key, 'string')
       )
+    },
+
+    getFilterDesc: function () {
+      return this._key + ' is ' + this._value
     }
   })
 
