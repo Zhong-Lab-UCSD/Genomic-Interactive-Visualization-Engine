@@ -87,14 +87,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var selector;
       var items;
 
-      setup(function(done) {
+      setup(function () {
         selector = fixture('inlineAttributes');
         items = Array.prototype.slice.apply(selector.querySelectorAll('div[some-attr]'));
-
-        selector.addEventListener('iron-items-changed', function onIronItemsChanged() {
-          selector.removeEventListener('iron-items-changed', onIronItemsChanged);
-          done();
-        });
       });
 
       test('selecting value programatically selects correct item', function() {
@@ -108,32 +103,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           done();
         });
       });
-
-      test('setting attr-for-selected to null keeps current selection', function() {
-        selector.select('value0');
-        assert.equal(selector.selectedItem, items[0]);
-        assert.equal(selector.selected, 'value0');
-        selector.attrForSelected = null;
-        assert.equal(selector.selectedItem, items[0]);
-        assert.equal(selector.selected, 0);
-      });
     });
 
     suite('reflected properties as attributes', function() {
       var selector;
       var items;
 
-      setup(function(done) {
+      setup(function () {
         selector = fixture('reflectedProperties');
         items = Array.prototype.slice.apply(selector.querySelectorAll('attr-reflector'));
         for (var i = 0; i < items.length; i++) {
           items[i].someAttr = "value" + i;
         }
-
-        selector.addEventListener('iron-items-changed', function onIronItemsChanged() {
-          selector.removeEventListener('iron-items-changed', onIronItemsChanged);
-          done();
-        });
       });
 
       test('selecting value programatically selects correct item', function() {
@@ -153,17 +134,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var selector;
       var items;
 
-      setup(function(done) {
+      setup(function () {
         selector = fixture('mixedPropertiesAndAttributes');
         items = Array.prototype.slice.apply(selector.querySelectorAll('attr-reflector, div[some-attr]'));
         for (var i = 0; i < items.length; i++) {
           items[i].someAttr = "value" + i;
         }
-
-        selector.addEventListener('iron-items-changed', function onIronItemsChanged() {
-          selector.removeEventListener('iron-items-changed', onIronItemsChanged);
-          done();
-        });
       });
 
       test('selecting value programatically selects correct item', function() {
@@ -197,14 +173,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var selector;
       var items;
 
-      setup(function(done) {
+      setup(function () {
         selector = fixture('defaultAttribute');
         items = Array.prototype.slice.apply(selector.querySelectorAll('div[some-attr]'));
-
-        selector.addEventListener('iron-items-changed', function onIronItemsChanged() {
-          selector.removeEventListener('iron-items-changed', onIronItemsChanged);
-          done();
-        });
       });
 
       test('setting non-existing value sets default', function() {
@@ -215,8 +186,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('setting non-existing value sets default', function() {
         selector.multi = true;
-        selector.select('non-existing-value');
-        assert.deepEqual(selector.selectedValues, ['default', 'non-existing-value']);
+        selector.select(['non-existing-value']);
+        assert.deepEqual(selector.selectedValues, ['default']);
         assert.deepEqual(selector.selectedItems, [items[2]]);
       });
 
@@ -233,7 +204,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(selector.selectedItem, undefined);
         selector.multi = true;
         selector.selectedValues = ['non-existing-value'];
-        assert.deepEqual(selector.selectedItems, []);
+        assert.deepEqual(selector.selectedItems, [undefined]);
         selector.fallbackSelection = 'default';
         assert.deepEqual(selector.selectedItems, [items[2]]);
       });

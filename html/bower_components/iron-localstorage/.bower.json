@@ -1,6 +1,6 @@
 {
   "name": "iron-localstorage",
-  "version": "2.1.1",
+  "version": "1.0.6",
   "description": "Provides access to local storage",
   "keywords": [
     "web-component",
@@ -15,45 +15,24 @@
   "license": "http://polymer.github.io/LICENSE.txt",
   "homepage": "https://github.com/PolymerElements/iron-localstorage/",
   "dependencies": {
-    "polymer": "Polymer/polymer#1.9 - 2"
+    "polymer": "Polymer/polymer#^1.5.0"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
-    "test-fixture": "PolymerElements/test-fixture#^3.0.0-rc.1",
-    "web-component-tester": "^6.0.0",
-    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0",
-    "paper-styles": "PolymerElements/paper-styles#1 - 2",
-    "paper-checkbox": "PolymerElements/paper-checkbox#1 - 2"
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "paper-styles": "PolymerElements/paper-styles#^1.0.2",
+    "paper-checkbox": "PolymerElements/paper-checkbox#^1.0.1"
   },
   "ignore": [],
-  "variants": {
-    "1.x": {
-      "dependencies": {
-        "polymer": "Polymer/polymer#^1.9"
-      },
-      "devDependencies": {
-        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
-        "test-fixture": "PolymerElements/test-fixture#^1.0.0",
-        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
-        "paper-styles": "PolymerElements/paper-styles#^1.0.2",
-        "paper-checkbox": "PolymerElements/paper-checkbox#^1.0.1",
-        "web-component-tester": "Polymer/web-component-tester#^4.0.0"
-      },
-      "resolutions": {
-        "webcomponentsjs": "^0.7"
-      }
-    }
-  },
-  "resolutions": {
-    "webcomponentsjs": "^1.0.0"
-  },
-  "_release": "2.1.1",
+  "_release": "1.0.6",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.1",
-    "commit": "43219ad500ba70ddaf6aced24c2cd8b63a730d02"
+    "tag": "v1.0.6",
+    "commit": "0888fcae201558c70dc5027774b772aed3ca1d0e"
   },
   "_source": "https://github.com/PolymerElements/iron-localstorage.git",
-  "_target": "^2.0.0",
+  "_target": "^1.0.6",
   "_originalSource": "PolymerElements/iron-localstorage"
 }

@@ -151,8 +151,8 @@ var GIVe = (function (give) {
    */
   // give.NewTrackData.prototype._dataFromChromEntry = function (dataEntry) {
   //   if (!dataEntry.data) {
-  //     give._verbConsole.info('No data in the ChromEntry. Get "' +
-  //       dataEntry.data + '".')
+  //     give._verboseConsole('No data in the ChromEntry. Get "' +
+  //       dataEntry.data + '".', give.VERBOSE_DEBUG)
   //     return null
   //   }
   //   return dataEntry.data

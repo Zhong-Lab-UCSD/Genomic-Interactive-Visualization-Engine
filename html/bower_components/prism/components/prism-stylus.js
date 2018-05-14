@@ -1,10 +1,7 @@
 (function (Prism) {
 	var inside = {
 		'url': /url\((["']?).*?\1\)/i,
-		'string': {
-			pattern: /("|')(?:(?!\1)[^\\\r\n]|\\(?:\r\n|[\s\S]))*\1/,
-			greedy: true
-		},
+		'string': /("|')(?:[^\\\r\n]|\\(?:\r\n|[\s\S]))*?\1/,
 		'interpolation': null, // See below
 		'func': null, // See below
 		'important': /\B!(?:important|optional)\b/i,
@@ -26,25 +23,19 @@
 	inside['interpolation'] = {
 		pattern: /\{[^\r\n}:]+\}/,
 		alias: 'variable',
-		inside: {
-			'delimiter': {
-				pattern: /^{|}$/,
-				alias: 'punctuation'
-			},
-			rest: inside
-		}
+		inside: Prism.util.clone(inside)
 	};
 	inside['func'] = {
 		pattern: /[\w-]+\([^)]*\).*/,
 		inside: {
 			'function': /^[^(]+/,
-			rest: inside
+			rest: Prism.util.clone(inside)
 		}
 	};
 
 	Prism.languages.stylus = {
 		'comment': {
-			pattern: /(^|[^\\])(\/\*[\s\S]*?\*\/|\/\/.*)/,
+			pattern: /(^|[^\\])(\/\*[\w\W]*?\*\/|\/\/.*)/,
 			lookbehind: true
 		},
 		'atrule-declaration': {

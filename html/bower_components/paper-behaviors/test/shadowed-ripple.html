@@ -27,7 +27,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       #wrapper {
         background: red;
       }
-      #wrapper > ::slotted(#source) {
+      #wrapper > ::content  #source {
         height: 25px;
         width: 50px;
         background: green;
@@ -39,7 +39,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </div>
     </div>
     <div id="wrapper">
-      <slot id="content"></slot>
+      <content id="content"></content>
     </div>
   </template>
   <script>

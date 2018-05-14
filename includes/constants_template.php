@@ -3,14 +3,6 @@
   // Also mysql user and passwords
   // This file will not be pushed onto Github
 
-  /**
-   * Whether all server-side errors should be suppressed.
-   * If this is set to TRUE, all server-side errors will be suppressed if they
-   * have nothing to do with user input, and only general nature of the error
-   * will be shown (such as "Database error").
-   */
-  define('SUPPRESS_SERVER_ERRORS', 'FALSE');
-
   define('CPB_HOST', '<CPB_HOST>');
   define('CPB_USER', '<CPB_USER>');
   define('CPB_PASS', '<CPB_PASS>');

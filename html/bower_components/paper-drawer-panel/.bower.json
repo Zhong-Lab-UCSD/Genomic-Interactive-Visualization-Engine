@@ -1,6 +1,6 @@
 {
   "name": "paper-drawer-panel",
-  "version": "2.1.1",
+  "version": "1.0.11",
   "description": "A responsive drawer panel",
   "authors": [
     "The Polymer Authors"
@@ -19,52 +19,29 @@
   "license": "http://polymer.github.io/LICENSE.txt",
   "homepage": "https://github.com/PolymerElements/paper-drawer-panel",
   "dependencies": {
-    "iron-media-query": "PolymerElements/iron-media-query#1 - 2",
-    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#1 - 2",
-    "iron-selector": "PolymerElements/iron-selector#1 - 2",
-    "polymer": "Polymer/polymer#1.9 - 2"
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.0",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.0",
+    "iron-selector": "PolymerElements/iron-selector#^1.0.0",
+    "polymer": "Polymer/polymer#^1.1.0"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
-    "paper-button": "PolymerElements/paper-button#1 - 2",
-    "paper-styles": "PolymerElements/paper-styles#1 - 2",
-    "iron-test-helpers": "PolymerElements/iron-test-helpers#1 - 2",
-    "web-component-tester": "^6.0.0",
-    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
-  },
-  "variants": {
-    "1.x": {
-      "dependencies": {
-        "iron-media-query": "PolymerElements/iron-media-query#^1.0.0",
-        "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.0",
-        "iron-selector": "PolymerElements/iron-selector#^1.0.0",
-        "polymer": "Polymer/polymer#^1.9"
-      },
-      "devDependencies": {
-        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
-        "paper-button": "PolymerElements/paper-button#^1.0.0",
-        "paper-styles": "PolymerElements/paper-styles#^1.0.0",
-        "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
-        "web-component-tester": "^4.0.0",
-        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
-      },
-      "resolutions": {
-        "webcomponentsjs": "^0.7"
-      }
-    }
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "paper-button": "PolymerElements/paper-button#^1.0.0",
+    "paper-styles": "PolymerElements/paper-styles#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
   },
   "main": "paper-drawer-panel.html",
   "ignore": [],
-  "resolutions": {
-    "webcomponentsjs": "^1.0.0"
-  },
-  "_release": "2.1.1",
+  "_release": "1.0.11",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.1",
-    "commit": "a04eb340d38e7395cc68dc32684935fa1298906b"
+    "tag": "v1.0.11",
+    "commit": "7f813dd41e1f74ff934189651b6a1d43b762d701"
   },
   "_source": "https://github.com/PolymerElements/paper-drawer-panel.git",
-  "_target": "^2.0.0",
+  "_target": "^1.0.0",
   "_originalSource": "PolymerElements/paper-drawer-panel"
 }

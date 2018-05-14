@@ -57,6 +57,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
 @demo demo/index.html
 @polymerBehavior
 */
+
   Polymer.IronFitBehavior = {
 
     properties: {
@@ -100,7 +101,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
 
       /**
        * The orientation against which to align the element horizontally
-       * relative to the `positionTarget`. Possible values are "left", "right", "center", "auto".
+       * relative to the `positionTarget`. Possible values are "left", "right", "auto".
        */
       horizontalAlign: {
         type: String
@@ -108,7 +109,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
 
       /**
        * The orientation against which to align the element vertically
-       * relative to the `positionTarget`. Possible values are "top", "bottom", "middle", "auto".
+       * relative to the `positionTarget`. Possible values are "top", "bottom", "auto".
        */
       verticalAlign: {
         type: String
@@ -128,8 +129,8 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
        * of it as increasing or decreasing the distance to the side of the
        * screen given by `horizontalAlign`.
        *
-       * If `horizontalAlign` is "left" or "center", this offset will increase or
-       * decrease the distance to the left side of the screen: a negative offset will
+       * If `horizontalAlign` is "left", this offset will increase or decrease
+       * the distance to the left side of the screen: a negative offset will
        * move the dropdown to the left; a positive one, to the right.
        *
        * Conversely if `horizontalAlign` is "right", this offset will increase
@@ -148,8 +149,8 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
        * of it as increasing or decreasing the distance to the side of the
        * screen given by `verticalAlign`.
        *
-       * If `verticalAlign` is "top" or "middle", this offset will increase or
-       * decrease the distance to the top side of the screen: a negative offset will
+       * If `verticalAlign` is "top", this offset will increase or decrease
+       * the distance to the top side of the screen: a negative offset will
        * move the dropdown upwards; a positive one, downwards.
        *
        * Conversely if `verticalAlign` is "bottom", this offset will increase
@@ -246,21 +247,13 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
       return this.horizontalAlign;
     },
 
-    /**
-     * True if the element should be positioned instead of centered.
-     * @private
-     */
-    get __shouldPosition() {
-      return (this.horizontalAlign || this.verticalAlign) &&
-        (this.horizontalAlign !== 'center' || this.verticalAlign !== 'middle');
-    },
-
     attached: function() {
       // Memoize this to avoid expensive calculations & relayouts.
       // Make sure we do it only once
       if (typeof this._isRTL === 'undefined') {
         this._isRTL = window.getComputedStyle(this).direction == 'rtl';
       }
+          
       this.positionTarget = this.positionTarget || this._defaultPositionTarget;
       if (this.autoFitOnAttach) {
         if (window.getComputedStyle(this).display === 'none') {
@@ -268,19 +261,8 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
             this.fit();
           }.bind(this));
         } else {
-          // NOTE: shadydom applies distribution asynchronously
-          // for performance reasons webcomponents/shadydom#120
-          // Flush to get correct layout info.
-          window.ShadyDOM && ShadyDOM.flush();
           this.fit();
         }
-      }
-    },
-
-    detached: function() {
-      if (this.__deferredFit) {
-        clearTimeout(this.__deferredFit);
-        this.__deferredFit = null;
       }
     },
 
@@ -371,7 +353,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
      * Positions the element according to `horizontalAlign, verticalAlign`.
      */
     position: function() {
-      if (!this.__shouldPosition) {
+      if (!this.horizontalAlign && !this.verticalAlign) {
         // needs to be centered, and it is done after constrain.
         return;
       }
@@ -396,8 +378,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
         height: rect.height + margin.top + margin.bottom
       };
 
-      var position = this.__getPosition(this._localeHorizontalAlign, this.verticalAlign, size, rect, positionRect,
-        fitRect);
+      var position = this.__getPosition(this._localeHorizontalAlign, this.verticalAlign, size, positionRect, fitRect);
 
       var left = position.left + margin.left;
       var top = position.top + margin.top;
@@ -427,7 +408,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
      * and/or `max-width`.
      */
     constrain: function() {
-      if (this.__shouldPosition) {
+      if (this.horizontalAlign || this.verticalAlign) {
         return;
       }
       this._discoverInfo();
@@ -483,7 +464,7 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
      * `position:fixed`.
      */
     center: function() {
-      if (this.__shouldPosition) {
+      if (this.horizontalAlign || this.verticalAlign) {
         return;
       }
       this._discoverInfo();
@@ -531,14 +512,14 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
       return target.getBoundingClientRect();
     },
 
-    __getOffscreenArea: function(position, size, fitRect) {
+    __getCroppedArea: function(position, size, fitRect) {
       var verticalCrop = Math.min(0, position.top) + Math.min(0, fitRect.bottom - (position.top + size.height));
       var horizontalCrop = Math.min(0, position.left) + Math.min(0, fitRect.right - (position.left + size.width));
       return Math.abs(verticalCrop) * size.width + Math.abs(horizontalCrop) * size.height;
     },
 
 
-    __getPosition: function(hAlign, vAlign, size, sizeNoMargins, positionRect, fitRect) {
+    __getPosition: function(hAlign, vAlign, size, positionRect, fitRect) {
       // All the possible configurations.
       // Ordered as top-left, top-right, bottom-left, bottom-right.
       var positions = [{
@@ -584,53 +565,23 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
       vAlign = vAlign === 'auto' ? null : vAlign;
       hAlign = hAlign === 'auto' ? null : hAlign;
 
-      if (!hAlign || hAlign === 'center') {
-        positions.push({
-          verticalAlign: 'top',
-          horizontalAlign: 'center',
-          top: positionRect.top + this.verticalOffset + (this.noOverlap ? positionRect.height : 0),
-          left: positionRect.left - sizeNoMargins.width / 2 + positionRect.width / 2 + this.horizontalOffset
-        });
-        positions.push({
-          verticalAlign: 'bottom',
-          horizontalAlign: 'center',
-          top: positionRect.bottom - size.height - this.verticalOffset - (this.noOverlap ? positionRect.height : 0),
-          left: positionRect.left - sizeNoMargins.width / 2 + positionRect.width / 2 + this.horizontalOffset
-        });
-      }
-
-      if (!vAlign || vAlign === 'middle') {
-        positions.push({
-          verticalAlign: 'middle',
-          horizontalAlign: 'left',
-          top: positionRect.top - sizeNoMargins.height / 2 + positionRect.height / 2 + this.verticalOffset,
-          left: positionRect.left + this.horizontalOffset + (this.noOverlap ? positionRect.width : 0)
-        });
-        positions.push({
-          verticalAlign: 'middle',
-          horizontalAlign: 'right',
-          top: positionRect.top - sizeNoMargins.height / 2 + positionRect.height / 2 + this.verticalOffset,
-          left: positionRect.right - size.width - this.horizontalOffset - (this.noOverlap ? positionRect.width : 0)
-        });
-      }
-
       var position;
       for (var i = 0; i < positions.length; i++) {
-        var candidate = positions[i];
-        var vAlignOk = candidate.verticalAlign === vAlign;
-        var hAlignOk = candidate.horizontalAlign === hAlign;
+        var pos = positions[i];
 
         // If both vAlign and hAlign are defined, return exact match.
         // For dynamicAlign and noOverlap we'll have more than one candidate, so
-        // we'll have to check the offscreenArea to make the best choice.
-        if (!this.dynamicAlign && !this.noOverlap && vAlignOk && hAlignOk) {
-          position = candidate;
+        // we'll have to check the croppedArea to make the best choice.
+        if (!this.dynamicAlign && !this.noOverlap &&
+            pos.verticalAlign === vAlign && pos.horizontalAlign === hAlign) {
+          position = pos;
           break;
         }
 
         // Align is ok if alignment preferences are respected. If no preferences,
         // it is considered ok.
-        var alignOk = (!vAlign || vAlignOk) && (!hAlign || hAlignOk);
+        var alignOk = (!vAlign || pos.verticalAlign === vAlign) &&
+                      (!hAlign || pos.horizontalAlign === hAlign);
 
         // Filter out elements that don't match the alignment (if defined).
         // With dynamicAlign, we need to consider all the positions to find the
@@ -639,20 +590,18 @@ within `fitInto` boundaries, while preserving the element's CSS margin values.
           continue;
         }
 
-        candidate.offscreenArea = this.__getOffscreenArea(candidate, size, fitRect);
+        position = position || pos;
+        pos.croppedArea = this.__getCroppedArea(pos, size, fitRect);
+        var diff = pos.croppedArea - position.croppedArea;
+        // Check which crops less. If it crops equally, check if align is ok.
+        if (diff < 0 || (diff === 0 && alignOk)) {
+          position = pos;
+        }
         // If not cropped and respects the align requirements, keep it.
         // This allows to prefer positions overlapping horizontally over the
         // ones overlapping vertically.
-        if (candidate.offscreenArea === 0 && alignOk) {
-          position = candidate;
+        if (position.croppedArea === 0 && alignOk) {
           break;
-        }
-        position = position || candidate;
-        var diff = candidate.offscreenArea - position.offscreenArea;
-        // Check which crops less. If it crops equally, check if at least one
-        // align setting is ok.
-        if (diff < 0 || (diff === 0 && (vAlignOk || hAlignOk))) {
-          position = candidate;
         }
       }
 

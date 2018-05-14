@@ -45,33 +45,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
+
       function ensureDocumentHasFocus() {
         window.top && window.top.focus();
       }
 
       function checkSelectionBar(tabs, tab) {
         var tabRect = tab.getBoundingClientRect();
-        var rect = Polymer.dom(tabs.root)
-                       .querySelector('#selectionBar')
-                       .getBoundingClientRect();
-        assert.approximately(rect.left, tabRect.left, 5);
-        assert.approximately(rect.right, tabRect.right, 5);
-      }
-
-      function waitForIronItemsChanged(selector, callback) {
-        selector.addEventListener(
-            'iron-items-changed', function onIronItemsChanged() {
-              selector.removeEventListener('iron-items-changed', onIronItemsChanged);
-              callback();
-            })
+        var rect = Polymer.dom(tabs.root).querySelector('#selectionBar').getBoundingClientRect();
+        assert.equal(Math.round(tabRect.left), Math.round(rect.left));
       }
 
       suite('defaults', function() {
+
         var tabs;
 
-        setup(function(done) {
+        setup(function () {
           tabs = fixture('basic');
-          waitForIronItemsChanged(tabs, done);
         });
 
         test('to nothing selected', function() {
@@ -79,10 +69,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         test('no tabs have iron-selected class', function() {
-          Array.prototype.forEach.call(
-              tabs.querySelectorAll('paper-tab'), function(tab) {
-                assert.isFalse(tab.classList.contains('iron-selected'));
-              });
+          Array.prototype.forEach.call(tabs.querySelectorAll('paper-tab'), function(tab) {
+            assert.isFalse(tab.classList.contains('iron-selected'));
+          });
         });
 
         test('to false as noink', function() {
@@ -117,27 +106,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       suite('hidden tabs', function() {
         var tabs;
 
-        setup(function(done) {
+        setup(function() {
           tabs = fixture('HiddenTabs');
-          waitForIronItemsChanged(tabs, done);
         });
 
         test('choose the correct bar position once made visible', function() {
           tabs.removeAttribute('hidden');
           tabs.selected = 0;
-          checkSelectionBar(tabs, tabs.items[0]);
+          expect(tabs._width).to.be.greaterThan(0);
+          expect(tabs._left).to.be.equal(0);
         });
       });
 
       suite('set the selected attribute', function() {
+
         var tabs, index = 0;
 
-        setup(function(done) {
+        setup(function () {
           tabs = fixture('basic');
-          waitForIronItemsChanged(tabs, function() {
-            tabs.selected = index;
-            done();
-          });
+          tabs.selected = index;
         });
 
         test('selected value', function() {
@@ -149,27 +136,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.isTrue(tab.classList.contains('iron-selected'));
         });
 
-        test(
-            'selected tab has selection bar position at the bottom of the tab',
-            function(done) {
-              setTimeout(function() {
-                checkSelectionBar(tabs, tabs.querySelectorAll('paper-tab')[index]);
-                done();
-              }, 1000);
-            });
+        test('selected tab has selection bar position at the bottom of the tab', function(done) {
+          setTimeout(function() {
+            checkSelectionBar(tabs, tabs.querySelectorAll('paper-tab')[index]);
+            done();
+          }, 1000);
+        });
+
       });
 
       suite('select tab via click', function() {
+
         var tabs, index = 1;
         var tab;
 
-        setup(function(done) {
+        setup(function () {
           tabs = fixture('basic');
-          waitForIronItemsChanged(tabs, function() {
-            tab = tabs.querySelectorAll('paper-tab')[index];
-            tab.dispatchEvent(new CustomEvent('click', {bubbles: true}));
-            done();
-          });
+          tab = tabs.querySelectorAll('paper-tab')[index];
+          tab.dispatchEvent(new CustomEvent('click', {bubbles: true}));
         });
 
         test('selected value', function() {
@@ -181,14 +165,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.isTrue(tab.classList.contains('iron-selected'));
         });
 
-        test(
-            'selected tab has selection bar position at the bottom of the tab',
-            function(done) {
-              setTimeout(function() {
-                checkSelectionBar(tabs, tabs.querySelectorAll('paper-tab')[index]);
-                done();
-              }, 1000);
-            });
+        test('selected tab has selection bar position at the bottom of the tab', function(done) {
+          setTimeout(function() {
+            checkSelectionBar(tabs, tabs.querySelectorAll('paper-tab')[index]);
+            done();
+          }, 1000);
+        });
 
         test('pressing enter on tab causes a click', function(done) {
           var clickCount = 0;
@@ -207,23 +189,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       suite('noink attribute', function() {
         var tabs;
 
-        setup(function(done) {
+        setup(function () {
           tabs = fixture('basic');
-          waitForIronItemsChanged(tabs, done);
         });
 
         test('noink attribute propagates to all descendant tabs', function() {
           tabs.noink = true;
-          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab'))
-              .forEach(function(tab) {
-                assert.isTrue(tab.noink);
-              });
+          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab')).forEach(function(tab) {
+            assert.isTrue(tab.noink);
+          });
 
           tabs.noink = false;
-          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab'))
-              .forEach(function(tab) {
-                assert.isFalse(tab.noink);
-              });
+          Array.prototype.slice.apply(tabs.querySelectorAll('paper-tab')).forEach(function(tab) {
+            assert.isFalse(tab.noink);
+          });
         });
       });
 
@@ -232,9 +211,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var RIGHT = 39;
         var tabs;
 
-        setup(function(done) {
+        setup(function () {
           tabs = fixture('basic');
-          waitForIronItemsChanged(tabs, done);
+          Polymer.dom.flush();
         });
 
         test('paper-tabs has role tablist', function() {
@@ -247,176 +226,168 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
         });
 
-        test(
-            'without autoselect, tabs are not automatically selected',
-            function(done) {
-              ensureDocumentHasFocus();
+        test('without autoselect, tabs are not automatically selected',
+          function(done) {
+            ensureDocumentHasFocus();
+            Polymer.Base.async(function() {
+              tabs.select(0);
+              MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
               Polymer.Base.async(function() {
-                tabs.select(0);
-                MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
+                assert.equal(tabs.selected, 0);
+
+                MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
                 Polymer.Base.async(function() {
                   assert.equal(tabs.selected, 0);
 
                   MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
                   Polymer.Base.async(function() {
                     assert.equal(tabs.selected, 0);
-
-                    MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
-                    Polymer.Base.async(function() {
-                      assert.equal(tabs.selected, 0);
-                      done();
-                    }, 100);
+                    done();
                   }, 100);
                 }, 100);
-              });
+              }, 100);
             });
+          });
 
-        test(
-            'with autoselect, tabs are selected when moved to using arrow ' +
-                'keys',
-            function(done) {
-              ensureDocumentHasFocus();
+        test('with autoselect, tabs are selected when moved to using arrow ' +
+          'keys', function(done) {
+            ensureDocumentHasFocus();
+            Polymer.Base.async(function() {
+              tabs.autoselect = true;
+              tabs.select(0);
+              MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
               Polymer.Base.async(function() {
-                tabs.autoselect = true;
-                tabs.select(0);
+                assert.equal(tabs.selected, 1);
+
                 MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
                 Polymer.Base.async(function() {
-                  assert.equal(tabs.selected, 1);
+                  assert.equal(tabs.selected, 2);
+
+                  MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
+                  Polymer.Base.async(function() {
+                    assert.equal(tabs.selected, 1);
+                    done();
+                  }, 100);
+                }, 100);
+              }, 100);
+            });
+          });
+
+        test('with autoselect, tabs are selected when moved to using arrow ' +
+          'keys (RTL)',function(done) {
+            ensureDocumentHasFocus();
+            Polymer.Base.async(function() {
+              tabs.setAttribute('dir', 'rtl');
+
+              tabs.autoselect = true;
+              tabs.select(0);
+              MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
+              Polymer.Base.async(function() {
+                assert.equal(tabs.selected, 1);
+
+                MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
+                Polymer.Base.async(function() {
+                  assert.equal(tabs.selected, 2);
 
                   MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
                   Polymer.Base.async(function() {
-                    assert.equal(tabs.selected, 2);
-
-                    MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
-                    Polymer.Base.async(function() {
-                      assert.equal(tabs.selected, 1);
-                      done();
-                    }, 100);
+                    assert.equal(tabs.selected, 1);
+                    done();
                   }, 100);
                 }, 100);
-              });
+              }, 100);
             });
+          });
 
-        test(
-            'with autoselect, tabs are selected when moved to using arrow ' +
-                'keys (RTL)',
-            function(done) {
-              ensureDocumentHasFocus();
+        test('with autoselect-delay zero, tabs are selected with ' +
+          'microtask timing after the keyup', function(done) {
+            ensureDocumentHasFocus();
+            Polymer.Base.async(function() {
+              tabs.autoselect = true;
+              tabs.autoselectDelay = 0;
+              tabs.select(0);
+
+              MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
               Polymer.Base.async(function() {
-                tabs.setAttribute('dir', 'rtl');
+                assert.equal(tabs.selected, 0);
+                assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
 
-                tabs.autoselect = true;
-                tabs.select(0);
-                MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
-                Polymer.Base.async(function() {
-                  assert.equal(tabs.selected, 1);
-
-                  MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, LEFT);
-                  Polymer.Base.async(function() {
-                    assert.equal(tabs.selected, 2);
-
-                    MockInteractions.pressAndReleaseKeyOn(tabs.selectedItem, RIGHT);
-                    Polymer.Base.async(function() {
-                      assert.equal(tabs.selected, 1);
-                      done();
-                    }, 100);
-                  }, 100);
-                }, 100);
-              });
-            });
-
-        test(
-            'with autoselect-delay zero, tabs are selected with ' +
-                'microtask timing after the keyup',
-            function(done) {
-              ensureDocumentHasFocus();
-              Polymer.Base.async(function() {
-                tabs.autoselect = true;
-                tabs.autoselectDelay = 0;
-                tabs.select(0);
-
+                // No keyup between keydown events: the key is being held.
                 MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
                 Polymer.Base.async(function() {
                   assert.equal(tabs.selected, 0);
-                  assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
+                  assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
 
-                  // No keyup between keydown events: the key is being held.
-                  MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
+                  MockInteractions.keyUpOn(tabs.selectedItem, RIGHT);
+                  assert.equal(tabs.selected, 0);
                   Polymer.Base.async(function() {
-                    assert.equal(tabs.selected, 0);
+                    assert.equal(tabs.selected, 2);
                     assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
 
-                    MockInteractions.keyUpOn(tabs.selectedItem, RIGHT);
-                    assert.equal(tabs.selected, 0);
+                    MockInteractions.keyDownOn(tabs.selectedItem, LEFT);
                     Polymer.Base.async(function() {
                       assert.equal(tabs.selected, 2);
-                      assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
+                      assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
 
-                      MockInteractions.keyDownOn(tabs.selectedItem, LEFT);
+                      MockInteractions.keyUpOn(tabs.selectedItem, LEFT);
+                      assert.equal(tabs.selected, 2);
                       Polymer.Base.async(function() {
-                        assert.equal(tabs.selected, 2);
-                        assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
-
-                        MockInteractions.keyUpOn(tabs.selectedItem, LEFT);
-                        assert.equal(tabs.selected, 2);
-                        Polymer.Base.async(function() {
-                          assert.equal(tabs.selected, 1);
-                          done();
-                        });
+                        assert.equal(tabs.selected, 1);
+                        done();
                       });
                     });
                   });
                 });
               });
             });
+          });
 
-        test(
-            'with autoselect-delay positive, tabs are selected with ' +
-                'microtask timing after the keyup and delay',
-            function(done) {
-              ensureDocumentHasFocus();
+        test('with autoselect-delay positive, tabs are selected with ' +
+          'microtask timing after the keyup and delay', function(done) {
+            ensureDocumentHasFocus();
+            Polymer.Base.async(function() {
+              var DELAY = 100;
+
+              tabs.autoselect = true;
+              tabs.autoselectDelay = DELAY;
+              tabs.select(0);
+
+              MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
               Polymer.Base.async(function() {
-                var DELAY = 100;
+                assert.equal(tabs.selected, 0);
+                assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
 
-                tabs.autoselect = true;
-                tabs.autoselectDelay = DELAY;
-                tabs.select(0);
-
+                // No keyup between keydown events: the key is being held.
                 MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
                 Polymer.Base.async(function() {
                   assert.equal(tabs.selected, 0);
-                  assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
+                  assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
 
-                  // No keyup between keydown events: the key is being held.
-                  MockInteractions.keyDownOn(tabs.selectedItem, RIGHT);
+                  MockInteractions.keyUpOn(tabs.selectedItem, RIGHT);
+                  assert.equal(tabs.selected, 0);
                   Polymer.Base.async(function() {
-                    assert.equal(tabs.selected, 0);
+                    assert.equal(tabs.selected, 2);
                     assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
 
-                    MockInteractions.keyUpOn(tabs.selectedItem, RIGHT);
-                    assert.equal(tabs.selected, 0);
+                    MockInteractions.keyDownOn(tabs.selectedItem, LEFT);
                     Polymer.Base.async(function() {
                       assert.equal(tabs.selected, 2);
-                      assert.equal(tabs.items.indexOf(tabs.focusedItem), 2);
+                      assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
 
-                      MockInteractions.keyDownOn(tabs.selectedItem, LEFT);
+                      MockInteractions.keyUpOn(tabs.selectedItem, LEFT);
+                      assert.equal(tabs.selected, 2);
                       Polymer.Base.async(function() {
-                        assert.equal(tabs.selected, 2);
-                        assert.equal(tabs.items.indexOf(tabs.focusedItem), 1);
-
-                        MockInteractions.keyUpOn(tabs.selectedItem, LEFT);
-                        assert.equal(tabs.selected, 2);
-                        Polymer.Base.async(function() {
-                          assert.equal(tabs.selected, 1);
-                          done();
-                        }, DELAY + 100);
-                      });
-                    }, DELAY + 100);
-                  });
+                        assert.equal(tabs.selected, 1);
+                        done();
+                      }, DELAY + 100);
+                    });
+                  }, DELAY + 100);
                 });
               });
             });
+          });
       });
+
     </script>
 
   </body>

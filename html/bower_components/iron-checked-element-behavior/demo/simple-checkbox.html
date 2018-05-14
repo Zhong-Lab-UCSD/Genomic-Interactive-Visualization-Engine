@@ -39,9 +39,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       is: 'simple-checkbox',
 
-      behaviors: [Polymer.IronCheckedElementBehavior],
+      behaviors: [
+        Polymer.IronCheckedElementBehavior
+      ],
 
-      properties: {label: {type: String, value: 'not validated'}},
+      properties: {
+        label: {
+          type: String,
+          value: 'not validated'
+        }
+      },
 
       _onCheckTap: function() {
         this.checked = this.$.checkbox.checked;
@@ -52,6 +59,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.label = this.invalid ? 'is invalid' : 'is valid';
       }
     });
+
   </script>
 
   </dom-module>

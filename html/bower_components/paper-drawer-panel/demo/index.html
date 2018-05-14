@@ -22,59 +22,60 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <link rel="import" href="../../paper-button/paper-button.html">
     <link rel="import" href="../paper-drawer-panel.html">
 
-    <custom-style>
-      <style is="custom-style">
+    <style is="custom-style">
 
-        .main-content {
-          text-align: center;
-          background-color: var(--google-grey-100);
-        }
+      #paperDrawerPanel [main] {
+        text-align: center;
+        background-color: var(--google-grey-100);
+      }
 
-        .drawer {
-          border-left: 1px solid var(--google-grey-300);
-        }
+      #paperDrawerPanel [drawer] {
+        border-right: 1px solid var(--google-grey-300);
+      }
 
-        paper-button {
-          color: white;
-          margin: 10px;
-          background-color: var(--google-blue-700);
-          white-space: nowrap;
-          display: inline-block;
-        }
+      #paperDrawerPanel[right-drawer] [drawer] {
+        border-left: 1px solid var(--google-grey-300);
+      }
 
-        button {
-          display: block;
-          line-height: 40px;
-          background-color: transparent;
-          border: none;
-          font-size: 14px;
-          margin: 20px;
-        }
+      paper-button {
+        color: white;
+        margin: 10px;
+        background-color: var(--google-blue-700);
+        white-space: nowrap;
+      }
 
-      </style>
-    </custom-style>
+      button {
+        display: block;
+        line-height: 40px;
+        background-color: transparent;
+        border: none;
+        font-size: 14px;
+        margin: 20px;
+      }
+
+    </style>
   </head>
 
   <body unresolved>
 
     <paper-drawer-panel id="paperDrawerPanel" force-narrow>
-      <div class="drawer" slot="drawer">
+      <div drawer>
         <button tabindex="0">Options</button>
         <button tabindex="0">Settings</button>
-        <button tabindex="0" onclick="toogleDrawer()">Close drawer</button>
+        <button tabindex="0" paper-drawer-toggle>Close drawer</button>
       </div>
-      <div class="main-content" slot="main">
+      <div main>
         <div>
           <paper-button onclick="flipDrawer()" raised>flip drawer</paper-button>
         </div>
         <div>
-          <paper-button onclick="toogleDrawer()" raised>Open drawer</paper-button>
+          <paper-button paper-drawer-toggle raised>toggle drawer</paper-button>
         </div>
       </div>
     </paper-drawer-panel>
 
     <script>
-      (function(win) {
+      (function(global) {
 
         'use strict';
 
@@ -82,13 +83,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         var pdp = document.getElementById('paperDrawerPanel');
 
-        win.flipDrawer = function() {
-          pdp.rightDrawer = !pdp.rightDrawer;
+        global.flipDrawer = function() {
+          if (pdp.hasAttribute(DRAWER_ATTR)) {
+            pdp.removeAttribute(DRAWER_ATTR);
+          } else {
+            pdp.setAttribute(DRAWER_ATTR, '');
+          }
         }
-
-        win.toogleDrawer = function() {
-          pdp.togglePanel();
-        };
 
       }(this));
     </script>

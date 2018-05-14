@@ -36,25 +36,25 @@ animations to be run when switching to or switching out of the page.
 	  overflow: hidden;
     }
 
-    :host > ::slotted(*) {
+    :host > ::content > * {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
     }
 
-    :host > ::slotted(:not(.iron-selected):not(.neon-animating)) {
+    :host > ::content > :not(.iron-selected):not(.neon-animating) {
       display: none !important;
     }
 
-    :host > ::slotted(.neon-animating) {
+    :host > ::content > .neon-animating {
       pointer-events: none;
     }
 
   </style>
 
   <template>
-    <slot id="content"></slot>
+    <content id="content"></content>
   </template>
 
 </dom-module>
@@ -100,7 +100,7 @@ animations to be run when switching to or switching out of the page.
       lesserExitAnimation: {
         type: String
       },
-
+	  
       horizontal: {
         type: Boolean,
         value: false,
@@ -192,10 +192,10 @@ animations to be run when switching to or switching out of the page.
 
       // display the selectedPage during the transition.
       selectedPage.classList.add('neon-animating');
-
+	  
 	  this.updateSize((this.horizontal? selectedPage.getBoundingClientRect().width: selectedPage.getBoundingClientRect().height) +
 		'px', true);
-
+	  
       // actually run the animations.
       if (this.animationConfig.length > 1) {
 
@@ -261,7 +261,7 @@ animations to be run when switching to or switching out of the page.
       }
       this.notifyResize();
     },
-
+	
     ready: function() {
       // Avoid transition at the beginning e.g. page loads and enable
       // transitions only after the element is rendered and ready.

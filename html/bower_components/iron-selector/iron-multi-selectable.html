@@ -12,9 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="iron-selectable.html">
 
 <script>
-  /**
-   * @polymerBehavior Polymer.IronMultiSelectableBehavior
-   */
+  /** @polymerBehavior Polymer.IronMultiSelectableBehavior */
   Polymer.IronMultiSelectableBehaviorImpl = {
     properties: {
 
@@ -33,10 +31,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
        */
       selectedValues: {
         type: Array,
-        notify: true,
-        value: function() {
-          return [];
-        }
+        notify: true
       },
 
       /**
@@ -45,10 +40,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       selectedItems: {
         type: Array,
         readOnly: true,
-        notify: true,
-        value: function() {
-          return [];
-        }
+        notify: true
       },
 
     },
@@ -66,7 +58,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      */
     select: function(value) {
       if (this.multi) {
-        this._toggleSelected(value);
+        if (this.selectedValues) {
+          this._toggleSelected(value);
+        } else {
+          this.selectedValues = [value];
+        }
       } else {
         this.selected = value;
       }
@@ -74,10 +70,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     multiChanged: function(multi) {
       this._selection.multi = multi;
-      this._updateSelected();
     },
 
-    // UNUSED, FOR API COMPATIBILITY
     get _shouldUpdateSelection() {
       return this.selected != null ||
         (this.selectedValues != null && this.selectedValues.length);
@@ -86,7 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     _updateAttrForSelected: function() {
       if (!this.multi) {
         Polymer.IronSelectableBehavior._updateAttrForSelected.apply(this);
-      } else if (this.selectedItems && this.selectedItems.length > 0) {
+      } else if (this._shouldUpdateSelection) {
         this.selectedValues = this.selectedItems.map(function(selectedItem) {
           return this._indexToValue(this.indexOf(selectedItem));
         }, this).filter(function(unfilteredValue) {
@@ -104,26 +98,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     _selectMulti: function(values) {
-      values = values || [];
-
-      var selectedItems = (this._valuesToItems(values) || []).filter(function(item) {
-        return item !== null && item !== undefined;
-      });
-
-      // clear all but the current selected items
-      this._selection.clear(selectedItems);
-
-      // select only those not selected yet
-      for (var i = 0; i < selectedItems.length; i++) {
-        this._selection.setItemSelected(selectedItems[i], true);
-      }
-
-      // Check for items, since this array is populated only when attached
-      if (this.fallbackSelection && !this._selection.get().length) {
-        var fallback = this._valueToItem(this.fallbackSelection);
-        if (fallback) {
-          this.select(this.fallbackSelection);
+      if (values) {
+        var selectedItems = this._valuesToItems(values);
+        // clear all but the current selected items
+        this._selection.clear(selectedItems);
+        // select only those not selected yet
+        for (var i = 0; i < selectedItems.length; i++) {
+          this._selection.setItemSelected(selectedItems[i], true);
         }
+        // Check for items, since this array is populated only when attached
+        if (this.fallbackSelection && this.items.length && !this._selection.get().length) {
+          var fallback = this._valueToItem(this.fallbackSelection);
+          if (fallback) {
+            this.selectedValues = [this.fallbackSelection];
+          }
+        }
+      } else {
+        this._selection.clear();
       }
     },
 
@@ -131,15 +122,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var s = this._selection.get();
       if (this.multi) {
         this._setSelectedItems(s);
-        this._setSelectedItem(s.length ? s[0] : null);
       } else {
-        if (s !== null && s !== undefined) {
-          this._setSelectedItems([s]);
-          this._setSelectedItem(s);
-        } else {
-          this._setSelectedItems([]);
-          this._setSelectedItem(null);
-        }
+        this._setSelectedItems([s]);
+        this._setSelectedItem(s);
       }
     },
 

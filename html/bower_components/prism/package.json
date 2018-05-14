@@ -1,9 +1,8 @@
 {
   "name": "prismjs",
-  "version": "1.14.0",
+  "version": "1.6.0",
   "description": "Lightweight, robust, elegant syntax highlighting. A spin-off project from Dabblet.",
   "main": "prism.js",
-  "style": "themes/prism.css",
   "scripts": {
     "test": "mocha tests/testrunner-tests.js && mocha tests/run.js"
   },
@@ -19,7 +18,7 @@
   "license": "MIT",
   "readmeFilename": "README.md",
   "optionalDependencies": {
-    "clipboard": "^2.0.0"
+    "clipboard": "^1.5.5"
   },
   "devDependencies": {
     "chai": "^2.3.0",
@@ -38,7 +37,7 @@
     "jspmPackage": true,
     "format": "global",
     "files": [
-      "components/**/*.js",
+      "components/**/*.min.js",
       "plugins/**/*",
       "themes/*.css",
       "prism.js"

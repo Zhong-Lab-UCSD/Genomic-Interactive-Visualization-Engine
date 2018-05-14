@@ -15,6 +15,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   /** @polymerBehavior */
   Polymer.PaperSpinnerBehavior = {
 
+    listeners: {
+      'animationend': '__reset',
+      'webkitAnimationEnd': '__reset'
+    },
+
     properties: {
       /**
        * Displays the spinner.
@@ -57,7 +62,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     __altChanged: function(alt) {
       // user-provided `aria-label` takes precedence over prototype default
-      if (alt === 'loading') {
+      if (alt === this.getPropertyInfo('alt').value) {
         this.alt = this.getAttribute('aria-label') || alt;
       } else {
         this.__setAriaHidden(alt==='');

@@ -34,22 +34,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </iron-doc-viewer>
 
-    <dom-module id="bound-fixture">
-      <template>
-        <iron-doc-viewer id="doc" descriptor="{{descriptor}}" bound></iron-doc-viewer>
-      </template>
-      <script>
-        window.addEventListener('WebComponentsReady', function() {
-          Polymer({
-            is: 'bound-fixture'
-          });
-        });
-      </script>
-    </dom-module>
-
     <test-fixture id="bound">
-      <template>
-        <bound-fixture></bound-fixture>
+      <template is="dom-template">
+        <iron-doc-viewer descriptor="{{descriptor}}" bound></iron-doc-viewer>
       </template>
     </test-fixture>
 
@@ -97,10 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         describe('with a bound descriptor', function() {
 
-          beforeEach(function(){
-            page = fixture('bound');
-            page.descriptor = ELEMENT;
-          });
+          beforeEach(function() { page = fixture('bound', {descriptor: ELEMENT}); });
 
           it('loads the descriptor', function() {
             expect(page.descriptor.is).to.eq('awesome-sauce');

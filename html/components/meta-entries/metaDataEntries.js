@@ -4,15 +4,14 @@ var GIVe = (function (give) {
 
   give.MetaDataEntries = function (url) {
     this.url = url || give.MetaDataEntries.defaultUrl
+    this.isReady = false
     this.entries = {}
-    this.DataPromise = give.postAjax(this.url, null, 'text', 'GET')
-      .then(res => this._responseHandler(res))
-      .catch(e => { throw e })
+    give.postAjax(this.url, null, this._responseHandler, 'text', 'GET', null, this)
   }
 
   var _strArrayToMetaEntry = function (strArray) {
     var isReady = false
-    var result = {} // all meta properties
+    var result = {}      // all meta properties
     while (strArray.length > 0) {
       var line = strArray.shift().trim()
       if (line && !line.startsWith('#')) {
@@ -27,7 +26,7 @@ var GIVe = (function (give) {
         }
       } else if (!line) {
         // empty line,
-        // if isReady = true, then this entry is done
+        // if this.isReady = true, then this entry is done
         if (isReady) {
           break
         }
@@ -39,7 +38,7 @@ var GIVe = (function (give) {
   give.MetaDataEntries.prototype._responseHandler = function (response) {
     if (response) {
       // file is available
-      var metaTxtArray = response.split('\n') // break into lines
+      var metaTxtArray = response.split('\n')  // break into lines
       while (metaTxtArray.length > 0) {
         var newEntry = _strArrayToMetaEntry(metaTxtArray)
         if (newEntry) {
@@ -50,8 +49,9 @@ var GIVe = (function (give) {
         }
       }
     }
-    give._verbConsole.info('Meta data loaded.')
-    return this
+    this.isReady = true
+    give._verboseConsole('Meta data loaded.', give.VERBOSE_DEBUG)
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'meta-data-ready', data: this})
   }
 
   give.MetaDataEntries.prototype.findMeta = function (organism, term, key) {

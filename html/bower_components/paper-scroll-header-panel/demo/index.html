@@ -26,70 +26,73 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
   <link rel="import" href="sample-content.html">
 
-  <custom-style>
-    <style is="custom-style">
+  <link rel="stylesheet" href="../../paper-styles/demo.css">
 
-      paper-scroll-header-panel {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        background-color: var(--paper-grey-200, #eee);
+  <style is="custom-style">
 
-        /* background for toolbar when it is at its full size */
-        /* crbug/618165: url(...) values cannot be used in custom properties */
-        --paper-scroll-header-panel-full-header: {
-          background-color: var(--paper-deep-purple-500);
-        };
+    paper-scroll-header-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: var(--paper-grey-200, #eee);
 
-        /* background for toolbar when it is condensed */
-        --paper-scroll-header-panel-condensed-header: {
-          background-color: var(--paper-deep-purple-500);
-        };
-      }
+      /* background for toolbar when it is at its full size */
+      --paper-scroll-header-panel-full-header: {
+        background-image: url(images/bg1.jpg);
+        background-position: left center;
+      };
 
-      paper-icon-button {
-        --paper-icon-button-ink-color: white;
-      }
+      /* background for toolbar when it is condensed */
+      --paper-scroll-header-panel-condensed-header: {
+        background-color: var(--paper-deep-purple-500);
+      };
+    }
 
-      paper-toolbar.tall {
-        background-color: transparent;
-      }
+    paper-icon-button {
+      --paper-icon-button-ink-color: white;
+    }
 
-      paper-toolbar.tall .title {
-        font-size: 40px;
-        margin-left: 60px;
-        -webkit-transform-origin: left center;
-        transform-origin: left center;
-      }
+    paper-toolbar.tall {
+      background-color: transparent;
+    }
 
-      .content {
-        padding: 8px;
-      }
+    paper-toolbar.tall .title {
+      font-size: 40px;
+      margin-left: 60px;
 
-      .spacer {
-        @apply --layout-flex;
-      }
+      -webkit-transform-origin: left center;
+      transform-origin: left center;
+    }
 
-    </style>
-  </custom-style>
+    .content {
+      padding: 8px;
+    }
+
+    .spacer {
+      @apply(--layout-flex);
+    }
+
+  </style>
 
 </head>
 <body unresolved>
 
   <paper-scroll-header-panel condenses>
 
-    <paper-toolbar slot="header" class="tall">
-      <paper-icon-button slot="top" icon="arrow-back"></paper-icon-button>
-      <div slot="top" class="spacer"></div>
-      <paper-icon-button slot="top" icon="search"></paper-icon-button>
-      <paper-icon-button slot="top" icon="more-vert"></paper-icon-button>
-      <div slot="bottom" class="title">Title</div>
+    <paper-toolbar class="tall">
+      <paper-icon-button icon="arrow-back"></paper-icon-button>
+      <div class="spacer"></div>
+      <paper-icon-button icon="search"></paper-icon-button>
+      <paper-icon-button icon="more-vert"></paper-icon-button>
+      <div class="bottom title">Title</div>
     </paper-toolbar>
 
-    <div slot="content" class="content">
+    <div class="content">
+
       <sample-content size="100"></sample-content>
+
     </div>
 
   </paper-scroll-header-panel>

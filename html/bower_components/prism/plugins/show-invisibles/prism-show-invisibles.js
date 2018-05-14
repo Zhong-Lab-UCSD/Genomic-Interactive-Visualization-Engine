@@ -10,8 +10,6 @@ if (
 Prism.hooks.add('before-highlight', function(env) {
 	var tokens = env.grammar;
 
-	if (!tokens) return;
-
 	tokens.tab = /\t/g;
 	tokens.crlf = /\r\n/g;
 	tokens.lf = /\n/g;

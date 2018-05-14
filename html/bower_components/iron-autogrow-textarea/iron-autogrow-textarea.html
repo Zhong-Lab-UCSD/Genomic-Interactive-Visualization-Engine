@@ -12,6 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-behaviors/iron-control-state.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-validatable-behavior/iron-validatable-behavior.html">
+<link rel="import" href="../iron-form-element-behavior/iron-form-element-behavior.html">
 
 <!--
 `iron-autogrow-textarea` is an element containing a textarea that grows in height as more
@@ -53,11 +54,10 @@ Custom property | Description | Default
       .mirror-text {
         visibility: hidden;
         word-wrap: break-word;
-        @apply --iron-autogrow-textarea;
       }
 
       .fit {
-        @apply --layout-fit;
+        @apply(--layout-fit);
       }
 
       textarea {
@@ -74,23 +74,27 @@ Custom property | Description | Default
         font-family: inherit;
         line-height: inherit;
         text-align: inherit;
-        @apply --iron-autogrow-textarea;
+        @apply(--iron-autogrow-textarea);
+      }
+
+      ::content textarea:invalid {
+        box-shadow: none;
       }
 
       textarea::-webkit-input-placeholder {
-        @apply --iron-autogrow-textarea-placeholder;
+        @apply(--iron-autogrow-textarea-placeholder);
       }
 
       textarea:-moz-placeholder {
-        @apply --iron-autogrow-textarea-placeholder;
+        @apply(--iron-autogrow-textarea-placeholder);
       }
 
       textarea::-moz-placeholder {
-        @apply --iron-autogrow-textarea-placeholder;
+        @apply(--iron-autogrow-textarea-placeholder);
       }
 
       textarea:-ms-input-placeholder {
-        @apply --iron-autogrow-textarea-placeholder;
+        @apply(--iron-autogrow-textarea-placeholder);
       }
     </style>
 
@@ -102,7 +106,6 @@ Custom property | Description | Default
     <div class="textarea-container fit">
       <textarea id="textarea"
         name$="[[name]]"
-        aria-label$="[[label]]"
         autocomplete$="[[autocomplete]]"
         autofocus$="[[autofocus]]"
         inputmode$="[[inputmode]]"
@@ -124,29 +127,21 @@ Custom property | Description | Default
     is: 'iron-autogrow-textarea',
 
     behaviors: [
+      Polymer.IronFormElementBehavior,
       Polymer.IronValidatableBehavior,
       Polymer.IronControlState
     ],
 
     properties: {
-      /**
-       * Use this property instead of `bind-value` for two-way data binding.
-       * @type {string|number}
-       */
-      value: {
-        observer: '_valueChanged',
-        type: String,
-        notify: true
-      },
 
       /**
-       * This property is deprecated, and just mirrors `value`. Use `value` instead.
+       * Use this property instead of `value` for two-way data binding.
+       * This property will be deprecated in the future. Use `value` instead.
        * @type {string|number}
        */
       bindValue: {
         observer: '_bindValueChanged',
-        type: String,
-        notify: true
+        type: String
       },
 
       /**
@@ -232,13 +227,6 @@ Custom property | Description | Default
        */
       maxlength: {
         type: Number
-      },
-
-      /**
-       * Bound to the textarea's `aria-label` attribute.
-       */
-      label: {
-        type: String
       }
 
     },
@@ -247,9 +235,13 @@ Custom property | Description | Default
       'input': '_onInput'
     },
 
+    observers: [
+      '_onValueChanged(value)'
+    ],
+
     /**
      * Returns the underlying textarea.
-     * @return {!HTMLTextAreaElement}
+     * @type HTMLTextAreaElement
      */
     get textarea() {
       return this.$.textarea;
@@ -257,7 +249,7 @@ Custom property | Description | Default
 
     /**
      * Returns textarea's selection start.
-     * @return {number}
+     * @type Number
      */
     get selectionStart() {
       return this.$.textarea.selectionStart;
@@ -265,7 +257,7 @@ Custom property | Description | Default
 
     /**
      * Returns textarea's selection end.
-     * @return {number}
+     * @type Number
      */
     get selectionEnd() {
       return this.$.textarea.selectionEnd;
@@ -304,29 +296,24 @@ Custom property | Description | Default
      * @return {boolean} True if the value is valid.
      */
     validate: function() {
-      // Use the nested input's native validity.
-      var valid =  this.$.textarea.validity.valid;
-
-      // Only do extra checking if the browser thought this was valid.
-      if (valid) {
-        // Empty, required input is invalid
-        if (this.required && this.value === '') {
-          valid = false;
-        } else if (this.hasValidator()) {
-          valid = Polymer.IronValidatableBehavior.validate.call(this, this.value);
-        }
+      // Empty, non-required input is valid.
+      if (!this.required && this.value == '') {
+        this.invalid = false;
+        return true;
       }
 
-      this.invalid = !valid;
+      var valid;
+      if (this.hasValidator()) {
+        valid = Polymer.IronValidatableBehavior.validate.call(this, this.value);
+      } else {
+        valid = this.$.textarea.validity.valid;
+        this.invalid = !valid;
+      }
       this.fire('iron-input-validate');
       return valid;
     },
 
-    _bindValueChanged: function(bindValue) {
-      this.value = bindValue;
-    },
-
-    _valueChanged: function(value) {
+    _bindValueChanged: function() {
       var textarea = this.textarea;
       if (!textarea) {
         return;
@@ -336,20 +323,18 @@ Custom property | Description | Default
       // the underlying textarea's value. Otherwise this change was probably
       // generated from the _onInput handler, and the two values are already
       // the same.
-      if (textarea.value !== value) {
-        textarea.value = !(value || value === 0) ? '' : value;
+      if (textarea.value !== this.bindValue) {
+        textarea.value = !(this.bindValue || this.bindValue === 0) ? '' : this.bindValue;
       }
 
-      this.bindValue = value;
+      this.value = this.bindValue;
       this.$.mirror.innerHTML = this._valueForMirror();
-
-      // Manually notify because we don't want to notify until after setting value.
+      // manually notify because we don't want to notify until after setting value
       this.fire('bind-value-changed', {value: this.bindValue});
     },
 
     _onInput: function(event) {
-      var eventPath = Polymer.dom(event).path;
-      this.value = eventPath ? eventPath[0].value : event.target.value;
+      this.bindValue = event.path ? event.path[0].value : event.target.value;
     },
 
     _constrain: function(tokens) {
@@ -380,5 +365,9 @@ Custom property | Description | Default
     _updateCached: function() {
       this.$.mirror.innerHTML = this._constrain(this.tokens);
     },
+
+    _onValueChanged: function() {
+      this.bindValue = this.value;
+    }
   });
 </script>

@@ -18,11 +18,11 @@
 		/*	border: #757575 solid 1px;
 			border: rgba(0, 0, 0, .54) solid 1px;
 		*/}
-
+		
 		.hidden {
 			display: none;
 		}
-
+		
 		.vertCenterContainer > div > paper-tabs {
 			width: auto;
 			height: 3em;
@@ -30,12 +30,12 @@
 			padding: 0px;
 			margin: 0px;
 		}
-
+		
 		#mainCollapse {
 			overflow: hidden;
 			padding: 0;
 		}
-
+		
 		#loadingBlock.unReady {
 			display: block;
 			position: absolute;
@@ -46,11 +46,11 @@
 			opacity: 0.8;
 			z-index: 1;
 		}
-
+		
 		#loadingBlock {
 			display: none;
 		}
-
+		
 		paper-spinner {
 			position: absolute;
 			top: 50%;
@@ -65,7 +65,7 @@
         <paper-spinner id="loadingSpinner" alt="Loading card content"></paper-spinner>
       </div>
       <div class="hidden">
-        <slot id="tabHeader" name="tabHeader"></slot>
+        <content id="tabHeader" select="[tabHeader]"></content>
       </div>
       <div class="cardContent">
         <div id="cardHeader" class="clearFix genemoHeader vertCenterContainer">
@@ -77,7 +77,7 @@
         <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
           <div>
             <resizable-tab-pages id="mainPage" selected="{{selectedTab}}" greater-entry-animation="slide-from-right-animation" greater-exit-animation="slide-left-animation" lesser-entry-animation="slide-from-left-animation" lesser-exit-animation="slide-right-animation">
-              <slot id="tabContent" name="tabContent"></slot>
+              <content id="tabContent" select="[tabContent]"></content>
             </resizable-tab-pages>
           </div>
         </iron-collapse>
@@ -86,11 +86,11 @@
   </template>
   <script>
     Polymer({
-
+        
 		is: "genemo-tab-cards",
-
+		
 		properties: {
-
+			
 			// ************* Genemo-card components **************
 			isOpened: {
 				type: Boolean,
@@ -114,32 +114,32 @@
 				type: String,
 				value: 'expand-less'
 			},
-
+			
 			domReady: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-
+			
 			ready: {
 				type: Boolean,
 				value: false,
 				readOnly: true,
 			},
-
-			// ************* Tab-cards unique components *************
+			
+			// ************* Tab-cards unique components *************		
 			selectedTab: {
 				type: Number,
 				value: 0
 			},
-
+			
 			pages: {
 				type: Array,
 				value: function() {
 					return [];
 				}
 			},
-
+			
 			tabs: {
 				type: Array,
 				value: function() {
@@ -147,18 +147,18 @@
 				}
 			}
 		},
-
+		
 		listeners: {
 			'content-dom-ready': 'contentDOMReady',
 			'content-ready': 'contentReady',
 		},
-
+		
 		toggleCollapseHeader: function(flag) {
 			// the top node with GenemoBody should have a member function getShrunk()
 			// then use the returned DOM to replace GenemoShrunk
 			// if nothing, then GenemoShrunk is simply GenemoHead
 			// flag is the target status
-
+			
 			if(flag && this.collapseHeaderEl) {
 				// there is old collapseHeader, needs to be removed
 				Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl);
@@ -171,7 +171,7 @@
 				}
 			}
 		},
-
+		
 		isOpenedChanged: function(newValue, oldValue) {
 			this.enableSignal = false;
 			if(newValue) {
@@ -182,18 +182,18 @@
 			this.toggleCollapseHeader(newValue);
 			this.enableSignal = true;
 		},
-
+		
 		collapseSignal: function(e, detail) {
 			if(this.enableSignal && this.collapseGroup == detail.group && this.isOpened != detail.flag) {
 				this.isOpened = detail.flag;
 			}
 		},
-
+		
 		toggleCollapse: function() {
 			// hide GenemoBody and convert GenemoHead to GenemoCollapse (if any)
 			this.isOpened = !this.isOpened;
 		},
-
+		
  		getCollapse: function() {
 			if(this.pages[this.selectedTab]) {
 				if(this.pages[this.selectedTab].getCollapse && this.pages[this.selectedTab].getCollapse()) {
@@ -204,17 +204,17 @@
 			}
 			return null;
 		},
-
+		
 		populateDOM: function() {
 			// populate tabs and animated pages
-
+			
 			this.pages = Polymer.dom(this.$.tabContent).getDistributedNodes();
 			this.tabs = Polymer.dom(this.$.tabHeader).getDistributedNodes();
-
+			
 			while(Polymer.dom(this.$.mainTab).firstChild) {
 				Polymer.dom(this.$.mainTab).removeChild(Polymer.dom(this.$.mainTab).firstChild);
 			}
-
+			
 			if(this.tabs.length <= 0) {
 				this.tabs = [];
 				for(var i = 0; i < this.pages.length; i++) {
@@ -225,15 +225,15 @@
 					}
 				}
 			}
-
+			
 			for(var i = 0; i < this.tabs.length; i++) {
 				var newTab = document.createElement('paper-tab');
 				Polymer.dom(newTab).appendChild(this.tabs[i]);
 				Polymer.dom(this.$.mainTab).appendChild(newTab);
 			}
-
+			
 		},
-
+		
 		contentDOMReady: function(e) {
 			if(this.domReady !== e.detail.flag) {
 				if(e.detail.flag) {
@@ -260,7 +260,7 @@
 			}
 			return this.domReady;
 		},
-
+		
 		setCardReady: function(readiness) {
 			if(readiness) {
 				// if card is not ready, use paper-spinner and add "unReady" class to cardContent
@@ -273,7 +273,7 @@
 			}
 			this._setReady(readiness);
 		},
-
+		
 		contentReady: function(e) {
 			if(this.ready !== e.detail.flag) {
 				if(e.detail.flag) {
@@ -299,13 +299,13 @@
 			}
 			return this.ready;
 		},
-
+		
 		attached: function() {
 			this.async(function() {
 				this.contentDOMReady({detail: {flag: true}}) && this.contentReady({detail: {flag: true}});
 			});
 		},
-
+		
     });
   </script>
 </dom-module>

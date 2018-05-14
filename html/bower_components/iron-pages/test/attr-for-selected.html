@@ -35,11 +35,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
+
       suite('basic', function() {
         var pages;
 
         suite('honor the selected attribute', function() {
-          setup(function() {
+          setup(function () {
             pages = fixture('basic');
           });
 
@@ -55,19 +56,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }, 1);
           });
 
-          test(
-              'selected item is display:block and all others are display:none',
-              function() {
-                pages.items.forEach(function(p) {
-                  assert.equal(
-                      getComputedStyle(p).display,
-                      p == pages.selectedItem ? 'block' : 'none');
-                });
-              });
+          test('selected item is display:block and all others are display:none', function() {
+            pages.items.forEach(function(p) {
+              assert.equal(getComputedStyle(p).display, p == pages.selectedItem ? 'block' : 'none');
+            });
+          });
         });
 
         suite('set selected attribute', function() {
-          setup(function() {
+          setup(function () {
             pages = fixture('basic');
             pages.selected = 'page2';
           });
@@ -80,17 +77,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             assert.equal(pages.selectedItem, pages.items[2]);
           });
 
-          test(
-              'selected item is display:block and all others are display:none',
-              function() {
-                pages.items.forEach(function(p) {
-                  assert.equal(
-                      getComputedStyle(p).display,
-                      p == pages.selectedItem ? 'block' : 'none');
-                });
-              });
+          test('selected item is display:block and all others are display:none', function() {
+            pages.items.forEach(function(p) {
+              assert.equal(getComputedStyle(p).display, p == pages.selectedItem ? 'block' : 'none');
+            });
+          });
         });
+
       });
+
     </script>
 
   </body>

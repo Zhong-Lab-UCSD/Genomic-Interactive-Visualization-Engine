@@ -32,25 +32,25 @@ Give it a hydrolysis `PropertyDescriptor` (via `descriptor`), and watch it go!
           <span id="type" class="type">{{descriptor.type}}</span>
           <span class="annotation">[[_getAnnotation(descriptor)]]</span>
         </div>
-        <ol id="params" hidden$="{{_computeHideParams(descriptor,descriptor.return)}}">
+        <ol id="params" hidden$="{{_computeHideParams(descriptor,return)}}">
           <template is="dom-repeat" items="{{descriptor.params}}">
             <li hidden$="{{!item.type}}">
               <span class="name">{{item.name}}</span>
               <span class="type">{{item.type}}</span>
               <marked-element markdown="{{item.desc}}">
-                <div slot="markdown-html" class="markdown-html"></div>
+                <div class="markdown-html"></div>
               </marked-element>
             </li>
           </template>
           <li class="return" hidden$="{{!descriptor.return}}">Returns
             <span class="type">{{descriptor.return.type}}</span>
             <marked-element markdown="{{descriptor.return.desc}}">
-              <div slot="markdown-html" class="markdown-html"></div>
+              <div class="markdown-html"></div>
             </marked-element>
           </li>
         </ol>
         <marked-element id="desc" markdown="{{descriptor.desc}}" hidden$="{{!descriptor.desc}}">
-          <div slot="markdown-html" class="markdown-html"></div>
+          <div class="markdown-html"></div>
         </marked-element>
       </div>
     </div>
@@ -182,7 +182,7 @@ Give it a hydrolysis `PropertyDescriptor` (via `descriptor`), and watch it go!
         },
 
         // hidden if no params, and no return value
-        _computeHideParams: function(descriptor, ret) {
+        _computeHideParams: function(descriptor,ret) {
           return (!descriptor.params || descriptor.params.length === 0) && !ret;
         },
 

@@ -12,14 +12,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
 <!--
-**This element has been deprecated in favor of [app-layout](https://github.com/PolymerElements/app-layout).**
-
 Material design: [Scrolling techniques](https://www.google.com/design/spec/patterns/scrolling-techniques.html)
 
 `paper-scroll-header-panel` contains a header section and a content section.  The
 header is initially on the top part of the view but it scrolls away with the
-rest of the scrollable content. Upon scrolling slightly up at any point, the
-header scrolls back into view. This saves screen space and allows users to
+rest of the scrollable content.  Upon scrolling slightly up at any point, the
+header scrolls back into view.  This saves screen space and allows users to
 access important controls by easily moving them back to the view.
 
 __Important:__ The `paper-scroll-header-panel` will not display if its parent does not have a height.
@@ -29,10 +27,9 @@ Using [layout classes](https://www.polymer-project.org/1.0/docs/migration.html#l
 ```html
 <body class="fullbleed layout vertical">
   <paper-scroll-header-panel class="flex">
-    <paper-toolbar slot="header">
+    <paper-toolbar>
       <div>Hello World!</div>
     </paper-toolbar>
-    <div slot="content">Content goes here...</div>
   </paper-scroll-header-panel>
 </body>
 ```
@@ -62,8 +59,8 @@ Note: If the class `paper-header` is used, the header must be positioned relativ
 
 ```html
 <paper-scroll-header-panel>
-  <div class="paper-header" slot="header">Header</div>
-  <div slot="content">Content goes here...</div>
+  <div class="paper-header">Header</div>
+  <div>Content goes here...</div>
 </paper-scroll-header-panel>
 ```
 
@@ -109,13 +106,15 @@ Custom property | Description | Default
         right: 0;
         bottom: 0;
         left: 0;
+
         -moz-box-sizing: border-box;
         box-sizing: border-box;
         -webkit-overflow-scrolling: touch;
+
         overflow-x: hidden;
         overflow-y: auto;
-        @apply --paper-scroll-header-container; /* deprecated due to incorrect/confusing naming */
-        @apply --paper-scroll-header-panel-container;
+        @apply(--paper-scroll-header-container); /* deprecated due to incorrect/confusing naming */
+        @apply(--paper-scroll-header-panel-container);
       }
 
       #headerContainer {
@@ -123,7 +122,7 @@ Custom property | Description | Default
         top: 0;
         right: 0;
         left: 0;
-        @apply --paper-scroll-header-panel-header-container;
+        @apply(--paper-scroll-header-panel-header-container);
       }
 
       .bg-container {
@@ -136,11 +135,11 @@ Custom property | Description | Default
       }
 
       #headerBg {
-        @apply --paper-scroll-header-panel-full-header;
+        @apply(--paper-scroll-header-panel-full-header);
       }
 
       #condensedHeaderBg {
-        @apply --paper-scroll-header-panel-condensed-header;
+        @apply(--paper-scroll-header-panel-condensed-header);
       }
 
       #headerBg, #condensedHeaderBg {
@@ -160,14 +159,14 @@ Custom property | Description | Default
     </style>
 
     <div id="mainContainer">
-      <slot id="mainSlot" name="content"></slot>
+      <content id="mainContent" select=":not(paper-toolbar):not(.paper-header)"></content>
     </div>
     <div id="headerContainer">
       <div class="bg-container">
         <div id="condensedHeaderBg"></div>
         <div id="headerBg"></div>
       </div>
-      <slot id="headerSlot" name="header"></slot>
+      <content id="headerContent" select="paper-toolbar, .paper-header"></content>
     </div>
   </template>
 </dom-module>
@@ -248,7 +247,8 @@ Custom property | Description | Default
        * new height or invoke `measureHeaderHeight()`.
        */
       headerHeight: {
-        type: Number
+        type: Number,
+        value: 0
       },
 
       /**
@@ -298,7 +298,7 @@ Custom property | Description | Default
       '_setup(headerHeight, condensedHeaderHeight, fixed)',
       '_condensedHeaderHeightChanged(condensedHeaderHeight)',
       '_headerHeightChanged(headerHeight, condensedHeaderHeight)',
-      '_condensesChanged(condenses, headerHeight)',
+      '_condensesChanged(condenses)',
     ],
 
     listeners: {
@@ -308,11 +308,10 @@ Custom property | Description | Default
     ready: function() {
       this._scrollHandler = this._scroll.bind(this);
       this.scroller.addEventListener('scroll', this._scrollHandler);
-      console.warn(this.is, 'is deprecated. Please use app-layout instead!');
     },
 
     attached: function() {
-      requestAnimationFrame(this.measureHeaderHeight.bind(this));
+      this.async(this.measureHeaderHeight, 1);
     },
 
     /**
@@ -322,7 +321,7 @@ Custom property | Description | Default
      * @type Object
      */
     get header() {
-      return Polymer.dom(this.$.headerSlot).getDistributedNodes()[0];
+      return Polymer.dom(this.$.headerContent).getDistributedNodes()[0];
     },
 
     /**
@@ -332,7 +331,7 @@ Custom property | Description | Default
      * @type Object
      */
     get content() {
-      return Polymer.dom(this.$.mainSlot).getDistributedNodes()[0];
+      return Polymer.dom(this.$.mainContent).getDistributedNodes()[0];
     },
 
     /**

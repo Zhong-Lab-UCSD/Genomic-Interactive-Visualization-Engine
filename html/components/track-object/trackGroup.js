@@ -73,7 +73,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.forEachByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray(IDList)) {
+    if (!Array.isArray) {
       IDList = [IDList]
     }
     return IDList.forEach(function (id) {
@@ -82,7 +82,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.someByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray(IDList)) {
+    if (!Array.isArray) {
       IDList = [IDList]
     }
     return IDList.some(function (id) {
@@ -91,7 +91,7 @@ var GIVe = (function (give) {
   }
 
   give.TrackGroup.prototype.everyByID = function (IDList, callback, thisArg) {
-    if (!Array.isArray(IDList)) {
+    if (!Array.isArray) {
       IDList = [IDList]
     }
     return IDList.every(function (id) {
@@ -133,12 +133,10 @@ var GIVe = (function (give) {
         if (track instanceof give.TrackObject) {
           return this.map.hasOwnProperty(track.id)
         }
-      default: // eslint-disable-line no-fallthrough
+      default:  // eslint-disable-line no-fallthrough
         // this will also handle situations where track is not a give.TrackObject object
-        give._verbConsole.warn('Track ' + track +
-          ' is not a give.TrackObject Object.')
-        give.fireSignal('warning', { msg: 'Track ' + track +
-          ' is not a give.TrackObject Object.' })
+        give._verboseConsole('Track ' + track +
+          ' is not a give.TrackObject Object.', give.VERBOSE_WARNING)
         return false
     }
   }

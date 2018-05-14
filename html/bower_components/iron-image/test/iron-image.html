@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 @license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
 This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
 The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
@@ -19,30 +19,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <link rel="import" href="../../polymer/polymer.html">
     <link rel="import" href="../../test-fixture/test-fixture.html">
     <link rel="import" href="../iron-image.html">
+
+    <style is="custom-style">
+      .fixed-width-container {
+        width: 500px;
+      }
+
+      .fixed-width-container iron-image {
+        width: 100%;
+        --iron-image-width: 100%;
+      }
+
+      .fixed-height-container {
+        height: 500px;
+      }
+
+      .fixed-height-container iron-image {
+        height: 100%;
+        --iron-image-height: 100%;
+      }
+    </style>
   </head>
   <body>
-    <custom-style>
-      <style is="custom-style">
-        .fixed-width-container {
-          width: 500px;
-        }
-
-        .fixed-width-container iron-image {
-          width: 100%;
-          --iron-image-width: 100%;
-        }
-
-        .fixed-height-container {
-          height: 500px;
-        }
-
-        .fixed-height-container iron-image {
-          height: 100%;
-          --iron-image-height: 100%;
-        }
-      </style>
-    </custom-style>
-
     <test-fixture id="TrivialImage">
       <template>
         <iron-image></iron-image>
@@ -65,15 +63,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </template>
     </test-fixture>
 
-    <test-fixture id="PreventLoad">
-      <template>
-        <iron-image prevent-load src="../demo/polymer.svg"></iron-image>
-      </template>
-    </test-fixture>
-
     <script>
       suite('<iron-image>', function() {
-        function randomImageUrl() {
+        function randomImageUrl () {
           return '../demo/polymer.svg?' + Math.random();
         }
 
@@ -90,31 +82,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             expect(image.error).to.be.eql(false);
           });
 
-          test(
-              'loading, loaded, error are false when src is set to empty string',
-              function(done) {
-                image.addEventListener('loaded-changed', function onLoadedChanged() {
-                  if (image.loaded) {
-                    image.removeEventListener('loaded-changed', onLoadedChanged);
-                    image.addEventListener(
-                        'loaded-changed', function onLoadedChanged2() {
-                          image.removeEventListener(
-                              'loaded-changed', onLoadedChanged2);
+          test('loading, loaded, error are false when src is set to empty string', function(done) {
+            image.addEventListener('loaded-changed', function onLoadedChanged() {
+              if (image.loaded) {
+                image.removeEventListener('loaded-changed', onLoadedChanged);
+                image.addEventListener('loaded-changed', function onLoadedChanged2() {
+                  image.removeEventListener('loaded-changed', onLoadedChanged2);
 
-                          expect(image.loading).to.be.eql(false);
-                          expect(image.loaded).to.be.eql(false);
-                          expect(image.error).to.be.eql(false);
-                          done();
-                        });
-
-                    expect(image.loading).to.be.eql(false);
-                    expect(image.loaded).to.be.eql(true);
-                    expect(image.error).to.be.eql(false);
-                    image.src = '';
-                  }
+                  expect(image.loading).to.be.eql(false);
+                  expect(image.loaded).to.be.eql(false);
+                  expect(image.error).to.be.eql(false);
+                  done();
                 });
-                image.src = randomImageUrl();
-              });
+
+                expect(image.loading).to.be.eql(false);
+                expect(image.loaded).to.be.eql(true);
+                expect(image.error).to.be.eql(false);
+                image.src = '';
+              }
+            });
+            image.src = randomImageUrl();
+          });
 
           test('can load images given a src', function(done) {
             image.addEventListener('loaded-changed', function onLoadedChanged() {
@@ -159,211 +147,64 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             image.src = '/this_image_should_not_exist.jpg';
           });
 
-          test(
-              'placeholder is hidden after loading when src is changed from invalid to valid',
-              function(done) {
-                image.preload = true;
+          // Test for PolymerElements/iron-image#16.
+          test('placeholder is hidden after loading when src is changed from invalid to valid', function(done) {
+            image.preload = true;
 
-                image.addEventListener('error-changed', function onErrorChanged() {
-                  image.removeEventListener('error-changed', onErrorChanged);
+            image.addEventListener('error-changed', function onErrorChanged() {
+              image.removeEventListener('error-changed', onErrorChanged);
 
-                  assert.equal(image.loading, false, 'errored image loading = false');
-                  assert.equal(image.loaded, false, 'errored image loaded = false');
-                  assert.equal(image.error, true, 'errored image error = true');
+              assert.equal(image.loading, false, 'errored image loading = false');
+              assert.equal(image.loaded, false, 'errored image loaded = false');
+              assert.equal(image.error, true, 'errored image error = true');
 
-                  image.addEventListener(
-                      'loaded-changed', function onLoadedChanged() {
-                        if (!image.loaded)
-                          return;
+              image.addEventListener('loaded-changed', function onLoadedChanged() {
+                if (!image.loaded) return;
 
-                        image.removeEventListener('loaded-changed', onLoadedChanged);
+                image.removeEventListener('loaded-changed', onLoadedChanged);
 
-                        assert.equal(
-                            image.loading, false, 'ok image loading = false');
-                        assert.equal(image.loaded, true, 'ok image loaded = true');
-                        assert.equal(image.error, false, 'ok image error = false');
-                        assert.equal(
-                            getComputedStyle(image.$.placeholder).display,
-                            'none',
-                            'placeholder has style.display = none');
+                assert.equal(image.loading, false, 'ok image loading = false');
+                assert.equal(image.loaded, true, 'ok image loaded = true');
+                assert.equal(image.error, false, 'ok image error = false');
+                assert.equal(getComputedStyle(image.$.placeholder).display, 'none', 'placeholder has style.display = none');
 
-                        done();
-                      });
-
-                  image.src = randomImageUrl();
-                });
-
-                image.src = '/this_image_should_not_exist.jpg';
+                done();
               });
 
-          test(
-              'image is not shown below placeholder if previous image was loaded with' +
-                  ' sizing on and current image fails to load',
-              function(done) {
-                image.preload = true;
-                image.sizing = 'cover';
+              image.src = randomImageUrl();
+            });
 
-                image.addEventListener('loaded-changed', function onLoadedChanged() {
-                  if (!image.loaded)
-                    return;
-                  image.removeEventListener('loaded-changed', onLoadedChanged);
-
-                  assert.notEqual(
-                      getComputedStyle(image.$.sizedImgDiv).backgroundImage,
-                      'none',
-                      'image visible after successful load');
-                  assert.equal(
-                      getComputedStyle(image.$.placeholder).display,
-                      'none',
-                      'placeholder hidden after successful load');
-
-                  image.addEventListener('error-changed', function onErrorChanged() {
-                    if (!image.error)
-                      return;
-                    image.removeEventListener('error-changed', onErrorChanged);
-
-                    assert.equal(
-                        getComputedStyle(image.$.sizedImgDiv).backgroundImage,
-                        'none',
-                        'image hidden after failed load');
-                    assert.notEqual(
-                        getComputedStyle(image.$.placeholder).display,
-                        'none',
-                        'placeholder visible after failed load');
-
-                    done();
-                  });
-
-                  image.src = '/this_image_should_not_exist.jpg';
-                });
-
-                image.src = randomImageUrl();
-              });
-        });
-
-        suite('preventLoad', function() {
-          setup(function() {
-            image = fixture('TrivialImage');
+            image.src = '/this_image_should_not_exist.jpg';
           });
 
-          test(
-              'The `prevent-load` attribute prevents the image from loading when created.',
-              function() {
-                var image = fixture('PreventLoad');
+          // Test for PolymerElements/iron-image#23.
+          test('image is not shown below placeholder if previous image was loaded with' +
+               ' sizing on and current image fails to load', function(done) {
+            image.preload = true;
+            image.sizing = 'cover';
 
-                // The image should still be in the initial state even though it has
-                // a valid `src` attribute.
-                assert.equal(image.loading, false);
-                assert.equal(image.loaded, false);
-                assert.equal(image.error, false);
+            image.addEventListener('loaded-changed', function onLoadedChanged() {
+              if (!image.loaded) return;
+              image.removeEventListener('loaded-changed', onLoadedChanged);
+
+              assert.notEqual(getComputedStyle(image.$.sizedImgDiv).backgroundImage, 'none', 'image visible after successful load');
+              assert.equal(getComputedStyle(image.$.placeholder).display, 'none', 'placeholder hidden after successful load');
+
+              image.addEventListener('error-changed', function onErrorChanged() {
+                if (!image.error) return;
+                image.removeEventListener('error-changed', onErrorChanged);
+
+                assert.equal(getComputedStyle(image.$.sizedImgDiv).backgroundImage, 'none', 'image hidden after failed load');
+                assert.notEqual(getComputedStyle(image.$.placeholder).display, 'none', 'placeholder visible after failed load');
+
+                done();
               });
 
-          test(
-              'If `preventLoad` is true, then changing `src` does not start loading the image.',
-              function() {
-                var attemptedLoadSpy = sinon.spy();
-                image.preventLoad = true;
-                image.addEventListener('loading-changed', attemptedLoadSpy);
-                expect(image.loading).not.to.be.ok;
-                image.src = randomImageUrl();
+              image.src = '/this_image_should_not_exist.jpg';
+            });
 
-                expect(attemptedLoadSpy).not.to.have.been.called;
-              });
-
-          test(
-              'If the image with URL `src` is not currently loaded and `preventLoad` changes to true, ' +
-                  'then the image at `src` is loaded.',
-              function(done) {
-                var attemptedLoadSpy = sinon.spy();
-                image.preventLoad = true;
-                image.addEventListener('loaded-changed', attemptedLoadSpy);
-                image.src = randomImageUrl();
-                expect(attemptedLoadSpy).not.to.have.been.called;
-                image.removeEventListener('loaded-changed', attemptedLoadSpy);
-
-                image.addEventListener('loaded-changed', function onLoadedChanged() {
-                  if (!image.loaded)
-                    return;
-                  image.removeEventListener('loaded-changed', onLoadedChanged);
-
-                  done();
-                });
-
-                image.preventLoad = false;
-              });
-
-          test(
-              'If the image with URL `src` is currently loaded, then toggling `preventLoad` does not ' +
-                  'reload the image.',
-              function(done) {
-                var image = fixture('PreventLoad');
-
-                assert.equal(image.loading, false);
-                assert.equal(image.loaded, false);
-                assert.equal(image.error, false);
-
-                image.addEventListener('loaded-changed', function onLoadedChanged() {
-                  image.removeEventListener('loaded-changed', onLoadedChanged);
-
-                  assert.equal(image.loading, false);
-                  assert.equal(image.loaded, true);
-                  assert.equal(image.error, false);
-
-                  // `loading` should not change after this point.
-                  var failed = false;
-                  image.addEventListener(
-                      'loading-changed', function onLoadingChanged() {
-                        failed = true;
-                        done(new Error('Toggling `preventLoad` reloaded the image.'));
-                      });
-
-                  image.preventLoad = true;
-                  image.preventLoad = false;
-
-                  if (!failed) {
-                    done();
-                  }
-                });
-
-                image.preventLoad = false;
-                image.src = randomImageUrl();
-              });
-
-          test(
-              'image is loaded when prevent-load is set to false after cycling `src`',
-              function(done) {
-                const initialSrc = randomImageUrl();
-
-                image.addEventListener('loaded-changed', function loadedChanged() {
-                  image.removeEventListener('loaded-changed', loadedChanged);
-
-                  assert(image.loaded);
-                  assert(!image.loading);
-                  assert(!image.error);
-
-                  image.preventLoad = true;
-                  image.src = randomImageUrl();
-                  image.src = initialSrc;
-
-                  assert(!image.loaded);
-                  assert(!image.loading);
-                  assert(!image.error);
-
-                  image.addEventListener('loaded-changed', function loadedChanged() {
-                    image.removeEventListener('loaded-changed', loadedChanged);
-
-                    assert(image.loaded);
-                    assert(!image.loading);
-                    assert(!image.error);
-
-                    done();
-                  });
-
-                  image.preventLoad = false;
-                });
-
-                image.src = initialSrc;
-              });
+            image.src = randomImageUrl();
+          });
         });
 
         suite('--iron-image-width, --iron-image-height', function() {
@@ -380,43 +221,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           test('100% width image fills container', function(done) {
-            fixedWidthIronImage.$.img.addEventListener(
-                'load', function onLoadedChanged(e) {
-                  fixedWidthIronImage.$.img.removeEventListener(
-                      'load', onLoadedChanged);
+            fixedWidthIronImage.$.img.addEventListener('load', function onLoadedChanged(e) {
+              fixedWidthIronImage.$.img.removeEventListener('load', onLoadedChanged);
+              Polymer.updateStyles();
 
-                  var containerRect = fixedWidthContainer.getBoundingClientRect();
-                  var ironImageRect = fixedWidthIronImage.getBoundingClientRect();
-                  var wrappedImageRect =
-                      fixedWidthIronImage.$.img.getBoundingClientRect();
+              var containerRect = fixedWidthContainer.getBoundingClientRect();
+              var ironImageRect = fixedWidthIronImage.getBoundingClientRect();
+              var wrappedImageRect = fixedWidthIronImage.$.img.getBoundingClientRect();
 
-                  expect(containerRect.width).to.be.closeTo(500, 0.5);
-                  expect(ironImageRect.width).to.be.closeTo(500, 0.5);
-                  expect(wrappedImageRect.width).to.be.closeTo(500, 0.5);
+              expect(containerRect.width).to.be.closeTo(500, 0.5);
+              expect(ironImageRect.width).to.be.closeTo(500, 0.5);
+              expect(wrappedImageRect.width).to.be.closeTo(500, 0.5);
 
-                  done();
-                });
+              done();
+            });
 
             fixedWidthIronImage.src = randomImageUrl();
           });
 
           test('100% height image fills container', function(done) {
-            fixedHeightIronImage.$.img.addEventListener(
-                'load', function onLoadedChanged(e) {
-                  fixedHeightIronImage.$.img.removeEventListener(
-                      'load', onLoadedChanged);
+            fixedHeightIronImage.$.img.addEventListener('load', function onLoadedChanged(e) {
+              fixedHeightIronImage.$.img.removeEventListener('load', onLoadedChanged);
+              Polymer.updateStyles();
 
-                  var containerRect = fixedHeightContainer.getBoundingClientRect();
-                  var ironImageRect = fixedHeightIronImage.getBoundingClientRect();
-                  var wrappedImageRect =
-                      fixedHeightIronImage.$.img.getBoundingClientRect();
+              var containerRect = fixedHeightContainer.getBoundingClientRect();
+              var ironImageRect = fixedHeightIronImage.getBoundingClientRect();
+              var wrappedImageRect = fixedHeightIronImage.$.img.getBoundingClientRect();
 
-                  expect(containerRect.height).to.be.closeTo(500, 0.5);
-                  expect(ironImageRect.height).to.be.closeTo(500, 0.5);
-                  expect(wrappedImageRect.height).to.be.closeTo(500, 0.5);
+              expect(containerRect.height).to.be.closeTo(500, 0.5);
+              expect(ironImageRect.height).to.be.closeTo(500, 0.5);
+              expect(wrappedImageRect.height).to.be.closeTo(500, 0.5);
 
-                  done();
-                });
+              done();
+            });
 
             fixedHeightIronImage.src = randomImageUrl();
           });
@@ -439,14 +276,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               assert.isFalse(image.$.img.hasAttribute('alt'));
             });
 
-            test(
-                'img alt text is empty string when iron-image alt text is empty string',
-                function() {
-                  image.alt = '';
+            test('img alt text is empty string when iron-image alt text is empty string', function() {
+              image.alt = '';
 
-                  assert.isTrue(image.$.img.hasAttribute('alt'));
-                  assert.strictEqual(image.$.img.getAttribute('alt'), '');
-                });
+              assert.isTrue(image.$.img.hasAttribute('alt'));
+              assert.strictEqual(image.$.img.getAttribute('alt'), '');
+            });
 
             test('img alt text matches iron-image alt text when defined', function() {
               image.alt = 'alt text value';
@@ -474,36 +309,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               assert.strictEqual(image.$.sizedImgDiv.getAttribute('aria-label'), '');
             });
 
-            test(
-                '#sizedImgDiv has aria-hidden when iron-image alt text is empty string',
-                function() {
-                  image.alt = '';
+            test('#sizedImgDiv has aria-hidden when iron-image alt text is empty string', function() {
+              image.alt = '';
 
-                  assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-hidden'));
-                  var hiddenValue = image.$.sizedImgDiv.getAttribute('aria-hidden');
-                  assert.isTrue(hiddenValue === '' || hiddenValue === 'true');
-                });
+              assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-hidden'));
+              var hiddenValue = image.$.sizedImgDiv.getAttribute('aria-hidden');
+              assert.isTrue(hiddenValue === '' || hiddenValue === 'true');
+            });
 
-            test(
-                '#sizedImgDiv aria-label matches iron-image alt text when defined',
-                function() {
-                  image.alt = 'alt text value';
+            test('#sizedImgDiv aria-label matches iron-image alt text when defined', function() {
+              image.alt = 'alt text value';
 
-                  assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-label'));
-                  assert.strictEqual(
-                      image.$.sizedImgDiv.getAttribute('aria-label'),
-                      'alt text value');
-                });
+              assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-label'));
+              assert.strictEqual(image.$.sizedImgDiv.getAttribute('aria-label'), 'alt text value');
+            });
 
-            test(
-                '#sizedImgDiv aria-label text is last path component of src when iron-image alt text is undefined',
-                function() {
-                  image.src = '/some/path.components/file.jpg?a=b&c=d#anchor';
+            test('#sizedImgDiv aria-label text is last path component of src when iron-image alt text is undefined', function() {
+              image.src = '/some/path.components/file.jpg?a=b&c=d#anchor';
 
-                  assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-label'));
-                  assert.strictEqual(
-                      image.$.sizedImgDiv.getAttribute('aria-label'), 'file.jpg');
-                });
+              assert.isTrue(image.$.sizedImgDiv.hasAttribute('aria-label'));
+              assert.strictEqual(image.$.sizedImgDiv.getAttribute('aria-label'), 'file.jpg');
+            });
           });
         });
       });

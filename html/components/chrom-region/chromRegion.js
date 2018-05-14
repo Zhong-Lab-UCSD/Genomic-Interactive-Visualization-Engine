@@ -57,12 +57,10 @@ var GIVe = (function (give) {
       } else if (typeof mainParams === 'object') {
         this._regionFromObject(mainParams)
       } else {
-        throw new give.GiveError(
-          'Must create ChromRegion with object or string!')
+        throw new Error('Must create ChromRegion with object or string!')
       }
       if (isNaN(this.start) || isNaN(this.end)) {
-        throw new give.GiveError(
-          'ChromRegion start and/or end number invalid!')
+        throw new Error('ChromRegion start and/or end number invalid!')
       }
       this.clipRegion(ref)
       var key
@@ -72,28 +70,28 @@ var GIVe = (function (give) {
             try {
               this[key] = mainParams[key]
             } catch (e) {
-              give._verbConsole.warn(e)
+              give._verboseConsole(e, give.VERBOSE_WARNING)
             }
           }
         }
       }
       if (typeof additionalParams === 'object') {
         for (key in additionalParams) {
-          if (!this.hasOwnProperty(key) &&
-            additionalParams.hasOwnProperty(key)
-          ) {
+          if (!this.hasOwnProperty(key) && additionalParams.hasOwnProperty(key)) {
             try {
               this[key] = additionalParams[key]
             } catch (e) {
-              give._verbConsole.warn(e)
+              give._verboseConsole(e, give.VERBOSE_WARNING)
             }
           }
         }
       }
     } catch (e) {
-      give._verbConsole.warn(e)
-      give._verbConsole.log('Thrown when creating chromosomal regions with:')
-      give._verbConsole.log(mainParams)
+      give._verboseConsole(e.message +
+        '\nThrown when creating chromosomal regions with:',
+        give.VERBOSE_DEBUG)
+      give._verboseConsole(mainParams, give.VERBOSE_DEBUG)
+      give._verboseConsole(e.stack, give.VERBOSE_DEBUG)
       throw (e)
     }
   }
@@ -110,20 +108,18 @@ var GIVe = (function (give) {
         }
       } else if (!ref.chromInfo[this.chr]) {
         // this is not a valid chromosome
-        throw (new give.GiveError(
-          this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
+        throw (new Error(this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
       }
     }
     if (this.start > this.end) {
       if (typeof minLength === 'number') {
-        give._verbConsole.info('Coordinates out of bounds: ' + this.chr + ':' +
+        give._verboseConsole('Coordinates out of bounds: ' + this.chr + ':' +
           this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
         this.start = Math.max(give.ChromRegion.CHROM_BASE, this.end - minLength)
-        give._verbConsole.info('Changed into: ' + this.chr + ':' +
+        give._verboseConsole('Changed into: ' + this.chr + ':' +
           this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
       } else {
-        throw (new give.GiveError(
-          'Coordinates out of bounds: ' + this.chr + ':' +
+        throw (new Error('Coordinates out of bounds: ' + this.chr + ':' +
           this.start + '-' + this.end + '!'))
       }
     }
@@ -152,14 +148,14 @@ var GIVe = (function (give) {
 
   give.ChromRegion.prototype.setStart = function (newStart, forced) {
     if (!forced && (isNaN(newStart) || newStart >= this.end)) {
-      throw (new give.GiveError('Invalid new start value: ' + newStart))
+      throw (new Error('Invalid new start value: ' + newStart))
     }
     this.start = newStart
   }
 
   give.ChromRegion.prototype.setEnd = function (newEnd, forced) {
     if (!forced && (isNaN(newEnd) || newEnd <= this.start)) {
-      throw (new give.GiveError('Invalid new end value: ' + newEnd))
+      throw (new Error('Invalid new end value: ' + newEnd))
     }
     this.end = newEnd
   }
@@ -398,7 +394,7 @@ var GIVe = (function (give) {
       var tempChrRegion = new give.ChromRegion(chrStr)
       tempChrRegion.clipRegion(ref)
     } catch (e) {
-      give._verbConsole.info(e)
+      give._verboseConsole(e, give.VERBOSE_DEBUG)
       return false
     }
     return true

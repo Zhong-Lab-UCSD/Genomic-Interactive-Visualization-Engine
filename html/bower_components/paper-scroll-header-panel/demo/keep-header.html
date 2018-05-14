@@ -26,53 +26,58 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
   <link rel="import" href="sample-content.html">
 
-  <custom-style>
-    <style is="custom-style">
+  <link rel="stylesheet" href="../../paper-styles/demo.css">
 
-      paper-scroll-header-panel {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        background-color: var(--paper-grey-200, #eee);;
-      }
+  <style is="custom-style">
 
-      paper-toolbar {
-        background-color: var(--google-blue-500, #4285f4);
-      }
+    paper-scroll-header-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: var(--paper-grey-200, #eee);;
+    }
 
-      .title {
-        margin: 0 8px;
-      }
+    paper-toolbar {
+      background-color: var(--google-blue-500, #4285f4);
+    }
 
-      .content {
-        padding: 8px;
-      }
+    paper-toolbar .title {
+      margin: 0 8px;
+    }
 
-      paper-icon-button {
-        --paper-icon-button-ink-color: white;
-      }
+    paper-scroll-header-panel .content {
+      padding: 8px;
+    }
 
-      .spacer {
-        @apply --layout-flex;
-      }
-    </style>
-  </custom-style>
+    paper-icon-button {
+      --paper-icon-button-ink-color: white;
+    }
+
+    .spacer {
+      @apply(--layout-flex);
+    }
+  </style>
+
 </head>
 <body unresolved>
 
   <paper-scroll-header-panel fixed>
 
-    <paper-toolbar slot="header">
-      <paper-icon-button slot="top" icon="arrow-back"></paper-icon-button>
-      <div slot="top" class="spacer title">Title</div>
-      <paper-icon-button slot="top" icon="search"></paper-icon-button>
-      <paper-icon-button slot="top" icon="more-vert"></paper-icon-button>
+    <paper-toolbar>
+
+      <paper-icon-button icon="arrow-back"></paper-icon-button>
+      <div class="spacer title">Title</div>
+      <paper-icon-button icon="search"></paper-icon-button>
+      <paper-icon-button icon="more-vert"></paper-icon-button>
+
     </paper-toolbar>
 
-    <div slot="content" class="content">
+    <div class="content">
+
       <sample-content size="100"></sample-content>
+
     </div>
 
   </paper-scroll-header-panel>

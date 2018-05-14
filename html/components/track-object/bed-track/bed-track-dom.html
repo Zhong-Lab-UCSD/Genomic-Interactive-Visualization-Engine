@@ -37,139 +37,138 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
   <script>
 var GIVe = (function (give) {
   'use strict'
-  class RasInfo {
-    constructor (start, end, rasterCount, rasterFillThreshold) {
-      this.prepareRaster(start, end, rasterCount)
-      this.prepareInfo(0)
-      this.RasterFillThreshold = rasterFillThreshold || 0.0001
-    }
 
-    prepareInfo (index, callback) {
-      if (this._Raster.length > 1) {
-        if (this._Info && typeof callback === 'function') {
-          callback(this.flag, this.currIndex)
-        }
-        this._Info = this._Info ||
-          new Array(RasInfo.RASTER_STATES.TotalNumOfStates)
-        this._Info.fill(0)
-        if (index < 0 || index >= this._Raster.length - 1) {
-          // index out of bounds
-          this._RasIndex = null
-          throw new give.GiveError('Index out of bounds for raster! Raster length: ' +
-            this._Raster.length + ', index: ' + index)
-        }
-        this._RasIndex = index || 0
+  give.RasInfo = function (start, end, rasterCount, rasterFillThreshold) {
+    this.prepareRaster(start, end, rasterCount)
+    this.prepareInfo(0)
+    this.RasterFillThreshold = rasterFillThreshold || 0.0001
+  }
+
+  give.RasInfo.prototype.prepareInfo = function (index, callback) {
+    if (this._Raster.length > 1) {
+      if (this._Info && typeof callback === 'function') {
+        callback(this.getFlag(), this.getCurrIndex())
       }
-    }
-
-    get flag () {
-      var maxFlag = RasInfo.RASTER_STATES.EMPTY
-      this._Info.every(function (entry, index) {
-        if (entry > parseInt((this.rasterEnd - this.rasterStart) *
-          this.RasterFillThreshold)
-        ) {
-          maxFlag = index
-          return true
-        }
-        return false
-      }, this)
-      return maxFlag
-    }
-
-    get rasterStart () {
-      return this._Raster[this._RasIndex]
-    }
-
-    get rasterEnd () {
-      return this._Raster[this._RasIndex + 1]
-    }
-
-    next (callback) {
-      this.prepareInfo(this._RasIndex + 1, callback)
-      return this._RasIndex
-    }
-
-    addData (length, flag) {
-      for (let i = RasInfo.RASTER_STATES.EMPTY; i <= flag; i++) {
-        this._Info[i] += length
+      this._Info = this._Info ||
+        new Array(this.constructor.RASTER_STATES.TotalNumOfStates)
+      this._Info.fill(0)
+      if (index < 0 || index >= this._Raster.length - 1) {
+        // index out of bounds
+        this._RasIndex = null
+        throw new Error('Index out of bounds for raster! Raster length: ' +
+          this._Raster.length + ', index: ' + index)
       }
-    }
-
-    prepareRaster (start, end, rasterCount) {
-      if (isNaN(rasterCount) || rasterCount < 1) {
-        rasterCount = 1
-      }
-      if (end - start < rasterCount) {
-        rasterCount = end - start
-      }
-      if (end - start > rasterCount) {
-        let currCoor = start
-        this._Raster = [currCoor]
-        do {
-          currCoor += parseInt((end - currCoor) / rasterCount + 0.5)
-          rasterCount--
-          this._Raster.push(currCoor)
-        } while (currCoor < end)
-      }
-    }
-
-    findRasIndex (coordinate) {
-      // bring this._RasterizedInfo._RasterIndex up to date
-      return give.locationOf(coordinate, this._Raster)
-    }
-
-    get currIndex () {
-      return this._RasIndex
-    }
-
-    /**
-     * genRasOutput - generate a series of consolidated non-empty rasterized
-     *    region.
-     *
-     * @param  {Array<number>} RasFlags   description
-     * @param  {number} startIndex description
-     * @returns {Array<object>}  return consolidated non-empty objects.
-     *    For example:
-     *    '''
-     *    [
-     *      {
-     *        'start': 123456,
-     *        'end': 234567,
-     *        'flag': 1 (=== give.RasInfo.RASTER_STATES.LINE)
-     *      },
-     *      ...
-     *    ]
-     *    '''
-     */
-    genRasOutput (RasFlags, startIndex) {
-      var results = []
-      var lastFlag
-      var lastIndex = startIndex
-      RasFlags.forEach(function (flag, index) {
-        if (flag !== lastFlag) {
-          if (lastFlag) {
-            results.push({
-              start: this._Raster[lastIndex],
-              end: this._Raster[startIndex + index],
-              flag: lastFlag
-            })
-          }
-          lastIndex = startIndex + index
-          lastFlag = flag
-        }
-      }, this)
-      if (lastFlag) {
-        results.push({
-          start: this._Raster[lastIndex],
-          end: this._Raster[startIndex + RasFlags.length],
-          flag: lastFlag
-        })
-      }
-      return results
+      this._RasIndex = index || 0
     }
   }
 
-  RasInfo.RASTER_STATES = {
+  give.RasInfo.prototype.getFlag = function () {
+    var maxFlag = this.constructor.RASTER_STATES.EMPTY
+    this._Info.every(function (entry, index) {
+      if (entry > parseInt((this.getRasterEnd() - this.getRasterStart()) *
+        this.RasterFillThreshold)
+      ) {
+        maxFlag = index
+        return true
+      }
+      return false
+    }, this)
+    return maxFlag
+  }
+
+  give.RasInfo.prototype.getRasterStart = function () {
+    return this._Raster[this._RasIndex]
+  }
+
+  give.RasInfo.prototype.getRasterEnd = function () {
+    return this._Raster[this._RasIndex + 1]
+  }
+
+  give.RasInfo.prototype.next = function (callback) {
+    this.prepareInfo(this._RasIndex + 1, callback)
+    return this._RasIndex
+  }
+
+  give.RasInfo.prototype.addData = function (length, flag) {
+    for (let i = this.constructor.RASTER_STATES.EMPTY; i <= flag; i++) {
+      this._Info[i] += length
+    }
+  }
+
+  give.RasInfo.prototype.prepareRaster = function (start, end, rasterCount) {
+    if (isNaN(rasterCount) || rasterCount < 1) {
+      rasterCount = 1
+    }
+    if (end - start < rasterCount) {
+      rasterCount = end - start
+    }
+    if (end - start > rasterCount) {
+      let currCoor = start
+      this._Raster = [currCoor]
+      do {
+        currCoor += parseInt((end - currCoor) / rasterCount + 0.5)
+        rasterCount--
+        this._Raster.push(currCoor)
+      } while (currCoor < end)
+    }
+  }
+
+  give.RasInfo.prototype.findRasIndex = function (coordinate) {
+    // bring this._RasterizedInfo._RasterIndex up to date
+    return give.locationOf(coordinate, this._Raster)
+  }
+
+  give.RasInfo.prototype.getCurrIndex = function () {
+    return this._RasIndex
+  }
+
+  /**
+   * genRasOutput - generate a series of consolidated non-empty rasterized
+   *    region.
+   *
+   * @param  {Array<number>} RasFlags   description
+   * @param  {number} startIndex description
+   * @returns {Array<object>}  return consolidated non-empty objects.
+   *    For example:
+   *    '''
+   *    [
+   *      {
+   *        'start': 123456,
+   *        'end': 234567,
+   *        'flag': 1 (=== give.RasInfo.RASTER_STATES.LINE)
+   *      },
+   *      ...
+   *    ]
+   *    '''
+   */
+  give.RasInfo.prototype.genRasOutput = function (RasFlags, startIndex) {
+    var results = []
+    var lastFlag
+    var lastIndex = startIndex
+    RasFlags.forEach(function (flag, index) {
+      if (flag !== lastFlag) {
+        if (lastFlag) {
+          results.push({
+            start: this._Raster[lastIndex],
+            end: this._Raster[startIndex + index],
+            flag: lastFlag
+          })
+        }
+        lastIndex = startIndex + index
+        lastFlag = flag
+      }
+    }, this)
+    if (lastFlag) {
+      results.push({
+        start: this._Raster[lastIndex],
+        end: this._Raster[startIndex + RasFlags.length],
+        flag: lastFlag
+      })
+    }
+    return results
+  }
+
+  give.RasInfo.RASTER_STATES = {
     TotalNumOfStates: 4,
     EMPTY: 0,
     LINE: 1,
@@ -177,11 +176,24 @@ var GIVe = (function (give) {
     THICK: 3
   }
 
-  give.RasInfo = RasInfo
+  give.BedTrackDOM = Polymer({
+    is: 'bed-track-dom',
 
-  class BedTrackDom extends give.TrackDom {
-    constructor (track, prop) {
-      super(track, prop)
+    behaviors: [
+      give.TrackDOMBehavior
+    ],
+
+    properties: {
+      /**
+       * whether this track honors itemRGB values provided by BED data.
+       */
+      honorItemRGB: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    created: function () {
       /**
        * @property {number} GENE_MARGIN
        * margin size between genes when gene name is shown. Unit in px.
@@ -223,31 +235,21 @@ var GIVe = (function (give) {
        * The size of raster in `DENSE` view in pixel.
        */
       this.RASTER_SIZE = 1
-
-      if (track.getSetting('honorItemRGB')) {
-        this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
-      }
-
-      this._RasInfo = null
-    }
-
-    static get properties () {
-      return {
-        /**
-         * whether this track honors itemRGB values provided by BED data.
-         */
-        honorItemRGB: {
-          type: Boolean,
-          value: false
-        }
-      }
-    }
+    },
 
     /**
      * ****** Implementation methods below ******
      */
 
-    drawData () {
+    trackImpl: function (track, prop) {
+      if (track.getSetting('honorItemRGB')) {
+        this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
+      }
+
+      this._RasInfo = null
+    },
+
+    drawData: function () {
       // this is to draw everything from this.data to the svg
       // Steps:
       //     put genes into lines (pack display)
@@ -294,7 +296,7 @@ var GIVe = (function (give) {
       // resize the heights
       this.updateLocationSize(null, null, null,
         this._calcHeight(numOfLines))
-    }
+    },
 
     /**
      * ****** Private and helper methods below ******
@@ -306,19 +308,19 @@ var GIVe = (function (give) {
      * @param  {number} [numOfLines] - number of lines in this track
      * @returns {number} height of this track
      */
-    _calcHeight (numOfLines) {
+    _calcHeight: function (numOfLines) {
       numOfLines = numOfLines || 1
       return (numOfLines * (this.fullHeightRatio + this.lineGapRatio) -
         this.lineGapRatio) * this.textSize
-    }
+    },
 
-    _aggregateTranscript (transcriptArray, transcript) {
+    _aggregateTranscript: function (transcriptArray, transcript) {
       if (transcriptArray.length <= 0 ||
         !transcriptArray[transcriptArray.length - 1].merge(transcript)
       ) {
         transcriptArray.push(new give.AggregatedTranscript(transcript))
       }
-    }
+    },
 
     /**
      * _allocateLineToTrans - test and allocate line number to a single
@@ -340,7 +342,7 @@ var GIVe = (function (give) {
      *    (This will happen when adaptive display is on and current active
      *    setting cannot hold all transcripts.)
      */
-    _allocateLineToTrans (lineEnds, transcript) {
+    _allocateLineToTrans: function (lineEnds, transcript) {
       // calculate x0 and x1 for the gene
       if (!this.regionInWindow(transcript)) {
         return true
@@ -398,7 +400,7 @@ var GIVe = (function (give) {
         })
       }
       return true
-    }
+    },
 
     /**
      * _prepareLines - prepare lines for genes in adaptive cases.
@@ -415,7 +417,7 @@ var GIVe = (function (give) {
      * @param  {GiveTreeBase} data - data object used to prepare the lines.
      * @returns {number}  number of lines this track will take.
      */
-    _prepareLines (data) {
+    _prepareLines: function (data) {
       var lineEnds = [] // arrays of line end coordinates
       if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
       ) {
@@ -431,7 +433,7 @@ var GIVe = (function (give) {
       } else {
         return false
       }
-    }
+    },
 
     /**
      * _drawOverflowTriangles - draw two overflow triangles if genes exceed
@@ -446,7 +448,7 @@ var GIVe = (function (give) {
      *    gene/transcript. __Notice that genes drawn are vertically-aligned
      *    to the center so yCoor should be the coordinates at the center.__
      */
-    _drawOverflowTriangles (transcript, colorRGB, height, yCoor) {
+    _drawOverflowTriangles: function (transcript, colorRGB, height, yCoor) {
       var halfHeight = 0.5 * height
       if (this.transformXCoordinate(transcript.getStartCoor(), false) < 0) {
         // left triangles
@@ -475,7 +477,7 @@ var GIVe = (function (give) {
         { fill: this.TRIANGLE_FILL, stroke: colorRGB }
         )
       }
-    }
+    },
 
     /**
      * _callTransFuncOnGene - call functions on transcripts of genes, or
@@ -492,7 +494,7 @@ var GIVe = (function (give) {
      * @param  {GeneObject} gene - the gene to be called upon.
      * @return {boolean} Whether the function call returns `true`
      */
-    _callTransFuncOnGene (transcriptCallback, gene) {
+    _callTransFuncOnGene: function (transcriptCallback, gene) {
       var transcripts
       if (this.activeVisibility >
         give.TrackObject.StatusEnum.VIS_COLLAPSED &&
@@ -503,14 +505,14 @@ var GIVe = (function (give) {
         transcripts = [gene]
       }
       return transcripts.every(transcriptCallback, this)
-    }
+    },
 
     /**
      * _drawSingleTranscript - draw a single gene in the track SVG
      *
      * @param  {GeneObject} gene - the gene to be drawn.
      */
-    _drawSingleGene (gene, index, arr) {
+    _drawSingleGene: function (gene, index, arr) {
       this._callTransFuncOnGene(function (transcript) {
         if (this.regionInWindow(transcript)) {
           this._drawSingleTranscript(transcript,
@@ -521,7 +523,7 @@ var GIVe = (function (give) {
         }
         return true
       }, gene)
-    }
+    },
 
     /**
      * _drawSingleTranscript - draw a single transcript in the track SVG
@@ -542,7 +544,7 @@ var GIVe = (function (give) {
      *    `height`.__
      * @param  {number} [lineHeight] - unit for all height values.
      */
-    _drawSingleTranscript (
+    _drawSingleTranscript: function (
       transcript, lastTrans, yCoor, colorRGB, height, halfHeightRatio,
       lineHeight
     ) {
@@ -584,7 +586,7 @@ var GIVe = (function (give) {
       }
 
       this._drawOverflowTriangles(transcript, colorRGB, height, yCoor)
-    }
+    },
 
     /**
      * _drawSingleTranscriptBodyFullRes - draw a single transcript in the
@@ -604,7 +606,7 @@ var GIVe = (function (give) {
      *    `height`.__
      * @param  {number} lineHeight - unit for all height values.
      */
-    _drawSingleTranscriptBodyFullRes (
+    _drawSingleTranscriptBodyFullRes: function (
       transcript, yCoor, colorRGB, height, halfHeightRatio, lineHeight
     ) {
       /**
@@ -637,7 +639,7 @@ var GIVe = (function (give) {
             this.drawRectangle(coor, colorRGB,
               yCoor, height * halfHeightRatio,
               this.mainSvg, colorRGB,
-              give.TrackDom.VALIGN_CENTER
+              give.TrackDOMBehaviorImpl.VALIGN_CENTER
             )
             blockStart = thickStart
           }
@@ -647,7 +649,7 @@ var GIVe = (function (give) {
             coor.setEnd(thickEnd)
             this.drawRectangle(coor, colorRGB, yCoor,
               height, null, colorRGB,
-              give.TrackDom.VALIGN_CENTER
+              give.TrackDOMBehaviorImpl.VALIGN_CENTER
             )
             blockStart = thickEnd
           }
@@ -659,7 +661,7 @@ var GIVe = (function (give) {
         coor.setEnd(blockEnd)
         this.drawRectangle(coor, colorRGB,
           yCoor, height * (isThick ? 1 : halfHeightRatio),
-          this.mainSvg, colorRGB, give.TrackDom.VALIGN_CENTER
+          this.mainSvg, colorRGB, give.TrackDOMBehaviorImpl.VALIGN_CENTER
         )
       }.bind(this)
 
@@ -693,7 +695,7 @@ var GIVe = (function (give) {
           transcript.thickStart, transcript.thickEnd, coor
         )
       }
-    }
+    },
 
     /**
      * _drawSingleTranscriptBodyRaster - draw a single transcript in the
@@ -715,7 +717,7 @@ var GIVe = (function (give) {
      *    `height`.__
      * @param  {number} lineHeight - unit for all height values.
      */
-    _drawSingleTranscriptBodyRaster (transcript, lastTrans, yCoor,
+    _drawSingleTranscriptBodyRaster: function (transcript, lastTrans, yCoor,
       colorRGB, height, halfHeightRatio, lineHeight
     ) {
       /**
@@ -748,11 +750,11 @@ var GIVe = (function (give) {
         blockStart, blockEnd, thickStart, thickEnd
       ) {
         var isThick = false
-        if (blockStart < this._RasInfo.rasterStart) {
-          blockStart = this._RasInfo.rasterStart
+        if (blockStart < this._RasInfo.getRasterStart()) {
+          blockStart = this._RasInfo.getRasterStart()
         }
         while (blockStart < blockEnd) {
-          var segEnd = Math.min(blockEnd, this._RasInfo.rasterEnd)
+          var segEnd = Math.min(blockEnd, this._RasInfo.getRasterEnd())
           if (typeof thickStart === 'number' ||
             typeof thickEnd === 'number'
           ) {
@@ -777,7 +779,7 @@ var GIVe = (function (give) {
               : give.RasInfo.RASTER_STATES.THIN)
 
           blockStart = segEnd
-          if (blockStart >= this._RasInfo.rasterEnd) {
+          if (blockStart >= this._RasInfo.getRasterEnd()) {
             // moved past the current raster, finish it and append to
             // rasterFlags
             this._RasInfo.next(addRasToFlags)
@@ -794,9 +796,9 @@ var GIVe = (function (give) {
           rasterDrawIndex = this._RasInfo.findRasIndex(blockStart)
           this._RasInfo.prepareInfo(rasterDrawIndex)
         } else {
-          rasterDrawIndex = this._RasInfo.currIndex
+          rasterDrawIndex = this._RasInfo.getCurrIndex()
           let targetIndex = this._RasInfo.findRasIndex(blockStart)
-          while (this._RasInfo.currIndex < targetIndex) {
+          while (this._RasInfo.getCurrIndex() < targetIndex) {
             this._RasInfo.next(addRasToFlags)
           }
         }
@@ -810,12 +812,12 @@ var GIVe = (function (give) {
             // first draw connecting lines (intron, if any)
             if (blockEnd < blockStart) {
               // fill rasters in the gap with `give.RasInfo.RASTER_STATES.LINE`
-              blockEnd = Math.max(this._RasInfo.rasterStart, blockEnd)
+              blockEnd = Math.max(this._RasInfo.getRasterStart(), blockEnd)
               while (blockEnd < blockStart) {
-                let segEnd = Math.min(blockStart, this._RasInfo.rasterEnd)
+                let segEnd = Math.min(blockStart, this._RasInfo.getRasterEnd())
                 this._RasInfo.addData(segEnd - blockEnd,
                   give.RasInfo.RASTER_STATES.LINE)
-                if (segEnd === this._RasInfo.rasterEnd) {
+                if (segEnd === this._RasInfo.getRasterEnd()) {
                   this._RasInfo.next(addRasToFlags)
                 }
                 blockEnd = segEnd
@@ -858,16 +860,16 @@ var GIVe = (function (give) {
                 this.drawRectangle(coor, colorRGB,
                   yCoor, (rasObj.flag === give.RasInfo.RASTER_STATES.THICK
                     ? 1 : halfHeightRatio) * height, this.mainSvg,
-                  null, give.TrackDom.VALIGN_CENTER
+                  null, give.TrackDOMBehaviorImpl.VALIGN_CENTER
                 )
               }
             }
           }, this)
         }
       }
-    }
+    },
 
-    _drawSpanningLine (region, colorRGB, y, height) {
+    _drawSpanningLine: function (region, colorRGB, y, height) {
       height = height || 1
       y = y || 0
 
@@ -882,10 +884,7 @@ var GIVe = (function (give) {
           region.getStrand(), colorRGB)
       }
     }
-  }
-
-  give.BedTrackDom = BedTrackDom
-  window.customElements.define('bed-track-dom', give.BedTrackDom)
+  })
 
   return give
 })(GIVe || {})

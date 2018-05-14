@@ -38,12 +38,12 @@
     #highlighter > div::before {
       content: '';
       outline: solid var(--highlighter-border-width, 9999px) var(--highlighter-color, var(--default-primary-color));
-      @apply --layout-fit;
+      @apply(--layout-fit);
       opacity: 0.9;
     }
     #highlighter > div::after {
       content: '';
-      @apply --layout-fit;
+      @apply(--layout-fit);
       border: solid 1px rgba(0, 0, 0, 0.3);
       box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.3);
     }
@@ -62,7 +62,7 @@
     <div id="highlighter" hidden$="[[isHidden]]">
       <div>
         <div id="dialogBox">
-          <slot></slot>
+          <content></content>
           <paper-button on-tap="_permCloseTutorial">Okay, got it</paper-button>
           <template is="dom-if" if="[[!disableRemindLater]]">
             <paper-button on-tap="_tempCloseTutorial">Remind me later</paper-button>
@@ -127,7 +127,7 @@
           if (!this.target) {
             this._setTarget()
             if (!this.target) {
-              throw new give.GiveError('Target not set for tutorial-highlight element.')
+              throw new Error('Target not set for tutorial-highlight element.')
             }
           }
           var rect = this.target.getBoundingClientRect()
@@ -140,7 +140,7 @@
           Polymer.dom.flush()
           var insideRect = this.$$('#highlighter > div').getBoundingClientRect()
 
-          // find the largest region to put <slot></slot>
+          // find the largest region to put <content></content>
           if (rect.left + rect.right > window.innerWidth) {
             // put content to the left
             this.$.dialogBox.style.right = '20px'

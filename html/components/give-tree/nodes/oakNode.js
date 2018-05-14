@@ -180,7 +180,7 @@ var GIVe = (function (give) {
     if (!(give.GiveTreeNode.prototype.isPrototypeOf(
       props.LeafNodeCtor.prototype
     ))) {
-      throw new give.GiveError('LeafNodeCtor `' + props.LeafNodeCtor +
+      throw new Error('LeafNodeCtor `' + props.LeafNodeCtor +
         '` is not a constructor for a tree node!')
     }
 
@@ -379,7 +379,8 @@ var GIVe = (function (give) {
         this._mergeChild(i, true, true)
       }
     } else {
-      give._verbConsole.warn('Data ' + data + ' is not found in the tree.')
+      give._verboseConsole('Data ' + data + ' is not found in the tree.',
+        give.VERBOSE_WARNING)
     }
 
     if (this.IsRoot && this.RevDepth > 0 && this.Values.length < 2) {
@@ -433,7 +434,7 @@ var GIVe = (function (give) {
           ? this.getNext() : null
       }
     } else { // !chrRange
-      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
   }
 

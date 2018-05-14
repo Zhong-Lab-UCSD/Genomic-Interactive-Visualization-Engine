@@ -5,92 +5,123 @@
 
 (function(Prism) {
 
-	Prism.languages.smarty = {
-		'comment': /\{\*[\s\S]*?\*\}/,
-		'delimiter': {
-			pattern: /^\{|\}$/i,
-			alias: 'punctuation'
-		},
-		'string': /(["'])(?:\\.|(?!\1)[^\\\r\n])*\1/,
-		'number': /\b0x[\dA-Fa-f]+|(?:\b\d+\.?\d*|\B\.\d+)(?:[Ee][-+]?\d+)?/,
-		'variable': [
-			/\$(?!\d)\w+/,
-			/#(?!\d)\w+#/,
-			{
-				pattern: /(\.|->)(?!\d)\w+/,
-				lookbehind: true
-			},
-			{
-				pattern: /(\[)(?!\d)\w+(?=\])/,
-				lookbehind: true
-			}
-		],
-		'function': [
-			{
-				pattern: /(\|\s*)@?(?!\d)\w+/,
-				lookbehind: true
-			},
-			/^\/?(?!\d)\w+/,
-			/(?!\d)\w+(?=\()/
-		],
-		'attr-name': {
-			// Value is made optional because it may have already been tokenized
-			pattern: /\w+\s*=\s*(?:(?!\d)\w+)?/,
+	var smarty_pattern = /\{\*[\w\W]+?\*\}|\{[\w\W]+?\}/g;
+	var smarty_litteral_start = '{literal}';
+	var smarty_litteral_end = '{/literal}';
+	var smarty_litteral_mode = false;
+	
+	Prism.languages.smarty = Prism.languages.extend('markup', {
+		'smarty': {
+			pattern: smarty_pattern,
 			inside: {
-				"variable": {
-					pattern: /(=\s*)(?!\d)\w+/,
-					lookbehind: true
+				'delimiter': {
+					pattern: /^\{|\}$/i,
+					alias: 'punctuation'
 				},
-				"operator": /=/
+				'string': /(["'])(?:\\?.)*?\1/,
+				'number': /\b-?(?:0x[\dA-Fa-f]+|\d*\.?\d+(?:[Ee][-+]?\d+)?)\b/,
+				'variable': [
+					/\$(?!\d)\w+/,
+					/#(?!\d)\w+#/,
+					{
+						pattern: /(\.|->)(?!\d)\w+/,
+						lookbehind: true
+					},
+					{
+						pattern: /(\[)(?!\d)\w+(?=\])/,
+						lookbehind: true
+					}
+				],
+				'function': [
+					{
+						pattern: /(\|\s*)@?(?!\d)\w+/,
+						lookbehind: true
+					},
+					/^\/?(?!\d)\w+/,
+					/(?!\d)\w+(?=\()/
+				],
+				'attr-name': {
+					// Value is made optional because it may have already been tokenized
+					pattern: /\w+\s*=\s*(?:(?!\d)\w+)?/,
+					inside: {
+						"variable": {
+							pattern: /(=\s*)(?!\d)\w+/,
+							lookbehind: true
+						},
+						"operator": /=/
+					}
+				},
+				'punctuation': [
+					/[\[\]().,:`]|\->/
+				],
+				'operator': [
+					/[+\-*\/%]|==?=?|[!<>]=?|&&|\|\|?/,
+					/\bis\s+(?:not\s+)?(?:div|even|odd)(?:\s+by)?\b/,
+					/\b(?:eq|neq?|gt|lt|gt?e|lt?e|not|mod|or|and)\b/
+				],
+				'keyword': /\b(?:false|off|on|no|true|yes)\b/
 			}
-		},
-		'punctuation': [
-			/[\[\]().,:`]|->/
-		],
-		'operator': [
-			/[+\-*\/%]|==?=?|[!<>]=?|&&|\|\|?/,
-			/\bis\s+(?:not\s+)?(?:div|even|odd)(?:\s+by)?\b/,
-			/\b(?:eq|neq?|gt|lt|gt?e|lt?e|not|mod|or|and)\b/
-		],
-		'keyword': /\b(?:false|off|on|no|true|yes)\b/
-	};
+		}
+	});
 
 	// Comments are inserted at top so that they can
 	// surround markup
 	Prism.languages.insertBefore('smarty', 'tag', {
 		'smarty-comment': {
-			pattern: /\{\*[\s\S]*?\*\}/,
+			pattern: /\{\*[\w\W]*?\*\}/,
 			alias: ['smarty','comment']
 		}
 	});
 
 	// Tokenize all inline Smarty expressions
-	Prism.hooks.add('before-tokenize', function(env) {
-		var smartyPattern = /\{\*[\s\S]*?\*\}|\{[\s\S]+?\}/g;
-		var smartyLitteralStart = '{literal}';
-		var smartyLitteralEnd = '{/literal}';
-		var smartyLitteralMode = false;
+	Prism.hooks.add('before-highlight', function(env) {
+		if (env.language !== 'smarty') {
+			return;
+		}
 
-		Prism.languages['markup-templating'].buildPlaceholders(env, 'smarty', smartyPattern, function (match) {
+		env.tokenStack = [];
+
+		env.backupCode = env.code;
+		env.code = env.code.replace(smarty_pattern, function(match) {
+
 			// Smarty tags inside {literal} block are ignored
-			if(match === smartyLitteralEnd) {
-				smartyLitteralMode = false;
+			if(match === smarty_litteral_end) {
+				smarty_litteral_mode = false;
 			}
 
-			if(!smartyLitteralMode) {
-				if(match === smartyLitteralStart) {
-					smartyLitteralMode = true;
+			if(!smarty_litteral_mode) {
+				if(match === smarty_litteral_start) {
+					smarty_litteral_mode = true;
 				}
+				env.tokenStack.push(match);
 
-				return true;
+				return '___SMARTY' + env.tokenStack.length + '___';
 			}
-			return false;
+			return match;
 		});
 	});
 
-	// Re-insert the tokens after tokenizing
-	Prism.hooks.add('after-tokenize', function(env) {
-		Prism.languages['markup-templating'].tokenizePlaceholders(env, 'smarty');
+	// Restore env.code for other plugins (e.g. line-numbers)
+	Prism.hooks.add('before-insert', function(env) {
+		if (env.language === 'smarty') {
+			env.code = env.backupCode;
+			delete env.backupCode;
+		}
+	});
+
+	// Re-insert the tokens after highlighting
+	// and highlight them with defined grammar
+	Prism.hooks.add('after-highlight', function(env) {
+		if (env.language !== 'smarty') {
+			return;
+		}
+
+		for (var i = 0, t; t = env.tokenStack[i]; i++) {
+			// The replace prevents $$, $&, $`, $', $n, $nn from being interpreted as special patterns
+			env.highlightedCode = env.highlightedCode.replace('___SMARTY' + (i + 1) + '___', Prism.highlight(t, env.grammar, 'smarty').replace(/\$/g, '$$$$'));
+		}
+
+		env.element.innerHTML = env.highlightedCode;
 	});
 
 }(Prism));

@@ -23,26 +23,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 </head>
 <body>
+
   <iron-meta key="info" value="foo/bar"></iron-meta>
 
   <script>
-    suite('basic', function() {
-      test('byKey', function() {
-        var meta = new Polymer.IronMeta({key: 'info'});
 
-        expect(meta.value).to.be.eql('foo/bar');
+    suite('basic', function() {
+
+      test('byKey', function() {
+        var meta = document.createElement('iron-meta');
+        assert.equal(meta.byKey('info'), 'foo/bar');
       });
 
       test('list', function() {
-        assert.equal(document.querySelector('iron-meta').list.length, 1);
+        var meta = document.createElement('iron-meta');
+        assert.equal(meta.list.length, 1);
       });
 
-      test('constructor with no arguments', function() {
-        expect(function() {
-          new Polymer.IronMeta();
-        }).to.not.throw();
-      });
     });
+
   </script>
 
 </body>

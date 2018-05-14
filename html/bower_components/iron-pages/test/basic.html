@@ -35,17 +35,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
+
       suite('basic', function() {
         var pages;
 
         suite('defaults', function() {
-          setup(function(done) {
+          setup(function () {
             pages = fixture('basic');
-            pages.addEventListener(
-                'iron-items-changed', function onIronItemsChanged() {
-                  pages.removeEventListener('iron-items-changed', onIronItemsChanged);
-                  done();
-                });
           });
 
           test('to nothing selected', function() {
@@ -53,9 +49,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           test('null activateEvent', function() {
-            // `activateEvent` is not a useful feature for iron-pages and it can
-            // interfere with ux; ensure iron-pages has cleared any default
-            // `activateEvent`
+            // `activateEvent` is not a useful feature for iron-pages and it can interfere
+            // with ux; ensure iron-pages has cleared any default `activateEvent`
             assert.equal(pages.activateEvent, null);
           });
 
@@ -75,15 +70,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         suite('set the selected attribute', function() {
-          setup(function(done) {
+          setup(function () {
             pages = fixture('basic');
-            pages.addEventListener(
-                'iron-items-changed', function onIronItemsChanged() {
-                  pages.removeEventListener('iron-items-changed', onIronItemsChanged);
-
-                  pages.selected = 0;
-                  done();
-                });
+            pages.selected = 0;
           });
 
           test('selected value', function() {
@@ -94,17 +83,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             assert.equal(pages.selectedItem, pages.items[0]);
           });
 
-          test(
-              'selected item is display:block and all others are display:none',
-              function() {
-                pages.items.forEach(function(p) {
-                  assert.equal(
-                      getComputedStyle(p).display,
-                      p == pages.selectedItem ? 'block' : 'none');
-                });
-              });
+          test('selected item is display:block and all others are display:none', function() {
+            pages.items.forEach(function(p) {
+              assert.equal(getComputedStyle(p).display, p == pages.selectedItem ? 'block' : 'none');
+            });
+          });
         });
+
       });
+
     </script>
 
   </body>

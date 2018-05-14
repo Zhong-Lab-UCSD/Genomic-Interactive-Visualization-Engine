@@ -66,8 +66,6 @@ Custom property | Description | Default
       :host {
         display: block;
         transition-duration: var(--iron-collapse-transition-duration, 300ms);
-        /* Safari 10 needs this property prefixed to correctly apply the custom property */
-        -webkit-transition-duration: var(--iron-collapse-transition-duration, 300ms);
         overflow: visible;
       }
 
@@ -80,7 +78,7 @@ Custom property | Description | Default
       }
     </style>
 
-    <slot></slot>
+    <content></content>
 
   </template>
 
@@ -175,6 +173,7 @@ Custom property | Description | Default
     hostAttributes: {
       role: 'group',
       'aria-hidden': 'true',
+      'aria-expanded': 'false'
     },
 
     listeners: {
@@ -265,6 +264,7 @@ Custom property | Description | Default
     },
 
     _openedChanged: function() {
+      this.setAttribute('aria-expanded', this.opened);
       this.setAttribute('aria-hidden', !this.opened);
 
       this._setTransitioning(true);

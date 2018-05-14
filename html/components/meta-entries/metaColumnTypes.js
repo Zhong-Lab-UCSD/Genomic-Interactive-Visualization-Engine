@@ -6,7 +6,7 @@ var GIVe = (function (give) {
     this.url = url || give.MetaColumnTypes.defaultUrl
     this.isReady = false
     this.entries = {}
-    give.postAjax(this.url, null, 'text', 'GET').then(this.responseHandler)
+    give.postAjax(this.url, null, this.responseHandler, 'text', 'GET', null, this)
   }
 
   give.MetaColumnTypes.prototype.responseHandler = function (data) {

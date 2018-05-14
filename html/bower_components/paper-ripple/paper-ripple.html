@@ -38,7 +38,7 @@ Example:
     <paper-ripple id="ripple" style="pointer-events: none;"></paper-ripple>
     ...
     downAction: function(e) {
-      this.$.ripple.downAction(e.detail);
+      this.$.ripple.downAction({detail: {x: e.x, y: e.y}});
     },
     upAction: function(e) {
       this.$.ripple.upAction();
@@ -150,8 +150,6 @@ Apply `circle` class to make the rippling effect within a circle.
 </dom-module>
 <script>
   (function() {
-    'use strict';
-
     var Utility = {
       distance: function(x1, y1, x2, y2) {
         var xDelta = (x1 - x2);
@@ -556,9 +554,6 @@ Apply `circle` class to make the rippling effect within a circle.
         return this.keyEventTarget;
       },
 
-      /**
-       * @type {!Object}
-       */
       keyBindings: {
         'enter:keydown': '_onEnterKeydown',
         'space:keydown': '_onSpaceKeydown',

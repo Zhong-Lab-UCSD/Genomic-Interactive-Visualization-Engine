@@ -130,21 +130,6 @@ interface LoadOptions {
    * of `href` will be ignored.
    */
   filter?: (path:string)=> boolean;
-
-  /**
-   * If resolver is 'xhr':
-   * Type of object to be returned by the XHR. Defaults to 'text',
-   * accepts 'document', 'arraybuffer', and 'json'.
-   * responseType: string;
-   */
-  responseType?: string;
-
-  /**
-   * If resolver is 'xhr':
-   * If true, we'll set the `withCredentials` property on any XHRs made.
-   * This is relevant for whether cross-domain requests include cookies.
-   */
-  withCredentials?: boolean;
 }
 
 /**
@@ -317,9 +302,7 @@ export class Analyzer {
     for (const element of pseudoElements) {
       element.contentHref = href;
       this.elements.push(element);
-      if (element.is) {
-        this.elementsByTagName[element.is] = element;
-      }
+      this.elementsByTagName[element.is] = element;
     }
     metadataLoaded = metadataLoaded.then(function(metadata){
       var metadataEntry: DocumentDescriptor = {
@@ -421,7 +404,7 @@ export class Analyzer {
           this.elements.push(element);
           if (element.is in this.elementsByTagName) {
             console.warn('Ignoring duplicate element definition: ' + element.is);
-          } else if (element.is) {
+          } else {
             this.elementsByTagName[element.is] = element;
           }
         });
@@ -699,9 +682,7 @@ export class Analyzer {
     if (this.features.length > 0) {
       var featureEl = docs.featureElement(this.features);
       this.elements.unshift(featureEl);
-      if (featureEl.is) {
-        this.elementsByTagName[featureEl.is] = featureEl;
-      }
+      this.elementsByTagName[featureEl.is] = featureEl;
     }
     var behaviorsByName = this.behaviorsByName;
     var elementHelper = (descriptor: ElementDescriptor) => {

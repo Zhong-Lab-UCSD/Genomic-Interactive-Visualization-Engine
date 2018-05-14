@@ -23,13 +23,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       #placeholder {
         opacity: 0;
         background-color: grey;
-        @apply --layout-fit;
+        @apply(--layout-fit);
       }
     </style>
-
+    
     <div id="placeholder"></div>
     <div id="container">
-      <slot name="div"></slot>
+      <content select="div"></content>
     </div>
 
   </template>
@@ -46,35 +46,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     properties: {
       animationConfig: {
-        type: Object
+        value: function() {
+          return {
+            'entry': [{
+              name: 'reverse-ripple-animation',
+              id: 'reverse-ripple',
+              toPage: this
+            }],
+
+            'exit': [{
+              name: 'fade-out-animation',
+              node: this.$.container,
+              timing: {
+                delay: 150,
+                duration: 0
+              }
+            }, {
+              name: 'ripple-animation',
+              id: 'ripple',
+              fromPage: this
+            }]
+          };
+        }
       }
-    },
-
-    attached: function() {
-      if (this.animationConfig) {
-        return;
-      }
-
-      this.animationConfig = {
-        'entry': [{
-          name: 'reverse-ripple-animation',
-          id: 'reverse-ripple',
-          toPage: this
-        }],
-
-        'exit': [{
-          name: 'fade-out-animation',
-          node: this.$.container,
-          timing: {
-            delay: 150,
-            duration: 0
-          }
-        }, {
-          name: 'ripple-animation',
-          id: 'ripple',
-          fromPage: this
-        }]
-      };
     }
   });
 })();

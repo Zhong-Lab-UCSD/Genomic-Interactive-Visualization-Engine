@@ -90,10 +90,10 @@ var GIVe = (function (give) {
       this.Values = props.Values
     } else {
       if (!Number.isInteger(props.Start) || !Number.isInteger(props.End)) {
-        throw (new give.GiveError('Start or End is not an integer number in non-leaf ' +
+        throw (new Error('Start or End is not an integer number in non-leaf ' +
                'node construction!'))
       } else if (props.Start < 0 || props.End < 0 || props.Start >= props.End) {
-        throw (new give.GiveError('Range error. Start: ' + props.Start +
+        throw (new Error('Range error. Start: ' + props.Start +
           ', end: ' + props.End))
       }
       this.Keys = [props.Start, props.End]
@@ -129,20 +129,24 @@ var GIVe = (function (give) {
   ) {
     var newRegion = chrRange.clone()
     if (truncStart && newRegion.getStart() < this.getStart()) {
+      give._verboseConsole('Start truncated, get ' + newRegion.getStart() +
+        ', truncated to ' + this.getStart() + '.', give.VERBOSE_DEBUG_MORE)
       newRegion.setStart(this.getStart(), doNotThrow)
     }
     if (truncEnd && newRegion.getEnd() > this.getEnd()) {
+      give._verboseConsole('End truncated, get ' + newRegion.getEnd() +
+        ', truncated to ' + this.getEnd() + '.', give.VERBOSE_DEBUG_MORE)
       newRegion.setEnd(this.getEnd(), doNotThrow)
     }
 
     if ((newRegion.getStart() >= newRegion.getEnd() ||
       this.getStart() >= newRegion.getEnd() ||
       this.getEnd() <= newRegion.getStart()) && !doNotThrow) {
-      throw (new give.GiveError(chrRange + ' is not a valid chrRegion or ' +
-        'not overlapping with the current node. \nRange start: ' +
-        newRegion.getStart() + ', end: ' + newRegion.getEnd() +
-        '\nCurrent node start: ' + this.getStart() +
-        ', end: ' + this.getEnd()))
+      throw (new Error(chrRange + ' is not a valid chrRegion or ' +
+            'not overlapping with the current node. \nRange start: ' +
+            newRegion.getStart() + ', end: ' + newRegion.getEnd() +
+            '\nCurrent node start: ' + this.getStart() +
+            ', end: ' + this.getEnd()))
     }
     return newRegion
   }
@@ -204,7 +208,7 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.getNext = function () {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('Cannot get the next sibling in an unlinked tree!')
+      throw new Error('Cannot get the next sibling in an unlinked tree!')
     }
     return this.Next
   }
@@ -216,7 +220,7 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.getPrev = function () {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('Cannot get the previous sibling in an unlinked tree!')
+      throw new Error('Cannot get the previous sibling in an unlinked tree!')
     }
     return this.Prev
   }
@@ -229,7 +233,7 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.setNext = function (nextNode) {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('Cannot set the next sibling in an unlinked tree!')
+      throw new Error('Cannot set the next sibling in an unlinked tree!')
     }
     this.Next = nextNode || null
     if (nextNode) {
@@ -264,7 +268,7 @@ var GIVe = (function (give) {
    */
   give.GiveNonLeafNode.prototype.setPrev = function (prevNode) {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('Cannot set the previous sibling in an unlinked tree!')
+      throw new Error('Cannot set the previous sibling in an unlinked tree!')
     }
     this.Prev = prevNode || null
     if (prevNode) {
@@ -303,7 +307,7 @@ var GIVe = (function (give) {
     convertTo, noPrev, noNext
   ) {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('No sibling links to severe in an unlinked tree!')
+      throw new Error('No sibling links to severe in an unlinked tree!')
     }
     if (!noPrev) {
       try {
@@ -329,7 +333,7 @@ var GIVe = (function (give) {
     convertTo, noPrev, noNext
   ) {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('No child links to severe in an unlinked tree!')
+      throw new Error('No child links to severe in an unlinked tree!')
     }
     if (!noPrev) {
       try {
@@ -372,7 +376,7 @@ var GIVe = (function (give) {
     index, doNotFixBack, doNotFixFront
   ) {
     if (!this.Tree.NeighboringLinks) {
-      throw new give.GiveError('No child links to fix in an unlinked tree!')
+      throw new Error('No child links to fix in an unlinked tree!')
     }
     if (this.RevDepth > 0) {
       if (!doNotFixBack) {
@@ -485,7 +489,7 @@ var GIVe = (function (give) {
     }
 
     if (data && !Array.isArray(data)) {
-      throw (new give.GiveError('Data is not an array! ' +
+      throw (new Error('Data is not an array! ' +
         'This will cause problems in ContList.'))
     }
 
@@ -505,7 +509,7 @@ var GIVe = (function (give) {
         this._addLeafRecords(data, chrRange, props)
       }
     } else { // chrRange
-      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
     return this._restructure()
   }
@@ -551,7 +555,7 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._addNonLeafRecords = function (
     data, chrRange, props
   ) {
-    throw new give.GiveError('GiveNonLeafNode._addNonLeafRecords not implemented in `' +
+    throw new Error('GiveNonLeafNode._addNonLeafRecords not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -571,7 +575,7 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype._addLeafRecords = function (
     data, chrRange, props
   ) {
-    throw new give.GiveError('GiveNonLeafNode._addLeafRecords not implemented in `' +
+    throw new Error('GiveNonLeafNode._addLeafRecords not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -605,7 +609,7 @@ var GIVe = (function (give) {
   give.GiveNonLeafNode.prototype.remove = function (
     data, removeExactMatch, props
   ) {
-    throw new give.GiveError('GiveNonLeafNode.remove not implemented in `' +
+    throw new Error('GiveNonLeafNode.remove not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -635,7 +639,7 @@ var GIVe = (function (give) {
     if (this.Values[index] &&
       (newLatterChild === undefined && newFormerChild === undefined)
     ) {
-      throw new give.GiveError('Cannot split an existing child without providing both' +
+      throw new Error('Cannot split an existing child without providing both' +
         ' resulting siblings!')
     }
     this.Keys.splice(index + 1, 0, newKey)
@@ -777,7 +781,7 @@ var GIVe = (function (give) {
       }
       return true
     } else { // !chrRange
-      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
     } // end if(chrRange)
   }
 
@@ -829,7 +833,7 @@ var GIVe = (function (give) {
       }
       return props._Result
     } else { // chrRange
-      throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      throw (new Error(chrRange + ' is not a valid chrRegion.'))
     }
   }
 

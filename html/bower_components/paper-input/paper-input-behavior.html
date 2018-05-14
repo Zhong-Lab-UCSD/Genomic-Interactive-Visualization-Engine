@@ -53,7 +53,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       /**
        * The value for this input. If you're using PaperInputBehavior to
        * implement your own paper-input-like element, bind this to
-       * the `<iron-input>`'s `bindValue`
+       * the `<input is="iron-input">`'s `bindValue`
        * property, or the value property of your input that is `notify:true`.
        */
       value: {
@@ -86,6 +86,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       /**
+       * Set to true to prevent the user from entering invalid input. If you're
+       * using PaperInputBehavior to  implement your own paper-input-like element,
+       * bind this to `<input is="iron-input">`'s `preventInvalidInput` property.
+       */
+      preventInvalidInput: {
+        type: Boolean
+      },
+
+      /**
        * Set this to specify the pattern allowed by `preventInvalidInput`. If
        * you're using PaperInputBehavior to implement your own paper-input-like
        * element, bind this to the `<input is="iron-input">`'s `allowedPattern`
@@ -96,11 +105,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       /**
-       * The type of the input. The supported types are the
-       * [native input's types](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Form_<input>_types).
+       * The type of the input. The supported types are `text`, `number` and `password`.
        * If you're using PaperInputBehavior to implement your own paper-input-like element,
-       * bind this to the (Polymer 1) `<input is="iron-input">`'s or (Polymer 2)
-       * `<iron-input>`'s `type` property.
+       * bind this to the `<input is="iron-input">`'s `type` property.
        */
       type: {
         type: String
@@ -354,49 +361,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         type: Boolean
       },
 
-      /** @private */
       _ariaDescribedBy: {
         type: String,
         value: ''
       },
 
-      /** @private */
       _ariaLabelledBy: {
         type: String,
         value: ''
       },
 
-      /** @private */
       _inputId: {
         type: String,
         value: ''
       }
+
     },
 
     listeners: {
       'addon-attached': '_onAddonAttached',
     },
 
-    /**
-     * @type {!Object}
-     */
     keyBindings: {
       'shift+tab:keydown': '_onShiftTabDown'
     },
 
-    /** @private */
     hostAttributes: {
       tabindex: 0
     },
 
     /**
      * Returns a reference to the input element.
-     * @return {!HTMLElement}
      */
     get inputElement() {
-      // Chrome generates audit errors if an <input type="password"> has a
-      // duplicate ID, which is almost always true in Shady DOM. Generate
-      // a unique ID instead.
       if (!this.$) {
         this.$ = {}
       }
@@ -409,13 +406,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     /**
      * Returns a reference to the focusable element.
-     * @return {!HTMLElement}
      */
     get _focusableElement() {
       return this.inputElement;
     },
 
-    created: function() {
+    registered: function() {
       // These types have some default placeholder text; overlapping
       // the label on top of it looks terrible. Auto-float the label in this case.
       this._typesThatHaveText = ["date", "datetime", "datetime-local", "month",
@@ -425,10 +421,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     attached: function() {
       this._updateAriaLabelledBy();
 
-      // In the 2.0 version of the element, this is handled in `onIronInputReady`,
-      // i.e. after the native input has finished distributing. In the 1.0 version,
-      // the input is in the shadow tree, so it's already available.
-      if (!Polymer.Element && this.inputElement &&
+      if (this.inputElement &&
           this._typesThatHaveText.indexOf(this.inputElement.type) !== -1) {
         this.alwaysFloatLabel = true;
       }
@@ -444,7 +437,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     _onAddonAttached: function(event) {
-      var target = Polymer.dom(event).rootTarget;
+      var target = event.path ? event.path[0] : event.target;
       if (target.id) {
         this._ariaDescribedBy = this._appendStringWithSpace(this._ariaDescribedBy, target.id);
       } else {
@@ -470,9 +463,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer.IronControlState._focusBlurHandler.call(this, event);
 
       // Forward the focus to the nested input.
-      if (this.focused && !this._shiftTabPressed && this._focusableElement) {
+      if (this.focused && !this._shiftTabPressed && this._focusableElement)
         this._focusableElement.focus();
-      }
     },
 
     /**

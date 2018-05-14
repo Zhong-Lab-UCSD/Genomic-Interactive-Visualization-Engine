@@ -1,6 +1,6 @@
 {
   "name": "paper-material",
-  "version": "2.1.0",
+  "version": "1.0.6",
   "description": "A material design container that looks like a lifted sheet of paper",
   "private": true,
   "authors": [
@@ -22,42 +22,23 @@
   "homepage": "https://github.com/PolymerElements/paper-material",
   "ignore": [],
   "dependencies": {
-    "polymer": "Polymer/polymer#1.9 - 2",
-    "paper-styles": "PolymerElements/paper-styles#1 - 2"
+    "polymer": "Polymer/polymer#^1.1.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.0"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
-    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#1 - 2",
-    "web-component-tester": "^6.0.0",
-    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "test-fixture": "polymerelements/test-fixture#^1.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0"
   },
-  "variants": {
-    "1.x": {
-      "dependencies": {
-        "polymer": "Polymer/polymer#^1.9",
-        "paper-styles": "PolymerElements/paper-styles#^1.0.0"
-      },
-      "devDependencies": {
-        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
-        "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
-        "web-component-tester": "^4.0.0",
-        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0"
-      },
-      "resolutions": {
-        "webcomponentsjs": "^0.7"
-      }
-    }
-  },
-  "resolutions": {
-    "webcomponentsjs": "^1.0.0"
-  },
-  "_release": "2.1.0",
+  "_release": "1.0.6",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.0",
-    "commit": "7bce7d98daa7cdf25de6ba7596090266ca0f7bb5"
+    "tag": "v1.0.6",
+    "commit": "6aef0896fcbc25f9f5bd1dd55f7679e6ab7f92ad"
   },
   "_source": "https://github.com/PolymerElements/paper-material.git",
-  "_target": "^2.0.0",
+  "_target": "^1.0.0",
   "_originalSource": "PolymerElements/paper-material"
 }

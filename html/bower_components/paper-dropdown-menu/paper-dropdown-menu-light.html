@@ -39,7 +39,7 @@ displayed instead.
 Example:
 
     <paper-dropdown-menu-light label="Your favourite pastry">
-      <paper-listbox slot="dropdown-content">
+      <paper-listbox class="dropdown-content">
         <paper-item>Croissant</paper-item>
         <paper-item>Donut</paper-item>
         <paper-item>Financier</paper-item>
@@ -49,7 +49,7 @@ Example:
 
 This example renders a dropdown menu with 4 options.
 
-The child element with the slot `dropdown-content` is used as the dropdown
+The child element with the class `dropdown-content` is used as the dropdown
 menu. This can be a [`paper-listbox`](paper-listbox), or any other or
 element that acts like an [`iron-selector`](iron-selector).
 
@@ -110,46 +110,46 @@ To style it:
       /**
        * All of these styles below are for styling the fake-input display
        */
-      [slot="dropdown-trigger"] {
+      .dropdown-trigger {
         box-sizing: border-box;
         position: relative;
         width: 100%;
         padding: 16px 0 8px 0;
       }
 
-      :host([disabled]) [slot="dropdown-trigger"] {
+      :host([disabled]) .dropdown-trigger {
         pointer-events: none;
         opacity: var(--paper-dropdown-menu-disabled-opacity, 0.33);
       }
 
-      :host([no-label-float]) [slot="dropdown-trigger"] {
+      :host([no-label-float]) .dropdown-trigger {
         padding-top: 8px;   /* If there's no label, we need less space up top. */
       }
 
       #input {
-        @apply --paper-font-subhead;
-        @apply --paper-font-common-nowrap;
+        @apply(--paper-font-subhead);
+        @apply(--paper-font-common-nowrap);
         line-height: 1.5;
-        border-bottom: 1px solid var(--paper-dropdown-menu-color, var(--secondary-text-color));
-        color: var(--paper-dropdown-menu-color, var(--primary-text-color));
+        border-bottom: 1px solid var(--paper-dropdown-menu-color, --secondary-text-color);
+        color: var(--paper-dropdown-menu-color, --primary-text-color);
         width: 100%;
         box-sizing: border-box;
         padding: 12px 20px 0 0;   /* Right padding so that text doesn't overlap the icon */
         outline: none;
-        @apply --paper-dropdown-menu-input;
+        @apply(--paper-dropdown-menu-input);
       }
 
-      #input:dir(rtl) {
+      :host-context([dir="rtl"]) #input {
         padding-right: 0px;
         padding-left: 20px;
       }
 
       :host([disabled]) #input {
-        border-bottom: 1px dashed var(--paper-dropdown-menu-color, var(--secondary-text-color));
+        border-bottom: 1px dashed var(--paper-dropdown-menu-color, --secondary-text-color);
       }
 
       :host([invalid]) #input {
-        border-bottom: 2px solid var(--paper-dropdown-error-color, var(--error-color));
+        border-bottom: 2px solid var(--paper-dropdown-error-color, --error-color);
       }
 
       :host([no-label-float]) #input {
@@ -157,8 +157,8 @@ To style it:
       }
 
       label {
-        @apply --paper-font-subhead;
-        @apply --paper-font-common-nowrap;
+        @apply(--paper-font-subhead);
+        @apply(--paper-font-common-nowrap);
         display: block;
         position: absolute;
         bottom: 0;
@@ -175,11 +175,11 @@ To style it:
         text-align: left;
         transition-duration: .2s;
         transition-timing-function: cubic-bezier(.4,0,.2,1);
-        color: var(--paper-dropdown-menu-color, var(--secondary-text-color));
-        @apply --paper-dropdown-menu-label;
+        color: var(--paper-dropdown-menu-color, --secondary-text-color);
+        @apply(--paper-dropdown-menu-label);
       }
 
-      label:dir(rtl) {
+      :host-context([dir="rtl"]) label {
         padding-right: 0px;
         padding-left: 20px;
       }
@@ -201,11 +201,11 @@ To style it:
       }
 
       :host([focused]) label.label-is-floating {
-        color: var(--paper-dropdown-menu-focus-color, var(--primary-color));
+        color: var(--paper-dropdown-menu-focus-color, --primary-color);
       }
 
       :host([invalid]) label.label-is-floating {
-        color: var(--paper-dropdown-error-color, var(--error-color));
+        color: var(--paper-dropdown-error-color, --error-color);
       }
 
       /**
@@ -213,7 +213,7 @@ To style it:
        * visible when it's focused.
        */
       label:after {
-        background-color: var(--paper-dropdown-menu-focus-color, var(--primary-color));
+        background-color: var(--paper-dropdown-menu-focus-color, --primary-color);
         bottom: 7px;    /* The container has an 8px bottom padding */
         content: '';
         height: 2px;
@@ -227,7 +227,7 @@ To style it:
       }
 
       :host([invalid]) label:after {
-        background-color: var(--paper-dropdown-error-color, var(--error-color));
+        background-color: var(--paper-dropdown-error-color, --error-color);
       }
 
       :host([no-label-float]) label:after {
@@ -244,12 +244,12 @@ To style it:
         position: absolute;
         right: 0px;
         bottom: 8px;    /* The container has an 8px bottom padding */
-        @apply --paper-font-subhead;
+        @apply(--paper-font-subhead);
         color: var(--disabled-text-color);
-        @apply --paper-dropdown-menu-icon;
+        @apply(--paper-dropdown-menu-icon);
       }
 
-      iron-icon:dir(rtl) {
+      :host-context([dir="rtl"]) iron-icon {
         left: 0;
         right: auto;
       }
@@ -261,8 +261,8 @@ To style it:
       .error {
         display: inline-block;
         visibility: hidden;
-        color: var(--paper-dropdown-error-color, var(--error-color));
-        @apply --paper-font-caption;
+        color: var(--paper-dropdown-error-color, --error-color);
+        @apply(--paper-font-caption);
         position: absolute;
         left:0;
         right:0;
@@ -280,7 +280,7 @@ To style it:
       id="menuButton"
       vertical-align="[[verticalAlign]]"
       horizontal-align="[[horizontalAlign]]"
-      vertical-offset="[[_computeMenuVerticalOffset(noLabelFloat, verticalOffset)]]"
+      vertical-offset="[[_computeMenuVerticalOffset(noLabelFloat)]]"
       disabled="[[disabled]]"
       no-animations="[[noAnimations]]"
       on-iron-select="_onIronSelect"
@@ -288,8 +288,7 @@ To style it:
       opened="{{opened}}"
       close-on-activate
       allow-outside-scroll="[[allowOutsideScroll]]">
-      <!-- support hybrid mode: user might be using paper-menu-button 1.x which distributes via <content> -->
-      <div class="dropdown-trigger" slot="dropdown-trigger">
+      <div class="dropdown-trigger">
         <label class$="[[_computeLabelClass(noLabelFloat,alwaysFloatLabel,hasContent)]]">
           [[label]]
         </label>
@@ -297,7 +296,7 @@ To style it:
         <iron-icon icon="paper-dropdown-menu:arrow-drop-down"></iron-icon>
         <span class="error">[[errorMessage]]</span>
       </div>
-      <slot id="content" name="dropdown-content" slot="dropdown-content"></slot>
+      <content id="content" select=".dropdown-content"></content>
     </paper-menu-button>
   </template>
 
@@ -343,12 +342,13 @@ To style it:
 
           /**
            * The value for this element that will be used when submitting in
-           * a form. It reflects the value of `selectedItemLabel`. If set directly,
-           * it will not update the `selectedItemLabel` value.
+           * a form. It is read only, and will always have the same value
+           * as `selectedItemLabel`.
            */
           value: {
             type: String,
             notify: true,
+            readOnly: true,
             observer: '_valueChanged',
           },
 
@@ -433,12 +433,6 @@ To style it:
             value: 'top'
           },
 
-          /**
-           * Overrides the vertical offset computed in
-           * _computeMenuVerticalOffset.
-           */
-          verticalOffset: Number,
-
           hasContent: {
             type: Boolean,
             readOnly: true
@@ -449,9 +443,6 @@ To style it:
           'tap': '_onTap'
         },
 
-        /**
-         * @type {!Object}
-         */
         keyBindings: {
           'up down': 'open',
           'esc': 'close'
@@ -483,13 +474,7 @@ To style it:
          * The content element that is contained by the dropdown menu, if any.
          */
         get contentElement() {
-          // Polymer 2.x returns slot.assignedNodes which can contain text nodes.
-          var nodes = Polymer.dom(this.$.content).getDistributedNodes();
-          for (var i = 0, l = nodes.length; i < l; i++) {
-            if (nodes[i].nodeType === Node.ELEMENT_NODE) {
-              return nodes[i];
-            }
-          }
+          return Polymer.dom(this.$.content).getDistributedNodes()[0];
         },
 
         /**
@@ -549,7 +534,7 @@ To style it:
             value = selectedItem.label || selectedItem.getAttribute('label') || selectedItem.textContent.trim();
           }
 
-          this.value = value;
+          this._setValue(value);
           this._setSelectedItemLabel(value);
         },
 
@@ -558,13 +543,9 @@ To style it:
          * `noLabelFloat`.
          *
          * @param {boolean} noLabelFloat True if the label should not float
-         * @param {number=} opt_verticalOffset Optional offset from the user
          * above the input, otherwise false.
          */
-         _computeMenuVerticalOffset: function(noLabelFloat, opt_verticalOffset) {
-          // Override offset if it's passed from the user.
-          if (opt_verticalOffset) { return opt_verticalOffset; }
-
+        _computeMenuVerticalOffset: function(noLabelFloat) {
           // NOTE(cdata): These numbers are somewhat magical because they are
           // derived from the metrics of elements internal to `paper-input`'s
           // template. The metrics will change depending on whether or not the

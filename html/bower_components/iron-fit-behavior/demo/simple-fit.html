@@ -20,14 +20,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         text-align: center;
       }
     </style>
-    <slot></slot>
+
+    <content></content>
   </template>
-  <script>
-    Polymer({
-      is: 'simple-fit',
-      behaviors: [
-        Polymer.IronFitBehavior
-      ]
-    });
-  </script>
+
 </dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'simple-fit',
+
+    behaviors: [
+      Polymer.IronFitBehavior
+    ]
+
+  });
+
+</script>

@@ -10,7 +10,7 @@ var GIVe = (function (give) {
       }
       this.prerequisites = prerequisites
     } else {
-      throw (new give.GiveError('Task entry error: no callback defined.'))
+      throw (new Error('Task entry error: no callback defined.'))
     }
     this.isDone = false
   }

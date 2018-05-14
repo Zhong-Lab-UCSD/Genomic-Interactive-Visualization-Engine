@@ -33,7 +33,7 @@ Custom property | Description | Default
   <template>
     <style>
       :host {
-        @apply --paper-font-body1;
+        @apply(--paper-font-body1);
 
         box-sizing: border-box;
         display: block;
@@ -55,11 +55,11 @@ Custom property | Description | Default
       }
 
       .deeplink:hover {
-        color: var(--iron-doc-viewer-property-deeplink-color-hover, var(--paper-pink-500));
+        color: var(--iron-doc-viewer-property-deeplink-color-hover, --paper-pink-500);
       }
 
       #signature {
-        @apply --paper-font-code1;
+        @apply(--paper-font-code1);
 
         float: left;
         overflow: hidden;
@@ -69,7 +69,7 @@ Custom property | Description | Default
       }
 
       #signature .name {
-        @apply --paper-font-code2;
+        @apply(--paper-font-code2);
       }
 
       :host([function]) #signature {
@@ -94,13 +94,13 @@ Custom property | Description | Default
       /* Metadata */
 
       #type {
-        @apply --paper-font-code1;
+        @apply(--paper-font-code1);
 
         font-style: italic;
       }
 
       .annotation {
-        color: var(--iron-doc-viewer-property-annotation-color, var(--paper-grey-700));
+        color: var(--iron-doc-viewer-property-annotation-color, --paper-grey-700);
         float: right;
       }
 
@@ -113,7 +113,7 @@ Custom property | Description | Default
       }
 
       #default .value {
-        color: var(--iron-doc-viewer-property-default-value-color, var(--paper-grey-500));
+        color: var(--iron-doc-viewer-property-default-value-color, --paper-grey-500);
         font-size: 12px;
       }
 
@@ -126,7 +126,7 @@ Custom property | Description | Default
       }
 
       #params .type {
-        @apply --paper-font-code1;
+        @apply(--paper-font-code1);
       }
 
       #params li {
@@ -165,11 +165,11 @@ Custom property | Description | Default
       }
 
       #desc .markdown-html code {
-        @apply --paper-font-code1;
+        @apply(--paper-font-code1);
       }
 
       #desc .markdown-html a {
-        color: var(--iron-doc-viewer-property-markdown-link-color, var(--paper-indigo-200));
+        color: var(--iron-doc-viewer-property-markdown-link-color, --paper-indigo-a200);
         text-decoration: none;
       }
 
@@ -184,7 +184,7 @@ Custom property | Description | Default
       }
       #meta {
         transition: opacity ease-in-out 150ms;
-        color: var(--iron-doc-viewer-property-meta-color, var(--paper-blue-500));
+        color: var(--iron-doc-viewer-property-meta-color, --paper-blue-500);
       }
       #desc {
         transition: transform ease-in-out 150ms, opacity  ease-in-out 150ms;

@@ -17,7 +17,7 @@ thing! https://github.com/PolymerLabs/tedium/issues
 _[Demo and API docs](https://elements.polymer-project.org/elements/paper-item)_
 
 
-## &lt;paper-item&gt;
+##&lt;paper-item&gt;
 
 Material design: [Lists](https://www.google.com/design/spec/components/lists.html)
 
@@ -95,20 +95,20 @@ This element has `role="listitem"` by default. Depending on usage, it may be mor
 
 
 
-## &lt;paper-icon-item&gt;
+##&lt;paper-icon-item&gt;
 
 `<paper-icon-item>` is a convenience element to make an item with icon. It is an interactive list
 item with a fixed-width icon area, according to Material Design. This is useful if the icons are of
 varying widths, but you want the item bodies to line up. Use this like a `<paper-item>`. The child
-node with the slot `item-icon` is placed in the icon area.
+node with the attribute `item-icon` is placed in the icon area.
 
 ```html
 <paper-icon-item>
-  <iron-icon icon="favorite" slot="item-icon"></iron-icon>
+  <iron-icon icon="favorite" item-icon></iron-icon>
   Favorite
 </paper-icon-item>
 <paper-icon-item>
-  <div class="avatar" slot="item-icon"></div>
+  <div class="avatar" item-icon></div>
   Avatar
 </paper-icon-item>
 ```
@@ -129,16 +129,9 @@ The following custom properties and mixins are available for styling:
 | `--paper-item-focused` | Mixin applied to focused paper-items | `{}` |
 | `--paper-item-focused-before` | Mixin applied to :before focused paper-items | `{}` |
 
-### Changes in 2.0
 
-Distribution is now done with the `slot="item-icon"` attributes (replacing the `item-icon` attribute):
 
-    <paper-icon-item>
-      <iron-icon icon="favorite" slot="item-icon"></iron-icon>
-      Favorite
-    </paper-icon-item>
-
-## &lt;paper-item-body&gt;
+##&lt;paper-item-body&gt;
 
 Use `<paper-item-body>` in a `<paper-item>` or `<paper-icon-item>` to make two- or
 three- line items. It is a flex item that is a vertical flexbox.

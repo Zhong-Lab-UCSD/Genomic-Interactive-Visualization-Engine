@@ -20,7 +20,7 @@
 	delete Prism.languages.sass.atrule;
 
 
-	var variable = /\$[-\w]+|#\{\$[-\w]+\}/;
+	var variable = /((\$[-_\w]+)|(#\{\$[-_\w]+\}))/i;
 	var operator = [
 		/[+*\/%]|[=!]=|<=?|>=?|\b(?:and|or|not)\b/,
 		{

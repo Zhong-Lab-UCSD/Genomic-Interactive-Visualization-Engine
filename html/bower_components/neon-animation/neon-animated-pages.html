@@ -21,6 +21,7 @@ animations to be run when switching to or switching out of the page.
 
 @group Neon Elements
 @element neon-animated-pages
+@demo demo/index.html
 -->
 
 <dom-module id="neon-animated-pages">
@@ -31,7 +32,7 @@ animations to be run when switching to or switching out of the page.
         position: relative;
       }
 
-      :host > ::slotted(*) {
+      :host > ::content > * {
         position: absolute;
         top: 0;
         left: 0;
@@ -39,17 +40,16 @@ animations to be run when switching to or switching out of the page.
         right: 0;
       }
 
-      :host > ::slotted(:not(.iron-selected):not(.neon-animating))
-       {
+      :host > ::content > :not(.iron-selected):not(.neon-animating) {
         display: none !important;
       }
 
-      :host > ::slotted(.neon-animating) {
+      :host > ::content > .neon-animating {
         pointer-events: none;
       }
     </style>
-
-    <slot id="content"></slot>
+    
+    <content id="content"></content>
   </template>
 
 </dom-module>
@@ -210,9 +210,10 @@ animations to be run when switching to or switching out of the page.
       var selectedPage = this.selectedItem || this._valueToItem(this.selected);
       this.resizerShouldNotify = function(element) {
         return element == selectedPage;
-      };
+      }
       this.notifyResize();
     }
+
   })
 
 })();

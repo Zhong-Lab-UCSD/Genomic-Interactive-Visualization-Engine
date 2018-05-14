@@ -45,7 +45,7 @@ var GIVe = (function (give) {
 
   give.BedTrack.prototype._DataObjCtor = give.BedTrackData
 
-  give.BedTrack.prototype._DomObjCtor = give.BedTrackDom
+  give.BedTrack.prototype._DomObjCtor = give.BedTrackDOM
 
   give.TrackObject.registerTrack(give.BedTrack)
 

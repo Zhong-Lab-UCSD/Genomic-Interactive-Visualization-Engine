@@ -12,12 +12,9 @@ Prism.languages.fortran = {
 			}
 		}
 	},
-	'comment': {
-		pattern: /!.*/,
-		greedy: true
-	},
+	'comment': /!.*/,
 	'boolean': /\.(?:TRUE|FALSE)\.(?:_\w+)?/i,
-	'number': /(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:[ED][+-]?\d+)?(?:_\w+)?/i,
+	'number': /(?:\b|[+-])(?:\d+(?:\.\d*)?|\.\d+)(?:[ED][+-]?\d+)?(?:_\w+)?/i,
 	'keyword': [
 		// Types
 		/\b(?:INTEGER|REAL|DOUBLE ?PRECISION|COMPLEX|CHARACTER|LOGICAL)\b/i,

@@ -1,6 +1,6 @@
 {
   "name": "iron-behaviors",
-  "version": "2.1.1",
+  "version": "1.0.17",
   "description": "Provides a set of behaviors for the iron elements",
   "private": true,
   "authors": [
@@ -16,48 +16,27 @@
   ],
   "license": "http://polymer.github.io/LICENSE.txt",
   "dependencies": {
-    "polymer": "Polymer/polymer#1.9 - 2",
-    "iron-a11y-keys-behavior": "PolymerElements/iron-a11y-keys-behavior#1 - 2"
+    "polymer": "Polymer/polymer#^1.2.0",
+    "iron-a11y-keys-behavior": "PolymerElements/iron-a11y-keys-behavior#^1.0.0"
   },
   "devDependencies": {
-    "paper-styles": "PolymerElements/paper-styles#1 - 2",
-    "paper-input": "PolymerElements/paper-input#1 - 2",
-    "iron-test-helpers": "PolymerElements/iron-test-helpers#1 - 2",
-    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
-    "web-component-tester": "^6.0.0",
-    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "paper-input": "polymerelements/paper-input#^1.0.0",
+    "iron-test-helpers": "polymerelements/iron-test-helpers#^1.0.0",
+    "iron-component-page": "polymerelements/iron-component-page#^1.0.0",
+    "test-fixture": "polymerelements/test-fixture#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
   },
   "ignore": [],
-  "variants": {
-    "1.x": {
-      "dependencies": {
-        "polymer": "Polymer/polymer#^1.9",
-        "iron-a11y-keys-behavior": "PolymerElements/iron-a11y-keys-behavior#^1.0.0"
-      },
-      "devDependencies": {
-        "paper-styles": "PolymerElements/paper-styles#^1.0.0",
-        "paper-input": "PolymerElements/paper-input#^1.0.0",
-        "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
-        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
-        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
-        "web-component-tester": "Polymer/web-component-tester#^4.0.0"
-      },
-      "resolutions": {
-        "webcomponentsjs": "^0.7"
-      }
-    }
-  },
-  "resolutions": {
-    "webcomponentsjs": "^1.0.0"
-  },
   "homepage": "https://github.com/PolymerElements/iron-behaviors",
-  "_release": "2.1.1",
+  "_release": "1.0.17",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.1",
-    "commit": "a27b45bebb2af58506af77c377dab301bf7406ce"
+    "tag": "v1.0.17",
+    "commit": "ef8e89b5f0aa4e8a6b51ca6491ea453bf395f94f"
   },
   "_source": "https://github.com/PolymerElements/iron-behaviors.git",
-  "_target": "1 - 2",
+  "_target": "^1.0.0",
   "_originalSource": "PolymerElements/iron-behaviors"
 }

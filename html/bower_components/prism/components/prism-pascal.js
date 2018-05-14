@@ -10,10 +10,7 @@ Prism.languages.pascal = {
 		/\{[\s\S]+?\}/,
 		/\/\/.*/
 	],
-	'string': {
-		pattern: /(?:'(?:''|[^'\r\n])*'|#[&$%]?[a-f\d]+)+|\^[a-z]/i,
-		greedy: true
-	},
+	'string': /(?:'(?:''|[^'\r\n])*'|#[&$%]?[a-f\d]+)+|\^[a-z]/i,
 	'keyword': [
 		{
 			// Turbo Pascal
@@ -38,9 +35,9 @@ Prism.languages.pascal = {
 	],
 	'number': [
 		// Hexadecimal, octal and binary
-		/(?:[&%]\d+|\$[a-f\d]+)/i,
+		/[+-]?(?:[&%]\d+|\$[a-f\d]+)/i,
 		// Decimal
-		/\b\d+(?:\.\d+)?(?:e[+-]?\d+)?/i
+		/([+-]|\b)\d+(?:\.\d+)?(?:e[+-]?\d+)?/i
 	],
 	'operator': [
 		/\.\.|\*\*|:=|<[<=>]?|>[>=]?|[+\-*\/]=?|[@^=]/i,

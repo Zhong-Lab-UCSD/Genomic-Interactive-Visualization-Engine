@@ -44,12 +44,12 @@ Example:
         display: block;
       }
 
-      :host > ::slotted(:not(slot):not(.iron-selected)) {
+      :host > ::content > :not(.iron-selected) {
         display: none !important;
       }
     </style>
 
-    <slot></slot>
+    <content></content>
   </template>
 
   <script>
@@ -57,7 +57,10 @@ Example:
 
       is: 'iron-pages',
 
-      behaviors: [Polymer.IronResizableBehavior, Polymer.IronSelectableBehavior],
+      behaviors: [
+        Polymer.IronResizableBehavior,
+        Polymer.IronSelectableBehavior
+      ],
 
       properties: {
 
@@ -65,15 +68,21 @@ Example:
         // is both non-sensical and problematic; e.g. in cases where a user
         // handler attempts to change the page and the activateEvent
         // handler immediately changes it back
-        activateEvent: {type: String, value: null}
+        activateEvent: {
+          type: String,
+          value: null
+        }
 
       },
 
-      observers: ['_selectedPageChanged(selected)'],
+      observers: [
+        '_selectedPageChanged(selected)'
+      ],
 
       _selectedPageChanged: function(selected, old) {
         this.async(this.notifyResize);
       }
     });
+
   </script>
 </dom-module>

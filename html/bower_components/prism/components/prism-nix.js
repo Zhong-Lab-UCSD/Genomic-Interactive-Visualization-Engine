@@ -2,7 +2,6 @@ Prism.languages.nix = {
 	'comment': /\/\*[\s\S]*?\*\/|#.*/,
 	'string': {
 		pattern: /"(?:[^"\\]|\\[\s\S])*"|''(?:(?!'')[\s\S]|''(?:'|\\|\$\{))*''/,
-		greedy: true,
 		inside: {
 			'interpolation': {
 				// The lookbehind ensures the ${} is not preceded by \ or ''
@@ -37,4 +36,4 @@ Prism.languages.nix = {
 	'punctuation': /[{}()[\].,:;]/
 };
 
-Prism.languages.nix.string.inside.interpolation.inside.rest = Prism.languages.nix;
+Prism.languages.nix.string.inside.interpolation.inside.rest = Prism.util.clone(Prism.languages.nix);

@@ -9,29 +9,29 @@
 		return;
 	}
 
-	var ClipboardJS = window.ClipboardJS || undefined;
+	var Clipboard = window.Clipboard || undefined;
 
-	if (!ClipboardJS && typeof require === 'function') {
-		ClipboardJS = require('clipboard');
+	if (!Clipboard && typeof require === 'function') {
+		Clipboard = require('clipboard');
 	}
 
 	var callbacks = [];
 
-	if (!ClipboardJS) {
+	if (!Clipboard) {
 		var script = document.createElement('script');
 		var head = document.querySelector('head');
 
 		script.onload = function() {
-			ClipboardJS = window.ClipboardJS;
+			Clipboard = window.Clipboard;
 
-			if (ClipboardJS) {
+			if (Clipboard) {
 				while (callbacks.length) {
 					callbacks.pop()();
 				}
 			}
 		};
 
-		script.src = 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js';
+		script.src = 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.8/clipboard.min.js';
 		head.appendChild(script);
 	}
 
@@ -39,7 +39,7 @@
 		var linkCopy = document.createElement('a');
 		linkCopy.textContent = 'Copy';
 
-		if (!ClipboardJS) {
+		if (!Clipboard) {
 			callbacks.push(registerClipboard);
 		} else {
 			registerClipboard();
@@ -48,7 +48,7 @@
 		return linkCopy;
 
 		function registerClipboard() {
-			var clip = new ClipboardJS(linkCopy, {
+			var clip = new Clipboard(linkCopy, {
 				'text': function () {
 					return env.code;
 				}

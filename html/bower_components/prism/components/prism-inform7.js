@@ -14,16 +14,13 @@ Prism.languages.inform7 = {
 			}
 		}
 	},
-	'comment': {
-		pattern: /\[[^\]]+\]/,
-		greedy: true
-	},
+	'comment': /\[[^\]]+\]/,
 	'title': {
 		pattern: /^[ \t]*(?:volume|book|part(?! of)|chapter|section|table)\b.+/im,
 		alias: 'important'
 	},
 	'number': {
-		pattern: /(^|[^-])(?:\b\d+(?:\.\d+)?(?:\^\d+)?\w*|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve))\b(?!-)/i,
+		pattern: /(^|[^-])(?:(?:\b|-)\d+(?:\.\d+)?(?:\^\d+)?\w*|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve))\b(?!-)/i,
 		lookbehind: true
 	},
 	'verb': {
@@ -53,7 +50,7 @@ Prism.languages.inform7 = {
 	'punctuation': /[.,:;(){}]/
 };
 
-Prism.languages.inform7['string'].inside['substitution'].inside.rest = Prism.languages.inform7;
+Prism.languages.inform7['string'].inside['substitution'].inside.rest = Prism.util.clone(Prism.languages.inform7);
 // We don't want the remaining text in the substitution to be highlighted as the string.
 Prism.languages.inform7['string'].inside['substitution'].inside.rest.text = {
 	pattern: /\S(?:\s*\S)*/,

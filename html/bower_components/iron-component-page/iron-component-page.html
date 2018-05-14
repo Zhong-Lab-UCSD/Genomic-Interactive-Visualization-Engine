@@ -15,12 +15,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../iron-selector/iron-selector.html">
-<link rel="import" href="../app-layout/app-scroll-effects/effects/waterfall.html">
-<link rel="import" href="../app-layout/app-header/app-header.html">
-<link rel="import" href="../app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
 <link rel="import" href="../paper-styles/color.html">
 <link rel="import" href="../paper-styles/typography.html">
-<link rel="import" href="../app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
 
 <!--
 Loads Polymer element and behavior documentation using
@@ -28,7 +26,7 @@ Loads Polymer element and behavior documentation using
 documentation page including demos (if available).
 
 To display a warning inside an `iron-component-page` element,
-add the `warning` slot to a child.
+add the `.warning` class to a child.
 -->
 
 <dom-module id="iron-component-page">
@@ -36,9 +34,10 @@ add the `warning` slot to a child.
     <style>
       :host {
         font-family: 'Roboto', 'Noto', sans-serif;
-        @apply --layout-fit;
-        @apply --layout;
-        @apply --layout-vertical;
+        @apply(--layout-fit);
+        @apply(--layout);
+        @apply(--layout-vertical);
+        overflow: hidden;
         background: var(--paper-grey-50);
       }
 
@@ -50,33 +49,54 @@ add the `warning` slot to a child.
         max-width: 20em;
       }
 
-      app-header {
+      paper-header-panel {
+        @apply(--layout-flex);
         background: var(--paper-grey-50);
       }
 
-      app-toolbar a {
+      paper-toolbar {
+        --paper-toolbar-background: var(--paper-grey-50);
+        --paper-toolbar-color: var(--paper-grey-800);
+        flex-shrink: 0;
+      }
+
+      :host > paper-header-panel {
+        opacity: 0;
+        transition: opacity 0.5s;
+      }
+
+      :host(.loaded) > paper-header-panel {
+        opacity: 1.0;
+      }
+
+      #content {
+        display: block;
+        background: var(--paper-grey-50);
+      }
+
+      paper-toolbar a {
         margin: 0 10px;
         cursor: pointer;
       }
 
-      app-toolbar a:last-child {
+      paper-toolbar a:last-child {
         margin-right: 0;
       }
 
-      app-toolbar a, app-toolbar a iron-icon {
+      paper-toolbar a, paper-toolbar a iron-icon {
         font-weight: normal;
         color: var(--paper-grey-500);
       }
 
-      app-toolbar iron-icon {
+      paper-toolbar iron-icon {
         margin: -2px 5px 0 0;
       }
 
-      app-toolbar a.iron-selected, app-toolbar a.iron-selected iron-icon {
+      paper-toolbar a.iron-selected, paper-toolbar a.iron-selected iron-icon {
         color: var(--paper-grey-800);
       }
 
-      app-toolbar a:hover, app-toolbar a:hover iron-icon {
+      paper-toolbar a:hover, paper-toolbar a:hover iron-icon {
         color: var(--paper-pink-500);
       }
 
@@ -85,7 +105,7 @@ add the `warning` slot to a child.
       }
 
       #demo iframe {
-        @apply --layout-fit;
+        @apply(--layout-fit);
       }
 
       #nodocs {
@@ -114,7 +134,7 @@ add the `warning` slot to a child.
 
       #docs {
         max-width: var(--iron-component-page-max-width, 48em);
-        @apply --iron-component-page-container;
+        @apply(--iron-component-page-container);
         padding: 20px;
         margin: 0 auto;
       }
@@ -126,7 +146,7 @@ add the `warning` slot to a child.
         background: transparent;
       }
 
-      app-toolbar a {
+      paper-toolbar a {
         font-size: 14px;
         text-transform: uppercase;
         cursor: pointer;
@@ -143,7 +163,7 @@ add the `warning` slot to a child.
 
       #catalog-heading h2 {
         color: var(--paper-grey-800);
-        @apply --paper-font-title;
+        @apply(--paper-font-title);
         margin: 0;
       }
 
@@ -172,46 +192,44 @@ add the `warning` slot to a child.
       }
 
       .no-docs {
-        @apply --layout-horizontal;
-        @apply --layout-center-center;
-        @apply --layout-fit;
+        @apply(--layout-horizontal);
+        @apply(--layout-center-center);
+        @apply(--layout-fit);
       }
 
       .docs-header {
-        @apply --layout-flex;
+        @apply(--layout-flex);
       }
     </style>
 
     <hydrolysis-analyzer id="analyzer" src="[[_srcUrl]]" transitive="[[transitive]]" clean analyzer="{{_hydroDesc}}" loading="{{_hydroLoading}}"></hydrolysis-analyzer>
     <iron-ajax id="ajax" url="[[docSrc]]" handle-as="json" on-response="_handleAjaxResponse" on-error="_handleError"></iron-ajax>
 
-    <app-header-layout has-scrolling-region>
-      <app-header id="headerPanel" fixed slot="header" effects="waterfall">
-        <app-toolbar catalog-hidden>
-          <div class="docs-header">
-            <!-- TODO: Replace with paper-dropdown-menu when available -->
-            <select id="active" value="[[active]]" on-change="_handleMenuItemSelected">
-              <template is="dom-repeat" items="[[docElements]]">
-                <option value="[[item.is]]">[[item.is]]</option>
-              </template>
-              <template is="dom-repeat" items="[[docBehaviors]]">
-                <option value="[[item.is]]">[[item.is]]</option>
-              </template>
-            </select>
-          </div>
-          <iron-selector attr-for-selected="view" selected="{{view}}" id="links" hidden$="[[!docDemos.length]]">
-            <a view="docs"><iron-icon icon="description"></iron-icon> Docs</a>
-            <a view="[[_demoView(docDemos.0.path)]]"><iron-icon icon="visibility"></iron-icon> <span>Demo</span></a>
-          </iron-selector>
-        </app-toolbar>
-      </app-header>
+    <paper-header-panel id="headerPanel" mode="[[scrollMode]]">
+      <paper-toolbar catalog-hidden>
+        <div class="docs-header">
+          <!-- TODO: Replace with paper-dropdown-menu when available -->
+          <select id="active" value="[[active]]" on-change="_handleMenuItemSelected">
+            <template is="dom-repeat" items="[[docElements]]">
+              <option value="[[item.is]]">[[item.is]]</option>
+            </template>
+            <template is="dom-repeat" items="[[docBehaviors]]">
+              <option value="[[item.is]]">[[item.is]]</option>
+            </template>
+          </select>
+        </div>
+        <iron-selector attr-for-selected="view" selected="{{view}}" id="links" hidden$="[[!docDemos.length]]">
+          <a view="docs"><iron-icon icon="description"></iron-icon> Docs</a>
+          <a view="[[_demoView(docDemos.0.path)]]"><iron-icon icon="visibility"></iron-icon> <span>Demo</span></a>
+        </iron-selector>
+      </paper-toolbar>
       <div id="content">
         <iron-selector id="view" selected="[[_viewType(view)]]" attr-for-selected="id">
           <div id="docs">
             <div id="catalog-heading" catalog-only>
               <h2><span>[[active]]</span> <span class="version" hidden$="[[!version]]">[[version]]</span></h2>
             </div>
-            <slot name="warning"></slot>
+            <content select=".warning"></content>
             <iron-doc-viewer prefix="[[_fragmentPrefix]]" id="viewer" descriptor="{{_activeDescriptor}}"
               on-iron-doc-viewer-component-selected="_handleComponentSelectedEvent"></iron-doc-viewer>
             <div id="nodocs" hidden$="[[_activeDescriptor]]" class="no-docs">
@@ -221,7 +239,7 @@ add the `warning` slot to a child.
           <div id="demo"></div>
         </iron-selector>
       </div>
-    </app-header-layout>
+    </paper-header-panel>
   </template>
 
   <script>
@@ -354,6 +372,15 @@ add the `warning` slot to a child.
             type: Array,
             notify: true,
             readOnly: true
+          },
+
+          /**
+           * The scroll mode for the page. For details about the modes,
+           * see the mode property in paper-header-panel.
+           */
+          scrollMode: {
+            type: String,
+            value: 'waterfall'
           },
 
           /**
@@ -615,7 +642,7 @@ add the `warning` slot to a child.
           }
           this.async(function() { this.$.active.value = active; });
           if (analyzer && analyzer.elementsByTagName) {
-            this.$.headerPanel.scrollTarget.scrollTop = 0;
+            this.$.headerPanel.scroller.scrollTop = 0;
             this._activeDescriptor = this._findDescriptor(active);
             if (this._activeDescriptor) {
               var hasDemo;

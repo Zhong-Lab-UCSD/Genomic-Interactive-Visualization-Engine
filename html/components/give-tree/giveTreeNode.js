@@ -48,7 +48,7 @@ var GIVe = (function (give) {
    * @returns {number}  The start coordinate.
    */
   give.GiveTreeNode.prototype.getStart = function () {
-    throw new give.GiveError('GiveTreeNode.getStart not implemented in `' +
+    throw new Error('GiveTreeNode.getStart not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -59,8 +59,8 @@ var GIVe = (function (give) {
    * @param {number} newStart - The new start coordinate.
    */
   give.GiveTreeNode.prototype.setStart = function (newStart) {
-    throw new give.GiveError('GiveTreeNode.setStart gets called but has not ' +
-      'been implemented in `' + this.constructor.name + '`.')
+    give._verboseConsole('GiveTreeNode.setStart gets called but has not been ' +
+      'implemented in `' + this.constructor.name + '`.', give.VERBOSE_WARNING)
   }
 
   /**
@@ -107,7 +107,7 @@ var GIVe = (function (give) {
    *    indicating siblings being created.
    */
   give.GiveTreeNode.prototype.insert = function (data, chrRange, props) {
-    throw new give.GiveError('GiveTreeNode.insert not implemented in `' +
+    throw new Error('GiveTreeNode.insert not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -144,7 +144,7 @@ var GIVe = (function (give) {
   give.GiveTreeNode.prototype.remove = function (
     data, removeExactMatch, props
   ) {
-    throw new give.GiveError('GiveTreeNode.remove not implemented in `' +
+    throw new Error('GiveTreeNode.remove not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -169,7 +169,7 @@ var GIVe = (function (give) {
    *    removed contents, should be either `null` (default) or `false`.
    */
   give.GiveTreeNode.prototype.clear = function (convertTo) {
-    throw new give.GiveError('GiveTreeNode.remove not implemented in `' +
+    throw new Error('GiveTreeNode.remove not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -203,7 +203,7 @@ var GIVe = (function (give) {
       (typeof filter !== 'function' || filter.call(thisVar, dataEntry))
     ) {
       if (!callback.call(thisVar, dataEntry) && breakOnFalse) {
-        throw new give.GiveError('False returned. Break traverse procedure.')
+        throw new Error('False returned. Break traverse procedure.')
       }
     }
     return true
@@ -235,7 +235,7 @@ var GIVe = (function (give) {
   give.GiveTreeNode.prototype.traverse = function (
     chrRange, callback, thisVar, filter, breakOnFalse, props
   ) {
-    throw new give.GiveError('GiveTreeNode.traverse not implemented in `' +
+    throw new Error('GiveTreeNode.traverse not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -250,7 +250,7 @@ var GIVe = (function (give) {
    *    such range is needed, return `[]`
    */
   give.GiveTreeNode.prototype.getUncachedRange = function (chrRange, props) {
-    throw new give.GiveError('GiveTreeNode.getUncachedRange not implemented in `' +
+    throw new Error('GiveTreeNode.getUncachedRange not implemented in `' +
       this.constructor.name + '`!')
   }
 
@@ -261,7 +261,7 @@ var GIVe = (function (give) {
    * @returns {boolean}      whether the node is empty
    */
   give.GiveTreeNode.prototype.isEmpty = function () {
-    throw new give.GiveError('GiveTreeNode.isEmpty not implemented in `' +
+    throw new Error('GiveTreeNode.isEmpty not implemented in `' +
       this.constructor.name + '`!')
   }
 

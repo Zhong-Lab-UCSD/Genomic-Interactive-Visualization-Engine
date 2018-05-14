@@ -44,20 +44,9 @@ element.
     is: 'iron-ajax',
 
     /**
-     * Fired before a request is sent.
-     *
-     * @event iron-ajax-presend
-     */
-
-    /**
      * Fired when a request is sent.
      *
      * @event request
-     */
-
-    /**
-     * Fired when a request is sent.
-     *
      * @event iron-ajax-request
      */
 
@@ -65,11 +54,6 @@ element.
      * Fired when a response is received.
      *
      * @event response
-     */
-
-    /**
-     * Fired when a response is received.
-     *
      * @event iron-ajax-response
      */
 
@@ -77,11 +61,6 @@ element.
      * Fired when an error is received.
      *
      * @event error
-     */
-
-    /**
-     * Fired when an error is received.
-     *
      * @event iron-ajax-error
      */
 
@@ -243,21 +222,8 @@ element.
 
       /**
        * The most recent request made by this iron-ajax element.
-       *
-       * @type {Object|undefined}
        */
       lastRequest: {
-        type: Object,
-        notify: true,
-        readOnly: true
-      },
-
-      /**
-       * The `progress` property of this element's `lastRequest`.
-       *
-       * @type {Object|undefined}
-       */
-      lastProgress: {
         type: Object,
         notify: true,
         readOnly: true
@@ -352,17 +318,6 @@ element.
         value: false
       },
 
-      /**
-       * Changes the [`completes`](iron-request#property-completes) promise chain 
-       * from `generateRequest` to reject with an object
-       * containing the original request, as well an error message.
-       * If false (default), the promise rejects with an error message only.
-       */
-      rejectWithRequest: {
-        type: Boolean,
-        value: false
-      },
-
       _boundHandleResponse: {
         type: Function,
         value: function() {
@@ -375,10 +330,6 @@ element.
       '_requestOptionsChanged(url, method, params.*, headers, contentType, ' +
           'body, sync, handleAs, jsonPrefix, withCredentials, timeout, auto)'
     ],
-
-    created: function() {
-      this._boundOnProgressChanged = this._onProgressChanged.bind(this);
-    },
 
     /**
      * The query string that should be appended to the `url`, serialized from
@@ -445,17 +396,13 @@ element.
       }
       var header;
 
-      if (typeof this.headers === 'object') {
+      if (this.headers instanceof Object) {
         for (header in this.headers) {
           headers[header] = this.headers[header].toString();
         }
       }
 
       return headers;
-    },
-
-    _onProgressChanged: function(event) {
-      this._setLastProgress(event.detail.value);
     },
 
     /**
@@ -482,8 +429,7 @@ element.
         handleAs: this.handleAs,
         jsonPrefix: this.jsonPrefix,
         withCredentials: this.withCredentials,
-        timeout: this.timeout,
-        rejectWithRequest: this.rejectWithRequest,
+        timeout: this.timeout
       };
     },
 
@@ -506,45 +452,20 @@ element.
         this._discardRequest.bind(this, request)
       );
 
-      var evt = this.fire('iron-ajax-presend', {
-        request: request,
-        options: requestOptions
-      }, {bubbles: this.bubbles, cancelable: true});
-
-      if (evt.defaultPrevented) {
-        request.abort();
-        request.rejectCompletes(request);
-        return request;
-      }
-
-      if (this.lastRequest) {
-        this.lastRequest.removeEventListener('iron-request-progress-changed',
-                this._boundOnProgressChanged);
-      }
-
-      request.addEventListener('iron-request-progress-changed',
-          this._boundOnProgressChanged);
-
       request.send(requestOptions);
-      this._setLastProgress(null);
+
       this._setLastRequest(request);
       this._setLoading(true);
 
       this.fire('request', {
         request: request,
         options: requestOptions
-      }, {
-        bubbles: this.bubbles,
-        composed: true
-      });
+      }, {bubbles: this.bubbles});
 
       this.fire('iron-ajax-request', {
         request: request,
         options: requestOptions
-      }, {
-        bubbles: this.bubbles,
-        composed: true
-      });
+      }, {bubbles: this.bubbles});
 
       return request;
     },
@@ -555,14 +476,8 @@ element.
         this._setLastError(null);
         this._setLoading(false);
       }
-      this.fire('response', request, {
-        bubbles: this.bubbles,
-        composed: true
-      });
-      this.fire('iron-ajax-response', request, {
-        bubbles: this.bubbles,
-        composed: true
-      });
+      this.fire('response', request, {bubbles: this.bubbles});
+      this.fire('iron-ajax-response', request, {bubbles: this.bubbles});
     },
 
     _handleError: function(request, error) {
@@ -586,18 +501,12 @@ element.
       this.fire('iron-ajax-error', {
         request: request,
         error: error
-      }, {
-        bubbles: this.bubbles,
-        composed: true
-      });
+      }, {bubbles: this.bubbles});
 
       this.fire('error', {
         request: request,
         error: error
-      }, {
-        bubbles: this.bubbles,
-        composed: true
-      });
+      }, {bubbles: this.bubbles});
     },
 
     _discardRequest: function(request) {

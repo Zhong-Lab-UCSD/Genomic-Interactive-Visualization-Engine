@@ -15,19 +15,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <dom-module id="test-dialog">
   <template>
     <style include="paper-dialog-shared-styles"></style>
-    <slot></slot>
+    <content></content>
   </template>
 
-  <script>
-    (function() {
-      'use strict';
-
-      Polymer({
-        is: 'test-dialog',
-        behaviors: [
-          Polymer.PaperDialogBehavior
-        ]
-      });
-    })();
-  </script>
 </dom-module>
+
+<script>
+
+(function() {
+
+  Polymer({
+
+    is: 'test-dialog',
+
+    behaviors: [
+      Polymer.PaperDialogBehavior
+    ]
+
+  });
+
+})();
+
+</script>

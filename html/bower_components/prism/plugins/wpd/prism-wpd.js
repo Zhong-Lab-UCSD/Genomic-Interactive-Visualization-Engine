@@ -65,26 +65,26 @@ Prism.hooks.add('wrap', function(env) {
 			|| env.language == 'scss'
 			|| env.language == 'markup'
 		) {
-			var href = 'https://webplatform.github.io/docs/';
-			var content = env.content;
+			var searchURL = 'w/index.php?fulltext&search=';
+
+			env.tag = 'a';
+
+			var href = 'http://docs.webplatform.org/';
 
 			if (env.language == 'css' || env.language == 'scss') {
-				href += 'css/';
+				href += 'wiki/css/';
 
 				if (env.type == 'property') {
 					href += 'properties/';
 				}
 				else if (env.type == 'rule') {
 					href += 'atrules/';
-					content = content.substring(1);
 				}
 				else if (env.type == 'pseudo-class') {
 					href += 'selectors/pseudo-classes/';
-					content = content.substring(1);
 				}
 				else if (env.type == 'pseudo-element') {
 					href += 'selectors/pseudo-elements/';
-					content = content.substring(2);
 				}
 			}
 			else if (env.language == 'markup') {
@@ -93,24 +93,24 @@ Prism.hooks.add('wrap', function(env) {
 					language = getLanguage(env.content) || language;
 
 					if (language) {
-						href += language + '/elements/';
+						href += 'wiki/' + language + '/elements/';
 					}
 					else {
-						return; // Abort
+						href += searchURL;
 					}
 				}
 				else if (env.type == 'attr-name') {
 					if (language) {
-						href += language + '/attributes/';
+						href += 'wiki/' + language + '/attributes/';
 					}
 					else {
-						return; // Abort
+						href += searchURL;
 					}
 				}
 			}
 
-			href += content;
-			env.tag = 'a';
+			href += env.content;
+
 			env.attributes.href = href;
 			env.attributes.target = '_blank';
 		}

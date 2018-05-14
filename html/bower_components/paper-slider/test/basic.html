@@ -69,7 +69,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         slider.max = 10;
         slider.value = 5;
         flush(function() {
-          assert.equal(slider.ratio, 50);
+          assert.equal(slider.ratio, 0.5);
           done();
         });
       });
@@ -158,7 +158,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       });
 
-      test('snap to the correct value on tapping/clicking', function(done) {
+      test('snap to the correct value on tapping', function(done) {
         var cursor = MockInteractions.topLeftOfNode(slider.$.sliderBar);
         cursor.x += slider.$.sliderBar.getBoundingClientRect().width * 0.9;
 
@@ -168,27 +168,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         slider.value = 0;
 
         MockInteractions.down(slider.$.sliderBar, cursor);
-        MockInteractions.up(slider.$.sliderBar, cursor);
 
         flush(function() {
           assert.equal(slider.value, slider.max);
             slider.step = 1;
             done();
-        });
-      });
-
-      test('tracking', function(done) {
-        var sliderWidth = slider.$.sliderBar.getBoundingClientRect().width;
-        slider.min = 0;
-        slider.max = 2;
-        slider.step = 1;
-        slider.value = 0;
-
-        MockInteractions.track(slider.$.sliderKnob, sliderWidth * 0.9, 0);
-
-        flush(function() {
-          assert.equal(slider.value, slider.max);
-          done();
         });
       });
 
@@ -223,7 +207,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         slider.min = 0;
         slider.max = 100;
         MockInteractions.down(slider.$.sliderBar, cursor);
-        MockInteractions.up(slider.$.sliderBar, cursor);
       });
 
       test('max markers', function(done) {

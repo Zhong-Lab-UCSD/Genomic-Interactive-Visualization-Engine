@@ -71,39 +71,47 @@ element.
 <dom-module id="paper-dialog">
   <template>
     <style include="paper-dialog-shared-styles"></style>
-    <slot></slot>
+    <content></content>
   </template>
 </dom-module>
 
 <script>
-Polymer({
-  is: 'paper-dialog',
 
-  behaviors: [
-    Polymer.PaperDialogBehavior,
-    Polymer.NeonAnimationRunnerBehavior
-  ],
+(function() {
 
-  listeners: {
-    'neon-animation-finish': '_onNeonAnimationFinish'
-  },
+  Polymer({
 
-  _renderOpened: function() {
-    this.cancelAnimation();
-    this.playAnimation('entry');
-  },
+    is: 'paper-dialog',
 
-  _renderClosed: function() {
-    this.cancelAnimation();
-    this.playAnimation('exit');
-  },
+    behaviors: [
+      Polymer.PaperDialogBehavior,
+      Polymer.NeonAnimationRunnerBehavior
+    ],
 
-  _onNeonAnimationFinish: function() {
-    if (this.opened) {
-      this._finishRenderOpened();
-    } else {
-      this._finishRenderClosed();
+    listeners: {
+      'neon-animation-finish': '_onNeonAnimationFinish'
+    },
+
+    _renderOpened: function() {
+      this.cancelAnimation();
+      this.playAnimation('entry');
+    },
+
+    _renderClosed: function() {
+      this.cancelAnimation();
+      this.playAnimation('exit');
+    },
+
+    _onNeonAnimationFinish: function() {
+      if (this.opened) {
+        this._finishRenderOpened();
+      } else {
+        this._finishRenderClosed();
+      }
     }
-  }
-});
+
+  });
+
+})();
+
 </script>

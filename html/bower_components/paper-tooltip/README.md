@@ -17,7 +17,7 @@ thing! https://github.com/PolymerLabs/tedium/issues
 _[Demo and API docs](https://elements.polymer-project.org/elements/paper-tooltip)_
 
 
-## &lt;paper-tooltip&gt;
+##&lt;paper-tooltip&gt;
 
 Material design: [Tooltips](https://www.google.com/design/spec/components/tooltips.html)
 
@@ -58,10 +58,5 @@ The following custom properties and mixins are available for styling:
 | `--paper-tooltip-opacity` | The opacity of the tooltip | `0.9` |
 | `--paper-tooltip-text-color` | The text color of the tooltip | `white` |
 | `--paper-tooltip` | Mixin applied to the tooltip | `{}` |
-| `--paper-tooltip-delay-in` | Delay before tooltip starts to fade in | `500` |
-| `--paper-tooltip-delay-out` | Delay before tooltip starts to fade out | `0` |
-| `--paper-tooltip-duration-in` | Timing for Animation when showing tooltip | `500` |
-| `--paper-tooltip-duration-out` | Timining for Animation when hiding tooltip | `0` |
-| `--paper-tooltip-animation` | Mixin applied to the tooltip animation | `{}` |
 
 

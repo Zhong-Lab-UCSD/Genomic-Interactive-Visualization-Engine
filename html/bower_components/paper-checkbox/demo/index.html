@@ -20,24 +20,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../paper-checkbox.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+      paper-checkbox {
+        display: block;
+        margin-right: 24px;
+      }
+
+      demo-snippet {
+        margin-bottom: 40px;
+      }
+      .vertical-section-container {
+        max-width: 550px;
+      }
+    </style>
   </head>
   <body unresolved>
-    <custom-style>
-      <style is="custom-style" include="demo-pages-shared-styles">
-        paper-checkbox {
-          display: block;
-          margin-right: 24px;
-        }
-
-        demo-snippet {
-          margin-bottom: 40px;
-        }
-        .vertical-section-container {
-          max-width: 550px;
-        }
-      </style>
-    </custom-style>
-
     <div class="vertical-section-container centered">
       <h3>Checkboxes can be checked or unchecked, or disabled entirely</h3>
       <demo-snippet class="centered-demo">
@@ -58,68 +56,59 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h3>Checkboxes can be styled using custom properties</h3>
       <demo-snippet class="centered-demo small-text">
         <template>
-          <custom-style>
-            <style is="custom-style">
-              paper-checkbox.red {
-                --paper-checkbox-size: 2em;
-                --paper-checkbox-checked-color: var(--paper-red-500);
-                --paper-checkbox-checked-ink-color: var(--paper-red-500);
-                --paper-checkbox-unchecked-color: var(--paper-red-900);
-                --paper-checkbox-unchecked-ink-color: var(--paper-red-900);
-                --paper-checkbox-label-color: var(--paper-red-700);
-                --paper-checkbox-vertical-align: top;
-              }
+          <style is="custom-style">
+            paper-checkbox.red {
+              --paper-checkbox-checked-color: var(--paper-red-500);
+              --paper-checkbox-checked-ink-color: var(--paper-red-500);
+              --paper-checkbox-unchecked-color: var(--paper-red-900);
+              --paper-checkbox-unchecked-ink-color: var(--paper-red-900);
+              --paper-checkbox-label-color: var(--paper-red-500);
+              --paper-checkbox-vertical-align: top;
+            }
 
-              paper-checkbox.green {
-                align-self: center;
-                border: 1px solid var(--paper-green-200);
-                padding: 8px 16px;
+            paper-checkbox.green {
+              align-self: center;
+              border: 1px solid var(--paper-green-200);
+              padding: 8px 16px;
 
-                --paper-checkbox-checked-color: var(--paper-green-500);
-                --paper-checkbox-checked-ink-color: var(--paper-green-500);
-                --paper-checkbox-unchecked-color: var(--paper-green-900);
-                --paper-checkbox-unchecked-ink-color: var(--paper-green-900);
-                --paper-checkbox-label-color: var(--paper-green-700);
-                --paper-checkbox-label-spacing: 0;
-                --paper-checkbox-margin: 8px 16px 8px 0;
-                --paper-checkbox-vertical-align: top;
-              }
+              --paper-checkbox-checked-color: var(--paper-green-500);
+              --paper-checkbox-checked-ink-color: var(--paper-green-500);
+              --paper-checkbox-unchecked-color: var(--paper-green-900);
+              --paper-checkbox-unchecked-ink-color: var(--paper-green-900);
+              --paper-checkbox-label-color: var(--paper-green-500);
+              --paper-checkbox-label-spacing: 0;
+              --paper-checkbox-margin: 8px 16px 8px 0;
+              --paper-checkbox-vertical-align: top;
+            }
 
-              paper-checkbox.blue {
-                --paper-checkbox-checked-color: var(--paper-blue-500);
-                --paper-checkbox-checked-ink-color: var(--paper-blue-500);
-                --paper-checkbox-unchecked-color: var(--paper-blue-900);
-                --paper-checkbox-unchecked-ink-color: var(--paper-blue-900);
-                --paper-checkbox-label-color: var(--paper-blue-700);
-                --paper-checkbox-label-checked-color: var(--paper-blue-900);
-              }
+            paper-checkbox.blue {
+              --paper-checkbox-checked-color: var(--paper-blue-500);
+              --paper-checkbox-checked-ink-color: var(--paper-blue-500);
+              --paper-checkbox-unchecked-color: var(--paper-blue-900);
+              --paper-checkbox-unchecked-ink-color: var(--paper-blue-900);
+              --paper-checkbox-label-color: var(--paper-blue-500);
+              --paper-checkbox-label-checked-color: var(--paper-blue-900);
+            }
 
-              paper-checkbox .title {
-                display: block;
-                font-size: 1.2em;
-              }
-
-              paper-checkbox .subtitle {
-                display: block;
-                font-size: 0.9em;
-                max-width: 150px;
-              }
-            </style>
-          </custom-style>
+            paper-checkbox .subtitle {
+              display: block;
+              font-size: 0.8em;
+              margin-top: 2px;
+              max-width: 150px;
+            }
+          </style>
 
           <paper-checkbox class="red">
-            <span class="title">Checkbox</span>
+            Checkbox
             <span class="subtitle">With a subtitle</span>
           </paper-checkbox>
           <paper-checkbox checked class="green">
-            <span class="title">Checkbox</span>
+            Checkbox
             <span class="subtitle">
               With a longer subtitle that wraps to another line
             </span>
           </paper-checkbox>
-          <paper-checkbox class="blue">
-            <span class="title">Checkbox</span>
-          </paper-checkbox>
+          <paper-checkbox class="blue">Checkbox</paper-checkbox>
         </template>
       </demo-snippet>
     </div>

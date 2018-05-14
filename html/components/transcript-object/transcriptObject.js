@@ -89,16 +89,16 @@ var GIVe = (function (give) {
         typeof this.blockSizes[i] !== 'number' ||
         isNaN(this.blockStarts[i]) || isNaN(this.blockSizes[i])
       ) {
-        throw new give.GiveError('Block #' + i + ' is invalid: not a number.')
+        throw new Error('Block #' + i + ' is invalid: not a number.')
       }
       if (this.blockStarts[i] < 0) {
         this.blockStarts[i] = 0
       } else if (this.blockStarts[i] >= this.getLength()) {
-        throw (new give.GiveError('Block #' + i + ' is invalid: ' +
+        throw (new Error('Block #' + i + ' is invalid: ' +
           this.regionToString(false) + ', ' +
           this.blockStarts[i] + ' is greater than length.'))
       } else if (this.blockSizes[i] < 0) {
-        throw (new give.GiveError('Block #' + i + ' size is invalid: ' +
+        throw (new Error('Block #' + i + ' size is invalid: ' +
           this.regionToString(false) + '!'))
       } else if (this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
         this.blockSizes[i] = this.getLength() - this.blockStarts[i]
@@ -108,7 +108,7 @@ var GIVe = (function (give) {
 
   give.TranscriptObject.prototype._setBlocksFromArray = function (exonLengths, exonStarts) {
     if (exonLengths.length !== exonStarts.length) {
-      throw (new give.GiveError('Exon lengths not matching: exonLengths(' +
+      throw (new Error('Exon lengths not matching: exonLengths(' +
         exonLengths.length + ') vs exonStarts (' + exonStarts.length + ')'))
     }
     this.blockStarts = exonStarts.slice()

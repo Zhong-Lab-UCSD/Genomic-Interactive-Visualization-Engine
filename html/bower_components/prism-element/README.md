@@ -1,3 +1,4 @@
+
 <!---
 
 This README is automatically generated from the comments in these files:
@@ -10,7 +11,9 @@ The bot does some handling of markdown. Please file a bug if it does the wrong
 thing! https://github.com/PolymerLabs/tedium/issues
 
 -->
-## &lt;prism-highlighter&gt;
+
+
+##&lt;prism-highlighter&gt;
 
 Syntax highlighting via [Prism](http://prismjs.com/).
 

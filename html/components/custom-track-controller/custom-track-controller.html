@@ -151,7 +151,7 @@
           // this will reset all tracks and redo the ref
           // note that the tracks should already be initialized before switching here
           if (!newRef) {
-            throw (new give.GiveError('No new ref specified!'))
+            throw (new Error('No new ref specified!'))
           }
           this.ref = newRef
           if (!this.ref.hasOwnProperty(this.customTrackGroupID)) {

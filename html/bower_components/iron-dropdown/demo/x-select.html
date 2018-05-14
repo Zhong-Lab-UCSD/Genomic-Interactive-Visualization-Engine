@@ -21,16 +21,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
     <div on-tap="open">
-      <slot name="dropdown-trigger"></slot>
+      <content select=".dropdown-trigger"></content>
     </div>
     <iron-dropdown id="dropdown"
       vertical-align="[[verticalAlign]]"
       horizontal-align="[[horizontalAlign]]"
       disabled="[[disabled]]"
-      scroll-action="[[scrollAction]]"
       open-animation-config="[[openAnimationConfig]]"
       close-animation-config="[[closeAnimationConfig]]">
-      <slot name="dropdown-content" slot="dropdown-content"></slot>
+      <content select=".dropdown-content"></content>
     </iron-dropdown>
   </template>
   <script>
@@ -41,7 +40,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         verticalAlign: String,
         horizontalAlign: String,
         disabled: Boolean,
-        scrollAction: String,
         openAnimationConfig: {
           type: Array,
           value: function() {

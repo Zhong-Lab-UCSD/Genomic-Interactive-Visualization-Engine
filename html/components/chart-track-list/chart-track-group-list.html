@@ -13,15 +13,15 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-group-list">
   <template>
-    <style include="genemo-shared-styles iron-flex">
+    <style include="genemo-shared-styles iron-flex" is="custom-style">
     :host {
       padding: 0.5em;
       display: block;
-      @apply --layout-fit;
-      @apply --layout-vertical;
+      @apply(--layout-fit);
+      @apply(--layout-vertical);
     }
     chart-track-list {
-      @apply --chart-track-list-items-mixin;
+      @apply(--chart-track-list-items-mixin);
     }
     .cardActions {
       padding: 0;
@@ -62,238 +62,240 @@
     </div>
   </template>
   <script>
-var GIVe = (function (give) {
-  'use strict'
+    var GIVe = (function (give) {
+      'use strict'
 
-  give.ChartTrackGroupList = Polymer({
-    is: 'chart-track-group-list',
+      give.ChartTrackGroupList = Polymer({
+        is: 'chart-track-group-list',
 
-    behaviors: [
-      give.GenemoTabCardContentBehavior,
-      give.RefEmbeddedBehavior
-    ],
+        behaviors: [
+          give.GenemoTabCardContentBehavior,
+          give.RefEmbeddedBehavior
+        ],
 
-    properties: {
-      textSize: {
-        type: Number,
-        value: 12    // unit is px
-      },
+        properties: {
+          textSize: {
+            type: Number,
+            value: 12    // unit is px
+          },
 
-      settingKey: {
-        type: String,
-        value: give.GENEMO_SELECTED_KEY
-      },
+          settingKey: {
+            type: String,
+            value: give.GENEMO_SELECTED_KEY
+          },
 
-      groupArray: {
-        type: Array,
-        value: function () {
-          return []
-        }
-      },
+          groupArray: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
 
-      groupIdList: {
-        // this is the array of allowed group IDs in the list
-        type: Array
-      },
+          groupIdList: {
+            // this is the array of allowed group IDs in the list
+            type: Array
+          },
 
-      defaultTrackIdList: {
-        type: Array,
-        value: function () {
-          return []
-        }
-      },
+          defaultTrackIdList: {
+            type: Array,
+            value: function () {
+              return []
+            }
+          },
 
-      /**
-       * Whether the track controller will support filter function
-       * @type {boolean}
-       */
-      withFilter: {
-        type: Boolean,
-        value: false
-      },
+          /**
+           * Whether the track controller will support filter function
+           * @type {boolean}
+           */
+          withFilter: {
+            type: Boolean,
+            value: false
+          },
 
-      /**
-       * Whether the track controller will reflect change immediately
-       * without calling this.DOMToTrack().
-       * This is always false if hasControls === true
-       * @type {boolean}
-       */
-      instantChange: {
-        type: Boolean,
-        value: false
-      },
+          /**
+           * Whether the track controller will reflect change immediately
+           * without calling this.DOMToTrack().
+           * This is always false if hasControls === true
+           * @type {boolean}
+           */
+          instantChange: {
+            type: Boolean,
+            value: false
+          },
 
-      /**
-       * Whether the track controller will show OK/Cancel controls
-       * @type {boolean}
-       */
-      hasControls: {
-        type: Boolean,
-        value: false
-      }
-    },
-
-    ready: function () {
-      this._setIcon('view-list')
-      this._setIconAlt('Track list')
-      this._setHeaderText('Track list')
-      this._setTabText('Tracks')
-
-      this.setDOMReady(true)
-      this.setReady(false)
-
-      this.completedRepeatDOMs = 0
-
-      if (this.defaultTrackIdList.length > 0) {
-        this._needOverrideDefault = true
-      }
-    },
-
-    /**
-     * _overrideTrackDefaultSettings - Override the default track settings
-     */
-    _overrideTrackDefaultSettings: function () {
-      if (this._refObj && this.defaultTrackIdList.length > 0) {
-        this._refObj.setTrackSettings(this.settingKey, false, null)
-        this.defaultTrackIdList.forEach(function (id) {
-          try {
-            this._refObj.getTracks().get(id).setSetting(this.settingKey, true)
-          } catch (e) {
-            give._verbConsole.warn('Track `' + id + '` does not exist!' + e)
-            give.fireSignal('warning',
-              { msg: 'Track `' + id + '` does not exist!' })
+          /**
+           * Whether the track controller will show OK/Cancel controls
+           * @type {boolean}
+           */
+          hasControls: {
+            type: Boolean,
+            value: false
           }
-        }, this)
-      }
-    },
+        },
 
-    _refreshRefTrackReady: function () {
-      // this is called after track is ready for trackRef
-      if (this._needOverrideDefault) {
-        this._overrideTrackDefaultSettings()
-        delete this._needOverrideDefault
-      } else {
-        // reference has changed, no need to override anymore
-        this.splice('defaultTrackIdList', 0, this.defaultTrackIdList.length)
-      }
+        ready: function () {
+          this._setIcon('view-list')
+          this._setIconAlt('Track list')
+          this._setHeaderText('Track list')
+          this._setTabText('Tracks')
 
-      this.splice('groupArray', 0, this.groupArray.length)
-      if (this.groupIdList && this.groupIdList.length > 0) {
-        this.groupIdList.forEach(function (groupID) {
-          if (this._refObj.groups.hasOwnProperty(groupID)) {
-            this.push('groupArray', this._refObj.groups[groupID])
+          this.setDOMReady(true)
+          this.setReady(false)
+
+          this.completedRepeatDOMs = 0
+
+          if (this.defaultTrackIdList.length > 0) {
+            this._needOverrideDefault = true
           }
-        }, this)
-      } else {
-        for (var key in this._refObj.getGroups()) {
-          if (this._refObj.groups.hasOwnProperty(key)) {
-            this.push('groupArray', this._refObj.groups[key])
+        },
+
+        /**
+         * _overrideTrackDefaultSettings - Override the default track settings
+         */
+        _overrideTrackDefaultSettings: function () {
+          if (this._refObj && this.defaultTrackIdList.length > 0) {
+            this._refObj.setTrackSettings(this.settingKey, false, null)
+            this.defaultTrackIdList.forEach(function (id) {
+              try {
+                this._refObj.getTracks().get(id).setSetting(this.settingKey, true)
+              } catch (e) {
+                give._verboseConsole('Track `' + id + '` does not exist!',
+                  give.VERBOSE_WARNING)
+              }
+            }, this)
           }
+        },
+
+        _refreshRefTrackReady: function () {
+          // this is called after track is ready for trackRef
+          if (this._needOverrideDefault) {
+            this._overrideTrackDefaultSettings()
+            delete this._needOverrideDefault
+          } else {
+            // reference has changed, no need to override anymore
+            this.splice('defaultTrackIdList', 0, this.defaultTrackIdList.length)
+          }
+
+          this.splice('groupArray', 0, this.groupArray.length)
+          if (this.groupIdList && this.groupIdList.length > 0) {
+            this.groupIdList.forEach(function (groupID) {
+              if (this._refObj.getGroups().hasOwnProperty(groupID)) {
+                this.push('groupArray', this._refObj.getGroups()[groupID])
+              }
+            }, this)
+          } else {
+            for (var key in this._refObj.getGroups()) {
+              if (this._refObj.getGroups().hasOwnProperty(key)) {
+                this.push('groupArray', this._refObj.getGroups()[key])
+              }
+            }
+          }
+          this.async(function () {
+            this.trackToDOM(true)
+            this.setReady(true)
+          })
+        },
+
+        _refreshRef: function () {
+          this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
+        },
+
+        updateAllGroupDOM: function () {
+          this.setReady(false)
+          this._refreshRef()
+        },
+
+        _prioritySort: function (itemA, itemB) {
+          return itemA.priority < itemB.priority
+            ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
+        },
+
+        /**
+         * Set the reference to new reference
+         *
+         * this will reset all tracks and redo the ref
+         * note that the tracks should already be initialized before switching here
+         *
+         * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
+         */
+        _setRefObj: function (refObj) {
+          // TODO: may need to add something to remove the override array
+          this._refObj = refObj
+          this.setReady(false)
+          if (this._refObj) {
+            this._refreshRef()
+          }
+        },
+
+        trackToDOM: function (scrollToSelected) {
+          // this is used when resetting selection
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
+            elem.trackToDOM(scrollToSelected)
+          }, this)
+        },
+
+        DOMToTrack: function () {
+          // this is used when submitting the results
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
+            elem.DOMToTrack()
+          }, this)
+        },
+
+        resetAllTracks: function () {
+          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
+            elem.resetAllTracks()
+          }, this)
+
+          // override default values if needed
+          this._overrideTrackDefaultSettings()
+        },
+
+        backToSearch: function () {
+          this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
+        },
+
+        /**
+         * launchFilter - Show track filter element
+         */
+        launchFilter: function () {
+          if (this.$$('#trackFilter')) {
+            this.$$('#trackFilter').show()
+          }
+        },
+
+        /**
+         * _filterTracksHandler - Event handler to filter the track
+         *
+         * @param  {Object} e - event from the track filter element
+         */
+        _filterTracksHandler: function (e) {
+          if (!e.detail.targetId || e.detail.targetId === this.id) {
+            e.stopPropagation()
+            this.applyFilter(e.detail.map, e.detail.flags)
+          }
+          // Otherwise the filter wants to change some other list (extremely rare),
+          // when whoever listens to filter-tracks event will handle.
+        },
+
+        submitChanges: function () {
+          this.DOMToTrack()
+          this.backToSearch()
+        },
+
+        cancelChanges: function () {
+          this.trackToDOM()
+          this.backToSearch()
+        },
+
+        applyFilter: function (map, flags) {
+          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
+          give.forEach(domList, function (elem) {
+            elem.applyFilter(map, flags)
+          }, this)
         }
-      }
-      this.async(function () {
-        this.trackToDOM(true)
-        this.setReady(true)
       })
-    },
 
-    _refreshRef: function () {
-      this._refObj.initTracks().then(() => this._refreshRefTrackReady)
-    },
-
-    updateAllGroupDOM: function () {
-      this.setReady(false)
-      this._refreshRef()
-    },
-
-    _prioritySort: function (itemA, itemB) {
-      return itemA.priority < itemB.priority
-        ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
-    },
-
-    /**
-     * Set the reference to new reference
-     *
-     * this will reset all tracks and redo the ref
-     * note that the tracks should already be initialized before switching here
-     *
-     * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
-     */
-    _setRefObj: function (refObj) {
-      // TODO: may need to add something to remove the override array
-      this._refObj = refObj
-      this.setReady(false)
-      if (this._refObj) {
-        this._refreshRef()
-      }
-    },
-
-    trackToDOM: function (scrollToSelected) {
-      // this is used when resetting selection
-      give.forEach(Polymer.dom(this.root).querySelectorAll('chart-track-list'),
-        elem => elem.trackToDOM(scrollToSelected), this)
-    },
-
-    DOMToTrack: function () {
-      // this is used when submitting the results
-      give.forEach(Polymer.dom(this.root).querySelectorAll('chart-track-list'),
-        elem => elem.DOMToTrack(), this)
-    },
-
-    resetAllTracks: function () {
-      give.forEach(Polymer.dom(this.root).querySelectorAll('chart-track-list'),
-        elem => elem.resetAllTracks(), this)
-
-      // override default values if needed
-      this._overrideTrackDefaultSettings()
-    },
-
-    backToSearch: function () {
-      this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
-    },
-
-    /**
-     * launchFilter - Show track filter element
-     */
-    launchFilter: function () {
-      if (this.$$('#trackFilter')) {
-        this.$$('#trackFilter').show()
-      }
-    },
-
-    /**
-     * _filterTracksHandler - Event handler to filter the track
-     *
-     * @param  {Object} e - event from the track filter element
-     */
-    _filterTracksHandler: function (e) {
-      if (!e.detail.targetId || e.detail.targetId === this.id) {
-        e.stopPropagation()
-        this.applyFilter(e.detail.map, e.detail.flags)
-      }
-      // Otherwise the filter wants to change some other list (extremely rare),
-      // when whoever listens to filter-tracks event will handle.
-    },
-
-    submitChanges: function () {
-      this.DOMToTrack()
-      this.backToSearch()
-    },
-
-    cancelChanges: function () {
-      this.trackToDOM()
-      this.backToSearch()
-    },
-
-    applyFilter: function (map, flags) {
-      var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
-      give.forEach(domList, function (elem) {
-        elem.applyFilter(map, flags)
-      }, this)
-    }
-  })
-
-  return give
-})(GIVe || {})
+      return give
+    })(GIVe || {})
   </script>
 </dom-module>

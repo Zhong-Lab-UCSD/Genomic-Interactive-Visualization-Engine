@@ -1,4 +1,2 @@
-bower_components*
-bower-*.json
+bower_components
 .DS_Store
-node_modules

@@ -4,17 +4,10 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
     <title>google-youtube Test Runner</title>
     <meta charset="UTF-8">
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../../platform/platform.js"></script>
+    <link rel="import" href="tests.html">
   </head>
   <body>
-    <script>
-      WCT.loadSuites([
-        'google-youtube-basic.html?dom=shadow',
-        'google-youtube-custom-thumbnail.html?dom=shadow',
-        'google-youtube-basic.html?wc-ce=true&wc-shadydom=true',
-        'google-youtube-custom-thumbnail.html?wc-ce=true&wc-shadydom=true',
-      ]);
-    </script>
+    <div id="mocha"></div>
   </body>
 </html>
