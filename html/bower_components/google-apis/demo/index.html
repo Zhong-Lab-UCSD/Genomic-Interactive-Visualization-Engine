@@ -10,24 +10,24 @@
 <body>
   <div id="messages"></div>
 
-  <template  id="t" is="dom-bind">
+  <dom-bind id="bind">
+    <template id="t" is="dom-bind">
 
-    <google-client-loader id="shortener"
-      name="urlshortener"
-      version="v1"
-      on-google-api-load="loadedShortener"></google-client-loader>
-    <google-js-api on-js-api-load="loaded"></google-js-api>
-    <google-plusone-api on-api-load="loaded"></google-plusone-api>
-    <google-realtime-api on-api-load="loaded"></google-realtime-api>
-    <google-maps-api on-api-load="loaded"></google-maps-api>
-    <google-youtube-api on-api-load="loaded"></google-youtube-api>
-    <google-legacy-loader on-api-load="loaded"></google-legacy-loader>
+      <google-client-loader id="shortener"
+        name="urlshortener"
+        version="v1"
+        on-google-api-load="loadedShortener"></google-client-loader>
+      <google-js-api on-js-api-load="loaded"></google-js-api>
+      <google-plusone-api on-api-load="loaded"></google-plusone-api>
+      <google-realtime-api on-api-load="loaded"></google-realtime-api>
+      <google-maps-api on-api-load="loaded"></google-maps-api>
+      <google-youtube-api on-api-load="loaded"></google-youtube-api>
+      <google-legacy-loader on-api-load="loaded"></google-legacy-loader>
 
-  </template>
-
+    </template>
+  </dom-bind>
   <script>
-    var t = document.querySelector('#t');
-
+    // polymer 1.x compatibility
     t.loadedShortener = function(event) {
       var request = event.target.api.url.get({
         shortUrl: 'http://goo.gl/fbsS'
@@ -35,13 +35,17 @@
       request.execute(function(resp) {
         console.log(resp);
       });
-    };
+    }
 
     t.loaded = function(e) {
       document.querySelector('#messages').innerHTML +=
         e.target.localName + ' loaded' + '<br>';
       console.log(e.target.localName + ' loaded', event.target.api);
-    };
+    }
+
+    // Polymer 2.0 compatibility
+    bind.loadedShortener = t.loadedShortener;
+    bind.loaded = t.loaded;
   </script>
 </body>
 </html>

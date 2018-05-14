@@ -55,7 +55,7 @@ var GIVe = (function (give) {
   give.BigWigTrack.prototype._DataObjCtor = give.BigWigTrackData
 
   // specify the visualization object used in this track
-  give.BigWigTrack.prototype._DomObjCtor = give.BigWigTrackDOM
+  give.BigWigTrack.prototype._DomObjCtor = give.BigWigTrackDom
 
   // __IMPORTANT:__ register this new track type
   give.TrackObject.registerTrack(give.BigWigTrack)

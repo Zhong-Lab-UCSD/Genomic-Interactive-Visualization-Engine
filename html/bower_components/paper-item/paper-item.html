@@ -85,27 +85,23 @@ This element has `role="listitem"` by default. Depending on usage, it may be mor
 
 <dom-module id="paper-item">
   <template>
-    <style include="paper-item-shared-styles"></style>
-    <style>
+    <style include="paper-item-shared-styles">
       :host {
-        @apply(--layout-horizontal);
-        @apply(--layout-center);
-        @apply(--paper-font-subhead);
+        @apply --layout-horizontal;
+        @apply --layout-center;
+        @apply --paper-font-subhead;
 
-        @apply(--paper-item);
+        @apply --paper-item;
       }
     </style>
-
-    <content></content>
+    <slot></slot>
   </template>
 
   <script>
     Polymer({
       is: 'paper-item',
 
-      behaviors: [
-        Polymer.PaperItemBehavior
-      ]
+      behaviors: [Polymer.PaperItemBehavior]
     });
   </script>
 </dom-module>

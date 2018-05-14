@@ -35,506 +35,499 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
   <template>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.InteractionTrackDOM = Polymer({
-        is: 'interaction-track-dom',
+  class InteractionTrackDom extends give.TrackDom {
+    constructor (track, properties) {
+      super(track, properties)
+      this.MAX_FILL_OPACITY = 0.3
+      properties = properties || {}
 
-        behaviors: [
-          give.TrackDOMBehavior
-        ],
+      this.fullHeightRatio = properties.hasOwnProperty('lineHeight')
+        ? properties.lineHeight : this.fullHeightRatio
+      this.subTrackGap = properties.hasOwnProperty('subTrackGap')
+        ? properties.subTrackGap : this.subTrackGap
+      this.threshold = properties.hasOwnProperty('threshold')
+        ? properties.threshold : this.threshold
+      this.setHeight(properties.hasOwnProperty('height')
+        ? properties.height
+        : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
+          (this.parent.windowSpan - 1)) * this.textSize)
+      this._setDynamicHeight(false)
 
-        properties: {
+      this.subSvgs = []
+      this.bufferWindow = []
+      this.quantiles = this.parent.getSetting('quantiles') ||
+        this.parent.getSetting('thresholdPercentile')
 
-          // note that this track will have childSvgs to match all the different coordinates
-          // each childSvg will have one viewWindow property
-          // but there will be only one textSvg object
-          // also, height will be calculated
+      this._pendingVWs = []
+    }
 
-          borderHeight: {    // this is the height for chromosomal box (lines and centromeres)
-            type: Number,
-            value: 1    // em
-          },
+    static get properties () {
+      return {
+        // note that this track will have childSvgs to match all the different coordinates
+        // each childSvg will have one viewWindow property
+        // but there will be only one textSvg object
+        // also, height will be calculated
 
-          subTrackGap: {
-            type: Number,
-            value: 6    // em
-          },
+        borderHeight: { // this is the height for chromosomal box (lines and centromeres)
+          type: Number,
+          value: 1 // em
+        },
 
-          // data structure for interaction tracks:
-          // data has one key (chrom), all other keys will be deleted upon changing chromosome (for now)
-          // data[chrom] is an array of ChrRegionToShow (for now)
-          // if two ChrRegionToShows are linked together, they will have same linkID
+        subTrackGap: {
+          type: Number,
+          value: 6 // em
+        },
 
-          threshold: {
-            type: Number,
-            value: 0.1
-          },
+        // data structure for interaction tracks:
+        // data has one key (chrom), all other keys will be deleted upon changing chromosome (for now)
+        // data[chrom] is an array of ChrRegionToShow (for now)
+        // if two ChrRegionToShows are linked together, they will have same linkID
 
-          boxBorderColor: {
-            type: Number,
-            value: 0
-          },
+        threshold: {
+          type: Number,
+          value: 0.1
+        },
 
-          quantiles: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+        boxBorderColor: {
+          type: Number,
+          value: 0
+        },
 
-          gradient: {
-            type: Array,
-            value: function () {
-              return [{percent: 0, color: 0x3F51B5},
-                  {percent: 0.33, color: 0x4CAF50},
-                  {percent: 0.67, color: 0xCDDC39},
-                  {percent: 1, color: 0xF44336}]    // Gradient (indigo-green-lime-red)
-            }
-          },
-
-          bandBorder: {
-            type: Number,
-            value: 1.0
+        quantiles: {
+          type: Array,
+          value: function () {
+            return []
           }
         },
 
-        created: function () {
-          this.MAX_FILL_OPACITY = 0.3
-        },
-
-        // ****** customized methods below ******
-
-        trackImpl: function (track, properties) {
-          properties = properties || {}
-
-          this.fullHeightRatio = properties.hasOwnProperty('lineHeight')
-            ? properties.lineHeight : this.fullHeightRatio
-          this.subTrackGap = properties.hasOwnProperty('subTrackGap')
-            ? properties.subTrackGap : this.subTrackGap
-          this.threshold = properties.hasOwnProperty('threshold')
-            ? properties.threshold : this.threshold
-          this.setHeight(properties.hasOwnProperty('height')
-            ? properties.height
-            : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
-              (this.parent.windowSpan - 1)) * this.textSize)
-          this._setDynamicHeight(false)
-
-          this.subSvgs = []
-          this.bufferWindow = []
-          this.quantiles = this.parent.getSetting('quantiles') ||
-            this.parent.getSetting('thresholdPercentile')
-
-          this._pendingVWs = []
-        },
-
-        initSvgComponents: function () {
-          for (var i = 0; i < this.parent.windowSpan; i++) {
-            var newSubSvg = document.createElementNS(this.svgNS, 'svg')
-            newSubSvg.setAttribute('id', this.parent.getCleanID() +
-              '_subSvg' + i)
-            Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
-            this.subSvgs.push(newSubSvg)
-            this._pendingVWs[i] = null
-          }
-          this.subSvgs.forEach(this.initSvgHolder, this)
-        },
-
-        setSvgComponentsSizeLocation: function () {
-          this.subSvgs.forEach(function (subSvg, index) {
-            subSvg.setAttributeNS(null, 'x', 0)
-            subSvg.setAttributeNS(null, 'y',
-              (this.fullHeightRatio + this.subTrackGap) * index * this.textSize)
-            subSvg.setAttributeNS(null, 'width', this.windowWidth)
-
-            subSvg.setAttributeNS(null, 'height',
-              this.fullHeightRatio * this.textSize)
-            subSvg.setAttribute('viewBox', '0 0 ' +
-              this.windowWidth + ' ' + this.fullHeightRatio * this.textSize)
-          }, this)
-        },
-
-        changeViewWindowAfterResize: function (
-          newWindowWidth, newViewWindow
-        ) {
-          // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
-          var newVWindowArr = new Array(this.subSvgs.length)
-          newVWindowArr = Array.isArray(newViewWindow)
-            ? newViewWindow : newVWindowArr.fill(newViewWindow)
-          try {
-            newVWindowArr.forEach(
-              function (newVWindow, index) {
-                var subSvg = this.subSvgs[index]
-                if (!newVWindow) {
-                  newVWindow = (newVWindow === false)
-                    ? subSvg.viewWindow
-                    : subSvg.viewWindow.getExtension(
-                        (newWindowWidth - this.windowWidth) / this.windowWidth,
-                        null, true, this.parent.ref
-                      )
-                }
-                this.updateTrack(newVWindow, index)
-              }, this
-            )
-          } catch (err) {
+        gradient: {
+          type: Array,
+          value: function () {
+            return [{percent: 0, color: 0x3F51B5},
+              {percent: 0.33, color: 0x4CAF50},
+              {percent: 0.67, color: 0xCDDC39},
+              {percent: 1, color: 0xF44336}] // Gradient (indigo-green-lime-red)
           }
         },
 
-        // ****** customized methods below ******
+        bandBorder: {
+          type: Number,
+          value: 1.0
+        }
+      }
+    }
 
-        getCurrentViewWindowExt: function (extension) {
-          var result = []
-          this.subSvgs.forEach(function (subSvg) {
-            result.push(subSvg.viewWindow.getExtension(
-              extension, null, true, this.parent.ref
-            ))
-          }, this)
-          return result
-        },
+    initSvgComponents () {
+      for (var i = 0; i < this.parent.windowSpan; i++) {
+        var newSubSvg = document.createElementNS(this.svgNS, 'svg')
+        newSubSvg.setAttribute('id', this.parent.cleanId +
+          '_subSvg' + i)
+        Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
+        this.subSvgs.push(newSubSvg)
+        this._pendingVWs[i] = null
+      }
+      this.subSvgs.forEach(this.initSvgHolder, this)
+    }
 
-        drawData: function () {
-          // this is to draw everything from this.data to the svg
-          // Steps:
-          //     put genes into lines (pack display)
-          //    draw genes out line by line
+    setSvgComponentsSizeLocation () {
+      this.subSvgs.forEach(function (subSvg, index) {
+        subSvg.setAttributeNS(null, 'x', 0)
+        subSvg.setAttributeNS(null, 'y',
+          (this.fullHeightRatio + this.subTrackGap) * index * this.textSize)
+        subSvg.setAttributeNS(null, 'width', this.windowWidth)
 
-          // clear text Margin svg
-          this.clear()
+        subSvg.setAttributeNS(null, 'height',
+          this.fullHeightRatio * this.textSize)
+        subSvg.setAttribute('viewBox', '0 0 ' +
+          this.windowWidth + ' ' + this.fullHeightRatio * this.textSize)
+      }, this)
+    }
 
-          this.linkMap = {}
-          // draw box track for each child svg
-          this.subSvgs.forEach(function (subSvg, index) {
-            this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
-              this.linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
-              subSvg, index)
-          }, this)
-
-          // draw interaction track for main svg
-          this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs,
-            this.svgMain)
-        },
-
-        clear: function () {
-          give.TrackDOMBehaviorImpl.clear.call(this)
-          this.subSvgs.forEach(this.clearSvg, this)
-          this.subSvgs.forEach(
-            Polymer.dom(this.mainSvg.holder).appendChild,
-            Polymer.dom(this.mainSvg.holder)
-          )
-        },
-
-        updateTrack: function (viewWindow, index, threshold) {
-          // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
-          // index: if viewWindow is a single give.ChromRegion Object, index will be the index
-          this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
-
-          try {
-            // Steps:
-            // Change view window by calling changeViewWindow()
-            //    May clip viewwindow by ref
-            if (viewWindow) {
-              if (Array.isArray(viewWindow)) {
-                // then it must have enough elements
-                this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
-              } else {
-                this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
-              }
-            }
-
-            if (this._pendingVWs.every(function (pendingVWindow) {
-              return pendingVWindow
-            }, this)) {
-              // Get data clipped by viewWindow by calling fetchData()
-              //    May also include data preparation
-              this.checkDataAndUpdate(this._pendingVWs)
-              // Update detailed content by calling drawData()
-              //    Will be debounced to prevent lagging
-            }
-          } catch (e) {
-            console.log(e.message)
-            console.log(e.stack)
-    //        if(this.oldViewWindowString) {
-    //          this.set('viewWindowString', this.oldViewWindowString);
-    //        }
-          }
-        },
-
-        updateThreshold: function (threshold) {
-          this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
-          this.checkDataAndUpdate()
-        },
-
-        changeViewWindow: function (viewWindow, index) {
-          if (Array.isArray(viewWindow)) {
-            viewWindow.forEach(this.changeViewWindow, this)
-          } else {
-            if (typeof (viewWindow) === 'string') {
-              this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
-            } else {
-              this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
-            }
-            this._pendingVWs[index] = this.subSvgs[index].viewWindow
-          }
-        },
-
-        drawBoxTrack: function (
-          regions, linkMap, y, height, svgToDraw, index
-        ) {
-          // regions is a chromBPTree of all connections
-          // regions with the same ID is connected and needs to be colored accordingly
-          // linkMap is an object with regionID as key and value as following:
-          //     color: the color index of the link;
-          //    regions: the regions with the same ID (array);
-
-          // may need to filter the regions first, either here or outside
-
-          var colorIndex = 0
-          svgToDraw = svgToDraw || this.mainSvg
-          height = height || this.borderHeight * this.textSize
-          y = y || 0
-
-          var windowToDraw = svgToDraw.viewWindow
-          var traverseFunc = function (linkMap, region) {
-            var linkID = region.data.linkID
-            if (!linkMap.hasOwnProperty(linkID)) {
-            // color is already there
-              colorIndex++
-              if (colorIndex >= this.colorSet.length) {
-                colorIndex = 0
-              }
-              linkMap[linkID] = []
-              linkMap[linkID].color = colorIndex
-              linkMap[linkID].map = {}
-            }
-            if (!linkMap[linkID].map.hasOwnProperty(region.data.regionID)) {
-              linkMap[linkID].push(region)
-              linkMap[linkID].map[region.data.regionID] = region
-            }
-          }.bind(this, linkMap)
-          var filterFunc = function (region) {
-            if (!this.isAboveThreshold(region.data.value) ||
-              (typeof (region.data.dirFlag) === 'number' &&
-                region.data.dirFlag !== index
-              )
-            ) {
-              return false
-            }
-            return true
-          }.bind(this)
-
-          if (regions && regions instanceof give.GiveTree) {
-            regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
-          }
-
-          // then draw the two horizontal lines
-          if (!this.regionInWindow(this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
-            // no centromere, just draw two lines
-            this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
-            this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
-          } else {
-            // has centromere, draw p part first
-            var pX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw)
-            if (pX > 0 && pX < this.windowWidth) {
-              this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
-              this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw)
-            }
-            // then centromere
-            var qX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw)
-            this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
-            this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
-            // then q part
-            if (qX > 0 && qX < this.windowWidth) {
-              this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
-              this.drawLine(qX, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
-            }
-          }
-        },
-
-        /**
-         * _generatePerm - generate permutation for neighboring svgs
-         *
-         * @param  {number} length - length of the interaction array
-         * @returns {Array<number>} permutation index values.
-         *    The return value will be all possible index permutations that is
-         *    available to the neighboring two svgs.
-         *    For example, for a `length` of 3, the return value will become:
-         *    `[[0, 1], [1, 0], [0, 2], [2, 0], [1, 2], [2, 1]]`
-         *    For every sub-array, it's the indices of the interactions that
-         *    neighboring svgs (two of them) will pull out from `linkMap`.
-         */
-        _generatePerm: function (length) {
-          if (length === 2) {
-            return [[0, 1], [1, 0]]
-          } else {
-            // console.log(length);
-          }
-        },
-
-        _drawConnectionBetweenNeighboringTracks: function (linkMap, svgNeighbors, svgMain) {
-          // linkMap is an object with regionID as key and regions as value (array)
-          // the colorMap should have been already populated
-          // windowsToDraw should be 'viewWindow' property of svgChildren
-
-          var regionMap = {}
-
-          for (var regionID in linkMap) {
-            if (linkMap.hasOwnProperty(regionID)) {
-              // region is here, draw the link (polygon)
-
-              // if(linkMap[regionID][0].data.value < threshold)
-              // now quantile is used instead of raw # of reads
-              if (!this.isAboveThreshold(linkMap[regionID][0].data.value)) {
-                continue
-              }
-
-              var perm = this._generatePerm(linkMap[regionID].length)
-              if (!perm) {
-                continue
-              }
-
-              perm.forEach(function (permIndex, index) {
-                if (
-                  permIndex.some(
-                    function (currentPerm, svgIndex) {
-                      return this.regionInWindow(linkMap[regionID][currentPerm], svgNeighbors[svgIndex])
-                    },
-                    this
-                  ) &&
-                  permIndex.every(
-                    function (currentPerm, svgIndex) {
-                      return (typeof (linkMap[regionID][currentPerm].data.dirFlag) !== 'number' ||
-                        linkMap[regionID][currentPerm].data.dirFlag === svgIndex) &&
-                        linkMap[regionID][currentPerm].chr === svgNeighbors[svgIndex].viewWindow.chr
-                    },
-                    this
+    changeViewWindowAfterResize (
+      newWindowWidth, newViewWindow
+    ) {
+      // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
+      var newVWindowArr = new Array(this.subSvgs.length)
+      newVWindowArr = Array.isArray(newViewWindow)
+        ? newViewWindow : newVWindowArr.fill(newViewWindow)
+      try {
+        newVWindowArr.forEach(
+          function (newVWindow, index) {
+            var subSvg = this.subSvgs[index]
+            if (!newVWindow) {
+              newVWindow = (newVWindow === false)
+                ? subSvg.viewWindow
+                : subSvg.viewWindow.getExtension(
+                    (newWindowWidth - this.windowWidth) / this.windowWidth,
+                    null, true, this.parent.ref
                   )
-                ) {
-                  // prepare the points
-                  var startPoints = []
-                  var endPoints = []
-
-                  var partialOutside = false
-
-                  svgNeighbors.forEach(function (svgChild, svgIndex) {
-                    var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStartCoor(),
-                                      true, svgChild)
-                    if (x > this.windowWidth) {
-                      partialOutside = true
-                    }
-
-                    var y = (parseInt(svgChild.getAttributeNS(null, 'y')) || 0)
-
-                    startPoints.push((x - this.bandBorder / 2) + ',' + y)
-                    startPoints.push((x - this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
-
-                    x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEndCoor(),
-                                    true, svgChild)
-                    if (x < 0) {
-                      partialOutside = true
-                    }
-
-                    x += (parseInt(svgChild.getAttributeNS(null, 'x')) || 0)
-                    endPoints.push((x + this.bandBorder / 2) + ',' + y)
-                    endPoints.push((x + this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
-                  }, this)
-
-                  var points = startPoints.concat(endPoints.reverse())
-                  if (!regionMap.hasOwnProperty(points)) {
-    //                this.createRawPolygon(points, {id: regionID,
-    //                  class: 'linkedRegion',
-    //                  fill: this.colorSet[3],
-    //                  stroke: this.colorSet[5],
-    //                  'stroke-width': 3,
-    //                  }, svgMain);
-                    if (this.quantiles) {
-                      this.createRawPolygon(points, {id: regionID,
-                        class: 'linkedRegion',
-                        fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID][0].data.value))),
-                        stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
-                        'stroke-width': 2,
-                        'fill-opacity': this.valueToPercentile(linkMap[regionID][0].data.value) * this.MAX_FILL_OPACITY
-                      }, svgMain)
-                    } else {
-                      this.createRawPolygon(points, {id: regionID,
-                        class: 'linkedRegion ' + (partialOutside ? 'partialOutside' : 'fullyInside'),
-                        fill: this.rgbToHex(this.colorSet[0]),
-                        stroke: this.rgbToHex(this.colorSet[0])
-                        // 'stroke-width': 0.5,
-                        // 'fill-opacity': partialOutside? 0.01: 0.2,
-                        // 'stroke-opacity': 1,
-                      }, svgMain)
-                    }
-                    regionMap[points] = true
-                  }
-                }
-              }, this)
             }
-          }
-        },
+            this.updateTrack(newVWindow, index)
+          }, this
+        )
+      } catch (err) {
+      }
+    }
 
-        drawConnectionBetweenTracks: function (linkMap, svgChildren, svgMain) {
-          svgMain = svgMain || this.mainSvg
-          svgChildren = svgChildren || this.subSvgs
-          for (var i = 1; i < svgChildren.length; i++) {
-            this._drawConnectionBetweenNeighboringTracks(linkMap,
-              [svgChildren[i - 1], svgChildren[i]], svgMain)
-          }
-        },
+    // ****** customized methods below ******
 
-        isAboveThreshold: function (value, threshold) {
-          threshold = threshold || this.threshold
-          if (typeof (value) === 'number') {
-            if (this.quantiles) {
-              return this.valueToPercentile(value) >= threshold / 100
-            } else {
-              return value >= threshold
-            }
+    getCurrentViewWindowExt (extension) {
+      var result = []
+      this.subSvgs.forEach(function (subSvg) {
+        result.push(subSvg.viewWindow.getExtension(
+          extension, null, true, this.parent.ref
+        ))
+      }, this)
+      return result
+    }
+
+    drawData () {
+      // this is to draw everything from this.data to the svg
+      // Steps:
+      //     put genes into lines (pack display)
+      //    draw genes out line by line
+
+      // clear text Margin svg
+      this.clear()
+
+      this.linkMap = {}
+      // draw box track for each child svg
+      this.subSvgs.forEach(function (subSvg, index) {
+        this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
+          this.linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
+          subSvg, index)
+      }, this)
+
+      // draw interaction track for main svg
+      this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs,
+        this.svgMain)
+    }
+
+    clear () {
+      super.clear()
+      this.subSvgs.forEach(this.clearSvg, this)
+      this.subSvgs.forEach(
+        Polymer.dom(this.mainSvg.holder).appendChild,
+        Polymer.dom(this.mainSvg.holder)
+      )
+    }
+
+    updateTrack (viewWindow, index, threshold) {
+      // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
+      // index: if viewWindow is a single give.ChromRegion Object, index will be the index
+      this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
+
+      try {
+        // Steps:
+        // Change view window by calling changeViewWindow()
+        //    May clip viewwindow by ref
+        if (viewWindow) {
+          if (Array.isArray(viewWindow)) {
+            // then it must have enough elements
+            this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
           } else {
-            return true
+            this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
           }
-        },
-
-        valueToPercentile: function (value, considerThreshold) {
-          if (Array.isArray(this.quantiles) && this.quantiles.length > 0) {
-            var result = 0
-            this.quantiles.every(function (quantile, index) {
-              result = index
-              return quantile < value
-            })
-            result = result / (this.quantiles.length - 1)
-            return considerThreshold ? (this.threshold < 100 ? (result - this.threshold / 100) / (1 - this.threshold / 100) : 0.5) : result
-          }
-          // otherwise, throw exception
-          throw (new Error('Quantile data missing!'))
-        },
-
-        percentileToGradient: function (percentile) {
-          // return the gradient value from this.gradient
-          // first find the closest two colors
-          var leftColor, rightColor, colorIndex
-          this.gradient.every(function (colorSet, index) {
-            colorIndex = index
-            return colorSet.percent < percentile
-          })
-          if (colorIndex === 0) {
-            return this.gradient[0].color
-          }
-          leftColor = this.gradient[colorIndex - 1]
-          rightColor = this.gradient[colorIndex]
-          return this.getColorBetween(leftColor.color, rightColor.color,
-            (percentile - leftColor.percent) / (rightColor.percent - leftColor.percent))
-        },
-
-        getColorBetween (lColor, rColor, weight) {
-          return (parseInt((rColor & 0xFF0000) * weight + (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000) +
-            (parseInt((rColor & 0x00FF00) * weight + (lColor & 0x00FF00) * (1 - weight)) & 0x00FF00) +
-            (parseInt((rColor & 0x0000FF) * weight + (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF)
         }
 
-      })
+        if (this._pendingVWs.every(function (pendingVWindow) {
+          return pendingVWindow
+        }, this)) {
+          // Get data clipped by viewWindow by calling fetchData()
+          //    May also include data preparation
+          this.checkDataAndUpdateDebounced(this._pendingVWs)
+          // Update detailed content by calling drawData()
+          //    Will be debounced to prevent lagging
+        }
+      } catch (e) {
+        console.log(e.message)
+        console.log(e.stack)
+//        if(this.oldViewWindowString) {
+//          this.set('viewWindowString', this.oldViewWindowString);
+//        }
+      }
+    }
 
-      return give
-    })(GIVe || {})
+    updateThreshold (threshold) {
+      this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
+      this.checkDataAndUpdateDebounced()
+    }
+
+    changeViewWindow (viewWindow, index) {
+      if (Array.isArray(viewWindow)) {
+        viewWindow.forEach(this.changeViewWindow, this)
+      } else {
+        if (typeof (viewWindow) === 'string') {
+          this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
+        } else {
+          this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
+        }
+        this._pendingVWs[index] = this.subSvgs[index].viewWindow
+      }
+    }
+
+    drawBoxTrack (
+      regions, linkMap, y, height, svgToDraw, index
+    ) {
+      // regions is a chromBPTree of all connections
+      // regions with the same ID is connected and needs to be colored accordingly
+      // linkMap is an object with regionID as key and value as following:
+      //     color: the color index of the link;
+      //    regions: the regions with the same ID (array);
+
+      // may need to filter the regions first, either here or outside
+
+      var colorIndex = 0
+      svgToDraw = svgToDraw || this.mainSvg
+      height = height || this.borderHeight * this.textSize
+      y = y || 0
+
+      var windowToDraw = svgToDraw.viewWindow
+      var traverseFunc = function (linkMap, region) {
+        var linkID = region.data.linkID
+        if (!linkMap.hasOwnProperty(linkID)) {
+        // color is already there
+          colorIndex++
+          if (colorIndex >= this.colorSet.length) {
+            colorIndex = 0
+          }
+          linkMap[linkID] = []
+          linkMap[linkID].color = colorIndex
+          linkMap[linkID].map = {}
+        }
+        if (!linkMap[linkID].map.hasOwnProperty(region.data.regionID)) {
+          linkMap[linkID].push(region)
+          linkMap[linkID].map[region.data.regionID] = region
+        }
+      }.bind(this, linkMap)
+      var filterFunc = function (region) {
+        if (!this.isAboveThreshold(region.data.value) ||
+          (typeof (region.data.dirFlag) === 'number' &&
+            region.data.dirFlag !== index
+          )
+        ) {
+          return false
+        }
+        return true
+      }.bind(this)
+
+      if (regions && regions instanceof give.GiveTree) {
+        regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
+      }
+
+      // then draw the two horizontal lines
+      if (!this.regionInWindow(this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
+        // no centromere, just draw two lines
+        this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
+        this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
+      } else {
+        // has centromere, draw p part first
+        var pX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw)
+        if (pX > 0 && pX < this.windowWidth) {
+          this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
+          this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw)
+        }
+        // then centromere
+        var qX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw)
+        this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
+        this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
+        // then q part
+        if (qX > 0 && qX < this.windowWidth) {
+          this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
+          this.drawLine(qX, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
+        }
+      }
+    }
+
+    /**
+     * _generatePerm - generate permutation for neighboring svgs
+     *
+     * @param  {number} length - length of the interaction array
+     * @returns {Array<number>} permutation index values.
+     *    The return value will be all possible index permutations that is
+     *    available to the neighboring two svgs.
+     *    For example, for a `length` of 3, the return value will become:
+     *    `[[0, 1], [1, 0], [0, 2], [2, 0], [1, 2], [2, 1]]`
+     *    For every sub-array, it's the indices of the interactions that
+     *    neighboring svgs (two of them) will pull out from `linkMap`.
+     */
+    _generatePerm (length) {
+      if (length === 2) {
+        return [[0, 1], [1, 0]]
+      } else {
+        // console.log(length);
+      }
+    }
+
+    _drawConnectionBetweenNeighboringTracks (linkMap, svgNeighbors, svgMain) {
+      // linkMap is an object with regionID as key and regions as value (array)
+      // the colorMap should have been already populated
+      // windowsToDraw should be 'viewWindow' property of svgChildren
+
+      var regionMap = {}
+
+      for (var regionID in linkMap) {
+        if (linkMap.hasOwnProperty(regionID)) {
+          // region is here, draw the link (polygon)
+
+          // if(linkMap[regionID][0].data.value < threshold)
+          // now quantile is used instead of raw # of reads
+          if (!this.isAboveThreshold(linkMap[regionID][0].data.value)) {
+            continue
+          }
+
+          var perm = this._generatePerm(linkMap[regionID].length)
+          if (!perm) {
+            continue
+          }
+
+          perm.forEach(function (permIndex, index) {
+            if (
+              permIndex.some(
+                function (currentPerm, svgIndex) {
+                  return this.regionInWindow(linkMap[regionID][currentPerm], svgNeighbors[svgIndex])
+                },
+                this
+              ) &&
+              permIndex.every(
+                function (currentPerm, svgIndex) {
+                  return (typeof (linkMap[regionID][currentPerm].data.dirFlag) !== 'number' ||
+                    linkMap[regionID][currentPerm].data.dirFlag === svgIndex) &&
+                    linkMap[regionID][currentPerm].chr === svgNeighbors[svgIndex].viewWindow.chr
+                },
+                this
+              )
+            ) {
+              // prepare the points
+              var startPoints = []
+              var endPoints = []
+
+              var partialOutside = false
+
+              svgNeighbors.forEach(function (svgChild, svgIndex) {
+                var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStartCoor(),
+                                  true, svgChild)
+                if (x > this.windowWidth) {
+                  partialOutside = true
+                }
+
+                var y = (parseInt(svgChild.getAttributeNS(null, 'y')) || 0)
+
+                startPoints.push((x - this.bandBorder / 2) + ',' + y)
+                startPoints.push((x - this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
+
+                x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEndCoor(),
+                                true, svgChild)
+                if (x < 0) {
+                  partialOutside = true
+                }
+
+                x += (parseInt(svgChild.getAttributeNS(null, 'x')) || 0)
+                endPoints.push((x + this.bandBorder / 2) + ',' + y)
+                endPoints.push((x + this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
+              }, this)
+
+              var points = startPoints.concat(endPoints.reverse())
+              if (!regionMap.hasOwnProperty(points)) {
+//                this.createRawPolygon(points, {id: regionID,
+//                  class: 'linkedRegion',
+//                  fill: this.colorSet[3],
+//                  stroke: this.colorSet[5],
+//                  'stroke-width': 3,
+//                  }, svgMain);
+                if (this.quantiles) {
+                  this.createRawPolygon(points, {id: regionID,
+                    class: 'linkedRegion',
+                    fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID][0].data.value))),
+                    stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
+                    'stroke-width': 2,
+                    'fill-opacity': this.valueToPercentile(linkMap[regionID][0].data.value) * this.MAX_FILL_OPACITY
+                  }, svgMain)
+                } else {
+                  this.createRawPolygon(points, {id: regionID,
+                    class: 'linkedRegion ' + (partialOutside ? 'partialOutside' : 'fullyInside'),
+                    fill: this.rgbToHex(this.colorSet[0]),
+                    stroke: this.rgbToHex(this.colorSet[0])
+                    // 'stroke-width': 0.5,
+                    // 'fill-opacity': partialOutside? 0.01: 0.2,
+                    // 'stroke-opacity': 1,
+                  }, svgMain)
+                }
+                regionMap[points] = true
+              }
+            }
+          }, this)
+        }
+      }
+    }
+
+    drawConnectionBetweenTracks (linkMap, svgChildren, svgMain) {
+      svgMain = svgMain || this.mainSvg
+      svgChildren = svgChildren || this.subSvgs
+      for (var i = 1; i < svgChildren.length; i++) {
+        this._drawConnectionBetweenNeighboringTracks(linkMap,
+          [svgChildren[i - 1], svgChildren[i]], svgMain)
+      }
+    }
+
+    isAboveThreshold (value, threshold) {
+      threshold = threshold || this.threshold
+      if (typeof (value) === 'number') {
+        if (this.quantiles) {
+          return this.valueToPercentile(value) >= threshold / 100
+        } else {
+          return value >= threshold
+        }
+      } else {
+        return true
+      }
+    }
+
+    valueToPercentile (value, considerThreshold) {
+      if (Array.isArray(this.quantiles) && this.quantiles.length > 0) {
+        var result = 0
+        this.quantiles.every(function (quantile, index) {
+          result = index
+          return quantile < value
+        })
+        result = result / (this.quantiles.length - 1)
+        return considerThreshold ? (this.threshold < 100 ? (result - this.threshold / 100) / (1 - this.threshold / 100) : 0.5) : result
+      }
+      // otherwise, throw exception
+      throw (new give.GiveError('Quantile data missing!'))
+    }
+
+    percentileToGradient (percentile) {
+      // return the gradient value from this.gradient
+      // first find the closest two colors
+      var leftColor, rightColor, colorIndex
+      this.gradient.every(function (colorSet, index) {
+        colorIndex = index
+        return colorSet.percent < percentile
+      })
+      if (colorIndex === 0) {
+        return this.gradient[0].color
+      }
+      leftColor = this.gradient[colorIndex - 1]
+      rightColor = this.gradient[colorIndex]
+      return this.getColorBetween(leftColor.color, rightColor.color,
+        (percentile - leftColor.percent) / (rightColor.percent - leftColor.percent))
+    }
+
+    getColorBetween (lColor, rColor, weight) {
+      return (parseInt((rColor & 0xFF0000) * weight + (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000) +
+        (parseInt((rColor & 0x00FF00) * weight + (lColor & 0x00FF00) * (1 - weight)) & 0x00FF00) +
+        (parseInt((rColor & 0x0000FF) * weight + (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF)
+    }
+  }
+
+  give.InteractionTrackDom = InteractionTrackDom
+  window.customElements.define('interaction-track-dom', give.InteractionTrackDom)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

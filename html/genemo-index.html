@@ -11,7 +11,7 @@
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="bower_components/polymer/polymer.html">
   <link rel="import" href="components/chart-area/chart-area.html">
-  <link rel="import" href="components/manual-icon/manual-icon.html">
+  <link rel="import" href="components/give-icons/give-icons.html">
   <link rel="import" href="components/cell-line-info-card/cell-line-info-card.html">
   <link rel="import" href="components/chart-track-list/chart-track-group-list.html">
   <link rel="import" href="components/search-card-content/search-card-content.html">
@@ -33,7 +33,10 @@
   <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
 
   <link rel="import" href="bower_components/google-youtube/google-youtube.html">
-  <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning"></style>
+  <custom-style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    </style>
+  </custom-style>
 </head>
 
 <body unresolved class="fullbleed layout vertical">
@@ -44,7 +47,7 @@
       attr-for-selected='id' class="flex layout vertical center self-stretch">
       <div id="genemoSearchPanel" class="layout vertical">
         <genemo-card disable-folding>
-          <search-card-content class="genemoBody" id='searchCard'></search-card-content>
+          <search-card-content slot="genemoBody" id='searchCard'></search-card-content>
         </genemo-card>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
           <paper-button raised noink>
@@ -58,7 +61,7 @@
         </paper-button>
       </div>
       <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
-        <chart-track-group-list class="genemoBody" id="mainChartTrackList"
+        <chart-track-group-list slot="genemoBody" id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected"
           has-controls with-filter>
         </chart-track-group-list>
@@ -66,7 +69,7 @@
     </iron-pages>
   </div>
   <paper-drawer-panel id='mainPanel' hidden force-narrow>
-    <div main class="layout vertical">
+    <div slot="main" class="layout vertical">
       <paper-toolbar id='mainToolbar'>
         <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
         <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
@@ -84,7 +87,7 @@
         </paper-tooltip>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
           <paper-button noink>
-            <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
+            <iron-icon icon="give-iconset:manual-icon"></iron-icon>
             GENEMO Manual
           </paper-button>
         </a>
@@ -95,7 +98,7 @@
       </paper-toolbar>
       <div class="flex layout horizontal">
         <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
-          <chrom-region-list class="genemoBody" id='mainRegionList'></chrom-region-list>
+          <chrom-region-list slot="genemoBody" id='mainRegionList'></chrom-region-list>
         </genemo-card>
         <div class="flex self-stretch relative">
           <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"
@@ -103,7 +106,7 @@
         </div>
       </div>
     </div>
-    <div drawer id="mainPanelDrawer" class="layout vertical">
+    <div slot="drawer" id="mainPanelDrawer" class="layout vertical">
       <!-- searchAndTrackTabs go here afterwards -->
     </div>
   </paper-drawer-panel>

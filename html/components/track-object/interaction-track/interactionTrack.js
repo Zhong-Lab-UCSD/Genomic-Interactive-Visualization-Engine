@@ -48,7 +48,7 @@ var GIVe = (function (give) {
 
   give.InteractionTrack.prototype._DataObjCtor = give.InteractionTrackData
 
-  give.InteractionTrack.prototype._DomObjCtor = give.InteractionTrackDOM
+  give.InteractionTrack.prototype._DomObjCtor = give.InteractionTrackDom
 
   /**
    * _getWindowSpan - Get the number of windows for the track to span across

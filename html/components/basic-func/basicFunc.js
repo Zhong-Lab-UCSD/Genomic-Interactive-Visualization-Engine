@@ -117,36 +117,37 @@ var GIVe = (function (give) {
   }
 
   give._debounceIDList = {}
-  give._timeOutFunc = function (debounceList, jobName, callbackFunc, immediate) {
-    if (!immediate) {
-      callbackFunc()
+  give._timeOutFunc = function (debounceList, jobName) {
+    if (typeof debounceList[jobName].callbackFunc === 'function') {
+      debounceList[jobName].callbackFunc()
     }
     delete debounceList[jobName]
   }
 
-  give._addDebouncer = function (debounceList, jobName, callbackFunc, interval, immediate) {
-    if (immediate) {
-      callbackFunc()
+  give._addDebouncer = function (debounceList, jobName, callbackFunc, interval) {
+    debounceList[jobName] = {
+      timeOutHandle: window.setTimeout(
+        give._timeOutFunc.bind(this, debounceList, jobName), interval),
+      callbackFunc: callbackFunc
     }
-    debounceList[jobName] = window.setTimeout(
-      give._timeOutFunc.bind(this, debounceList, jobName, callbackFunc, immediate),
-      interval)
   }
 
   give.debounce = function (jobName, callback, interval, immediate) {
     if (give._debounceIDList.hasOwnProperty(jobName)) {
-      if (!immediate) {
-        give.cancelDebouncer(jobName)
-        give._addDebouncer(give._debounceIDList, jobName, callback, interval, immediate)
-      }
+      give._debounceIDList[jobName].callbackFunc = callback
     } else {
-      give._addDebouncer(give._debounceIDList, jobName, callback, interval, immediate)
+      if (immediate) {
+        callback()
+        give._addDebouncer(give._debounceIDList, jobName, null, interval)
+      } else {
+        give._addDebouncer(give._debounceIDList, jobName, callback, interval)
+      }
     }
   }
 
   give.cancelDebouncer = function (jobName) {
     if (give._debounceIDList.hasOwnProperty(jobName)) {
-      window.clearTimeout(give._debounceIDList[jobName])
+      window.clearTimeout(give._debounceIDList[jobName].timeOutHandle)
       delete give._debounceIDList[jobName]
     }
   }
@@ -169,7 +170,7 @@ var GIVe = (function (give) {
     start = start || 0
     end = end || array.length
     compareFunc = compareFunc || give.compareNumbers
-    var pivot = parseInt((start + end) / 2)  // = parseInt((start + end) / 2)
+    var pivot = parseInt((start + end) / 2) // = parseInt((start + end) / 2)
 
     var comp = compareFunc(element, array[pivot])
     if (end - start <= 1) {
@@ -183,7 +184,9 @@ var GIVe = (function (give) {
     }
   }
 
-  give.postAjax = give.postAjax || function (target, params, responseFunc, responseType, method, errorFunc, thisVar) {
+  give.postAjaxLegacy = give.postAjaxLegacy || function (
+    target, params, responseFunc, responseType, method, errorFunc, thisVar
+  ) {
     // this is a wrapper for Ajax calls throughout GIVe
     method = method || 'POST'
     var xhr = new window.XMLHttpRequest()
@@ -196,37 +199,79 @@ var GIVe = (function (give) {
           !!(navigator.userAgent.match(/Trident/) ||
              navigator.userAgent.match(/rv 11/)))) {
           // IE detected (should be IE 11), fix the json return issue
-          give._verboseConsole(
-            'You are currently using IE 11 to visit this site. ' +
-            'Some part of the site may behave differently and if you encounter ' +
-            'any problems, please use the info on \'About us\' page to ' +
-            'contact us.', give.VERBOSE_MAJ_ERROR
-          )
+          let errorMsg = 'You are currently using IE 11 to visit this site. ' +
+            'Some part of the site may behave differently and if you ' +
+            'encounter any problems, please use the info on \'About us\' ' +
+            'page to contact us.'
+          give._verbConsole.error(errorMsg)
+          give.fireSignal('warning', { msg: errorMsg })
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)
       } else {
         if (errorFunc) {
-          errorFunc.call(thisVar, xhr.status)  // handle 404, 500 or other errors
+          errorFunc.call(thisVar, xhr.status) // handle 404, 500 or other errors
         } else {
-          // TODO: put default error handling here
         }
       }
     }
     xhr.onerror = function () {
       if (errorFunc) {
-        errorFunc.call(thisVar, xhr.status)  // handle 404, 500 or other errors
+        errorFunc.call(thisVar, xhr.status) // handle 404, 500 or other errors
       } else {
-        // TODO: put default error handling here
+      }
+      xhr.open(method, target)
+      if (params instanceof window.FormData) {
+        xhr.send(params)
+      } else {
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify(params))
       }
     }
-    xhr.open(method, target)
-    if (params instanceof window.FormData) {
-      xhr.send(params)
-    } else {
-      xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.send(JSON.stringify(params))
-    }
+  }
+
+  give.postAjax = give.postAjax || function (
+    target, params, responseType, method
+  ) {
+    // this is a wrapper for Ajax calls throughout
+    return new Promise((resolve, reject) => {
+      method = method || 'POST'
+      var xhr = new window.XMLHttpRequest()
+      xhr.responseType = responseType || ''
+      xhr.onload = function () {
+        var responses = this.response
+        if (this.status >= 200 && this.status < 400) {
+          if (this.responseType.toLowerCase() === 'json' &&
+             (navigator.appName === 'Microsoft Internet Explorer' ||
+            !!(navigator.userAgent.match(/Trident/) ||
+               navigator.userAgent.match(/rv 11/)))) {
+            // IE detected (should be IE 11), fix the json return issue
+            let errorMsg = 'You are currently using IE 11 to visit this site. ' +
+              'Some part of the site may behave differently and if you ' +
+              'encounter any problems, please use the info on \'About us\' ' +
+              'page to contact us.'
+            give._verbConsole.error(errorMsg)
+            give.fireSignal('warning', { msg: errorMsg })
+            responses = JSON.parse(responses)
+          }
+          resolve(responses)
+        } else {
+          reject(new give.GiveError('Connection error (' + this.status + ')' +
+            this.response ? ': ' + this.response : ''))
+        }
+      }
+      xhr.onerror = function () {
+        reject(new give.GiveError('Connection error (' + this.status + ')' +
+          this.response ? ': ' + this.response : ''))
+      }
+      xhr.open(method, target)
+      if (params instanceof window.FormData) {
+        xhr.send(params)
+      } else {
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify(params))
+      }
+    })
   }
 
   give.fireCoreSignal = function (signame, sigdata) {
@@ -242,9 +287,9 @@ var GIVe = (function (give) {
            navigator.userAgent.match(/rv 11/))) {
       newEvent = document.createEvent('CustomEvent')
       newEvent.initCustomEvent(evName,
-                   sigParams && sigParams.bubbles,
-                   sigParams && sigParams.cancelable,
-                   sigDetail || null)
+        sigParams && sigParams.bubbles,
+        sigParams && sigParams.cancelable,
+        sigDetail || null)
     } else {
       if (sigDetail) {
         sigParams = sigParams || {}
@@ -262,17 +307,6 @@ var GIVe = (function (give) {
       return str.substr(0, prefixLength) + '...' + str.substr(str.length - suffixLength)
     } else {
       return str
-    }
-  }
-
-  give._verboseConsole = function (message, verboseLvl, moreMsg) {
-    if (give.verboseLvl >= verboseLvl) {
-      if (message instanceof Error) {
-        console.log((moreMsg ? moreMsg + ' | ' : '') + message.message)
-        console.log(message.stack)
-      } else {
-        console.log(message)
-      }
     }
   }
 
@@ -315,13 +349,66 @@ var GIVe = (function (give) {
     try {
       return document.execCommand('copy')
     } catch (e) {
-      give._verboseConsole(e, give.VERBOSE_MIN_ERROR,
-        '(give._copyTextToClipboard) Cannot copy to clipboard.')
+      give._verbConsole.warn(e)
+      give.fireSignal('warning', { msg: 'Cannot copy code to clipboard.' })
       return false
     } finally {
       document.body.removeChild(textArea)
     }
   }
+
+  give.comparePriorities = function (priorities1, priorities2) {
+    for (let i = 0; i < priorities1.length; i++) {
+      if (priorities2.length > i) {
+        if (priorities1[i] !== priorities2[i]) {
+          return Math.sign(priorities1[1] - priorities2[i])
+        }
+      } else {
+        return 1
+      }
+    }
+    return priorities2.length > priorities1.length ? -1 : 0
+  }
+
+  give._initDebug = function (isInDebug) {
+    if (isInDebug || give.DEBUG) {
+      /**
+       * Provide _verbConsole support
+       */
+      give._verbConsole = {
+        log: window.console.log.bind(window.console),
+        error: window.console.error.bind(window.console),
+        info: window.console.info.bind(window.console),
+        warn: window.console.warn.bind(window.console)
+      }
+
+      /**
+       * Create a customized error object
+       */
+      give.GiveError = class GiveError extends Error {
+        constructor () {
+          super(...arguments)
+          if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, GiveError)
+          }
+        }
+        toString () {
+          return super.toString() + '\n' + this.stack
+        }
+      }
+    } else {
+      var _emptyFunc = () => {}
+      give._verbConsole = {
+        log: _emptyFunc,
+        error: window.console.error.bind(window.console),
+        info: _emptyFunc,
+        warn: window.console.warn.bind(window.console)
+      }
+      give.GiveError = Error
+    }
+  }
+
+  give._initDebug()
 
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)

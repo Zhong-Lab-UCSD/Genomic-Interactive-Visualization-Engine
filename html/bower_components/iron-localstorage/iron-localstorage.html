@@ -152,16 +152,19 @@ is resolved. Local storage will be blown away.
     },
 
     _trySaveValue: function() {
-      if (this._doNotSave) {
+      if (this.autoSaveDisabled === undefined || this._doNotSave) {
         return;
       }
+
       if (this._loaded && !this.autoSaveDisabled) {
         this.debounce('save', this.save);
       }
     },
 
     _debounceReload: function() {
-      this.debounce('reload', this.reload);
+      if (this.name !== undefined && this.useRaw !== undefined) {
+        this.debounce('reload', this.reload);
+      }
     },
 
     /**
@@ -192,7 +195,7 @@ is resolved. Local storage will be blown away.
         this._doNotSave = true;  // guard for save watchers
         this.value = null;
         this._doNotSave = false;
-        this.fire('iron-localstorage-load-empty', { externalChange: externalChange});
+        this.fire('iron-localstorage-load-empty', { externalChange: externalChange}, {composed: true});
       } else {
         if (!this.useRaw) {
           try { // parse value as JSON
@@ -207,7 +210,7 @@ is resolved. Local storage will be blown away.
         this._doNotSave = true;
         this.value = v;
         this._doNotSave = false;
-        this.fire('iron-localstorage-load', { externalChange: externalChange});
+        this.fire('iron-localstorage-load', { externalChange: externalChange}, {composed: true});
       }
     },
 

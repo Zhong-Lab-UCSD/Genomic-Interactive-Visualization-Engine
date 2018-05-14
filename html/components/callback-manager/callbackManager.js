@@ -117,7 +117,7 @@ var GIVe = (function (give) {
       }
       this._callbackFuncs[callbackID] = callback
     } else {
-      throw new Error('Callback is not a function!')
+      throw new give.GiveError('Callback is not a function!')
     }
   }
 

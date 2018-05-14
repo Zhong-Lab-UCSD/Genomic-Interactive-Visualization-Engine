@@ -33,22 +33,22 @@ limitations under the License.
         display: table;
         padding: 0;
         background: var(--card-background-color);
-        @apply(--meta-entry-paper-material-mixin);
+        @apply --meta-entry-paper-material-mixin;
       }
       paper-material > div:not(.status) {
         padding: 1em 0.5em;
         word-break: break-word;
       }
       paper-material > div.group-overlay {
-        @apply(--layout-fit);
-        @apply(--layout-horizontal);
-        @apply(--meta-entry-group-overlay-mixin);
+        @apply --layout-fit;
+        @apply --layout-horizontal;
+        @apply --meta-entry-group-overlay-mixin;
         padding: 0;
         background: var(--light-primary-color);
       }
       paper-material > div.selection-border {
-        @apply(--layout-fit);
-        @apply(--meta-entry-selection-border-mixin);
+        @apply --layout-fit;
+        @apply --meta-entry-selection-border-mixin;
         box-sizing: border-box;
         border: 0.5px var(--secondary-text-color) solid;
         pointer-events: none;
@@ -77,7 +77,7 @@ limitations under the License.
         background: var(--accent-color);
       }
       paper-material > div.group-overlay div.groupInfo {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         padding: 1em 1em 1em 0.5em;
       }
       paper-material > div.group-overlay span.groupTrackCount {
