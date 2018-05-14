@@ -19,11 +19,12 @@ var GIVe = (function (give) {
   'use strict'
 
   class MetadataFilter extends give.DataFilter {
-    constructor (metaKeyArr, criteriaValue, compFunction) {
+    constructor (metaKeyArr, criteriaValue, compFunction, metaFetchFunction) {
       super(...arguments)
       this.MetaKeys = metaKeyArr
       this.Criteria = criteriaValue
       this.CompFunc = compFunction
+      this.MetaFunc = metaFetchFunction
     }
 
     set MetaKeys (metaKeyArr) {
@@ -56,12 +57,24 @@ var GIVe = (function (give) {
       return this._CompFunc
     }
 
-    filter (data) {
-      if (data && this.MetaKeys.length > 0) {
-        return this.MetaKeys.some(
-          (key) => this.CompFunc(data[key], this.Criteria))
+    set MetaFunc (metaFetchFunction) {
+      if (typeof metaFetchFunction === 'function') {
+        this._MetaFunc = metaFetchFunction
+      } else {
+        this._MetaFunc = this.constructor._DefaultMetaFunc
       }
-      return !!data
+    }
+
+    get MetaFunc () {
+      return this._MetaFunc
+    }
+
+    filter (track) {
+      if (track && this.MetaKeys.length > 0) {
+        return this.MetaKeys.some(
+          (key) => this.CompFunc(this.MetaFunc(track, key), this.Criteria))
+      }
+      return !!track
     }
   }
 
@@ -73,6 +86,8 @@ var GIVe = (function (give) {
     }
     return !needle
   }
+
+  MetadataFilter._DefaultMetaFunc = (track, key) => track[key]
 
   give.MetadataFilter = MetadataFilter
 

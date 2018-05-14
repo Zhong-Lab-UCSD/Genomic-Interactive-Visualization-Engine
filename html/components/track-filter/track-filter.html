@@ -1,4 +1,192 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 <link rel="import" href="../basic-func/basic-func.html">
-<link rel="import" href="../track-object/track-group.html">
+<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../ref-object/ref-object.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <script src="dataFilter.js"></script>
-<script src="trackFilter.js"></script>
+<script src="metadataFilter.js"></script>
+<dom-module id="track-filter">
+  <template>
+    <style include="genemo-shared-styles">
+    </style>
+    <paper-dropdown-menu id="keyDropdown" label="[[fieldLabel]]">
+      <paper-menu class="dropdown-content" id="keyMenu"
+        attr-for-selected="value" selected="{{_key}}">
+        <template is="dom-repeat" items="[[_keyArray]]">
+          <paper-item value="[[item.keyId]]">[[item.keyValue]]</paper-item>
+        </template>
+      </paper-menu>
+    </paper-dropdown-menu>
+    <div>
+      is
+    </div>
+    <paper-dropdown-menu id="valueDropdown" label="[[valueLabel]]">
+      <paper-menu class="dropdown-content" id="valueMenu"
+        attr-for-selected="value" selected="{{_value}}">
+        <template is="dom-repeat" items="[[_valueArray]]">
+          <paper-item value="[[item.valueId]]">[[item.value]]</paper-item>
+        </template>
+      </paper-menu>
+    </paper-dropdown-menu>
+  </template>
+  <script>
+var GIVe = (function (give) {
+  'use strict'
+
+  give.RefSelector = Polymer({
+    is: 'track-filter',
+
+    behaviors: [
+      give.RefEmbeddedBehavior
+    ],
+
+    properties: {
+      refArray: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
+
+      _key: {
+        type: String,
+        observer: '_keyChanged'
+      },
+
+      _value: {
+        type: String,
+      },
+
+      hasValue: {
+        type: Boolean,
+        computed: '_hasValue(value)',
+        notify: true
+      },
+
+      fieldLabel: {
+        type: String,
+        value: 'Field'
+      },
+
+      _keyArray: {
+        type: Array,
+        value: function () {
+          return [
+            {
+              keyId: 'title',
+              keyValue: 'Data type'
+            },
+            {
+              keyId: 'cellType',
+              keyValue: 'Cell type'
+            },
+            {
+              keyId: 'labName',
+              keyValue: 'Lab name'
+            }
+          ]
+        }
+      },
+
+      valueLabel: {
+        type: String,
+        value: 'Value'
+      },
+
+      _valueArray: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
+
+      _keyValueDict: {
+        type: Object,
+        value: function () {
+          return {}
+        }
+      }
+    },
+
+    ready: function () {
+      this._valueArray = [
+        {
+          valueId: 'n/a',
+          value: '(Field required)'
+        }
+      ]
+    },
+
+    _refreshRef: function () {
+      this._refObj.callOnTracksReady(this._buildMetaValueTables.bind(this))
+    },
+
+    _setRefObj: function (refObj) {
+      this._refObj = refObj
+      this._readiness = false
+      if (this._refObj) {
+        this._refreshRef()
+      }
+    },
+
+    _buildMetaValueTables: function () {
+      this._keyValueDict = {}
+      this._keyArray.forEach(fieldObj => {
+        this._keyValueDict[fieldObj.keyId] = new Set()
+      })
+      this._refObj.getTracks().forEach(track => {
+        this._keyArray.forEach(fieldObj => {
+          let value = track.getSetting(fieldObj.keyId)
+          if (value && !this._keyValueDict[fieldObj.keyId].has(value)) {
+            this._keyValueDict[fieldObj.keyId].add(value)
+          }
+        })
+      })
+      this.async(function () {
+        this._readiness = true
+      })
+    },
+
+    _keyChanged: function (newValue, oldValue) {
+      if (newValue) {
+        this._valueArray =
+          Array.from(this._keyValueDict[newValue].values()).sort().map(
+            entry => ({ valueId: entry, value: entry })
+          )
+      }
+    },
+
+    _hasValue: function (value) {
+      return !!value
+    },
+
+    createFilter: function () {
+      return new give.MetadataFilter(this.key, this.value,
+        (hay, needle) => (hay.toLowerCase() === needle.toLowerCase()),
+        (track, key) => track.getSetting(key)
+      )
+    }
+  })
+
+  return give
+})(GIVe || {})
+  </script>
+</dom-module>

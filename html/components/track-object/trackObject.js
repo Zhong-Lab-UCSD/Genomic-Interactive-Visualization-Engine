@@ -115,7 +115,7 @@ var GIVe = (function (give) {
       return this.getSetting('dataType') +
         (this.getSetting('trackFeature') ? ' (' + this.getSetting('trackFeature') + ')' : '')
     }
-    return ''
+    return this.getSetting('shortLabel') || ''
   }
 
   give.TrackObject.prototype.getTableNames = function () {
@@ -209,12 +209,15 @@ var GIVe = (function (give) {
    * @returns {object} The value of the setting entry
    */
   give.TrackObject.prototype.getSetting = function (key, type) {
-//    if(!this.Settings.settings.hasOwnProperty(key)) {
-//      if(this.Settings.hasOwnProperty(key)) {
-//        this.Settings.settings[key] = this.Settings[key];
-//      }
-//    }
-//    delete this.Settings[key];
+    // if(!this.Settings.settings.hasOwnProperty(key)) {
+    //  if(this.Settings.hasOwnProperty(key)) {
+    //    this.Settings.settings[key] = this.Settings[key];
+    //  }
+    // }
+    // delete this.Settings[key];
+    if (key.toLowerCase() === 'title') {
+      return this.getTitle()
+    }
     switch (type) {
       case 'integer':
         return parseInt(this.Settings[key])
