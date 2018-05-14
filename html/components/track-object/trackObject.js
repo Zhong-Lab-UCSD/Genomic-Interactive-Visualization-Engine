@@ -115,7 +115,7 @@ var GIVe = (function (give) {
       return this.getSetting('dataType') +
         (this.getSetting('trackFeature') ? ' (' + this.getSetting('trackFeature') + ')' : '')
     }
-    return ''
+    return this.getSetting('shortLabel') || ''
   }
 
   give.TrackObject.prototype.getTableNames = function () {
@@ -215,6 +215,9 @@ var GIVe = (function (give) {
     //  }
     // }
     // delete this.Settings[key];
+    if (key.toLowerCase() === 'title') {
+      return this.getTitle()
+    }
     switch (type) {
       case 'integer':
         return parseInt(this.Settings[key])
@@ -234,7 +237,7 @@ var GIVe = (function (give) {
             return !!this.Settings[key]
         }
       case 'string':
-        return this.Settings[key] || ''
+        return (this.Settings[key] || '').toString()
       default:
         return this.Settings[key]
     }

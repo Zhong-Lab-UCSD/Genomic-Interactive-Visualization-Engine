@@ -1,0 +1,411 @@
+<!--
+@license
+Copyright 2017 GIVe Authors
+*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../genemo-styles.html">
+<dom-module id="multi-dropdown">
+  <template>
+    <style include="genemo-shared-styles">
+      :host {
+        font-size: 12px;
+        overflow: visible;
+      }
+      paper-input div[suffix] {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+      }
+      iron-dropdown {
+        background: var(--primary-background-color);
+      }
+      iron-dropdown div em {
+        display: block;
+        padding: 0.5em 2em;
+        min-height: 20px;
+      }
+      iron-list {
+        font-size: 12px;
+        width: 500px;
+      }
+      paper-item {
+        cursor: pointer;
+        font-size: 12px;
+        overflow-x: hidden;
+      }
+      paper-item > * {
+        display: inline-block;
+      }
+      paper-item > .geneNameClass {
+        margin-right: 1em;
+      }
+    </style>
+    <paper-input class="fullWidth" id="mainText" label="[[label]]"
+      value="{{dispValue}}" on-input="_partialInputHandler"
+      on-focus="_textFocus" on-blur="_textUnFocus"
+      no-label-float="[[noLabelFloat]]"
+      always-float-label="[[alwaysFloatLabel]]"
+      error-message="[[errorMessage]]"
+      invalid="[[invalid]]" read-only="[[_dropdownOpen]]">
+      <div id="icons" suffix slot="suffix">
+        <template is="dom-if" if="[[_dropdownOpen]]">
+          <iron-icon icon="arrow-drop-down"></iron-icon>
+        </template>
+        <template is="dom-if" if="[[!_dropdownOpen]]">
+          <iron-icon icon="search"></iron-icon>
+        </template>
+      </div>
+    </paper-input>
+    <iron-dropdown id="geneNameDropDown" no-overlap>
+      <div class="dropdown-content">
+        <template is="dom-if" if="[[!_hasCandidate(candidates)]]">
+          <em>[[emptyCandidatesString]]</em>
+        </template>
+        <template is="dom-repeat" items="[[candidates]]" id="candidateList"
+          sort="_highlightSort" filter="_candidateFilter">
+          <paper-checkbox>
+            <div class="geneNameClass">
+              <span>[[item.contentBefore]]</span>
+              <strong>[[item.contentBold]]</strong>
+              <span>[[item.contentAfter]]</span>
+            </div>
+            <div class="geneDescClass">
+              [[item.description]]
+            </div>
+          </paper-checkbox>
+        </template>
+      </div>
+    </iron-dropdown>
+  </template>
+  <script>
+var GIVe = (function (give) {
+  'use strict'
+
+  give.MultiDropdown = Polymer({
+    is: 'multi-dropdown',
+
+    properties: {
+
+      value: {
+        type: Array,
+        value: function () {
+          return []
+        },
+        notify: true,
+        observer: '_valueObserver'
+      },
+
+      alwaysFloatLabel: {
+        type: Boolean,
+        value: false
+      },
+
+      noLabelFloat: {
+        type: Boolean,
+        value: false
+      },
+
+      inputValue: {
+        type: String,
+        value: ''
+      },
+
+      label: {
+        type: String,
+        value: 'Coordinate or gene name'
+      },
+
+      errorMessage: {
+        type: String,
+        value: 'Invalid chromosomal region!'
+      },
+
+      candidates: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
+
+      isCandidatesEmpty: {
+        type: Boolean,
+        value: true
+      },
+
+      coorSuffix: {
+        type: String,
+        value: ''
+      },
+
+      emptyCandidatesString: {
+        type: String,
+        value: '(No results)'
+      },
+
+      selectedCandidate: {
+        type: Object,
+        observer: '_partialSelectionChanged'
+      },
+
+      mouseOutTimeOut: {
+        // this is the number of ms before hiding the menu
+        type: Number,
+        value: 1000
+      },
+
+      invalid: {
+        type: Boolean,
+        value: false
+      },
+
+      allowPartialGeneName: {
+        type: Boolean,
+        value: false
+      },
+
+      required: {
+        type: Boolean,
+        value: false
+      },
+
+      _dropdownOpen: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    listeners: {
+      'mouseover': '_mouseOverHandler',
+      'mouseout': '_mouseOutHandler'
+    },
+
+    ready: function () {
+      this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
+      this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
+      this.GENE_LIST_MAX_LINES = 7
+
+      this.SET_TEXT_FOCUS_JOB_NAME = '_GCI_SetFocus'
+      this.SET_TEXT_FOCUS_DEBOUNCE = 100
+
+      this.REFOCUS_JOB_NAME = '_GCI_ReFocus'
+      this.REFOCUS_DEBOUNCE = 50
+
+      this.querySent = ''
+
+      this._decoupleInput = false
+      // set this to true to decouple input values with actual values
+
+      this.MOUSEOUT_JOBNAME = 'MouseOutJob'
+      this.mouseOutTimeOut = 1000
+
+      this.$.geneNameDropDown.positionTarget = this.$.geneName
+      this.$.geneNameDropDown.focusTarget = this.$.geneName
+    },
+
+    attached: function () {
+      this.$.partialNameAjax.auto = true
+    },
+
+    _hasCandidate: function (candidates) {
+      return candidates && candidates.length > 0
+    },
+
+    _partialInputHandler: function () {
+      // $("#waiting").html($("#geneName").val());
+      this._decoupleInput = false
+      this.value = this.inputValue
+    },
+
+    _valueObserver: function (newValue, oldValue) {
+      if (!this._decoupleInput) {
+        // value is coupled with input field
+        this.coorSuffix = ''
+        this.inputValue = newValue
+        if (newValue !== this.querySent) {
+          if (newValue.length > 1 && !this._valueIsCoordinate()) {
+            // length is enough for ajax and also not already updated
+            // start the timer to prepare for ajax
+            this._sendPartialQuery(newValue)
+          } else {
+            this._toggleGList(false)
+          }
+        }
+      } else {
+        this._decoupleInput = false
+      }
+    },
+
+    _setValueDecoupled: function (newValue) {
+      this._decoupleInput = true
+      this.value = newValue
+    },
+
+    _textFocus: function () {
+      this._setTextFocusDebounced(true)
+    },
+
+    _textUnFocus: function () {
+      this._setTextFocusDebounced(false)
+    },
+
+    _mouseOverHandler: function () {
+      this._setMouseGList(true)
+    },
+
+    _mouseOutHandler: function () {
+      this._setMouseGList(false)
+    },
+
+    _updatePartialQuery: function (e, detail) {
+      // $('#geneName').removeClass('searchFieldBusy');
+      this.splice('candidates', 0, this.candidates.length)
+      var data = detail.response
+      if (data) {
+        if (data['(max_exceeded)']) {
+          // max number of candidates has been reached
+          this.emptyCandidatesString = '(Type more for candidates)'
+        } else {
+          this.emptyCandidatesString = '(No results)'
+          for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+              var val = data[key]
+              var entry = {
+                name: key,
+                coor: val.coor,
+                description: val.description,
+                contentBefore: '',
+                contentBold: '',
+                contentAfter: ''
+              }
+              if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
+                // gene has an alias that is actually matching
+                if (val.alias.toLowerCase().indexOf(this.querySent.toLowerCase()) === 0) {
+                  // has a matching alias
+                  entry.contentBefore = entry.name + ' ('
+                  entry.contentBold = val.alias.substr(0, this.querySent.length)
+                  entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
+                } else {
+                  // no matching alias (shouldn't happen)
+                  entry.contentBefore = entry.name
+                  console.log(this.querySent)
+                  console.log(entry)
+                }
+              } else {
+                entry.contentBold = key.substr(0, this.querySent.length)
+                entry.contentAfter = key.substr(this.querySent.length)
+              }
+              this.push('candidates', entry)
+            }
+          }
+        }
+        this.isCandidatesEmpty = (!this.candidates || this.candidates.length <= 0)
+        this._toggleGList(true)
+      } else {
+        this._toggleGList(false)
+      }
+    },
+
+    _partialSelectionChanged: function (newValue, oldValue) {
+      if (newValue && newValue.coor) {
+        this.coorSuffix = '(' + newValue.coor + ')'
+        this.inputValue = newValue.name
+        this.querySent = newValue.name
+        this._setValueDecoupled(newValue.coor)
+        this._toggleGList(false)
+      }
+    },
+
+    _toggleGList: function (toggle) {
+      if (toggle) {
+        // turn on GList
+        this.$.candidatesList.style.height = Math.min(this.candidates.length,
+          this.GENE_LIST_MAX_LINES) *
+          this.GENE_LIST_PX_PER_LINE + 'px'
+        this.$.candidatesList.clearSelection()
+        this.$.candidatesList.notifyResize()
+        this.$.geneNameDropDown.refit()
+        this.$.geneNameDropDown.open()
+        this.$.partialNameAjax.debounceDuration = 50
+      } else {
+        this.$.partialNameAjax.debounceDuration = 300
+        if (this.$.geneNameDropDown.opened) {
+          this.$.geneNameDropDown.close()
+          if (!this._inFocus) {
+            this.validate()
+          } else {
+            this.debounce(this.REFOCUS_JOB_NAME,
+              this.$.geneName.focus.bind(this.$.geneName),
+              this.REFOCUS_DEBOUNCE
+            )
+          }
+        }
+      }
+    },
+
+    _setTextFocusDebounced: function (flag) {
+      if (this.isDebouncerActive(this.SET_TEXT_FOCUS_JOB_NAME)) {
+        this.cancelDebouncer(this.SET_TEXT_FOCUS_JOB_NAME)
+      }
+      if (flag !== this._inFocus) {
+        this.debounce(this.SET_TEXT_FOCUS_JOB_NAME,
+          this._setTextFocus.bind(this, flag),
+          flag ? 0 : this.SET_TEXT_FOCUS_DEBOUNCE)
+      }
+    },
+
+    _setTextFocus: function (flag) {
+      this._inFocus = flag
+      this._checkGList()
+      if (!flag && this._refObj && this._refObj.chromInfo &&
+        this._valueIsCoordinate()) {
+        // blurred, correct cases for chromosomal coordinates
+        var chrom = this.value.split(/[:\s-]+/)[0]
+        if (this._refObj.chromInfo.hasOwnProperty(chrom) &&
+          this._refObj.chromInfo[chrom].name !== chrom) {
+          // case is wrong, fix it
+          this.value = this.value.replace(chrom, this._refObj.chromInfo[chrom].name)
+        }
+      }
+      if (!flag && !this.$.geneNameDropDown.opened) {
+        this.validate()
+      }
+    },
+
+    _setMouseGList: function (flag) {
+      this._mouseInGList = flag
+      this._checkGList()
+    },
+
+    _checkGList: function () {
+      if (!this._inFocus && !this._mouseInGList) {
+        this.debounce(this.MOUSEOUT_JOBNAME, this._toggleGList.bind(this, false),
+          this.mouseOutTimeOut)
+      } else {
+        if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
+          this.cancelDebouncer(this.MOUSEOUT_JOBNAME)
+        }
+      }
+    }
+  })
+
+  return give
+})(GIVe || {})
+  </script>
+</dom-module>

@@ -15,9 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <link rel="import" href="../ref-selector/ref-selector.html">
+<link rel="import" href="../track-filter/track-filter.html">
 <link rel="import" href="../track-meta-list/track-meta-list.html">
 <link rel="import" href="../html-builder/html-builder.html">
 <link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -36,7 +39,7 @@ limitations under the License.
         --paper-toolbar-background: var(--primary-background-color);
         --paper-toolbar-color: var(--primary-text-color);
       }
-      paper-toolbar div#htmlGeneratorButtons {
+      paper-toolbar > div#htmlGeneratorButtons {
         padding: 0 0.5em;
       }
       paper-toolbar div paper-button {
@@ -49,10 +52,19 @@ limitations under the License.
       paper-toolbar div paper-button[toggles][active] {
         background-color: rgba(0, 0, 0, 0.2);
       }
-      paper-button#generateHtml {
+      paper-button#clearFilterBtn {
+        padding: 0.1em;
+        min-width: 0;
+        margin: -0.3em 0 -0.3em 0.5em;
+      }
+      paper-button#clearFilterBtn iron-icon {
+        width: 1.5em;
+        height: 1.5em;
+      }
+      paper-button.placeHoldingBtn {
         visibility: hidden;
       }
-      paper-button#generateHtml[visible] {
+      paper-button.placeHoldingBtn[visible] {
         visibility: visible;
       }
     </style>
@@ -60,11 +72,23 @@ limitations under the License.
       <slot id="logo" name="logo"></slot>
       <span class="title">[[titleText]]</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
+      <div id="filterButtons">
+        <paper-button id="filterBtn" raised toggles active="{{_filterDialogOn}}"
+          on-tap="toggleFilter" disabled$="[[!_calcIntroHidden(currentRef)]]">
+          [[filterText]]
+          <paper-button raised id="clearFilterBtn"
+            hidden$="[[!_filterActive]]"
+            on-tap="clearFilter">
+            <iron-icon icon="clear"></iron-icon>
+          </paper-button>
+        </paper-button>
+      </div>
       <div id="htmlGeneratorButtons">
         <paper-button raised toggles active="{{generatorMode}}">
           HTML Generator Mode
         </paper-button>
-        <paper-button raised id="generateHtml" visible$="[[generatorMode]]"
+        <paper-button class="placeHoldingBtn" raised id="generateHtmlBtn"
+          visible$="[[generatorMode]]"
           on-tap="generateHtml"
           disabled$="[[!numOfGroupsSelected]]">
           Generate
@@ -78,54 +102,122 @@ limitations under the License.
     <track-meta-list id="mainMetaList" class="flex self-center"
       ref="[[currentRef]]" selection-enabled$="[[generatorMode]]"
       num-of-groups-selected="{{numOfGroupsSelected}}"
-      hidden$="[[!currentRef]]">
+      hidden$="[[!currentRef]]" filter-obj="[[_trackFilter]]">
     </track-meta-list>
     <html-builder id="mainHtmlBuilder" ref="[[currentRef]]"></html-builder>
+    <paper-dialog id="filterDialog" on-iron-overlay-closed="_filterClosed">
+      <track-filter id="mainTrackFilter" ref="[[currentRef]]"
+        has-value="{{_filterHasValue}}">
+      </track-filter>
+      <div class="buttons">
+        <paper-button dialog-confirm disabled$="[[!_filterHasValue]]">
+          <iron-icon icon="filter-list"></iron-icon>
+          Filter
+        </paper-button>
+        <paper-button dialog-dismiss>
+          Cancel
+        </paper-button>
+      </div>
+    </paper-dialog>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.TrackManager = Polymer({
-        is: 'track-manager',
+  give.TrackManager = Polymer({
+    is: 'track-manager',
 
-        properties: {
-          currentRef: {
-            type: String,
-            value: ''
-          },
+    properties: {
+      currentRef: {
+        type: String,
+        value: '',
+        observer: '_refChanged'
+      },
 
-          generatorMode: {
-            type: Boolean,
-            value: false
-          },
+      generatorMode: {
+        type: Boolean,
+        value: false
+      },
 
-          numOfGroupsSelected: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          titleText: {
-            type: String,
-            value: 'Data Hub'
-          }
-        },
-
-        generateHtml: function () {
-          this.$.mainHtmlBuilder.createDialog(null,
-            this.$.mainMetaList.selectedGroups,
-            this.$.mainMetaList.selectedTracks
-          )
-        },
-
-        _calcIntroHidden: function (currentRef) {
-          return !!currentRef
+      numOfGroupsSelected: {
+        type: Array,
+        value: function () {
+          return []
         }
-      })
+      },
 
-      return give
-    })(GIVe || {})
+      titleText: {
+        type: String,
+        value: 'Data Hub'
+      },
+
+      _filterHasValue: {
+        type: Boolean
+      },
+
+      _filterDialogOn: {
+        type: Boolean
+      },
+
+      _filterActive: {
+        type: Boolean,
+        computed: '_calcFilterActive(_trackFilter)'
+      },
+
+      _trackFilter: {
+        type: Object,
+        value: null
+      },
+
+      filterText: {
+        type: String,
+        value: 'Filter'
+      }
+    },
+
+    generateHtml: function () {
+      this.$.mainHtmlBuilder.createDialog(null,
+        this.$.mainMetaList.selectedGroups,
+        this.$.mainMetaList.selectedTracks
+      )
+    },
+
+    _refChanged: function (newRef, oldRef) {
+      this.clearFilter()
+    },
+
+    _calcIntroHidden: function (currentRef) {
+      return !!currentRef
+    },
+
+    _calcFilterActive: function (_trackFilter) {
+      return !!_trackFilter
+    },
+
+    _filterClosed: function (e, detail) {
+      if (this.$.filterDialog.closingReason.confirmed) {
+        this._trackFilter = this.$.mainTrackFilter.createFilter()
+        this.filterText = 'Filter: ' + this.$.mainTrackFilter.getFilterDesc()
+        this.$.filterDialog.closingReason.confirmed = false
+      }
+      this._filterDialogOn = this.$.filterDialog.opened
+    },
+
+    toggleFilter: function () {
+      this.$.filterDialog.toggle()
+      this._filterDialogOn = this.$.filterDialog.opened
+    },
+
+    clearFilter: function (e) {
+      if (e) {
+        e.stopPropagation()
+      }
+      this._trackFilter = null
+      this.filterText = 'Filter'
+    }
+  })
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

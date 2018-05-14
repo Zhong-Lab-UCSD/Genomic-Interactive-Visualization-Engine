@@ -47,7 +47,7 @@ limitations under the License.
       .listHolder {
         @apply --layout-flex;
         @apply --layout-relative;
-        min-width: 99em;
+        min-width: 99.5em;
       }
       #loadingBlock {
         display: block;
@@ -96,202 +96,316 @@ limitations under the License.
     </div>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.TrackMetaList = Polymer({
-        is: 'track-meta-list',
+  give.TrackMetaList = Polymer({
+    is: 'track-meta-list',
 
-        behaviors: [
-          give.RefEmbeddedBehavior
-        ],
+    behaviors: [
+      give.RefEmbeddedBehavior
+    ],
 
-        properties: {
-          _dispTrackArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+    properties: {
+      _dispTrackArray: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          _groupHeader: {
-            type: String,
-            value: ''
-          },
+      _groupHeader: {
+        type: String,
+        value: ''
+      },
 
-          _readiness: {
-            type: Boolean,
-            value: false
-          },
+      _readiness: {
+        type: Boolean,
+        value: false
+      },
 
-          filters: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      _trackGroupEntries: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          _trackGroupEntries: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      selectionEnabled: {
+        type: Boolean,
+        value: false
+      },
 
-          selectionEnabled: {
-            type: Boolean,
-            value: false
-          },
+      selectedTracks: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          selectedTracks: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      selectedGroups: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          selectedGroups: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      numOfGroupsSelected: {
+        type: Number,
+        value: 0,
+        readOnly: true,
+        notify: true
+      },
 
-          numOfGroupsSelected: {
-            type: Number,
-            value: 0,
-            readOnly: true,
-            notify: true
+      filterObj: {
+        type: Object,
+        value: null,
+        observer: '_filterObjChanged'
+      }
+    },
+
+    ready: function () {
+      this._groupEntryDict = {}
+      this._inUpdatingSelection = false
+      this._isReady = true
+      this._savedSelectedGroups = null
+      this._savedExtraSelectedTracks = null
+      this._selectedSet = new Set()
+    },
+
+    _refreshRefTrackReady: function () {
+      if (this.filterObj) {
+        this._updateDispTrackArrayFiltered()
+      } else {
+        this._updateDispTrackArrayFull()
+      }
+      this.async(function () {
+        this._readiness = true
+      })
+    },
+
+    _clearDispArray: function () {
+      this._inUpdatingSelection = true
+      this._dispTrackArray = []
+      this.splice('_trackGroupEntries', 0)
+      this._groupEntryDict = {}
+      this._inUpdatingSelection = false
+    },
+
+    _updateDispTrackArrayFull: function () {
+      this._clearDispArray()
+      let newArray = []
+      for (var key in this._refObj.getGroups()) {
+        if (this._refObj.getGroups().hasOwnProperty(key) &&
+          this._refObj.getGroups()[key].getLength() > 0
+        ) {
+          var groupEntry = {
+            isGroup: true,
+            dataObj: this._refObj.getGroups()[key],
+            index: newArray.length,
+            selected: false,
+            trackSelected: false,
+            groupSelected: false
           }
-        },
+          this._groupEntryDict[groupEntry.dataObj.id] = groupEntry
+          newArray.push(groupEntry)
+          this.push('_trackGroupEntries', groupEntry)
+          this._refObj.getGroups()[key].forEach(function (track) {
+            newArray.push({ dataObj: track, groupSelected: false })
+          }, this)
+        }
+      }
+      this._dispTrackArray = newArray
+      this.async(() => this._syncSelection())
+    },
 
-        ready: function () {
-          this._groupEntryDict = {}
-          this._inUpdatingSelection = false
-          this._isReady = true
-        },
+    _updateDispTrackArrayFiltered: function () {
+      this._clearDispArray()
+      let newArray = []
+      this._refObj.getTracks().filter(track => this.filterObj.filter(track))
+        .forEach(track => {
+          newArray.push({ dataObj: track, groupSelected: false })
+        })
+      this._dispTrackArray = newArray
+      this.async(() => this._syncSelection())
+    },
 
-        _refreshRefTrackReady: function () {
-          this._groupEntryDict = {}
-          this.splice('_dispTrackArray', 0, this._dispTrackArray.length)
-          for (var key in this._refObj.getGroups()) {
-            if (this._refObj.getGroups().hasOwnProperty(key) &&
-              this._refObj.getGroups()[key].getLength() > 0
-            ) {
-              var groupEntry = {
-                isGroup: true,
-                dataObj: this._refObj.getGroups()[key],
-                index: this._dispTrackArray.length,
-                selected: false,
-                trackSelected: false,
-                groupSelected: false
-              }
-              this._groupEntryDict[groupEntry.dataObj.id] = groupEntry
-              this.push('_dispTrackArray', groupEntry)
-              this.push('_trackGroupEntries', groupEntry)
-              this._refObj.getGroups()[key].forEach(function (track) {
-                this.push('_dispTrackArray', {
-                  dataObj: track, groupSelected: false
-                })
-              }, this)
-            }
-          }
-          this.async(function () {
-            this._readiness = true
-          })
-        },
+    _syncSelection: function () {
+      this._inUpdatingSelection = true
+      this._dispTrackArray.forEach(dispElem => {
+        if (this._selectedSet.has(dispElem.dataObj.id)) {
+          this.$.trackList.selectItem(dispElem)
+        }
+      })
+      this._inUpdatingSelection = false
+      this._selectedItemsChangedHandler()
+    },
 
-        _refreshRef: function () {
-          this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
-        },
+    _refreshRef: function () {
+      this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
+    },
 
-        _setRefObj: function (refObj) {
-          this._refObj = refObj
-          this._readiness = false
-          if (this._refObj) {
-            this._refreshRef()
-          }
-        },
+    _setRefObj: function (refObj) {
+      this._refObj = refObj
+      this._readiness = false
+      this._savedExtraSelectedTracks = null
+      this._savedSelectedGroups = null
+      this._restoreSelectionArrays()
+      if (this._refObj) {
+        this._refreshRef()
+      }
+    },
 
-        _getDisplayedItems: function (tracks) {
-          if (Array.isArray(tracks) && this.filters) {
-            return tracks.filter(this._filterTracks, this)
-          }
-          return tracks
-        },
+    _restoreSelectionArrays: function () {
+      if (this._savedExtraSelectedTracks) {
+        this._selectedSet.clear()
+        this.selectedTracks = this._savedExtraSelectedTracks.slice()
+        this.selectedGroups = this._savedSelectedGroups.slice()
+        this.selectedTracks.reduce(
+          (previous, current) => previous.add(current.id),
+          this._selectedSet
+        )
+        this.selectedGroups.reduce(
+          (previous, current) => previous.add(current.id),
+          this._selectedSet
+        )
+      } else {
+        this.splice('selectedGroups', 0)
+        this.splice('selectedTracks', 0)
+        this._selectedSet.clear()
+      }
+    },
 
-        _filterTracks: function (trackArrayElement) {
-          // TODO: implement filter process
-        },
+    _getDisplayedItems: function (tracks) {
+      if (Array.isArray(tracks) && this.filters) {
+        return tracks.filter(this._filterTracks, this)
+      }
+      return tracks
+    },
 
-        _hideGroupHeader: function () {
-          return !this._groupHeader
-        },
+    _filterObjChanged: function (newValue, oldValue) {
+      if (this._isReady) {
+        this._readiness = false
+        if (oldValue && !newValue) {
+          // filterObj has been removed
+          // restore all display and restore selection status
+          // clear saved selection
+          this._savedExtraSelectedTracks = null
+          this._savedSelectedGroups = null
+          this._updateDispTrackArrayFull()
+        } else if (newValue) {
+          // new filterObj is in place
+          // save the current group selection to this._savedSelectedGroups
+          this._savedSelectedGroups = this.selectedGroups.slice()
+          // save the current track selection
+          // __that will not pass the new filter__
+          // to this._savedExtraSelectedTracks
+          this._savedExtraSelectedTracks = this.selectedTracks.filter(
+            track => !this.filterObj.filter(track)
+          )
+          this._updateDispTrackArrayFiltered()
+        }
+        this.async(function () {
+          this._readiness = true
+        })
+      }
+    },
 
-        _selectedItemsChangedHandler: function (e, detail) {
-          if (this._isReady && !this._inUpdatingSelection) {
-            this._inUpdatingSelection = true
-            this.splice('selectedGroups', 0)
-            this.splice('selectedTracks', 0)
-            this._trackGroupEntries.forEach(function (groupEntry) {
-              groupEntry.selected = false
-              this.set('_dispTrackArray.' + groupEntry.index + '.trackSelected',
-                false)
-            }, this)
-            // Procedure: go through all selected tracks, if the tracks are
-            // selected but the groups are not, select the group.
-            var selectedItems = this.$.trackList.selectedItems
-            for (var i = 0; i < selectedItems.length; i++) {
-              if (selectedItems[i].isGroup) {
-                selectedItems[i].selected = true
-              } else {
-                this.push('selectedTracks', selectedItems[i].dataObj)
-                if (!this._groupEntryDict[selectedItems[i].dataObj.groupID]
-                  .trackSelected
-                ) {
-                  this.set('_dispTrackArray.' +
+    _hideGroupHeader: function () {
+      return !this._groupHeader
+    },
+
+    _selectedItemsChangedHandler: function (e, detail) {
+      if (this._isReady && !this._inUpdatingSelection) {
+        this._inUpdatingSelection = true
+        this._restoreSelectionArrays()
+        let selectedItems = this.$.trackList.selectedItems
+        if (!this.filterObj) {
+          this._trackGroupEntries.forEach(function (groupEntry) {
+            groupEntry.selected = false
+            this.set('_dispTrackArray.' + groupEntry.index + '.trackSelected',
+              false)
+          }, this)
+          // Procedure: go through all selected tracks, if the tracks are
+          // selected but the groups are not, select the group.
+          for (let i = 0; i < selectedItems.length; i++) {
+            this._selectedSet.add(selectedItems[i].dataObj.id)
+            if (selectedItems[i].isGroup) {
+              selectedItems[i].selected = true
+            } else {
+              this.push('selectedTracks', selectedItems[i].dataObj)
+              this._selectedSet.add(selectedItems[i].dataObj.groupID)
+              if (!this._groupEntryDict[selectedItems[i].dataObj.groupID]
+                .trackSelected
+              ) {
+                this.set(
+                  '_dispTrackArray.' +
                     this._groupEntryDict[selectedItems[i].dataObj.groupID]
                       .index + '.trackSelected',
-                    true)
-                }
+                  true
+                )
               }
             }
-            this._trackGroupEntries.forEach(function (groupEntry) {
-              if (groupEntry.trackSelected && !groupEntry.selected) {
-                /**
-                 * TODO: change this into `selectIndex` once `iron-list`
-                 * updates to v2
-                 */
-                this.$.trackList.push('selectedItems', groupEntry)
-                groupEntry.selected = true
-              }
-              if (groupEntry.selected) {
-                this.push('selectedGroups', groupEntry.dataObj)
-              }
-            }, this)
-            this._dispTrackArray.forEach(function (dispTrackElem, index) {
-              if (!dispTrackElem.isGroup) {
-                if (
-                  this._groupEntryDict[dispTrackElem.dataObj.groupID].selected
-                ) {
-                  this.set('_dispTrackArray.' + index + '.groupSelected', true)
-                } else {
-                  this.set('_dispTrackArray.' + index + '.groupSelected', false)
-                }
-              }
-            }, this)
-            this.$.trackList.notifyResize()
-            this._setNumOfGroupsSelected(this.selectedGroups.length)
-            this.async(function () {
-              this._inUpdatingSelection = false
-            })
           }
+          this._trackGroupEntries.forEach(function (groupEntry) {
+            if (groupEntry.trackSelected && !groupEntry.selected) {
+              /**
+               * TODO: change this into `selectIndex` once `iron-list`
+               * updates to v2
+               */
+              this.$.trackList.push('selectedItems', groupEntry)
+              groupEntry.selected = true
+            }
+            if (groupEntry.selected) {
+              this.push('selectedGroups', groupEntry.dataObj)
+            }
+          }, this)
+          this._dispTrackArray.forEach(function (dispTrackElem, index) {
+            if (!dispTrackElem.isGroup) {
+              if (
+                this._groupEntryDict[dispTrackElem.dataObj.groupID].selected
+              ) {
+                this.set('_dispTrackArray.' + index + '.groupSelected', true)
+              } else {
+                this.set('_dispTrackArray.' + index + '.groupSelected', false)
+              }
+            }
+          }, this)
+          this.$.trackList.notifyResize()
+        } else {
+          // filterObj is active, no group entries will be shown
+          // first, select all tracks and groups with tracks in selectedItems
+          for (let i = 0; i < selectedItems.length; i++) {
+            this.push('selectedTracks', selectedItems[i].dataObj)
+            this._selectedSet.add(selectedItems[i].dataObj.id)
+            if (!this._selectedSet.has(selectedItems[i].dataObj.groupID)) {
+              this.push('selectedGroups',
+                this._refObj.getGroups()[selectedItems[i].dataObj.groupID])
+              this._selectedSet.add(selectedItems[i].dataObj.groupID)
+            }
+          }
+          // then update all tracks' groupSelected attribute
+          this._dispTrackArray.forEach(function (dispTrackElem, index) {
+            if (
+              this._selectedSet.has(dispTrackElem.dataObj.groupID)
+            ) {
+              this.set('_dispTrackArray.' + index + '.groupSelected', true)
+            } else {
+              this.set('_dispTrackArray.' + index + '.groupSelected', false)
+            }
+          }, this)
         }
-        // TODO: use on-scroll event of iron-list to implement group label
-        //    floating
-      })
+        this._setNumOfGroupsSelected(this.selectedGroups.length)
+        this.async(function () {
+          this._inUpdatingSelection = false
+        })
+      }
+    }
+    // TODO: use on-scroll event of iron-list to implement group label
+    //    floating
+  })
 
-      return give
-    })(GIVe || {})
+  return give
+})(GIVe || {})
   </script>
 </dom-module>
