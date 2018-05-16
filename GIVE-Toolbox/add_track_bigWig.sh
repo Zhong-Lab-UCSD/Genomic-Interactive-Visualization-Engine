@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 PROGNAME=$0
 
 usage() {
@@ -18,6 +18,7 @@ usage() {
     -W <windowMax>: (Optional) The maximum value of data shown in the window, only effective when autoScale is set to false.
     -w <windowMin>: (Optional) The minimum value of data shown in the window, only effective when autoScale is set to false.
     -f <file>: (Required) bigWig file path. It must be a system absolute path. Make sure MySQL can access this file.
+    -m <meta_info>: (Optional) Check GIVE mannual of data format to know supported metainfo, such as cellType and labName. The value of '-m' paramter must be json name/value pair list quoted in single quotations, such as: -m '"cellType":"H1", "labName":"Zhong Lab"'
     -h : show usage help
 EOF
     exit 1
@@ -45,8 +46,7 @@ do
     fi
 done
 
-
-while getopts u:p:r:t:g:l:s:o:v:a:W:w:f:h: opt; do
+while getopts u:p:r:t:g:l:s:o:v:a:W:w:f:m:h: opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
         p) mysqlp=$OPTARG;;
@@ -61,6 +61,7 @@ while getopts u:p:r:t:g:l:s:o:v:a:W:w:f:h: opt; do
         W) windowMax=$OPTARG;;
         w) windowMin=$OPTARG;;
         f) file=$OPTARG;;
+        m) meta_info=$OPTARG;;
         h) usage;;
         \?) usage && exit;;
         *) usage;;
@@ -122,6 +123,27 @@ if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     exit 1
 fi
 
+settings='"group":"'$group_name'",
+            "longLabel":"'$long_label'",
+            "priority":'$priority',
+            "shortLabel":"'$short_label'",
+            "track":"'$track_name'",
+            "type":"bigwig",
+            "visibility":"'$visibility'",
+            "autoScale":'$autoscale
+
+if [[ $windowMax != "" ]]; then
+    settings+=', "windowMax":'$windowMax
+fi
+
+if [[ $windowMin != "" ]]; then
+    settings+=', "windowMin":'$windowMin
+fi
+
+if [[ $meta_info != "" ]]; then
+    settings+=', '$meta_info
+fi
+
 read -r -d '' mysql_query <<EOF
 CREATE TABLE \`$ref\`.\`$track_name\` (
         \`fileName\` varchar(255) NOT NULL
@@ -138,16 +160,7 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
         NULL,
         NULL,
         '$group_name',
-        '{
-            "group":"$group_name",
-            "longLabel":"$long_label",
-            "priority":$priority,
-            "shortLabel":"$short_label",
-            "track":"$track_name",
-            "type":"bigwig",
-            "visibility":"$visibility",
-            "autoScale":$autoscale
-        }'
+        '{ $settings }'
     );
 
 EOF

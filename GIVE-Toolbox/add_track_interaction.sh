@@ -1,6 +1,5 @@
 #!/bin/bash
-
-set -e
+#set -e
 
 PROGNAME=$0
 
@@ -18,6 +17,7 @@ usage() {
     -v <visibility>: (Required) "full" or "none". The display mode of the track. If "full", signals will be plotted against the genome in a line graph. If "none", this track is not shown at all.
     -q <quantiles>: (Optional) The quantile values used for scaling. If not supplied, it will be in mono color autoscale mode. If color gradient based on quantile is desired, an array of quantile values should be provided here. Value will be scaled by quantiles before being mapped onto the color gradient. The quantile value used in the GIVE-Toolbox example: -q "0.37,1.32,1.78,2.19,2.60,2.97,3.43,3.85,4.34,4.90,5.48,6.16,6.94,8.01,9.05,10.41,12.37,14.88,19.84,31.77,290.17" 
     -f <file>: (Required) interaction file path. It must be a system absolute path. Make sure MySQL can access this file.
+    -m <meta_info>: (Optional) Check GIVE mannual of data format to know supported metainfo, such as cellType and labName. The value of '-m' paramter must be json name/value pair list quoted in single quotations, such as: -m '"cellType":"H1", "labName":"Zhong Lab"'
     -h : show usage help
 EOF
     exit 1
@@ -46,7 +46,7 @@ do
 done
 
 
-while getopts u:p:r:t:g:l:s:o:v:q:f:h: opt; do
+while getopts u:p:r:t:g:l:s:o:v:q:f:m:h: opt; do
     case $opt in
         u) mysqlu=$OPTARG;;
         p) mysqlp=$OPTARG;;
@@ -59,6 +59,7 @@ while getopts u:p:r:t:g:l:s:o:v:q:f:h: opt; do
         v) visibility=$OPTARG;;
         q) quantiles=$OPTARG;;
         f) file=$OPTARG;;
+        m) meta_info=$OPTARG;;
         h) usage;;
         \?) usage && exit 1;;
         *) usage;;
@@ -85,9 +86,6 @@ while [ -z "$mysqlp" ]; do
     echo "Password format error! The input password is blank. Please input again:" && read -s -p "Password:" mysqlp
     echo    
 done
-
-
-
 
 if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     "select count(*) from \`$ref\`.\`grp\` where name='$group_name';") -eq 0 ]; then
@@ -120,6 +118,19 @@ if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     exit 1
 fi
 
+settings='"group":"'$group_name'",
+            "longLabel":"'$long_label'",
+            "priority":'$priority',
+            "shortLabel":"'$short_label'",
+            "track":"'$track_name'",
+            "type":"interaction",
+            "visibility":"'$visibility'",
+            "quantiles": [ '$quantiles' ]'
+
+if [[ $meta_info != "" ]]; then
+    settings+=', '$meta_info
+fi
+
 read -r -d '' mysql_query <<EOF
 CREATE TABLE \`$ref\`.\`$track_name\` (
         \`ID\` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -144,18 +155,7 @@ INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
         NULL,
         NULL,
         '$group_name', 
-        '{
-            "group":"$group_name",
-            "longLabel":"$long_label",
-            "priority":$priority,
-            "shortLabel":"$short_label",
-            "track":"$track_name",
-            "type":"interaction",
-            "visibility":"$visibility",
-            "quantiles": [
-                $quantiles
-            ]
-        }'
+        '{ $settings }'
     );
 
 EOF
