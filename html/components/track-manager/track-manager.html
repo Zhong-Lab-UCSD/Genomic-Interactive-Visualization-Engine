@@ -136,14 +136,12 @@ var GIVe = (function (give) {
 
       generatorMode: {
         type: Boolean,
-        value: false
+        value: false,
+        observer: '_generatorModeChanged'
       },
 
       numOfGroupsSelected: {
-        type: Array,
-        value: function () {
-          return []
-        }
+        type: Number
       },
 
       titleText: {
@@ -180,6 +178,19 @@ var GIVe = (function (give) {
         this.$.mainMetaList.selectedGroups,
         this.$.mainMetaList.selectedTracks
       )
+    },
+
+    _generatorModeChanged: function (newValue, oldValue) {
+      if (oldValue && !newValue) {
+        // this is toggling from enabled to disabled
+        // check if there are tracks and/or groups selected
+        if (this.numOfGroupsSelected) {
+          // there are tracks and/or groups selected
+          // TODO: use a `<paper-dialog>` get confirmation of clearing
+          // the selection (can be done via Promise resolution/rejection)
+          this.$.mainMetaList.clearSelection()
+        }
+      }
     },
 
     _refChanged: function (newRef, oldRef) {
