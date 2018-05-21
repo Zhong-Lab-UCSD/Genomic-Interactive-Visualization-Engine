@@ -248,9 +248,7 @@ var GIVe = (function (give) {
     _setRefObj: function (refObj) {
       this._refObj = refObj
       this._readiness = false
-      this._savedExtraSelectedTracks = null
-      this._savedSelectedGroups = null
-      this._restoreSelectionArrays()
+      this.clearSelection()
       if (this._refObj) {
         this._refreshRef()
       }
@@ -400,6 +398,16 @@ var GIVe = (function (give) {
           this._inUpdatingSelection = false
         })
       }
+    },
+
+    clearSelection: function () {
+      this._savedExtraSelectedTracks = null
+      this._savedSelectedGroups = null
+      try {
+        this.$.trackList.clearSelection()
+      } catch (ignore) {
+      }
+      this._restoreSelectionArrays()
     }
     // TODO: use on-scroll event of iron-list to implement group label
     //    floating
