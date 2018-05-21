@@ -138,6 +138,9 @@ var GIVe = (function (give) {
           value: '(Field required)'
         }
       ]
+      this._keyDict = this._keyArray.reduce(
+        (map, fieldObj) => map.set(fieldObj.keyId, fieldObj.keyValue),
+        new Map())
     },
 
     _refreshRef: function () {
@@ -200,7 +203,7 @@ var GIVe = (function (give) {
     },
 
     getFilterDesc: function () {
-      return this._key + ' is ' + this._value
+      return this._keyDict.get(this._key) + ' is ' + this._value
     }
   })
 
