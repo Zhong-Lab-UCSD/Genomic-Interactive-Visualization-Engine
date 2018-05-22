@@ -22,40 +22,31 @@ var GIVe = (function (give) {
    * Object representing a corrdinate track, see `GIVe.TrackObject` for details.
    * @typedef {object} CoorTrack
    * @class give.CoorTrack
-   *
-   * @constructor
    * @implements give.TrackObject
-   * @param {string} ID - The ID of the new track object
-   * @param {object} Settings - Settings of the new track. Dictionary format.
-   *   Note that if `Settings` has a property named `settings`,
-   *   it will be merged with `this.Settings`, while properties in
-   *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
-   * @param {string} groupID - The group ID of the new track object
    */
-  give.CoorTrack = function (ID, Settings, ref, groupID) {
-    give.TrackObject.apply(this, arguments)
-  }
-
-  give.extend(give.TrackObject, give.CoorTrack)
-
-  /**
-   * getType - get the key strings showing this type of data.
-   *    This shall be the same as the `type` column for track entries in
-   *    `trackDb` table so that GIVE is able to figure out the track is of this
-   *    type.
-   *
-   * @returns {Array<string>}  return all keys matching this type.
-   */
-  give.CoorTrack.getType = function () {
-    return ['coordinate', 'coor']
+  class CoorTrack extends give.TrackObject {
+    /**
+     * typeList - get the key strings showing this type of data.
+     *    This shall be the same as the `type` column for track entries in
+     *    `trackDb` table so that GIVE is able to figure out the track is of
+     *    this type.
+     * @static
+     * @property
+     *
+     * @returns {Array<string>}  return all keys matching this type.
+     */
+    static get typeList () {
+      return ['coordinate', 'coor']
+    }
   }
 
   // specify the visualization object used in this track
-  give.CoorTrack.prototype._DomObjCtor = give.CoorTrackDom
+  CoorTrack._DomObjCtor = give.CoorTrackDom
 
   // __IMPORTANT:__ register this new track type
-  give.TrackObject.registerTrack(give.CoorTrack)
+  give.TrackObject.registerTrack(CoorTrack)
+
+  give.CoorTrack = CoorTrack
 
   return give
 })(GIVe || {})
