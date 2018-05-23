@@ -51,7 +51,7 @@ var GIVe = (function (give) {
           resChromEntry.attr
         )
       )
-      if (this.parent.getTypeTrunk().indexOf('gene') > -1) {
+      if (this.parent.typeTrunk.indexOf('gene') > -1) {
         // is some gene oriented type
         // check if it overlaps with existing gene(s)
         // because the gene list is sorted by start,
@@ -87,7 +87,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.BedTrackData.prototype._localFileHandler = function (localFile, regions) {
+  give.BedTrackData.prototype._localFileHandler = function (e, regions) {
     // placeholder to read local file content
     // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
     // data will be passed via firing a 'response' event with {detail: data}
@@ -100,25 +100,21 @@ var GIVe = (function (give) {
     //      like in http://matthewmeye.rs/blog/post/html5-line-reader/
     //      or    http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
 
-    var reader = new window.FileReader()
     var result = {}
-    reader.onload = function (e) {
-      var lines = e.target.result.split(/\r\n|\r|\n/g)
-      lines.forEach(function (line) {
-        var transcript = new give.TranscriptObject(line)
-        if (regions.some(function (region) {
-          return transcript.overlaps(region)
-        }, this)) {
-          // needs to push this line to result
-          if (!result.hasOwnProperty(transcript.chr)) {
-            result[transcript.chr] = []
-          }
-          result[transcript.chr].push({geneBed: line})
+    var lines = e.target.result.split(/\r\n|\r|\n/g)
+    lines.forEach(function (line) {
+      var transcript = new give.TranscriptObject(line)
+      if (regions.some(function (region) {
+        return transcript.overlaps(region)
+      }, this)) {
+        // needs to push this line to result
+        if (!result.hasOwnProperty(transcript.chr)) {
+          result[transcript.chr] = []
         }
-      }, this)
-      this._dataHandler(result, regions)
-    }.bind(this)
-    reader.readAsText(localFile)
+        result[transcript.chr].push({geneBed: line})
+      }
+    }, this)
+    return this._dataHandler(result, regions)
   }
 
   /**

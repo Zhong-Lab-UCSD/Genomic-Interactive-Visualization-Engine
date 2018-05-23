@@ -72,8 +72,8 @@ var GIVe = (function (give) {
       }
 
       this._setParent(track)
-      // this._setTrackType(track.getTypeTrunk())
-      this.id = this.parent.getTypeTrunk() + '_' + give._trackCounter++
+      // this._setTrackType(track.typeTrunk)
+      this.id = this.parent.typeTrunk + '_' + give._trackCounter++
 
       this._DispPriority = properties.subPriority || 0
       this._OverriddenPriority = null
@@ -290,7 +290,7 @@ var GIVe = (function (give) {
         this.trackSvg.appendChild(this.mainSvg)
 
         // this._setInitialized(true);
-        // this.fire('track-initialized', {ID: this.parent.getID()});
+        // this.fire('track-initialized', {ID: this.parent.id});
         this.initSvgHolder(this.mainSvg)
 
         if (typeof this.initSvgComponents === 'function') {
@@ -1120,7 +1120,7 @@ var GIVe = (function (give) {
           give.fireSignal('warning', { msg: e.message })
         })
         .finally(() => {
-          give.fireSignal('track-ready', {ID: this.parent.getID()})
+          give.fireSignal('track-ready', {ID: this.parent.id})
         })
       return this.readyPromise
     }

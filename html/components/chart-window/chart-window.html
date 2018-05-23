@@ -291,9 +291,7 @@ var GIVe = (function (give) {
 
     _checkVWindowsInit () {
       if (!this._initialized) {
-        if (this._refObj && this._viewWindows.every(function (vwindow) {
-          return !!vwindow
-        }, this)) {
+        if (this._refObj && this._viewWindow) {
           this._initialized = true
           this.resetDOM()
           return true
@@ -322,9 +320,9 @@ var GIVe = (function (give) {
       return original
     }
 
-    _createTrackProp (viewWindowIndex, props) {
+    _createTrackProp (props) {
       props = props || {}
-      props.windowIndex = viewWindowIndex
+      props.windowIndex = this.index
       props.width = this.$.chartHolding.clientWidth
       props.textMargin = this.textMargin
       return props
@@ -350,12 +348,12 @@ var GIVe = (function (give) {
     }
 
     _addTrackDomSvg (trackDom) {
-      if (!this._addedSvgOrderMap.hasOwnProperty(trackDom.parent.getID())) {
+      if (!this._addedSvgOrderMap.hasOwnProperty(trackDom.parent.id)) {
         let slotId = this._getSlotId(trackDom)
         if (slotId) {
           this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
             .appendChild(trackDom.TrackSvg)
-          this._addedSvgOrderMap[trackDom.parent.getID()] =
+          this._addedSvgOrderMap[trackDom.parent.id] =
             this._svgSizes[slotId]
           this._svgSizes[slotId]++
         }
@@ -364,42 +362,40 @@ var GIVe = (function (give) {
       return null
     }
 
-    _pushSingleWindowTrackDom (trackDom, viewWindowIndex) {
-      var holder
-      if (trackDom.pin === 'top') {
-        holder = this._trackDomsByWindow[viewWindowIndex].pinAbove
-      } else if (trackDom.pin === 'bottom') {
-        holder = this._trackDomsByWindow[viewWindowIndex].pinBelow
-      } else {
-        holder = this._trackDomsByWindow[viewWindowIndex].scrolling
-      }
-      holder.splice(
-        give.locationOf(trackDom, holder, null, null,
-          function (trackDom1, trackDom2) {
-            return give.TrackObject.comparePriorities(trackDom1.parent,
-              trackDom2.parent, this._refObj.groups)
-          }.bind(this)
-        ) + 1, 0, trackDom)
-    }
-
-    _addMultiWindowTrackDom (trackDom, viewWindowIndex) {
-      // actually this will enum all viewWindowIndices
-      this._trackDomsByWindow[viewWindowIndex].pinInBetween.push(trackDom)
-      for (var i = 1; i < trackDom.parent.windowSpan; i++) {
-        this._trackDomsByWindow[viewWindowIndex + i]
-          .hiddenTrackComponents.push(trackDom)
-      }
-    }
-
-    _addVisibleTrack (track, viewWindowIndex, forceAdd, props) {
-      if (forceAdd || (
-        !this._trackDomsByWindow[viewWindowIndex].map
-          .hasOwnProperty(track.getID()) &&
-        viewWindowIndex + track.windowSpan <= this._viewWindows.length
-      )) {
+    // _pushSingleWindowTrackDom (trackDom, viewWindowIndex) {
+    //   var holder
+    //   if (trackDom.pin === 'top') {
+    //     holder = this._trackDomsByWindow[viewWindowIndex].pinAbove
+    //   } else if (trackDom.pin === 'bottom') {
+    //     holder = this._trackDomsByWindow[viewWindowIndex].pinBelow
+    //   } else {
+    //     holder = this._trackDomsByWindow[viewWindowIndex].scrolling
+    //   }
+    //   holder.splice(
+    //     give.locationOf(trackDom, holder, null, null,
+    //       function (trackDom1, trackDom2) {
+    //         return give.TrackObject.comparePriorities(trackDom1.parent,
+    //           trackDom2.parent, this._refObj.groups)
+    //       }.bind(this)
+    //     ) + 1, 0, trackDom)
+    // }
+    //
+    // _addMultiWindowTrackDom (trackDom, viewWindowIndex) {
+    //   // actually this will enum all viewWindowIndices
+    //   this._trackDomsByWindow[viewWindowIndex].pinInBetween.push(trackDom)
+    //   for (var i = 1; i < trackDom.parent.windowSpan; i++) {
+    //     this._trackDomsByWindow[viewWindowIndex + i]
+    //       .hiddenTrackComponents.push(trackDom)
+    //   }
+    // }
+    //
+    _addVisibleTrack (track, forceAdd, props) {
+      if (forceAdd ||
+        !this._addedSvgOrderMap.hasOwnProperty(track.id)
+      ) {
         try {
-          let newTrackDom = new track._DomObjCtor(track)
-          this._addTrackDom(newTrackDom, viewWindowIndex)
+          let newTrackDom = track.createDomObj(this._createTrackProp(props))
+          this._addTrackDom(newTrackDom)
           return newTrackDom
         } catch (err) {
           give._verbConsole.warn(err)
@@ -506,10 +502,9 @@ var GIVe = (function (give) {
      * @return {string} The actual range (may be cropped by reference),
      *                   converted to string.
      */
-    _changeViewWindowObj (viewWindow, index) {
-      this.splice('_viewWindows', index, 1, viewWindow.clone())
-      this.splice('coordinates', index, 1,
-        this._viewWindows[index].regionToString(false))
+    _changeViewWindowObj (viewWindow) {
+      this._viewWindow = viewWindow.clone()
+      this.coordinate = viewWindow.regionToString(false)
       if (this._initialized) {
         this._updateTracksInWindow(index)
       } else {
@@ -792,9 +787,9 @@ var GIVe = (function (give) {
           if (track.getSetting('visibility') >
             give.TrackObject.StatusEnum.VIS_NONE
           ) {
-            this._trackDomHolder.push(new track._DomObjCtor(track), {
-              subPriority: index
-            })
+            this._trackDomHolder.push(track.createDomObj(
+              this._createTrackProp({ subPriority: index })
+            ))
           }
         }
         if (this.groupIdList && this.groupIdList.length > 0) {

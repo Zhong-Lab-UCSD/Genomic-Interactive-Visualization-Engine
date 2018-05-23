@@ -22,7 +22,6 @@ var GIVe = (function (give) {
    * Data structure for a track in GIVE
    * @typedef {object} TrackDataObjectBase
    * @property {TrackObjectBase} parent - Track object as parent
-   * @property {string} _getDataJobName - The job name of debouncing purposes
    * @property {number} getDataDebounceInt - Debouncing interval
    * @property {object} _pendingRangesById - Regions requested by GUI elements
    *   that have not been merged yet
@@ -31,474 +30,471 @@ var GIVe = (function (give) {
    * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
    *
-   * @class give.TrackDataObject
+   * @class TrackDataObject
    *
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
    */
-  give.TrackDataObject = function (parent) {
-    if (!(parent instanceof give.TrackObject)) {
-      throw new give.GiveError('Parent ' + parent + ' is not a proper GIVE.TrackObject!')
+  class TrackDataObject {
+    constructor (parent) {
+      if (!(parent instanceof give.TrackObject)) {
+        throw new give.GiveError(
+          'Parent ' + parent + ' is not a proper GIVE.TrackObject!')
+      }
+      this._parent = parent
+
+      this.getDataDebounceInt = this.parent.getSetting('debounceInterval') ||
+        TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
+      this._debouncePromise = null
+      this._pendingRangesById = {}
+      this._committedRegions = []
+
+      this._fetchPromise = null
+      this._ongoingFetchPromise = null
+      this._data = {}
+
+      this._initSettings()
     }
-    this.parent = parent
 
-    this._getDataJobName = ((this.parent.getID && this.parent.getID())
-      ? this.parent.getID()
-      : (Math.random().toString(36) + '0000000').slice(2, 7)) + '_GETDATA'
-    this.getDataDebounceInt = this.parent.getSetting('debounceInterval') ||
-      give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
-    this._debouncePromise = null
-    this._pendingRangesById = {}
-    this._committedRegions = []
-
-    this._fetchPromise = null
-    this._ongoingFetchPromise = null
-    this._data = {}
-
-    this._initSettings()
-  }
-
-  give.TrackDataObject.prototype.getTrackSetting = function (key) {
-    return this.parent.getSetting(key)
-  }
-
-  give.TrackDataObject.prototype.setTrackSetting = function (key, value) {
-    return this.parent.setSetting(key, value)
-  }
-
-  give.TrackDataObject.prototype._initSettings = function () {
-    if (!this.getTrackSetting('requestUrl')) {
-      this.setTrackSetting('requestUrl', this.getTrackSetting('isCustom')
-        ? give.TrackDataObject.fetchCustomTarget
-        : give.TrackDataObject.fetchDataTarget)
+    get parent () {
+      return this._parent
     }
-  }
 
-  /**
-   * _mergeGUIRegionsByResolution - merge the ranges submitted to the data object
-   * (potentially by different GUI elements, __e.g.__ different view windows) into
-   * one single list.
-   *
-   * The ranges with finer (smaller value) resolution requirements will override
-   * the ranges with coarser ones.
-   *
-   * The result will be a single array of all requested ranges, each with the finest
-   * resolution requirement by the GUI element.
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Object} unmergedGUIRanges - An `Object` containing all requested
-   * `GIVE.ChromRegion`s, the object should have properties named by its requesting
-   * GUI element and the value being an `Array` of non-overlapping
-   * `GIVE.ChromRegion`s. Resolutions can be provided as the `resolution` property
-   * of the `GIVE.ChromRegion` object. For example:
-   * ```
-   * {
-   *   'bigwig_dom_1': [
-   *     new GIVE.ChromRegion("chr1:12345-67890", species, {resolution: 100}),
-   *     new GIVE.ChromRegion("chr1:123456-789012", species, {resolution: 100})
-   *   ]
-   * }
-   * ```
-   * @returns {Array<ChromRegionLiteral>} An ordered array of merged ranges.
-   */
-  give.TrackDataObject.prototype._mergeGUIRegionsByResolution = function (
-    unmergedGUIRanges
-  ) {
-    // this is to generate a single array of ChromRegions, separated by resolution
-    var mergedGUIRanges = []
-    for (var callerID in unmergedGUIRanges) {
-      if (unmergedGUIRanges.hasOwnProperty(callerID)) {
-        for (var i = 0; i < unmergedGUIRanges[callerID].length; i++) {
-          var GUIRange = unmergedGUIRanges[callerID][i]
-          var j = 0
+    getTrackSetting (key, type) {
+      return this.parent.getSetting(key, type)
+    }
 
-          while (j < mergedGUIRanges.length &&
-             (mergedGUIRanges[j].chr < GUIRange.chr ||
-              (mergedGUIRanges[j].chr === GUIRange.chr &&
-               mergedGUIRanges[j].getEnd() <= GUIRange.getStart()))) {
-            j++
-          }
+    setTrackSetting (key, value) {
+      return this.parent.setSetting(key, value)
+    }
 
-          while (j < mergedGUIRanges.length && GUIRange &&
-              GUIRange.overlaps(mergedGUIRanges[j])) {
-            // needs to determine which one should take the resolution
-            var queryRange = mergedGUIRanges[j]
-            if (typeof queryRange.Resolution === 'number' &&
-              (typeof GUIRange.Resolution !== 'number' ||
-                GUIRange.Resolution < queryRange.Resolution
-              )
-            ) {
-              // GUI has smaller resolution
-              if (queryRange.getStart() < GUIRange.getStart()) {
-                if (queryRange.getEnd() > GUIRange.getEnd()) {
-                  // queryRange is split into two
-                  var newQueryRange = queryRange.clone()
-                  newQueryRange.setStart(GUIRange.getEnd())
-                  mergedGUIRanges.splice(j + 1, 0, newQueryRange)
-                }
-                queryRange.setEnd(GUIRange.getStart())
-                j++
-              } else {
-                if (queryRange.getEnd() <= GUIRange.getEnd()) {
-                  // queryRange is completely covered by GUIRange,
-                  //    remove queryRange
-                  mergedGUIRanges.splice(j, 1)
-                } else {
-                  // queryRange has something at the end
-                  queryRange.setStart(GUIRange.getEnd())
-                }
-              }
-            } else if (typeof GUIRange.Resolution === 'number' &&
-              (typeof queryRange.Resolution !== 'number' ||
-                queryRange.Resolution < GUIRange.Resolution
-              )
-            ) {
-              // query has smaller resolution
-              if (queryRange.getStart() <= GUIRange.getStart()) {
-                if (queryRange.getEnd() >= GUIRange.getEnd()) {
-                  // queryRange completely covers GUIRange
-                  // remove GUIRange
-                  GUIRange = null
-                } else {
-                  // GUIRange still has something at the end
-                  GUIRange.setStart(queryRange.getEnd())
-                  j++
-                }
-              } else {
-                if (queryRange.getEnd() < GUIRange.getEnd()) {
-                  // GUIRange will be split into two
-                  // push the earlier GUIRange into mergedGUIRanges
-                  var newGUIRange = GUIRange.clone()
-                  newGUIRange.setEnd(queryRange.getStart())
-                  mergedGUIRanges.splice(j, 0, newGUIRange)
-                  GUIRange.setStart(queryRange.getEnd())
-                  j++
-                } else {
-                  // queryRange has something at the end
-                  GUIRange.setEnd(queryRange.getStart())
-                }
-              }
-            } else {
-              // same resolution, merge the region
-              GUIRange.assimilate(queryRange)
-              mergedGUIRanges.splice(j, 1)
-            }
-          }
-
-          if (GUIRange) {
-            mergedGUIRanges.splice(j, 0, GUIRange.clone())
-          }
-        }
+    _initSettings () {
+      if (!this.getTrackSetting('requestUrl')) {
+        this.setTrackSetting('requestUrl', this.getTrackSetting('isCustom')
+          ? TrackDataObject.fetchCustomTarget
+          : TrackDataObject.fetchDataTarget)
       }
     }
 
-    give._verbConsole.info(mergedGUIRanges)
+    /**
+     * _mergeGUIRegionsByResolution - merge the ranges submitted to the data object
+     * (potentially by different GUI elements, __e.g.__ different view windows) into
+     * one single list.
+     *
+     * The ranges with finer (smaller value) resolution requirements will override
+     * the ranges with coarser ones.
+     *
+     * The result will be a single array of all requested ranges, each with the finest
+     * resolution requirement by the GUI element.
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {Object} unmergedGUIRanges - An `Object` containing all requested
+     * `GIVE.ChromRegion`s, the object should have properties named by its requesting
+     * GUI element and the value being an `Array` of non-overlapping
+     * `GIVE.ChromRegion`s. Resolutions can be provided as the `resolution` property
+     * of the `GIVE.ChromRegion` object. For example:
+     * ```
+     * {
+     *   'bigwig_dom_1': [
+     *     new GIVE.ChromRegion("chr1:12345-67890", species, {resolution: 100}),
+     *     new GIVE.ChromRegion("chr1:123456-789012", species, {resolution: 100})
+     *   ]
+     * }
+     * ```
+     * @returns {Array<ChromRegionLiteral>} An ordered array of merged ranges.
+     */
+    _mergeGUIRegionsByResolution (unmergedGUIRanges) {
+      // this is to generate a single array of ChromRegions, separated by resolution
+      var mergedGUIRanges = []
+      for (var callerID in unmergedGUIRanges) {
+        if (unmergedGUIRanges.hasOwnProperty(callerID)) {
+          for (var i = 0; i < unmergedGUIRanges[callerID].length; i++) {
+            var GUIRange = unmergedGUIRanges[callerID][i]
+            var j = 0
 
-    return mergedGUIRanges
-  }
-
-  /**
-   * _getTrackUncachedRange - get uncached ranges from the data object (Oak tree,
-   * Pine tree, etc.)
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Array<ChromRegionLiteral>} mergedGUIRanges - An ordered,
-   *   non-overlapping list of merged regions, this list can be obtained by
-   *   calling `this._mergeGUIRegionsByResolution()`.
-   * @returns {Array<ChromRegionLiteral>} The list with cached regions removed
-   */
-  give.TrackDataObject.prototype._getTrackUncachedRange = function (mergedGUIRanges) {
-    var totalUncachedRanges = []
-    if (mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
-      mergedGUIRanges.forEach(function (chrRange, index) {
-        if (this.getData(chrRange.chr, true).getUncachedRange) {
-          var uncachedRanges = this.getData(chrRange.chr).getUncachedRange(
-            chrRange, {
-              BufferingRatio: this._getResBufferRatio()
+            while (j < mergedGUIRanges.length &&
+               (mergedGUIRanges[j].chr < GUIRange.chr ||
+                (mergedGUIRanges[j].chr === GUIRange.chr &&
+                 mergedGUIRanges[j].getEnd() <= GUIRange.getStart()))) {
+              j++
             }
-          )
-          totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
-        } else {
-          chrRange.Resolution = typeof chrRange.Resolution === 'number'
-            ? chrRange.Resolution / this._getResBufferRatio()
-            : chrRange.Resolution
-          totalUncachedRanges.push(chrRange)
+
+            while (j < mergedGUIRanges.length && GUIRange &&
+                GUIRange.overlaps(mergedGUIRanges[j])) {
+              // needs to determine which one should take the resolution
+              var queryRange = mergedGUIRanges[j]
+              if (typeof queryRange.Resolution === 'number' &&
+                (typeof GUIRange.Resolution !== 'number' ||
+                  GUIRange.Resolution < queryRange.Resolution
+                )
+              ) {
+                // GUI has smaller resolution
+                if (queryRange.getStart() < GUIRange.getStart()) {
+                  if (queryRange.getEnd() > GUIRange.getEnd()) {
+                    // queryRange is split into two
+                    var newQueryRange = queryRange.clone()
+                    newQueryRange.setStart(GUIRange.getEnd())
+                    mergedGUIRanges.splice(j + 1, 0, newQueryRange)
+                  }
+                  queryRange.setEnd(GUIRange.getStart())
+                  j++
+                } else {
+                  if (queryRange.getEnd() <= GUIRange.getEnd()) {
+                    // queryRange is completely covered by GUIRange,
+                    //    remove queryRange
+                    mergedGUIRanges.splice(j, 1)
+                  } else {
+                    // queryRange has something at the end
+                    queryRange.setStart(GUIRange.getEnd())
+                  }
+                }
+              } else if (typeof GUIRange.Resolution === 'number' &&
+                (typeof queryRange.Resolution !== 'number' ||
+                  queryRange.Resolution < GUIRange.Resolution
+                )
+              ) {
+                // query has smaller resolution
+                if (queryRange.getStart() <= GUIRange.getStart()) {
+                  if (queryRange.getEnd() >= GUIRange.getEnd()) {
+                    // queryRange completely covers GUIRange
+                    // remove GUIRange
+                    GUIRange = null
+                  } else {
+                    // GUIRange still has something at the end
+                    GUIRange.setStart(queryRange.getEnd())
+                    j++
+                  }
+                } else {
+                  if (queryRange.getEnd() < GUIRange.getEnd()) {
+                    // GUIRange will be split into two
+                    // push the earlier GUIRange into mergedGUIRanges
+                    var newGUIRange = GUIRange.clone()
+                    newGUIRange.setEnd(queryRange.getStart())
+                    mergedGUIRanges.splice(j, 0, newGUIRange)
+                    GUIRange.setStart(queryRange.getEnd())
+                    j++
+                  } else {
+                    // queryRange has something at the end
+                    GUIRange.setEnd(queryRange.getStart())
+                  }
+                }
+              } else {
+                // same resolution, merge the region
+                GUIRange.assimilate(queryRange)
+                mergedGUIRanges.splice(j, 1)
+              }
+            }
+
+            if (GUIRange) {
+              mergedGUIRanges.splice(j, 0, GUIRange.clone())
+            }
+          }
         }
-      }, this)
-    }
-    return totalUncachedRanges
-  }
+      }
 
-  /**
-   * _prepareRemoteQuery - Prepare the remote query object
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
-   * @returns {object} - The object being fed to the server via AJAX
-   */
-  give.TrackDataObject.prototype._prepareRemoteQuery = function (regions) {
-    // provide data to mainAjax
-    // for most of the tracks, this is only trackID and window
+      give._verbConsole.info(mergedGUIRanges)
 
-    var getRegionRes = function (region) {
-      return region.Resolution
+      return mergedGUIRanges
     }
 
-    if (this.getTrackSetting('isCustom')) {
-      return {
+    /**
+     * _getTrackUncachedRange - get uncached ranges from the data object (Oak tree,
+     * Pine tree, etc.)
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {Array<ChromRegionLiteral>} mergedGUIRanges - An ordered,
+     *   non-overlapping list of merged regions, this list can be obtained by
+     *   calling `this._mergeGUIRegionsByResolution()`.
+     * @returns {Array<ChromRegionLiteral>} The list with cached regions removed
+     */
+    _getTrackUncachedRange (mergedGUIRanges) {
+      var totalUncachedRanges = []
+      if (mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
+        mergedGUIRanges.forEach(function (chrRange, index) {
+          if (this.getData(chrRange.chr, true).getUncachedRange) {
+            var uncachedRanges = this.getData(chrRange.chr).getUncachedRange(
+              chrRange, {
+                BufferingRatio: this.resBufferRatio
+              }
+            )
+            totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
+          } else {
+            chrRange.Resolution = typeof chrRange.Resolution === 'number'
+              ? chrRange.Resolution / this.resBufferRatio
+              : chrRange.Resolution
+            totalUncachedRanges.push(chrRange)
+          }
+        }, this)
+      }
+      return totalUncachedRanges
+    }
+
+    /**
+     * _prepareRemoteQuery - Prepare the remote query object
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
+     * @returns {object} - The object being fed to the server via AJAX
+     */
+    _prepareRemoteQuery (regions) {
+      // provide data to mainAjax
+      // for most of the tracks, this is only trackID and window
+      let query = {
         db: this.parent.ref.db,
-        type: this.parent.getTypeTrunk(),
+        type: this.parent.typeTrunk,
         remoteURL: this.getTrackSetting('remoteUrl'),
-        window: regions.map(function (region) {
-          return region.regionToString(false)
-        }, this),
-        params: regions.some(getRegionRes, this) ? {
-          resolutions: regions.map(getRegionRes, this)
-        } : null
+        window: regions.map(region => region.regionToString(false)),
       }
-    } else {
-      return {
-        db: this.parent.ref.db,
-        type: this.parent.getTypeTrunk(),
-        trackID: this.parent.getID(),
-        window: regions.map(function (region) {
-          return region.regionToString(false)
-        }, this),
-        params: regions.some(getRegionRes, this) ? {
-          resolutions: regions.map(getRegionRes, this)
-        } : null
+      if (regions.some(region => region.Resolution)) {
+        query.params = {
+          resolutions: regions.map(region => region.Resolution)
+        }
       }
-    }
-  }
-
-  /**
-   * _prepareCustomQuery - Provide data to custom track query.
-   *   for most of the tracks, this is only window (does not need to stringify)
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @returns {Array<ChromRegionLiteral>} The array of query regions
-   */
-  give.TrackDataObject.prototype._prepareCustomQuery = function () {
-    return this._committedRegions
-  }
-
-  /**
-   * fetchData - Get data from this TrackDataObject.
-   *   GUI elements will call this function to see if data in cache need to be
-   *   retrieved, and queue a callback function once data are ready.
-   *   Multiple consecutive calls will be collapsed together to reduce
-   *   computational burden.
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges - The range to
-   *   be queried
-   * @param  {string} callerID - ID of the caller elements, to group consecutive
-   *   calls together
-   */
-  give.TrackDataObject.prototype.fetchData = function (ranges, callerID) {
-    callerID = callerID || give.TrackDataObject._NO_CALLERID_KEY
-
-    if (!Array.isArray(ranges)) {
-      ranges = [ranges]
-    }
-    give._verbConsole.info('fetchData()')
-    give._verbConsole.info(ranges.map(range => range.regionToString()))
-
-    this._pendingRangesById[callerID] = ranges
-
-    if (!this._debouncePromise) {
-      if (this.getDataDebounceInt) {
-        this._debouncePromise = new Promise((resolve, reject) => {
-          setTimeout(resolve, this.getDataDebounceInt)
-        })
+      if (this.getTrackSetting('isCustom')) {
+        query.remoteURL = this.getTrackSetting('remoteUrl')
       } else {
-        this._debouncePromise = Promise.resolve()
+        query.trackID = this.parent.id
       }
-      this._fetchPromise = this._debouncePromise
-        .then(() => this._queryAndRetrieveData())
+      return query
     }
-    return this._fetchPromise
-  }
 
-  /**
-   * getData - Get the actual `this._DataStructure` object representing the
-   *    underlying data. Underlying data are supposed to be ready when this
-   *    method is called.
-   * This method can be overriden to accept `null` if needed
-   *
-   * @param  {string} chrom - The chrom to be requested
-   * @param  {boolean} createIfNotExist - if the data structure is not there
-   *    for the chromosome, create a new data structure if this is `true`,
-   *    throw an exception if this is `false`.
-   * @returns {this._DataStructure|null}       the underlying data
-   *    (or `null` if no data for the track)
-   */
-  give.TrackDataObject.prototype.getData = function (chrom, createIfNotExist) {
-    if (!this._data || !this._data.hasOwnProperty(chrom)) {
-      if (createIfNotExist) {
-        this._data = this._data || {}
-        this._data[chrom] = this._createNewDataStructure(chrom)
-      } else {
-        throw new give.GiveError('Data not ready for track \'' +
-          this.parent.getID() + '\'' + ', chromosome \'' + chrom + '\'.')
+    /**
+     * _prepareCustomQuery - Provide data to custom track query.
+     *   for most of the tracks, this is only window (does not need to stringify)
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @returns {Array<ChromRegionLiteral>} The array of query regions
+     */
+    _prepareCustomQuery () {
+      return this._committedRegions
+    }
+
+    /**
+     * fetchData - Get data from this TrackDataObject.
+     *   GUI elements will call this function to see if data in cache need to
+     *   be retrieved, and queue a callback function once data are ready.
+     *   Multiple consecutive calls will be collapsed together to reduce
+     *   computational burden.
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @async
+     * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges - The
+     *    range(s) to be queried
+     * @param  {string} callerID - ID of the caller elements, to group
+     *    consecutive calls together
+     * @returns {Promise} returns a promise that resolves to `this.parent`
+     *    when data is fetched.
+     */
+    fetchData (ranges, callerID) {
+      callerID = callerID || TrackDataObject._NO_CALLERID_KEY
+
+      if (!Array.isArray(ranges)) {
+        ranges = [ranges]
       }
-    }
-    return this._data[chrom]
-  }
+      give._verbConsole.info('fetchData()')
+      give._verbConsole.info(ranges.map(range => range.regionToString()))
 
-  /**
-   * _queryAndRetrieveData - Merge all unmerged query in
-   *   `this._pendingRangesById`, filter out the cached
-   *   portion, store the results in `this._committedRegions`,
-   *   then proceed with data retrieval
-   * @memberof TrackDataObjectBase.prototype
-   */
-  give.TrackDataObject.prototype._queryAndRetrieveData = function () {
-    if (this._ongoingFetchPromise === this._fetchPromise) {
-      // this will only happen when debounce interval is shorter than fetch
-      // extend the debounce to fetch completion and queue another fetch
-      return this._fetchPromise.then(() => this._queryAndRetrieveData())
-    }
+      this._pendingRangesById[callerID] = ranges
 
-    this._debouncePromise = null
-    this._committedRegions = this._getTrackUncachedRange(
-      this._mergeGUIRegionsByResolution(this._pendingRangesById)
-    )
-    this._pendingRangesById = {}
-    if (this._committedRegions && this._committedRegions.length > 0) {
-      this._ongoingFetchPromise = this._fetchPromise
-      return this._retrieveData(this._committedRegions)
-    }
-  }
-
-  /**
-   * _retrieveData - Retrieve data based on track type (determined by
-   *   `this.getTrackSetting('isCustom')` and
-   *   `this.getTrackSetting('localFile')`)
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
-   */
-  give.TrackDataObject.prototype._retrieveData = function (regions) {
-    // directly from request URL
-    // use iron-ajax to submit request directly
-    // customized components are used in data preparation and data handler
-    // use dataHandler(e, detail) as return handler
-    // callback is in case update is needed
-    // remoteQuery is already prepared or can be provided by regions
-
-    if (this.getTrackSetting('isCustom') && this.getTrackSetting('localFile')) {
-      // if track has its own getLocalData function, then get local data instead of getting remote data
-      return this._readLocalFile(regions)
-      // afterwards it's this.dataHandler()'s job.
-    } else if (this.getTrackSetting('requestUrl')) {
-      return give.postAjax(this.getTrackSetting('requestUrl'),
-        this._prepareRemoteQuery(regions), 'json')
-        .then((response) => this._responseHandler(response))
-    }
-  }
-
-  /**
-   * _createNewDataStructure - create a new data structure and pass in
-   *    necessary parameters based on `this`.
-   *
-   * @param  {string} chrom - chromosomal name of the new data structure.
-   * @returns {this.constructor._DataStructure} - a new data structure for the
-   *    chromosome.
-   */
-  give.TrackDataObject.prototype._createNewDataStructure = function (chrom) {
-    return new this.constructor._DataStructure(
-      this.parent.ref.chromInfo[chrom].chrRegion,
-      {
-        SummaryCtor: this.constructor._SummaryCtor
+      if (!this._debouncePromise) {
+        if (this.getDataDebounceInt) {
+          this._debouncePromise = new Promise((resolve, reject) => {
+            setTimeout(resolve, this.getDataDebounceInt)
+          })
+        } else {
+          this._debouncePromise = Promise.resolve(this.parent)
+        }
+        this._fetchPromise = this._debouncePromise
+          .then(() => this._collapseQueryAndRetrieve())
       }
-    )
-  }
-
-  /**
-   * _responseHandler - Function used to handle remote responses
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {object} response - Responses from remote servers.
-   *   The object should contain chromosomal names as its
-   *   property names, and an array of data entries as the property value.
-   *   For example:
-   *   ```
-   *   {
-   *     'chr10': [
-   *       {
-   *         'genebed': 'chr10 12345 67890 somegene 120 + ...' // BED format
-   *         'geneSymbol': 'someSymbol'
-   *       },
-   *       ...
-   *     ]
-   *   }
-   *   ```
-   *   The detailed format requirements will depend on the implementation of
-   *   both the server-side code and `this._dataHandler`
-   */
-  give.TrackDataObject.prototype._responseHandler = function (response) {
-    this._dataHandler(response, this._committedRegions)
-    if (this._ongoingFetchPromise === this._fetchPromise) {
-      this._fetchPromise = null
+      return this._fetchPromise
     }
-    this._ongoingFetchPromise = null
-    this._committedRegions.length = 0
-  }
 
-  /**
-   * _readLocalFile - description
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
-   */
-  give.TrackDataObject.prototype._readLocalFile = function (regions) {
-    this._localFileHandler(this.localFile, regions)
-    regions.length = 0
-    if (this._ongoingFetchPromise === this._fetchPromise) {
-      this._fetchPromise = null
+    /**
+     * getData - Get the actual `this._DataStructure` object representing the
+     *    underlying data. Underlying data are supposed to be ready when this
+     *    method is called.
+     * This method can be overriden to accept `null` if needed
+     *
+     * @param  {string} chrom - The chrom to be requested
+     * @param  {boolean} createIfNotExist - if the data structure is not there
+     *    for the chromosome, create a new data structure if this is `true`,
+     *    throw an exception if this is `false`.
+     * @returns {this._DataStructure|null}       the underlying data
+     *    (or `null` if no data for the track)
+     */
+    getData (chrom, createIfNotExist) {
+      if (!this._data || !this._data.hasOwnProperty(chrom)) {
+        if (createIfNotExist) {
+          this._data = this._data || {}
+          this._data[chrom] = this._createNewDataStructure(chrom)
+        } else {
+          throw new give.GiveError('Data not ready for track \'' +
+            this.parent.id + '\'' + ', chromosome \'' + chrom + '\'.')
+        }
+      }
+      return this._data[chrom]
     }
-    this._ongoingFetchPromise = null
+
+    /**
+     * _collapseQueryAndRetrieve - Merge all unmerged query in
+     *   `this._pendingRangesById`, filter out the cached
+     *   portion, store the results in `this._committedRegions`,
+     *   then proceed with data retrieval
+     * @memberof TrackDataObjectBase.prototype
+     * @async
+     * @returns {Promise} returns a promise that resolves to `this.parent`
+     *    when data is ready.
+     */
+    _collapseQueryAndRetrieve () {
+      if (this._ongoingFetchPromise === this._fetchPromise) {
+        // this will only happen when debounce interval is shorter than fetch
+        // extend the debounce to fetch completion and queue another fetch
+        return this._fetchPromise.then(() => this._collapseQueryAndRetrieve())
+      }
+
+      this._debouncePromise = null
+      this._committedRegions = this._getTrackUncachedRange(
+        this._mergeGUIRegionsByResolution(this._pendingRangesById)
+      )
+      this._pendingRangesById = {}
+      if (this._committedRegions && this._committedRegions.length > 0) {
+        this._ongoingFetchPromise = this._fetchPromise
+        return this._retrieveData(this._committedRegions)
+      }
+      return Promise.resolve(this.parent)
+    }
+
+    /**
+     * _retrieveData - Retrieve data based on track type (determined by
+     *   `this.getTrackSetting('isCustom')` and
+     *   `this.getTrackSetting('localFile')`)
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
+     *   potential resolutions
+     * @async
+     * @returns {Promise} returns a promise that resolves to `this.parent`
+     *    when data is ready.
+     */
+    _retrieveData (regions) {
+      // directly from request URL
+      // use iron-ajax to submit request directly
+      // customized components are used in data preparation and data handler
+      // use dataHandler(e, detail) as return handler
+      // callback is in case update is needed
+      // remoteQuery is already prepared or can be provided by regions
+
+      if (this.getTrackSetting('isCustom') &&
+        this.getTrackSetting('localFile')
+      ) {
+        // if track has its own getLocalData function, then get local data
+        // instead of getting remote data
+        return new Promise((resolve, reject) => {
+          let reader = new window.FileReader()
+          reader.onload = resolve
+          reader.readAsText(this.getTrackSetting('localFile'))
+        }).then(response => this._responseHandler(
+          this._localFileHandler.bind(this), response
+        ))
+        // afterwards it's this.dataHandler()'s job.
+      } else if (this.getTrackSetting('requestUrl')) {
+        return give.postAjax(this.getTrackSetting('requestUrl'),
+          this._prepareRemoteQuery(regions), 'json'
+        ).then(response => this._responseHandler(
+          this._dataHandler.bind(this), response
+        ))
+      }
+      return Promise.resolve(this.parent)
+    }
+
+    /**
+     * _createNewDataStructure - create a new data structure and pass in
+     *    necessary parameters based on `this`.
+     *
+     * @param  {string} chrom - chromosomal name of the new data structure.
+     * @returns {this.constructor._DataStructure} - a new data structure for the
+     *    chromosome.
+     */
+    _createNewDataStructure (chrom) {
+      return new this.constructor._DataStructure(
+        this.parent.ref.chromInfo[chrom].chrRegion,
+        {
+          SummaryCtor: this.constructor._SummaryCtor
+        }
+      )
+    }
+
+    /**
+     * _responseHandler - Function used to handle remote responses
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {object} response - Responses from remote servers.
+     *   The object should contain chromosomal names as its
+     *   property names, and an array of data entries as the property value.
+     *   For example:
+     *   ```
+     *   {
+     *     'chr10': [
+     *       {
+     *         'genebed': 'chr10 12345 67890 somegene 120 + ...' // BED format
+     *         'geneSymbol': 'someSymbol'
+     *       },
+     *       ...
+     *     ]
+     *   }
+     *   ```
+     *   The detailed format requirements will depend on the implementation of
+     *   both the server-side code and `this._dataHandler`
+     * @returns {TrackObjectBase} returns `this.parent`.
+     */
+    _responseHandler (dataHandler, response) {
+      dataHandler(response, this._committedRegions)
+      if (this._ongoingFetchPromise === this._fetchPromise) {
+        this._fetchPromise = null
+      }
+      this._ongoingFetchPromise = null
+      this._committedRegions.length = 0
+      return this.parent
+    }
+
+    /**
+     * _readRemoteFile - placeholder to read remote URL
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {string} URL - The URL of the remote file
+     * @param  {Array<ChromRegionLiteral>} query - Query regions, including
+     *   potential resolutions
+     */
+    _readRemoteFile (URL, query) {
+      // placeholder to read remote URL
+      // query is the current window (may involve buffering, can be implemented in _prepareCustomQuery)
+      // data will be passed via firing a 'response' event with {detail: data}
+      // and the response will be handled by this._responseHandler(e, detail)
+      //
+      // Notice that to achieve this, CORS needs to be enabled on target server
+      // The fallback method is going through GeNemo server as a proxy
+      return false
+    }
+
+    /**
+     * resBufferRatio - get the buffer ratio of resolution
+     *
+     * @returns {number}  the buffer ratio. For example, 1.2 means the requested
+     *    resolution will be 20% finer than needed.
+     */
+    get resBufferRatio () {
+      return TrackDataObject.RESOLUTION_BUFFER_RATIO
+    }
   }
 
-  /**
-   * _readRemoteFile - placeholder to read remote URL
-   *
-   * @memberof TrackDataObjectBase.prototype
-   * @param  {string} URL - The URL of the remote file
-   * @param  {Array<ChromRegionLiteral>} query - Query regions, including
-   *   potential resolutions
-   */
-  give.TrackDataObject.prototype._readRemoteFile = function (URL, query) {
-    // placeholder to read remote URL
-    // query is the current window (may involve buffering, can be implemented in _prepareCustomQuery)
-    // data will be passed via firing a 'response' event with {detail: data}
-    // and the response will be handled by this._responseHandler(e, detail)
-    //
-    // Notice that to achieve this, CORS needs to be enabled on target server
-    // The fallback method is going through GeNemo server as a proxy
-    return false
-  }
-
-  /**
-   * _getResBufferRatio - get the buffer ratio of resolution
-   *
-   * @returns {number}  the buffer ratio. For example, 1.2 means the requested
-   *    resolution will be 20% finer than needed.
-   */
-  give.TrackDataObject.prototype._getResBufferRatio = function () {
-    return give.TrackDataObject.RESOLUTION_BUFFER_RATIO
-  }
-
-  // Static members for give.TrackDataObject
+  // Static members for TrackDataObject
   // URLs for data retrieval
   /**
    * @property {string} fetchDataTarget - The URL to fetch remote data.
    * @static
    */
-  give.TrackDataObject.fetchDataTarget = give.Host +
+  TrackDataObject.fetchDataTarget = give.Host +
     (give.ServerPath || '/') +
     (give.Trk_FetchDataTarget || 'getTrackData.php')
 
@@ -506,7 +502,7 @@ var GIVe = (function (give) {
    * @property {string} fetchCustomTarget - The URL to fetch custom track data.
    * @static
    */
-  give.TrackDataObject.fetchCustomTarget = give.Host +
+  TrackDataObject.fetchCustomTarget = give.Host +
     (give.ServerPath || '/') +
     (give.Trk_FetchCustomTarget || 'getTrackData.php')
 
@@ -515,27 +511,27 @@ var GIVe = (function (give) {
    *   prefix for debouncing job names.
    * @static
    */
-  give.TrackDataObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
+  TrackDataObject._getDataQueueCallbackID = 'GETDATA_QUEUE_'
 
   /**
    * @property {string} _NO_CALLERID_KEY - Default caller ID if none is provided.
    * @static
    */
-  give.TrackDataObject._NO_CALLERID_KEY = '_giveNoCallerID'
+  TrackDataObject._NO_CALLERID_KEY = '_giveNoCallerID'
 
   /**
    * @property {number} RESOLUTION_BUFFER_RATIO - The default values for buffer
    *   if data at current resolution is not available.
    * @static
    */
-  give.TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.25
+  TrackDataObject.RESOLUTION_BUFFER_RATIO = 1.25
 
   /**
    * @property {number} DEFAULT_DEBOUNCE_INTERVAL - The default values for
    *   debounce interval (in milliseconds) between `fetchData()` calls.
    * @static
    */
-  give.TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
+  TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
 
   /**
    * **************************************************************************
@@ -556,7 +552,7 @@ var GIVe = (function (give) {
    *    object storing all necessary data corresponding to the correct
    *    chromosome. Then use `.insert` to insert the new data entries.
    *
-   *    See documentation for `GIVe.TrackDataObject` for references to
+   *    See documentation for `TrackDataObject` for references to
    *    `this.getData`, and `GIVe.GiveTree` for references to `.insert`.
    *
    * @memberof TrackDataObjectBase.prototype
@@ -576,7 +572,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} queryRegions - Query regions,
    *   including potential resolutions
    */
-  give.TrackDataObject.prototype._dataHandler = function (
+  TrackDataObject.prototype._dataHandler = function (
     response, queryRegions
   ) {
     queryRegions.forEach(function (region, index) {
@@ -619,7 +615,7 @@ var GIVe = (function (give) {
    *   `this._dataFromResponse` or this method is overriden.
    * @returns {ChromRegionLiteral} a `give.ChromRegion` object.
    */
-  give.TrackDataObject._chromEntryFromResponse = function (entry) {
+  TrackDataObject._chromEntryFromResponse = function (entry) {
     var chrRegion = new give.ChromRegion(entry.regionString, this.parent.ref)
     chrRegion.data = ((this.constructor._SummaryCtor &&
       this.constructor._SummaryCtor._testRespEntry(entry))
@@ -645,7 +641,7 @@ var GIVe = (function (give) {
    *   ```
    * @returns {object} return the data object.
    */
-  give.TrackDataObject._dataFromResponse = function (entry) {
+  TrackDataObject._dataFromResponse = function (entry) {
     return entry.data
   }
 
@@ -658,7 +654,7 @@ var GIVe = (function (give) {
    *    extract data from.
    * @returns {object} the data object.
    */
-  give.TrackDataObject._dataFromChromEntry = function (dataEntry) {
+  TrackDataObject._dataFromChromEntry = function (dataEntry) {
     if (!dataEntry.data) {
       give._verbConsole.info('No data in the ChromEntry. Get "' +
         dataEntry.data + '".')
@@ -676,7 +672,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  give.TrackDataObject.prototype._localFileHandler = function (
+  TrackDataObject.prototype._localFileHandler = function (
     localFile, regions
   ) {
   }
@@ -687,7 +683,7 @@ var GIVe = (function (give) {
    * @memberof TrackDataObjectBase
    * @static
    */
-  give.TrackDataObject._SummaryCtor = null
+  TrackDataObject._SummaryCtor = null
 
   /**
    * _DataStructure - Constructor for underlying data structure used in
@@ -696,7 +692,9 @@ var GIVe = (function (give) {
    * @memberof TrackDataObjectBase
    * @static
    */
-  give.TrackDataObject._DataStructure = give.OakTree
+  TrackDataObject._DataStructure = give.OakTree
+
+  give.TrackDataObject = TrackDataObject
 
   /**
    * **************************************************************************
@@ -731,7 +729,7 @@ var GIVe = (function (give) {
 
   /**
    * dataFromChromEntry - extract data object from `give.ChromRegion`.
-   *    This should be the same as `give.TrackDataObject._dataFromChromEntry`
+   *    This should be the same as `TrackDataObject._dataFromChromEntry`
    *    (or the corresponding `TrackDataObject`).
    *
    * @static
@@ -739,7 +737,7 @@ var GIVe = (function (give) {
    * @returns {object} returns the data contained within `entry`.
    */
   give.SummaryCtorBase._dataFromChromEntry = function (entry) {
-    return give.TrackDataObject._dataFromChromEntry(entry)
+    return TrackDataObject._dataFromChromEntry(entry)
   }
 
   /**

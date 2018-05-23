@@ -330,7 +330,7 @@ var GIVe = (function (give) {
      * getType - Get the track type string.
      *   The track type string is inherited from UCSC, where the first keyword
      *   indicates the main track type (which can be retrieved by
-     *   `this.getTypeTrunk()`)
+     *   `this.typeTrunk`)
      *
      * @memberof TrackObjectBase.prototype
      * @returns {string}  The track type string
@@ -342,7 +342,7 @@ var GIVe = (function (give) {
     /**
      * getTypeTrunk - Get the track type keyword.
      *   This is used to get the lowercase keyword of the track type
-     *   (see `this.getType()`).
+     *   (see `this.type`).
      *
      * @memberof TrackObjectBase.prototype
      * @returns {string}  The track type keyword
@@ -352,7 +352,7 @@ var GIVe = (function (give) {
     }
 
     /**
-     * getCleanID - Get the ID that conforms to HTML 4.1
+     * cleanId - Get the ID that conforms to HTML 4.1
      *   Brackets and spaces will be removed in ID.
      *   *Since HTML5 is being required now, this function has been deprecated
      *   and is retained for legacy uses only.*
@@ -360,7 +360,7 @@ var GIVe = (function (give) {
      * @memberof TrackObjectBase.prototype
      * @returns {string}  Cleaned ID
      */
-    get cleanID () {
+    get cleanId () {
       // remove blanks and brackets in IDs to conform to HTML 4.1
       return this._id.replace(/[\s()+/]/g, '')
     }

@@ -340,7 +340,7 @@ var GIVe = (function (give) {
         if (this.dispTrackArray.length > 0) {
           this.htmlCode += '\n  default-track-id-list=\'["' +
             this.dispTrackArray.map(function (track) {
-              return track.getID()
+              return track.id
             }, this).join('", "') + '"]\''
         }
         if (this._coordinatesFilled) {

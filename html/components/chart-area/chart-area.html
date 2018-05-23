@@ -405,7 +405,7 @@ var GIVe = (function (give) {
         this._addSingleWindowTrackDOM(trackDOM, viewWindowIndex)
       }
       this._trackDOMsByWindow[viewWindowIndex]
-        .map[trackDOM.parent.getID()] = true
+        .map[trackDOM.parent.id] = true
     },
 
     _addSingleWindowTrackDOM: function (trackDOM, viewWindowIndex) {
@@ -438,11 +438,11 @@ var GIVe = (function (give) {
     _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
       if (forceAdd || (
         !this._trackDOMsByWindow[viewWindowIndex].map
-          .hasOwnProperty(track.getID()) &&
+          .hasOwnProperty(track.id) &&
         viewWindowIndex + track.windowSpan <= this._viewWindows.length
       )) {
         try {
-          var newTrackDOM = new track._DomObjCtor(track,
+          let newTrackDOM = track.createDomObj(
             this._createTrackProp(viewWindowIndex, props))
           if (newTrackDOM) {
             this._addTrackDOM(newTrackDOM, viewWindowIndex)
