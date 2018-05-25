@@ -242,8 +242,7 @@ var GIVe = (function (give) {
       let query = {
         db: this.parent.ref.db,
         type: this.parent.typeTrunk,
-        remoteURL: this.getTrackSetting('remoteUrl'),
-        window: regions.map(region => region.regionToString(false)),
+        window: regions.map(region => region.regionToString(false))
       }
       if (regions.some(region => region.Resolution)) {
         query.params = {
@@ -251,7 +250,7 @@ var GIVe = (function (give) {
         }
       }
       if (this.getTrackSetting('isCustom')) {
-        query.remoteURL = this.getTrackSetting('remoteUrl')
+        query.remoteUrl = this.getTrackSetting('remoteUrl')
       } else {
         query.trackID = this.parent.id
       }
@@ -384,20 +383,24 @@ var GIVe = (function (give) {
       // use dataHandler(e, detail) as return handler
       // callback is in case update is needed
       // remoteQuery is already prepared or can be provided by regions
-
-      if (this.getTrackSetting('isCustom') &&
-        this.getTrackSetting('localFile')
-      ) {
-        // if track has its own getLocalData function, then get local data
-        // instead of getting remote data
-        return new Promise((resolve, reject) => {
-          let reader = new window.FileReader()
-          reader.onload = resolve
-          reader.readAsText(this.getTrackSetting('localFile'))
-        }).then(response => this._responseHandler(
-          this._localFileHandler.bind(this), response
+      if (this.getTrackSetting('isCustom')) {
+        let customProm
+        if (this.getTrackSetting('localFile')) {
+          // if track has its own getLocalData function, then get local data
+          // instead of getting remote data
+          customProm = new Promise((resolve, reject) => {
+            let reader = new window.FileReader()
+            reader.onload = resolve
+            reader.readAsText(this.getTrackSetting('localFile'))
+          })
+          // afterwards it's this.dataHandler()'s job.
+        } else {
+          // a custom track with a remote URL
+          customProm = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
+        }
+        return customProm.then(response => this._responseHandler(
+          this._fileHandler.bind(this), response
         ))
-        // afterwards it's this.dataHandler()'s job.
       } else if (this.getTrackSetting('requestUrl')) {
         return give.postAjax(this.getTrackSetting('requestUrl'),
           this._prepareRemoteQuery(regions), 'json'
@@ -463,18 +466,35 @@ var GIVe = (function (give) {
      *
      * @memberof TrackDataObjectBase.prototype
      * @param  {string} URL - The URL of the remote file
-     * @param  {Array<ChromRegionLiteral>} query - Query regions, including
-     *   potential resolutions
+     * @param  {Array<Number>} range - The range of the file (in bytes)
+     * @returns {Promise} A promise that resolves to the content of the remote
+     *    URL.
      */
-    _readRemoteFile (URL, query) {
+    _readRemoteFile (url, range) {
       // placeholder to read remote URL
-      // query is the current window (may involve buffering, can be implemented in _prepareCustomQuery)
-      // data will be passed via firing a 'response' event with {detail: data}
+      // query is the current window (may involve buffering, can be implemented
+      // in _prepareCustomQuery)
+      // data will be passed via the resolution of the promise
       // and the response will be handled by this._responseHandler(e, detail)
       //
       // Notice that to achieve this, CORS needs to be enabled on target server
       // The fallback method is going through GeNemo server as a proxy
-      return false
+      return give.postAjax(url, null, 'blob').catch(err => {
+        // this is used to handle CORS-related errors
+        if (err.status && err.status >= 400) {
+          // re-route the request through target server
+          // TODO: implement this "proxy-ish" behavior on `/givdata`
+          return give.postAjax(
+            this.getTrackSetting('requestUrl'), {
+              remoteUrl: url,
+              range: range || null
+            },
+            'blob'
+          )
+        } else {
+          throw (err)
+        }
+      })
     }
 
     /**
@@ -672,7 +692,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  TrackDataObject.prototype._localFileHandler = function (
+  TrackDataObject.prototype._fileHandler = function (
     localFile, regions
   ) {
   }

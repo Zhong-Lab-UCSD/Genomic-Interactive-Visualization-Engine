@@ -72,7 +72,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  give.BigWigTrackData.prototype._localFileHandler = function (
+  give.BigWigTrackData.prototype._fileHandler = function (
     localFile, regions
   ) {
     var reader = new window.FileReader()

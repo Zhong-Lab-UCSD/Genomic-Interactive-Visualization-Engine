@@ -59,7 +59,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.InteractionTrackData.prototype._localFileHandler = function (
+  give.InteractionTrackData.prototype._fileHandler = function (
     localFile, regions
   ) {
     // placeholder to read local file content

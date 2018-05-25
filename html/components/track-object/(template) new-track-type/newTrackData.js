@@ -168,7 +168,7 @@ var GIVe = (function (give) {
    * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
    *   potential resolutions
    */
-  give.NewTrackData.prototype._localFileHandler = function (localFile, regions) {
+  give.NewTrackData.prototype._fileHandler = function (localFile, regions) {
     // var reader = new window.FileReader()
     // var result = {}
     // reader.onload = function (e) {

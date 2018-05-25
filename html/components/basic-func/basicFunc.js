@@ -231,7 +231,7 @@ var GIVe = (function (give) {
   }
 
   give.postAjax = give.postAjax || function (
-    target, params, responseType, method
+    target, params, responseType, method, additionalHeaders
   ) {
     // this is a wrapper for Ajax calls throughout
     return new Promise((resolve, reject) => {
@@ -246,30 +246,36 @@ var GIVe = (function (give) {
             !!(navigator.userAgent.match(/Trident/) ||
                navigator.userAgent.match(/rv 11/)))) {
             // IE detected (should be IE 11), fix the json return issue
-            let errorMsg = 'You are currently using IE 11 to visit this site. ' +
-              'Some part of the site may behave differently and if you ' +
-              'encounter any problems, please use the info on \'About us\' ' +
-              'page to contact us.'
+            let errorMsg = 'You are currently using IE 11 to visit this ' +
+              'site. Some part of the site may behave differently and if ' +
+              'you encounter any problems, please use the info on ' +
+              '\'About us\' page to contact us.'
             give._verbConsole.error(errorMsg)
             give.fireSignal('warning', { msg: errorMsg })
             responses = JSON.parse(responses)
           }
           resolve(responses)
         } else {
-          reject(new give.GiveError('Connection error (' + this.status + ')' +
-            this.response ? ': ' + this.response : ''))
+          let err = new give.GiveError('Connection error (' + this.status +
+            ')' + this.response ? ': ' + this.response : '')
+          err.status = this.status
+          reject(err)
         }
       }
-      xhr.onerror = function () {
-        reject(new give.GiveError('Connection error (' + this.status + ')' +
-          this.response ? ': ' + this.response : ''))
+      xhr.onerror = () => {
+        let err = new give.GiveError('Connection error (' + this.status + ')' +
+          this.response ? ': ' + this.response : '')
+        err.status = this.status
+        reject(err)
       }
       xhr.open(method, target)
       if (params instanceof window.FormData) {
         xhr.send(params)
-      } else {
+      } else if (params) {
         xhr.setRequestHeader('Content-Type', 'application/json')
         xhr.send(JSON.stringify(params))
+      } else {
+        xhr.send()
       }
     })
   }

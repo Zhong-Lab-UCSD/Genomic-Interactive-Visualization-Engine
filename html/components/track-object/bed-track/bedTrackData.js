@@ -87,7 +87,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.BedTrackData.prototype._localFileHandler = function (e, regions) {
+  give.BedTrackData.prototype._fileHandler = function (e, regions) {
     // placeholder to read local file content
     // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
     // data will be passed via firing a 'response' event with {detail: data}
