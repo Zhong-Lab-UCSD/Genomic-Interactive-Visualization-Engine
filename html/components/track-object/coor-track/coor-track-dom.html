@@ -75,7 +75,7 @@ var GIVe = (function (give) {
     }
 
     constructor (track, properties) {
-      super(track, properties)
+      super(...arguments)
       this.MIN_TICK_GAP = 100
       this.MIN_TICK_TEXT_MARGIN = 50
       this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50

@@ -181,7 +181,7 @@ var GIVe = (function (give) {
 
   class BedTrackDom extends give.TrackDom {
     constructor (track, prop) {
-      super(track, prop)
+      super(...arguments)
       /**
        * @property {number} GENE_MARGIN
        * margin size between genes when gene name is shown. Unit in px.

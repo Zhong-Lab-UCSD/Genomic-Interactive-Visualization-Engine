@@ -41,7 +41,7 @@ var GIVe = (function (give) {
 
   class BigWigTrackDom extends give.TrackDom {
     constructor (track, props) {
-      super(track, props)
+      super(...arguments)
       this.MARGIN = 2
       this.FORECOLOR_INDEX = 0 // the color index for fore color
       this.TEXT_COLOR_RGB = 0 // the color index for text

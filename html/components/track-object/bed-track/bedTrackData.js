@@ -27,218 +27,109 @@ var GIVe = (function (give) {
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
    */
-  give.BedTrackData = function (parent) {
-    give.TrackDataObject.apply(this, arguments)
-  }
-
-  give.extend(give.TrackDataObject, give.BedTrackData)
-
-  give.BedTrackData.prototype._dataHandler = function (res, regions) {
-    // this is to handle data within response
-    // return data should be already sorted by chrom and start
-
-    // first, purge buffer if different chromosome
-    //      for(var chrom in this.data) {
-    //        if(this.data.hasOwnProperty(chrom) && !res.hasOwnProperty(chrom)) {
-    //          // not the same chromosome
-    //          delete this.data[chrom];
-    //        }
-    //      }
-    var resChromEntryFunc = function (geneArray, geneNameMap, resChromEntry) {
-      var newGene = new give.GeneObject(
-        new give.TranscriptObject(resChromEntry.geneBed,
-          this.parent.ref,
-          resChromEntry.attr
+  class BedTrackData extends give.TrackDataObject {
+    /**
+     * _dataHandler - This should be the detailed implementation about how to
+     *    handle the responses from server
+     *
+     *    When implementing this method, use `this.getData` to get the `GiveTree`
+     *    object storing all necessary data corresponding to the correct
+     *    chromosome. Then use `.insert` to insert the new data entries.
+     *
+     *    See documentation for `TrackDataObject` for references to
+     *    `this.getData`, and `GIVe.GiveTree` for references to `.insert`.
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {object} response - Responses from remote servers.
+     *   The object should contain chromosomal region strings as its
+     *   property names, and an array of data entries as the property value.
+     *   For example:
+     *   ```
+     *   {
+     *     'chr10:1-1000000': [
+     *       <response entry>,
+     *       ...
+     *     ]
+     *   }
+     *   ```
+     *   See `this._chromEntryFromResponse` for details of `<response entry>`.
+     * @param  {Array<ChromRegionLiteral>} queryRegions - Query regions,
+     *   including potential resolutions
+     */
+    _dataHandler (res, regions) {
+      // this is to handle data within response
+      // return data should be already sorted by chrom and start
+      let resChromEntryFunc = (geneArray, geneNameMap, resChromEntry) => {
+        let newGene = new give.GeneObject(
+          new give.TranscriptObject(resChromEntry.geneBed,
+            this.parent.ref,
+            resChromEntry.attr
+          )
         )
-      )
-      if (this.parent.typeTrunk.indexOf('gene') > -1) {
-        // is some gene oriented type
-        // check if it overlaps with existing gene(s)
-        // because the gene list is sorted by start,
-        //    whenever it doesn't overlap with the current gene
-        //    it will become a new gene entry.
-        if (!geneNameMap.hasOwnProperty(newGene.name) ||
-          !geneNameMap[newGene.name].merge(newGene)
-        ) {
+        if (this.parent.typeTrunk.indexOf('gene') > -1) {
+          // is some gene oriented type
+          // check if it overlaps with existing gene(s)
+          // because the gene list is sorted by start,
+          //    whenever it doesn't overlap with the current gene
+          //    it will become a new gene entry.
+          if (!geneNameMap.hasOwnProperty(newGene.name) ||
+            !geneNameMap[newGene.name].merge(newGene)
+          ) {
+            geneArray.push(newGene)
+            geneNameMap[newGene.name] = newGene
+          }
+        } else {
           geneArray.push(newGene)
-          geneNameMap[newGene.name] = newGene
         }
-      } else {
-        geneArray.push(newGene)
       }
-    }
 
-    for (var chrom in res) {
-      var regionsInChrom = regions.filter(function (region) {
-        return region.chr === chrom
-      }, this)
-      if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
-        Array.isArray(res[chrom])
-      ) {
-        var geneNameMap = {}
-        var geneArray = []
-        res[chrom].forEach(
-          resChromEntryFunc.bind(this, geneArray, geneNameMap), this
-        )
-        // then populate the B+ Tree with geneArray
-        this.getData(chrom, true).insert(
-          geneArray.sort(give.ChromRegion.compareChrRegion), regionsInChrom)
-      }
-    }
-  }
-
-  give.BedTrackData.prototype._fileHandler = function (e, regions) {
-    // placeholder to read local file content
-    // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-    // data will be passed via firing a 'response' event with {detail: data}
-    // and the response will be handled by this.responseHandler(e, detail)
-
-    // BED file implementation:
-    //    brutal force going through the file to find regions that intersect the query region
-    //    return the lines filtered
-    //    currently using FileReader.readAsText(), may change into better adaptations for bigger files
-    //      like in http://matthewmeye.rs/blog/post/html5-line-reader/
-    //      or    http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
-
-    var result = {}
-    var lines = e.target.result.split(/\r\n|\r|\n/g)
-    lines.forEach(function (line) {
-      var transcript = new give.TranscriptObject(line)
-      if (regions.some(function (region) {
-        return transcript.overlaps(region)
-      }, this)) {
-        // needs to push this line to result
-        if (!result.hasOwnProperty(transcript.chr)) {
-          result[transcript.chr] = []
-        }
-        result[transcript.chr].push({geneBed: line})
-      }
-    }, this)
-    return this._dataHandler(result, regions)
-  }
-
-  /**
-   * _SummaryCtor - Constructor of summary data
-   * @constructor
-   * @memberof BedTrackData.prototype
-   *
-   * @class BedTrackData.prototype._SummaryCtor
-   *
-   * @property {number} summaryLength - length of the summary
-   * @property {number} thickRangeRate - rate of thick ranges, total bases
-   *    covered by thick ranges (multiple ranges will be counted as well) over
-   *    summary length.
-   * @property {number} thinRangeRate - rate of thin ranges
-   * @property {number} gapRate - rate of gaps
-   */
-  give.BedTrackData.prototype._SummaryCtor = function (node, oldSummary) {
-    if (oldSummary) {
-      this.summaryLength = oldSummary.summaryLength || node.getLength()
-      this.thickRangeRate = oldSummary.thickRangeRate || 0
-      this.thinRangeRate = oldSummary.thinRangeRate || 0
-      this.gapRate = oldSummary.gapRate || 0
-      this.value = oldSummary.value ||
-        (this.thickRangeRate + this.thinRangeRate + this.gapRate) /
-        this.summaryLength
-    } else {
-      this.summaryLength = node.getLength()
-      this.thickRangeRate = 0
-      this.thinRangeRate = 0
-      this.gapRate = 0
-      this.value = 0
-    }
-  }
-
-  give.BedTrackData.prototype._SummaryCtor.prototype.addSummary = function (
-    node, summary
-  ) {
-    this.thickRangeRate += summary.thickRangeRate * summary.summaryLength /
-      this.summaryLength
-    this.thinRangeRate += summary.thinRangeRate * summary.summaryLength /
-      this.summaryLength
-    this.gapRate += summary.gapRate * summary.summaryLength /
-      this.summaryLength
-    this.value = (this.thickRangeRate + this.thinRangeRate + this.gapRate) /
-      this.summaryLength
-  }
-
-  give.BedTrackData.prototype._SummaryCtor.prototype.addData = function (
-    node, data
-  ) {
-    // data can be either a summary or actual components
-    // TODO: if data supports data.getLength(), use data.getLength() instead
-    if (data instanceof this.constructor) {
-      this.addSummary(data)
-    } else {
-      // the data is a BED entry, add all its elements into the summary
-
-      // helper function for a single block
-      var _processSingleBlock = function (
-        blockStart, blockEnd, thickStart, thickEnd
-      ) {
-        var isThick = false
-        // truncate blockStart and blockEnd
-        if (blockStart < node.getStart()) {
-          blockStart = node.getStart()
-        }
-        if (blockEnd > node.getEnd()) {
-          blockEnd = node.getEnd()
-        }
-
-        if (typeof thickStart === 'number' ||
-          typeof thickEnd === 'number'
+      for (let chrom in res) {
+        let regionsInChrom = regions.filter(region => (region.chr === chrom))
+        if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
+          Array.isArray(res[chrom])
         ) {
-          // there is a thick and thin region
-          if (thickStart < blockEnd && thickStart > blockStart) {
-            // CDS start is in this block
-            this.thinRangeRate += (thickStart - blockStart) / this.summaryLength
-            blockStart = thickStart
-          }
-          if (thickEnd < blockEnd && thickEnd > blockStart) {
-            // CDS end is in this block
-            this.thickRangeRate += (thickEnd - blockStart) / this.summaryLength
-            blockStart = thickEnd
-          }
-          isThick = (thickStart < blockEnd) && (thickEnd > blockStart)
-        } else {
-          isThick = true
+          let geneNameMap = {}
+          let geneArray = []
+          res[chrom].forEach(
+            entry => resChromEntryFunc(geneArray, geneNameMap, entry)
+          )
+          // then populate the B+ Tree with geneArray
+          this.getData(chrom, true).insert(
+            geneArray.sort(give.ChromRegion.compareChrRegion), regionsInChrom)
         }
-        if (isThick) {
-          this.thickRangeRate += (blockEnd - blockStart) / this.summaryLength
-        } else {
-          this.thinRangeRate += (blockEnd - blockStart) / this.summaryLength
-        }
-      }.bind(this)
-
-      if (data.getNumOfBlocks && data.getNumOfBlocks()) {
-        // there are blocks within data, so fill in the gaps first
-        var currLoc = null
-        for (var i = 0; i < data.getNumOfBlocks(); i++) {
-          var blockStart = data.getStart() + data.getBlockStarts()[i]
-          var blockEnd = blockStart + data.getBlockSizes[i]
-          if (typeof (currLoc) === 'number' && currLoc < blockStart) {
-            this.gapRate += (blockStart - currLoc) / this.summaryLength
-            currLoc = blockEnd
-          }
-          _processSingleBlock(blockStart, blockEnd,
-            data.thickStart, data.thickEnd)
-        }
-      } else {
-        _processSingleBlock(data.getStart(), data.getEnd(),
-          data.thickStart, data.thickEnd)
       }
-      this.value = (this.thickRangeRate + this.thinRangeRate + this.gapRate) /
-        this.summaryLength
+    }
+
+    _fileHandler (res, regions) {
+      // placeholder to read local file content
+      // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+      // data will be passed via firing a 'response' event with {detail: data}
+      // and the response will be handled by this.responseHandler(e, detail)
+
+      // BED file implementation:
+      //    brutal force going through the file to find regions that intersect the query region
+      //    return the lines filtered
+      //    currently using FileReader.readAsText(), may change into better adaptations for bigger files
+      //      like in http://matthewmeye.rs/blog/post/html5-line-reader/
+      //      or    http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
+
+      let result = {}
+      let lines = res.split(/\r\n|\r|\n/g)
+      lines.forEach(line => {
+        let transcript = new give.TranscriptObject(line)
+        if (regions.some(region => transcript.overlaps(region))) {
+          // needs to push this line to result
+          if (!result.hasOwnProperty(transcript.chr)) {
+            result[transcript.chr] = []
+          }
+          result[transcript.chr].push({geneBed: line})
+        }
+      })
+      return this._dataHandler(result, regions)
     }
   }
 
-  /**
-   * _DataStructure - Constructor for underlying data structure used in
-   *   `this._data`. Default value is `GIVE.OakTree`
-   * @constructor
-   * @memberof TrackDataObjectBase.prototype
-   */
-  // give.BedTrackData.prototype._DataStructure = give.PineTree
+  give.BedTrackData = BedTrackData
 
   return give
 })(GIVe || {})

@@ -40,7 +40,7 @@ var GIVe = (function (give) {
 
   class InteractionTrackDom extends give.TrackDom {
     constructor (track, properties) {
-      super(track, properties)
+      super(...arguments)
       this.MAX_FILL_OPACITY = 0.3
       properties = properties || {}
 

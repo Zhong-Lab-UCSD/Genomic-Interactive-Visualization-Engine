@@ -63,6 +63,10 @@ var GIVe = (function (give) {
         : null
     }
 
+    get ref () {
+      return this._ref
+    }
+
     get windowSpan () {
       return this.getSetting('windowSpan') || this.constructor._getWindowSpan()
     }
