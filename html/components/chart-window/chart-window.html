@@ -89,7 +89,9 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       </div>
     </div>
     <template is="dom-if" if="[[showTutorial]]">
-      <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
+      <tutorial-highlight id="coorTrackTutorial"
+        tutorial-key="coor-track-tutorial"
+        dom-target-id="[[_coorDomSvgId]]">
         <div>
           You may use mouse wheel within the coordinate track to zoom in/out, drag any track to move.
         </div>
@@ -110,6 +112,9 @@ var GIVe = (function (give) {
       this.resizeDebounceInt = 400
       // this.resizeJobName = 'RESIZE'
       this.resizeAsyncProcess = null
+      this._trackDomHolder = []
+      this._hiddenTrackDomHolder = []
+      this._addedSvgOrderMap = new Map()
     }
 
     static get properties () {
@@ -117,7 +122,7 @@ var GIVe = (function (give) {
         /**
          * The view windows to display in the element.
          * The members of the properties should be `GIVE.ChromRegion` Objects
-         * @type {Array.<GIVe.ChromRegion>}
+         * @type {GIVe.ChromRegion}
          */
         _viewWindow: {
           type: Object,
@@ -134,25 +139,9 @@ var GIVe = (function (give) {
           value: 1
         },
 
-        _trackDomHolder: {
-          type: Array,
-          value () {
-            return []
-          }
-        },
-
-        _hiddenTrackDomHolder: {
-          type: Array,
-          value () {
-            return []
-          }
-        },
-
-        _addedSvgOrderMap: {
-          type: Object,
-          value () {
-            return {}
-          }
+        _coorDomSvgId: {
+          type: String,
+          value: ''
         },
 
         _svgSizes: {
@@ -168,39 +157,8 @@ var GIVe = (function (give) {
         },
 
         /**
-         * The array holding trackDoms for every view window.
-         * The member of the array should be Objects with the following properties:
-         * * `pinAbove`: An array of track DOMs that will be pinned at the top of the view window;
-         * * `scrolling`: An array of track DOMs that will appear in the scrolling part;
-         * * `pinBelow`: An array of track DOMs that will be pinned at the bottom of the view window;
-         * * `pinInBetween`: *(optional)* An array of track DOMs that will appear in the space between
-         *                    this view window and the next one;
-         * * `map`: An Object used for id-to-DOM lookups;
-         * * `hiddenTrackComponents`: An array of track DOMs that are hidden and never displayed;
-         *                            (this is mainly used for cross-view-window tracks because
-         *                             it will only display once but will receive update signal
-         *                             from multiple views)
-         * * `divId`: The id of the `<div>` tag for the view window.
-         * Please refer to `this._initDOMArray()` for details.
-         * @type {Array.<{
-         *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-         *   scrolling: Array.<GIVe.TrackDomBehavior>,
-         *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-         *   map: Object,
-         *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-         * }>}
-         */
-        _trackDomsByWindow: {
-          type: Array,
-          value () {
-            return []
-          }
-        },
-
-        /**
-         * The view windows to display in the element, in coordinate format.
+         * The view window to display in the element, in coordinate format.
          * This is for HTML attributes
-         * @type {Array.<string>}
          */
         coordinate: {
           type: String,
@@ -277,6 +235,9 @@ var GIVe = (function (give) {
       if (this.defaultTrackIdList.length > 0) {
         this._needOverrideDefault = true
       }
+
+      this._initDOMCoorTrack()
+
       this.addEventListener('iron-resize', this._onIronResize)
       this.addEventListener('track-ready', this._trackReadyHandler)
       this.addEventListener('update-window', this._updateWindowHandler)
@@ -348,13 +309,12 @@ var GIVe = (function (give) {
     }
 
     _addTrackDomSvg (trackDom) {
-      if (!this._addedSvgOrderMap.hasOwnProperty(trackDom.parent.id)) {
+      if (!this._addedSvgOrderMap.has(trackDom.parent.id)) {
         let slotId = this._getSlotId(trackDom)
         if (slotId) {
           this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
             .appendChild(trackDom.TrackSvg)
-          this._addedSvgOrderMap[trackDom.parent.id] =
-            this._svgSizes[slotId]
+          this._addedSvgOrderMap.set(trackDom.parent.id, this._svgSizes[slotId])
           this._svgSizes[slotId]++
         }
         return slotId
@@ -362,40 +322,11 @@ var GIVe = (function (give) {
       return null
     }
 
-    // _pushSingleWindowTrackDom (trackDom, viewWindowIndex) {
-    //   var holder
-    //   if (trackDom.pin === 'top') {
-    //     holder = this._trackDomsByWindow[viewWindowIndex].pinAbove
-    //   } else if (trackDom.pin === 'bottom') {
-    //     holder = this._trackDomsByWindow[viewWindowIndex].pinBelow
-    //   } else {
-    //     holder = this._trackDomsByWindow[viewWindowIndex].scrolling
-    //   }
-    //   holder.splice(
-    //     give.locationOf(trackDom, holder, null, null,
-    //       function (trackDom1, trackDom2) {
-    //         return give.TrackObject.comparePriorities(trackDom1.parent,
-    //           trackDom2.parent, this._refObj.groups)
-    //       }.bind(this)
-    //     ) + 1, 0, trackDom)
-    // }
-    //
-    // _addMultiWindowTrackDom (trackDom, viewWindowIndex) {
-    //   // actually this will enum all viewWindowIndices
-    //   this._trackDomsByWindow[viewWindowIndex].pinInBetween.push(trackDom)
-    //   for (var i = 1; i < trackDom.parent.windowSpan; i++) {
-    //     this._trackDomsByWindow[viewWindowIndex + i]
-    //       .hiddenTrackComponents.push(trackDom)
-    //   }
-    // }
-    //
-    _addVisibleTrack (track, forceAdd, props) {
-      if (forceAdd ||
-        !this._addedSvgOrderMap.hasOwnProperty(track.id)
-      ) {
+    _addVisibleTrack (track, props) {
+      if (!this._addedSvgOrderMap.hasOwnProperty(track.id)) {
         try {
           let newTrackDom = track.createDomObj(this._createTrackProp(props))
-          this._addTrackDom(newTrackDom)
+          this._trackDomHolder.push(newTrackDom)
           return newTrackDom
         } catch (err) {
           give._verbConsole.warn(err)
@@ -426,18 +357,16 @@ var GIVe = (function (give) {
       }
       if (changeWindow) {
         this.fire('update-coordinate', {
-          newWindow: this.getViewWindowStrings()
+          newWindow: this.getViewWindowString()
         })
       }
       delete this.resizeAsyncProcess
     }
 
     /**
-     * Refresh all tracks in a certain view or all views
-     *
-     * @param  {number|null} index - The index for the view being updated, use null for all views
+     * Refresh all tracks in the view
      */
-    _updateTracks (index) {
+    _updateTracks () {
       // index is the window index
       // only need to update tracks involved with that index
       if (typeof index === 'number') {
@@ -475,7 +404,7 @@ var GIVe = (function (give) {
       ) {
         this.updateHeightLocation()
         try {
-          if (this._firstRun && this.coorTrackZeroDOM &&
+          if (this._firstRun && this.showTutorial &&
             this.coorTrackZeroDOM.getTrackSvg()
           ) {
             this.$.coorTrackTutorial.domTargetId =
@@ -506,11 +435,11 @@ var GIVe = (function (give) {
       this._viewWindow = viewWindow.clone()
       this.coordinate = viewWindow.regionToString(false)
       if (this._initialized) {
-        this._updateTracksInWindow(index)
+        this._updateTracks()
       } else {
         this._checkVWindowsInit()
       }
-      return this._viewWindows[index].regionToString(false)
+      return this.coordinate
     }
 
     /**
@@ -518,12 +447,11 @@ var GIVe = (function (give) {
      * Range may be cropped if it exceed the maximum range allowed by the reference.
      *
      * @param  {string|ChromRegionLiteral} viewWindow - The range to change into.
-     * @param  {number} index - Index of the viewWindow.
      * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
      * @return {string} The actual range (may be cropped by reference),
      *                   converted to string.
      */
-    changeViewWindow (viewWindow, index, forceDomReset) {
+    changeViewWindow (viewWindow, forceDomReset) {
       if (forceDomReset) {
         this._initialized = false
       }
@@ -538,56 +466,13 @@ var GIVe = (function (give) {
         } else {
           err.data = err.data || {}
           err.data.updatedCoor =
-            (this._viewWindows[index] &&
-              this._viewWindows[index].regionToString
-            ) ? this._viewWindows[index].regionToString(false) : null
+            (this._viewWindow &&
+              this._viewWindow.regionToString
+            ) ? this._viewWindow.regionToString(false) : null
           throw err
         }
       }
-      return this._changeViewWindowObj(viewWindowObj, index)
-    }
-
-    /**
-     * Change ranges in all views at once
-     *
-     * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
-     * @return {Array<string>} The actual ranges, converted to `string`.
-     */
-    changeAllViewWindows (viewWindows) {
-      var exceptionList = []
-      var viewWindowObjs = viewWindows.map(function (vWindow, index) {
-        var vWindowObj = null
-        try {
-          vWindowObj = new give.ChromRegion(vWindow, this._refObj)
-        } catch (err) {
-          exceptionList.push(index, err)
-        }
-        return vWindowObj
-      }, this)
-      if (exceptionList.length > 0) {
-        // some exception has happended during the conversion
-        // throw an exception telling calling procedures
-        if (this.passExceptions) {
-          var error = new give.GiveError('Exception occured during' +
-            ' ChromRegion conversion.')
-          error.data = error.data || {}
-          error.data.exceptionList = exceptionList
-          error.data.updatedCoors = viewWindowObjs.map(
-            function (vWindowObj) {
-              return ((vWindowObj && vWindowObj.regionToString)
-                ? vWindowObj.regionToString(false) : null)
-            }
-          )
-          throw error
-        } else {
-          // TODO: gracefully handle the exception
-        }
-      } else {
-        viewWindowObjs.forEach(function (vwindow, index) {
-          this._changeViewWindowObj(vwindow, index)
-        }, this)
-      }
-      return this.getViewWindowStrings()
+      return this._changeViewWindowObj(viewWindowObj)
     }
 
     _changeThreshold (_threshold) {
@@ -608,7 +493,7 @@ var GIVe = (function (give) {
       if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
         // only update _threshold only
         this._changeThreshold(threshold)
-        return this.getViewWindowStrings()
+        return this.getViewWindowString()
       } else {
         this._threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this._threshold)
         if (viewWindows) {
@@ -617,7 +502,7 @@ var GIVe = (function (give) {
           this._updateTracks()
         }
       }
-      return this.getViewWindowStrings()
+      return this.getViewWindowString()
     }
 
     /**
@@ -625,7 +510,7 @@ var GIVe = (function (give) {
      *
      * @returns {Array<string>} The ranges, converted to `string`.
      */
-    getViewWindowStrings () {
+    getViewWindowString () {
       return this._viewWindows.map(function (vwindow, index) {
         return vwindow.regionToString(false)
       }, this)
@@ -689,48 +574,15 @@ var GIVe = (function (give) {
       this._checkVWindowsInit()
     }
 
-    _initDOMArray () {
-      // this is the array for visible tracks by window
-      // notice that this is an array of array
-      // tracks are grouped by its corresponding viewWindow Index
-      this._trackDomsByWindow = []
-      if (this._viewWindows.length > 0) {
-        this._domsReady = false
-      }
-      for (var i = 0; i < this._viewWindows.length; i++) {
-        var newTrackDomEntry = {
-          pinAbove: [],
-          scrolling: [],
-          pinBelow: [],
-          map: {},
-          divId: give.ChartArea.DOM_DIV_ID + i
-        }
-        if (i < this._viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
-          newTrackDomEntry.pinInBetween = []
-        }
-        if (i > 0) {
-          newTrackDomEntry.hiddenTrackComponents = []
-        }
-        this.push('_trackDomsByWindow', newTrackDomEntry)
-      }
-      this.$.trackSvgHolders.render()
-    }
-
-    _initDOMCoorTracks () {
+    _initDOMCoorTrack () {
       if (this._refObj) {
-        this._viewWindows.forEach(function (vwindow, windowIndex) {
-          // coordinate track
-          var coorTrackDom = this._addVisibleTrack(
-            give.TrackObject.createTrack(
-              'coor_' + this._refObj.db + '_' + windowIndex,
-              this._createTrackProp(windowIndex,
-                { type: 'coordinate', priority: 0 }
-              ), this._refObj
-            ), windowIndex)
-          if (!windowIndex) {
-            this.coorTrackZeroDOM = coorTrackDom
-          }
-        }, this)
+        let coorTrack = give.TrackObject.createTrack(
+          'coor_' + this._refObj.db,
+          this._createTrackProp({ type: 'coordinate', priority: 0 }),
+          this._refObj
+        )
+        coorTrack.effPriority = this.constructor.COOR_TRACK_EFF_PRIORITY
+        this._coorDomSvgId = this._addVisibleTrack(coorTrack).trackSvg.id
       }
     }
 
@@ -740,7 +592,7 @@ var GIVe = (function (give) {
     resetDOM () {
       if (this._initialized) {
         this._readiness = false
-        this._initDOMArray()
+        this.addAllTrackDoms()
       } else {
         this._readiness = true
       }
@@ -995,52 +847,19 @@ var GIVe = (function (give) {
         if (e.detail.newWindow instanceof give.ChromRegion ||
           typeof e.detail.newWindow === 'string'
         ) {
-          var windowIndex =
-            (!isNaN(parseInt(e.detail.windowIndex)) &&
-              parseInt(e.detail.windowIndex) >= 0)
-              ? parseInt(e.detail.windowIndex)
-              : 0
-          this.changeViewWindow(e.detail.newWindow, windowIndex,
-            !!(e.detail.tracks))
+          this.changeViewWindow(e.detail.newWindow, !!(e.detail.tracks))
           this.fire('update-coordinate', {
-            windowIndex: windowIndex,
+            windowIndex: this.index,
             newWindow: e.detail.newWindow
           })
         }
       } catch (err) {
-        console.log(err.message)
-        console.log(err.stack)
+        give._verbConsole.warn(err)
       }
     }
 
     updateWindow (e) {
       this._updateWindowHandler(e)
-    }
-
-    _initTrackDomContainers () {
-      if (this._trackDomsByWindow.every(this._setDivElemInWindow, this)) {
-        this._initDOMCoorTracks()
-        this._domsReady = true
-        if (this._initialized) {
-          this.addAllTrackDoms()
-        }
-      } else {
-        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-          this._initTrackDomContainers.bind(this),
-          give.ChartArea.DOM_CHANGE_DEBOUNCE)
-      }
-    }
-
-    _domChangeHandler () {
-      if (!this._domsReady) {
-        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-          this._initTrackDomContainers.bind(this),
-          give.ChartArea.DOM_CHANGE_DEBOUNCE)
-      }
-    }
-
-    _vWindowHasPinBetween () {
-      return !!this._pinInBetween.length
     }
 
     _onIronResize (e, detail) {
@@ -1066,11 +885,10 @@ var GIVe = (function (give) {
 
   ChartWindow.svgNS = 'http://www.w3.org/2000/svg'
 
-  ChartWindow.DOM_DIV_ID = 'domDiv_'
-  ChartWindow.INTERACTION_SUBS = 2
-
   ChartWindow.DOM_CHANGE_JOBNAME = 'DOMChange'
   ChartWindow.DOM_CHANGE_DEBOUNCE = 200
+
+  ChartWindow.COOR_TRACK_EFF_PRIORITY = -1
 
   give.ChartWindow = ChartWindow
   window.customElements.define('chart-window', give.ChartWindow)

@@ -61,6 +61,7 @@ var GIVe = (function (give) {
       this._dataObj = (typeof this.constructor._DataObjCtor === 'function')
         ? new this.constructor._DataObjCtor(this)
         : null
+      this._effPriority = null
     }
 
     get ref () {
@@ -69,6 +70,14 @@ var GIVe = (function (give) {
 
     get windowSpan () {
       return this.getSetting('windowSpan') || this.constructor._getWindowSpan()
+    }
+
+    get effPriority () {
+      return this.visibility ? this._effPriority : null
+    }
+
+    set effPriority (effPrior) {
+      this._effPriority = this.visibility ? effPrior : null
     }
 
     /**
@@ -219,6 +228,9 @@ var GIVe = (function (give) {
       } else if (typeof vis === 'undefined' || vis === null) {
         // use as toggle switch
         this.visibility = !this.visibility
+      }
+      if (!this.visibility) {
+        this.effPriority = null
       }
     }
 
