@@ -27,16 +27,97 @@ limitations under the License.
 <!--
 ### Overview
 
-`<chart-area>` provides a Web Component element to interactively display genomic
-data.
+`<chart-window>` provides a Web Component element to interactively display
+genomic data.
 
 ```html
-<chart-area group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
+<chart-window group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
 ```
 
-Although `<chart-area>` does not contain the navigational control elements as in `<chart-controller>`, users may still navigate by dragging and mouse-wheeling on the coordinates to move around.
+Although `<chart-window>` does not contain the navigational control elements as
+in `<chart-controller>`, users may still navigate by dragging and
+mouse-wheeling on the coordinates to move around.
 
-Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details on references used.
+Please refer to
+[`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details
+on references used.
+
+### Managing Track Priorities
+
+`<chart-window>` will manage track order once a view has been generated. Its
+behavior regarding to track order will be discussed within this section.
+
+#### Before generating a view
+
+`<chart-window>` shall receive an ordered list of all visible tracks from its
+embedded `refObject`, the visibility of tracks will be supplied by its
+`defaultTrackIdList` property, or (if said property is not set) by the
+default `visibility` property of individual tracks.
+
+When the visibility of tracks have been determined, `refObject` will provide
+a sorted list (by relative `priorities` property of the tracks) of visible
+tracks to start with.
+
+#### Populating the view with tracks
+
+Once `<chart-window>` receives the ordered list of visible tracks, it will:
+*   Assign every track's `trackDom`'s `<svg>` element into its
+    corresponding slot (`pinTop`, `pinBottom`, `scroll`, and
+    `pinInBetween`) by inserting it into the corresponding DOM node.
+*   Keep record of the relative order for every `<svg>` element within its
+    own slot.
+    Every track object will have an __`effective priority`__ value consists of
+    its slot allocation (`pinTop`, `scroll`, `pinBottom`, `pinInBetween`)
+    and its position within the slot.
+*   Assign the `y` property for every `<svg>` when drawing the DOM element
+    so that it appears in the correct order regardless of its order in the
+    DOM tree.
+
+#### Modifying the track list and its effect on track order
+
+##### Adding new tracks
+
+This action may only come from the parent element.
+
+When a new track is being added to the visible list, it will be allocated to
+its corresponding slot but __added to the very end of the list__. The
+`effective priority` value of the new track will be set if not done yet.
+
+##### Removing a track
+
+This action may come from the parent element or from the `<chart-window>`
+itself (via a "delete" button, to be implemented).
+
+When an existing track is being removed, it will be delisted from the slot,
+the `trackDom` object will be put into a recycled list (previous recycled list
+will be cleared) and all the `visibility` values and `effective priority`
+values will be updated accordingly.
+
+If this action comes from the `<chart-window>` itself, notify its parent about
+this change.
+
+##### Restoring a track previously removed
+
+This action may only come from the parent element.
+
+When a restoring command was received, all `trackDom`s in the recycled list
+will be restored to their corresponding location, their `track`'s `visibility`
+properties and `effective priority` values will be adjusted. After that, the
+recycled list will be cleared.
+
+##### Changing the location of a track
+
+This action may come from the parent element or from the `<chart-window>`
+itself (via drag-drop, to be implemented).
+
+The `effective priority` will be updated to the new locations if the action
+comes from `<chart-window>` itself (this happens when user tries to alter the
+order of the tracks).
+
+Then the actual `svg` `y` values will be updated to reflect the new location.
+
+If this action comes from the `<chart-window>` itself, notify its parent about
+this change.
 
 -->
 <dom-module id="chart-window">
@@ -102,6 +183,63 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 var GIVe = (function (give) {
   'use strict'
 
+  class EffPrior {
+    constructor (slotId, pos) {
+      // raise error if slotId is not correct
+      this.slotId = slotId
+      this.pos = pos
+    }
+
+    set slotId (newSlotId) {
+      if (typeof this.slotIdVal[newSlotId] !== 'number') {
+        throw new give.GiveError('Invalid slotId: ' + newSlotId)
+      }
+      this._slotId = newSlotId
+    }
+
+    get slotId () {
+      return this._slotId
+    }
+
+    set pos (newPos) {
+      if (!Number.isInteger(newPos) || newPos < 0) {
+        throw new give.GiveError('Invalid new position number: ' + newPos)
+      }
+      this._pos = newPos
+    }
+
+    get pos () {
+      return this._pos
+    }
+
+    static isValidEffPrior (effPrior) {
+      return effPrior && typeof this.slotIdVal[effPrior._slotId] === 'number'
+    }
+
+    static compare (effPrior1, effPrior2) {
+      // first handle null values (null is larger than any valid value)
+      if (!this.isValidEffPrior(effPrior1) ||
+        !this.isValidEffPrior(effPrior2)
+      ) {
+        return !this.isValidEffPrior(effPrior1)
+          ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
+      }
+      return effPrior1._slotId === effPrior2._slotId
+        ? Math.sign(this.slotIdVal[effPrior1._slotId] -
+          this.slotIdVal[effPrior2._slotId])
+        : Math.sign(effPrior1._pos - effPrior2._pos)
+    }
+  }
+
+  EffPrior.slotIdVal = {
+    '_PinTop': -1,
+    '_Scroll': 0,
+    '_PinBottom': 1,
+    '_PinBetween': 2
+  }
+
+  give.EffPrior = EffPrior
+
   class ChartWindow extends Polymer.mixinBehaviors([
     Polymer.IronResizableBehavior,
     give.RefEmbeddedBehavior], Polymer.Element
@@ -114,7 +252,7 @@ var GIVe = (function (give) {
       this.resizeAsyncProcess = null
       this._trackDomHolder = []
       this._hiddenTrackDomHolder = []
-      this._addedSvgOrderMap = new Map()
+      this._addedSvgOrderSet = new Set()
     }
 
     static get properties () {
@@ -144,18 +282,6 @@ var GIVe = (function (give) {
           value: ''
         },
 
-        _svgSizes: {
-          type: Object,
-          value () {
-            return {
-              '_PinTop': 0,
-              '_Scroll': 0,
-              '_PinBottom': 0,
-              '_PinBetween': 0
-            }
-          }
-        },
-
         /**
          * The view window to display in the element, in coordinate format.
          * This is for HTML attributes
@@ -163,6 +289,13 @@ var GIVe = (function (give) {
         coordinate: {
           type: String,
           notify: true
+        },
+
+        defaultTrackIdList: {
+          type: Array,
+          value: function () {
+            return []
+          }
         },
 
         _initialized: {
@@ -238,6 +371,13 @@ var GIVe = (function (give) {
 
       this._initDOMCoorTrack()
 
+      this._svgSizes = {
+        '_PinTop': 0,
+        '_Scroll': 0,
+        '_PinBottom': 0,
+        '_PinBetween': 0
+      }
+
       this.addEventListener('iron-resize', this._onIronResize)
       this.addEventListener('track-ready', this._trackReadyHandler)
       this.addEventListener('update-window', this._updateWindowHandler)
@@ -309,12 +449,17 @@ var GIVe = (function (give) {
     }
 
     _addTrackDomSvg (trackDom) {
-      if (!this._addedSvgOrderMap.has(trackDom.parent.id)) {
+      if (!this._addedSvgOrderSet.has(trackDom.parent.id)) {
         let slotId = this._getSlotId(trackDom)
         if (slotId) {
+          this._trackDomHolder.push(trackDom)
           this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
             .appendChild(trackDom.TrackSvg)
-          this._addedSvgOrderMap.set(trackDom.parent.id, this._svgSizes[slotId])
+          if (!trackDom.parent.effPriority) {
+            trackDom.parent.effPriority =
+              new EffPrior(slotId, this._svgSizes[slotId])
+          }
+          this._addedSvgOrderSet.add(trackDom.parent.id)
           this._svgSizes[slotId]++
         }
         return slotId
@@ -323,10 +468,10 @@ var GIVe = (function (give) {
     }
 
     _addVisibleTrack (track, props) {
-      if (!this._addedSvgOrderMap.hasOwnProperty(track.id)) {
+      if (!this._addedSvgOrderSet.has(track.id)) {
         try {
           let newTrackDom = track.createDomObj(this._createTrackProp(props))
-          this._trackDomHolder.push(newTrackDom)
+          this._addTrackDomSvg(newTrackDom)
           return newTrackDom
         } catch (err) {
           give._verbConsole.warn(err)
