@@ -160,11 +160,38 @@ var GIVe = (function (give) {
     return x1 < x2 ? -1 : (x1 > x2 ? 1 : 0)
   }
 
-  give.locationOf = give.locationOf || function (element, array, start, end, compareFunc) {
+  /**
+   * locationOf - get the first index of an sorted array where the array member
+   *    is greater than the element. This can be used in conjunction
+   *    with `Array.splice` to achieve a sorted insertion.
+   * Return `0` if the element is not greater than the first array memeber;
+   *    return `array.length` if it is greater than the last array member.
+   *
+   * @param  {object} element - element to be compared
+   * @param  {Array} array - sorted array of comparable elements
+   * @param  {number} start - starting index
+   * @param  {number} end - ending index (will not be included in the
+   *    comparison)
+   * @param  {function} compareFunc - a function taking two arguments to
+   *    compare both. The function should return 1 if the first element is
+   *    strictly greater than the second; return 0 if both are equal; return -1
+   *    if the second is greater.
+   * @param  {function} compareFunc - a function taking two arguments to
+   *    compare both. The function should return 1 if the first element is
+   *    strictly greater than the second; return 0 if both are equal; return -1
+   *    if the second is greater.
+   * @param  {boolean} beforeEqual - if this is `true`, the returned index will
+   *    be the first array member __equal or greater__ than `element`,
+   *    otherwise, it needs to be __strictly greater__.
+   * @returns {number} the correct index of an sorted array for `element`.
+   */
+  give.locationOf = give.locationOf || function (
+    element, array, start, end, compareFunc, beforeEqual
+  ) {
     // this is to return the index that element will be put AFTER
     // so if the element needs to be put to the top, it will return start-1
     if (array.length === 0) {
-      return -1
+      return 0
     }
 
     start = start || 0
@@ -174,12 +201,12 @@ var GIVe = (function (give) {
 
     var comp = compareFunc(element, array[pivot])
     if (end - start <= 1) {
-      return (comp === -1) ? pivot - 1 : pivot
+      return (comp === -1 || (beforeEqual && comp === 0)) ? pivot : pivot + 1
     }
 
     switch (comp) {
       case -1: return give.locationOf(element, array, start, pivot, compareFunc)
-      case 0: return pivot
+      case 0: return beforeEqual ? pivot : pivot + 1
       case 1: return give.locationOf(element, array, pivot, end, compareFunc)
     }
   }

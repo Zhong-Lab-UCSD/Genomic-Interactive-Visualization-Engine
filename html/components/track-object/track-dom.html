@@ -71,7 +71,12 @@ var GIVe = (function (give) {
         this.setHeight(100)
       }
 
-      this._setParent(track)
+      /**
+       * The underlying track object for metadata, settings,
+       * actual data and communication with the server
+       * @type {GIVE.TrackObject}
+       */
+      this._parent = track
       // this._setTrackType(track.typeTrunk)
       this.id = this.parent.typeTrunk + '_' + give._trackCounter++
 
@@ -117,13 +122,12 @@ var GIVe = (function (give) {
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
 
+    get parent () {
+      return this._parent
+    }
+
     static get properties () {
       return {
-        /**
-         * The underlying track object for metadata, settings,
-         * actual data and communication with the server
-         * @type {GIVE.TrackObject}
-         */
         parent: {
           type: Object,
           readOnly: true

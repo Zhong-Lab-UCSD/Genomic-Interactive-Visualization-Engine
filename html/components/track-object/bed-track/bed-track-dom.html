@@ -115,7 +115,7 @@ var GIVe = (function (give) {
 
     findRasIndex (coordinate) {
       // bring this._RasterizedInfo._RasterIndex up to date
-      return give.locationOf(coordinate, this._Raster)
+      return give.locationOf(coordinate, this._Raster) - 1
     }
 
     get currIndex () {

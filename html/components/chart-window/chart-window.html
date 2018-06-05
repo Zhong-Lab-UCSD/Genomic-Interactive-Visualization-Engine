@@ -153,19 +153,19 @@ this change.
     <div id="chartHolding" hidden$="[[!_initialized]]">
       <div class="pinnedParts" id="_PinTop">
         <div class="trackDomHolder"></div>
-        <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        <svg class="svgHolder" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
       <div class="scrollingParts" id="_Scroll">
-        <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        <svg class="svgHolder" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
       <div class="pinnedParts" id="_PinBottom">
-        <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        <svg class="svgHolder" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
       <div class="pinnedParts" id="_PinBetween">
-        <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+        <svg class="svgHolder" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
     </div>
@@ -184,21 +184,21 @@ var GIVe = (function (give) {
   'use strict'
 
   class EffPrior {
-    constructor (slotId, pos) {
-      // raise error if slotId is not correct
-      this.slotId = slotId
+    constructor (pinValue, pos) {
+      // raise error if pinValue is not correct
+      this.pinValue = pinValue
       this.pos = pos
     }
 
-    set slotId (newSlotId) {
-      if (typeof this.slotIdVal[newSlotId] !== 'number') {
-        throw new give.GiveError('Invalid slotId: ' + newSlotId)
+    set pinValue (newPinValue) {
+      if (typeof this.constructor.pinValueMap[newPinValue] !== 'number') {
+        throw new give.GiveError('Invalid pinValue: ' + newPinValue)
       }
-      this._slotId = newSlotId
+      this._pinValue = newPinValue
     }
 
-    get slotId () {
-      return this._slotId
+    get pinValue () {
+      return this._pinValue
     }
 
     set pos (newPos) {
@@ -213,7 +213,8 @@ var GIVe = (function (give) {
     }
 
     static isValidEffPrior (effPrior) {
-      return effPrior && typeof this.slotIdVal[effPrior._slotId] === 'number'
+      return effPrior &&
+        typeof this.pinValueMap[effPrior._pinValue] === 'number'
     }
 
     static compare (effPrior1, effPrior2) {
@@ -224,18 +225,18 @@ var GIVe = (function (give) {
         return !this.isValidEffPrior(effPrior1)
           ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
       }
-      return effPrior1._slotId === effPrior2._slotId
-        ? Math.sign(this.slotIdVal[effPrior1._slotId] -
-          this.slotIdVal[effPrior2._slotId])
+      return effPrior1._pinValue === effPrior2._pinValue
+        ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
+          this.pinValueMap[effPrior2._pinValue])
         : Math.sign(effPrior1._pos - effPrior2._pos)
     }
   }
 
-  EffPrior.slotIdVal = {
-    '_PinTop': -1,
-    '_Scroll': 0,
-    '_PinBottom': 1,
-    '_PinBetween': 2
+  EffPrior.pinValueMap = {
+    'top': -1,
+    'scroll': 0,
+    'bottom': 1,
+    'inbetween': 2
   }
 
   give.EffPrior = EffPrior
@@ -250,9 +251,9 @@ var GIVe = (function (give) {
       this.resizeDebounceInt = 400
       // this.resizeJobName = 'RESIZE'
       this.resizeAsyncProcess = null
-      this._trackDomHolder = []
-      this._hiddenTrackDomHolder = []
-      this._addedSvgOrderSet = new Set()
+      this._trackDoms = []
+      this._hiddenTrackDoms = []
+      this._addedTrackMap = new Map()
     }
 
     static get properties () {
@@ -429,46 +430,102 @@ var GIVe = (function (give) {
       return props
     }
 
-    _getSlotId (trackDom) {
-      let slotId = '_Scroll'
-      let reverseDom =
-        (this.index > 0 && this.index === this.totalWindows - 1)
-      if (trackDom.parent.windowSpan > 1) {
-        if (this.index + trackDom.parent.windowSpan > this.totalWindows) {
+    _getSlotId (track) {
+      if (track.windowSpan > 1) {
+        if (this.index + track.windowSpan > this.totalWindows) {
           return null
         }
-        slotId = '_PinBetween'
+        return '_PinBetween'
       } else {
-        if (trackDom.pin === 'top') {
-          slotId = reverseDom ? '_PinBottom' : '_PinTop'
-        } else if (trackDom.pin === 'bottom') {
-          slotId = reverseDom ? '_PinTop' : '_PinBottom'
-        }
+        return this._slotIdFromPinValue(track.getSetting('pin'))
       }
-      return slotId
     }
 
-    _addTrackDomSvg (trackDom) {
-      if (!this._addedSvgOrderSet.has(trackDom.parent.id)) {
-        let slotId = this._getSlotId(trackDom)
-        if (slotId) {
-          this._trackDomHolder.push(trackDom)
-          this.shadowRoot.querySelector('div#' + slotId + ' > svg.containedSvg')
-            .appendChild(trackDom.TrackSvg)
+    _slotIdFromPinValue (pinValue) {
+      pinValue = pinValue || ''
+      let reverseDom =
+        (this.index > 0 && this.index === this.totalWindows - 1)
+      switch (pinValue.toLowerCase()) {
+        case 'top':
+          return reverseDom ? '_PinBottom' : '_PinTop'
+        case 'bottom':
+          return reverseDom ? '_PinTop' : '_PinBottom'
+        case 'inbetween':
+          return '_PinBetween'
+        default:
+          return '_Scroll'
+      }
+    }
+
+    _pinValueFromSlotId (slotId) {
+      let reverseDom =
+        (this.index > 0 && this.index === this.totalWindows - 1)
+      switch (slotId.toLowerCase()) {
+        case '_PinTop':
+          return reverseDom ? 'bottom' : 'top'
+        case '_PinBottom':
+          return reverseDom ? 'top' : 'bottom'
+        case '_PinBetween':
+          return 'inbetween'
+        default:
+          return 'scroll'
+      }
+    }
+
+    _addTrackDomSvg (trackDom, honorEffPriority) {
+      if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
+        let slotId
+        if (honorEffPriority && trackDom.parent.effPriority) {
+          slotId = this._slotIdFromPinValue(
+            trackDom.parent.effPriority.pinValue
+          )
+        } else {
+          slotId = this._getSlotId(trackDom.parent)
           if (!trackDom.parent.effPriority) {
             trackDom.parent.effPriority =
-              new EffPrior(slotId, this._svgSizes[slotId])
+              new EffPrior(this._pinValueFromSlotId(slotId),
+                this._svgSizes[slotId])
           }
-          this._addedSvgOrderSet.add(trackDom.parent.id)
-          this._svgSizes[slotId]++
         }
+        // Add DOM element
+        this.shadowRoot.querySelector('div#' + slotId + ' > svg.svgHolder')
+          .appendChild(trackDom.TrackSvg)
+        // Find the correct location of the new DOM
+        let domPos = give.locationOf(trackDom, this._trackDoms, null, null,
+          (dom1, dom2) => EffPrior.compare(
+            dom1.parent.effPriority, dom2.parent.effPriority
+          ), true
+        )
+        if (this._trackDoms[domPos] &&
+          !EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
+            trackDom.parent.effPriority)
+        ) {
+          // Update all effPriority values for DOMs after the new DOM
+          for (let i = domPos;
+            i < this._trackDoms.length &&
+            this._trackDoms[i].parent.effPriority.pinValue ===
+            trackDom.parent.effPriority.pinValue;
+            i++
+          ) {
+            this._trackDoms[i].parent.effPriority.pos =
+              this._trackDoms[i].parent.effPriority.pos + 1
+          }
+        }
+        // Insert the new DOM into its correct location
+        this._trackDoms.splice(domPos, 0, trackDom)
+
+        this._addedTrackMap.set(trackDom.parent.id, {
+          'trackDom': trackDom,
+          'visible': true
+        })
+        this._svgSizes[slotId]++
         return slotId
       }
       return null
     }
 
     _addVisibleTrack (track, props) {
-      if (!this._addedSvgOrderSet.has(track.id)) {
+      if (!this._addedTrackMap.has(track.id)) {
         try {
           let newTrackDom = track.createDomObj(this._createTrackProp(props))
           this._addTrackDomSvg(newTrackDom)
@@ -478,6 +535,64 @@ var GIVe = (function (give) {
           give.fireSignal('warning', { msg: err.message })
           return null
         }
+      }
+    }
+
+    _addHiddenTrack (trackDom) {
+      if (trackDom) {
+        this._hiddenTrackDoms.push(trackDom)
+        this._addedTrackMap.set(trackDom.parent.id, {
+          'trackDom': trackDom,
+          'visible': false
+        })
+      }
+    }
+
+    _removeTrack (tracks) {
+      if (!Array.isArray) {
+        tracks = [tracks]
+      }
+      let visibleTracksChanged = false
+      tracks.forEach(track => {
+        if (this._addedTrackMap.has(track.id)) {
+          if (this._addedTrackMap.get(track.id).visible) {
+            // This track is visible, remove the <svg> element from its slot
+            this.shadowRoot.querySelector(
+              'div#' + this._slotIdFromPinValue(track.effPriority.pinValue) +
+              ' > svg.svgHolder'
+            ).removeChild(this._addedTrackMap.get(track.id).trackDom.TrackSvg)
+            // Then remove the DOM itself
+            this._trackDoms = this._trackDoms.filter(dom => {
+              return dom.parent.id !== track.id
+            })
+            // set flag to update effPriority values
+            visibleTracksChanged = true
+          } else {
+            // This track is a linked track (some interaction track),
+            // Remove DOM only
+            this._hiddenTrackDoms = this._hiddenTrackDoms.filter(dom => {
+              return dom.parent.id !== track.id
+            })
+          }
+          this._addedTrackMap.delete(track.id)
+        } else {
+          give._verbConsole.warn('Track ID "' + track.id + '" does not exist!')
+        }
+      })
+
+      if (visibleTracksChanged) {
+        // Update all effPriority values affected
+        for (let slotId in this._svgSizes) {
+          if (this._svgSizes.hasOwnProperty(slotId)) {
+            this._svgSizes[slotId] = 0
+          }
+        }
+        this._trackDoms.forEach(trackDom => {
+          let slotId = this._pinValueFromSlotId(
+            trackDom.parent.effPriority.pinValue)
+          trackDom.parent.effPriority.pos = this._svgSizes[slotId].length
+          this._svgSizes[slotId]++
+        })
       }
     }
 
@@ -744,7 +859,7 @@ var GIVe = (function (give) {
     }
 
     _clearDOM () {
-      var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
+      var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.svgHolder')
       svgList.forEach(function (svgElem, index) {
         while (Polymer.dom(svgElem).firstChild) {
           Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
@@ -784,7 +899,7 @@ var GIVe = (function (give) {
           if (track.getSetting('visibility') >
             give.TrackObject.StatusEnum.VIS_NONE
           ) {
-            this._trackDomHolder.push(track.createDomObj(
+            this._trackDoms.push(track.createDomObj(
               this._createTrackProp({ subPriority: index })
             ))
           }
@@ -799,7 +914,7 @@ var GIVe = (function (give) {
           this._refObj.tracks.forEach(showTrack)
         }
         // sort trackDomBy priorities
-        this._trackDomHolder.sort(
+        this._trackDoms.sort(
           (a, b) => give.comparePriorities(a.Priorities, b.Priorities))
         this.populateDOM(noRefreshContent)
       }
@@ -907,7 +1022,7 @@ var GIVe = (function (give) {
     _populateDomInWindow (domInWindowEntry, index) {
       var _populateDomInComponent = function (component, trackDom, trackDomIndex) {
         Polymer.dom(this.$.trackDomHolder).appendChild(trackDom)
-        Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDom.getTrackSvg())
+        Polymer.dom(component.querySelector('svg.svgHolder')).appendChild(trackDom.getTrackSvg())
       }
       this._callForeachWithElemFuncOnDomInWindowEntry(
         _populateDomInComponent.bind(this), null, null,
@@ -940,9 +1055,9 @@ var GIVe = (function (give) {
         if (divElem._currY > 0) {
           divElem._currY -= this._trackGap * this._textSize
         }
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('width', divElem._svgWidth)
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('height', divElem._currY)
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('viewBox',
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('width', divElem._svgWidth)
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('height', divElem._currY)
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('viewBox',
           '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
         delete divElem._currY
         delete divElem._svgWidth

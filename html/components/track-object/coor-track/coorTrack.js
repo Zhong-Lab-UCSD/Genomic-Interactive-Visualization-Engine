@@ -38,6 +38,13 @@ var GIVe = (function (give) {
     static get typeList () {
       return ['coordinate', 'coor']
     }
+
+    constructor () {
+      super(...arguments)
+      if (!this.getSetting('pin')) {
+        this.setSetting('pin', 'top')
+      }
+    }
   }
 
   // specify the visualization object used in this track

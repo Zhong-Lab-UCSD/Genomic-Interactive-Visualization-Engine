@@ -29,7 +29,7 @@ var GIVe = (function (give) {
       var loc = 0
       for (i = 0; i < newRegion.getNumOfBlocks(); i++) {
         loc = give.locationOf(newRegion.blockStarts[i] + newRegion.start - newStart,
-          this.blockStarts, loc) + 1
+          this.blockStarts, loc)
         this.blockStarts.splice(loc, 0, newRegion.blockStarts[i] + newRegion.start - newStart)
         this.blockSizes.splice(loc, 0, newRegion.blockSizes[i])
       }
