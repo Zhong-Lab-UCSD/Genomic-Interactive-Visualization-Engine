@@ -146,29 +146,31 @@
       // Construct SQL components separately
       // Build query strings based on $refInfo
       // coordinate field
-      $selectExpr = "CONCAT(`geneFilter`.`chrom`, ':', " .
-        "MIN(`geneFilter`.`" . $settings->startCol . "`), '-', " .
-        "MAX(`geneFilter`.`" . $settings->endCol . "`)) AS `coor`, `" .
+      $selectExpr = "CONCAT(`geneTable`.`chrom`, ':', " .
+        "MIN(`geneTable`.`" . $settings->startCol . "`), '-', " .
+        "MAX(`geneTable`.`" . $settings->endCol . "`)) AS `coor`, `" .
         ((!empty($settings->linkedCoorTable)) ?
-        $settings->linkedCoorTable : "geneFilter") . "`.`" .
+        $settings->linkedCoorTable : "geneTable") . "`.`" .
         $settings->geneSymbolColumn . "` AS `name`";
 
-      $tableReference = "(SELECT * FROM `" . $settings->geneCoorTable .
-        "` WHERE `chrom` NOT LIKE '%\_%') AS `geneFilter`";
+      $tableReference = $settings->geneCoorTable .
+        " AS `geneTable`";
       if ($settings->linkedCoorTable) {
         $tableReference = "(" . $tableReference . " LEFT JOIN `" .
-          $settings->linkedCoorTable . "` ON `geneFilter`.`name` = `" .
+          $settings->linkedCoorTable . "` ON `geneTable`.`name` = `" .
           $settings->linkedCoorTable . "`.`" .
           $settings->linkedCoorKeys . "`)";
       }
 
+      $chromFilter = "`geneTable`.`chrom` NOT LIKE '%\_%'";
+
       $whereCondition = "`" . ((!empty($settings->linkedCoorTable)) ?
-        $settings->linkedCoorTable : "geneFilter") . "`.`" .
+        $settings->linkedCoorTable : "geneTable") . "`.`" .
         $settings->geneSymbolColumn . "` LIKE ?";
 
       $groupByExpr = "`" .
         ((!empty($settings->linkedCoorTable)) ? $settings->linkedCoorTable :
-        "geneFilter") .  "`.`" . $settings->geneSymbolColumn . "`";
+        "geneTable") .  "`.`" . $settings->geneSymbolColumn . "`";
 
       $orderByExpr = "`name` = '" . $mysqli->real_escape_string($partialName) .
         "', `name`";
@@ -179,7 +181,7 @@
           "`.`description` AS `description`";
         $tableReference .= " INNER JOIN `" . $settings->geneDescTable .
           "` ON `" . ((!empty($settings->linkedCoorTable)) ?
-          $settings->linkedCoorTable : "geneFilter") . "`.`" .
+          $settings->linkedCoorTable : "geneTable") . "`.`" .
           $settings->geneSymbolColumn . "` = `" .
           $settings->geneDescTable . "`.`" .
           $settings->descSymbolColumn . "` ";
@@ -190,7 +192,7 @@
         $selectExpr .= ", `" . $settings->aliasTable . "`.`alias` AS `alias`";
         $tableReference .= " INNER JOIN `" . $settings->aliasTable . "` ON `" .
           ((!empty($settings->linkedCoorTable)) ?
-          $settings->linkedCoorTable : "geneFilter") . "`.`" .
+          $settings->linkedCoorTable : "geneTable") . "`.`" .
           $settings->geneSymbolColumn . "` = `" .
           $settings->aliasTable . "`.`" .
           $settings->aliasSymbolColumn . "`";
@@ -206,7 +208,8 @@
       //   " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
       // );
       $queryStmt = $mysqli->prepare("SELECT " . $selectExpr .
-        " FROM " . $tableReference . " WHERE " . $whereCondition .
+        " FROM " . $tableReference .
+        " WHERE " . $whereCondition . " AND " . $chromFilter .
         " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
       );
       $partialNameToBind = $partialName . '%';
