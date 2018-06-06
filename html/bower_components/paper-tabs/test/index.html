@@ -16,14 +16,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <body>
 
     <script>
-      WCT.loadSuites([
-        'basic.html',
+      var pages = [
         'attr-for-selected.html',
+        'basic.html',
         'links.html',
-        'basic.html?dom=shadow',
-        'attr-for-selected.html?dom=shadow',
-        'links.html?dom=shadow'
-      ]);
+      ];
+      var suites = [];
+      for (var i = 0; i < pages.length; i++) {
+        suites.push(pages[i] + '?dom=shadow');
+        suites.push(pages[i] + '?wc-shadydom=true&wc-ce=true');
+      }
+      WCT.loadSuites(suites);
     </script>
 
 

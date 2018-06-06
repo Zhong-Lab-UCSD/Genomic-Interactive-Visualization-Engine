@@ -56,7 +56,7 @@ property.
 
     <section id="summary" class="card" hidden$="[[!descriptor.desc]]">
       <marked-element markdown="{{descriptor.desc}}">
-        <div class="markdown-html"></div>
+        <div slot="markdown-html" class="markdown-html"></div>
       </marked-element>
     </section>
 
@@ -68,9 +68,11 @@ property.
 
     <section id$="[[_formatAnchor(prefix,'properties')]]" class="card" hidden$="{{_noneToShow(_showPrivate,_properties)}}">
       <header><a href$="#[[_formatAnchor(prefix,'properties')]]" class="deeplink">Properties</a></header>
-      <template is="dom-repeat" items="{{_properties}}" hidden$="{{!_properties.length}}">
-        <iron-doc-property anchor-id="[[_formatAnchor(prefix,'property',item.name)]]" descriptor="{{item}}"></iron-doc-property>
-      </template>
+      <div hidden$="{{!_properties.length}}">
+        <template is="dom-repeat" items="{{_properties}}">
+          <iron-doc-property anchor-id="[[_formatAnchor(prefix,'property',item.name)]]" descriptor="{{item}}"></iron-doc-property>
+        </template>
+      </div>
     </section>
 
     <section id$="[[_formatAnchor(prefix,'methods')]]" class="card"  hidden$="{{_noneToShow(_showPrivate,_methods)}}">
@@ -246,6 +248,10 @@ property.
         },
 
         _noneToShow: function(showPrivate, items) {
+          if (showPrivate === undefined || items === undefined) {
+            return true;
+          }
+
           for (var i = 0; i < items.length; i++) {
             if (showPrivate || !items[i].private) return false;
           }
@@ -258,6 +264,10 @@ property.
         },
 
         _hideBehaviors: function(behaviors) {
+          if (behaviors === undefined) {
+            return true;
+          }
+
           return behaviors === null || behaviors.length === 0;
         },
 

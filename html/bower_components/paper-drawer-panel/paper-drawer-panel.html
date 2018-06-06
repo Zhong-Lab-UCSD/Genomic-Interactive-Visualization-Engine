@@ -14,13 +14,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
 <!--
+**This element has been deprecated in favor of [app-layout](https://github.com/PolymerElements/app-layout).**
+
 Material design: [Navigation drawer](https://www.google.com/design/spec/patterns/navigation-drawer.html)
 
-`paper-drawer-panel` contains a drawer panel and a main panel.  The drawer
-and the main panel are side-by-side with drawer on the left.  When the browser
+`paper-drawer-panel` contains a drawer panel and a main panel. The drawer
+and the main panel are side-by-side with drawer on the left. When the browser
 window size is smaller than the `responsiveWidth`, `paper-drawer-panel`
-changes to narrow layout.  In narrow layout, the drawer will be stacked on top
-of the main panel.  The drawer will slide in/out to hide/reveal the main
+changes to narrow layout. In narrow layout, the drawer will be stacked on top
+of the main panel. The drawer will slide in/out to hide/reveal the main
 panel.
 
 Use the attribute `drawer` to indicate that the element is the drawer panel and
@@ -29,44 +31,22 @@ Use the attribute `drawer` to indicate that the element is the drawer panel and
 Example:
 
     <paper-drawer-panel>
-      <div drawer> Drawer panel... </div>
-      <div main> Main panel... </div>
+      <div slot="drawer"> Drawer panel... </div>
+      <div slot="main"> Main panel... </div>
     </paper-drawer-panel>
 
-The drawer and the main panels are not scrollable.  You can set CSS overflow
+The drawer and the main panels are not scrollable. You can set CSS overflow
 property on the elements to make them scrollable or use `paper-header-panel`.
 
 Example:
 
     <paper-drawer-panel>
-      <paper-header-panel drawer>
+      <paper-header-panel slot="drawer">
         <paper-toolbar></paper-toolbar>
         <div> Drawer content... </div>
       </paper-header-panel>
-      <paper-header-panel main>
+      <paper-header-panel slot="main">
         <paper-toolbar></paper-toolbar>
-        <div> Main content... </div>
-      </paper-header-panel>
-    </paper-drawer-panel>
-
-An element that should toggle the drawer will automatically do so if it's
-given the `paper-drawer-toggle` attribute.  Also this element will automatically
-be hidden in wide layout.
-
-Example:
-
-    <paper-drawer-panel>
-      <paper-header-panel drawer>
-        <paper-toolbar>
-          <div>Application</div>
-        </paper-toolbar>
-        <div> Drawer content... </div>
-      </paper-header-panel>
-      <paper-header-panel main>
-        <paper-toolbar>
-          <paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
-          <div>Title</div>
-        </paper-toolbar>
         <div> Main content... </div>
       </paper-header-panel>
     </paper-drawer-panel>
@@ -74,8 +54,8 @@ Example:
 To position the drawer to the right, add `right-drawer` attribute.
 
     <paper-drawer-panel right-drawer>
-      <div drawer> Drawer panel... </div>
-      <div main> Main panel... </div>
+      <div slot="drawer"> Drawer panel... </div>
+      <div slot="main"> Main panel... </div>
     </paper-drawer-panel>
 
 ### Styling
@@ -142,17 +122,15 @@ Custom property | Description | Default
         overflow: hidden;
       }
 
-      iron-selector > #drawer {
+      #drawer {
         position: absolute;
         top: 0;
         left: 0;
         height: 100%;
         background-color: white;
-
         -moz-box-sizing: border-box;
         box-sizing: border-box;
-
-        @apply(--paper-drawer-panel-drawer-container);
+        @apply --paper-drawer-panel-drawer-container;
       }
 
       .transition-drawer {
@@ -161,23 +139,21 @@ Custom property | Description | Default
       }
 
       .left-drawer > #drawer {
-        @apply(--paper-drawer-panel-left-drawer-container);
+        @apply --paper-drawer-panel-left-drawer-container;
       }
 
       .right-drawer > #drawer {
         left: auto;
         right: 0;
-
-        @apply(--paper-drawer-panel-right-drawer-container);
+        @apply --paper-drawer-panel-right-drawer-container;
       }
 
-      iron-selector > #main {
+      #main {
         position: absolute;
         top: 0;
         right: 0;
         bottom: 0;
-
-        @apply(--paper-drawer-panel-main-container);
+        @apply --paper-drawer-panel-main-container;
       }
 
       .transition > #main {
@@ -192,11 +168,11 @@ Custom property | Description | Default
         transition: right ease-in-out 0.3s, padding ease-in-out 0.3s;
       }
 
-      #main > ::content > [main] {
+      #main > ::slotted(*) {
         height: 100%;
       }
 
-      #drawer > ::content > [drawer] {
+      #drawer > ::slotted(*) {
         height: 100%;
       }
 
@@ -210,8 +186,7 @@ Custom property | Description | Default
         opacity: 0;
         transition: opacity ease-in-out 0.38s, visibility ease-in-out 0.38s;
         background-color: rgba(0, 0, 0, 0.3);
-
-        @apply(--paper-drawer-panel-scrim);
+        @apply --paper-drawer-panel-scrim;
       }
 
       .narrow-layout > #drawer {
@@ -226,13 +201,12 @@ Custom property | Description | Default
         box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.15);
       }
 
-      .narrow-layout > #drawer > ::content > [drawer] {
+      .narrow-layout > #drawer > ::slotted(*) {
         border: 0;
       }
 
       .left-drawer.narrow-layout > #drawer:not(.iron-selected) {
         visibility: hidden;
-
         -webkit-transform: translateX(-100%);
         transform: translateX(-100%);
       }
@@ -240,7 +214,6 @@ Custom property | Description | Default
       .right-drawer.narrow-layout > #drawer:not(.iron-selected) {
         left: auto;
         visibility: hidden;
-
         -webkit-transform: translateX(100%);
         transform: translateX(100%);
       }
@@ -272,13 +245,8 @@ Custom property | Description | Default
         min-height: 100%;
         left: 0;
         right: 0;
-
         -moz-box-sizing: border-box;
         box-sizing: border-box;
-      }
-
-      iron-selector:not(.narrow-layout) ::content [paper-drawer-toggle] {
-        display: none;
       }
     </style>
 
@@ -291,16 +259,17 @@ Custom property | Description | Default
     <iron-selector
         attr-for-selected="id"
         class$="[[_computeIronSelectorClass(narrow, _transition, dragging, rightDrawer, peeking)]]"
+        on-transitionend="_onTransitionEnd"
         activate-event=""
         selected="[[selected]]">
 
-      <div id="main" style$="[[_computeMainStyle(narrow, rightDrawer, drawerWidth)]]">
-        <content select="[main]"></content>
+      <div id="main">
+        <slot name="main"></slot>
         <div id="scrim" on-tap="closeDrawer"></div>
       </div>
 
-      <div id="drawer" style$="[[_computeDrawerStyle(drawerWidth)]]">
-        <content id="drawerContent" select="[drawer]"></content>
+      <div id="drawer">
+        <slot id="drawerSlot" name="drawer"></slot>
       </div>
 
     </iron-selector>
@@ -491,15 +460,6 @@ Custom property | Description | Default
           },
 
           /**
-           * The attribute on elements that should toggle the drawer on tap, also elements will
-           * automatically be hidden in wide layout.
-           */
-          drawerToggleAttribute: {
-            type: String,
-            value: 'paper-drawer-toggle'
-          },
-
-          /**
            * The CSS selector for the element that should receive focus when the drawer is open.
            * By default, when the drawer opens, it focuses the first tabbable element. That is,
            * the first element that can receive focus.
@@ -535,13 +495,14 @@ Custom property | Description | Default
           tap: '_onTap',
           track: '_onTrack',
           down: '_downHandler',
-          up: '_upHandler',
-          transitionend: '_onTransitionEnd'
+          up: '_upHandler'
         },
 
         observers: [
           '_forceNarrowChanged(forceNarrow, defaultSelected)',
-          '_toggleFocusListener(selected)'
+          '_toggleFocusListener(selected)',
+          '_setMainStyle(narrow, rightDrawer, drawerWidth)',
+          '_setDrawerStyle(drawerWidth)'
         ],
 
         ready: function() {
@@ -549,6 +510,7 @@ Custom property | Description | Default
           // transitions only after the element is rendered and ready.
           this._transition = true;
           this._boundFocusListener = this._didFocus.bind(this);
+          console.warn(this.is, 'is deprecated. Please use app-layout instead!');
         },
 
         /**
@@ -591,7 +553,7 @@ Custom property | Description | Default
 
         _onTransitionEnd: function (e) {
           var target = Polymer.dom(e).localTarget;
-          if (target !== this) {
+          if (target !== this.$.drawer) {
             // ignore events coming from the light dom
             return;
           }
@@ -620,20 +582,16 @@ Custom property | Description | Default
           });
         },
 
-        _computeDrawerStyle: function(drawerWidth) {
-          return 'width:' + drawerWidth + ';';
+        _setDrawerStyle: function(drawerWidth) {
+          this.$.drawer.style.width = drawerWidth;
         },
 
-        _computeMainStyle: function(narrow, rightDrawer, drawerWidth) {
-          var style = '';
-
-          style += 'left:' + ((narrow || rightDrawer) ? '0' : drawerWidth) + ';';
+        _setMainStyle: function(narrow, rightDrawer, drawerWidth) {
+          this.$.main.style.left = (narrow || rightDrawer) ? '0' : drawerWidth;
 
           if (rightDrawer) {
-            style += 'right:' + (narrow ? '' : drawerWidth) + ';';
+            this.$.main.style.right = narrow ? '' : drawerWidth;
           }
-
-          return style;
         },
 
         _computeMediaQuery: function(forceNarrow, responsiveWidth) {
@@ -663,9 +621,7 @@ Custom property | Description | Default
 
         _responsiveChange: function(narrow) {
           this._setNarrow(narrow);
-
           this.selected = this.narrow ? this.defaultSelected : null;
-
           this.setScrollDirection(this._swipeAllowed() ? 'y' : 'all');
           this.fire('paper-responsive-change', {narrow: this.narrow});
         },
@@ -808,15 +764,13 @@ Custom property | Description | Default
           this.transform(this._transformForTranslateX(translateX), this.$.drawer);
         },
 
-        _getDrawerContent: function() {
-          return Polymer.dom(this.$.drawerContent).getDistributedNodes()[0];
+        _getDrawerSlot: function() {
+          return Polymer.dom(this.$.drawerSlot).getDistributedNodes()[0];
         },
 
         _getAutoFocusedNode: function() {
-          var drawerContent = this._getDrawerContent();
-
           return this.drawerFocusSelector ?
-              Polymer.dom(drawerContent).querySelector(this.drawerFocusSelector) || drawerContent : null;
+              Polymer.dom(this._getDrawerSlot()).querySelector(this.drawerFocusSelector) : null;
         },
 
         _toggleFocusListener: function(selected) {
@@ -835,8 +789,8 @@ Custom property | Description | Default
 
           var path = Polymer.dom(event).path;
           var focusedChild = path[0];
-          var drawerContent = this._getDrawerContent();
-          var focusedChildCameFromDrawer = path.indexOf(drawerContent) !== -1;
+          var drawerSlot = this._getDrawerSlot();
+          var focusedChildCameFromDrawer = path.indexOf(drawerSlot) !== -1;
 
           if (!focusedChildCameFromDrawer) {
             event.stopPropagation();

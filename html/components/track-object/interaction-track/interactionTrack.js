@@ -22,47 +22,43 @@ var GIVe = (function (give) {
    * Object representing a BED track, see `GIVe.TrackObject` for details.
    * @typedef {object} InteractionTrack
    * @class give.InteractionTrack
-   *
-   * @property {number} windowSpan - how many windows this track will show
-   *    across.
-   *
-   * @constructor
    * @implements give.TrackObject
-   * @param {string} ID - The ID of the new track object
-   * @param {object} Settings - Settings of the new track. Dictionary format.
-   *   Note that if `Settings` has a property named `settings`,
-   *   it will be merged with `this.Settings`, while properties in
-   *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
-   * @param {string} groupID - The group ID of the new track object
    */
-  give.InteractionTrack = function (ID, Settings, ref, groupID) {
-    give.TrackObject.apply(this, arguments)
+  class InteractionTrack extends give.TrackObject {
+    /**
+     * typeList - get the key strings showing this type of data.
+     *    This shall be the same as the `type` column for track entries in
+     *    `trackDb` table so that GIVE is able to figure out the track is of
+     *    this type.
+     * @static
+     * @property
+     *
+     * @returns {Array<string>}  return all keys matching this type.
+     */
+    static get typeList () {
+      return ['interaction']
+    }
+
+    /**
+     * _getWindowSpan - Get the number of windows for the track to span across
+     * @static
+     *
+     * @return {number} number of windows this track will span across
+     */
+    static _getWindowSpan () {
+      return this.INTERACTION_WINDOW_SPAN
+    }
   }
 
-  give.extend(give.TrackObject, give.InteractionTrack)
+  InteractionTrack._DataObjCtor = give.InteractionTrackData
 
-  give.InteractionTrack.getType = function () {
-    return ['interaction']
-  }
+  InteractionTrack._DomObjCtor = give.InteractionTrackDom
 
-  give.InteractionTrack.prototype._DataObjCtor = give.InteractionTrackData
+  InteractionTrack.INTERACTION_WINDOW_SPAN = 2
 
-  give.InteractionTrack.prototype._DomObjCtor = give.InteractionTrackDOM
+  give.TrackObject.registerTrack(InteractionTrack)
 
-  /**
-   * _getWindowSpan - Get the number of windows for the track to span across
-   * @memberof InteractionTrack.prototype
-   *
-   * @return {number} number of windows this track will span across
-   */
-  give.InteractionTrack.prototype._getWindowSpan = function () {
-    return give.InteractionTrack.INTERACTION_WINDOW_SPAN
-  }
-
-  give.TrackObject.registerTrack(give.InteractionTrack)
-
-  give.InteractionTrack.INTERACTION_WINDOW_SPAN = 2
+  give.InteractionTrack = InteractionTrack
 
   return give
 })(GIVe || {})

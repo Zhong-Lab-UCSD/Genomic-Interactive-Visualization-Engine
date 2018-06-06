@@ -1,6 +1,7 @@
 [![Build status](https://travis-ci.org/PolymerElements/paper-slider.svg?branch=master)](https://travis-ci.org/PolymerElements/paper-slider)
+[![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/PolymerElements/paper-slider)
 
-##&lt;paper-slider&gt;
+## &lt;paper-slider&gt;
 
 Material design: [Sliders](https://www.google.com/design/spec/components/sliders.html)
 

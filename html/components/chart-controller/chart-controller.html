@@ -74,7 +74,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     <style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
       :host {
         font-size: 12px;
-        @apply(--layout-fit);
+        @apply --layout-fit;
       }
       gene-coor-input {
         margin: 0.5em;
@@ -84,7 +84,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         display: block;
         margin-left: 0.5em;
       }
-      div.dataReference ::content > * {
+      div.dataReference ::slotted(*) {
         margin: 1em;
       }
       div#navigationHelp {
@@ -113,7 +113,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     </style>
     <!-- TODO: add paper-dropmenu for ref -->
     <paper-drawer-panel>
-      <div drawer class="layout vertical">
+      <div slot="drawer" class="layout vertical">
         <template is="dom-repeat" items="{{_coorObjs}}">
           <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
             floatingLabel="true" value="{{item.coor}}" invalid="[[item.invalid]]">
@@ -124,7 +124,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           <paper-button raised id="cancelUpdateChart" on-tap="resetTracks">Cancel</paper-button>
         </div>
         <genemo-card disable-folding class="flex flexFillGenemoCard">
-          <chart-track-group-list ref="[[ref]]" class="genemoBody" id="mainTrackList"
+          <chart-track-group-list ref="[[ref]]" slot="genemoBody" id="mainTrackList"
             group-id-list='[[groupIdList]]' setting-key="visibility"
             has-controls='[[hasControls]]' with-filter='[[withFilter]]'
             instant-change='[[instantChange]]'
@@ -133,7 +133,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         </genemo-card>
         <custom-track-controller ref="[[ref]]" id="mainCTController"></custom-track-controller>
       </div>
-      <div main class="layout vertical">
+      <div slot="main" class="layout vertical">
         <paper-toolbar id='mainToolbar'>
           <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
           <div class="title">[[titleText]]
@@ -149,7 +149,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               <li>Move mouse cursor <strong>onto the coordinates</strong> and <em>use mouse wheel</em> to zoom in / out.</li>
             </ul>
           </paper-tooltip>
-          <content id="additionalCtrls" select=".toolBarCtrls"></content>
+          <slot id="additionalCtrls" name="toolBarCtrls"></slot>
         </paper-toolbar>
         <div class="content flex layout vertical">
           <div class="flex relative">
@@ -160,7 +160,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             </chart-area>
           </div>
           <div class="dataReference">
-            <content id="reference" select=".chartReference"></content>
+            <slot id="reference" name="chartReference"></slot>
           </div>
         </div>
       </div>

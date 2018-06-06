@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
@@ -51,14 +50,14 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         font-family: 'Roboto', Arial, Helvetica, sans-serif;
         display: block;
         margin: 0;
-        @apply(--layout-fit);
+        @apply --layout-fit;
       }
       #trackDOMHolder {
         display: none;
       }
       paper-material {
-        @apply(--layout-fit);
-        @apply(--layout-vertical);
+        @apply --layout-fit;
+        @apply --layout-vertical;
         padding: 0.8em;
         overflow-x: hidden;
         overflow-y: auto;
@@ -66,19 +65,19 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       div#chartHolding {
         padding: 0;
         width: 100%;
-        @apply(--layout-vertical);
-        @apply(--layout-flex);
+        @apply --layout-vertical;
+        @apply --layout-flex;
       }
       div#chartHolding div {
         margin: 0;
         padding: 0;
       }
       div.pinnedParts {
-        @apply(--layout-start);
+        @apply --layout-start;
         overflow: hidden;
       }
       div.scrollingParts {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         overflow-x: hidden;
         overflow-y: auto;
       }
@@ -87,7 +86,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       #loadingBlock {
         display: block;
         pointer-events: none;
-        @apply(--layout-fit);
+        @apply --layout-fit;
         z-index: 1;
         opacity: 0.8;
         background: var(--card-background-color);
@@ -108,9 +107,12 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 
     </style>
     <style include="genemo-track-styles"></style>
-    <div id="loadingBlock" hidden$="[[_readiness]]">
-      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
-    </div>
+    <template is="dom-if" if="[[!_readiness]]">
+      <div id="loadingBlock">
+        <paper-spinner id="loadingSpinner" alt="Loading card content"
+          active$="[[!_readiness]]"></paper-spinner>
+      </div>
+    </template>
     <paper-material>
       <div id="chartHolding" hidden$="[[!_initialized]]">
         <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
@@ -403,7 +405,7 @@ var GIVe = (function (give) {
         this._addSingleWindowTrackDOM(trackDOM, viewWindowIndex)
       }
       this._trackDOMsByWindow[viewWindowIndex]
-        .map[trackDOM.parent.getID()] = true
+        .map[trackDOM.parent.id] = true
     },
 
     _addSingleWindowTrackDOM: function (trackDOM, viewWindowIndex) {
@@ -436,18 +438,19 @@ var GIVe = (function (give) {
     _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
       if (forceAdd || (
         !this._trackDOMsByWindow[viewWindowIndex].map
-          .hasOwnProperty(track.getID()) &&
+          .hasOwnProperty(track.id) &&
         viewWindowIndex + track.windowSpan <= this._viewWindows.length
       )) {
         try {
-          var newTrackDOM = new track._DomObjCtor(track,
+          let newTrackDOM = track.createDomObj(
             this._createTrackProp(viewWindowIndex, props))
           if (newTrackDOM) {
             this._addTrackDOM(newTrackDOM, viewWindowIndex)
           }
           return newTrackDOM
         } catch (err) {
-          give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
+          give._verbConsole.warn(err)
+          give.fireSignal('warning', { msg: err.message })
           return null
         }
       }
@@ -463,8 +466,7 @@ var GIVe = (function (give) {
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
       // this will also rearrange the y value for all tracks as well
-      give._verboseConsole('UpdateHeightLocation(' + changeWindow +
-        ')', give.VERBOSE_DEBUG)
+      give._verbConsole.info('UpdateHeightLocation(' + changeWindow + ')')
       if (!this._trackDOMsByWindow.every(
         this._updateDomHeightInWindow.bind(this, changeWindow), this)
       ) {
@@ -533,7 +535,8 @@ var GIVe = (function (give) {
           }
           this._firstRun = false
         } catch (e) {
-          give._verboseConsole(e, give.VERBOSE_WARNING)
+          give._verbConsole.warn(e)
+          give.fireSignal('warning', { msg: e.message })
         } finally {
           this._readiness = true
         }
@@ -617,7 +620,7 @@ var GIVe = (function (give) {
         // some exception has happended during the conversion
         // throw an exception telling calling procedures
         if (this.passExceptions) {
-          var error = new Error('Exception occured during ChromRegion' +
+          var error = new give.GiveError('Exception occured during ChromRegion' +
             ' conversion.')
           error.data = error.data || {}
           error.data.exceptionList = exceptionList
@@ -688,10 +691,11 @@ var GIVe = (function (give) {
         this._refObj.setTrackSettings('visibility', false, null)
         this.defaultTrackIdList.forEach(function (id) {
           try {
-            this._refObj.getTracks().get(id).setSetting('visibility', true)
+            this._refObj.tracks.get(id).setSetting('visibility', true)
           } catch (e) {
-            give._verboseConsole('Track `' + id + '` does not exist!',
-              give.VERBOSE_WARNING)
+            give._verbConsole.warn('Track `' + id + '` does not exist!\n' + e)
+            give.fireSignal('warning',
+              { msg: 'Track `' + id + '` does not exist!' })
           }
         }, this)
       }
@@ -822,13 +826,13 @@ var GIVe = (function (give) {
         this._viewWindows.forEach(function (vwindow, windowIndex) {
           if (this.groupIdList && this.groupIdList.length > 0) {
             this.groupIdList.forEach(function (groupID) {
-              if (this._refObj.getGroups().hasOwnProperty(groupID)) {
-                this._refObj.getGroups()[groupID].forEach(
+              if (this._refObj.groups.hasOwnProperty(groupID)) {
+                this._refObj.groups[groupID].forEach(
                   showTrack.bind(this, windowIndex), this)
               }
             }, this)
           } else {
-            this._refObj.getTracks().forEach(
+            this._refObj.tracks.forEach(
               showTrack.bind(this, windowIndex), this)
           }
         }, this)
@@ -837,7 +841,8 @@ var GIVe = (function (give) {
     },
 
     addAllTrackDOMs: function (noRefreshContent) {
-      this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent, this.ref))
+      this._refObj.initTracks().then(
+        () => this._addAllTrackDOMsTracksReady(noRefreshContent, this.ref))
     },
 
     _removeInvisibleTrackDOMs: function () {
@@ -1059,10 +1064,11 @@ var GIVe = (function (give) {
     },
 
     _domChangeHandler: function () {
-      this._domsReady = false
-      this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-        this._initTrackDOMContainers.bind(this),
-        give.ChartArea.DOM_CHANGE_DEBOUNCE)
+      if (!this._domsReady) {
+        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
+          this._initTrackDOMContainers.bind(this),
+          give.ChartArea.DOM_CHANGE_DEBOUNCE)
+      }
     },
 
     _getElemId: function (divId, suffix) {
@@ -1074,8 +1080,12 @@ var GIVe = (function (give) {
     },
 
     _onIronResize: function (e, detail) {
-      if (this._domsReady) {
-        give._verboseConsole('_onIronResize()', give.VERBOSE_DEBUG)
+      if (this._domsReady && this._trackDOMsByWindow.every(
+        this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
+          return trackDOM.isReady
+        }), this)
+      ) {
+        give._verbConsole.info('_onIronResize()')
         if (!this.resizeAsyncProcess) {
           delete this._svgWidth
           this.resizeAsyncProcess = this.async(

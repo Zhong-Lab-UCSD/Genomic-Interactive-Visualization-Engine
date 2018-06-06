@@ -24,7 +24,7 @@ var GIVe = (function (give) {
         this.removeFlag(e.detail.flag)
       }
     } else {
-      throw (new Error('Task scheduler error: task entry not valid.'))
+      throw (new give.GiveError('Task scheduler error: task entry not valid.'))
     }
   }
 
@@ -35,7 +35,7 @@ var GIVe = (function (give) {
         this.tasks.push(task)
       }
     } else {
-      throw (new Error('Task scheduler error: task entry not valid.'))
+      throw (new give.GiveError('Task scheduler error: task entry not valid.'))
     }
   }
 

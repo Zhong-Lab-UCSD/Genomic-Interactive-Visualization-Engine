@@ -6,7 +6,7 @@
 
     /************************** Polymer and Material Design colors below *********************/
 
-    :root {
+    html {
       --dark-primary-color: #303F9F;
       --default-primary-color: #3F51B5;
       --default-primary-color-lighten: #5C6BC0;
@@ -182,7 +182,7 @@
     /************************** Genemo shared classes below *********************/
 
     div#genemoFirstContainer {
-      @apply(--layout-fit);
+      @apply --layout-fit;
       padding: 0.8em;
     }
 
@@ -205,11 +205,11 @@
 
     genemo-card.flexFillGenemoCard {
       --genemo-card-material-mixin: {
-        @apply(--layout-fit);
-        @apply(--layout-vertical);
+        @apply --layout-fit;
+        @apply --layout-vertical;
       };
       --genemo-card-fixed-content-mixin: {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         position: relative;
       };
     }

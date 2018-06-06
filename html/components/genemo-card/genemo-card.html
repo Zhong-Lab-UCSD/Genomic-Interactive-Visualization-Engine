@@ -31,7 +31,7 @@
       z-index: 0;
       text-align: left;
       position: relative;
-      @apply(--genemo-card-mixin);
+      @apply --genemo-card-mixin;
     /*  border: #757575 solid 1px;
       border: rgba(0, 0, 0, .54) solid 1px;
     */}
@@ -45,7 +45,7 @@
 
     #loadingBlock.notReady {
       display: block;
-      @apply(--layout-fit);
+      @apply --layout-fit;
       z-index: 1;
       opacity: 0.8;
       background: var(--card-background-color);
@@ -68,7 +68,7 @@
 
     paper-material {
       background: var(--card-background-color);
-      @apply(--genemo-card-material-mixin);
+      @apply --genemo-card-material-mixin;
     }
 
     #cardFixedContent {
@@ -86,12 +86,12 @@
           on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
         <div id="cardHeadContent" class="vertCenterElement"></div>
         <div id="cardHeadHolder">
-          <content id="cardhead" select=".genemoHead"></content>
+          <slot id="cardhead" name="genemoHead"></slot>
         </div>
       </div>
       <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
         hidden$="[[disableFolding]]">
-        <content id="cardbody" select=".genemoBody"></content>
+        <slot id="cardbody" name="genemoBody"></slot>
       </iron-collapse>
       <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
     </paper-material>

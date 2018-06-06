@@ -68,18 +68,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
+      function waitForIronItemsChanged(selector, callback) {
+        selector.addEventListener(
+            'iron-items-changed', function onIronItemsChanged() {
+              selector.removeEventListener('iron-items-changed', onIronItemsChanged);
+              callback();
+            })
+      }
 
       suite('links', function() {
-
         suite('has link attribute', function() {
-
           var tabs;
           var tab, anchor;
 
-          setup(function () {
+          setup(function(done) {
             tabs = fixture('links');
-            tab = tabs.querySelectorAll('paper-tab')[1];
-            anchor = tab.querySelector('a');
+            waitForIronItemsChanged(tabs, function() {
+              tab = tabs.querySelectorAll('paper-tab')[1];
+              anchor = tab.querySelector('a');
+              done();
+            });
           });
 
           test('pressing enter on tab causes anchor click', function(done) {
@@ -103,18 +111,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             MockInteractions.pressSpace(tab);
           });
-
         });
 
         suite('does not have link attribute', function() {
-
           var tabs;
           var tab, anchor;
 
-          setup(function () {
+          setup(function(done) {
             tabs = fixture('not-links');
-            tab = tabs.querySelectorAll('paper-tab')[1];
-            anchor = tab.querySelector('a');
+            waitForIronItemsChanged(tabs, function() {
+              tab = tabs.querySelectorAll('paper-tab')[1];
+              anchor = tab.querySelector('a');
+              done();
+            });
           });
 
           test('pressing enter on tab does not cause anchor click', function(done) {
@@ -128,18 +137,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             MockInteractions.pressEnter(tab);
           });
-
         });
 
         suite('not first child', function() {
-
           var tabs;
           var tab, anchor;
 
-          setup(function () {
+          setup(function(done) {
             tabs = fixture('links');
-            tab = tabs.querySelectorAll('paper-tab')[1];
-            anchor = tab.querySelector('a');
+            waitForIronItemsChanged(tabs, function() {
+              tab = tabs.querySelectorAll('paper-tab')[1];
+              anchor = tab.querySelector('a');
+              done();
+            });
           });
 
           test('pressing enter on tab causes anchor click', function(done) {
@@ -152,11 +162,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             MockInteractions.pressEnter(tab);
           });
-
         });
-
       });
-
     </script>
 
   </body>

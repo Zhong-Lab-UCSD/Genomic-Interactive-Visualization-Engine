@@ -35,219 +35,215 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
   <template>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.CoorTrackDOM = Polymer({
-        is: 'coor-track-dom',
-
-        behaviors: [
-          give.TrackDOMBehavior
-        ],
-
-        properties: {
-
-          tickLength: {
-            type: Number,
-            value: 9
-          },
-
-          minorMajorRatio: {  // how big minor span gaps should be
-            type: Number,
-            value: 0.2
-          },
-
-          minorLength: {    // how long minor span ticks should be
-            type: Number,
-            value: 0.75
-          },
-
-          labelLocation: {
-            type: String,
-            value: 'up',
-            readOnly: true
-          },
-
-          scrollPercentage: {
-            type: Number,
-            value: 0.3     // * deltaY in scrolling is the amount of zoom in/out
-          },
-
-          foreColor: {
-            type: Number,
-            value: 0x000000
-          }
-
+  class CoorTrackDom extends give.TrackDom {
+    static get properties () {
+      return {
+        tickLength: {
+          type: Number,
+          value: 9
         },
 
-        created: function () {
-          this.MIN_TICK_GAP = 100
-          this.MIN_TICK_TEXT_MARGIN = 50
-          this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50
-          this.LINEGAP_RATIO = 2.4    // this is the actual gap used to display between ticks and numbers
+        minorMajorRatio: { // how big minor span gaps should be
+          type: Number,
+          value: 0.2
         },
 
-        trackImpl: function (track, properties) {
-          properties = properties || {}
-
-          this.pin = this.pin || 'top'
-
-          this._setDynamicHeight(false)
-          this._setLabelLocation(
-            (isNaN(properties.windowIndex) || properties.windowIndex === 0)
-              ? 'up' : 'down'
-          )
-          this._setTrackMainDOMClass('coordinates')
-
-          this._setTrackHeight(properties.height || this.tickLength +
-            (this.lineGapRatio * this.LINEGAP_RATIO + 1) * this.textSize)
-
-          if (properties.hasOwnProperty('colorIndex')) {
-            this.foreColor = this.colorSet[properties.colorIndex]
-          } else if (properties.hasOwnProperty('color')) {
-            this.foreColor = parseInt(properties.color)
-          }
-
-          if (this.textMargin) {
-            this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG
-          }
-
-          this._drawDebounceInt = 0
+        minorLength: { // how long minor span ticks should be
+          type: Number,
+          value: 0.75
         },
 
-      // ****** customized methods below ******
-
-        drawData: function () {
-        // this is to draw everything from this.data to the svg
-        // Steps:
-        //     put genes into lines (pack display)
-        //    draw genes out line by line
-
-        // clear text Margin svg
-          this.clear()
-          this.drawCoordinates()
+        labelLocation: {
+          type: String,
+          value: 'up',
+          readOnly: true
         },
 
-      // ** coordinate handling **
-
-        getRealTicks: function (viewWindow, maxNumOfTicks) {
-        // will get the span between ticks for viewWindow
-        // should be an array of [1,2,5] * 10^x
-        // the results will contain two sets of ticks
-          viewWindow = viewWindow || this.mainSvg.viewWindow
-          maxNumOfTicks = maxNumOfTicks ||
-            Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
-          var span = viewWindow.getLength() / maxNumOfTicks
-          var minorSpan
-          if (Math.ceil(span) > 0) {
-          // round up to closest [1,2,5] * 10^x
-            var spanExp = parseInt(Math.log(span) / Math.LN10)
-            var spanHeader = span / Math.pow(10, spanExp)
-            if (spanHeader > 5) {
-              spanExp++
-              spanHeader = 1
-            } else if (spanHeader > 2) {
-              spanHeader = 5
-            } else if (spanHeader > 1) {
-              spanHeader = 2
-            }
-            span = spanHeader * Math.pow(10, spanExp)
-          }
-          span = Math.ceil(span)
-          if (span <= 0) {
-            span = 1
-          }
-
-          minorSpan = Math.ceil(span * this.minorMajorRatio)
-
-          var currIndex = Math.ceil(viewWindow.start / minorSpan) * minorSpan
-          var result = [{
-            chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
-          }]
-          currIndex += minorSpan
-          while (currIndex < viewWindow.end) {
-            result.push({
-              chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
-            })
-            currIndex += minorSpan
-          }
-          return result
+        scrollPercentage: {
+          type: Number,
+          value: 0.3 // * deltaY in scrolling is the amount of zoom in/out
         },
 
-        drawCoordinates: function (svgToDraw, labels) {
-          // svgToDraw is the DOM svg component (the track element, not the figure itself)
-          // windowToDraw is the window object (chr, start, end, subwindows)
-          // this will draw coordinate for windowToDraw at the top of svgToDraw
-          // labels will be some values to indicate whether a label needs to be included:
-          //    'up' means the labels will be put on top of the ticks
-          //    'down' means the labels will be put below the ticks
-
-          svgToDraw = this.mainSvg || svgToDraw
-
-          var windowToDraw = svgToDraw.viewWindow
-          labels = labels || this.labelLocation
-
-          // first get the drawing window size from svgToDraw
-          // calculate number of ticks in the svg
-          var ticks = this.getRealTicks()
-          ticks.forEach(function (value, index) {
-            var tickX = this.transformXCoordinate(value, false, svgToDraw)
-            var tickY = 0.5
-            if (labels === 'up') {
-              tickY += this.textSize * (1 + this.lineGapRatio * this.LINEGAP_RATIO) +
-                (!value.major ? this.tickLength * (1 - this.minorLength) : 0) -
-                0.5
-            }
-            this.drawLine(tickX, tickY, tickX,
-              tickY + this.tickLength * (!value.major ? this.minorLength : 1),
-              this.foreColor, svgToDraw)
-
-            if (value.major && tickX > this.MIN_TICK_TEXT_MARGIN &&
-              tickX < this.windowWidth - this.MIN_TICK_TEXT_MARGIN &&
-              (labels === 'up' || labels === 'down')) {
-              // add text label for the tick
-              this.drawText(tickX, (labels === 'up'
-                ? 0 : this.lineGapRatio * this.textSize + this.tickLength) +
-                0.5 * this.textSize, value.coor, 'middle')
-            }
-          }, this)
-          // then draw a line connecting all the ticks
-          this.drawLine(0, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
-            this.windowWidth, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
-            this.foreColor, svgToDraw)
-
-          if (labels === 'up' || labels === 'down') {
-            this.drawText(this.textMargin ? this.textMargin : 0,
-              (labels === 'up' ? 0.5
-                : this.lineGapRatio * this.LINEGAP_RATIO * this.textSize +
-                  this.tickLength
-              ) + 0.5 * this.textSize,
-              windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
-              this.textMargin ? this.textSvg : this.mainSvg)
-          }
-        },
-
-        wheelHandler: function (e, detail) {
-          var diff = e.deltaY / 100 * this.scrollPercentage
-          this.fire('update-window', {
-            windowIndex: this.windowIndex,
-            newWindow: this.getMainSvg().viewWindow
-              .getExtension(
-                diff, this.revTransXCoordinate(e.pageX -
-                  e.target.getBoundingClientRect().left).coor,
-                true, this.parent.ref,
-                Math.ceil(this.windowWidth /
-                  (this.MAX_SPACE_PER_BASE * this.textSize))
-              ).regionToString(false)
-          })
-        // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
-        //  diff, this.revTransXCoordinate(e.x).coor, true, this.parent.ref).regionToString(false));
-        // svgTarget.needsUpdate = true;
-        // this.updateChart(50);
+        foreColor: {
+          type: Number,
+          value: 0x000000
         }
-      })
+      }
+    }
 
-      return give
-    })(GIVe || {})
+    constructor (track, properties) {
+      super(...arguments)
+      this.MIN_TICK_GAP = 100
+      this.MIN_TICK_TEXT_MARGIN = 50
+      this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50
+      this.LINEGAP_RATIO = 2.4 // this is the actual gap used to display between ticks and numbers
+
+      properties = properties || {}
+
+      this.pin = this.pin || 'top'
+
+      this._setDynamicHeight(false)
+      this._setLabelLocation(
+        (isNaN(properties.windowIndex) || properties.windowIndex === 0)
+          ? 'up' : 'down'
+      )
+      this._setTrackMainDOMClass('coordinates')
+
+      this._setTrackHeight(properties.height || this.tickLength +
+        (this.lineGapRatio * this.LINEGAP_RATIO + 1) * this.textSize)
+
+      if (properties.hasOwnProperty('colorIndex')) {
+        this.foreColor = this.colorSet[properties.colorIndex]
+      } else if (properties.hasOwnProperty('color')) {
+        this.foreColor = parseInt(properties.color)
+      }
+
+      if (this.textMargin) {
+        this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG
+      }
+
+      this._drawDebounceInt = 0
+    }
+
+    // ****** customized methods below ******
+
+    drawData () {
+    // this is to draw everything from this.data to the svg
+    // Steps:
+    //     put genes into lines (pack display)
+    //    draw genes out line by line
+
+    // clear text Margin svg
+      this.clear()
+      this.drawCoordinates()
+    }
+
+    // ** coordinate handling **
+
+    getRealTicks (viewWindow, maxNumOfTicks) {
+    // will get the span between ticks for viewWindow
+    // should be an array of [1,2,5] * 10^x
+    // the results will contain two sets of ticks
+      viewWindow = viewWindow || this.mainSvg.viewWindow
+      maxNumOfTicks = maxNumOfTicks ||
+        Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
+      var span = viewWindow.getLength() / maxNumOfTicks
+      var minorSpan
+      if (Math.ceil(span) > 0) {
+      // round up to closest [1,2,5] * 10^x
+        var spanExp = parseInt(Math.log(span) / Math.LN10)
+        var spanHeader = span / Math.pow(10, spanExp)
+        if (spanHeader > 5) {
+          spanExp++
+          spanHeader = 1
+        } else if (spanHeader > 2) {
+          spanHeader = 5
+        } else if (spanHeader > 1) {
+          spanHeader = 2
+        }
+        span = spanHeader * Math.pow(10, spanExp)
+      }
+      span = Math.ceil(span)
+      if (span <= 0) {
+        span = 1
+      }
+
+      minorSpan = Math.ceil(span * this.minorMajorRatio)
+
+      var currIndex = Math.ceil(viewWindow.start / minorSpan) * minorSpan
+      var result = [{
+        chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
+      }]
+      currIndex += minorSpan
+      while (currIndex < viewWindow.end) {
+        result.push({
+          chr: viewWindow.chr, coor: currIndex, major: !(currIndex % span)
+        })
+        currIndex += minorSpan
+      }
+      return result
+    }
+
+    drawCoordinates (svgToDraw, labels) {
+      // svgToDraw is the DOM svg component (the track element, not the figure itself)
+      // windowToDraw is the window object (chr, start, end, subwindows)
+      // this will draw coordinate for windowToDraw at the top of svgToDraw
+      // labels will be some values to indicate whether a label needs to be included:
+      //    'up' means the labels will be put on top of the ticks
+      //    'down' means the labels will be put below the ticks
+
+      svgToDraw = this.mainSvg || svgToDraw
+
+      var windowToDraw = svgToDraw.viewWindow
+      labels = labels || this.labelLocation
+
+      // first get the drawing window size from svgToDraw
+      // calculate number of ticks in the svg
+      var ticks = this.getRealTicks()
+      ticks.forEach(function (value, index) {
+        var tickX = this.transformXCoordinate(value, false, svgToDraw)
+        var tickY = 0.5
+        if (labels === 'up') {
+          tickY += this.textSize * (1 + this.lineGapRatio * this.LINEGAP_RATIO) +
+            (!value.major ? this.tickLength * (1 - this.minorLength) : 0) -
+            0.5
+        }
+        this.drawLine(tickX, tickY, tickX,
+          tickY + this.tickLength * (!value.major ? this.minorLength : 1),
+          this.foreColor, svgToDraw)
+
+        if (value.major && tickX > this.MIN_TICK_TEXT_MARGIN &&
+          tickX < this.windowWidth - this.MIN_TICK_TEXT_MARGIN &&
+          (labels === 'up' || labels === 'down')) {
+          // add text label for the tick
+          this.drawText(tickX, (labels === 'up'
+            ? 0 : this.lineGapRatio * this.textSize + this.tickLength) +
+            0.5 * this.textSize, value.coor, 'middle')
+        }
+      }, this)
+      // then draw a line connecting all the ticks
+      this.drawLine(0, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
+        this.windowWidth, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
+        this.foreColor, svgToDraw)
+
+      if (labels === 'up' || labels === 'down') {
+        this.drawText(this.textMargin ? this.textMargin : 0,
+          (labels === 'up' ? 0.5
+            : this.lineGapRatio * this.LINEGAP_RATIO * this.textSize +
+              this.tickLength
+          ) + 0.5 * this.textSize,
+          windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
+          this.textMargin ? this.textSvg : this.mainSvg)
+      }
+    }
+
+    wheelHandler (e, detail) {
+      var diff = e.deltaY / 100 * this.scrollPercentage
+      this.fire('update-window', {
+        windowIndex: this.windowIndex,
+        newWindow: this.getMainSvg().viewWindow
+          .getExtension(
+            diff, this.revTransXCoordinate(e.pageX -
+              e.target.getBoundingClientRect().left).coor,
+            true, this.parent.ref,
+            Math.ceil(this.windowWidth /
+              (this.MAX_SPACE_PER_BASE * this.textSize))
+          ).regionToString(false)
+      })
+    // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
+    //  diff, this.revTransXCoordinate(e.x).coor, true, this.parent.ref).regionToString(false));
+    // svgTarget.needsUpdate = true;
+    // this.updateChart(50);
+    }
+  }
+
+  give.CoorTrackDom = CoorTrackDom
+  window.customElements.define('coor-track-dom', give.CoorTrackDom)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

@@ -1,12 +1,15 @@
 Prism.languages.erlang = {
 	'comment': /%.+/,
-	'string': /"(?:\\?.)*?"/,
+	'string': {
+		pattern: /"(?:\\.|[^\\"\r\n])*"/,
+		greedy: true
+	},
 	'quoted-function': {
-		pattern: /'(?:\\.|[^'\\])+'(?=\()/,
+		pattern: /'(?:\\.|[^\\'\r\n])+'(?=\()/,
 		alias: 'function'
 	},
 	'quoted-atom': {
-		pattern: /'(?:\\.|[^'\\])+'/,
+		pattern: /'(?:\\.|[^\\'\r\n])+'/,
 		alias: 'atom'
 	},
 	'boolean': /\b(?:true|false)\b/,
@@ -14,7 +17,7 @@ Prism.languages.erlang = {
 	'number': [
 		/\$\\?./,
 		/\d+#[a-z0-9]+/i,
-		/(?:\b|-)\d*\.?\d+([Ee][+-]?\d+)?\b/
+		/(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i
 	],
 	'function': /\b[a-z][\w@]*(?=\()/,
 	'variable': {

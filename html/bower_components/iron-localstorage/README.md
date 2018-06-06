@@ -16,8 +16,10 @@ thing! https://github.com/PolymerLabs/tedium/issues
 
 _[Demo and API docs](https://elements.polymer-project.org/elements/iron-localstorage)_
 
+## Changes in 2.0
+* ⚠️ This element is now deprecated ⚠️
 
-##&lt;iron-localstorage&gt;
+## &lt;iron-localstorage&gt;
 
 Element access to Web Storage API (window.localStorage).
 

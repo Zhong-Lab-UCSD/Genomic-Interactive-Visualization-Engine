@@ -39,38 +39,9 @@ for Polymer Element guide, including lifecycles, properties, methods and others.
 var GIVe = (function (give) {
   'use strict'
 
-  give.BigWigTrackDOM = Polymer({ // and fix usage of detail, reader, results, etc.
-
-    is: 'bigwig-track-dom',
-    behaviors: [
-      give.TrackDOMBehavior
-    ],
-    properties: {
-      upperPercentile: {
-        type: Number,
-        value: 0.01
-      },
-
-      lowerPercentile: {
-        type: Number,
-        value: 0.01
-      },
-
-      numOfDigits: {
-        type: Number,
-        value: 2
-      },
-      autoScale: {
-        type: Boolean,
-        value: true
-      },
-
-      includeZero: {
-        type: Boolean,
-        value: true
-      }
-    },
-    created: function () {
+  class BigWigTrackDom extends give.TrackDom {
+    constructor (track, props) {
+      super(...arguments)
       this.MARGIN = 2
       this.FORECOLOR_INDEX = 0 // the color index for fore color
       this.TEXT_COLOR_RGB = 0 // the color index for text
@@ -90,28 +61,29 @@ var GIVe = (function (give) {
        *     to be explained
        */
       this.MIN_RESOLUTION_PER_PIXEL = 1
-    },
 
-    trackImpl: function (track, prop) {
       /**
        * The upper bound for the track display. Any values above this will be displayed as a overflow line.
        */
       this.windowMax = track.getSetting('windowMax', 'float') ||
-        give.BigWigTrackDOM._DEFAULT_MAX
+        BigWigTrackDom._DEFAULT_MAX
 
       /**
        * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
        */
       this.windowMin = track.getSetting('windowMin', 'float') ||
-        give.BigWigTrackDOM._DEFAULT_MIN
+        BigWigTrackDom._DEFAULT_MIN
 
       if (!(this.windowMax > this.windowMin)) {
-        give._verboseConsole('Window Range Error: windowMax = ' +
-          this.windowMax + '; windowMin = ' + this.windowMin,
-          give.VERBOSE_WARNING
+        give._verbConsole.warn(
+          'Window Range Error: windowMax = ' +
+          this.windowMax + '; windowMin = ' + this.windowMin
         )
-        this.windowMax = give.BigWigTrackDOM._DEFAULT_MAX
-        this.windowMin = give.BigWigTrackDOM._DEFAULT_MIN
+        give.fireSignal('warning',
+          { msg: 'Window Range Error: windowMax = ' +
+          this.windowMax + '; windowMin = ' + this.windowMin })
+        this.windowMax = BigWigTrackDom._DEFAULT_MAX
+        this.windowMin = BigWigTrackDom._DEFAULT_MIN
       }
 
       /**
@@ -120,7 +92,7 @@ var GIVe = (function (give) {
       try {
         this.setHeight(track.getSetting('height', 'integer'))
       } catch (e) {
-        this.setHeight(give.BigWigTrackDOM._DEFAULT_HEIGHT)
+        this.setHeight(BigWigTrackDom._DEFAULT_HEIGHT)
       }
 
       this.labelMarginRight = this.MARGIN + this.TEXT_MARGIN_GAP
@@ -150,23 +122,51 @@ var GIVe = (function (give) {
        */
       this.averagePointAmount = 10
       // this.dataPoints=[]
-      this.slidingWindowWidth = 5   // sliding window size (single side)
+      this.slidingWindowWidth = 5 // sliding window size (single side)
       this.dataPoints = []
-    },
+    }
+
+    static get properties () {
+      return {
+        upperPercentile: {
+          type: Number,
+          value: 0.01
+        },
+
+        lowerPercentile: {
+          type: Number,
+          value: 0.01
+        },
+
+        numOfDigits: {
+          type: Number,
+          value: 2
+        },
+        autoScale: {
+          type: Boolean,
+          value: true
+        },
+
+        includeZero: {
+          type: Boolean,
+          value: true
+        }
+      }
+    }
 
     /**
      * anonymous function - description
      *
      * @return {type}  returns the resolution.
      */
-    getResolution: function (newVWindow) {
+    getResolution (newVWindow) {
       return Math.max(Math.floor(
         newVWindow.getLength() / this.windowWidth /
         this.MIN_RESOLUTION_PER_PIXEL
       ), 1)
-    },
+    }
 
-    _pushSingleRawPointEntry: function (
+    _pushSingleRawPointEntry (
       dataPointArray, chrRange, dataEntry
     ) {
       // start is the end of the last entry in dataPointArray
@@ -202,9 +202,9 @@ var GIVe = (function (give) {
           chrSpan.move(span)
         }
       }
-    },
+    }
 
-    _generateRawPointsList: function (vwindow) {
+    _generateRawPointsList (vwindow) {
       var rawDataPoints = []
       // First populate the raw data points
       this.parent.getData(vwindow.chr).traverse(vwindow,
@@ -223,9 +223,9 @@ var GIVe = (function (give) {
         lastEnd += vwindow.Resolution
       }
       return rawDataPoints
-    },
+    }
 
-    _generateSmoothedPoints: function () {
+    _generateSmoothedPoints () {
       // Get the smoothing points
       var vwindow = this.mainSvg.viewWindow
       var slidingWindowSpan = this.getResolution(vwindow) *
@@ -261,9 +261,9 @@ var GIVe = (function (give) {
         }, this.parent.ref, { data: { value: slidingSum / windowElemCount } }))
       }
       return smoothedPointsList
-    },
+    }
 
-    _findAutoScale: function () {
+    _findAutoScale () {
       this.windowMax = this.includeZero ? 0 : Number.NEGATIVE_INFINITY
       this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
       try {
@@ -283,9 +283,9 @@ var GIVe = (function (give) {
         this.windowMax = 1
         this.windowMin = 0
       }
-    },
+    }
 
-    drawData: function () {
+    drawData () {
       // default drawing mode is 0 (sliding window smoothing)
       var mode = parseInt(give.getParameterByName('mode') || 0)
       // draw the given point with height determined by signal strength
@@ -307,7 +307,7 @@ var GIVe = (function (give) {
         }
       }
       this.drawScale()
-    },
+    }
 
     /**
      * anonymous function - transforms a signal strength into a y coordinate on the svg.
@@ -316,7 +316,7 @@ var GIVe = (function (give) {
      * @param  {type} flags  has two booleans
      * @return {type}        returns the y coordinate
      */
-    transformYCoordinate: function (signal, flags) {
+    transformYCoordinate (signal, flags) {
     // transform Y coordinate from signal with this.windowMin and this.windowMax
     // notice that if the value exceeds either boundary,
     // it will return the Y value at the boundary, but will mark flags.EXCEED_MAX or flags.EXCEED_MIN as true
@@ -333,7 +333,7 @@ var GIVe = (function (give) {
       }
       return (signal - this.windowMax) / (this.windowMin - this.windowMax) *
       (this.drawingBoundary.bottom - this.drawingBoundary.top) + this.drawingBoundary.top
-    },
+    }
 
     /**
      * anonymous function - scales a line to be drawn based on window ranges, assuming autoscale is being used.
@@ -342,7 +342,7 @@ var GIVe = (function (give) {
      * @param  {type} extremes description
      * @return {type}          description
      */
-    scaleLine: function (strength, extremes) {
+    scaleLine (strength, extremes) {
       var zero, value
       if (extremes[0] < 0 && extremes[1] > 0) { // if range is from - to +
         zero = ((0 - extremes[0]) / extremes[3] * this.height)
@@ -359,7 +359,7 @@ var GIVe = (function (give) {
         }
       }
       return [this.height - zero, this.height - value]
-    },
+    }
 
     /**
      * anonymous function - scales a line to be drawn based on the custom window range.
@@ -367,7 +367,7 @@ var GIVe = (function (give) {
      * @param  {type} strength description
      * @return {type}          description
      */
-    scaleLineCustom: function (strength) {
+    scaleLineCustom (strength) {
       var zero = 0
       var value = 0
       var cutOff = 0
@@ -393,7 +393,7 @@ var GIVe = (function (give) {
         cutOff += 3
       }
       return [zero, value, cutOff]
-    },
+    }
 
     /**
      * anonymous function - Draws the horizontal thick, diferent colored lines where the values go further than the window ranges.
@@ -401,7 +401,7 @@ var GIVe = (function (give) {
      * @param  {type} overflows the list of overflow areas
      * @return {type}           description
      */
-    drawOverflowLines: function (overflows) {
+    drawOverflowLines (overflows) {
     // overflows is an object containing overflowing ChrRegions
     // { 'exceedMax': Array(), 'exceedMin': Array() }
     // purple
@@ -412,7 +412,7 @@ var GIVe = (function (give) {
       }.bind(this)
       overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
       overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
-    },
+    }
 
     /**
      * anonymous function - Adds a point from the dataEntry to the datapoints.
@@ -420,26 +420,26 @@ var GIVe = (function (give) {
      * @param  {type} dataEntry holds many points, just not in the correct format (yet).
      * @return {type}           description
      */
-    addPoint: function (vwindowChr, dataEntry) {
+    addPoint (vwindowChr, dataEntry) {
       /* var x = dataEntry.getStart()
       var y = dataEntry.getEnd()
       var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
           ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
           // var vwindow = this.mainSvg.viewWindow
       this.parent.data[vwindowChr].dataPoints.push(dataEntry)
-    },
+    }
     // another function called draw splines? which converts the four bezier  points to scale on the svg and draws them as a curve?
     // use svg function
 
-    drawBCurve: function (bPoints) {
+    drawBCurve (bPoints) {
       var svgToDraw = this.mainSvg
       var BCurve = document.createElementNS(this.svgNS, 'path')
       BCurve.setAttribute('d', 'M' + bPoints[0][0] + ' ' + bPoints[0][1] + ' C ' + bPoints[1][0] + ' ' + bPoints[1][1] + ' ' + bPoints[2][0] + ' ' + bPoints[2][1] + ' ' + bPoints[3][0] + ' ' + bPoints[3][1])// use c for the rest
       BCurve.setAttribute('stroke', 'black')
       BCurve.setAttribute('fill', 'transparent')
       this.addElement(BCurve, svgToDraw)
-    },
-    drawDownLine: function (x, y) {
+    }
+    drawDownLine (x, y) {
       var svgToDraw = this.mainSvg
       var DownLine = document.createElementNS(this.svgNS, 'line')
       DownLine.setAttribute('x1', x)
@@ -448,8 +448,8 @@ var GIVe = (function (give) {
       DownLine.setAttribute('y2', 0)
       DownLine.setAttribute('stroke', 'black')
       this.addElement(DownLine, svgToDraw)
-    },
-    bSpline: function (points) {
+    }
+    bSpline (points) {
         // for each (four?) points: calculate the tripmid point things, store them as p1.t2 , p2.t1, p2.t2, p3.t1, p3.t2, p4.t1
         // calculate the midpoints of each connected trimidpoint pair, store as p2.m, p3.m
         // calculate input the points as bezier: p2.m, p2.t2, p3.t1, p3.m, with the middle two as control points.
@@ -495,8 +495,8 @@ var GIVe = (function (give) {
       }
       // this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false)
       // drawSpline(points)
-    },
-    newBCurve: function () { // this one fills it too. note that some zooms have less than four points to workwith.
+    }
+    newBCurve () { // this one fills it too. note that some zooms have less than four points to workwith.
       var vwindow = this.mainSvg.viewWindow
       var svgToDraw = this.mainSvg
       var curveStart = 0
@@ -522,8 +522,8 @@ var GIVe = (function (give) {
           }
         }
       }
-    },
-    calculateSvgCurvePoints: function (i) {
+    }
+    calculateSvgCurvePoints (i) {
       var vwindow = this.mainSvg.viewWindow
       var svgToDraw = this.mainSvg
       var windowToDraw = this.mainSvg.viewWindow
@@ -548,8 +548,8 @@ var GIVe = (function (give) {
       p3.adjustedMidPoint = [this.transformXCoordinate({chr: windowToDraw.chr, coor: (p3.midPoint[0]) }, false), this.transformYCoordinate(p3.midPoint[1])]
       var adjustedBPoints = [p2.adjustedMidPoint, p2.adjustedt2, p3.adjustedt1, p3.adjustedMidPoint]
       return adjustedBPoints
-    },
-    newDrawBCurve: function (start, end) {
+    }
+    newDrawBCurve (start, end) {
       var vwindow = this.mainSvg.viewWindow
       var svgToDraw = this.mainSvg
       var windowToDraw = this.mainSvg.viewWindow
@@ -570,7 +570,7 @@ var GIVe = (function (give) {
       d = d + ' C ' + SvgPoints[1][0] + ' ' + SvgPoints[1][1] + ' ' + SvgPoints[2][0] + ' ' + SvgPoints[2][1] + ' ' + SvgPoints[3][0] + ' ' + this.transformYCoordinate(0)
       BCurve.setAttribute('d', d)
       this.addElement(BCurve, svgToDraw)
-    },
+    }
 
     /**
      * anonymous function - Takes a specified amount of points (by averagePointAmount) around the point and assigns the average y value of all those points to the middle point's display.
@@ -578,7 +578,7 @@ var GIVe = (function (give) {
      *
      * @return {type}  description
      */
-    averagePoints: function () {
+    averagePoints () {
       var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
       var vwindow = this.mainSvg.viewWindow
       this.parent.data[vwindow.chr].averageDataPoints = []
@@ -591,9 +591,9 @@ var GIVe = (function (give) {
         temp.data.value = parseInt(sum / this.averagePointAmount + 0.5)
         this.parent.data[vwindow.chr].averageDataPoints.push(temp)
       }
-    },
+    }
 
-    _pushCoorToPolygon: function (polygon, vwindow, xCoor, yValue, flags, replace) {
+    _pushCoorToPolygon (polygon, vwindow, xCoor, yValue, flags, replace) {
       if (!replace) {
         polygon.points.push(this.transformXCoordinate({
           chr: vwindow.chr,
@@ -606,9 +606,9 @@ var GIVe = (function (give) {
         }, false) + ',' + this.transformYCoordinate(yValue, flags)
       }
       polygon.lastX = xCoor
-    },
+    }
 
-    _endPolygon: function (polygon) {
+    _endPolygon (polygon) {
       var svgToDraw = this.mainSvg
       this.createRawPolygon(polygon.points, {
         class: 'wiggleShapes',
@@ -618,7 +618,7 @@ var GIVe = (function (give) {
       this.drawOverflowLines(polygon.overflows)
       polygon.points = []
       polygon.overflows = {exceedMax: [], exceedMin: []}
-    },
+    }
 
     /**
      * drawPeak - Draws the given points onto the svg window.
@@ -627,7 +627,7 @@ var GIVe = (function (give) {
      * @param  {type} dataEntry   description
      * @return {type}             description
      */
-    drawPeak: function (dataPoints) {
+    drawPeak (dataPoints) {
       var svgToDraw = this.mainSvg
       var windowToDraw = svgToDraw.viewWindow
 
@@ -690,9 +690,9 @@ var GIVe = (function (give) {
           currPolygon.lastX, 0)
         this._endPolygon(currPolygon)
       }
-    },
+    }
 
-    _drawPeakFromBedGraph: function (currPolygon, dataEntry) {
+    _drawPeakFromBedGraph (currPolygon, dataEntry) {
       var svgToDraw = this.mainSvg
       var windowToDraw = svgToDraw.viewWindow
       var flags = {}
@@ -762,13 +762,13 @@ var GIVe = (function (give) {
       }
 
       return true
-    },
+    }
 
     /**
      * drawScale - Draws the signal strength scale on the left side of the
      *  track.
      */
-    drawScale: function () {
+    drawScale () {
       if (this.textSvg) {
       // first draw the lines
         this.drawLine(
@@ -797,7 +797,7 @@ var GIVe = (function (give) {
             this.numOfDigits).toString(),
           'end', null, this.textSvg)
       }
-    },
+    }
 
     /**
      * anonymous function - Sets the window range.
@@ -806,30 +806,32 @@ var GIVe = (function (give) {
      * @param  {type} max description
      * @return {type}     description
      */
-    setExtremes: function (min, max) {
+    setExtremes (min, max) {
       if (max > min) {
         this.windowMin = min
         this.windowMax = max
         this.windowRange = max - min
         this.autoScale = false
       } else {} // there is an error
-    },
+    }
 
     /**
      * anonymous function - Automatically scales the window, taking the maximum and minimum signal strengths in the display window as the range extremes.
      *
      * @return {type}  description
      */
-    autoWindow: function () {
+    autoWindow () {
       this.autoScale = true
     }
+  }
 
-  })
+  BigWigTrackDom._DEFAULT_HEIGHT = 80
+  BigWigTrackDom._DEFAULT_MAX = 20
+  BigWigTrackDom._DEFAULT_MIN = 0
 
-  give.BigWigTrackDOM._DEFAULT_HEIGHT = 80
-  give.BigWigTrackDOM._DEFAULT_MAX = 20
-  give.BigWigTrackDOM._DEFAULT_MIN = 0
+  give.BigWigTrackDom = BigWigTrackDom
 
+  window.customElements.define('bigwig-track-dom', give.BigWigTrackDom)
 
   return give
 })(GIVe || {})

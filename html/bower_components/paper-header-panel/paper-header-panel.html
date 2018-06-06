@@ -12,6 +12,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <!--
+**This element has been deprecated in favor of [app-layout](https://github.com/PolymerElements/app-layout).**
+
 `paper-header-panel` contains a header section and a content panel section.
 
 __Important:__ The `paper-header-panel` will not display if its parent does not have a height.
@@ -20,7 +22,7 @@ Using layout classes, you can make the `paper-header-panel` fill the screen
 
     <body class="fullbleed layout vertical">
       <paper-header-panel class="flex">
-        <paper-toolbar>
+        <paper-toolbar slot="header">
           <div>Hello World!</div>
         </paper-toolbar>
       </paper-header-panel>
@@ -32,24 +34,16 @@ header section.
 Example:
 
     <paper-header-panel>
-      <paper-toolbar>Header</paper-toolbar>
-      <div>Content goes here...</div>
-    </paper-header-panel>
-
-If you want to use other than `paper-toolbar` for the header, add `paper-header` class to that
-element.
-
-Example:
-
-    <paper-header-panel>
-      <div class="paper-header">Header</div>
+      <paper-toolbar slot="header">Header</paper-toolbar>
       <div>Content goes here...</div>
     </paper-header-panel>
 
 To have the content fit to the main area, use the `fit` class.
 
+Example:
+
     <paper-header-panel>
-      <div class="paper-header">standard</div>
+      <div slot="header">standard</div>
       <div class="fit">content fits 100% below the header</div>
     </paper-header-panel>
 
@@ -66,14 +60,6 @@ Mode | Description
 `waterfall-tall` | The header is initially taller (`tall` class is added to the header). As the user scrolls, the header separates (forming an edge) while condensing (`tall` class is removed from the header).
 `scroll` | The header keeps its seam with the panel, and is pushed off screen.
 `cover` | The panel covers the whole `paper-header-panel` including the header. This allows user to style the panel in such a way that the panel is partially covering the header.
-
-Example:
-
-    <paper-header-panel mode="waterfall">
-      <div class="paper-header">standard</div>
-      <div class="content fit">content fits 100% below the header</div>
-    </paper-header-panel>
-
 
 ### Styling
 
@@ -147,17 +133,14 @@ Custom property | Description | Default
   <template>
     <style>
       :host {
-        @apply(--layout-vertical);
-
+        @apply --layout-vertical;
         position: relative;
         height: 100%;
-
-        @apply(--paper-header-panel);
+        @apply --paper-header-panel;
       }
 
       #mainContainer {
-        @apply(--layout-flex);
-
+        @apply --layout-flex;
         position: relative;
         overflow-y: auto;
         overflow-x: hidden;
@@ -165,25 +148,22 @@ Custom property | Description | Default
       }
 
       #mainPanel {
-        @apply(--layout-vertical);
-        @apply(--layout-flex);
-
+        @apply --layout-vertical;
+        @apply --layout-flex;
         position: relative;
         min-height: 0;
-
-        @apply(--paper-header-panel-body);
+        @apply --paper-header-panel-body;
       }
 
       #mainContainer {
-        @apply(--paper-header-panel-container);
+        @apply --paper-header-panel-container;
       }
 
       /*
        * mode: scroll
        */
       :host([mode=scroll]) #mainContainer {
-        @apply(--paper-header-panel-scroll-container);
-
+        @apply --paper-header-panel-scroll-container;
         overflow: visible;
       }
 
@@ -197,8 +177,7 @@ Custom property | Description | Default
        * mode: cover
        */
       :host([mode=cover]) #mainContainer {
-        @apply(--paper-header-panel-cover-container);
-
+        @apply --paper-header-panel-cover-container;
         position: absolute;
         top: 0;
         right: 0;
@@ -214,14 +193,14 @@ Custom property | Description | Default
        * mode: standard
        */
       :host([mode=standard]) #mainContainer {
-        @apply(--paper-header-panel-standard-container);
+        @apply --paper-header-panel-standard-container;
       }
 
       /*
        * mode: seamed
        */
       :host([mode=seamed]) #mainContainer {
-        @apply(--paper-header-panel-seamed-container);
+        @apply --paper-header-panel-seamed-container;
       }
 
 
@@ -229,23 +208,21 @@ Custom property | Description | Default
        * mode: waterfall
        */
       :host([mode=waterfall]) #mainContainer {
-        @apply(--paper-header-panel-waterfall-container);
+        @apply --paper-header-panel-waterfall-container;
       }
 
       /*
        * mode: waterfall-tall
        */
       :host([mode=waterfall-tall]) #mainContainer {
-        @apply(--paper-header-panel-waterfall-tall-container);
+        @apply --paper-header-panel-waterfall-tall-container;
       }
 
       #dropShadow {
         transition: opacity 0.5s;
         height: 6px;
         box-shadow: inset 0px 5px 6px -3px rgba(0, 0, 0, 0.4);
-
-        @apply(--paper-header-panel-shadow);
-
+        @apply --paper-header-panel-shadow;
         position: absolute;
         top: 0;
         left: 0;
@@ -257,13 +234,18 @@ Custom property | Description | Default
       #dropShadow.has-shadow {
         opacity: 1;
       }
+
+      #mainContainer > ::slotted(.fit) {
+        @apply --layout-fit;
+      }
+
     </style>
 
-    <content id="headerContent" select="paper-toolbar, .paper-header"></content>
+    <slot id="headerSlot" name="header"></slot>
 
     <div id="mainPanel">
       <div id="mainContainer" class$="[[_computeMainContainerClass(mode)]]">
-        <content id="mainContent" select="*"></content>
+        <slot></slot>
       </div>
       <div id="dropShadow"></div>
     </div>
@@ -295,7 +277,7 @@ Custom property | Description | Default
         is: 'paper-header-panel',
 
         /**
-         * Fired when the content has been scrolled.  `event.detail.target` returns
+         * Fired when the content has been scrolled. `event.detail.target` returns
          * the scrollable element which you can use to access scroll info such as
          * `scrollTop`.
          *
@@ -338,10 +320,10 @@ Custom property | Description | Default
            * partially covering the header.
            *
            *     <paper-header-panel mode="cover">
-           *       <paper-toolbar class="tall">
+           *       <paper-toolbar slot="header" class="tall">
            *         <paper-icon-button icon="menu"></paper-icon-button>
            *       </paper-toolbar>
-           *       <div class="content"></div>
+           *       <div></div>
            *     </paper-header-panel>
            */
           mode: {
@@ -384,10 +366,6 @@ Custom property | Description | Default
           '_computeDropShadowHidden(atTop, mode, shadow)'
         ],
 
-        ready: function() {
-          this.scrollHandler = this._scroll.bind(this);
-        },
-
         attached: function() {
           this._addListener();
           // Run `scroll` logic once to initialize class names, etc.
@@ -398,21 +376,22 @@ Custom property | Description | Default
           this._removeListener();
         },
 
+        ready: function() {
+          this.scrollHandler = this._scroll.bind(this);
+          console.warn(this.is, 'is deprecated. Please use app-layout instead!');
+        },
+
         /**
          * Returns the header element
-         *
-         * @property header
-         * @type Object
+         * @return {!Element|undefined}
          */
         get header() {
-          return Polymer.dom(this.$.headerContent).getDistributedNodes()[0];
+          return Polymer.dom(this.$.headerSlot).getDistributedNodes()[0];
         },
 
         /**
          * Returns the scrollable element.
-         *
-         * @property scroller
-         * @type Object
+         * @return {!HTMLElement}
          */
         get scroller() {
           return this._getScrollerForMode(this.mode);
@@ -420,9 +399,7 @@ Custom property | Description | Default
 
         /**
          * Returns true if the scroller has a visible shadow.
-         *
-         * @property visibleShadow
-         * @type Boolean
+         * @return {boolean}
          */
         get visibleShadow() {
           return this.$.dropShadow.classList.contains('has-shadow');
@@ -457,7 +434,7 @@ Custom property | Description | Default
         },
 
         _addListener: function() {
-          this.scroller.addEventListener('scroll', this.scrollHandler, false);
+          this.scroller.addEventListener('scroll', this.scrollHandler);
         },
 
         _removeListener: function() {

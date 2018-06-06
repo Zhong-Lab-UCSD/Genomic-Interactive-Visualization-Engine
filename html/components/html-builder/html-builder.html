@@ -36,7 +36,7 @@ limitations under the License.
       :host {
         position: relative;
         overflow-x: auto;
-        @apply(--layout-vertical);
+        @apply --layout-vertical;
       }
       div.controllers > * {
         margin: 0 0 0.3em 0;
@@ -55,7 +55,7 @@ limitations under the License.
         overflow-wrap: break-word;
       }
       paper-textarea#codeRegion {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         --paper-input-container-input: {
           font-family: Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
           font-size: 14px;
@@ -63,7 +63,7 @@ limitations under the License.
         };
       }
       paper-input#titleInput {
-        @apply(--layout-flex);
+        @apply --layout-flex;
       }
       gene-coor-input {
         width: 18em;
@@ -158,258 +158,259 @@ limitations under the License.
     </paper-dialog>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.HtmlBuilder = Polymer({
-        is: 'html-builder',
+  give.HtmlBuilder = Polymer({
+    is: 'html-builder',
 
-        behaviors: [
-          give.RefEmbeddedBehavior
-        ],
+    behaviors: [
+      give.RefEmbeddedBehavior
+    ],
 
-        properties: {
-          dispTrackArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+    properties: {
+      dispTrackArray: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          dispGroupArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
+      dispGroupArray: {
+        type: Array,
+        value: function () {
+          return []
+        }
+      },
 
-          selectedElement: {
-            type: String,
-            value: 'chart-controller'
-          },
+      selectedElement: {
+        type: String,
+        value: 'chart-controller'
+      },
 
-          customTitle: {
-            type: String,
-            value: ''
-          },
+      customTitle: {
+        type: String,
+        value: ''
+      },
 
-          _numOfSubs: {
-            type: Number,
-            value: 1
-          },
+      _numOfSubs: {
+        type: Number,
+        value: 1
+      },
 
-          _defaultCoor1: {
-            type: String,
-            value: ''
-          },
+      _defaultCoor1: {
+        type: String,
+        value: ''
+      },
 
-          _defaultCoor2: {
-            type: String,
-            value: ''
-          },
+      _defaultCoor2: {
+        type: String,
+        value: ''
+      },
 
-          htmlCode: {
-            type: String,
-            value: ''
-          }
-        },
+      htmlCode: {
+        type: String,
+        value: ''
+      }
+    },
 
-        ready: function () {
-          this._coordinatesFilled = false
-        },
+    ready: function () {
+      this._coordinatesFilled = false
+    },
 
-        _calcRefLabel: function (refObj) {
-          return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
-        },
+    _calcRefLabel: function (refObj) {
+      return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
+    },
 
-        _calcGroupLabel: function (groupArray) {
-          // Try to use group description first, if too long, then just use
-          // 'n group(s)'
-          var result = '(None selected)'
-          if (groupArray) {
-            result = ''
-            groupArray.every(function (grp, index) {
-              result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
-              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-                result = null
-                return false
-              }
-              return true
-            }, this)
-            if (!result) {
-              result = groupArray.length > 0
-                ? (groupArray.length + ' group' +
-                  (groupArray.length > 1 ? 's' : ''))
-                : '(None selected)'
-            }
-          }
-          return result
-        },
-
-        _calcTrackLabel: function (trackArray) {
-          // Try to use track title first, if too long, then just use
-          // 'n track(s)'
-          var result = '(None selected)'
-          if (trackArray) {
-            result = ''
-            trackArray.every(function (track, index) {
-              result += (index > 0 ? ', ' : '') +
-                (track.getTitle() || track.getSetting('shortLabel', 'string'))
-              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-                result = null
-                return false
-              }
-              return true
-            }, this)
-            if (!result) {
-              result = trackArray.length > 0
-                ? (trackArray.length + ' track' +
-                  (trackArray.length > 1 ? 's' : ''))
-                : '(None selected)'
-            }
-          }
-          return result
-        },
-
-        _computeLabelForCoorOne: function (numOfSubs) {
-          return 'Default coordinates (or gene name)' +
-            (numOfSubs > 1 ? ' #1' : '')
-        },
-
-        _computeLabelForCoorTwo: function (numOfSubs) {
-          return 'Default coordinates (or gene name) #2'
-        },
-
-        _multiWindow: function (numOfSubs) {
-          return numOfSubs > 1
-        },
-
-        _controllerNotSelected: function (element) {
-          return element !== 'chart-controller'
-        },
-
-        _validateCoordinates: function () {
-          // First determine if any of the coordinates are filled
-          var index, elem
-          this._coordinatesFilled = false
-          for (index = 0; index < this._numOfSubs; index++) {
-            if (this.querySelectorAll('gene-coor-input')[index].value) {
-              this._coordinatesFilled = true
-              break
-            }
-          }
-
-          for (index = 0; index < this._numOfSubs; index++) {
-            elem = this.querySelectorAll('gene-coor-input')[index]
-            elem.validate()
-            if ((!!elem.value) !== this._coordinatesFilled) {
-              elem.errorMessage =
-                'Coordinates should be all blank or all filled!'
-              elem.invalid = true
-            }
-          }
-
-          // Then find potential invalid coordinates
-          for (index = 0; index < this._numOfSubs; index++) {
-            elem = this.querySelectorAll('gene-coor-input')[index]
-            if (elem.invalid) {
-              return false
-            }
+    _calcGroupLabel: function (groupArray) {
+      // Try to use group description first, if too long, then just use
+      // 'n group(s)'
+      var result = '(None selected)'
+      if (groupArray) {
+        result = ''
+        groupArray.every(function (grp, index) {
+          result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
+          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+            result = null
+            return false
           }
           return true
-        },
-
-        updateCode: function () {
-          if (this._validateCoordinates()) {
-            var baseURL = window.location.protocol + '//' +
-              window.location.hostname +
-              (window.location.port ? ':' + window.location.port : '')
-            this.htmlCode = '<script src="' + baseURL +
-              '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
-              '<\/script>\n' +
-              '<link rel="import" href="' + baseURL +
-              '/components/' + this.selectedElement + '/' +
-              this.selectedElement + '.html">\n'
-            this.htmlCode += '<' + this.selectedElement + ' ref="' +
-              this._refObj.db + '" num-of-subs="' +
-              this._numOfSubs + '"'
-            this.htmlCode += '\n  group-id-list=\'["' +
-              this.dispGroupArray.map(function (group) {
-                return group.id
-              }, this).join('", "') + '"]\''
-            if (this.dispTrackArray.length > 0) {
-              this.htmlCode += '\n  default-track-id-list=\'["' +
-                this.dispTrackArray.map(function (track) {
-                  return track.getID()
-                }, this).join('", "') + '"]\''
-            }
-            if (this._coordinatesFilled) {
-              var coordinateArray = []
-              for (var i = 0; i < this._numOfSubs; i++) {
-                coordinateArray.push(
-                  this.querySelectorAll('gene-coor-input')[i].value)
-              }
-              this.htmlCode += '\n  coordinates=\'["' +
-                coordinateArray.join('", "') + '"]\''
-            }
-            if (!this._controllerNotSelected(this.selectedElement) &&
-              this.customTitle
-            ) {
-              this.htmlCode += '\n  title-text="' +
-                this.customTitle + '"'
-            }
-            this.htmlCode += '>\n</' + this.selectedElement + '>'
-          }
-          this.updateCodeLink()
-        },
-
-        copyToClipboard: function () {
-          // To prevent messing up with the selection of paper-textarea,
-          // create a new <text-area> element to do the copying.
-          if (give._copyTextToClipboard(this.htmlCode)) {
-            // TODO: indicate the copying was successful
-          } else {
-            // TODO: indicate otherwise
-          }
-        },
-
-        updateCodeLink: function () {
-          if (this.codeLink !== null) {
-            window.URL.revokeObjectURL(this.codeLink)
-          }
-          if (this.htmlCode.length > 0) {
-            var codeFile = new window.Blob([this.htmlCode], {type: 'text/plain'})
-            this.codeLink = window.URL.createObjectURL(codeFile)
-          }
-        },
-
-        createDialog: function (ref, groupArray, trackArray) {
-          if (!ref && !this._refObj) {
-            // reference not ready, nor is it provided
-            throw new Error('No reference is given!')
-          } else if (ref) {
-            this.setRef(ref, this._createDialogWithRef.bind(
-              this, groupArray, trackArray))
-          } else {
-            return this._createDialogWithRef(groupArray, trackArray)
-          }
-        },
-
-        _createDialogWithRef: function (groupArray, trackArray) {
-          this.dispGroupArray = []
-          this.dispGroupArray = groupArray
-          this.dispTrackArray = []
-          if (Array.isArray(trackArray) && trackArray.length > 0) {
-            this.dispTrackArray = trackArray
-          }
-          this.updateCode()
-          this.$.mainDialog.open()
+        }, this)
+        if (!result) {
+          result = groupArray.length > 0
+            ? (groupArray.length + ' group' +
+              (groupArray.length > 1 ? 's' : ''))
+            : '(None selected)'
         }
-      })
+      }
+      return result
+    },
 
-      give.HtmlBuilder.MAX_DESC_LENGTH = 100
+    _calcTrackLabel: function (trackArray) {
+      // Try to use track title first, if too long, then just use
+      // 'n track(s)'
+      var result = '(None selected)'
+      if (trackArray) {
+        result = ''
+        trackArray.every(function (track, index) {
+          result += (index > 0 ? ', ' : '') +
+            (track.getTitle() || track.getSetting('shortLabel', 'string'))
+          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+            result = null
+            return false
+          }
+          return true
+        }, this)
+        if (!result) {
+          result = trackArray.length > 0
+            ? (trackArray.length + ' track' +
+              (trackArray.length > 1 ? 's' : ''))
+            : '(None selected)'
+        }
+      }
+      return result
+    },
 
-      return give
-    })(GIVe || {})
+    _computeLabelForCoorOne: function (numOfSubs) {
+      return 'Default coordinates (or gene name)' +
+        (numOfSubs > 1 ? ' #1' : '')
+    },
+
+    _computeLabelForCoorTwo: function (numOfSubs) {
+      return 'Default coordinates (or gene name) #2'
+    },
+
+    _multiWindow: function (numOfSubs) {
+      return numOfSubs > 1
+    },
+
+    _controllerNotSelected: function (element) {
+      return element !== 'chart-controller'
+    },
+
+    _validateCoordinates: function () {
+      // First determine if any of the coordinates are filled
+      var index, elem
+      this._coordinatesFilled = false
+      for (index = 0; index < this._numOfSubs; index++) {
+        if (this.querySelectorAll('gene-coor-input')[index].value) {
+          this._coordinatesFilled = true
+          break
+        }
+      }
+
+      for (index = 0; index < this._numOfSubs; index++) {
+        elem = this.querySelectorAll('gene-coor-input')[index]
+        elem.validate()
+        if ((!!elem.value) !== this._coordinatesFilled) {
+          elem.errorMessage =
+            'Coordinates should be all blank or all filled!'
+          elem.invalid = true
+        }
+      }
+
+      // Then find potential invalid coordinates
+      for (index = 0; index < this._numOfSubs; index++) {
+        elem = this.querySelectorAll('gene-coor-input')[index]
+        if (elem.invalid) {
+          return false
+        }
+      }
+      return true
+    },
+
+    updateCode: function () {
+      if (this._validateCoordinates()) {
+        var baseURL = window.location.protocol + '//' +
+          window.location.hostname +
+          (window.location.port ? ':' + window.location.port : '')
+        this.htmlCode = '<script src="' + baseURL +
+          '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
+          '<\/script>\n' +
+          '<link rel="import" href="' + baseURL +
+          '/components/' + this.selectedElement + '/' +
+          this.selectedElement + '.html">\n'
+        this.htmlCode += '<' + this.selectedElement + ' ref="' +
+          this._refObj.db + '" num-of-subs="' +
+          this._numOfSubs + '"'
+        this.htmlCode += '\n  group-id-list=\'["' +
+          this.dispGroupArray.map(function (group) {
+            return group.id
+          }, this).join('", "') + '"]\''
+        if (this.dispTrackArray.length > 0) {
+          this.htmlCode += '\n  default-track-id-list=\'["' +
+            this.dispTrackArray.map(function (track) {
+              return track.id
+            }, this).join('", "') + '"]\''
+        }
+        if (this._coordinatesFilled) {
+          var coordinateArray = []
+          for (var i = 0; i < this._numOfSubs; i++) {
+            coordinateArray.push(
+              this.querySelectorAll('gene-coor-input')[i].value)
+          }
+          this.htmlCode += '\n  coordinates=\'["' +
+            coordinateArray.join('", "') + '"]\''
+        }
+        if (!this._controllerNotSelected(this.selectedElement) &&
+          this.customTitle
+        ) {
+          this.htmlCode += '\n  title-text="' +
+            this.customTitle + '"'
+        }
+        this.htmlCode += '>\n</' + this.selectedElement + '>'
+      }
+      this.updateCodeLink()
+    },
+
+    copyToClipboard: function () {
+      // To prevent messing up with the selection of paper-textarea,
+      // create a new <text-area> element to do the copying.
+      if (give._copyTextToClipboard(this.htmlCode)) {
+        // TODO: indicate the copying was successful
+      } else {
+        // TODO: indicate otherwise
+      }
+    },
+
+    updateCodeLink: function () {
+      if (this.codeLink !== null) {
+        window.URL.revokeObjectURL(this.codeLink)
+      }
+      if (this.htmlCode.length > 0) {
+        var codeFile = new window.Blob([this.htmlCode], {type: 'text/plain'})
+        this.codeLink = window.URL.createObjectURL(codeFile)
+      }
+    },
+
+    createDialog: function (ref, groupArray, trackArray) {
+      if (!ref && !this._refObj) {
+        // reference not ready, nor is it provided
+        throw new give.GiveError('No reference is given!')
+      } else if (ref) {
+        this.setRef(ref).then(
+          () => this._createDialogWithRef(groupArray, trackArray)
+        )
+      } else {
+        return this._createDialogWithRef(groupArray, trackArray)
+      }
+    },
+
+    _createDialogWithRef: function (groupArray, trackArray) {
+      this.dispGroupArray = []
+      this.dispGroupArray = groupArray
+      this.dispTrackArray = []
+      if (Array.isArray(trackArray) && trackArray.length > 0) {
+        this.dispTrackArray = trackArray
+      }
+      this.updateCode()
+      this.$.mainDialog.open()
+    }
+  })
+
+  give.HtmlBuilder.MAX_DESC_LENGTH = 100
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>
