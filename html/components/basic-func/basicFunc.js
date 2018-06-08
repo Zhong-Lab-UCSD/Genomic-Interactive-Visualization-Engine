@@ -180,6 +180,10 @@ var GIVe = (function (give) {
    *    compare both. The function should return 1 if the first element is
    *    strictly greater than the second; return 0 if both are equal; return -1
    *    if the second is greater.
+   *    Note: The two arguments of `compareFunc` can have different types if
+   *    `element` and items in `array` are of different types. In such a case,
+   *    the first argument of `compareFunc` should always correspond to
+   *    `element` and the second argument to `array` members.
    * @param  {boolean} beforeEqual - if this is `true`, the returned index will
    *    be the first array member __equal or greater__ than `element`,
    *    otherwise, it needs to be __strictly greater__.

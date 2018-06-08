@@ -472,6 +472,14 @@ var GIVe = (function (give) {
       }
     }
 
+    _findEffPriorIndex (effPriority) {
+      return give.locationOf(effPriority, this._trackDoms, null, null,
+        (effPriority, dom2) => EffPrior.compare(
+          effPriority, dom2.parent.effPriority
+        ), true
+      )
+    }
+
     _addTrackDomSvg (trackDom, honorEffPriority) {
       if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
         let slotId
@@ -491,11 +499,7 @@ var GIVe = (function (give) {
         this.shadowRoot.querySelector('div#' + slotId + ' > svg.svgHolder')
           .appendChild(trackDom.TrackSvg)
         // Find the correct location of the new DOM
-        let domPos = give.locationOf(trackDom, this._trackDoms, null, null,
-          (dom1, dom2) => EffPrior.compare(
-            dom1.parent.effPriority, dom2.parent.effPriority
-          ), true
-        )
+        let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
         if (this._trackDoms[domPos] &&
           !EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
             trackDom.parent.effPriority)
@@ -507,8 +511,7 @@ var GIVe = (function (give) {
             trackDom.parent.effPriority.pinValue;
             i++
           ) {
-            this._trackDoms[i].parent.effPriority.pos =
-              this._trackDoms[i].parent.effPriority.pos + 1
+            this._trackDoms[i].parent.effPriority.pos += 1
           }
         }
         // Insert the new DOM into its correct location
@@ -555,15 +558,16 @@ var GIVe = (function (give) {
       let visibleTracksChanged = false
       tracks.forEach(track => {
         if (this._addedTrackMap.has(track.id)) {
+          let trackDom = this._addedTrackMap.get(track.id).trackDom
           if (this._addedTrackMap.get(track.id).visible) {
             // This track is visible, remove the <svg> element from its slot
             this.shadowRoot.querySelector(
               'div#' + this._slotIdFromPinValue(track.effPriority.pinValue) +
               ' > svg.svgHolder'
-            ).removeChild(this._addedTrackMap.get(track.id).trackDom.TrackSvg)
+            ).removeChild(trackDom.TrackSvg)
             // Then remove the DOM itself
             this._trackDoms = this._trackDoms.filter(dom => {
-              return dom.parent.id !== track.id
+              return dom !== trackDom
             })
             // set flag to update effPriority values
             visibleTracksChanged = true
@@ -571,7 +575,7 @@ var GIVe = (function (give) {
             // This track is a linked track (some interaction track),
             // Remove DOM only
             this._hiddenTrackDoms = this._hiddenTrackDoms.filter(dom => {
-              return dom.parent.id !== track.id
+              return dom !== trackDom
             })
           }
           this._addedTrackMap.delete(track.id)
@@ -593,6 +597,98 @@ var GIVe = (function (give) {
           trackDom.parent.effPriority.pos = this._svgSizes[slotId].length
           this._svgSizes[slotId]++
         })
+      }
+    }
+
+    /**
+     * _trackEffPriorUpdated - this is used when the `effPriority` values
+     *    __has been updated for all `track`s__ in the parent element, and the
+     *    DOM array order needs to be restored.
+     *
+     * @param  {TrackObjectBase} track - the track whose `effPriority` has
+     *    changed
+     */
+    _trackEffPriorUpdated (track, oldIndex, newIndex) {
+      if (track && this._addedTrackMap.has(track.id)) {
+        throw new give.GiveError('Track does not exist for track "' +
+          track && track.id + '"!')
+      }
+      if (this._addedTrackMap.get(track.id).visible) {
+        let trackDom = this._addedTrackMap.get(track.id).trackDom
+        let oldIndex = this._trackDoms.indexOf(trackDom)
+        if (oldIndex >= 0) {
+          this._moveTrackDom(oldIndex,
+            this._findEffPriorIndex(trackDom.parent.effPriority))
+        } else {
+          throw new give.GiveError('TrackDOM does not exist for track "' +
+            track.id + '"!')
+        }
+      }
+    }
+
+    _moveTrackDom (oldIndex, newIndex) {
+      let trackDom = this._trackDoms[oldIndex]
+      this._trackDoms.splice(oldIndex, 1)
+      this._trackDoms.splice(
+        this._findEffPriorIndex(trackDom.parent.effPriority), 0, trackDom)
+    }
+
+    /**
+     * _changeTrackEffPrior - change the `effPriority` value of the `track`
+     *    given the `trackDom`
+     *
+     * @param  {TrackDom} trackDom       The `trackDom` for which `effPriority`
+     *    needs to be changed.
+     * @param  {EffPrior} newEffPriority The new `effPriority` value.
+     *    Notice that the `pos` value is the new position of the `trackDom`
+     *    as if its just being inserted. Therefore, it __should not consider
+     *    the position of `trackDom` itself__ if the new location is after
+     *    the original one.
+     */
+    _changeTrackEffPrior (trackDom, newEffPriority) {
+      if (trackDom && newEffPriority) {
+        let oldEffPriority = trackDom.parent.effPriority
+        if (EffPrior.compare(oldEffPriority, newEffPriority)) {
+          // determine if the pin value has changed
+          let oldIndex = this._trackDoms.indexOf(trackDom)
+          let newIndex = this._findEffPriorIndex(newEffPriority)
+          if (oldEffPriority.pinValue === newEffPriority.pinValue) {
+            // same pin value, just change the tracks in between
+            let step = Math.sign(newIndex - oldIndex)
+            for (let i = oldIndex + step;
+              i * step <= newIndex * step;
+              i += step
+            ) {
+              this._trackDoms[i].parent.effPriority.pos -= step
+            }
+          } else {
+            // pin value is different, separate into two steps
+            // -1 for all tracks with the old pin value and pos > oldPos
+            for (let i = oldIndex + 1;
+              i < this._trackDoms.length &&
+                this._trackDoms[i].parent.effPriority.pinValue ===
+                  oldEffPriority.pinValue;
+              i++
+            ) {
+              this._trackDoms[i].parent.effPriority.pos -= 1
+            }
+            // +1 for all tracks with the new pin value and pos >= newPos
+            for (let i = newIndex;
+              i < this._trackDoms.length &&
+                this._trackDoms[i].parent.effPriority.pinValue ===
+                  newEffPriority.pinValue;
+              i++
+            ) {
+              this._trackDoms[i].parent.effPriority.pos += 1
+            }
+          }
+          trackDom.parent.effPriority = newEffPriority
+          this._moveTrackDom(oldIndex, newIndex)
+        } else {
+          give._verbConsole.warn('Effective priority not changed.')
+        }
+      } else {
+        throw new give.GiveError('No TrackDOM or effPriority provided!')
       }
     }
 
