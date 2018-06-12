@@ -380,7 +380,7 @@ var GIVe = (function (give) {
   give.ChromRegion._REGION_SHORTNAME_LIMIT = 11
   give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH = 6
   give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH = 4
-  give.ChromRegion.CHROM_BASE = 0      // may be 0 for UCSC
+  give.ChromRegion.CHROM_BASE = 0 // may be 0 for UCSC
 
   give.ChromRegion.clipCoordinate = function (coor, ref) {
     // this is to clip single coordinate
