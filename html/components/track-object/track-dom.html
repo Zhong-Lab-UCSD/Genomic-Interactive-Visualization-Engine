@@ -54,7 +54,7 @@ var GIVe = (function (give) {
       this.updateJobName = 'UPDATE'
       this.cacheUpdateJobName = 'UPDATECACHE'
 
-      this.narrowMode = false
+      this._narrowMode = false
       this.labelMarginRight = 0
 
       // request URL is the target to get data from
@@ -252,8 +252,19 @@ var GIVe = (function (give) {
 
     ready () {
       if (this.windowWidth < this.MIN_TOTAL_WIDTH) {
-        this.switchNarrowMode(true)
+        this._narrowMode = true
       }
+    }
+
+    get viewWindow () {
+      return this.mainSvg ? this.mainSvg.viewWindow : null
+    }
+
+    set viewWindow (newViewWindow) {
+      if (Array.isArray(newViewWindow)) {
+        newViewWindow = newViewWindow[0]
+      }
+      this.mainSvg.viewWindow = newViewWindow
     }
 
     getTrackSetting (key) {
@@ -281,7 +292,7 @@ var GIVe = (function (give) {
 
         // if textMargin is specified, create a svg element for text labels
 
-        if (this.textMargin) {
+        if (this.textMargin && !this._narrowMode) {
           this.initTextSvgAndHolder()
         }
 
@@ -336,7 +347,8 @@ var GIVe = (function (give) {
           this.textSvg.setAttribute('viewBox', '0 0 ' +
             this.textMargin + ' ' + this.trackHeight)
         }
-        this.mainSvg.setAttributeNS(null, 'x', (this.narrowMode ? 0 : this.textMargin + this.TEXT_MARGIN_GAP))
+        this.mainSvg.setAttributeNS(null, 'x',
+          (this._narrowMode ? 0 : this.textMargin + this.TEXT_MARGIN_GAP))
         this.mainSvg.setAttributeNS(null, 'y', 0)
         this.mainSvg.setAttributeNS(null, 'width', this.windowWidth)
 
@@ -438,6 +450,8 @@ var GIVe = (function (give) {
      *   If this value is `undefined` or `null`, then a new one will be
      *   generated based on the current view window, current width and
      *   new width.
+     * @returns {Promise} Returns a `Promise` that will resolve to the
+     *    current `this.viewWindow` object.
      */
     changeViewWindowAfterResize (newWindowWidth, newViewWindow) {
       // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
@@ -456,7 +470,8 @@ var GIVe = (function (give) {
     }
 
     /**
-     * setWideModeWidthParameters - set width-related parameters in wide mode.
+     * setWidthParameters - set width-related parameters and switching
+     *    between narrow (to be implemented) or wide mode if needed.
      *
      * @param  {number} newWidth - new width, in px
      * @param  {number} newTxtMargin - new text margin, in px
@@ -464,12 +479,18 @@ var GIVe = (function (give) {
      *    coordinates. This is useful when view window has changed in one
      *    track and every other track needs to be brought to synchronization.
      *    If omitted, new view window will be recalculated based on new
-     *    width (useful for the first track).
+     *    width (useful for the first track). If this is `false`, then
+     *    `viewwindow` shall not be changed at all.
+     * @returns {Promise} Returns a `Promise` that will resolve to the
+     *    current `this.viewWindow` object.
      */
-    setWideModeWidthParameters (
-      newWidth, newTxtMargin, newViewWindow
-    ) {
-      var widthChanged = false
+    setWidthParameters (newWidth, newTxtMargin, newWindow) {
+      newWidth = (typeof (newWidth) === 'number' && newWidth > 0)
+        ? newWidth : this.totalWidth
+      newTxtMargin = (typeof (newTxtMargin) === 'number' && newTxtMargin > 0)
+        ? newTxtMargin : (this.textMargin ? this.textMargin : null)
+
+      let widthChanged = false
       if (newTxtMargin && newTxtMargin !== this.textMargin) {
         // needs to change txtMargin
         if (newTxtMargin > 0) {
@@ -487,39 +508,27 @@ var GIVe = (function (give) {
         }
         widthChanged = true
       }
+      let newNarrowMode = (
+        newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0) <
+        this.MIN_TOTAL_WIDTH
+      )
 
-      if (newWidth !== this.totalWidth || widthChanged) {
-        // needs to change totalWidth as well
-        var newWindowWidth = newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
-        let promise = this.changeViewWindowAfterResize(newWindowWidth, newViewWindow)
+      if (newWidth !== this.totalWidth || widthChanged ||
+        newNarrowMode !== this._narrowMode ||
+        (newWindow instanceof give.ChromRegion &&
+          give.ChromRegion.compareChrRegion(newWindow, this.mainSvg.viewWindow)
+        )
+      ) {
+        // drawing width changed
+        this._narrowMode = newNarrowMode
+        let newWindowWidth = newWidth -
+          ((!this._narrowMode && newTxtMargin) ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+        let promise = this.changeViewWindowAfterResize(newWindowWidth, newWindow)
         this.totalWidth = newWidth
-        this.windowWidth = this.totalWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+        this.windowWidth = newWindowWidth
         return promise
       }
-    }
-
-    /**
-     * setWidthParameters - set width-related parameters and switching
-     *    between narrow (to be implemented) or wide mode if needed.
-     *
-     * @param  {number} newWidth - new width, in px
-     * @param  {number} newTxtMargin - new text margin, in px
-     * @param  {ChromRegionLiteral} [newViewWindow] - new view window
-     *    coordinates. This is useful when view window has changed in one
-     *    track and every other track needs to be brought to synchronization.
-     *    If omitted, new view window will be recalculated based on new
-     *    width (useful for the first track).
-     */
-    setWidthParameters (newWidth, newTxtMargin, newWindow) {
-      newWidth = (typeof (newWidth) === 'number' && newWidth > 0) ? newWidth : this.totalWidth
-      newTxtMargin = (typeof (newTxtMargin) === 'number' && newTxtMargin > 0) ? newTxtMargin : (this.textMargin ? this.textMargin : null)
-
-      if (newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0) < this.MIN_TOTAL_WIDTH) {
-        this.switchNarrowMode(true)
-        // TODO: complete narrow mode codes
-      } else {
-        return this.setWideModeWidthParameters(newWidth, newTxtMargin, newWindow)
-      }
+      return Promise.resolve(this.viewWindow)
     }
 
     /**
@@ -724,10 +733,15 @@ var GIVe = (function (give) {
         var promise = this.setWidthParameters(width, newTxtWidth, newWindow) // may involve narrowMode
       }
       if (typeof (height) === 'number') {
-        this.setHeight(height) // may also involve narrowMode?
+        promise = promise.then(resolvedValue => {
+          this.setHeight(height) // may also involve narrowMode?
+          return resolvedValue
+        })
       }
-      this.setSvgSizeLocation()
-      return promise
+      return promise.then(resolvedValue => {
+        this.setSvgSizeLocation()
+        return resolvedValue
+      })
     }
 
     drawLine (x1, y1, x2, y2, colorRGB, svgToDraw) {
@@ -1020,7 +1034,7 @@ var GIVe = (function (give) {
       this._pendingNewVWArr = null
       this._dataPromise = this._nextDataPromise
       this._nextDataPromise = null
-      this.changeViewWindow(windowToDraw)
+      this.viewWindow = windowToDraw
       var shortLabelArr
       if (this.textSvg) {
         shortLabelArr = this.createShortLabelArr()
@@ -1109,6 +1123,7 @@ var GIVe = (function (give) {
         // Note that the new promise cannot be returned here
         // since drawing is already complete by this time point
         .then(() => this.loadCache())
+        .then(() => this.mainSvg.viewWindow)
     }
 
     updateTrack (viewWindow, index, threshold) {
@@ -1125,6 +1140,7 @@ var GIVe = (function (give) {
         })
         .finally(() => {
           give.fireSignal('track-ready', {ID: this.parent.id})
+          return this.viewWindow
         })
       return this.readyPromise
     }
@@ -1152,27 +1168,22 @@ var GIVe = (function (give) {
         ) : null
     }
 
-    changeViewWindow (viewWindow) {
-      // if (typeof (viewWindow) === 'string') {
-      //   this.mainSvg.viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
-      // } else {
-      //   this.mainSvg.viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
-      // }
-      // this.set('viewWindowString', newValue);
-      if (Array.isArray(viewWindow)) {
-        viewWindow = viewWindow[0]
-      }
-      this.mainSvg.viewWindow = viewWindow
-    }
-
     _verifyViewWindow (viewWindow) {
       viewWindow = viewWindow || this.mainSvg.viewWindow
-      if (typeof (viewWindow) === 'string') {
-        return new give.ChromRegion(viewWindow, this.parent.ref)
+      if (Array.isArray(viewWindow)) {
+        viewWindow = viewWindow.map(this._verifyViewWindowElem.bind(this))
       } else {
-        return viewWindow.clipRegion(this.parent.ref).clone()
+        viewWindow = this._verifyViewWindowElem(viewWindow)
       }
-      // this.set('viewWindowString', newValue);
+      return viewWindow
+    }
+
+    _verifyViewWindowElem (viewWindowElem, index) {
+      if (typeof (viewWindow) === 'string') {
+        return new give.ChromRegion(viewWindowElem, this.parent.ref)
+      } else {
+        return viewWindowElem.clipRegion(this.parent.ref).clone()
+      }
     }
 
     rgbToHex (colorRGB) {
@@ -1273,10 +1284,6 @@ var GIVe = (function (give) {
 
     wheelHandler (e, detail) {
       // do nothing here, will do stuff in coor-track
-    }
-
-    switchNarrowMode () {
-      this.windowWidth = this.totalWidth
     }
   }
 

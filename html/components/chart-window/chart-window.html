@@ -152,7 +152,6 @@ this change.
     <style include="genemo-track-styles"></style>
     <div id="chartHolding" hidden$="[[!_initialized]]">
       <div class="pinnedParts" id="_PinTop">
-        <div class="trackDomHolder"></div>
         <svg class="svgHolder" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
         </svg>
       </div>
@@ -693,30 +692,102 @@ var GIVe = (function (give) {
     }
 
     /**
-     * Update the height and location of individual tracks
-     *
-     * @param  {number} width - Width of the current area
+     * @function updateHeightLocation
+     * @param  {number} scrollFreeWidth - If a new width is need to be specified
+     * @param  {boolean} changeWindow - Whether the view window needs to
+     *    be changed, if this is `true`, then the function will become
+     *    async (otherwise the Promise resolves immediately).
+     * @return {Promise} Returns a Promise that resolves to `{
+     *      'width': <new width, useful if no width was supplied>,
+     *      'window': <new window if needs to be updated>
+     *    }`
+     *    when new data was ready.
      */
-    updateHeightLocation (changeWindow) {
+    updateHeightLocation (scrollFreeWidth, changeWindow) {
       // calculate the heights for all tracks
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
       // this will also rearrange the y value for all tracks as well
-      give._verbConsole.info('UpdateHeightLocation(' + changeWindow + ')')
-      if (!this._trackDomsByWindow.every(
-        this._updateDomHeightInWindow.bind(this, changeWindow), this)
-      ) {
-        // resizing is needed for all the windows
-        // note that new width is already stored in `this._svgWidth`
-        this._trackDomsByWindow.forEach(
-          this._updateDomHeightInWindow.bind(this, changeWindow), this)
+      give._verbConsole.info(
+        'UpdateHeightLocation(' + scrollFreeWidth + ', ' + changeWindow + ')')
+      
+      if (scrollFreeWidth) {
+        this._svgWidth = scrollFreeWidth
+      } else {
+        this._svgWidth = null
       }
-      if (changeWindow) {
-        this.fire('update-coordinate', {
-          newWindow: this.getViewWindowString()
-        })
+
+      let divList = [...this.shadowRoot.querySelectorAll(
+        'div#chartHolding > div'
+      )]
+      divList.forEach(divElem => {
+        divElem._currY = 0
+        divElem._svgWidth = this._svgWidth || divElem.clientWidth
+      })
+
+      this.trackDoms.forEach
+
+      var reverse = (index > 0 && index === this._trackDomsByWindow.length - 1)
+      for (var key in domInWindowEntry) {
+        if (domInWindowEntry.hasOwnProperty(key) &&
+          Array.isArray(domInWindowEntry[key]) &&
+          domInWindowEntry[key].divElem &&
+          domInWindowEntry[key].divElem.querySelector('svg')
+        ) {
+          if (startFunc && typeof startFunc === 'function') {
+            startFunc(domInWindowEntry[key].divElem)
+          }
+          var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+            : domInWindowEntry[key]
+          enumArray.forEach(func.bind(this,
+            domInWindowEntry[key].divElem), this)
+          if (endFunc && typeof endFunc === 'function') {
+            endFunc(domInWindowEntry[key].divElem)
+          }
+        }
       }
-      delete this.resizeAsyncProcess
+      this.trackdoms.forEach((trackDom, index) => {
+
+      })
+
+
+
+
+
+
+
+      var _prepareSvgHeight = function (svgWidth, divElem) {
+        divElem._currY = 0
+        divElem._svgWidth = svgWidth || divElem.clientWidth
+      }
+      var _setDomIndHeight = function (divElem, trackDom, index) {
+        trackDom.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
+        divElem._currY += trackDom.getHeight() + this._trackGap * this._textSize
+      }.bind(this)
+      var _setSvgWidthHeight = function (divElem) {
+        if (divElem._currY > 0) {
+          divElem._currY -= this._trackGap * this._textSize
+        }
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('width', divElem._svgWidth)
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('height', divElem._currY)
+        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('viewBox',
+          '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
+        delete divElem._currY
+        delete divElem._svgWidth
+      }.bind(this)
+      this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
+        _prepareSvgHeight.bind(this, this._svgWidth),
+        _setSvgWidthHeight, domInWindowEntry, index)
+      this._svgWidth = this._svgWidth ||
+        domInWindowEntry.scrolling.divElem.clientWidth
+      if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
+        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+      }
+      if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
+        // scrolling happened, needs to shrink pinned track width
+        return false
+      }
+      return true
     }
 
     /**
@@ -1123,54 +1194,6 @@ var GIVe = (function (give) {
       this._callForeachWithElemFuncOnDomInWindowEntry(
         _populateDomInComponent.bind(this), null, null,
         domInWindowEntry, index)
-    }
-
-    /**
-     * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
-     *
-     * @param  {boolean} changeWindow - index of domInWindowEntry in the array
-     * @param  {[
-     *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-     *   scrolling: Array.<GIVe.TrackDomBehavior>,
-     *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-     *   map: Object,
-     *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-     * ]} domInWindowEntry - viewWindow Array
-     * @param  {number} index - index of domInWindowEntry in the array
-     */
-    _updateDomHeightInWindow (changeWindow, domInWindowEntry, index) {
-      var _prepareSvgHeight = function (svgWidth, divElem) {
-        divElem._currY = 0
-        divElem._svgWidth = svgWidth || divElem.clientWidth
-      }
-      var _setDomIndHeight = function (divElem, trackDom, index) {
-        trackDom.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
-        divElem._currY += trackDom.getHeight() + this._trackGap * this._textSize
-      }.bind(this)
-      var _setSvgWidthHeight = function (divElem) {
-        if (divElem._currY > 0) {
-          divElem._currY -= this._trackGap * this._textSize
-        }
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('width', divElem._svgWidth)
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('height', divElem._currY)
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('viewBox',
-          '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
-        delete divElem._currY
-        delete divElem._svgWidth
-      }.bind(this)
-      this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-        _prepareSvgHeight.bind(this, this._svgWidth),
-        _setSvgWidthHeight, domInWindowEntry, index)
-      this._svgWidth = this._svgWidth ||
-        domInWindowEntry.scrolling.divElem.clientWidth
-      if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
-        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-      }
-      if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
-        // scrolling happened, needs to shrink pinned track width
-        return false
-      }
-      return true
     }
 
     populateDOM (noRefreshContent) {
