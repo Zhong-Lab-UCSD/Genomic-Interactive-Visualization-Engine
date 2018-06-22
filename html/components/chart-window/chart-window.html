@@ -138,6 +138,7 @@ this change.
       div {
         margin: 0;
         padding: 0;
+        border: none;
       }
       div.pinnedParts {
         @apply --layout-start;
@@ -324,10 +325,12 @@ var GIVe = (function (give) {
         },
 
         /**
-         * Promise resolved when the entire `chart-window` is ready
-         * @type {object}
+         * Promise resolved to the current `viewWindow` when the entire
+         * `chart-window` is ready.
+         * When resolved, this value will be set to `null`
+         * @type {Promise}
          */
-        readyPromise: {
+        drawingPromise: {
           type: Object,
           value: null
         },
@@ -390,6 +393,10 @@ var GIVe = (function (give) {
       })
     }
 
+    get reverseFlag () {
+      return this.index > 0 && this.index === this.totalWindows - 1
+    }
+
     _checkVWindowsInit () {
       if (!this._initialized) {
         if (this._refObj && this._viewWindow) {
@@ -429,8 +436,12 @@ var GIVe = (function (give) {
       return props
     }
 
-    _getSlotId (track) {
-      if (track.windowSpan > 1) {
+    _getSlotId (track, honorEffPriority) {
+      if (honorEffPriority && track.effPriority) {
+        return this._slotIdFromPinValue(
+          track.effPriority.pinValue
+        )
+      } else if (track.windowSpan > 1) {
         if (this.index + track.windowSpan > this.totalWindows) {
           return null
         }
@@ -442,13 +453,11 @@ var GIVe = (function (give) {
 
     _slotIdFromPinValue (pinValue) {
       pinValue = pinValue || ''
-      let reverseDom =
-        (this.index > 0 && this.index === this.totalWindows - 1)
       switch (pinValue.toLowerCase()) {
         case 'top':
-          return reverseDom ? '_PinBottom' : '_PinTop'
+          return this.reverseFlag ? '_PinBottom' : '_PinTop'
         case 'bottom':
-          return reverseDom ? '_PinTop' : '_PinBottom'
+          return this.reverseFlag ? '_PinTop' : '_PinBottom'
         case 'inbetween':
           return '_PinBetween'
         default:
@@ -457,13 +466,11 @@ var GIVe = (function (give) {
     }
 
     _pinValueFromSlotId (slotId) {
-      let reverseDom =
-        (this.index > 0 && this.index === this.totalWindows - 1)
       switch (slotId.toLowerCase()) {
         case '_PinTop':
-          return reverseDom ? 'bottom' : 'top'
+          return this.reverseFlag ? 'bottom' : 'top'
         case '_PinBottom':
-          return reverseDom ? 'top' : 'bottom'
+          return this.reverseFlag ? 'top' : 'bottom'
         case '_PinBetween':
           return 'inbetween'
         default:
@@ -481,22 +488,16 @@ var GIVe = (function (give) {
 
     _addTrackDomSvg (trackDom, honorEffPriority) {
       if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
-        let slotId
-        if (honorEffPriority && trackDom.parent.effPriority) {
-          slotId = this._slotIdFromPinValue(
-            trackDom.parent.effPriority.pinValue
-          )
-        } else {
-          slotId = this._getSlotId(trackDom.parent)
-          if (!trackDom.parent.effPriority) {
-            trackDom.parent.effPriority =
-              new EffPrior(this._pinValueFromSlotId(slotId),
-                this._svgSizes[slotId])
-          }
+        let slotId = this._getSlotId(trackDom.parent, honorEffPriority)
+        if (!trackDom.parent.effPriority) {
+          trackDom.parent.effPriority =
+            new EffPrior(this._pinValueFromSlotId(slotId),
+              this._svgSizes[slotId])
         }
         // Add DOM element
-        this.shadowRoot.querySelector('div#' + slotId + ' > svg.svgHolder')
-          .appendChild(trackDom.TrackSvg)
+        this.shadowRoot.querySelector(
+          'div#' + slotId + ' > svg.svgHolder'
+        ).appendChild(trackDom.TrackSvg)
         // Find the correct location of the new DOM
         let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
         if (this._trackDoms[domPos] &&
@@ -693,67 +694,101 @@ var GIVe = (function (give) {
 
     /**
      * @function updateHeightLocation
-     * @param  {number} scrollFreeWidth - If a new width is need to be specified
+     * @param  {number} width - If a new width is need to be specified
      * @param  {boolean} changeWindow - Whether the view window needs to
      *    be changed, if this is `true`, then the function will become
      *    async (otherwise the Promise resolves immediately).
-     * @return {Promise} Returns a Promise that resolves to `{
-     *      'width': <new width, useful if no width was supplied>,
-     *      'window': <new window if needs to be updated>
-     *    }`
-     *    when new data was ready.
+     * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves to
+     *    the new window when new data was ready.
+     * @throws {number} if width needs to be changed (due to scroll bar), the
+     *    new width will be thrown to let 
      */
-    updateHeightLocation (scrollFreeWidth, changeWindow) {
+    updateHeightLocation (width, changeWindow) {
       // calculate the heights for all tracks
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
       // this will also rearrange the y value for all tracks as well
       give._verbConsole.info(
-        'UpdateHeightLocation(' + scrollFreeWidth + ', ' + changeWindow + ')')
-      
-      if (scrollFreeWidth) {
-        this._svgWidth = scrollFreeWidth
-      } else {
-        this._svgWidth = null
-      }
+        'UpdateHeightLocation(' + width + ', ' + changeWindow + ')')
+
+      // prepare element widths and heights
 
       let divList = [...this.shadowRoot.querySelectorAll(
         'div#chartHolding > div'
       )]
       divList.forEach(divElem => {
         divElem._currY = 0
-        divElem._svgWidth = this._svgWidth || divElem.clientWidth
+        divElem._svgWidth = width || divElem.clientWidth
       })
 
-      this.trackDoms.forEach
+      // Set the width and height of individual tracks
+      // Because this can be async, the following steps are all async
 
-      var reverse = (index > 0 && index === this._trackDomsByWindow.length - 1)
-      for (var key in domInWindowEntry) {
-        if (domInWindowEntry.hasOwnProperty(key) &&
-          Array.isArray(domInWindowEntry[key]) &&
-          domInWindowEntry[key].divElem &&
-          domInWindowEntry[key].divElem.querySelector('svg')
+      let enumArray = this.reverseFlag ? this.trackdoms.slice().reverse()
+        : this.trackdoms
+
+      this.drawingPromise = (this.drawingPromise || Promise.resolve()).then(
+        () => Promise.all(
+          enumArray.map((trackDom, index) => {
+            let divElem = this.shadowRoot.querySelector(
+              'div#' + this._getSlotId(trackDom.parent, true)
+            )
+            return trackDom.updateLocationSize(
+              0, divElem._currY, divElem._svgWidth, null, null,
+              changeWindow ? null : false
+            ).then(() => {
+              divElem._currY += (trackDom.getHeight() +
+                this._trackGap * this._textSize
+              )
+            })
+          })
+        )
+      ).then(windows => {
+        // update `this._viewWindow` and clear `this.drawingPromise`
+        if (Array.isArray(windows) &&
+          give.ChromRegion.compare(windows[0], this._viewWindow)
         ) {
-          if (startFunc && typeof startFunc === 'function') {
-            startFunc(domInWindowEntry[key].divElem)
-          }
-          var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-            : domInWindowEntry[key]
-          enumArray.forEach(func.bind(this,
-            domInWindowEntry[key].divElem), this)
-          if (endFunc && typeof endFunc === 'function') {
-            endFunc(domInWindowEntry[key].divElem)
-          }
+          this._viewWindow = windows[0]
         }
-      }
-      this.trackdoms.forEach((trackDom, index) => {
-
+        this.drawingPromise = null
+        return this._viewWindow
       })
 
+      return this.drawingPromise.then(window => {
+        divList.forEach(divElem => {
+          if (divElem._currY > 0) {
+            divElem._currY -= this._trackGap * this._textSize
+          }
+          let svgElem = divElem.querySelector('svg.svgHolder')
+          svgElem.setAttribute('width', divElem._svgWidth)
+          svgElem.setAttribute('height', divElem._currY)
+          svgElem.setAttribute('viewBox',
+            '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
+          delete divElem._currY
+          delete divElem._svgWidth
+        })
+        return window
+      }).then(window => {
+        return window
+      })
 
+      // set the width and height of the ending `<svg>` element
 
+      
+      // test if all 
+      if (!this.querySelector('div#_Scroll').scrollHeight
+        !== !this.querySelector('div#_Scroll').clientHeight &&
+        !this.querySelector('div#_Scroll').scrollHeight
+        !== !this.querySelector('div#_Scroll').clientHeight
+      ) {
+        let scrollDivWidth = this.querySelector('div#_Scroll').clientWidth
+      }
 
-
+      this._svgWidth = this._svgWidth ||
+        this.querySelector('div#_Scroll').clientWidth
+      if (this._svgWidth > this.querySelector('div#_Scroll').clientWidth) {
+        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+      }
 
 
       var _prepareSvgHeight = function (svgWidth, divElem) {

@@ -26,9 +26,11 @@ var GIVe = (function (give) {
   give._trackCounter = 0
 
   /**
+   * @class TrackDom
+   *
    * Basic track DOM behaviors, including the svg drawing functions
    *
-   * @polymerBehavior TrackDOMBehavior
+   * @param  {type}  {description}
    */
   class TrackDom {
     constructor (track, properties) {
@@ -1027,13 +1029,23 @@ var GIVe = (function (give) {
 
     // ** Track event handling and functions **
 
-    drawDataWrapper () {
+    drawDataWrapper (callerIdRegions) {
       // fire track-ready event to its container (to calculate size and do other stuff)
-      let windowToDraw = this._committedNewVWArr
-      this._committedNewVWArr = this._pendingNewVWArr
+      if (callerIdRegions && callerIdRegions.hasOwnProperty(this.id)) {
+        regions = callerIdRegions[this.id]
+        if (!Array.isArray(regions)) {
+          regions = [regions]
+        }
+        if (give.ChromRegion.compareChrRegion(regions[0], this.mainSvg.viewWindow) {
+          // not the same region as submitted
+          // which means the resolution is for the previous promise
+          // throw a `give.PromiseCanceller` to cancel promise handling
+          throw new give.PromiseCanceller(true)
+        }
+      }
+      let windowToDraw = this._pendingNewVWArr
       this._pendingNewVWArr = null
-      this._dataPromise = this._nextDataPromise
-      this._nextDataPromise = null
+      this._dataPromise = null
       this.viewWindow = windowToDraw
       var shortLabelArr
       if (this.textSvg) {
@@ -1045,9 +1057,6 @@ var GIVe = (function (give) {
       }
       // draw a rectangle over the coordinate track to handle mouse events
       this.initSvgReceiver(this.getMainSvg())
-      if (!this._dataPromise) {
-        this._drawingPromise = null
-      }
       return windowToDraw
     }
 
@@ -1091,7 +1100,7 @@ var GIVe = (function (give) {
         } else {
           this._debouncePromise = Promise.resolve()
         }
-        this._drawingPromise = this._debouncePromise
+        return this._debouncePromise
           .then(() => this.checkDataAndUpdate())
       }
       return this._drawingPromise
@@ -1105,43 +1114,39 @@ var GIVe = (function (give) {
         this._pendingNewVWArr.map(range => range.getExtension(
           TrackDom.DefaultRangeSpanProp, null, true, this.parent.ref)
         ), this.id)
-      let lastPromise
-      if (!this._dataPromise || newDataPromise === this._dataPromise) {
-        this._committedNewVWArr = this._pendingNewVWArr
-        this._pendingNewVWArr = null
-        if (!this._dataPromise) {
-          this._dataPromise = newDataPromise
-        }
-        lastPromise = this._dataPromise
-      } else if (!this._nextDataPromise) {
-        this._nextDataPromise = newDataPromise
-        lastPromise = Promise.all([this._drawingPromise, newDataPromise])
-      } else {
-        return this._drawingPromise
+      if (this._dataPromise !== newDataPromise) {
+        this._dataPromise = newDataPromise
+        return newDataPromise.then(this.drawDataWrapper.bind(this))
+          // Note that the new promise cannot be returned here
+          // since drawing is already complete by this time point
+          .then(() => this.loadCache())
+          .then(() => this.mainSvg.viewWindow)
       }
-      return lastPromise.then(() => this.drawDataWrapper())
-        // Note that the new promise cannot be returned here
-        // since drawing is already complete by this time point
-        .then(() => this.loadCache())
-        .then(() => this.mainSvg.viewWindow)
+      return this._drawingPromise
     }
 
     updateTrack (viewWindow, index, threshold) {
       // viewWindow is the new viewWindow value of coordinates
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
-
-      this.readyPromise = Promise.resolve(viewWindow)
+      let newDrawingPromise = Promise.resolve(viewWindow)
         .then(this._verifyViewWindow.bind(this))
         .then(this.checkDataAndUpdateDebounced.bind(this))
-        .catch((e) => {
-          give._verbConsole.warn(e)
-          give.fireSignal('warning', { msg: e.message })
-        })
-        .finally(() => {
-          give.fireSignal('track-ready', {ID: this.parent.id})
+      if (this._drawingPromise !== newDrawingPromise) {
+        this._drawingPromise = newDrawingPromise
+        this.readyPromise = this._drawingPromise.catch(
+          e => {
+            if (e instanceof give.PromiseCanceller && e.isCancelled) {
+              throw e
+            }
+            give._verbConsole.warn(e)
+            give.fireSignal('warning', { msg: e.message })
+          }
+        ).then(() => {
+          give.fireSignal('track-ready', { ID: this.parent.id })
           return this.viewWindow
         })
+      }
       return this.readyPromise
     }
 

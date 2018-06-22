@@ -281,7 +281,8 @@ var GIVe = (function (give) {
      *    range(s) to be queried
      * @param  {string} callerID - ID of the caller elements, to group
      *    consecutive calls together
-     * @returns {Promise} returns a promise that resolves to `this.parent`
+     * @returns {Promise} returns a promise that resolves to an object
+     *    with `callerID`s as key and the last committed range(s) as value
      *    when data is fetched.
      */
     fetchData (ranges, callerID) {
@@ -301,7 +302,7 @@ var GIVe = (function (give) {
             setTimeout(resolve, this.getDataDebounceInt)
           })
         } else {
-          this._debouncePromise = Promise.resolve(this.parent)
+          this._debouncePromise = Promise.resolve()
         }
         this._fetchPromise = this._debouncePromise
           .then(() => this._collapseQueryAndRetrieve())
@@ -342,7 +343,8 @@ var GIVe = (function (give) {
      *   then proceed with data retrieval
      * @memberof TrackDataObjectBase.prototype
      * @async
-     * @returns {Promise} returns a promise that resolves to `this.parent`
+     * @returns {Promise} returns a promise that resolves to an object
+     *    with `callerID`s as key and the last committed range(s) as value
      *    when data is ready.
      */
     _collapseQueryAndRetrieve () {
@@ -356,12 +358,13 @@ var GIVe = (function (give) {
       this._committedRegions = this._getTrackUncachedRange(
         this._mergeGUIRegionsByResolution(this._pendingRangesById)
       )
+      this._committedRangesById = this._pendingRangesById
       this._pendingRangesById = {}
       if (this._committedRegions && this._committedRegions.length > 0) {
         this._ongoingFetchPromise = this._fetchPromise
         return this._retrieveData(this._committedRegions)
       }
-      return Promise.resolve(this.parent)
+      return Promise.resolve(this._committedRangesById)
     }
 
     /**
@@ -373,7 +376,8 @@ var GIVe = (function (give) {
      * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
      *   potential resolutions
      * @async
-     * @returns {Promise} returns a promise that resolves to `this.parent`
+     * @returns {Promise} returns a promise that resolves to an object
+     *    with `callerID`s as key and the last committed range(s) as value
      *    when data is ready.
      */
     _retrieveData (regions) {
@@ -404,7 +408,7 @@ var GIVe = (function (give) {
           this._dataHandler.bind(this), response
         ))
       }
-      return Promise.resolve(this.parent)
+      return Promise.resolve(this._committedRangesById)
     }
 
     /**
@@ -461,7 +465,8 @@ var GIVe = (function (give) {
      *   ```
      *   The detailed format requirements will depend on the implementation of
      *   both the server-side code and `this._dataHandler`
-     * @returns {TrackObjectBase} returns `this.parent`.
+     * @returns {object} returns `this._committedRangesById` (and remove the
+     *   property from `this`).
      */
     _responseHandler (dataHandler, response) {
       dataHandler(response, this._committedRegions)
@@ -470,7 +475,9 @@ var GIVe = (function (give) {
       }
       this._ongoingFetchPromise = null
       this._committedRegions.length = 0
-      return this.parent
+      let committedRangedById = this._committedRangesById
+      this._committedRangesById = null
+      return committedRangedById
     }
 
     /**

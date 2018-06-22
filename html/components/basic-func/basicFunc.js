@@ -447,6 +447,14 @@ var GIVe = (function (give) {
 
   give._initDebug()
 
+  class PromiseCanceller {
+    constructor (isCancelled) {
+      this.isCancelled = isCancelled
+    }
+  }
+
+  give.PromiseCanceller = PromiseCanceller
+
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})

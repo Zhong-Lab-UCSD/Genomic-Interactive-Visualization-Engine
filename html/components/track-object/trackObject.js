@@ -414,13 +414,16 @@ var GIVe = (function (give) {
      *   assigned by setting `.Resolution` property of the element.
      * @param  {string} callerID    The element ID calling `this.fetchData`,
      *   this is used to collapse multiple calls from the same element.
-     * @returns {Promise}  Returns a promise that resolves to `this`.
+     * @returns {Promise<object>}  Returns a promise that resolves to an object
+     *   with `callerID`s as key and the last committed range(s) as value.
      */
     fetchData (ranges, callerID) {
       if (this._dataObj && this._dataObj.fetchData) {
-        return this._dataObj.fetchData(ranges, callerID).then(() => this)
+        return this._dataObj.fetchData(ranges, callerID)
       } else {
-        return Promise.resolve(this)
+        let callerObj = {}
+        callerObj.callerID = ranges
+        return Promise.resolve(callerObj)
       }
     }
 
