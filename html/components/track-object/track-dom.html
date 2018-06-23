@@ -82,38 +82,116 @@ var GIVe = (function (give) {
       // this._setTrackType(track.typeTrunk)
       this.id = this.parent.typeTrunk + '_' + give._trackCounter++
 
-      this._DispPriority = properties.subPriority || 0
-      this._OverriddenPriority = null
+      /**
+       * The CSS class for the main SVG element
+       * @type {string}
+       */
+      this.trackMainDOMClass = properties.trackMainDOMClass || ''
 
-      // this is the type of visibility values that are allowed in a particular track
-      this.allowedVisibilities = [
-        give.TrackObject.StatusEnum.VIS_NONE,
-        give.TrackObject.StatusEnum.VIS_DENSE,
-        give.TrackObject.StatusEnum.VIS_NOTEXT,
-        give.TrackObject.StatusEnum.VIS_COLLAPSED,
-        give.TrackObject.StatusEnum.VIS_PACK,
-        give.TrackObject.StatusEnum.VIS_FULL
-      ]
-      this.defaultVisibility = give.TrackObject.StatusEnum.VIS_FULL
+      /**
+       * Text size of the track, will also affect line sizes.
+       * This serves as the standard for the other properties.
+       * @type {number}
+       */
+      textSize: {
+        type: Number,
+          value: 12
+      },
+
+      /**
+       * Proportion of full line height (multiplies of `this.textSize`).
+       * @type {number}
+       */
+      fullHeightRatio: {
+        type: Number,
+          value: 1
+      },
+
+      /**
+       * Proportion of half height (for bed files, for example). Multiplies
+       * of `this.textSize`.
+       * @type {number}
+       */
+      halfHeightRatio: {
+        type: Number,
+          value: 0.6
+      },
+
+      /**
+       * This is the size of the gap between lines (in a BED file, for example).
+       * Multiplies of `this.textSize`
+       * @type {number}
+       */
+      lineGapRatio: {
+        type: Number,
+          value: 0.1
+      },
+
+      /**
+       * Interval for update drawing, needs to be a small value for coordinates
+       * @type {number}
+       */
+      _drawDebounceInt: {
+        type: Number,
+          value: 0
+      },
+
+      /**
+       * Interval for getting data into cache. This is longer than draw debouncing
+       * @type {number}
+       */
+      _cacheDebounceInt: {
+        type: Number,
+          value: 200
+      },
+
+      /**
+       * Flag to indicate whether this track has a dynamic height (from its contents).
+       * @type {boolean}
+       */
+      dynamicHeight: {
+        type: Boolean,
+          value: true,
+            readOnly: true
+      },
 
       this.activeVisibility = this.getTrackSetting('visibility') || this.defaultVisibility
 
-      this.textMargin = this.textMargin || properties.textMargin || 0
+      this.textMargin = properties.textMargin || 0
 
-      this.windowIndex = this.windowIndex || properties.windowIndex || 0
+      /**
+       * The actual height of the track in pixels.
+       * This will be useful if `this.dynamicHeight === true`
+       * @type {number}
+       */
+      this.trackHeight = properties.height || 100
+
+      /**
+       * Flag to indicate whether this track has a dynamic height (from its contents).
+       * @type {boolean}
+       */
+      this.dynamicHeight = this.constructor.DYNAMIC_HEIGHT
+      if (properties.hasOwnProperty('dynamicHeight')) {
+        this.dynamicHeight = properties.dynamicHeight
+      }
+
+      this.windowIndex = properties.windowIndex || 0
 
       this.cacheRegionSpan = TrackDom.CacheRangeSpanProp
 
       this.windowWidth = properties.width -
-                (properties.textMargin ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
+        (properties.textMargin ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
       this.totalWidth = properties.width
 
-      if (properties.pin) {
-        this.pin = properties.pin
-      }
+      this.pin = properties.pin || this.constructor.PIN
 
       this._cacheDebouncer = null
 
+      /**
+       * Promise resolved when the entire `chart-window` is ready
+       * @type {Promise<give.ChromRegion>}
+       */
+      this.readyPromise = null
       this._dataPromise = null
       this._nextDataPromise = null
       this._debouncePromise = null
@@ -136,17 +214,6 @@ var GIVe = (function (give) {
         },
 
         /**
-         * The CSS class for the main SVG element
-         * @type {string}
-         */
-        trackMainDOMClass: {
-          type: String,
-          readOnly: true
-        },
-
-        /**
-         * Text size of the track, will also affect line sizes.
-         * This serves as the standard for the other properties.
          * @type {number}
          */
         textSize: {
@@ -247,8 +314,6 @@ var GIVe = (function (give) {
         // initialized: {
         //  type: Boolean,
         //  value: false,
-        //  readOnly: true,
-        // },
       }
     }
 
@@ -523,11 +588,12 @@ var GIVe = (function (give) {
       ) {
         // drawing width changed
         this._narrowMode = newNarrowMode
-        let newWindowWidth = newWidth -
-          ((!this._narrowMode && newTxtMargin) ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
-        let promise = this.changeViewWindowAfterResize(newWindowWidth, newWindow)
+        let newWinWidth = newWidth -
+          ((!this._narrowMode && newTxtMargin)
+            ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+        let promise = this.changeViewWindowAfterResize(newWinWidth, newWindow)
         this.totalWidth = newWidth
-        this.windowWidth = newWindowWidth
+        this.windowWidth = newWinWidth
         return promise
       }
       return Promise.resolve(this.viewWindow)
@@ -557,30 +623,35 @@ var GIVe = (function (give) {
      *    If `false`, absolute level is used. Please see
      *    `give.TrackObject.StatusEnum` for possible absolute values.
      *    If `true`, then `newValue` will be used to adjust visibility levels
-     *    according to `this.allowedVisibilities`. Negative value means
-     *    lowering the amount of details shown.
+     *    according to `this.constructor.allowedVisibilities`. Negative value
+     *    means lowering the amount of details shown.
      */
     changeVisibility (newValue, relative) {
       if (!relative) {
         // setting the absolute visibility value,
-        // if not allowed, the closest one *with more detail* (read: later in this.allowedVisibilities) will be chosen
-        if (this.allowedVisibilities.indexOf(newValue) >= 0) {
+        // if not allowed, the closest one *with more detail*
+        // (read: later in this.constructor.allowedVisibilities)
+        // will be chosen
+        if (this.constructor.allowedVisibilities.indexOf(newValue) >= 0) {
           this.activeVisibility = newValue
         } else {
-          this.allowedVisibilities.every(function (vis) {
+          this.constructor.allowedVisibilities.every(function (vis) {
             this.activeVisibility = vis
             return vis < newValue
           }, this)
         }
       } else {
-        // just move values within this.allowedVisibilities
-        var newIndex = this.allowedVisibilities.indexOf(this.activeVisibility) + newValue
+        // just move values within this.constructor.allowedVisibilities
+        var newIndex = (
+          this.constructor.allowedVisibilities.indexOf(this.activeVisibility)
+            + newValue
+        )
         if (newIndex < 0) {
           newIndex = 0
-        } else if (newIndex >= this.allowedVisibilities.length) {
-          newIndex = this.allowedVisibilities.length - 1
+        } else if (newIndex >= this.constructor.allowedVisibilities.length) {
+          newIndex = this.constructor.allowedVisibilities.length - 1
         }
-        this.activeVisibility = this.allowedVisibilities[newIndex]
+        this.activeVisibility = this.constructor.allowedVisibilities[newIndex]
       }
     }
 
@@ -1291,6 +1362,35 @@ var GIVe = (function (give) {
       // do nothing here, will do stuff in coor-track
     }
   }
+
+  TrackDom.TEXT_SIZE = 12
+  TrackDom.FULL_HEIGHT_RATIO = 1
+  TrackDom.HALF_HEIGHT_RATIO = 0.6
+  TrackDom.LINE_GAP_RATIO = 0.1
+
+  TrackDom._DRAW_DEBOUNCE_INTERVAL = 0
+  TrackDom._CACHE_DEBOUNCE_INTERVAL = 200
+  
+  TrackDom.DYNAMIC_HEIGHT = true
+  TrackDom.PIN = 'scroll'
+  
+  TrackDom.DEFAULT_VISIBILITY = give.TrackObject.StatusEnum.VIS_FULL
+  // this is the type of visibility values that are allowed in a particular track
+  TrackDom.allowedVisibilities = [
+    give.TrackObject.StatusEnum.VIS_NONE,
+    give.TrackObject.StatusEnum.VIS_DENSE,
+    give.TrackObject.StatusEnum.VIS_NOTEXT,
+    give.TrackObject.StatusEnum.VIS_COLLAPSED,
+    give.TrackObject.StatusEnum.VIS_PACK,
+    give.TrackObject.StatusEnum.VIS_FULL
+  ]
+      
+
+  TrackDom.colorSet = [
+    0x3F51B5, 0x2196F3, 0x009688,
+    0x4CAF50, 0xCDDC39, 0xFFC107,
+    0x795548, 0xF44336, 0x9C27B0
+  ] // put color set here
 
   TrackDom.VALIGN_TOP = 0
   TrackDom.VALIGN_CENTER = 1
