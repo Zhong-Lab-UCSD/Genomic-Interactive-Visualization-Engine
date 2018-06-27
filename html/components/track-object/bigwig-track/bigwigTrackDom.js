@@ -1,41 +1,35 @@
-<!--
-@license
-Copyright 2017 GIVe Authors
-*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-### Overview
-
-`<bigwig-track-dom>` is the Web Component to display BigWig tracks. It's part
-of `GIVe.BigWigTrack` object and is used to visualize data from the
-`GIVe.BigWigTrack` object.
-
-### Visibility level
-
-### References
-*   [`GIVe.TrackObject`](../index.html) for details on tracks in
-general;
-*   [`GIVe.BigWigTrack`](./bed-track/index.html) for details on BED
-track implementation;
-*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
-for Polymer Element guide, including lifecycles, properties, methods and others.
-
--->
-<dom-module id="bigwig-track-dom">
-
-<template>
-</template>
-<script>
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * ### Overview
+ *
+ * `<bigwig-track-dom>` is the Web Component to display BigWig tracks. It's part
+ * of `GIVe.BigWigTrack` object and is used to visualize data from the
+ * `GIVe.BigWigTrack` object.
+ *
+ * ### Visibility level
+ *
+ * ### References
+ * *   [`GIVe.TrackObject`](../index.html) for details on tracks in
+ * general;
+ * *   [`GIVe.BigWigTrack`](./bed-track/index.html) for details on BED
+ * track implementation;
+ * *   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
+ * for Polymer Element guide, including lifecycles, properties, methods and others.
+ */
 var GIVe = (function (give) {
   'use strict'
 
@@ -65,8 +59,10 @@ var GIVe = (function (give) {
       /**
        * The upper bound for the track display. Any values above this will be displayed as a overflow line.
        */
-      this.windowMax = track.getSetting('windowMax', 'float') ||
+      this.windowMax = (
+        track.getSetting('windowMax', 'float') ||
         BigWigTrackDom._DEFAULT_MAX
+      )
 
       /**
        * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
@@ -115,7 +111,40 @@ var GIVe = (function (give) {
       /**
        * Whether or not to automatically scale the window bounds according to the data displayed.
        */
-      this.autoScale = track.getSetting('autoScale', 'boolean')
+      this.autoScale = this.constructor._DEFAULT_AUTOSCALE
+      if (props.hasOwnProperty('autoScale')) {
+        this.autoScale = props.autoScale
+      } else if (track.hasSetting('autoScale')) {
+        this.autoScale = track.getSetting('autoScale', 'boolean')
+      }
+
+      /**
+       * Whether or not to automatically scale the window bounds according to the data displayed.
+       */
+      this.includeZero = this.constructor._DEFAULT_INCLUDE_ZERO
+      if (props.hasOwnProperty('includeZero')) {
+        this.includeZero = props.includeZero
+      } else if (track.hasSetting('includeZero')) {
+        this.includeZero = track.getSetting('includeZero', 'boolean')
+      }
+
+      this.upperPercentile = (
+        props.upperPercentile ||
+        track.getSetting('upperPercentile', 'float') ||
+        this.constructor._DEFAULT_UPPER_PERCENTILE
+      )
+
+      this.lowerPercentile = (
+        props.lowerPercentile ||
+        track.getSetting('lowerPercentile', 'float') ||
+        this.constructor._DEFAULT_LOWER_PERCENTILE
+      )
+
+      this.numOfDigits = (
+        props.numOfDigits ||
+        track.getSetting('numOfDigits', 'integer') ||
+        this.constructor._DEFAULT_NUM_OF_DIGITS
+      )
 
       /**
        * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
@@ -124,34 +153,6 @@ var GIVe = (function (give) {
       // this.dataPoints=[]
       this.slidingWindowWidth = 5 // sliding window size (single side)
       this.dataPoints = []
-    }
-
-    static get properties () {
-      return {
-        upperPercentile: {
-          type: Number,
-          value: 0.01
-        },
-
-        lowerPercentile: {
-          type: Number,
-          value: 0.01
-        },
-
-        numOfDigits: {
-          type: Number,
-          value: 2
-        },
-        autoScale: {
-          type: Boolean,
-          value: true
-        },
-
-        includeZero: {
-          type: Boolean,
-          value: true
-        }
-      }
     }
 
     /**
@@ -323,7 +324,7 @@ var GIVe = (function (give) {
     // (flags needs to be an object from the caller to receive such values)
       flags = flags || {}
       delete flags.EXCEED_MIN
-      delete flags.EXCEED_MAX  // clear flags first
+      delete flags.EXCEED_MAX // clear flags first
       if (signal > this.windowMax) {
         flags.EXCEED_MAX = true
         return this.drawingBoundary.top
@@ -421,11 +422,11 @@ var GIVe = (function (give) {
      * @return {type}           description
      */
     addPoint (vwindowChr, dataEntry) {
-      /* var x = dataEntry.getStart()
-      var y = dataEntry.getEnd()
-      var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
-          ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value */
-          // var vwindow = this.mainSvg.viewWindow
+      // var x = dataEntry.getStart()
+      // var y = dataEntry.getEnd()
+      // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
+      //   ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value
+      // var vwindow = this.mainSvg.viewWindow
       this.parent.data[vwindowChr].dataPoints.push(dataEntry)
     }
     // another function called draw splines? which converts the four bezier  points to scale on the svg and draws them as a curve?
@@ -450,10 +451,10 @@ var GIVe = (function (give) {
       this.addElement(DownLine, svgToDraw)
     }
     bSpline (points) {
-        // for each (four?) points: calculate the tripmid point things, store them as p1.t2 , p2.t1, p2.t2, p3.t1, p3.t2, p4.t1
-        // calculate the midpoints of each connected trimidpoint pair, store as p2.m, p3.m
-        // calculate input the points as bezier: p2.m, p2.t2, p3.t1, p3.m, with the middle two as control points.
-    // this should take points and bspline it?    ToDo: create separate functions for regular average and bspline, to switch between them easily.
+      // for each (four?) points: calculate the tripmid point things, store them as p1.t2 , p2.t1, p2.t2, p3.t1, p3.t2, p4.t1
+      // calculate the midpoints of each connected trimidpoint pair, store as p2.m, p3.m
+      // calculate input the points as bezier: p2.m, p2.t2, p3.t1, p3.m, with the middle two as control points.
+      // this should take points and bspline it?    ToDo: create separate functions for regular average and bspline, to switch between them easily.
       var vwindow = this.mainSvg.viewWindow
       var windowToDraw = this.mainSvg.viewWindow
       for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 4; i++) { // calculate thirdpoints and put them in arrays
@@ -829,11 +830,14 @@ var GIVe = (function (give) {
   BigWigTrackDom._DEFAULT_MAX = 20
   BigWigTrackDom._DEFAULT_MIN = 0
 
-  give.BigWigTrackDom = BigWigTrackDom
+  BigWigTrackDom._DEFAULT_AUTOSCALE = false
+  BigWigTrackDom._DEFAULT_INCLUDE_ZERO = true
 
-  window.customElements.define('bigwig-track-dom', give.BigWigTrackDom)
+  BigWigTrackDom._DEFAULT_UPPER_PERCENTILE = 0.1
+  BigWigTrackDom._DEFAULT_LOWER_PERCENTILE = 0.1
+  BigWigTrackDom._DEFAULT_NUM_OF_DIGITS = 2
+
+  give.BigWigTrackDom = BigWigTrackDom
 
   return give
 })(GIVe || {})
-</script>
-</dom-module>

@@ -1,79 +1,23 @@
-<!--
-@license
-Copyright 2017 GIVe Authors
-*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-### Overview
-
-`<bigwig-track-dom>` is the Web Component to display BigWig tracks. It's part
-of `GIVe.BigWigTrack` object and is used to visualize data from the
-`GIVe.BigWigTrack` object.
-
-### Visibility level
-
-### References
-*   [`GIVe.TrackObject`](../index.html) for details on tracks in
-general;
-*   [`GIVe.BigWigTrack`](./bed-track/index.html) for details on BED
-track implementation;
-*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
-for Polymer Element guide, including lifecycles, properties, methods and others.
-
--->
-<dom-module id="coor-track-dom">
-  <template>
-  </template>
-  <script>
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ * *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 var GIVe = (function (give) {
   'use strict'
 
   class CoorTrackDom extends give.TrackDom {
-    static get properties () {
-      return {
-        tickLength: {
-          type: Number,
-          value: 9
-        },
-
-        minorMajorRatio: { // how big minor span gaps should be
-          type: Number,
-          value: 0.2
-        },
-
-        minorLength: { // how long minor span ticks should be
-          type: Number,
-          value: 0.75
-        },
-
-        labelLocation: {
-          type: String,
-          value: 'up',
-          readOnly: true
-        },
-
-        scrollPercentage: {
-          type: Number,
-          value: 0.3 // * deltaY in scrolling is the amount of zoom in/out
-        },
-
-        foreColor: {
-          type: Number,
-          value: 0x000000
-        }
-      }
-    }
-
     constructor (track, properties) {
       super(...arguments)
       this.MIN_TICK_GAP = 100
@@ -83,13 +27,7 @@ var GIVe = (function (give) {
 
       properties = properties || {}
 
-      this.pin = this.pin || 'top'
-
       this._setDynamicHeight(false)
-      this._setLabelLocation(
-        (isNaN(properties.windowIndex) || properties.windowIndex === 0)
-          ? 'up' : 'down'
-      )
       this._setTrackMainDOMClass('coordinates')
 
       this._setTrackHeight(properties.height || this.tickLength +
@@ -106,6 +44,30 @@ var GIVe = (function (give) {
       }
 
       this._drawDebounceInt = 0
+
+      this.tickLength = properties.hasOwnProperty('tickLength')
+        ? properties.tickLength
+        : this.constructor._DEFAULT_TICK_LENGTH
+
+      this.minorMajorRatio = properties.hasOwnProperty('minorMajorRatio')
+        ? properties.minorMajorRatio
+        : this.constructor._DEFAULT_MINOR_MAJOR_RATIO
+
+      this.minorLength = properties.hasOwnProperty('minorLength')
+        ? properties.minorLength
+        : this.constructor._DEFAULT_MINOR_LENGTH
+
+      this.labelLocation = properties.hasOwnProperty('labelLocation')
+        ? properties.labelLocation
+        : (this.pin === 'top' ? 'up' : 'down')
+
+      this.scrollPercentage = properties.hasOwnProperty('scrollPercentage')
+        ? properties.scrollPercentage
+        : this.constructor._DEFAULT_SCROLL_PERCENTAGE
+
+      this.foreColor = properties.hasOwnProperty('foreColor')
+        ? properties.foreColor
+        : this.constructor._DEFAULT_FORE_COLOR
     }
 
     // ****** customized methods below ******
@@ -222,9 +184,9 @@ var GIVe = (function (give) {
 
     wheelHandler (e, detail) {
       var diff = e.deltaY / 100 * this.scrollPercentage
-      this.fire('update-window', {
+      give.fireSignal('update-window', {
         windowIndex: this.windowIndex,
-        newWindow: this.getMainSvg().viewWindow
+        newWindow: this._mainSvg.viewWindow
           .getExtension(
             diff, this.revTransXCoordinate(e.pageX -
               e.target.getBoundingClientRect().left).coor,
@@ -232,7 +194,7 @@ var GIVe = (function (give) {
             Math.ceil(this.windowWidth /
               (this.MAX_SPACE_PER_BASE * this.textSize))
           ).regionToString(false)
-      })
+      }, null, e.target)
     // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
     //  diff, this.revTransXCoordinate(e.x).coor, true, this.parent.ref).regionToString(false));
     // svgTarget.needsUpdate = true;
@@ -240,10 +202,17 @@ var GIVe = (function (give) {
     }
   }
 
+  CoorTrackDom._DEFAULT_TICK_LENGTH = 9
+  CoorTrackDom._DEFAULT_MINOR_MAJOR_RATIO = 0.2
+  CoorTrackDom._DEFAULT_MINOR_LENGTH = 0.75
+
+  CoorTrackDom._DEFAULT_SCROLL_PERCENTAGE = 0.3
+  CoorTrackDom._DEFAULT_FORE_COLOR = 0x000000
+
+  CoorTrackDom.PIN = 'top'
+  CoorTrackDom.DYNAMIC_HEIGHT = false
+
   give.CoorTrackDom = CoorTrackDom
-  window.customElements.define('coor-track-dom', give.CoorTrackDom)
 
   return give
 })(GIVe || {})
-  </script>
-</dom-module>

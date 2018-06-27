@@ -1,41 +1,35 @@
-<!--
-@license
-Copyright 2017 GIVe Authors
-*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-### Overview
-
-`<bed-track-dom>` is the Web Component to display BED tracks. It's part of
-`GIVe.BedTrack` object and is used to visualize data from the `GIVe.BedTrack`
-object.
-
-### Visibility level
-
-### References
-*   [`GIVe.TrackObject`](../index.html) for details on tracks in
-general;
-*   [`GIVe.BedTrack`](./bed-track/index.html) for details on BED
-track implementation;
-*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
-for Polymer Element guide, including lifecycles, properties, methods and others.
-
--->
-<link rel="import" href="../track-dom.html">
-<dom-module id="bed-track-dom">
-  <template>
-  </template>
-  <script>
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * ### Overview
+ *
+ * `<bed-track-dom>` is the Web Component to display BED tracks. It's part of
+ * `GIVe.BedTrack` object and is used to visualize data from the `GIVe.BedTrack`
+ * object.
+ *
+ * ### Visibility level
+ *
+ * ### References
+ * *   [`GIVe.TrackObject`](../index.html) for details on tracks in
+ * general;
+ * *   [`GIVe.BedTrack`](./bed-track/index.html) for details on BED
+ * track implementation;
+ * *   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
+ * for Polymer Element guide, including lifecycles, properties, methods and others.
+ */
 var GIVe = (function (give) {
   'use strict'
   class RasInfo {
@@ -225,23 +219,17 @@ var GIVe = (function (give) {
        */
       this.RASTER_SIZE = 1
 
-      if (track.getSetting('honorItemRGB')) {
-        this.honorItemRGB = track.getSetting('honorItemRGB', 'boolean')
+      /**
+       * whether this track honors itemRGB values provided by BED data.
+       */
+      this.honorItemRgb = false
+      if (prop.hasOwnProperty('honorItemRgb')) {
+        this.honorItemRgb = prop.honorItemRgb
+      } else if (track.getSetting('honorItemRGB')) {
+        this.honorItemRgb = track.getSetting('honorItemRGB', 'boolean')
       }
 
       this._RasInfo = null
-    }
-
-    static get properties () {
-      return {
-        /**
-         * whether this track honors itemRGB values provided by BED data.
-         */
-        honorItemRGB: {
-          type: Boolean,
-          value: false
-        }
-      }
     }
 
     /**
@@ -517,7 +505,7 @@ var GIVe = (function (give) {
           this._drawSingleTranscript(transcript,
             Array.isArray(arr) ? index === arr.length - 1 : false,
             null,
-            (this.honorItemRGB && gene.itemRGB !== undefined)
+            (this.honorItemRgb && gene.itemRGB !== undefined)
               ? gene.itemRGB : null)
         }
         return true
@@ -890,5 +878,3 @@ var GIVe = (function (give) {
 
   return give
 })(GIVe || {})
-  </script>
-</dom-module>

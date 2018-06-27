@@ -278,6 +278,10 @@ var GIVe = (function (give) {
       this._initSettings()
     }
 
+    hasSetting (key) {
+      return this._settings.hasOwnProperty(key)
+    }
+
     /**
      * getSetting - get setting value
      *
@@ -299,6 +303,7 @@ var GIVe = (function (give) {
       switch (type) {
         case 'integer':
           return parseInt(this._settings[key])
+        case 'number':
         case 'float':
           return parseFloat(this._settings[key])
         case 'boolean':
