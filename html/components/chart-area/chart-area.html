@@ -969,7 +969,7 @@ var GIVe = (function (give) {
       }
       var _setDomIndHeight = function (divElem, trackDOM, index) {
         trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
-        divElem._currY += trackDOM.getHeight() + this._trackGap * this._textSize
+        divElem._currY += trackDOM.height() + this._trackGap * this._textSize
       }.bind(this)
       var _setSvgWidthHeight = function (divElem) {
         if (divElem._currY > 0) {

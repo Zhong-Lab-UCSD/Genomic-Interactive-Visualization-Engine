@@ -36,8 +36,6 @@ var GIVe = (function (give) {
 
       this.MIN_TOTAL_WIDTH = 100
 
-      this.TEXT_MARGIN_GAP = 5 // flank width for arrow
-
       this.Y_HIDDEN = -30 // value to hide stuff in svg (to calculate size)
 
       this.MAX_SPACE_PER_BASE = 1.5
@@ -50,7 +48,6 @@ var GIVe = (function (give) {
       this.cacheUpdateJobName = 'UPDATECACHE'
 
       this._narrowMode = false
-      this.labelMarginRight = 0
 
       // request URL is the target to get data from
       // width is the width given for the track (including text margin), units in px
@@ -65,6 +62,17 @@ var GIVe = (function (give) {
       } catch (e) {
         this.setHeight(100)
       }
+
+      /**
+       * Right padding size of text labels, in px.
+       * @type {number}
+       */
+      this.textRightPadding = properties.hasOwnProperty('textRightPadding')
+        ? properties.textRightPadding
+        : (this.hasTrackSetting('textRightPadding')
+          ? this.getTrackSetting('textRightPadding', 'float')
+          : this.constructor.DEFAULT_RIGHT_PADDING
+        )
 
       /**
        * The underlying track object for metadata, settings,
@@ -381,14 +389,15 @@ var GIVe = (function (give) {
      *
      * @param  {number} newWindowWidth The new window width (in pixels)
      * @param  {number} newViewWindow  The new view window coordinate.
-     *   If this value is `undefined` or `null`, then a new one will be
-     *   generated based on the current view window, current width and
-     *   new width.
+     *   (deprecated) If this value is `undefined` or `null`,
+     *   then a new one will be generated based on the current view window,
+     *   current width and new width.
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
     changeViewWindowAfterResize (newWindowWidth, newViewWindow) {
-      // this is only used to change the viewWindow of _mainSvg (both narrow and wide mode)
+      // this is only used to change the viewWindow of _mainSvg
+      // (both narrow and wide mode)
       if (!newViewWindow) {
         // no new window, need to calculate
         if (!this.viewWindow) {
@@ -418,7 +427,7 @@ var GIVe = (function (give) {
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
-    setWidthParameters (newWidth, newTxtMargin, newWindow) {
+    setWidthParameters (newWidth, newTxtMargin, newWindow, newNarrowMode) {
       newWidth = (typeof (newWidth) === 'number' && newWidth > 0)
         ? newWidth : this.totalWidth
       newTxtMargin = (typeof (newTxtMargin) === 'number' && newTxtMargin > 0)
@@ -442,11 +451,6 @@ var GIVe = (function (give) {
         }
         widthChanged = true
       }
-      // let newNarrowMode = (
-      //   newWidth - (newTxtMargin ? newTxtMargin + this.TEXT_MARGIN_GAP : 0) <
-      //   this.MIN_TOTAL_WIDTH
-      // )
-      let newNarrowMode = false
 
       if (newWidth !== this.totalWidth || widthChanged ||
         newNarrowMode !== this._narrowMode ||
@@ -458,7 +462,7 @@ var GIVe = (function (give) {
         this._narrowMode = newNarrowMode
         let newWinWidth = newWidth -
           ((!this._narrowMode && newTxtMargin)
-            ? newTxtMargin + this.TEXT_MARGIN_GAP : 0)
+            ? newTxtMargin : 0)
         let promise = this.changeViewWindowAfterResize(newWinWidth, newWindow)
         this.totalWidth = newWidth
         this.windowWidth = newWinWidth
@@ -955,13 +959,13 @@ var GIVe = (function (give) {
     }
 
     createShortLabelArr (label, maxX) {
-      maxX = maxX || this.textMargin - this.labelMarginRight
+      maxX = maxX || this.textMargin - this.textRightPadding
       return this.createWordWrappedText(label || this.getTrackSetting('shortLabel'),
         'end', null, this._textSvg, maxX, this.trackHeight)
     }
 
     drawShortLabelArr (labelArr, maxX) {
-      maxX = maxX || this.textMargin - this.labelMarginRight
+      maxX = maxX || this.textMargin - this.textRightPadding
       this.drawWordWrappedText(maxX, this.trackHeight * 0.5, labelArr,
         'end', 'both', null, this._textSvg, true)
     }
@@ -1238,6 +1242,8 @@ var GIVe = (function (give) {
   TrackDom.FULL_HEIGHT_RATIO = 1
   TrackDom.HALF_HEIGHT_RATIO = 0.6
   TrackDom.LINE_GAP_RATIO = 0.1
+
+  TrackDom.DEFAULT_RIGHT_PADDING = 8
 
   TrackDom._DRAW_DEBOUNCE_INTERVAL = 0
   TrackDom._CACHE_DEBOUNCE_INTERVAL = 200
