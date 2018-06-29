@@ -284,6 +284,8 @@ var GIVe = (function (give) {
      * @returns {Promise} returns a promise that resolves to an object
      *    with `callerID`s as key and the last committed range(s) as value
      *    when data is fetched.
+     *    __NOTE__: if multiple fetchData requests are called within the
+     *    same fetch data cycle, the promises returned will be the same.
      */
     fetchData (ranges, callerID) {
       callerID = callerID || TrackDataObject._NO_CALLERID_KEY
@@ -306,6 +308,7 @@ var GIVe = (function (give) {
         }
         this._fetchPromise = this._debouncePromise
           .then(() => this._collapseQueryAndRetrieve())
+        return this._fetchPromise
       }
       return this._fetchPromise
     }
@@ -475,9 +478,9 @@ var GIVe = (function (give) {
       }
       this._ongoingFetchPromise = null
       this._committedRegions.length = 0
-      let committedRangedById = this._committedRangesById
+      let committedRangesById = this._committedRangesById
       this._committedRangesById = null
-      return committedRangedById
+      return committedRangesById
     }
 
     /**

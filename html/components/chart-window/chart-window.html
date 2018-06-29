@@ -696,39 +696,56 @@ var GIVe = (function (give) {
       }
     }
 
-    updateHeightLocation (width) {
+    updateSvgHeightLocation (width) {
+      // update width and throw width if needed
+      width = width || this.querySelector('#chartHolding').clientWidth
 
+      let divList = [...this.shadowRoot.querySelectorAll('#chartHolding > div')]
+
+      divList.forEach(divElem => {
+        let svgElem = divElem.querySelector('svg.svgHolder')
+        svgElem.setAttribute('width', width)
+        svgElem.setAttribute('height', divElem._currY || 0)
+        svgElem.setAttribute('viewBox',
+          '0 0 ' + width + ' ' + divElem._currY || 0)
+        delete divElem._currY
+      })
+      if (
+        width === this.querySelector('#chartHolding').clientWidth &&
+        this.querySelector('#_Scroll').clientWidth < width
+      ) {
+        throw this.querySelector('#_Scroll').clientWidth
+      }
+      // update `this._viewWindow` and clear `this.drawingPromise`
+      // `windows` is the array returned by Promise.all()
+      this.windowWidth = width
+      return this._viewWindow
     }
 
     /**
-     * @function updateHeightLocViewWindow
+     * @function updateTrackHeightLocVWindow
+     * @async
      * @param  {number} width - If a new width is need to be specified
-     * @param  {boolean} changeWindow - Whether the view window needs to
-     *    be changed, if this is `true`, then the function will become
-     *    async (otherwise the Promise resolves immediately).
+     * @param  {ChromRegionLiteral} newVWindow - Whether the view window needs to
+     *    be changed to the new window, if this is not provided, then the function
+     *    will return a resolved `Promise`.
      * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves to
      *    the new window when new data was ready.
      * @throws {number} if width needs to be changed (due to scroll bar), the
      *    new width will be thrown to let the calling function (in `chart-area`)
      *    be informed of incoming width change.
      */
-    updateHeightLocViewWindow (width, changeWindow) {
+    updateTrackHeightLocVWindow (width, newVWindow) {
       // calculate the heights for all tracks
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
       // this will also rearrange the y value for all tracks as well
       give._verbConsole.info(
-        'updateHeightLocViewWindow(' + width + ', ' + changeWindow + ')')
+        'updateTrackHeightLocVWindow(' + width + ', ' + newVWindow + ')')
 
       // prepare element widths and heights
-
-      let divList = [...this.shadowRoot.querySelectorAll(
-        '#chartHolding > div'
-      )]
-      divList.forEach(divElem => {
-        divElem._currY = 0
-        divElem._svgWidth = width || divElem.clientWidth
-      })
+      newVWindow = newVWindow || false
+      width = width || this.querySelector('#chartHolding').clientWidth
 
       // Set the width and height of individual tracks
       // Because this can be async, the following steps are all async
@@ -736,112 +753,35 @@ var GIVe = (function (give) {
       let enumArray = this.reverseFlag ? this.trackdoms.slice().reverse()
         : this.trackdoms
 
-      this.drawingPromise = (this.drawingPromise || Promise.resolve()).then(
-        () => Promise.all(
-          enumArray.map((trackDom, index) => {
-            let divElem = this.shadowRoot.querySelector(
-              '#' + this._getSlotId(trackDom.parent, true)
-            )
-            return trackDom.updateLocationSize(
-              0, divElem._currY, divElem._svgWidth, null, null,
-              changeWindow ? this._pendingVWindow : false
-            ).then(() => {
-              divElem._currY += (trackDom.height +
-                this._trackGap * this._textSize
-              )
-            })
-          })
+      this.updatingPromise = Promise.all(enumArray.map(trackDom => {
+        let divElem = this.shadowRoot.querySelector(
+          '#' + this._getSlotId(trackDom.parent, true)
         )
-      ).then(windows => {
-        // update `this._viewWindow` and clear `this.drawingPromise`
-        // `windows` is the array returned by Promise.all()
-        if (Array.isArray(windows) &&
-          give.ChromRegion.compare(windows[0], this._viewWindow)
-        ) {
-          this._viewWindow = windows[0]
+        if (divElem.hasOwnProperty('_currY')) {
+          divElem._currY += this._trackGap * this._textSize
+        } else {
+          divElem._currY = 0
         }
-        this.drawingPromise = null
-        return this._viewWindow
+        return trackDom.updateLocationSize(
+          0, divElem._currY, width, null, null, newVWindow
+        ).then(window => {
+          divElem._currY += trackDom.height
+          return window
+        })
+      })).then(windows => {
+        // First check whether other resizing event fired before
+        // this update (otherwise the display may not be up-to-date).
+        if (newVWindow && Array.isArray(windows) &&
+          give.ChromRegion.compare(windows[0], newVWindow)
+        ) {
+          throw new give.PromiseCanceller(true)
+        }
+        this._viewWindow = newVWindow
+        // update width and throw new width if needed
+        return this.updateSvgHeightLocation(this._pendingWidth)
       })
 
-      return this.drawingPromise.then(
-        // After creating the SVG contents
-        // (and potentially updating the viewWindow),
-        // check the width of the window and throw if needed
-        window => {
-          divList.forEach(divElem => {
-            if (divElem._currY > 0) {
-              divElem._currY -= this._trackGap * this._textSize
-            }
-            let svgElem = divElem.querySelector('svg.svgHolder')
-            svgElem.setAttribute('width', divElem._svgWidth)
-            svgElem.setAttribute('height', divElem._currY)
-            svgElem.setAttribute('viewBox',
-              '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
-            delete divElem._currY
-            delete divElem._svgWidth
-          })
-          if (
-            this.querySelector('#_Scroll').clientWidth <
-            this.querySelector('#chartHolding').clientWidth
-          ) {
-            throw this.querySelector('#_Scroll').clientWidth
-          }
-          return window
-        }
-      )
-
-      // set the width and height of the ending `<svg>` element
-
-      
-      // test if all 
-      if (!this.querySelector('#_Scroll').scrollHeight
-        !== !this.querySelector('#_Scroll').clientHeight &&
-        !this.querySelector('#_Scroll').scrollHeight
-        !== !this.querySelector('#_Scroll').clientHeight
-      ) {
-        let scrollDivWidth = this.querySelector('#_Scroll').clientWidth
-      }
-
-      this._svgWidth = this._svgWidth ||
-        this.querySelector('#_Scroll').clientWidth
-      if (this._svgWidth > this.querySelector('#_Scroll').clientWidth) {
-        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-      }
-
-
-      var _prepareSvgHeight = function (svgWidth, divElem) {
-        divElem._currY = 0
-        divElem._svgWidth = svgWidth || divElem.clientWidth
-      }
-      var _setDomIndHeight = function (divElem, trackDom, index) {
-        trackDom.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
-        divElem._currY += trackDom.height + this._trackGap * this._textSize
-      }.bind(this)
-      var _setSvgWidthHeight = function (divElem) {
-        if (divElem._currY > 0) {
-          divElem._currY -= this._trackGap * this._textSize
-        }
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('width', divElem._svgWidth)
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('height', divElem._currY)
-        Polymer.dom(divElem).querySelector('svg.svgHolder').setAttribute('viewBox',
-          '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
-        delete divElem._currY
-        delete divElem._svgWidth
-      }.bind(this)
-      this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-        _prepareSvgHeight.bind(this, this._svgWidth),
-        _setSvgWidthHeight, domInWindowEntry, index)
-      this._svgWidth = this._svgWidth ||
-        domInWindowEntry.scrolling.divElem.clientWidth
-      if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
-        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-      }
-      if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
-        // scrolling happened, needs to shrink pinned track width
-        return false
-      }
-      return true
+      return this.updatingPromise
     }
 
     /**
@@ -1277,13 +1217,13 @@ var GIVe = (function (give) {
     _updateWindowHandler (e) {
       // update the windows by events bubbled up from bottom tracks
       try {
-        if (e.detail.newWindow instanceof give.ChromRegion ||
-          typeof e.detail.newWindow === 'string'
+        if (e.detail.newVWindow instanceof give.ChromRegion ||
+          typeof e.detail.newVWindow === 'string'
         ) {
-          this.changeViewWindow(e.detail.newWindow, !!(e.detail.tracks))
+          this.changeViewWindow(e.detail.newVWindow, !!(e.detail.tracks))
           this.fire('update-coordinate', {
             windowIndex: this.index,
-            newWindow: e.detail.newWindow
+            newVWindow: e.detail.newVWindow
           })
         }
       } catch (err) {
@@ -1312,14 +1252,15 @@ var GIVe = (function (give) {
           }
           this.resizePromise = this._debouncePromise
             .then(() => {
-              this._pendingWidth = (
+              let pendingWidth = (
                 this.querySelector('#chartHolding').clientWidth
               )
-              this._pendingVWindow = this.viewWindow.getExtension(
+              let pendingVWindow = this.viewWindow.getExtension(
                 (this._pendingWidth - this.windowWidth) / this.windowWidth,
-                null, true, this._refObj)
-              return this.updateHeightLocViewWindow(
-                this._pendingWidth, this._pendingVWindow
+                null, true, this._refObj
+              )
+              return this.updateTrackHeightLocVWindow(
+                pendingWidth, pendingVWindow
               )
             })
         }

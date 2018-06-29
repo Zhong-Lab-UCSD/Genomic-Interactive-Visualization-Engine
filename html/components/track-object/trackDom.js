@@ -57,11 +57,6 @@ var GIVe = (function (give) {
 
       this.x = properties.x || 0
       this.y = properties.y || 0
-      try {
-        this.setHeight(properties.height)
-      } catch (e) {
-        this.setHeight(100)
-      }
 
       /**
        * Right padding size of text labels, in px.
@@ -472,13 +467,13 @@ var GIVe = (function (give) {
     }
 
     /**
-     * setHeight - set the height of the track
+     * set height - set the height of the track
      *
      * @param  {number} newHeight - new height of the track, in px
      */
-    setHeight (newHeight) {
+    set height (newHeight) {
       if (newHeight > 0) {
-        this._setTrackHeight(newHeight)
+        this.trackHeight = newHeight
       } else {
         throw new give.GiveError('Invalid height value: ' + newHeight)
       }
@@ -674,14 +669,14 @@ var GIVe = (function (give) {
         this.y = y
         // this._trackSvg.setAttributeNS(null, 'y', this.y);
       }
-      if (typeof (width) === 'number') {
-        var promise = this.setWidthParameters(width, newTxtWidth, newWindow) // may involve narrowMode
-      }
       if (typeof (height) === 'number') {
-        promise = promise.then(resolvedValue => {
-          this.setHeight(height) // may also involve narrowMode?
-          return resolvedValue
-        })
+        this.height = height // may also involve narrowMode?
+      }
+      let promise
+      if (typeof (width) === 'number') {
+        promise = this.setWidthParameters(width, newTxtWidth, newWindow) // may involve narrowMode
+      } else {
+        promise = Promise.resolve(this.viewWindow)
       }
       return promise.then(resolvedValue => {
         this.setSvgSizeLocation()
@@ -1018,11 +1013,9 @@ var GIVe = (function (give) {
 
     checkDataAndUpdateDebounced (newVWindow) {
       // Steps:
-      //    * run this.parent.fetchData with drawData (debounced) as callback
-      //    * whenever drawData (debounced) is done, run updateCache
-      //    Meanwhile, run fetch data (debounced) without visible callback
-      //    * Otherwise, run fetch data with drawData (debounced) as callback
-      //    * Also, convert all new ranges into arrays first
+      // * run this.checkDataAndUpdate (debounced) as callback
+      //    * if this.checkDataAndUpdate has been debounced, reject the
+      //      current promise
 
       if (this._cacheDebouncer && this._cacheDebouncer.isActive()) {
         this._cacheDebouncer.cancel()
@@ -1046,12 +1039,39 @@ var GIVe = (function (give) {
         return this._debouncePromise
           .then(() => this.checkDataAndUpdate())
       }
-      return this._drawingPromise
+      return Promise.reject(new give.PromiseCanceller(true))
     }
 
+    /**
+     * @function checkDataAndUpdate
+     * Check if `this.parent` has up-to-date data and then refresh the DOM
+     * content. The new view window is supplied in `this._pendingNewVWArr`.
+     *
+     * @returns {Promise} A Promise that will resolve to `this.viewWindow`
+     *    when everything is done. (`this.loadCache` uses `Polymer.Async`
+     *    so it will happen after the Promise is resolved.)
+     *    If a new function call can be answered with an on-going Promise
+     *    (presumably chained by other Promises in calling code), a
+     *    rejected Promise (with a give.PromiseCanceller) will be returned
+     *    indicating no further chaining is needed.
+     * @memberof TrackDom
+     */
     checkDataAndUpdate () {
-      // call this.parent.fetchData and chain drawing functions
-      // return a Promise so that parent dom objects will know it's ready
+      // The procedures for checking data and update is shown below:
+      // * Call this.parent.fetchData to get the up-to-date data promise.
+      //    * If the returned promise is the same as the existing one, this
+      //      shows that `this.parent` will provide the correct resolution for
+      //      the existing data promise (`this._dataPromise`), therefore,
+      //      previously chained promises after `this._dataPromise` can
+      //      still be used and no new promise shall be needed.
+      //      Reject the current promise with `give.PromiseCanceller`.
+      //    * If the returned promise is different (or is new), then a new
+      //      promise chain is needed.
+      //      The stale promise chain will be cancelled in
+      //      `this.drawDataWrapper`
+      // * Chained promises include `this.drawDataWrapper`, then
+      //      `this.loadCache`, it will resolve to `this.viewWindow`
+      //    * whenever checkDataAndUpdate (debounced) is done, run loadCache
       this._debouncePromise = null
       let newDataPromise = this.parent.fetchData(
         this._pendingNewVWArr.map(range => range.getExtension(
@@ -1065,7 +1085,9 @@ var GIVe = (function (give) {
           .then(() => this.loadCache())
           .then(() => this.viewWindow)
       }
-      return this._drawingPromise
+      // Otherwise it's the same data promise, use the old chained functions
+      // after this._dataPromise instead of creating new chained functions
+      return Promise.reject(new give.PromiseCanceller(true))
     }
 
     updateTrack (viewWindow, index, threshold) {
