@@ -427,7 +427,7 @@ var GIVe = (function (give) {
         return this._dataObj.fetchData(ranges, callerID)
       } else {
         let callerObj = {}
-        callerObj.callerID = ranges
+        callerObj[callerID] = ranges
         return Promise.resolve(callerObj)
       }
     }

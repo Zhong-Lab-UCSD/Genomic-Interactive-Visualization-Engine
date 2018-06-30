@@ -199,9 +199,7 @@ var GIVe = (function (give) {
        */
       this.readyPromise = null
       this._dataPromise = null
-      this._nextDataPromise = null
       this._debouncePromise = null
-      this._drawingPromise = null
 
       this._pendingNewVWArr = null
 
@@ -281,13 +279,7 @@ var GIVe = (function (give) {
       return this.parent.priorities
     }
 
-    /**
-     * setSvgSizeLocation - Set the size and location (mainly Y value) of
-     *   main track SVG element.
-     */
-    setSvgSizeLocation () {
-      this.trackSvg.setAttributeNS(null, 'x', this.x)
-      this.trackSvg.setAttributeNS(null, 'y', this.y)
+    setSvgSize () {
       this.trackSvg.setAttributeNS(null, 'width', this.totalWidth)
       // notice that the heights are placeholder and will change
       this.trackSvg.setAttributeNS(null, 'height', this.trackHeight)
@@ -315,6 +307,20 @@ var GIVe = (function (give) {
       if (typeof this.setSvgComponentsSizeLocation === 'function') {
         this.setSvgComponentsSizeLocation()
       }
+    }
+
+    setSvgLocation () {
+      this.trackSvg.setAttributeNS(null, 'x', this.x)
+      this.trackSvg.setAttributeNS(null, 'y', this.y)
+    }
+
+    /**
+     * setSvgSizeLocation - Set the size and location (mainly Y value) of
+     *   main track SVG element.
+     */
+    setSvgSizeLocation () {
+      this.setSvgLocation()
+      this.setSvgSize()
     }
 
     /**
@@ -376,7 +382,7 @@ var GIVe = (function (give) {
     }
 
     /**
-     * changeViewWindowAfterResize - Change window width and height
+     * _changeViewWindowAfterResize - Change window width and height
      *   (__e.g.__ resizing browser window from an `iron-resized` event).
      * Notice that this is a track-level solution: the first track(s) (very
      *   likely to be coordinates) will generate a new `newViewWindow` value
@@ -390,7 +396,7 @@ var GIVe = (function (give) {
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
-    changeViewWindowAfterResize (newWindowWidth, newViewWindow) {
+    _changeViewWindowAfterResize (newWindowWidth, newViewWindow) {
       // this is only used to change the viewWindow of _mainSvg
       // (both narrow and wide mode)
       if (!newViewWindow) {
@@ -458,10 +464,9 @@ var GIVe = (function (give) {
         let newWinWidth = newWidth -
           ((!this._narrowMode && newTxtMargin)
             ? newTxtMargin : 0)
-        let promise = this.changeViewWindowAfterResize(newWinWidth, newWindow)
-        this.totalWidth = newWidth
-        this.windowWidth = newWinWidth
-        return promise
+        this._pendingTotalWidth = newWidth
+        this._pendingWindowWidth = newWinWidth
+        return this._changeViewWindowAfterResize(newWinWidth, newWindow)
       }
       return Promise.resolve(this.viewWindow)
     }
@@ -660,7 +665,7 @@ var GIVe = (function (give) {
       }
     }
 
-    updateLocationSize (x, y, width, height, newTxtWidth, newWindow) {
+    updateLocation (x, y) {
       if (typeof (x) === 'number') {
         this.x = x
         // this._trackSvg.setAttributeNS(null, 'x', this.x);
@@ -669,6 +674,10 @@ var GIVe = (function (give) {
         this.y = y
         // this._trackSvg.setAttributeNS(null, 'y', this.y);
       }
+      this.setSvgLocation()
+    }
+
+    updateSize (width, height, newTxtWidth, newWindow) {
       if (typeof (height) === 'number') {
         this.height = height // may also involve narrowMode?
       }
@@ -679,7 +688,7 @@ var GIVe = (function (give) {
         promise = Promise.resolve(this.viewWindow)
       }
       return promise.then(resolvedValue => {
-        this.setSvgSizeLocation()
+        this.setSvgSize()
         return resolvedValue
       })
     }
@@ -981,10 +990,18 @@ var GIVe = (function (give) {
           throw new give.PromiseCanceller(true)
         }
       }
-      let windowToDraw = this._pendingNewVWArr
+      // commit pending view windows
+      this.viewWindow = this._pendingNewVWArr || this.viewWindow
       this._pendingNewVWArr = null
+      // commit pending widths (if any)
+      if (this._pendingTotalWidth) {
+        this.totalWidth = this._pendingTotalWidth
+        this.windowWidth = this._pendingWindowWidth
+        delete this._pendingTotalWidth
+        delete this._pendingWindowWidth
+        this.setSvgSize()
+      }
       this._dataPromise = null
-      this.viewWindow = windowToDraw
       var shortLabelArr
       if (this._textSvg) {
         shortLabelArr = this.createShortLabelArr()
@@ -995,11 +1012,11 @@ var GIVe = (function (give) {
       }
       // draw a rectangle over the coordinate track to handle mouse events
       this.initSvgReceiver(this._mainSvg)
-      return windowToDraw
+      return this.viewWindow
     }
 
     loadCache () {
-      if (!this._drawingPromise) {
+      if (!this._dataPromise) {
         // there is no future redrawing queued
         this._cacheDebouncer = Polymer.Debouncer.debounce(
           this._cacheDebouncer,
@@ -1011,10 +1028,10 @@ var GIVe = (function (give) {
       }
     }
 
-    checkDataAndUpdateDebounced (newVWindow) {
+    _checkDataAndUpdateDebounced (newVWindow) {
       // Steps:
-      // * run this.checkDataAndUpdate (debounced) as callback
-      //    * if this.checkDataAndUpdate has been debounced, reject the
+      // * run this._checkDataAndUpdate (debounced) as callback
+      //    * if this._checkDataAndUpdate has been debounced, reject the
       //      current promise
 
       if (this._cacheDebouncer && this._cacheDebouncer.isActive()) {
@@ -1037,13 +1054,13 @@ var GIVe = (function (give) {
           this._debouncePromise = Promise.resolve()
         }
         return this._debouncePromise
-          .then(() => this.checkDataAndUpdate())
+          .then(() => this._checkDataAndUpdate())
       }
-      return Promise.reject(new give.PromiseCanceller(true))
+      throw new give.PromiseCanceller(true)
     }
 
     /**
-     * @function checkDataAndUpdate
+     * @function _checkDataAndUpdate
      * Check if `this.parent` has up-to-date data and then refresh the DOM
      * content. The new view window is supplied in `this._pendingNewVWArr`.
      *
@@ -1056,7 +1073,7 @@ var GIVe = (function (give) {
      *    indicating no further chaining is needed.
      * @memberof TrackDom
      */
-    checkDataAndUpdate () {
+    _checkDataAndUpdate () {
       // The procedures for checking data and update is shown below:
       // * Call this.parent.fetchData to get the up-to-date data promise.
       //    * If the returned promise is the same as the existing one, this
@@ -1071,7 +1088,7 @@ var GIVe = (function (give) {
       //      `this.drawDataWrapper`
       // * Chained promises include `this.drawDataWrapper`, then
       //      `this.loadCache`, it will resolve to `this.viewWindow`
-      //    * whenever checkDataAndUpdate (debounced) is done, run loadCache
+      //    * whenever _checkDataAndUpdate (debounced) is done, run loadCache
       this._debouncePromise = null
       let newDataPromise = this.parent.fetchData(
         this._pendingNewVWArr.map(range => range.getExtension(
@@ -1087,7 +1104,7 @@ var GIVe = (function (give) {
       }
       // Otherwise it's the same data promise, use the old chained functions
       // after this._dataPromise instead of creating new chained functions
-      return Promise.reject(new give.PromiseCanceller(true))
+      throw new give.PromiseCanceller(true)
     }
 
     updateTrack (viewWindow, index, threshold) {
@@ -1095,28 +1112,27 @@ var GIVe = (function (give) {
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
       try {
-        let newDrawingPromise = this.checkDataAndUpdateDebounced(
+        this.readyPromise = this._checkDataAndUpdateDebounced(
           this._verifyViewWindow(viewWindow)
-        )
-        if (this._drawingPromise !== newDrawingPromise) {
-          this._drawingPromise = newDrawingPromise
-          this.readyPromise = this._drawingPromise.catch(
-            e => {
-              if (e instanceof give.PromiseCanceller && e.isCancelled) {
-                throw e
-              }
-              give._verbConsole.warn(e)
-              give.fireSignal('warning', { msg: e.message })
+        ).catch(
+          e => {
+            if (e instanceof give.PromiseCanceller && e.isCancelled) {
+              throw e
             }
-          ).then(() => {
-            give.fireSignal('track-ready', { ID: this.parent.id })
-            return this.viewWindow
-          })
-        }
-        return this.readyPromise
+            give._verbConsole.warn(e)
+            give.fireSignal('warning', { msg: e.message })
+          }
+        ).then(() => {
+          give.fireSignal('track-ready', { ID: this.parent.id })
+          this.readyPromise = null
+          return this.viewWindow
+        })
       } catch (e) {
-        return Promise.reject(e)
+        if (!(e instanceof give.PromiseCanceller) || !e.isCancelled) {
+          throw e
+        }
       }
+      return this.readyPromise
     }
 
     regionInWindow (region, svgToDraw) {

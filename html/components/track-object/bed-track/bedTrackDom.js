@@ -281,8 +281,7 @@ var GIVe = (function (give) {
       }
 
       // resize the heights
-      this.updateLocationSize(null, null, null,
-        this._calcHeight(numOfLines))
+      this.updateSize(null, this._calcHeight(numOfLines))
     }
 
     /**

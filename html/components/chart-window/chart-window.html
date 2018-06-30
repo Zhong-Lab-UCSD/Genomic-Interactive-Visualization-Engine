@@ -253,6 +253,13 @@ var GIVe = (function (give) {
       this.resizeAsyncProcess = null
       this._trackDoms = []
       this._hiddenTrackDoms = []
+
+      /**
+       * _trackDomPromises - an array holding all updating promises of tracks
+       *    within `this._trackDoms` __and `this._hiddenTrackDoms`__
+       * @type {Array<Promise>}
+       */
+      this._trackDomPromises = []
       this._addedTrackMap = new Map()
     }
 
@@ -719,27 +726,31 @@ var GIVe = (function (give) {
       // update `this._viewWindow` and clear `this.drawingPromise`
       // `windows` is the array returned by Promise.all()
       this.windowWidth = width
-      return this._viewWindow
     }
 
     /**
      * @function updateTrackHeightLocVWindow
      * @async
      * @param  {number} width - If a new width is need to be specified
-     * @param  {ChromRegionLiteral} newVWindow - Whether the view window needs to
-     *    be changed to the new window, if this is not provided, then the function
-     *    will return a resolved `Promise`.
-     * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves to
-     *    the new window when new data was ready.
+     * @param  {ChromRegionLiteral} newVWindow - Whether the view window needs
+     *    to be changed to the new window, if this is not provided, then the
+     *    function will return a resolved `Promise`.
+     * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves
+     *    to the new window when new data was ready.
      * @throws {number} if width needs to be changed (due to scroll bar), the
-     *    new width will be thrown to let the calling function (in `chart-area`)
-     *    be informed of incoming width change.
+     *    new width will be thrown to let the calling function (in
+     *    `chart-area`) be informed of incoming width change.
      */
     updateTrackHeightLocVWindow (width, newVWindow) {
-      // calculate the heights for all tracks
-      // note that by the time this is called, all tracks should be ready
-      // (this is handled in track-ready event handler)
-      // this will also rearrange the y value for all tracks as well
+      // Steps:
+      // * Update all tracks' width and height (with maybe new view window)
+      // * Calculate whether a scroll bar will be needed and rearrange all
+      //   the svg elements by changing the Y value
+      //   (by calculating and setting the height of the svgHolder element) 
+      //   * If a scroll bar is needed, throw the width with scroll bar
+      //     factored in. Process ends to wait for the next call from the
+      //     parent element (`chart-area`).
+      // * Resolve the promise to the new view window
       give._verbConsole.info(
         'updateTrackHeightLocVWindow(' + width + ', ' + newVWindow + ')')
 
@@ -747,39 +758,48 @@ var GIVe = (function (give) {
       newVWindow = newVWindow || false
       width = width || this.querySelector('#chartHolding').clientWidth
 
-      // Set the width and height of individual tracks
-      // Because this can be async, the following steps are all async
+      // Update all tracks' width and height (with maybe new view window)
+      // If no new promise is needed, do not chain stuff afterwards
+      let newUpdatingPromise = give.getAggregatedUpdatePromise(
+        this._trackDomPromises,
+        this._trackDoms.concat(this._hiddenTrackDoms),
+        trackDom => trackDom.updateSize(width, null, null, newVWindow)
+      )
 
-      let enumArray = this.reverseFlag ? this.trackdoms.slice().reverse()
-        : this.trackdoms
+      if (newUpdatingPromise) {
+        // * Calculate whether a scroll bar will be needed
+        //   (by calculating and setting the height of the svgHolder element) 
+        //   * If a scroll bar is needed, throw the width with scroll bar
+        //     factored in. Process ends to wait for the next call from the
+        //     parent element (`chart-area`).
+        let enumArray = this.reverseFlag ? this.trackdoms.slice().reverse()
+          : this.trackdoms
 
-      this.updatingPromise = Promise.all(enumArray.map(trackDom => {
-        let divElem = this.shadowRoot.querySelector(
-          '#' + this._getSlotId(trackDom.parent, true)
-        )
-        if (divElem.hasOwnProperty('_currY')) {
-          divElem._currY += this._trackGap * this._textSize
-        } else {
-          divElem._currY = 0
-        }
-        return trackDom.updateLocationSize(
-          0, divElem._currY, width, null, null, newVWindow
-        ).then(window => {
-          divElem._currY += trackDom.height
+        this.updatingPromise = newUpdatingPromise.then(windows => {
+          // First check whether other resizing event fired before
+          // this update (otherwise the display may not be up-to-date).
+          if (newVWindow && Array.isArray(windows) &&
+            give.ChromRegion.compare(windows[0], newVWindow)
+          ) {
+            throw new give.PromiseCanceller(true)
+          }
+          this._viewWindow = newVWindow
+          enumArray.forEach(trackDom => {
+            let divElem = this.shadowRoot.querySelector(
+              '#' + this._getSlotId(trackDom.parent, true)
+            )
+            if (divElem.hasOwnProperty('_currY')) {
+              divElem._currY += this._trackGap * this._textSize
+            } else {
+              divElem._currY = 0
+            }
+            trackDom.updateLocation(0, divElem._currY)
+            divElem._currY += trackDom.height
+          })
+          this.updateSvgHeightLocation(this._pendingWidth)
           return window
         })
-      })).then(windows => {
-        // First check whether other resizing event fired before
-        // this update (otherwise the display may not be up-to-date).
-        if (newVWindow && Array.isArray(windows) &&
-          give.ChromRegion.compare(windows[0], newVWindow)
-        ) {
-          throw new give.PromiseCanceller(true)
-        }
-        this._viewWindow = newVWindow
-        // update width and throw new width if needed
-        return this.updateSvgHeightLocation(this._pendingWidth)
-      })
+      }
 
       return this.updatingPromise
     }

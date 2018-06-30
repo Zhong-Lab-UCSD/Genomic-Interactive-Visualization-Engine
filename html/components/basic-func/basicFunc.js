@@ -447,6 +447,30 @@ var GIVe = (function (give) {
 
   give._initDebug()
 
+  give.getAggregatedUpdatePromise = function (promiseArray, objArray, promiseFunc) {
+    promiseArray = promiseArray || []
+    let promisesChanged = false
+    if (promiseArray.length <= 0) {
+      promiseArray = objArray.forEach(obj => {
+        promiseArray.push(promiseFunc(obj))
+      })
+      promisesChanged = true
+    } else {
+      objArray.forEach((obj, index) => {
+        let newPromise = promiseFunc(obj)
+        if (newPromise !== promiseArray[index]) {
+          // new promise
+          promiseArray[index] = newPromise
+          promisesChanged = true
+        }
+      })
+    }
+    if (promisesChanged) {
+      return Promise.all(promiseArray)
+    }
+    return null
+  }
+
   class PromiseCanceller {
     constructor (isCancelled) {
       this.isCancelled = isCancelled
