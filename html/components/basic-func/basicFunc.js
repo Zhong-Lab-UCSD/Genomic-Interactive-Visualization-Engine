@@ -447,7 +447,9 @@ var GIVe = (function (give) {
 
   give._initDebug()
 
-  give.getAggregatedUpdatePromise = function (promiseArray, objArray, promiseFunc) {
+  give.getAggregatedUpdatePromise = function (
+    promiseArray, objArray, promiseFunc
+  ) {
     promiseArray = promiseArray || []
     let promisesChanged = false
     if (promiseArray.length <= 0) {
@@ -457,11 +459,19 @@ var GIVe = (function (give) {
       promisesChanged = true
     } else {
       objArray.forEach((obj, index) => {
-        let newPromise = promiseFunc(obj)
-        if (newPromise !== promiseArray[index]) {
-          // new promise
-          promiseArray[index] = newPromise
-          promisesChanged = true
+        try {
+          let newPromise = promiseFunc(obj)
+          if (newPromise !== promiseArray[index]) {
+            // new promise
+            promiseArray[index] = newPromise
+            promisesChanged = true
+          }
+        } catch (e) {
+          // skip promises that have been cancelled
+          // (which means the original should be kept)
+          if (!(e instanceof give.PromiseCanceller)) {
+            throw e
+          }
         }
       })
     }
