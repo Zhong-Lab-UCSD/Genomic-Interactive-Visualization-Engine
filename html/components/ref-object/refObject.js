@@ -108,7 +108,7 @@ var GIVe = (function (give) {
     }
 
     fillTracks (groupInfo, keepOld, requestUrl) {
-      // notice that trackInfo is supposed to be an array
+      // notice that groupInfo is supposed to be an array
       if (!keepOld) {
         this.tracks.clear()
         this.groups = {}
@@ -134,12 +134,35 @@ var GIVe = (function (give) {
 
         this.groups[groupID].addTrack(newTrack)
       }
-      for (var groupID in groupInfo) {
+      for (let groupID in groupInfo) {
         if (groupInfo.hasOwnProperty(groupID)) {
           this.groups[groupID] = new give.TrackGroup(groupID, groupInfo[groupID])
           groupInfo[groupID].tracks.forEach(
             loadTrackFromRemoteData.bind(this, groupID), this
           )
+        }
+      }
+
+      // sort tracks based on their priority,
+      // then rewrite all priority values within each group
+      // this will make sure future sorting will be stable
+      // (since priority values are not used once all tracks are loaded anyway)
+      this.sortTracks(true)
+    }
+
+    sortTracks (refreshPriority, compareFunc) {
+      compareFunc = compareFunc || give.TrackObject.comparePriorities
+      this.tracks.sort(compareFunc)
+      if (refreshPriority) {
+        let priority = 1
+        this.tracks.forEach(track => {
+          track.priority = priority
+          priority++
+        })
+      }
+      for (let groupID in this.groups) {
+        if (this.groups.hasOwnProperty(groupID)) {
+          this.groups[groupID].sort(compareFunc)
         }
       }
     }

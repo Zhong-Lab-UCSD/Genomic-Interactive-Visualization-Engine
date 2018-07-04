@@ -95,7 +95,7 @@ var GIVe = (function (give) {
           )
           // then populate the B+ Tree with geneArray
           this.getData(chrom, true).insert(
-            geneArray.sort(give.ChromRegion.compareChrRegion), regionsInChrom)
+            geneArray.sort(give.ChromRegion.compare), regionsInChrom)
         }
       }
     }

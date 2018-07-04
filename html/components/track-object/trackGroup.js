@@ -16,7 +16,7 @@ var GIVe = (function (give) {
     }
     this.label = this.label || ''
     this.priority = this.priority || give.TrackGroup._MAX_GROUP_PRIORITY
-    this.visibility = !!(this.visibility)    // force into boolean
+    this.visibility = !!(this.visibility) // force into boolean
   }
 
   give.TrackGroup.prototype.addTrack = function (track) {
@@ -76,27 +76,21 @@ var GIVe = (function (give) {
     if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
-    return IDList.forEach(function (id) {
-      return callback.call(thisArg, this.get(id))
-    }, this)
+    return IDList.forEach(id => callback.call(thisArg, this.get(id)))
   }
 
   give.TrackGroup.prototype.someByID = function (IDList, callback, thisArg) {
     if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
-    return IDList.some(function (id) {
-      return callback.call(thisArg, this.get(id))
-    }, this)
+    return IDList.some(id => callback.call(thisArg, this.get(id)))
   }
 
   give.TrackGroup.prototype.everyByID = function (IDList, callback, thisArg) {
     if (!Array.isArray(IDList)) {
       IDList = [IDList]
     }
-    return IDList.every(function (id) {
-      return callback.call(thisArg, this.get(id))
-    }, this)
+    return IDList.every(id => callback.call(thisArg, this.get(id)))
   }
 
   give.TrackGroup.prototype.clear = function () {
@@ -110,6 +104,11 @@ var GIVe = (function (give) {
 
   give.TrackGroup.prototype.map = function (mapFunc, thisArg) {
     return this.array.map(mapFunc, thisArg)
+  }
+
+  give.TrackGroup.prototype.sort = function (compareFunc) {
+    this.array.sort(compareFunc)
+    return this
   }
 
   give.TrackGroup.prototype.filterSelf = function (callback, thisArg) {

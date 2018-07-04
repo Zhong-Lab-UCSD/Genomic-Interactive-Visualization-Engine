@@ -187,66 +187,7 @@ this change.
 var GIVe = (function (give) {
   'use strict'
 
-  class EffPrior {
-    constructor (pinValue, pos) {
-      // raise error if pinValue is not correct
-      this.pinValue = pinValue
-      this.pos = pos
-    }
-
-    set pinValue (newPinValue) {
-      if (typeof this.constructor.pinValueMap[newPinValue] !== 'number') {
-        throw new give.GiveError('Invalid pinValue: ' + newPinValue)
-      }
-      this._pinValue = newPinValue
-    }
-
-    get pinValue () {
-      return this._pinValue
-    }
-
-    set pos (newPos) {
-      if (!Number.isInteger(newPos) || newPos < 0) {
-        throw new give.GiveError('Invalid new position number: ' + newPos)
-      }
-      this._pos = newPos
-    }
-
-    get pos () {
-      return this._pos
-    }
-
-    static isValidEffPrior (effPrior) {
-      return effPrior &&
-        typeof this.pinValueMap[effPrior._pinValue] === 'number'
-    }
-
-    static compare (effPrior1, effPrior2) {
-      // first handle null values (null is larger than any valid value)
-      if (!this.isValidEffPrior(effPrior1) ||
-        !this.isValidEffPrior(effPrior2)
-      ) {
-        return !this.isValidEffPrior(effPrior1)
-          ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
-      }
-      return effPrior1._pinValue === effPrior2._pinValue
-        ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
-          this.pinValueMap[effPrior2._pinValue])
-        : Math.sign(effPrior1._pos - effPrior2._pos)
-    }
-  }
-
-  EffPrior.pinValueMap = {
-    'top': -1,
-    'scroll': 0,
-    'bottom': 1,
-    'inbetween': 2
-  }
-
-  give.EffPrior = EffPrior
-
   class ChartWindow extends Polymer.mixinBehaviors([
-    Polymer.IronResizableBehavior,
     give.RefEmbeddedBehavior], Polymer.Element
   ) {
     constructor () {
@@ -361,24 +302,15 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       // initialize this._viewWindows from this.coordinates
-      if (give.ChromRegion.isValidChromRegion(this.coordinate,
-        this._refObj) &&
-        (!this._viewWindow ||
-          this._viewWindow.regionToString(false) !==
-          new give.ChromRegion(this.coordinate, this._refObj)
-            .regionToString(false)
-        )
-      ) {
-        this._viewWindow = new give.ChromRegion(this.coordinate, this._refObj)
-      } else {
-        this._viewWindow = false
+      this._pendingVWindow = null
+      this._viewWindow = null
+      if (this.coordinate) {
+        this._pendingVWindow = this.getVerifiedViewWindow(this.coordinate)
       }
 
       if (this.defaultTrackIdList.length > 0) {
         this._needOverrideDefault = true
       }
-
-      this._initDOMCoorTrack()
 
       this._svgSizes = {
         '_PinTop': 0,
@@ -389,7 +321,6 @@ var GIVe = (function (give) {
 
       this.windowWidth = this.querySelector('#chartHolding').clientWidth
       this._pendingWidth = null
-      this._pendingVWindow = null
 
       this.addEventListener('iron-resize', this._onIronResize)
       this.addEventListener('track-ready', this._trackReadyHandler)
@@ -397,22 +328,20 @@ var GIVe = (function (give) {
     }
 
     attached () {
-      this.async(function () {
-        // attach all trackDoms
-        this._checkVWindowsInit(true)
-      })
+      Promise.resolve().then(() => this._initDomAfterVWinRefReady())
     }
 
     get reverseFlag () {
       return this.index > 0 && this.index === this.totalWindows - 1
     }
 
-    _checkVWindowsInit () {
+    _initDomAfterVWinRefReady (newWindow) {
       if (!this._initialized) {
-        if (this._refObj && this._viewWindow) {
+        if (this._refObj &&
+          (newWindow || this._viewWindow || this._pendingVWindow)
+        ) {
           this._initialized = true
-          this.resetDOM()
-          return true
+          return this.resetDOM(newWindow)
         } else {
           this._initialized = false
           return false
@@ -490,7 +419,7 @@ var GIVe = (function (give) {
 
     _findEffPriorIndex (effPriority) {
       return give.locationOf(effPriority, this._trackDoms, null, null,
-        (effPriority, dom2) => EffPrior.compare(
+        (effPriority, dom2) => give.EffPrior.compare(
           effPriority, dom2.parent.effPriority
         ), true
       )
@@ -501,7 +430,7 @@ var GIVe = (function (give) {
         let slotId = this._getSlotId(trackDom.parent, honorEffPriority)
         if (!trackDom.parent.effPriority) {
           trackDom.parent.effPriority =
-            new EffPrior(this._pinValueFromSlotId(slotId),
+            new give.EffPrior(this._pinValueFromSlotId(slotId),
               this._svgSizes[slotId])
         }
         // Add DOM element
@@ -510,7 +439,7 @@ var GIVe = (function (give) {
         // Find the correct location of the new DOM
         let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
         if (this._trackDoms[domPos] &&
-          !EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
+          !give.EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
             trackDom.parent.effPriority)
         ) {
           // Update all effPriority values for DOMs after the new DOM
@@ -536,11 +465,11 @@ var GIVe = (function (give) {
       return null
     }
 
-    _addVisibleTrack (track, props) {
+    _addVisibleTrack (track, props, honorEffPriority) {
       if (!this._addedTrackMap.has(track.id)) {
         try {
           let newTrackDom = track.createDomObj(this._createTrackProp(props))
-          this._addTrackDomSvg(newTrackDom)
+          this._addTrackDomSvg(newTrackDom, honorEffPriority)
           return newTrackDom
         } catch (err) {
           give._verbConsole.warn(err)
@@ -658,14 +587,14 @@ var GIVe = (function (give) {
       // clear `this._trackDoms`
       this._trackDoms.length = 0
     }
-    
+
     /**
      * _changeTrackEffPrior - change the `effPriority` value of the `track`
      *    given the `trackDom`
      *
      * @param  {TrackDom} trackDom       The `trackDom` for which `effPriority`
      *    needs to be changed.
-     * @param  {EffPrior} newEffPriority The new `effPriority` value.
+     * @param  {give.EffPrior} newEffPriority The new `effPriority` value.
      *    Notice that the `pos` value is the new position of the `trackDom`
      *    as if its just being inserted. Therefore, it __should not consider
      *    the position of `trackDom` itself__ if the new location is after
@@ -674,7 +603,7 @@ var GIVe = (function (give) {
     _changeTrackEffPrior (trackDom, newEffPriority) {
       if (trackDom && newEffPriority) {
         let oldEffPriority = trackDom.parent.effPriority
-        if (EffPrior.compare(oldEffPriority, newEffPriority)) {
+        if (give.EffPrior.compare(oldEffPriority, newEffPriority)) {
           // determine if the pin value has changed
           let oldIndex = this._trackDoms.indexOf(trackDom)
           let newIndex = this._findEffPriorIndex(newEffPriority)
@@ -758,7 +687,7 @@ var GIVe = (function (give) {
       // * Update all tracks' width and height (with maybe new view window)
       // * Calculate whether a scroll bar will be needed and rearrange all
       //   the svg elements by changing the Y value
-      //   (by calculating and setting the height of the svgHolder element) 
+      //   (by calculating and setting the height of the svgHolder element)
       //   * If a scroll bar is needed, throw the width with scroll bar
       //     factored in. Process ends to wait for the next call from the
       //     parent element (`chart-area`).
@@ -767,7 +696,7 @@ var GIVe = (function (give) {
         'updateTracks(' + width + ', ' + newVWindow + ')')
 
       // prepare element widths and heights
-      newVWindow = newVWindow || false
+      this._pendingVWindow = newVWindow || this._pendingVWindow || false
       width = width || this.querySelector('#chartHolding').clientWidth
 
       // Update all tracks' width and height (with maybe new view window)
@@ -775,17 +704,17 @@ var GIVe = (function (give) {
       let newdrawingPromise = give.getAggregatedUpdatePromise(
         this._trackDomPromises,
         this._trackDoms.concat(this._hiddenTrackDoms),
-        trackDom => trackDom.updateSize(newVWindow, width)
+        trackDom => trackDom.update(newVWindow, width, null, null, this.index)
       )
 
       if (newdrawingPromise) {
         // * Calculate whether a scroll bar will be needed
-        //   (by calculating and setting the height of the svgHolder element) 
+        //   (by calculating and setting the height of the svgHolder element)
         //   * If a scroll bar is needed, throw the width with scroll bar
         //     factored in. Process ends to wait for the next call from the
         //     parent element (`chart-area`).
         this.drawingPromise = newdrawingPromise.then(
-          windows => this._trackReadyHandler(windows, newVWindow, width)
+          windows => this._trackReadyHandler(windows, width)
         )
       }
 
@@ -821,19 +750,21 @@ var GIVe = (function (give) {
       this.updateSvgHeightLocation(newWidth)
     }
 
-    _trackReadyHandler (windows, newVWindow, newWidth) {
+    _trackReadyHandler (windows, newWidth) {
       // First check whether other resizing event fired before
       // this update (otherwise the display may not be up-to-date).
-      if (newVWindow && Array.isArray(windows) && windows.some(
-        window => give.ChromRegion.compareChrRegion(window, newVWindow)
+      let pendingVWindow = this._pendingVWindow || this._viewWindow
+      if (pendingVWindow && Array.isArray(windows) && windows.some(
+        window => give.ChromRegion.compare(window, this._pendingVWindow)
       )) {
         throw new give.PromiseCanceller(true)
       }
       // update `this._viewWindow` and clear `this.drawingPromise`
       // `windows` is the array returned by Promise.all()
       delete this.drawingPromise
-      this._viewWindow = this._viewWindow || newVWindow
+      this._viewWindow = pendingVWindow
       this.coordinate = this._viewWindow.regionToString(false)
+      delete this._pendingVWindow
       this._updateTrackLocation(newWidth)
       // call tutorial elements if needed
       try {
@@ -876,9 +807,11 @@ var GIVe = (function (give) {
      *    new width will be thrown to let the calling function (in
      *    `chart-area`) be informed of incoming width change.
      */
-    changeViewWindow (viewWindow, forceDomReset) {
-      if (forceDomReset) {
-        return this.resetDOM(viewWindow)
+    changeViewWindow (viewWindow, forceUpdateDom) {
+      if (!this._initialized) {
+        return this._initDomAfterVWinRefReady(viewWindow)
+      } else if (forceUpdateDom) {
+        return this.updateDOM(viewWindow)
       } else {
         return this.updateTracks(viewWindow, null, this.index)
       }
@@ -896,61 +829,46 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _overrideTrackDefaultVis - Override default shown tracks
+     * _addTracksFromDefaultList - Add tracks based on
+     *    `this.defaultTrackIdList` instead of the default values in
+     *    the database
      */
-    _overrideTrackDefaultVis () {
-      if (this._refObj && this.defaultTrackIdList.length > 0) {
-        this._refObj.setTrackSettings('visibility', false, null)
-        this.defaultTrackIdList.forEach(function (id) {
-          try {
-            this._refObj.tracks.get(id).setSetting('visibility', true)
-          } catch (e) {
-            give._verbConsole.warn('Track `' + id + '` does not exist!\n' + e)
-            give.fireSignal('warning',
-              { msg: 'Track `' + id + '` does not exist!' })
-          }
-        }, this)
-      }
-      delete this._needOverrideDefault
+    _addTracksFromDefaultList () {
+      this._refObj.tracks.forEach(
+        track => track.setSetting('visibility', false)
+      )
+      this.defaultTrackIdList.forEach(
+        id => {
+          this._refObj.tracks.get(id).setSetting('visibility', true)
+          this._addVisibleTrack(this._refObj.tracks.get(id))
+        }
+      )
     }
 
     /**
-     * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
-     *
-     * @param  {number} newValue new `numOfSubs` value
-     * @param  {number} oldValue old `numOfSubs` value
+     * _addTracksFromVisibilitySettings - Add tracks based on the default
+     *    `visibility` values in the database (via `track.isVisible`).
+     *    Note that `this.groupIdList` will determine the track groups that
+     *    will be shown here.
      */
-    _numOfSubsChanged (newValue, oldValue) {
-      this._initialized = false
-      if (this._refObj) {
-        var defaultWindows = this._refObj.settings.defaultViewWindows
-        for (var i = 0; i < newValue; i++) {
-          if (this.coordinates[i] !== false &&
-            !give.ChromRegion.isValidChromRegion(this.coordinates[i],
-              this._refObj
-            ) && Array.isArray(this._refObj.settings.defaultViewWindows)
-          ) {
-            this.splice('coordinates', i, 1,
-              defaultWindows[i % defaultWindows.length])
+    _addTracksFromVisibilitySettings () {
+      let showTrack =
+        track => (track.isVisible ? this._addVisibleTrack(track) : null)
+      if (this.groupIdList && this.groupIdList.length > 0) {
+        this.groupIdList.forEach(groupID => {
+          if (this._refObj.groups.hasOwnProperty(groupID)) {
+            this._refObj.groups[groupID].forEach(showTrack)
           }
-          if (give.ChromRegion.isValidChromRegion(this.coordinates[i],
-            this._refObj)
-          ) {
-            this.splice('_viewWindows', i, 1,
-              new give.ChromRegion(this.coordinates[i], this._refObj))
-          } else {
-            this.splice('_viewWindows', i, 1, null)
-          }
-        }
-        this._checkVWindowsInit()
+        })
+      } else {
+        this._refObj.tracks.forEach(showTrack)
       }
     }
 
     _setRefObj (refObj) {
       this._refObj = refObj
-      this._numOfSubsChanged(this.numOfSubs)
       this._initialized = false
-      this._checkVWindowsInit()
+      return this._initDomAfterVWinRefReady()
     }
 
     _initDOMCoorTrack () {
@@ -966,114 +884,61 @@ var GIVe = (function (give) {
     /**
      * Reset the entire DOM display
      */
-    resetDOM () {
+    resetDOM (newWindow) {
       if (this._initialized) {
+        this._clearDOM()
         this._readiness = false
-        this.addAllTrackDoms()
+        this._initDOMCoorTrack()
+        return this.addAllTrackDoms(newWindow)
       } else {
         this._readiness = true
+        return Promise.resolve(this._viewWindow)
       }
     }
 
-    _addAllTrackDomsTracksReady (noRefreshContent, refObj) {
-      // function called when tracks are ready for this._refObj
-      if (refObj.db === this.ref) {
-        // Only respond to this call if ref has not been changed
-        if (!this._needOverrideDefault) {
-          // no default tracks supplied, use groupIdList filter and
-          // visibility settings
-          // sort by priorities defined in database
-          if (this.groupIdList && this.groupIdList.length > 0) {
-            this.groupIdList.forEach(groupID => {
-              if (this._refObj.groups.hasOwnProperty(groupID)) {
-                this._refObj.groups[groupID].forEach(showTrack)
-              }
-            })
-          } else {
-            this._refObj.tracks.forEach(showTrack)
-          }
-        } else {
+    addAllTrackDoms (newWindow, noRefreshContent) {
+      return this._refObj.initTracks().then(refObj => {
+        if (refObj.db !== this.ref) {
+          // Only respond to this call if ref has not been changed
+          throw new give.PromiseCanceller(true)
+        }
+        if (this._needOverrideDefault) {
           // use this.defaultTrackIdList to directly fill in the DOM array
           // without sorting by priority (use the defaultTrackIdList order)
-          // then populate SVG
-          this._overrideTrackDefaultVis()
-        }
-        let showTrack = (track, index) => {
-          // notice that if track type is 'interaction',
-          // it needs to be 'unshifted' to later windows
-          if (track.getSetting('visibility') >
-            give.TrackObject.StatusEnum.VIS_NONE
-          ) {
-            this._trackDoms.push(track.createDomObj(
-              this._createTrackProp({ subPriority: index })
-            ))
-          }
-        }
-        if (this.groupIdList && this.groupIdList.length > 0) {
-          this.groupIdList.forEach(groupID => {
-            if (this._refObj.groups.hasOwnProperty(groupID)) {
-              this._refObj.groups[groupID].forEach(showTrack)
-            }
-          })
+          this._addTracksFromDefaultList()
+          delete this._needOverrideDefault
         } else {
-          this._refObj.tracks.forEach(showTrack)
+          // no default tracks supplied, use groupIdList filter and
+          // visibility settings
+          // sort by priorities defined in database (this should be done
+          //    in `this._refObj` already)
+          this._addTracksFromVisibilitySettings()
         }
-        // sort trackDomBy priorities
-        this._trackDoms.sort(
-          (a, b) => give.comparePriorities(a.Priorities, b.Priorities))
-        this.populateDOM(noRefreshContent)
-      }
-    }
-
-    addAllTrackDoms (noRefreshContent) {
-      this._refObj.initTracks().then(
-        refObj => this._addAllTrackDomsTracksReady(noRefreshContent, refObj))
+        if (!noRefreshContent) {
+          return this.updateTracks(newWindow, null, this.index)
+        } else {
+          return Promise.resolve(this._viewWindow)
+        }
+      })
     }
 
     _removeInvisibleTrackDoms () {
-      this._trackDomsByWindow.forEach(function (domInWindowEntry, windowIndex) {
-        // notice that because tracks may get deleted, don't use forEach with splice
-        for (var key in domInWindowEntry) {
-          if (domInWindowEntry.hasOwnProperty(key) &&
-            Array.isArray(domInWindowEntry[key])
-          ) {
-            // filter out all tracks with visibility set as 0
-            // delete entries in domInWindowEntry.map first
-            for (var i = 0; i < domInWindowEntry[key].length; i++) {
-              if (domInWindowEntry[key][i].getTrackSetting('visibility') ===
-                give.TrackObject.StatusEnum.VIS_NONE) {
-                delete domInWindowEntry.map[domInWindowEntry[key][i].parent.id]
-                domInWindowEntry[key].splice(i, 1)
-                i--
-              }
-            }
-          }
-        }
-      }, this)
+      // Find tracks from `this._trackDoms` that become invisible now
+      // then call `this._removeTrack` to remove them
+      let removedTracks = this._trackDoms.map(trackDom => trackDom.parent)
+        .filter(track => !track.isVisible)
+      this._removeTrack(removedTracks)
     }
 
-    populateDOM (noRefreshContent) {
-      // first clear old DOMs
-      this._clearDOM()
-      // then populate all new DOMS by window
-      this._trackDomsByWindow.forEach(this._populateDomInWindow, this)
-      this.updateHeightLocation()
-      Polymer.dom.flush()
-      if (!noRefreshContent) {
-        // then update everything
-        this.refreshAll()
-      }
-    }
-
-    updateDOM (noRefreshContent) {
+    updateDOM (newWindow, noRefreshContent) {
       // update existing DOMs, first remove all tracks that should be hidden
       // if noRefreshContent = true, do not refresh content (should be refreshed later)
-      if (this._trackDomsByWindow && this._trackDomsByWindow.length > 0) {
+      if (this._trackDoms && this._trackDoms.length > 0) {
         this._removeInvisibleTrackDoms()
       }
 
       // then add new Tracks (if not there already)
-      this.addAllTrackDoms(noRefreshContent)
+      return this.addAllTrackDoms(newWindow, noRefreshContent)
     }
 
     _updateWindowHandler (e) {
@@ -1082,11 +947,11 @@ var GIVe = (function (give) {
         if (e.detail.newVWindow instanceof give.ChromRegion ||
           typeof e.detail.newVWindow === 'string'
         ) {
-          this.changeViewWindow(e.detail.newVWindow, !!(e.detail.tracks))
-          this.fire('update-coordinate', {
+          give.fireSignal('update-coordinate', {
             windowIndex: this.index,
             newVWindow: e.detail.newVWindow
-          })
+          }, null, this)
+          return this.changeViewWindow(e.detail.newVWindow, !!(e.detail.tracks))
         }
       } catch (err) {
         give._verbConsole.warn(err)
@@ -1094,44 +959,8 @@ var GIVe = (function (give) {
     }
 
     updateWindow (e) {
-      this._updateWindowHandler(e)
+      return this._updateWindowHandler(e)
     }
-
-    _onIronResize (e, detail) {
-      if (this._domsReady && this._trackDomsByWindow.every(
-        this._callEveryOnDomInWindowEntry.bind(this, function (trackDom) {
-          return trackDom.isReady
-        }), this)
-      ) {
-        give._verbConsole.info('_onIronResize()')
-        if (!this._debouncePromise) {
-          if (this.resizeDebounceInt) {
-            this._debouncePromise = new Promise((resolve, reject) => {
-              setTimeout(resolve, this.resizeDebounceInt)
-            })
-          } else {
-            this._debouncePromise = Promise.resolve()
-          }
-          this.resizePromise = this._debouncePromise
-            .then(() => {
-              let pendingWidth = (
-                this.querySelector('#chartHolding').clientWidth
-              )
-              let pendingVWindow = this.viewWindow.getExtension(
-                (pendingWidth - this.windowWidth) / this.windowWidth,
-                null, true, this._refObj
-              )
-              return this.updateTracks(
-                pendingVWindow, pendingWidth
-              )
-            })
-        }
-        return this.resizePromise
-      }
-    }
-
-  // TODO: add/remove/rearrange tracks
-
   }
 
   ChartWindow.svgNS = 'http://www.w3.org/2000/svg'
@@ -1146,6 +975,5 @@ var GIVe = (function (give) {
 
   return give
 })(GIVe || {})
-
   </script>
 </dom-module>

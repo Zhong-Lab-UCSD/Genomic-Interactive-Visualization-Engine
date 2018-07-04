@@ -1091,6 +1091,29 @@ var GIVe = (function (give) {
             this.resizeDebounceInt
           )
         }
+        // if (!this._debouncePromise) {
+        //   if (this.resizeDebounceInt) {
+        //     this._debouncePromise = new Promise((resolve, reject) => {
+        //       setTimeout(resolve, this.resizeDebounceInt)
+        //     })
+        //   } else {
+        //     this._debouncePromise = Promise.resolve()
+        //   }
+        //   this.resizePromise = this._debouncePromise
+        //     .then(() => {
+        //       let pendingWidth = (
+        //         this.querySelector('#chartHolding').clientWidth
+        //       )
+        //       let pendingVWindow = this.viewWindow.getExtension(
+        //         (pendingWidth - this.windowWidth) / this.windowWidth,
+        //         null, true, this._refObj
+        //       )
+        //       return this.updateTracks(
+        //         pendingVWindow, pendingWidth
+        //       )
+        //     })
+        // }
+        // return this.resizePromise
       }
     }
 

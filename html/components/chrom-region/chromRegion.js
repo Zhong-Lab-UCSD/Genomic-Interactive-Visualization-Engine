@@ -404,7 +404,7 @@ var GIVe = (function (give) {
     return true
   }
 
-  give.ChromRegion.compareChrRegion = function (region1, region2) {
+  give.ChromRegion.compare = function (region1, region2) {
     return ((region1.chr === region2.chr)
       ? ((region1.getStart() === region2.getStart())
         ? ((region1.getEnd() === region2.getEnd())

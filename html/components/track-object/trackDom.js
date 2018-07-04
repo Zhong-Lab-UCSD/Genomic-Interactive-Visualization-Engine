@@ -467,7 +467,7 @@ var GIVe = (function (give) {
       if (forceUpdate || newWidth !== this.totalWidth ||
         newNarrowMode !== this._narrowMode ||
         (newWindow instanceof give.ChromRegion &&
-          give.ChromRegion.compareChrRegion(newWindow, this.viewWindow)
+          give.ChromRegion.compare(newWindow, this.viewWindow)
         )
       ) {
         // drawing width changed
@@ -1001,7 +1001,7 @@ var GIVe = (function (give) {
         if (!Array.isArray(regions)) {
           regions = [regions]
         }
-        if (give.ChromRegion.compareChrRegion(regions[0], this.viewWindow)) {
+        if (give.ChromRegion.compare(regions[0], this.viewWindow)) {
           // not the same region as submitted
           // which means the resolution is for the previous promise
           // throw a `give.PromiseCanceller` to cancel promise handling
