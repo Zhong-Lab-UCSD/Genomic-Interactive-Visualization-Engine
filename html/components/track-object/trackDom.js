@@ -412,7 +412,7 @@ var GIVe = (function (give) {
             (newWindowWidth - this.windowWidth) / this.windowWidth,
             null, true, this.parent.ref)
       }
-      return this._updateTrack(newViewWindow, ...args)
+      return this._updateContent(newViewWindow, ...args)
     }
 
     /**
@@ -467,7 +467,7 @@ var GIVe = (function (give) {
       if (forceUpdate || newWidth !== this.totalWidth ||
         newNarrowMode !== this._narrowMode ||
         (newWindow instanceof give.ChromRegion &&
-          give.ChromRegion.compare(newWindow, this.viewWindow)
+          give.ChromRegion.compareChrRegion(newWindow, this.viewWindow)
         )
       ) {
         // drawing width changed
@@ -1001,7 +1001,7 @@ var GIVe = (function (give) {
         if (!Array.isArray(regions)) {
           regions = [regions]
         }
-        if (give.ChromRegion.compare(regions[0], this.viewWindow)) {
+        if (give.ChromRegion.compareChrRegion(regions[0], this.viewWindow)) {
           // not the same region as submitted
           // which means the resolution is for the previous promise
           // throw a `give.PromiseCanceller` to cancel promise handling
@@ -1124,7 +1124,7 @@ var GIVe = (function (give) {
       throw new give.PromiseCanceller(true)
     }
 
-    _updateTrack (viewWindow, ...args) {
+    _updateContent (viewWindow, ...args) {
       // viewWindow is the new viewWindow value of coordinates
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track

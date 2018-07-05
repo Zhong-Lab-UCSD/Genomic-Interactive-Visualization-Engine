@@ -112,26 +112,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       </div>
     </template>
     <paper-material>
-      <div id="chartHolding" hidden$="[[!_initialized]]">
-        <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
-          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinTop')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <div class="scrollingParts" id="[[_getElemId(item.divId, 'Scroll')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBottom')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <template is="dom-if" if="[[_vWindowHasPinBetween(item)]]">
-            <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBetween')]]">
-              <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-              </svg>
-            </div>
-          </template>
+      <div id="windowHolding" hidden$="[[!_initialized]]">
+        <template id="trackSvgHolders" is="dom-repeat"
+          items="[[_chartWindows]]" index-as="index">
+          <chart-window coordinate="[[item.coordinate]]" index="[[index]]"
+            total-windows="[[_chartWindows.length]]"
+            group-id-list="[[item.groupIdList]]" ref="[[item.ref]]">
+          </chart-window>
         </template>
       </div>
       <div id="coorLocationHolder" hidden$="[[!_initialized]]"></div>

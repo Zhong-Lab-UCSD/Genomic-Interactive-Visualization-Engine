@@ -151,7 +151,7 @@ this change.
       }
     </style>
     <style include="genemo-track-styles"></style>
-    <div id="chartHolding" hidden$="[[!_initialized]]">
+    <div id="chartHolding">
       <div class="pinnedParts">
         <svg class="svgHolder" version="1.1" baseProfile="full"
           xmlns="http://www.w3.org/2000/svg" id="_PinTop">
@@ -244,6 +244,28 @@ var GIVe = (function (give) {
           notify: true
         },
 
+        /**
+         * The track groups included in the embedded browser. Group IDs are
+         * specified in the data source. The data source on our server currently
+         * provides these track groups:
+         * *  `'genes'`: gene annotation tracks, for all available references
+         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
+         * *  `'interaction'`: genomic interaction data sets, including those
+         * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
+         * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
+         * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
+         * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
+         * for `mm10` only
+         * @type {Array.<string>}
+         */
+        groupIdList: {
+          // this is the array of allowed group IDs in the list
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+      
         defaultTrackIdList: {
           type: Array,
           value: function () {
@@ -333,6 +355,10 @@ var GIVe = (function (give) {
 
     get reverseFlag () {
       return this.index > 0 && this.index === this.totalWindows - 1
+    }
+
+    get initialized () {
+      return this._initialized
     }
 
     _initDomAfterVWinRefReady (newWindow) {
@@ -839,8 +865,14 @@ var GIVe = (function (give) {
       )
       this.defaultTrackIdList.forEach(
         id => {
-          this._refObj.tracks.get(id).setSetting('visibility', true)
-          this._addVisibleTrack(this._refObj.tracks.get(id))
+          if (this._refObj.tracks.hasTrack(id)) {
+            this._refObj.tracks.get(id).setSetting('visibility', true)
+            this._addVisibleTrack(this._refObj.tracks.get(id))
+          } else {
+            give._verbConsole.info(
+              'Track ID `' + id + '` does not exist in ref ' +
+              this._refObj.id)
+          }
         }
       )
     }
