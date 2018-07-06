@@ -16,13 +16,12 @@ limitations under the License.
 -->
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../basic-func/basic-func.html">
-<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
-<link rel="import" href="../chart-area/genemo-track-styles.html">
+<link rel="import" href="./genemo-track-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -62,12 +61,14 @@ tracks to start with.
 
 Once `<chart-window>` receives the ordered list of visible tracks, it will:
 *   Assign every track's `trackDom`'s `<svg>` element into its
-    corresponding slot (`pinTop`, `pinBottom`, `scroll`, and
-    `pinInBetween`) by inserting it into the corresponding DOM node.
+    corresponding slot (`top`, `scroll`, `bottom`, and `inbetween`) by
+    inserting it into the corresponding DOM node. Notice that if this window
+    is the last window in the view, the slots and track order will be
+    reversed to preserve a certain degree of symmetry.
 *   Keep record of the relative order for every `<svg>` element within its
     own slot.
     Every track object will have an __`effective priority`__ value consists of
-    its slot allocation (`pinTop`, `scroll`, `pinBottom`, `pinInBetween`)
+    its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
     and its position within the slot.
 *   Assign the `y` property for every `<svg>` when drawing the DOM element
     so that it appears in the correct order regardless of its order in the
@@ -178,7 +179,8 @@ this change.
         tutorial-key="coor-track-tutorial"
         dom-target-id="[[_coorDomSvgId]]">
         <div>
-          You may use mouse wheel within the coordinate track to zoom in/out, drag any track to move.
+          You may use mouse wheel within the coordinate track to zoom in/out,
+          drag any track to move.
         </div>
       </tutorial-highlight>
     </template>
@@ -191,11 +193,7 @@ var GIVe = (function (give) {
     give.RefEmbeddedBehavior], Polymer.Element
   ) {
     constructor () {
-      super()
-      this.svgNS = 'http://www.w3.org/2000/svg'
-      this.resizeDebounceInt = 400
-      // this.resizeJobName = 'RESIZE'
-      this.resizeAsyncProcess = null
+      super(...arguments)
       this._trackDoms = []
       this._hiddenTrackDoms = []
 
@@ -206,6 +204,19 @@ var GIVe = (function (give) {
        */
       this._trackDomPromises = []
       this._addedTrackMap = new Map()
+
+      this._pendingVWindow = null
+      this._viewWindow = null
+      this._pendingWidth = null
+
+      this._svgSizes = {
+        '_PinTop': 0,
+        '_Scroll': 0,
+        '_PinBottom': 0,
+        '_PinBetween': 0
+      }
+
+      this._updatingCoor = false
     }
 
     static get properties () {
@@ -241,7 +252,8 @@ var GIVe = (function (give) {
          */
         coordinate: {
           type: String,
-          notify: true
+          notify: true,
+          observer: '_coorChanged'
         },
 
         /**
@@ -265,7 +277,7 @@ var GIVe = (function (give) {
             return []
           }
         },
-      
+
         defaultTrackIdList: {
           type: Array,
           value: function () {
@@ -309,9 +321,10 @@ var GIVe = (function (give) {
          * element is run
          * @type {boolean}
          */
-        _firstRun: {
+        firstRun: {
           type: Boolean,
-          value: true
+          value: true,
+          notify: true
         },
 
         showTutorial: {
@@ -324,33 +337,24 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       // initialize this._viewWindows from this.coordinates
-      this._pendingVWindow = null
-      this._viewWindow = null
-      if (this.coordinate) {
-        this._pendingVWindow = this.getVerifiedViewWindow(this.coordinate)
-      }
-
       if (this.defaultTrackIdList.length > 0) {
         this._needOverrideDefault = true
       }
 
-      this._svgSizes = {
-        '_PinTop': 0,
-        '_Scroll': 0,
-        '_PinBottom': 0,
-        '_PinBetween': 0
-      }
-
       this.windowWidth = this.querySelector('#chartHolding').clientWidth
-      this._pendingWidth = null
 
-      this.addEventListener('iron-resize', this._onIronResize)
       this.addEventListener('track-ready', this._trackReadyHandler)
       this.addEventListener('update-window', this._updateWindowHandler)
+
+      if (this.coordinate) {
+        this._coorChanged(this.coordinate)
+      }
     }
 
     attached () {
-      Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+      if (!this._initialized) {
+        Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+      }
     }
 
     get reverseFlag () {
@@ -362,18 +366,14 @@ var GIVe = (function (give) {
     }
 
     _initDomAfterVWinRefReady (newWindow) {
-      if (!this._initialized) {
-        if (this._refObj &&
-          (newWindow || this._viewWindow || this._pendingVWindow)
-        ) {
-          this._initialized = true
-          return this.resetDOM(newWindow)
-        } else {
-          this._initialized = false
-          return false
-        }
+      if (this._refObj &&
+        (newWindow || this._viewWindow || this._pendingVWindow)
+      ) {
+        this._initialized = true
+        return this.resetDOM(newWindow)
       }
-      return true
+      this._updateCoordinates()
+      return false
     }
 
     /**
@@ -723,6 +723,8 @@ var GIVe = (function (give) {
 
       // prepare element widths and heights
       this._pendingVWindow = newVWindow || this._pendingVWindow || false
+      this._updateCoordinates()
+
       width = width || this.querySelector('#chartHolding').clientWidth
 
       // Update all tracks' width and height (with maybe new view window)
@@ -789,8 +791,7 @@ var GIVe = (function (give) {
       // `windows` is the array returned by Promise.all()
       delete this.drawingPromise
       this._viewWindow = pendingVWindow
-      this.coordinate = this._viewWindow.regionToString(false)
-      delete this._pendingVWindow
+      this._pendingVWindow = null
       this._updateTrackLocation(newWidth)
       // call tutorial elements if needed
       try {
@@ -840,6 +841,34 @@ var GIVe = (function (give) {
         return this.updateDOM(viewWindow)
       } else {
         return this.updateTracks(viewWindow, null, this.index)
+      }
+    }
+
+    _coorChanged (newValue, oldValue) {
+      if (!this._updatingCoor) {
+        try {
+          let newWindow = this.getVerifiedViewWindow(newValue)
+          let currWindow = this._pendingVWindow || this._viewWindow
+          if (give.ChromRegion.compare(currWindow, newWindow)) {
+            this.changeViewWindow(newWindow)
+          }
+        } catch (err) {
+          err.data = err.data || {}
+          err.data.updatedCoor =
+            (this._viewWindow && this._viewWindow.regionToString)
+              ? this._viewWindow.regionToString(false) : null
+          this._updateCoordinates()
+          throw err
+        }
+      }
+    }
+
+    _updateCoordinates (window) {
+      window = window || this._pendingVWindow || this._viewWindow
+      if (window) {
+        this._updatingCoor = true
+        this.coordinate = window.regionToString(false)
+        this._updatingCoor = false
       }
     }
 
@@ -946,7 +975,7 @@ var GIVe = (function (give) {
           //    in `this._refObj` already)
           this._addTracksFromVisibilitySettings()
         }
-        if (!noRefreshContent) {
+        if (newWindow || !noRefreshContent) {
           return this.updateTracks(newWindow, null, this.index)
         } else {
           return Promise.resolve(this._viewWindow)
@@ -994,13 +1023,6 @@ var GIVe = (function (give) {
       return this._updateWindowHandler(e)
     }
   }
-
-  ChartWindow.svgNS = 'http://www.w3.org/2000/svg'
-
-  ChartWindow.DOM_CHANGE_JOBNAME = 'DOMChange'
-  ChartWindow.DOM_CHANGE_DEBOUNCE = 200
-
-  ChartWindow.COOR_TRACK_EFF_PRIORITY = -1
 
   give.ChartWindow = ChartWindow
   window.customElements.define('chart-window', give.ChartWindow)

@@ -68,19 +68,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         @apply --layout-vertical;
         @apply --layout-flex;
       }
-      div#chartHolding div {
-        margin: 0;
-        padding: 0;
-      }
-      div.pinnedParts {
-        @apply --layout-start;
-        overflow: hidden;
-      }
-      div.scrollingParts {
-        @apply --layout-flex;
-        overflow-x: hidden;
-        overflow-y: auto;
-      }
       #loadingBlock {
         display: block;
         pointer-events: none;
@@ -113,7 +100,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
     </template>
     <paper-material>
       <div id="windowHolding" hidden$="[[!_initialized]]">
-        <template id="trackSvgHolders" is="dom-repeat"
+        <template id="windowsHolder" is="dom-repeat"
           items="[[_chartWindows]]" index-as="index">
           <chart-window coordinate="[[item.coordinate]]" index="[[index]]"
             total-windows="[[_chartWindows.length]]"
@@ -121,194 +108,145 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
           </chart-window>
         </template>
       </div>
-      <div id="coorLocationHolder" hidden$="[[!_initialized]]"></div>
-      <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
-        <div>
-          You may use mouse wheel within the coordinate track to zoom in/out, drag any track to move.
-        </div>
-      </tutorial-highlight>
       <div class="uninitialized" hidden$="[[_initialized]]">
         Please select a region to display first.
       </div>
     </paper-material>
-    <div id="trackDOMHolder"></div>
   </template>
   <script>
 var GIVe = (function (give) {
   'use strict'
 
-  give.ChartArea = Polymer({
-    is: 'chart-area',
+  class ChartArea extends Polymer.mixinBehaviors([
+    Polymer.IronResizableBehavior], Polymer.Element
+  ) {
+    constuctor () {
+      super(...arguments)
+      this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
+    }
 
-    behaviors: [
-      Polymer.IronResizableBehavior,
-      give.RefEmbeddedBehavior
-    ],
+    static get properties () {
+      return {
+        /**
+         * The view windows to display in the element.
+         * The members of the properties should be `GIVE.ChromRegion` Objects
+         * @type {Array.<GIVe.ChromRegion>}
+         */
+        _viewWindows: {
+          type: Array,
+          notify: true,
+          value () {
+            return []
+          }
+        },
 
-    properties: {
-      /**
-       * The view windows to display in the element.
-       * The members of the properties should be `GIVE.ChromRegion` Objects
-       * @type {Array.<GIVe.ChromRegion>}
-       */
-      _viewWindows: {
-        type: Array,
-        notify: true,
-        value: function () {
-          return []
+        /**
+         * The view windows to display in the element, in coordinate format.
+         * This is for HTML attributes
+         * @type {Array.<string>}
+         */
+        coordinates: {
+          type: Array,
+          notify: true,
+          value () {
+            return []
+          }
+        },
+
+        /**
+         * The track groups included in the embedded browser. Group IDs are
+         * specified in the data source. The data source on our server currently
+         * provides these track groups:
+         * *  `'genes'`: gene annotation tracks, for all available references
+         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
+         * *  `'interaction'`: genomic interaction data sets, including those
+         * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
+         * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
+         * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
+         * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
+         * for `mm10` only
+         * @type {Array.<string>}
+         */
+        groupIdList: {
+          // this is the array of allowed group IDs in the list
+          type: Array,
+          value () {
+            return []
+          }
+        },
+
+        defaultTrackIdList: {
+          type: Array,
+          value () {
+            return []
+          }
+        },
+
+        /**
+         * Number of sub views in this controller.
+         * Notice that if this setting is different from `coordinates.length`,
+         * adjustments will be made to `coordinates` (truncating excessive
+         * items or padding with default values).
+         */
+        numOfSubs: {
+          type: Number,
+          value: 1,
+          notify: true,
+          observer: '_numOfSubsChanged'
+        },
+
+        passExceptions: {
+          type: Boolean,
+          value: false
+        },
+
+        _initialized: {
+          type: Boolean,
+          value: false
+        },
+
+        _trackGap: {
+          type: Number,
+          value: 0.3 // unit is em
+        },
+
+        _textSize: {
+          type: Number,
+          value: 12 // unit is px
+        },
+
+        textMargin: {
+          type: Number,
+          value: 100 // unit is px
+        },
+
+        _threshold: {
+          type: Number,
+          value: 0.0
+        },
+
+        /**
+         * Flag to indicate whether the entire `chart-area` is ready
+         * @type {boolean}
+         */
+        _readiness: {
+          type: Boolean,
+          value: true
+        },
+
+        /**
+         * Flag to indicate whether this is the first time this `chart-area`
+         * element is run
+         * @type {boolean}
+         */
+        _firstRun: {
+          type: Boolean,
+          value: true
         }
-      },
-
-      /**
-       * The array holding trackDOMs for every view window.
-       * The member of the array should be Objects with the following properties:
-       * * `pinAbove`: An array of track DOMs that will be pinned at the top of the view window;
-       * * `scrolling`: An array of track DOMs that will appear in the scrolling part;
-       * * `pinBelow`: An array of track DOMs that will be pinned at the bottom of the view window;
-       * * `pinInBetween`: *(optional)* An array of track DOMs that will appear in the space between
-       *                    this view window and the next one;
-       * * `map`: An Object used for id-to-DOM lookups;
-       * * `hiddenTrackComponents`: An array of track DOMs that are hidden and never displayed;
-       *                            (this is mainly used for cross-view-window tracks because
-       *                             it will only display once but will receive update signal
-       *                             from multiple views)
-       * * `divId`: The id of the `<div>` tag for the view window.
-       * Please refer to `this._initDOMArray()` for details.
-       * @type {Array.<{
-       *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-       *   scrolling: Array.<GIVe.TrackDomBehavior>,
-       *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-       *   map: Object,
-       *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-       * }>}
-       */
-      _trackDOMsByWindow: {
-        type: Array,
-        value: function () {
-          return []
-        }
-      },
-
-      /**
-       * The view windows to display in the element, in coordinate format.
-       * This is for HTML attributes
-       * @type {Array.<string>}
-       */
-      coordinates: {
-        type: Array,
-        notify: true,
-        value: function () {
-          return []
-        }
-      },
-
-      /**
-       * The track groups included in the embedded browser. Group IDs are
-       * specified in the data source. The data source on our server currently
-       * provides these track groups:
-       * *  `'genes'`: gene annotation tracks, for all available references
-       * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
-       * *  `'interaction'`: genomic interaction data sets, including those
-       * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-       * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-       * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-       * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-       * for `mm10` only
-       * @type {Array.<string>}
-       */
-      groupIdList: {
-        // this is the array of allowed group IDs in the list
-        type: Array,
-        value: function () {
-          return []
-        }
-      },
-
-      defaultTrackIdList: {
-        type: Array,
-        value: function () {
-          return []
-        }
-      },
-
-      /**
-       * Number of sub views in this controller.
-       * Notice that if this setting is different from `coordinates.length`,
-       * adjustments will be made to `coordinates` (truncating excessive
-       * items or padding with default values).
-       */
-      numOfSubs: {
-        type: Number,
-        value: 1,
-        notify: true,
-        observer: '_numOfSubsChanged'
-      },
-
-      passExceptions: {
-        type: Boolean,
-        value: false
-      },
-
-      _initialized: {
-        type: Boolean,
-        value: false
-      },
-
-      _trackGap: {
-        type: Number,
-        value: 0.3 // unit is em
-      },
-
-      _textSize: {
-        type: Number,
-        value: 12 // unit is px
-      },
-
-      textMargin: {
-        type: Number,
-        value: 100 // unit is px
-      },
-
-      _threshold: {
-        type: Number,
-        value: 0.0
-      },
-
-      /**
-       * Flag to indicate whether the entire `chart-area` is ready
-       * @type {boolean}
-       */
-      _readiness: {
-        type: Boolean,
-        value: true
-      },
-
-      /**
-       * Flag to indicate whether this is the first time this `chart-area`
-       * element is run
-       * @type {boolean}
-       */
-      _firstRun: {
-        type: Boolean,
-        value: true
       }
-    },
+    }
 
-    listeners: {
-      'track-ready': '_trackReadyHandler',
-      'update-window': '_updateWindowHandler',
-      'iron-resize': '_onIronResize',
-      'dom-change': '_domChangeHandler'
-    },
-
-    created: function () {
-      this.svgNS = 'http://www.w3.org/2000/svg'
-      this.resizeDebounceInt = 400
-      // this.resizeJobName = 'RESIZE'
-      this.resizeAsyncProcess = null
-    },
-
-    ready: function () {
+    ready () {
       // initialize this._viewWindows from this.coordinates
       this.coordinates.forEach(function (coordinateStr, index) {
         if (give.ChromRegion.isValidChromRegion(coordinateStr,
@@ -331,16 +269,21 @@ var GIVe = (function (give) {
       }
       // initialize DOM array
       this._initDOMArray()
-    },
 
-    attached: function () {
+      this.addEventListener('track-ready', this._trackReadyHandler)
+      this.addEventListener('update-window', this._updateWindowHandler)
+      this.addEventListener('iron-resize', this._onIronResize)
+      this.addEventListener('dom-change', this._domChangeHandler)
+    }
+
+    attached () {
       this.async(function () {
         // attach all trackDOMs
         this._checkVWindowsInit(true)
       })
-    },
+    }
 
-    _checkVWindowsInit: function () {
+    _checkVWindowsInit () {
       if (!this._initialized) {
         if (this._refObj && this._viewWindows.every(function (vwindow) {
           return !!vwindow
@@ -354,7 +297,7 @@ var GIVe = (function (give) {
         }
       }
       return true
-    },
+    }
 
     /**
      * Merge properties together
@@ -364,24 +307,24 @@ var GIVe = (function (give) {
      * @param  {object} newProp - object with new properties
      * @returns {object} object with the merged properties
      */
-    _mergeProperty: function (original, newProp) {
+    _mergeProperty (original, newProp) {
       for (var key in newProp) {
         if (newProp.hasOwnProperty(key)) {
           original[key] = newProp[key]
         }
       }
       return original
-    },
+    }
 
-    _createTrackProp: function (viewWindowIndex, props) {
+    _createTrackProp (viewWindowIndex, props) {
       props = props || {}
       props.windowIndex = viewWindowIndex
       props.width = this.$.chartHolding.clientWidth
       props.textMargin = this.textMargin
       return props
-    },
+    }
 
-    _addTrackDOM: function (trackDOM, viewWindowIndex) {
+    _addTrackDOM (trackDOM, viewWindowIndex) {
       if (trackDOM.parent.windowSpan > 1) {
         // this track involves multiple windows for display
         // (e.g. interaction tracks)
@@ -391,9 +334,9 @@ var GIVe = (function (give) {
       }
       this._trackDOMsByWindow[viewWindowIndex]
         .map[trackDOM.parent.id] = true
-    },
+    }
 
-    _addSingleWindowTrackDOM: function (trackDOM, viewWindowIndex) {
+    _addSingleWindowTrackDOM (trackDOM, viewWindowIndex) {
       var holder
       if (trackDOM.pin === 'top') {
         holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
@@ -409,18 +352,18 @@ var GIVe = (function (give) {
               trackDOM2.parent, this._refObj.groups)
           }.bind(this)
         ) + 1, 0, trackDOM)
-    },
+    }
 
-    _addMultiWindowTrackDOM: function (trackDOM, viewWindowIndex) {
+    _addMultiWindowTrackDOM (trackDOM, viewWindowIndex) {
       // actually this will enum all viewWindowIndices
       this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
       for (var i = 1; i < trackDOM.parent.windowSpan; i++) {
         this._trackDOMsByWindow[viewWindowIndex + i]
           .hiddenTrackComponents.push(trackDOM)
       }
-    },
+    }
 
-    _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
+    _addVisibleTrack (track, viewWindowIndex, forceAdd, props) {
       if (forceAdd || (
         !this._trackDOMsByWindow[viewWindowIndex].map
           .hasOwnProperty(track.id) &&
@@ -439,14 +382,14 @@ var GIVe = (function (give) {
           return null
         }
       }
-    },
+    }
 
     /**
      * Update the height and location of individual tracks
      *
      * @param  {number} width - Width of the current area
      */
-    updateHeightLocation: function (changeWindow) {
+    updateHeightLocation (changeWindow) {
       // calculate the heights for all tracks
       // note that by the time this is called, all tracks should be ready
       // (this is handled in track-ready event handler)
@@ -466,14 +409,14 @@ var GIVe = (function (give) {
         })
       }
       delete this.resizeAsyncProcess
-    },
+    }
 
     /**
      * Refresh all tracks in a certain view or all views
      *
      * @param  {number|null} index - The index for the view being updated, use null for all views
      */
-    _updateTracks: function (index) {
+    _updateTracks (index) {
       // index is the window index
       // only need to update tracks involved with that index
       if (typeof index === 'number') {
@@ -483,14 +426,14 @@ var GIVe = (function (give) {
           this._updateTracksInWindow(windex)
         }, this)
       }
-    },
+    }
 
     /**
      * Refresh all tracks in a certain view
      *
      * @param  {number} index - The index for the view being updated
      */
-    _updateTracksInWindow: function (index) {
+    _updateTracksInWindow (index) {
       // index is the window index
       // only need to update tracks involved with that index
       this._readiness = false
@@ -500,9 +443,9 @@ var GIVe = (function (give) {
           trackDOM.updateTrack(this._viewWindows[index],
             index, this._threshold)
         }.bind(this), this._trackDOMsByWindow[index], index)
-    },
+    }
 
-    _trackReadyHandler: function (e) {
+    _trackReadyHandler (e) {
       // check if all tracks are ready, otherwise do nothing
       if (this._trackDOMsByWindow.every(
         this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
@@ -526,7 +469,7 @@ var GIVe = (function (give) {
           this._readiness = true
         }
       }
-    },
+    }
 
     /**
      * _changeViewWindowObj - Change the range of a sub view.
@@ -538,7 +481,7 @@ var GIVe = (function (give) {
      * @return {string} The actual range (may be cropped by reference),
      *                   converted to string.
      */
-    _changeViewWindowObj: function (viewWindow, index) {
+    _changeViewWindowObj (viewWindow, index) {
       this.splice('_viewWindows', index, 1, viewWindow.clone())
       this.splice('coordinates', index, 1,
         this._viewWindows[index].regionToString(false))
@@ -548,7 +491,7 @@ var GIVe = (function (give) {
         this._checkVWindowsInit()
       }
       return this._viewWindows[index].regionToString(false)
-    },
+    }
 
     /**
      * Change the range of a sub view.
@@ -560,7 +503,7 @@ var GIVe = (function (give) {
      * @return {string} The actual range (may be cropped by reference),
      *                   converted to string.
      */
-    changeViewWindow: function (viewWindow, index, forceDomReset) {
+    changeViewWindow (viewWindow, index, forceDomReset) {
       if (forceDomReset) {
         this._initialized = false
       }
@@ -582,7 +525,7 @@ var GIVe = (function (give) {
         }
       }
       return this._changeViewWindowObj(viewWindowObj, index)
-    },
+    }
 
     /**
      * Change ranges in all views at once
@@ -590,7 +533,7 @@ var GIVe = (function (give) {
      * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
      * @return {Array<string>} The actual ranges, converted to `string`.
      */
-    changeAllViewWindows: function (viewWindows) {
+    changeAllViewWindows (viewWindows) {
       var exceptionList = []
       var viewWindowObjs = viewWindows.map(function (vWindow, index) {
         var vWindowObj = null
@@ -625,9 +568,9 @@ var GIVe = (function (give) {
         }, this)
       }
       return this.getViewWindowStrings()
-    },
+    }
 
-    _changeThreshold: function (_threshold) {
+    _changeThreshold (_threshold) {
       this._threshold = _threshold || this._threshold
       this._trackDOMsByWindow.forEach(
         this._callForeachFuncOnDomInWindowEntry.bind(
@@ -639,9 +582,9 @@ var GIVe = (function (give) {
           }.bind(this)
         ), this
       )
-    },
+    }
 
-    refreshAll: function (viewWindows, threshold) {
+    refreshAll (viewWindows, threshold) {
       if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
         // only update _threshold only
         this._changeThreshold(threshold)
@@ -655,23 +598,23 @@ var GIVe = (function (give) {
         }
       }
       return this.getViewWindowStrings()
-    },
+    }
 
     /**
      * Get the `string` of ranges in all views
      *
      * @returns {Array<string>} The ranges, converted to `string`.
      */
-    getViewWindowStrings: function () {
+    getViewWindowStrings () {
       return this._viewWindows.map(function (vwindow, index) {
         return vwindow.regionToString(false)
       }, this)
-    },
+    }
 
     /**
      * _overrideTrackDefaultVis - Override default shown tracks
      */
-    _overrideTrackDefaultVis: function () {
+    _overrideTrackDefaultVis () {
       if (this._refObj && this.defaultTrackIdList.length > 0) {
         this._refObj.setTrackSettings('visibility', false, null)
         this.defaultTrackIdList.forEach(function (id) {
@@ -685,7 +628,7 @@ var GIVe = (function (give) {
         }, this)
       }
       delete this._needOverrideDefault
-    },
+    }
 
     /**
      * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
@@ -693,7 +636,7 @@ var GIVe = (function (give) {
      * @param  {number} newValue new `numOfSubs` value
      * @param  {number} oldValue old `numOfSubs` value
      */
-    _numOfSubsChanged: function (newValue, oldValue) {
+    _numOfSubsChanged (newValue, oldValue) {
       this._initialized = false
       if (this._refObj) {
         var defaultWindows = this._refObj.settings.defaultViewWindows
@@ -717,16 +660,16 @@ var GIVe = (function (give) {
         }
         this._checkVWindowsInit()
       }
-    },
+    }
 
-    _setRefObj: function (refObj) {
+    _setRefObj (refObj) {
       this._refObj = refObj
       this._numOfSubsChanged(this.numOfSubs)
       this._initialized = false
       this._checkVWindowsInit()
-    },
+    }
 
-    _initDOMArray: function () {
+    _initDOMArray () {
       // this is the array for visible tracks by window
       // notice that this is an array of array
       // tracks are grouped by its corresponding viewWindow Index
@@ -750,10 +693,10 @@ var GIVe = (function (give) {
         }
         this.push('_trackDOMsByWindow', newTrackDOMEntry)
       }
-      this.$.trackSvgHolders.render()
-    },
+      this.$.windowsHolder.render()
+    }
 
-    _initDOMCoorTracks: function () {
+    _initDOMCoorTracks () {
       if (this._refObj) {
         this._viewWindows.forEach(function (vwindow, windowIndex) {
           // coordinate track
@@ -769,21 +712,21 @@ var GIVe = (function (give) {
           }
         }, this)
       }
-    },
+    }
 
     /**
      * Reset the entire DOM display
      */
-    resetDOM: function () {
+    resetDOM () {
       if (this._initialized) {
         this._readiness = false
         this._initDOMArray()
       } else {
         this._readiness = true
       }
-    },
+    }
 
-    _clearDOM: function () {
+    _clearDOM () {
       var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
       svgList.forEach(function (svgElem, index) {
         while (Polymer.dom(svgElem).firstChild) {
@@ -793,9 +736,9 @@ var GIVe = (function (give) {
       while (Polymer.dom(this.$.trackDOMHolder).firstChild) {
         Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild)
       }
-    },
+    }
 
-    _addAllTrackDOMsTracksReady: function (noRefreshContent, ref) {
+    _addAllTrackDOMsTracksReady (noRefreshContent, ref) {
       // function called when tracks are ready for this._refObj
       if (ref === this.ref) {
         // Only respond to this call if ref has not been changed
@@ -823,14 +766,14 @@ var GIVe = (function (give) {
         }, this)
         this.populateDOM(noRefreshContent)
       }
-    },
+    }
 
-    addAllTrackDOMs: function (noRefreshContent) {
+    addAllTrackDOMs (noRefreshContent) {
       this._refObj.initTracks().then(
         () => this._addAllTrackDOMsTracksReady(noRefreshContent, this.ref))
-    },
+    }
 
-    _removeInvisibleTrackDOMs: function () {
+    _removeInvisibleTrackDOMs () {
       this._trackDOMsByWindow.forEach(function (domInWindowEntry, windowIndex) {
         // notice that because tracks may get deleted, don't use forEach with splice
         for (var key in domInWindowEntry) {
@@ -850,9 +793,9 @@ var GIVe = (function (give) {
           }
         }
       }, this)
-    },
+    }
 
-    _setDivElemInWindow: function (domInWindowEntry, index) {
+    _setDivElemInWindow (domInWindowEntry, index) {
       var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
       if (
         !this.$$('#' + this._getElemId(domInWindowEntry.divId, 'Scroll'))
@@ -870,9 +813,9 @@ var GIVe = (function (give) {
           this._getElemId(domInWindowEntry.divId, 'PinBetween'))
       }
       return true
-    },
+    }
 
-    _callForeachWithElemFuncOnDomInWindowEntry: function (func, startFunc, endFunc, domInWindowEntry, index) {
+    _callForeachWithElemFuncOnDomInWindowEntry (func, startFunc, endFunc, domInWindowEntry, index) {
       var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
       for (var key in domInWindowEntry) {
         if (domInWindowEntry.hasOwnProperty(key) &&
@@ -892,9 +835,9 @@ var GIVe = (function (give) {
           }
         }
       }
-    },
+    }
 
-    _callForeachFuncOnDomInWindowEntry: function (func, domInWindowEntry, index) {
+    _callForeachFuncOnDomInWindowEntry (func, domInWindowEntry, index) {
       var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
       for (var key in domInWindowEntry) {
         if (domInWindowEntry.hasOwnProperty(key) &&
@@ -905,9 +848,9 @@ var GIVe = (function (give) {
           enumArray.forEach(func, this)
         }
       }
-    },
+    }
 
-    _callEveryOnDomInWindowEntry: function (func, domInWindowEntry, index) {
+    _callEveryOnDomInWindowEntry (func, domInWindowEntry, index) {
       // same thing as _callForeachFuncOnDomInWindowEntry, just replace forEach by every
       var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
       for (var key in domInWindowEntry) {
@@ -922,9 +865,9 @@ var GIVe = (function (give) {
         }
       }
       return true
-    },
+    }
 
-    _populateDomInWindow: function (domInWindowEntry, index) {
+    _populateDomInWindow (domInWindowEntry, index) {
       var _populateDomInComponent = function (component, trackDOM, trackDomIndex) {
         Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
         Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDOM.getTrackSvg())
@@ -932,7 +875,7 @@ var GIVe = (function (give) {
       this._callForeachWithElemFuncOnDomInWindowEntry(
         _populateDomInComponent.bind(this), null, null,
         domInWindowEntry, index)
-    },
+    }
 
     /**
      * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
@@ -947,7 +890,7 @@ var GIVe = (function (give) {
      * ]} domInWindowEntry - viewWindow Array
      * @param  {number} index - index of domInWindowEntry in the array
      */
-    _updateDomHeightInWindow: function (changeWindow, domInWindowEntry, index) {
+    _updateDomHeightInWindow (changeWindow, domInWindowEntry, index) {
       var _prepareSvgHeight = function (svgWidth, divElem) {
         divElem._currY = 0
         divElem._svgWidth = svgWidth || divElem.clientWidth
@@ -980,9 +923,9 @@ var GIVe = (function (give) {
         return false
       }
       return true
-    },
+    }
 
-    populateDOM: function (noRefreshContent) {
+    populateDOM (noRefreshContent) {
       // first clear old DOMs
       this._clearDOM()
       // then populate all new DOMS by window
@@ -993,9 +936,9 @@ var GIVe = (function (give) {
         // then update everything
         this.refreshAll()
       }
-    },
+    }
 
-    updateDOM: function (noRefreshContent) {
+    updateDOM (noRefreshContent) {
       // update existing DOMs, first remove all tracks that should be hidden
       // if noRefreshContent = true, do not refresh content (should be refreshed later)
       if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
@@ -1004,9 +947,9 @@ var GIVe = (function (give) {
 
       // then add new Tracks (if not there already)
       this.addAllTrackDOMs(noRefreshContent)
-    },
+    }
 
-    _updateWindowHandler: function (e) {
+    _updateWindowHandler (e) {
       // update the windows by events bubbled up from bottom tracks
       try {
         if (e.detail.newWindow instanceof give.ChromRegion ||
@@ -1028,13 +971,13 @@ var GIVe = (function (give) {
         console.log(err.message)
         console.log(err.stack)
       }
-    },
+    }
 
-    updateWindow: function (e) {
+    updateWindow (e) {
       this._updateWindowHandler(e)
-    },
+    }
 
-    _initTrackDOMContainers: function () {
+    _initTrackDOMContainers () {
       if (this._trackDOMsByWindow.every(this._setDivElemInWindow, this)) {
         this._initDOMCoorTracks()
         this._domsReady = true
@@ -1046,25 +989,25 @@ var GIVe = (function (give) {
           this._initTrackDOMContainers.bind(this),
           give.ChartArea.DOM_CHANGE_DEBOUNCE)
       }
-    },
+    }
 
-    _domChangeHandler: function () {
+    _domChangeHandler () {
       if (!this._domsReady) {
         this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
           this._initTrackDOMContainers.bind(this),
           give.ChartArea.DOM_CHANGE_DEBOUNCE)
       }
-    },
+    }
 
-    _getElemId: function (divId, suffix) {
+    _getElemId (divId, suffix) {
       return divId + '_' + suffix
-    },
+    }
 
-    _vWindowHasPinBetween: function (domInWindowEntry) {
+    _vWindowHasPinBetween (domInWindowEntry) {
       return !!domInWindowEntry.pinInBetween
-    },
+    }
 
-    _onIronResize: function (e, detail) {
+    _onIronResize (e, detail) {
       if (this._domsReady && this._trackDOMsByWindow.every(
         this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
           return trackDOM.isReady
@@ -1103,19 +1046,16 @@ var GIVe = (function (give) {
         // return this.resizePromise
       }
     }
+  }
 
-  // TODO: add/remove/rearrange tracks
+  ChartArea.DOM_DIV_ID = 'domDiv_'
+  ChartArea.INTERACTION_SUBS = 2
 
-  })
+  ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400
 
-  give.ChartArea.DOM_DIV_ID = 'domDiv_'
-  give.ChartArea.INTERACTION_SUBS = 2
-
-  give.ChartArea.DOM_CHANGE_JOBNAME = 'DOMChange'
-  give.ChartArea.DOM_CHANGE_DEBOUNCE = 200
+  give.ChartArea = ChartArea
 
   return give
 })(GIVe || {})
-
   </script>
 </dom-module>
