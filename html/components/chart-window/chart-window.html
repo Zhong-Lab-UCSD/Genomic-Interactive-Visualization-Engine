@@ -227,8 +227,7 @@ var GIVe = (function (give) {
          * @type {GIVe.ChromRegion}
          */
         _viewWindow: {
-          type: Object,
-          notify: true
+          type: Object
         },
 
         index: {
@@ -290,20 +289,9 @@ var GIVe = (function (give) {
           value: false
         },
 
-        _trackGap: {
-          type: Number,
-          value: 0.3 // unit is em
-        },
-
-        _textSize: {
-          type: Number,
-          value: 12 // unit is px
-        },
-
-        textMargin: {
-          type: Number,
-          value: 100 // unit is px
-        },
+        trackGap: Number,
+        textSize: Number,
+        textMargin: Number,
 
         /**
          * Promise resolved to the current `viewWindow` when the entire
@@ -323,7 +311,6 @@ var GIVe = (function (give) {
          */
         firstRun: {
           type: Boolean,
-          value: true,
           notify: true
         },
 
@@ -499,7 +486,7 @@ var GIVe = (function (give) {
           return newTrackDom
         } catch (err) {
           give._verbConsole.warn(err)
-          give.fireSignal('warning', { msg: err.message })
+          give.fireSignal('warning', { msg: err.message }, null, this)
           return null
         }
       }
@@ -750,14 +737,14 @@ var GIVe = (function (give) {
     }
 
     _showTutorialIfNeeded () {
-      if (this._firstRun && this.showTutorial &&
+      if (this.firstRun && this.showTutorial &&
         this._coorDomSvg
       ) {
         this.$.coorTrackTutorial.domTargetId =
           this._coorDomSvg.id
         this.$.coorTrackTutorial.showTutorial()
       }
-      this._firstRun = false
+      this.firstRun = false
     }
 
     _updateTrackLocation (newWidth) {
@@ -782,6 +769,7 @@ var GIVe = (function (give) {
       // First check whether other resizing event fired before
       // this update (otherwise the display may not be up-to-date).
       let pendingVWindow = this._pendingVWindow || this._viewWindow
+      this._trackDomPromises.length = 0
       if (pendingVWindow && Array.isArray(windows) && windows.some(
         window => give.ChromRegion.compare(window, this._pendingVWindow)
       )) {
@@ -798,7 +786,7 @@ var GIVe = (function (give) {
         this._showTutorialIfNeeded()
       } catch (e) {
         give._verbConsole.warn(e)
-        give.fireSignal('warning', { msg: e.message })
+        give.fireSignal('warning', { msg: e.message }, null, this)
       } finally {
         this._readiness = true
       }
@@ -929,6 +917,10 @@ var GIVe = (function (give) {
     _setRefObj (refObj) {
       this._refObj = refObj
       this._initialized = false
+      give.fireSignal('ref-changed', {
+        ref: refObj.db,
+        index: this.index
+      }, null, this)
       return this._initDomAfterVWinRefReady()
     }
 

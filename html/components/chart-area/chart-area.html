@@ -23,7 +23,6 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
-<link rel="import" href="genemo-track-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -102,9 +101,13 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       <div id="windowHolding" hidden$="[[!_initialized]]">
         <template id="windowsHolder" is="dom-repeat"
           items="[[_chartWindows]]" index-as="index">
-          <chart-window coordinate="[[item.coordinate]]" index="[[index]]"
-            total-windows="[[_chartWindows.length]]"
-            group-id-list="[[item.groupIdList]]" ref="[[item.ref]]">
+          <chart-window coordinate="{{item.coordinate}}" index="[[index]]"
+            total-windows="[[numOfSubs]]"
+            default-track-id-list="[[item.defaultTrackIdList]]"
+            group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
+            text-margin="[[textMargin]]" track-gap="[[trackGap]]"
+            text-size="[[textSize]]" first-run="{{_firstRun}}"
+            show-tutorial="[[!index]]">
           </chart-window>
         </template>
       </div>
@@ -123,6 +126,7 @@ var GIVe = (function (give) {
     constuctor () {
       super(...arguments)
       this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
+      this._updatingWindows = false
     }
 
     static get properties () {
@@ -130,12 +134,11 @@ var GIVe = (function (give) {
         /**
          * The view windows to display in the element.
          * The members of the properties should be `GIVE.ChromRegion` Objects
-         * @type {Array.<GIVe.ChromRegion>}
+         * @type {object}
          */
-        _viewWindows: {
+        _chartWindows: {
           type: Array,
-          notify: true,
-          value () {
+          value: function () {
             return []
           }
         },
@@ -143,14 +146,20 @@ var GIVe = (function (give) {
         /**
          * The view windows to display in the element, in coordinate format.
          * This is for HTML attributes
-         * @type {Array.<string>}
+         * @type {string} 
          */
-        coordinates: {
-          type: Array,
+        coordinate: {
+          type: String,
           notify: true,
-          value () {
-            return []
-          }
+          value: '',
+          observer: '_coorChanged'
+        },
+
+        ref: {
+          type: String,
+          notify: true,
+          value: '',
+          observer: '_refChanged'
         },
 
         /**
@@ -170,14 +179,14 @@ var GIVe = (function (give) {
         groupIdList: {
           // this is the array of allowed group IDs in the list
           type: Array,
-          value () {
+          value: function () {
             return []
           }
         },
 
         defaultTrackIdList: {
           type: Array,
-          value () {
+          value: function () {
             return []
           }
         },
@@ -205,12 +214,12 @@ var GIVe = (function (give) {
           value: false
         },
 
-        _trackGap: {
+        trackGap: {
           type: Number,
           value: 0.3 // unit is em
         },
 
-        _textSize: {
+        textSize: {
           type: Number,
           value: 12 // unit is px
         },
@@ -218,11 +227,6 @@ var GIVe = (function (give) {
         textMargin: {
           type: Number,
           value: 100 // unit is px
-        },
-
-        _threshold: {
-          type: Number,
-          value: 0.0
         },
 
         /**
@@ -244,6 +248,12 @@ var GIVe = (function (give) {
           value: true
         }
       }
+    }
+
+    static get observers () {
+      return [
+        '_windowChanged(_chartWindows.*)'
+      ]
     }
 
     ready () {
@@ -281,6 +291,24 @@ var GIVe = (function (give) {
         // attach all trackDOMs
         this._checkVWindowsInit(true)
       })
+    }
+
+    _getValueArray (strVal) {
+      let arr = [strVal]
+      try {
+        let parsed = JSON.parse(strVal)
+        if (Array.isArray(parsed)) {
+          arr = parsed
+        }
+      } catch (ignore) { }
+      if (arr.length <= 0) {
+        arr[0] = null
+      }
+      // repeat arr until it is at least as long as `this.numOfSubs`
+      while (arr.length < this.numOfSubs) {
+        arr = arr.concat(arr)
+      }
+      return arr.slice(0, this.numOfSubs)
     }
 
     _checkVWindowsInit () {
@@ -638,28 +666,45 @@ var GIVe = (function (give) {
      */
     _numOfSubsChanged (newValue, oldValue) {
       this._initialized = false
-      if (this._refObj) {
-        var defaultWindows = this._refObj.settings.defaultViewWindows
-        for (var i = 0; i < newValue; i++) {
-          if (this.coordinates[i] !== false &&
-            !give.ChromRegion.isValidChromRegion(this.coordinates[i],
-              this._refObj
-            ) && Array.isArray(this._refObj.settings.defaultViewWindows)
-          ) {
-            this.splice('coordinates', i, 1,
-              defaultWindows[i % defaultWindows.length])
-          }
-          if (give.ChromRegion.isValidChromRegion(this.coordinates[i],
-            this._refObj)
-          ) {
-            this.splice('_viewWindows', i, 1,
-              new give.ChromRegion(this.coordinates[i], this._refObj))
-          } else {
-            this.splice('_viewWindows', i, 1, null)
+      let refs = this._getValueArray(this.ref)
+      let coordinates = this._getValueArray(this.coordinate)
+      let exceptionList = []
+      if (newValue > oldValue) {
+        for (let i = this._chartWindows.length; i < newValue; i++) {
+          try {
+            let newWindow = {
+              ref: refs[i],
+              coordinate: coordinates[i],
+              defaultTrackIdList: this.defaultTrackIdList,
+              groupIdList: this.groupIdList
+            }
+            this.push('_chartWindows', newWindow)
+          } catch (err) {
+            exceptionList.push({ index: i, error: err })
           }
         }
-        this._checkVWindowsInit()
+      } else {
+        // less window, remove the excessive ones
+        for (let i = this._chartWindows.length - 1; i >= newValue; i--) {
+          this.pop('_chartWindows')
+        }
       }
+      if (exceptionList.length > 0) {
+        // some exception has happended during the conversion
+        // throw an exception telling calling procedures
+        if (this.passExceptions) {
+          var error = new give.GiveError('Exception occured during window' +
+            ' number change.')
+          error.data = error.data || {}
+          error.data.exceptionList = exceptionList
+          error.data.updatedCoors = this.coordinate
+          error.data.updatedRefs = this.ref
+          throw error
+        } else {
+          // TODO: gracefully handle the exception
+        }
+      }
+      this.updateWindows()
     }
 
     _setRefObj (refObj) {
@@ -667,33 +712,6 @@ var GIVe = (function (give) {
       this._numOfSubsChanged(this.numOfSubs)
       this._initialized = false
       this._checkVWindowsInit()
-    }
-
-    _initDOMArray () {
-      // this is the array for visible tracks by window
-      // notice that this is an array of array
-      // tracks are grouped by its corresponding viewWindow Index
-      this._trackDOMsByWindow = []
-      if (this._viewWindows.length > 0) {
-        this._domsReady = false
-      }
-      for (var i = 0; i < this._viewWindows.length; i++) {
-        var newTrackDOMEntry = {
-          pinAbove: [],
-          scrolling: [],
-          pinBelow: [],
-          map: {},
-          divId: give.ChartArea.DOM_DIV_ID + i
-        }
-        if (i < this._viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
-          newTrackDOMEntry.pinInBetween = []
-        }
-        if (i > 0) {
-          newTrackDOMEntry.hiddenTrackComponents = []
-        }
-        this.push('_trackDOMsByWindow', newTrackDOMEntry)
-      }
-      this.$.windowsHolder.render()
     }
 
     _initDOMCoorTracks () {
@@ -1047,9 +1065,6 @@ var GIVe = (function (give) {
       }
     }
   }
-
-  ChartArea.DOM_DIV_ID = 'domDiv_'
-  ChartArea.INTERACTION_SUBS = 2
 
   ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400
 
