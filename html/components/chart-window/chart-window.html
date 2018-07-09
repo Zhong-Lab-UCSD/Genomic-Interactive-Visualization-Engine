@@ -196,6 +196,7 @@ var GIVe = (function (give) {
       super(...arguments)
       this._trackDoms = []
       this._hiddenTrackDoms = []
+      this.linkedTrackDoms = {}
 
       /**
        * _trackDomPromises - an array holding all updating promises of tracks
@@ -441,39 +442,41 @@ var GIVe = (function (give) {
     _addTrackDomSvg (trackDom, honorEffPriority) {
       if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
         let slotId = this._getSlotId(trackDom.parent, honorEffPriority)
-        if (!trackDom.parent.effPriority) {
-          trackDom.parent.effPriority =
-            new give.EffPrior(this._pinValueFromSlotId(slotId),
-              this._svgSizes[slotId])
-        }
-        // Add DOM element
-        this.shadowRoot.querySelector('#' + slotId)
-          .appendChild(trackDom.trackSvg)
-        // Find the correct location of the new DOM
-        let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
-        if (this._trackDoms[domPos] &&
-          !give.EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
-            trackDom.parent.effPriority)
-        ) {
-          // Update all effPriority values for DOMs after the new DOM
-          for (let i = domPos;
-            i < this._trackDoms.length &&
-            this._trackDoms[i].parent.effPriority.pinValue ===
-            trackDom.parent.effPriority.pinValue;
-            i++
-          ) {
-            this._trackDoms[i].parent.effPriority.pos += 1
+        if (slotId) {
+          if (!trackDom.parent.effPriority) {
+            trackDom.parent.effPriority =
+              new give.EffPrior(this._pinValueFromSlotId(slotId),
+                this._svgSizes[slotId])
           }
-        }
-        // Insert the new DOM into its correct location
-        this._trackDoms.splice(domPos, 0, trackDom)
+          // Add DOM element
+          this.shadowRoot.querySelector('#' + slotId)
+            .appendChild(trackDom.trackSvg)
+          // Find the correct location of the new DOM
+          let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
+          if (this._trackDoms[domPos] &&
+            !give.EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
+              trackDom.parent.effPriority)
+          ) {
+            // Update all effPriority values for DOMs after the new DOM
+            for (let i = domPos;
+              i < this._trackDoms.length &&
+              this._trackDoms[i].parent.effPriority.pinValue ===
+              trackDom.parent.effPriority.pinValue;
+              i++
+            ) {
+              this._trackDoms[i].parent.effPriority.pos += 1
+            }
+          }
+          // Insert the new DOM into its correct location
+          this._trackDoms.splice(domPos, 0, trackDom)
 
-        this._addedTrackMap.set(trackDom.parent.id, {
-          'trackDom': trackDom,
-          'visible': true
-        })
-        this._svgSizes[slotId]++
-        return slotId
+          this._addedTrackMap.set(trackDom.parent.id, {
+            'trackDom': trackDom,
+            'visible': true
+          })
+          this._svgSizes[slotId]++
+          return slotId
+        }
       }
       return null
     }
@@ -810,23 +813,20 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _changeViewWindowObj - Change the range of a sub view.
+     * _changeViewWindow - Change the range of a sub view.
      *    The range should be a `GIVE.ChromRegion` object and clipped.
      *    No exceptions should be thrown from this function.
      *
      * @param  {ChromRegionLiteral} viewWindow - The target range
-     * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
      * @return {Promise<ChromRegionLiteral>} A Promise that resolves to the
      *    updated view window when the updating is done.
      * @throws {number} if width needs to be changed (due to scroll bar), the
      *    new width will be thrown to let the calling function (in
      *    `chart-area`) be informed of incoming width change.
      */
-    changeViewWindow (viewWindow, forceUpdateDom) {
+    changeViewWindow (viewWindow) {
       if (!this._initialized) {
         return this._initDomAfterVWinRefReady(viewWindow)
-      } else if (forceUpdateDom) {
-        return this.updateDOM(viewWindow)
       } else {
         return this.updateTracks(viewWindow, null, this.index)
       }
@@ -984,8 +984,12 @@ var GIVe = (function (give) {
     }
 
     updateDOM (newWindow, noRefreshContent) {
+      if (!this._initialized) {
+        return this._initDomAfterVWinRefReady(viewWindow)
+      }
       // update existing DOMs, first remove all tracks that should be hidden
-      // if noRefreshContent = true, do not refresh content (should be refreshed later)
+      // if noRefreshContent = true, do not refresh content
+      // (should be refreshed later)
       if (this._trackDoms && this._trackDoms.length > 0) {
         this._removeInvisibleTrackDoms()
       }
@@ -1000,11 +1004,11 @@ var GIVe = (function (give) {
         if (e.detail.newVWindow instanceof give.ChromRegion ||
           typeof e.detail.newVWindow === 'string'
         ) {
-          give.fireSignal('update-coordinate', {
-            windowIndex: this.index,
-            newVWindow: e.detail.newVWindow
-          }, null, this)
-          return this.changeViewWindow(e.detail.newVWindow, !!(e.detail.tracks))
+          if (e.detail.tracks) {
+            return this.updateDOM(e.detail.newWindow)
+          } else {
+            return this.changeViewWindow(e.detail.newVWindow)
+          }
         }
       } catch (err) {
         give._verbConsole.warn(err)

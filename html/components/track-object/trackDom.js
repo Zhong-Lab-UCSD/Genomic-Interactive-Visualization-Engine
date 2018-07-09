@@ -16,8 +16,6 @@
  */
 
 var GIVe = (function (give) {
-  give._trackCounter = 0
-
   /**
    * @class TrackDom
    *
@@ -50,7 +48,8 @@ var GIVe = (function (give) {
       this._narrowMode = false
 
       // request URL is the target to get data from
-      // width is the width given for the track (including text margin), units in px
+      // width is the width given for the track (including text margin),
+      // units in px
       // type is reserved
 
       properties = properties || {}
@@ -76,13 +75,19 @@ var GIVe = (function (give) {
        */
       this._parent = track
       // this._setTrackType(track.typeTrunk)
-      this.id = this.parent.typeTrunk + '_' + give._trackCounter++
+      this.id = this.parent.typeTrunk + '_' + this.constructor._trackCounter++
 
       /**
        * The CSS class for the main SVG element
        * @type {string}
        */
       this.trackMainDOMClass = properties.trackMainDOMClass || ''
+
+      /**
+       * the main index of the chart-window this track is in.
+       * @type {number}
+       */
+      this.windowIndex = properties.windowIndex || null
 
       /**
        * Text size of the track, will also affect line sizes.
@@ -117,7 +122,8 @@ var GIVe = (function (give) {
       )
 
       /**
-       * This is the size of the gap between lines (in a BED file, for example).
+       * This is the size of the gap between lines (in a BED file, for
+       * example).
        * Multiplies of `this.textSize`
        * @type {number}
        */
@@ -138,7 +144,8 @@ var GIVe = (function (give) {
       )
 
       /**
-       * Interval for getting data into cache. This is longer than draw debouncing
+       * Interval for getting data into cache. This is longer than draw
+       * debouncing
        * @type {number}
        */
       this._cacheDebounceInt = (
@@ -169,7 +176,8 @@ var GIVe = (function (give) {
       )
 
       /**
-       * Flag to indicate whether this track has a dynamic height (from its contents).
+       * Flag to indicate whether this track has a dynamic height (from its
+       *   contents).
        * @type {boolean}
        */
       this.dynamicHeight = this.constructor.DYNAMIC_HEIGHT
@@ -182,7 +190,8 @@ var GIVe = (function (give) {
       this.cacheRegionSpan = TrackDom.CacheRangeSpanProp
 
       this.windowWidth = properties.width -
-        (properties.textMargin ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
+        (properties.textMargin
+          ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
       this.totalWidth = properties.width
 
       this.pin = (
@@ -224,6 +233,16 @@ var GIVe = (function (give) {
       this._mainSvg.viewWindow = newViewWindow
     }
 
+    get linkedIndices () {
+      if (this.parent.windowSpan > 1 && this.windowIndex !== null) {
+        return Array.from(
+          new Array(this.parent.windowSpan - 1),
+          (val, index) => (this.windowIndex + index + 1)
+        )
+      }
+      return null
+    }
+
     getTrackSetting (key) {
       return this.parent.getSetting(key)
     }
@@ -240,7 +259,8 @@ var GIVe = (function (give) {
      * @returns {DOMelement}  SVG DOM element
      */
     get trackSvg () {
-      // this will be called after the trackDOM is initialized (should be later than "attached")
+      // this will be called after the trackDOM is initialized (should be
+      // later than "attached")
 
       if (!this._trackSvg) {
         this._trackSvg = document.createElementNS(this.svgNS, 'svg')
@@ -583,7 +603,9 @@ var GIVe = (function (give) {
     }
 
     getCurrentViewWindowExt (extension) {
-      return [this.viewWindow.getExtension(extension, null, true, this.parent.ref)]
+      return [
+        this.viewWindow.getExtension(extension, null, true, this.parent.ref)
+      ]
     }
 
     // ****** common methods used by all tracks ******
@@ -614,7 +636,8 @@ var GIVe = (function (give) {
         return 0
       }
       try {
-        var result = (coordinate.coor - windowToDraw.start + 0.5) * this.windowWidth /
+        var result = 
+          (coordinate.coor - windowToDraw.start + 0.5) * this.windowWidth /
           parseFloat(windowToDraw.getLength())
         if (moveOutsideToBorder) {
           if (result < 0) {
@@ -632,7 +655,8 @@ var GIVe = (function (give) {
     revTransXCoordinate (x, svgToDraw) {
       // reversely translate X value from JavaScript to chromosome coordinate
       svgToDraw = svgToDraw || this._mainSvg
-      var windowToDraw = svgToDraw.viewWindow || svgToDraw.parentNode.viewWindow
+      var windowToDraw =
+        svgToDraw.viewWindow || svgToDraw.parentNode.viewWindow
       return give.ChromRegion.clipCoordinate({chr: windowToDraw.chr,
         coor: parseInt(x / this.windowWidth * windowToDraw.getLength() +
           windowToDraw.start + 0.5)}, this.parent.ref)
@@ -651,8 +675,6 @@ var GIVe = (function (give) {
       svgToDraw = svgToDraw.holder || svgToDraw
       svgToDraw.removeChild(elem)
     }
-
-    // Create another group on top of the holder group, used to capture gesture events
 
     clear () {
       if (this._textSvg) {
@@ -712,7 +734,8 @@ var GIVe = (function (give) {
     }
 
     drawLine (x1, y1, x2, y2, colorRGB, svgToDraw) {
-      // notice that this function draws line according to svg coordinates, not genomic coordinates
+      // notice that this function draws line according to svg coordinates,
+      // not genomic coordinates
       // color is a 24-bit number
       var newLine = document.createElementNS(this.svgNS, 'line')
       newLine.setAttributeNS(null, 'x1', x1)
@@ -784,8 +807,14 @@ var GIVe = (function (give) {
 
     setElementParams (elem, params) {
       for (var key in params) {
-        if (params.hasOwnProperty(key) && params[key] !== undefined && params[key] !== null) {
-          if ((key === 'fill' || key === 'stroke') && (typeof params[key] === 'number')) {
+        if (
+          params.hasOwnProperty(key) &&
+          params[key] !== undefined && params[key] !== null
+        ) {
+          if (
+            (key === 'fill' || key === 'stroke') &&
+            (typeof params[key] === 'number')
+          ) {
             // need to convert integer color to string
             params[key] = this.rgbToHex(params[key])
           }
@@ -818,13 +847,16 @@ var GIVe = (function (give) {
       if (windowToDraw.overlaps(region) > 0) {
         var x0 = this.transformXCoordinate(region.getStartCoor(), true)
         var x1 = this.transformXCoordinate(region.getEndCoor(), true)
-        var newRegion = this.createRawRectangle(x0, y, x1, y + height,
-          {fill: colorRGB,
-            stroke: (typeof strokeColorRGB === 'number') ? strokeColorRGB : 'none',
-            id: region.id}, svgToDraw)
+        var newRegion = this.createRawRectangle(x0, y, x1, y + height, {
+          fill: colorRGB,
+          stroke: (typeof strokeColorRGB === 'number') 
+            ? strokeColorRGB : 'none',
+          id: region.id
+        }, svgToDraw)
 
         // add strand info
-        this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(), 0xFFFFFF, svgToDraw)
+        this.drawStrandArrows(x0, y, x1, y + height, region.getStrand(),
+          0xFFFFFF, svgToDraw)
       }
       return newRegion
     }
@@ -834,43 +866,61 @@ var GIVe = (function (give) {
         // first calculate number of arrows
         var arrowWidth = (y1 - y0) * 0.5 * this.ARROW_HEIGHT_PROP
         if (arrowWidth < this.ARROW_MIN_HEIGHT * 0.5) {
-          arrowWidth = Math.min(this.ARROW_MIN_HEIGHT, (y1 - y0) * 0.5 * this.ARROW_MAX_HEIGHT_PROP)
+          arrowWidth = Math.min(this.ARROW_MIN_HEIGHT,
+            (y1 - y0) * 0.5 * this.ARROW_MAX_HEIGHT_PROP)
         }
         if (x1 - x0 >= arrowWidth * this.ARROW_RECT_MIN_WIDTH) {
           // needs some width to draw arrow
           var arrowCenters = []
-          if (x1 - x0 > arrowWidth * (this.ARROW_FLANK_WIDTH * 2 + this.ARROW_GAP_WIDTH + 2)) {
+          if (x1 - x0 >
+            arrowWidth * (
+              this.ARROW_FLANK_WIDTH * 2 + this.ARROW_GAP_WIDTH + 2
+            )
+          ) {
             // multiple arrows
-            var numArrows = Math.floor(((x1 - x0) / arrowWidth - this.ARROW_FLANK_WIDTH * 2 - 1) /
-              (this.ARROW_GAP_WIDTH + 1)) + 1
+            var numArrows = Math.floor(
+              ((x1 - x0) / arrowWidth - this.ARROW_FLANK_WIDTH * 2 - 1) /
+              (this.ARROW_GAP_WIDTH + 1)
+            ) + 1
             // calculate the center for the first arrow
-            var arrowCenter = (x0 + x1) * 0.5 - ((this.ARROW_GAP_WIDTH + 1) * arrowWidth * (numArrows - 1) * 0.5)
+            var arrowCenter = (
+              x0 + x1 -
+              (this.ARROW_GAP_WIDTH + 1) * arrowWidth * (numArrows - 1)
+            ) * 0.5
+              
             for (var i = 0; i < numArrows; i++) {
               arrowCenters.push(arrowCenter)
-              arrowCenter = arrowCenter + (1 + this.ARROW_GAP_WIDTH) * arrowWidth
+              arrowCenter += (1 + this.ARROW_GAP_WIDTH) * arrowWidth
             }
           } else {
             arrowCenters.push(0.5 * (x1 + x0))
           }
 
-          arrowCenters.forEach(function (xCtr) {
-            this.drawSingleStrandArrow(xCtr, (y1 + y0) * 0.5, arrowWidth, strand, colorRGB, svgToDraw)
-          }, this)
+          arrowCenters.forEach(
+            xCtr => this.drawSingleStrandArrow(xCtr, (y1 + y0) * 0.5,
+              arrowWidth, strand, colorRGB, svgToDraw)
+          )
         }
       }
     }
 
     drawSingleStrandArrow (xCtr, yCtr, width, strand, colorRGB, svgToDraw) {
       var halfWidthX = ((strand === '+') ? width * 0.5 : -width * 0.5)
-      this.drawLine(xCtr - halfWidthX, yCtr - width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw)
-      this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr, colorRGB, svgToDraw)
+      this.drawLine(xCtr - halfWidthX, yCtr - width, xCtr + halfWidthX, yCtr,
+        colorRGB, svgToDraw)
+      this.drawLine(xCtr - halfWidthX, yCtr + width, xCtr + halfWidthX, yCtr,
+        colorRGB, svgToDraw)
     }
 
-    createWordWrappedText (text, textAnchor, params, svgToDraw, maxWidth, maxHeight) {
-      // notice that all whitespaces in text will be subsituted by ' ' and consecutive spaces will be collapsed
-      // extendDirection ('up' | 'both' | 'down') determine how extra text will be extended
-      // when avoidCollision is true, no text will be drawn
-      //    if any of the text component is overlapping with existing text elements
+    createWordWrappedText (
+      text, textAnchor, params, svgToDraw, maxWidth, maxHeight
+    ) {
+      // notice that all whitespaces in text will be subsituted by ' ' and
+      //   consecutive spaces will be collapsed
+      // extendDirection ('up' | 'both' | 'down') determine how extra text
+      //   will be extended
+      // when avoidCollision is true, no text will be drawn if any of the
+      //   text component is overlapping with existing text elements
       if (!text) {
         return null
       }
@@ -884,9 +934,10 @@ var GIVe = (function (give) {
       textArray.every(function (currWord, index) {
         var currWidth, i
         do {
-          currWidth = this.testTextWidth((results[results.length - 1].length > 0
-            ? results[results.length - 1] + ' '
-            : '') + currWord, textAnchor, params, svgToDraw)
+          currWidth = this.testTextWidth(
+            (results[results.length - 1].length > 0
+              ? results[results.length - 1] + ' ' : '') + currWord,
+            textAnchor, params, svgToDraw)
 
           if (currWidth > maxWidth) {
             // this line is full
@@ -904,26 +955,35 @@ var GIVe = (function (give) {
             }
 
             // then add another line
-            if (currHeight + this.textSize * (this.lineGapRatio + this.fullHeightRatio) > maxHeight) {
+            if (
+              currHeight + this.textSize * (
+                this.lineGapRatio + this.fullHeightRatio
+              ) > maxHeight
+            ) {
               // too many lines, use '...', and end processing
               do {
-                results[results.length - 1] = results[results.length - 1].slice(0, -1)
-                currWidth = this.testTextWidth((results[results.length - 1].length > 0
-                  ? results[results.length - 1] + ' ...'
-                  : '...'), textAnchor, params, svgToDraw)
-              } while (currWidth > maxWidth && results[results.length - 1].length > 0)
-              results[results.length - 1] = results[results.length - 1].length > 0
-                ? results[results.length - 1] + ' ...'
-                : '...'
+                results[results.length - 1] =
+                  results[results.length - 1].slice(0, -1)
+                currWidth = this.testTextWidth(
+                  (results[results.length - 1].length > 0
+                    ? results[results.length - 1] + ' ...' : '...'),
+                  textAnchor, params, svgToDraw)
+              } while (currWidth > maxWidth &&
+                results[results.length - 1].length > 0)
+              results[results.length - 1] =
+                results[results.length - 1].length > 0
+                  ? results[results.length - 1] + ' ...' : '...'
               resultWidths[resultWidths.length - 1] = currWidth
               return false
             }
             results.push('')
             resultWidths.push(0)
-            currHeight += this.textSize * (this.lineGapRatio + this.fullHeightRatio)
+            currHeight +=
+              this.textSize * (this.lineGapRatio + this.fullHeightRatio)
           } else {
-            results[results.length - 1] = (results[results.length - 1].length > 0
-              ? results[results.length - 1] + ' ' : '') + currWord
+            results[results.length - 1] =
+              (results[results.length - 1].length > 0
+                ? results[results.length - 1] + ' ' : '') + currWord
             resultWidths[resultWidths.length - 1] = currWidth
             return true
           }
@@ -933,7 +993,10 @@ var GIVe = (function (give) {
       return results
     }
 
-    drawWordWrappedText (x, y, textArr, textAnchor, extendDirection, params, svgToDraw, avoidCollision) {
+    drawWordWrappedText (
+      x, y, textArr, textAnchor, extendDirection, params,
+      svgToDraw, avoidCollision
+    ) {
       // calculate the top line y based on number of lines and everything
       var vertParam = 0.5 // this is for default value ('middle')
       switch (extendDirection) {
@@ -982,7 +1045,8 @@ var GIVe = (function (give) {
 
     createShortLabelArr (label, maxX) {
       maxX = maxX || this.textMargin - this.textRightPadding
-      return this.createWordWrappedText(label || this.getTrackSetting('shortLabel'),
+      return this.createWordWrappedText(
+        label || this.getTrackSetting('shortLabel'),
         'end', null, this._textSvg, maxX, this.trackHeight)
     }
 
@@ -995,7 +1059,8 @@ var GIVe = (function (give) {
     // ** Track event handling and functions **
 
     drawDataWrapper (callerIdRegions, ...args) {
-      // fire track-ready event to its container (to calculate size and do other stuff)
+      // fire track-ready event to its container
+      // (to calculate size and do other stuff)
       if (callerIdRegions && callerIdRegions.hasOwnProperty(this.id)) {
         let regions = callerIdRegions[this.id]
         if (!Array.isArray(regions)) {
@@ -1199,14 +1264,21 @@ var GIVe = (function (give) {
 
     tokensToDict (line) {
       // this function is used to 'dictionarize' the track settings line
-      // it will convert lines such as 'track type=wiggle_0 name="fixedStep" description="fixedStep format"'
-      // into JavaScript Objects such as
-      // { 'track': null, 'type': 'wiggle_0', 'name': 'fixedStep', 'description': 'fixedStep format' }
+      // it will convert lines such as 'track type=wiggle_0 name="fixedStep"
+      // description="fixedStep format"' into JavaScript Objects such as
+      // {
+      //   'track': null,
+      //   'type': 'wiggle_0',
+      //   'name': 'fixedStep',
+      //   'description': 'fixedStep format'
+      // }
       var result = {}
       var tokens = line.split(/\s+/g)
       tokens.every(function (token, index) {
-        // notice that there should be no '=' in keys, but '=' should be fine in values
-        // also '#' will not be treated as comment if appearing within value and quoted
+        // notice that there should be no '=' in keys, but '=' should be fine
+        //   in values
+        // also '#' will not be treated as comment if appearing within value
+        //   and quoted
         var components = token.trim().split('=')
         var key = components.shift()
         var value = components.join('=')
@@ -1220,8 +1292,11 @@ var GIVe = (function (give) {
           // whatever follows will be comment
           return false
         }
-        if ((value.charAt(0) === "'" && value.charAt(value.length - 1) === "'") ||
-          (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"')) {
+        if (
+          (value.charAt(0) === "'" &&
+            value.charAt(value.length - 1) === "'") ||
+          (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"')
+        ) {
           // remove outside quotes, also ignore '#'
           value = value.substr(1, value.length - 2)
         } else {
@@ -1266,8 +1341,9 @@ var GIVe = (function (give) {
                 detail.dx * this.dragData.ratio, true,
                 this.parent.ref).regionToString(false)
             }, null, e.target)
-          // this.setViewWindowString(this.dragData.oldWindow.getShift(
-          //  detail.dx * this.dragData.ratio, true, this.parent.ref).regionToString(false));
+            // this.setViewWindowString(this.dragData.oldWindow.getShift(
+            //   detail.dx * this.dragData.ratio, true, this.parent.ref)
+            //   .regionToString(false));
           }
           break
         case 'end':
@@ -1293,6 +1369,8 @@ var GIVe = (function (give) {
     }
   }
 
+  TrackDom._trackCounter = 0
+
   TrackDom.TEXT_SIZE = 12
   TrackDom.FULL_HEIGHT_RATIO = 1
   TrackDom.HALF_HEIGHT_RATIO = 0.6
@@ -1308,7 +1386,8 @@ var GIVe = (function (give) {
   TrackDom.PIN = 'scroll'
 
   TrackDom.DEFAULT_VISIBILITY = give.TrackObject.StatusEnum.VIS_FULL
-  // this is the type of visibility values that are allowed in a particular track
+  // this is the type of visibility values that are allowed in a particular
+  //   track
   TrackDom.allowedVis = [
     give.TrackObject.StatusEnum.VIS_NONE,
     give.TrackObject.StatusEnum.VIS_DENSE,
