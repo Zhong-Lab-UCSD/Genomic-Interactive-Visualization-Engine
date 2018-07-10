@@ -205,6 +205,8 @@ var GIVe = (function (give) {
        */
       this._trackDomPromises = []
       this._addedTrackMap = new Map()
+      this._hiddenTrackDomMap = new Map()
+      this._linkedTrackDomMap = new Map()
 
       this._pendingVWindow = null
       this._viewWindow = null
@@ -470,10 +472,7 @@ var GIVe = (function (give) {
           // Insert the new DOM into its correct location
           this._trackDoms.splice(domPos, 0, trackDom)
 
-          this._addedTrackMap.set(trackDom.parent.id, {
-            'trackDom': trackDom,
-            'visible': true
-          })
+          this._addedTrackMap.set(trackDom.parent.id, trackDom)
           this._svgSizes[slotId]++
           return slotId
         }
@@ -483,25 +482,20 @@ var GIVe = (function (give) {
 
     _addVisibleTrack (track, props, honorEffPriority) {
       if (!this._addedTrackMap.has(track.id)) {
-        try {
-          let newTrackDom = track.createDomObj(this._createTrackProp(props))
-          this._addTrackDomSvg(newTrackDom, honorEffPriority)
-          return newTrackDom
-        } catch (err) {
-          give._verbConsole.warn(err)
-          give.fireSignal('warning', { msg: err.message }, null, this)
-          return null
+        let newTrackDom = track.createDomObj(this._createTrackProp(props))
+        this._addTrackDomSvg(newTrackDom, honorEffPriority)
+        if (newTrackDom.linkedIndices) {
+          this.
         }
+        return newTrackDom.linkedIndices ? newTrackDom : null
       }
+      return null
     }
 
     _addHiddenTrack (trackDom) {
-      if (trackDom) {
+      if (trackDom && !this._hiddenTrackDomMap.has(trackDom.id)) {
         this._hiddenTrackDoms.push(trackDom)
-        this._addedTrackMap.set(trackDom.parent.id, {
-          'trackDom': trackDom,
-          'visible': false
-        })
+        this._hiddenTrackDomMap.set(trackDom.id, trackDom)
       }
     }
 
@@ -512,25 +506,17 @@ var GIVe = (function (give) {
       let visibleTracksChanged = false
       tracks.forEach(track => {
         if (this._addedTrackMap.has(track.id)) {
-          let trackDom = this._addedTrackMap.get(track.id).trackDom
-          if (this._addedTrackMap.get(track.id).visible) {
-            // This track is visible, remove the <svg> element from its slot
-            this.shadowRoot.querySelector(
-              '#' + this._slotIdFromPinValue(track.effPriority.pinValue)
-            ).removeChild(trackDom.trackSvg)
-            // Then remove the DOM itself
-            this._trackDoms = this._trackDoms.filter(dom => {
-              return dom !== trackDom
-            })
-            // set flag to update effPriority values
-            visibleTracksChanged = true
-          } else {
-            // This track is a linked track (some interaction track),
-            // Remove DOM only
-            this._hiddenTrackDoms = this._hiddenTrackDoms.filter(dom => {
-              return dom !== trackDom
-            })
-          }
+          let trackDom = this._addedTrackMap.get(track.id)
+          // This track is visible, remove the <svg> element from its slot
+          this.shadowRoot.querySelector(
+            '#' + this._slotIdFromPinValue(track.effPriority.pinValue)
+          ).removeChild(trackDom.trackSvg)
+          // Then remove the DOM itself
+          this._trackDoms = this._trackDoms.filter(dom => {
+            return dom !== trackDom
+          })
+          // set flag to update effPriority values
+          visibleTracksChanged = true
           this._addedTrackMap.delete(track.id)
         } else {
           give._verbConsole.warn('Track ID "' + track.id + '" does not exist!')
@@ -551,6 +537,10 @@ var GIVe = (function (give) {
           this._svgSizes[slotId]++
         })
       }
+    }
+
+    _removeHiddenTrackDom (trackDomId) {
+
     }
 
     /**
@@ -880,18 +870,34 @@ var GIVe = (function (give) {
       this._refObj.tracks.forEach(
         track => track.setSetting('visibility', false)
       )
-      this.defaultTrackIdList.forEach(
+      let exceptions = []
+      let result = this.defaultTrackIdList.map(
         id => {
-          if (this._refObj.tracks.hasTrack(id)) {
-            this._refObj.tracks.get(id).setSetting('visibility', true)
-            this._addVisibleTrack(this._refObj.tracks.get(id))
-          } else {
-            give._verbConsole.info(
-              'Track ID `' + id + '` does not exist in ref ' +
-              this._refObj.id)
+          try {
+            if (this._refObj.tracks.hasTrack(id)) {
+              this._refObj.tracks.get(id).setSetting('visibility', true)
+              return this._addVisibleTrack(this._refObj.tracks.get(id))
+            } else {
+              throw new give.GiveError(
+                'Track ID `' + id + '` does not exist in ref ' +
+                this._refObj.id)
+            }
+          } catch (err) {
+            err.message = '[Adding Track `' + id + '`] ' + err.message
+            exceptions.push(err)
+            return null
           }
         }
-      )
+      ).filter(item => !!item)
+      if (exceptions.length > 0) {
+        let message = exceptions.reduce(
+          (prev, currErr) => (prev + '\n' + currErr.message),
+          'Exception occured when adding tracks:'
+        )
+        give._verbConsole.warn(message)
+        give.fireSignal('warning', { msg: message }, null, this)
+      }
+      return result
     }
 
     /**
@@ -901,6 +907,7 @@ var GIVe = (function (give) {
      *    will be shown here.
      */
     _addTracksFromVisibilitySettings () {
+      let exceptions = []
       let showTrack =
         track => (track.isVisible ? this._addVisibleTrack(track) : null)
       if (this.groupIdList && this.groupIdList.length > 0) {
