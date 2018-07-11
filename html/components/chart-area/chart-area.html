@@ -14,7 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
@@ -101,7 +102,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       <div id="windowHolding" hidden$="[[!_initialized]]">
         <template id="windowsHolder" is="dom-repeat"
           items="[[_chartWindows]]" index-as="index">
-          <chart-window coordinate="{{item.coordinate}}" index="[[index]]"
+          <chart-window id="[[_calcCWId(index)]]"
+            coordinate="{{item.coordinate}}" index="[[index]]"
             total-windows="[[numOfSubs]]"
             default-track-id-list="[[item.defaultTrackIdList]]"
             group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
@@ -309,6 +311,10 @@ var GIVe = (function (give) {
         arr = arr.concat(arr)
       }
       return arr.slice(0, this.numOfSubs)
+    }
+
+    _calcCWId (index) {
+      return '_chart-window-' + index
     }
 
     _checkVWindowsInit () {
@@ -670,15 +676,20 @@ var GIVe = (function (give) {
       let coordinates = this._getValueArray(this.coordinate)
       let exceptionList = []
       if (newValue > oldValue) {
+        // refresh hidden dom list
+        let hiddenDoms = []
+        this._chartWindows.forEach((chartWindowItem, index) => {
+          this.shadowRoot.querySelector('#' + this._calcCWId(index)).updateDOM(null, true, hiddenDoms)
+        })
         for (let i = this._chartWindows.length; i < newValue; i++) {
           try {
-            let newWindow = {
+            let newWindowItem = {
               ref: refs[i],
               coordinate: coordinates[i],
               defaultTrackIdList: this.defaultTrackIdList,
               groupIdList: this.groupIdList
             }
-            this.push('_chartWindows', newWindow)
+            this.push('_chartWindows', newWindowItem)
           } catch (err) {
             exceptionList.push({ index: i, error: err })
           }
