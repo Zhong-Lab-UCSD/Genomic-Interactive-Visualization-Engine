@@ -211,6 +211,7 @@ var GIVe = (function (give) {
       this._debouncePromise = null
 
       this._pendingNewVWArr = null
+      this._requestVWArr = null
 
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
@@ -234,7 +235,7 @@ var GIVe = (function (give) {
     }
 
     get linkedIndices () {
-      if (this.parent.windowSpan > 1 && this.windowIndex !== null) {
+      if (this.parent.windowSpan > 1) {
         return Array.from(
           new Array(this.parent.windowSpan - 1),
           (val, index) => (this.windowIndex + index + 1)
@@ -249,6 +250,26 @@ var GIVe = (function (give) {
 
     setTrackSetting (key, value) {
       return this.parent.setSetting(key, value)
+    }
+
+    /**
+     * hasLinksInTargetView - Return whether this track DOM has a linked
+     *    component in the given view window. This is used to establish links
+     *    for multi-window tracks.
+     * Notice that for cross-species tracks, the ref criteria should be
+     *    modified accordingly in the implementation.
+     *
+     * @param {object} context - The context of the viewWindow to be queried.
+     *    It should contain two properties.
+     * @param {string} context.ref - The reference of the viewWindow
+     * @param {number} context.index - The index of the viewWindow
+     * @returns {boolean} Whether this track DOM has linked component in the
+     *    viewWindow queried
+     * @memberof TrackDom
+     */
+    hasLinksInTargetView (context) {
+      return context.ref === this.parent.ref &&
+        context.index <= this.windowIndex + this.parent.windowSpan - 1
     }
 
     /**
@@ -424,7 +445,8 @@ var GIVe = (function (give) {
       if (!newViewWindow) {
         // no new window, need to calculate
         if (!this.viewWindow) {
-          return
+          return Promise.reject(new give.GiveError('No original view ' +
+            'window, cannot calculate the new view window!'))
         }
         newViewWindow = (newViewWindow === false)
           ? this.viewWindow
@@ -486,9 +508,10 @@ var GIVe = (function (give) {
 
       if (forceUpdate || newWidth !== this.totalWidth ||
         newNarrowMode !== this._narrowMode ||
-        (newWindow instanceof give.ChromRegion &&
-          give.ChromRegion.compareChrRegion(newWindow, this.viewWindow)
-        )
+        (newWindow instanceof give.ChromRegion && (
+          !(this.viewWindow instanceof give.ChromRegion) ||
+          give.ChromRegion.compare(newWindow, this.viewWindow)
+        ))
       ) {
         // drawing width changed
         this._narrowMode = newNarrowMode
@@ -636,7 +659,7 @@ var GIVe = (function (give) {
         return 0
       }
       try {
-        var result = 
+        var result =
           (coordinate.coor - windowToDraw.start + 0.5) * this.windowWidth /
           parseFloat(windowToDraw.getLength())
         if (moveOutsideToBorder) {
@@ -849,7 +872,7 @@ var GIVe = (function (give) {
         var x1 = this.transformXCoordinate(region.getEndCoor(), true)
         var newRegion = this.createRawRectangle(x0, y, x1, y + height, {
           fill: colorRGB,
-          stroke: (typeof strokeColorRGB === 'number') 
+          stroke: (typeof strokeColorRGB === 'number')
             ? strokeColorRGB : 'none',
           id: region.id
         }, svgToDraw)
@@ -887,7 +910,7 @@ var GIVe = (function (give) {
               x0 + x1 -
               (this.ARROW_GAP_WIDTH + 1) * arrowWidth * (numArrows - 1)
             ) * 0.5
-              
+
             for (var i = 0; i < numArrows; i++) {
               arrowCenters.push(arrowCenter)
               arrowCenter += (1 + this.ARROW_GAP_WIDTH) * arrowWidth
@@ -1056,6 +1079,27 @@ var GIVe = (function (give) {
         'end', 'both', null, this._textSvg, true)
     }
 
+    /**
+     * _checkReqVWindows - check whether the view windows are the same ones
+     *    previously requested. This is used to determine if the fulfilled
+     *    promise is not a staled one.
+     *
+     * @param {Array<ChromRegionLiteral>} vwindows - returned view windows
+     * @returns {boolean} Whether the view windows are the same.
+     * @memberof TrackDom
+     */
+    _checkReqVWindows (vwindows) {
+      try {
+        return vwindows.length === this._requestVWArr.length &&
+          vwindows.every((vwindow, index) =>
+            !give.ChromRegion.compare(vwindow, this._requestVWArr[index])
+          )
+      } catch (err) {
+        give._verbConsole.warn(err.message)
+        return false
+      }
+    }
+
     // ** Track event handling and functions **
 
     drawDataWrapper (callerIdRegions, ...args) {
@@ -1066,12 +1110,14 @@ var GIVe = (function (give) {
         if (!Array.isArray(regions)) {
           regions = [regions]
         }
-        if (give.ChromRegion.compareChrRegion(regions[0], this.viewWindow)) {
+        if (!this._checkReqVWindows(regions)) {
           // not the same region as submitted
           // which means the resolution is for the previous promise
           // throw a `give.PromiseCanceller` to cancel promise handling
           throw new give.PromiseCanceller(true)
         }
+      } else {
+        throw new give.PromiseCanceller(true)
       }
       // commit pending view windows
       this.viewWindow = this._pendingNewVWArr || this.viewWindow
@@ -1122,12 +1168,6 @@ var GIVe = (function (give) {
         this._cacheDebouncer = null
       }
 
-      this._pendingNewVWArr = Array.isArray(newVWindow)
-        ? newVWindow.slice() : [newVWindow]
-      this._pendingNewVWArr.forEach(range => {
-        range.Resolution = this.getResolution(range) || 1
-      })
-
       if (!this._debouncePromise) {
         if (this._drawDebounceInt) {
           this._debouncePromise = new Promise((resolve, reject) => {
@@ -1173,10 +1213,12 @@ var GIVe = (function (give) {
       //      `this.loadCache`, it will resolve to `this.viewWindow`
       //    * whenever _checkDataAndUpdate (debounced) is done, run loadCache
       this._debouncePromise = null
-      let newDataPromise = this.parent.fetchData(
-        this._pendingNewVWArr.map(range => range.getExtension(
-          this.constructor.DefaultRangeSpanProp, null, true, this.parent.ref)
-        ), this.id)
+      this._requestVWArr = this._pendingNewVWArr.map(
+        range => range.getExtension(
+          this.constructor.DefaultRangeSpanProp, null, true, this.parent.ref
+        )
+      )
+      let newDataPromise = this.parent.fetchData(this._requestVWArr, this.id)
       if (this._dataPromise !== newDataPromise) {
         this._dataPromise = newDataPromise
         return newDataPromise.then(
@@ -1194,9 +1236,14 @@ var GIVe = (function (give) {
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
       try {
-        this.readyPromise = this._checkDataAndUpdateDebounced(
-          this._verifyViewWindow(viewWindow), ...args
-        ).catch(
+        viewWindow = this._verifyViewWindow(viewWindow)
+        this._pendingNewVWArr = Array.isArray(viewWindow)
+          ? viewWindow.slice() : [viewWindow]
+        this._pendingNewVWArr.forEach(range => {
+          range.Resolution = this.getResolution(range) || 1
+        })
+
+        this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(
           e => {
             if (e instanceof give.PromiseCanceller && e.isCancelled) {
               throw e
@@ -1317,7 +1364,8 @@ var GIVe = (function (give) {
     // ** Event handlers **
 
     dragHandler (e, detail) {
-    // this is used to handle all 'track' events
+      // this is used to handle all 'track' events
+      window.getSelection().removeAllRanges()
       switch (detail.state) {
         case 'start':
         // register initial window
@@ -1326,7 +1374,6 @@ var GIVe = (function (give) {
             this.dragData = {}
             this.dragData.oldWindow = this.viewWindow.clone()
             this.dragData.ratio = -1 / parseFloat(this.windowWidth)
-            window.getSelection().removeAllRanges()
           } catch (err) {
             console.log(err)
           }
@@ -1359,7 +1406,6 @@ var GIVe = (function (give) {
             }, null, e.target)
           }
           delete (this.dragData)
-          window.getSelection().removeAllRanges()
           break
       }
     }

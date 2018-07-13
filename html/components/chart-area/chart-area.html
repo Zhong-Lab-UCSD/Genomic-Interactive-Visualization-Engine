@@ -19,7 +19,6 @@ limitations under the License.
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -122,13 +121,22 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 var GIVe = (function (give) {
   'use strict'
 
+  /**
+   * The actual chart area element, with potential multiple windows for 
+   *    side-by-side view
+   */
   class ChartArea extends Polymer.mixinBehaviors([
     Polymer.IronResizableBehavior], Polymer.Element
   ) {
     constuctor () {
-      super(...arguments)
+      super()
       this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
       this._updatingWindows = false
+      this._idEnforcedSet = new Set()
+    }
+
+    static get is () {
+      return 'chart-area'
     }
 
     static get properties () {
@@ -675,12 +683,9 @@ var GIVe = (function (give) {
       let refs = this._getValueArray(this.ref)
       let coordinates = this._getValueArray(this.coordinate)
       let exceptionList = []
+      // 1. First update the number of chart-windows
       if (newValue > oldValue) {
         // refresh hidden dom list
-        let hiddenDoms = []
-        this._chartWindows.forEach((chartWindowItem, index) => {
-          this.shadowRoot.querySelector('#' + this._calcCWId(index)).updateDOM(null, true, hiddenDoms)
-        })
         for (let i = this._chartWindows.length; i < newValue; i++) {
           try {
             let newWindowItem = {
@@ -700,6 +705,12 @@ var GIVe = (function (give) {
           this.pop('_chartWindows')
         }
       }
+      // 2. Then update the track DOMs within the chart-windows
+      // (because the surrounding environment has changed, some of the tracks,
+      // especially multi-window ones, may have its requirement conditions
+      // changed)
+      // 3. Then link the multi-window track DOMs through the chart-windows
+      // 4. Update all the windows
       if (exceptionList.length > 0) {
         // some exception has happended during the conversion
         // throw an exception telling calling procedures

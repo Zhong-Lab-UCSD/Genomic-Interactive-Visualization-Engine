@@ -18,110 +18,12 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../track-object/tracks-header.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../genemo-styles.html">
 <link rel="import" href="./genemo-track-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<!--
-### Overview
-
-`<chart-window>` provides a Web Component element to interactively display
-genomic data.
-
-```html
-<chart-window group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
-```
-
-Although `<chart-window>` does not contain the navigational control elements as
-in `<chart-controller>`, users may still navigate by dragging and
-mouse-wheeling on the coordinates to move around.
-
-Please refer to
-[`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details
-on references used.
-
-### Managing Track Priorities
-
-`<chart-window>` will manage track order once a view has been generated. Its
-behavior regarding to track order will be discussed within this section.
-
-#### Before generating a view
-
-`<chart-window>` shall receive an ordered list of all visible tracks from its
-embedded `refObject`, the visibility of tracks will be supplied by its
-`defaultTrackIdList` property, or (if said property is not set) by the
-default `visibility` property of individual tracks.
-
-When the visibility of tracks have been determined, `refObject` will provide
-a sorted list (by relative `priorities` property of the tracks) of visible
-tracks to start with.
-
-#### Populating the view with tracks
-
-Once `<chart-window>` receives the ordered list of visible tracks, it will:
-*   Assign every track's `trackDom`'s `<svg>` element into its
-    corresponding slot (`top`, `scroll`, `bottom`, and `inbetween`) by
-    inserting it into the corresponding DOM node. Notice that if this window
-    is the last window in the view, the slots and track order will be
-    reversed to preserve a certain degree of symmetry.
-*   Keep record of the relative order for every `<svg>` element within its
-    own slot.
-    Every track object will have an __`effective priority`__ value consists of
-    its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
-    and its position within the slot.
-*   Assign the `y` property for every `<svg>` when drawing the DOM element
-    so that it appears in the correct order regardless of its order in the
-    DOM tree.
-
-#### Modifying the track list and its effect on track order
-
-##### Adding new tracks
-
-This action may only come from the parent element.
-
-When a new track is being added to the visible list, it will be allocated to
-its corresponding slot but __added to the very end of the list__. The
-`effective priority` value of the new track will be set if not done yet.
-
-##### Removing a track
-
-This action may come from the parent element or from the `<chart-window>`
-itself (via a "delete" button, to be implemented).
-
-When an existing track is being removed, it will be delisted from the slot,
-the `trackDom` object will be put into a recycled list (previous recycled list
-will be cleared) and all the `visibility` values and `effective priority`
-values will be updated accordingly.
-
-If this action comes from the `<chart-window>` itself, notify its parent about
-this change.
-
-##### Restoring a track previously removed
-
-This action may only come from the parent element.
-
-When a restoring command was received, all `trackDom`s in the recycled list
-will be restored to their corresponding location, their `track`'s `visibility`
-properties and `effective priority` values will be adjusted. After that, the
-recycled list will be cleared.
-
-##### Changing the location of a track
-
-This action may come from the parent element or from the `<chart-window>`
-itself (via drag-drop, to be implemented).
-
-The `effective priority` will be updated to the new locations if the action
-comes from `<chart-window>` itself (this happens when user tries to alter the
-order of the tracks).
-
-Then the actual `svg` `y` values will be updated to reflect the new location.
-
-If this action comes from the `<chart-window>` itself, notify its parent about
-this change.
-
--->
 <dom-module id="chart-window">
   <template>
     <style include="genemo-shared-styles">
@@ -190,13 +92,114 @@ this change.
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartWindow extends Polymer.mixinBehaviors([
-    give.RefEmbeddedBehavior], Polymer.Element
-  ) {
+  /**
+   * ### Overview
+   *
+   * `<chart-window>` provides a Web Component element to interactively display
+   * genomic data.
+   *
+   * ```html
+   * <chart-window group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
+   * ```
+   *
+   * Although `<chart-window>` does not contain the navigational control elements as
+   * in `<chart-controller>`, users may still navigate by dragging and
+   * mouse-wheeling on the coordinates to move around.
+   *
+   * Please refer to
+   * [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for details
+   * on references used.
+   *
+   * ### Managing Track Priorities
+   *
+   * `<chart-window>` will manage track order once a view has been generated. Its
+   * behavior regarding to track order will be discussed within this section.
+   *
+   * #### Before generating a view
+   *
+   * `<chart-window>` shall receive an ordered list of all visible tracks from its
+   * embedded `refObject`, the visibility of tracks will be supplied by its
+   * `defaultTrackIdList` property, or (if said property is not set) by the
+   * default `visibility` property of individual tracks.
+   *
+   * When the visibility of tracks have been determined, `refObject` will provide
+   * a sorted list (by relative `priorities` property of the tracks) of visible
+   * tracks to start with.
+   *
+   * #### Populating the view with tracks
+   *
+   * Once `<chart-window>` receives the ordered list of visible tracks, it will:
+   * *   Assign every track's `trackDom`'s `<svg>` element into its
+   *     corresponding slot (`top`, `scroll`, `bottom`, and `inbetween`) by
+   *     inserting it into the corresponding DOM node. Notice that if this window
+   *     is the last window in the view, the slots and track order will be
+   *     reversed to preserve a certain degree of symmetry.
+   * *   Keep record of the relative order for every `<svg>` element within its
+   *     own slot.
+   *     Every track object will have an __`effective priority`__ value consists of
+   *     its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
+   *     and its position within the slot.
+   * *   Assign the `y` property for every `<svg>` when drawing the DOM element
+   *     so that it appears in the correct order regardless of its order in the
+   *     DOM tree.
+   *
+   * #### Modifying the track list and its effect on track order
+   *
+   * ##### Adding new tracks
+   *
+   * This action may only come from the parent element.
+   *
+   * When a new track is being added to the visible list, it will be allocated to
+   * its corresponding slot but __added to the very end of the list__. The
+   * `effective priority` value of the new track will be set if not done yet.
+   *
+   * ##### Removing a track
+   *
+   * This action may come from the parent element or from the `<chart-window>`
+   * itself (via a "delete" button, to be implemented).
+   *
+   * When an existing track is being removed, it will be delisted from the slot,
+   * the `trackDom` object will be put into a recycled list (previous recycled list
+   * will be cleared) and all the `visibility` values and `effective priority`
+   * values will be updated accordingly.
+   *
+   * If this action comes from the `<chart-window>` itself, notify its parent about
+   * this change.
+   *
+   * ##### Restoring a track previously removed
+   *
+   * This action may only come from the parent element.
+   *
+   * When a restoring command was received, all `trackDom`s in the recycled list
+   * will be restored to their corresponding location, their `track`'s `visibility`
+   * properties and `effective priority` values will be adjusted. After that, the
+   * recycled list will be cleared.
+   *
+   * ##### Changing the location of a track
+   *
+   * This action may come from the parent element or from the `<chart-window>`
+   * itself (via drag-drop, to be implemented).
+   *
+   * The `effective priority` will be updated to the new locations if the action
+   * comes from `<chart-window>` itself (this happens when user tries to alter the
+   * order of the tracks).
+   *
+   * Then the actual `svg` `y` values will be updated to reflect the new location.
+   *
+   * If this action comes from the `<chart-window>` itself, notify its parent about
+   * this change.
+   *
+   * @customElement
+   * @polymer
+   * @appliesMixin give.RefEmbedMixin
+   */
+  class ChartWindow extends give.RefEmbedMixin(Polymer.Element) {
     constructor () {
-      super(...arguments)
+      super()
       this._trackDoms = []
       this._hiddenTrackDoms = []
+      this._addedTrackMap = new Map()
+      this._hiddenTrackDomMap = new Map()
 
       /**
        * _trackDomPromises - an array holding all updating promises of tracks
@@ -204,9 +207,6 @@ var GIVe = (function (give) {
        * @type {Array<Promise>}
        */
       this._trackDomPromises = []
-      this._addedTrackMap = new Map()
-      this._hiddenTrackDomMap = new Map()
-      this.linkedTrackDomMap = new Map()
 
       this._pendingVWindow = null
       this._viewWindow = null
@@ -270,7 +270,7 @@ var GIVe = (function (give) {
          * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
          * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
          * for `mm10` only
-         * @type {Array.<string>}
+         * @type {Array<string>}
          */
         groupIdList: {
           // this is the array of allowed group IDs in the list
@@ -341,11 +341,11 @@ var GIVe = (function (give) {
       }
     }
 
-    attached () {
-      if (!this._initialized) {
-        Promise.resolve().then(() => this._initDomAfterVWinRefReady())
-      }
-    }
+    // attached () {
+    //   if (!this._initialized) {
+    //     Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+    //   }
+    // }
 
     get reverseFlag () {
       return this.index > 0 && this.index === this.totalWindows - 1
@@ -355,15 +355,11 @@ var GIVe = (function (give) {
       return this._initialized
     }
 
-    _initDomAfterVWinRefReady (newWindow) {
-      if (this._refObj &&
-        (newWindow || this._viewWindow || this._pendingVWindow)
-      ) {
-        this._initialized = true
-        return this.resetDOM(newWindow)
+    get context () {
+      return {
+        ref: this.ref,
+        index: this.index
       }
-      this._updateCoordinates()
-      return false
     }
 
     /**
@@ -396,11 +392,6 @@ var GIVe = (function (give) {
         return this._slotIdFromPinValue(
           track.effPriority.pinValue
         )
-      } else if (track.windowSpan > 1) {
-        if (this.index + track.windowSpan > this.totalWindows) {
-          return null
-        }
-        return '_PinBetween'
       } else {
         return this._slotIdFromPinValue(track.getSetting('pin'))
       }
@@ -480,32 +471,24 @@ var GIVe = (function (give) {
       return null
     }
 
-    _addVisibleTrack (track, props, honorEffPriority) {
-      if (!this._addedTrackMap.has(track.id) ||
-        track.windowSpan <= 1 ||
-        this.index + track.windowSpan <= this.totalWindows
+    _addVisibleTrack (track, contexts, props, honorEffPriority) {
+      if (!this._addedTrackMap.has(track.id) &&
+        track.checkViewReq(contexts, this.index)
       ) {
         let newTrackDom = track.createDomObj(this._createTrackProp(props))
         this._addTrackDomSvg(newTrackDom, honorEffPriority)
-        if (newTrackDom.linkedIndices) {
-          this.linkedTrackDomMap.set(newTrackDom.id, newTrackDom)
-        }
-        return newTrackDom.linkedIndices ? newTrackDom : null
+        return newTrackDom
       }
       return null
     }
 
     _addHiddenTrackDom (trackDom) {
       if (trackDom && !this._hiddenTrackDomMap.has(trackDom.id) &&
-        trackDom.linkedIndices &&
-        trackDom.linkedIndices.indexOf(this.index) >= 0
+        trackDom.hasLinksInTargetView(this.context)
       ) {
         this._hiddenTrackDoms.push(trackDom)
         this._hiddenTrackDomMap.set(trackDom.id, trackDom)
-        if (trackDom.linkedIndices.indexOf(this.index + 1) >= 0) {
-          this.linkedTrackDomMap.set(trackDom.id, trackDom)
-          return trackDom
-        }
+        return trackDom
       }
       return null
     }
@@ -523,7 +506,6 @@ var GIVe = (function (give) {
             '#' + this._slotIdFromPinValue(track.effPriority.pinValue)
           ).removeChild(trackDom.trackSvg)
           // Then remove the DOM itself
-          this.linkedTrackDomMap.delete(trackDom.id)
           this._trackDoms = this._trackDoms.filter(dom => {
             return dom.id !== trackDom.id
           })
@@ -558,7 +540,6 @@ var GIVe = (function (give) {
             this._hiddenTrackDomMap.get(trackDomId)
           ), 1)
         this._hiddenTrackDomMap.delete(trackDomId)
-        this.linkedTrackDomMap.delete(trackDom.id)
       }
     }
 
@@ -809,7 +790,7 @@ var GIVe = (function (give) {
       try {
         // This may throw some exceptions
         // (when invalid view windows are supplied)
-        return new give.ChromRegion(coordinate, this._refObj)
+        return new give.ChromRegion(coordinate, this.refObj)
       } catch (err) {
         // Invalid view windows are supplied, fail gracefully
         err.data = err.data || {}
@@ -832,13 +813,13 @@ var GIVe = (function (give) {
      * @throws {number} if width needs to be changed (due to scroll bar), the
      *    new width will be thrown to let the calling function (in
      *    `chart-area`) be informed of incoming width change.
+     * @async
      */
     changeViewWindow (viewWindow) {
       if (!this._initialized) {
-        return this._initDomAfterVWinRefReady(viewWindow)
-      } else {
-        return this.updateTracks(viewWindow, null, this.index)
+        this.resetDOM(viewWindow)
       }
+      return this.updateTracks(viewWindow, null, this.index)
     }
 
     _coorChanged (newValue, oldValue) {
@@ -881,31 +862,31 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _addTracksFromDefaultList - Add tracks based on
+     * _addTrksFromDefList - Add tracks based on
      *    `this.defaultTrackIdList` instead of the default values in
      *    the database
      */
-    _addTracksFromDefaultList () {
-      this._refObj.tracks.forEach(
+    _addTrksFromDefList (contexts) {
+      this.refObj.tracks.forEach(
         track => track.setSetting('visibility', false)
       )
       let exceptions = []
-      let linkedDoms = this.defaultTrackIdList.map(id => {
+      this.defaultTrackIdList.forEach(id => {
         try {
-          if (this._refObj.tracks.hasTrack(id)) {
-            this._refObj.tracks.get(id).setSetting('visibility', true)
-            return this._addVisibleTrack(this._refObj.tracks.get(id))
+          let track = this.refObj.tracks.hasTrack(id)
+          if (track) {
+            track.setSetting('visibility', true)
+            return this._addVisibleTrack(track, contexts)
           } else {
-            throw new give.GiveError(
-              'Track ID `' + id + '` does not exist in ref ' +
-              this._refObj.id)
+            give._verbConsole.info('Track ID `' + id +
+              '` does not exist in ref ' + this.refObj.id)
           }
         } catch (err) {
           err.message = '[Adding Track `' + id + '`] ' + err.message
           exceptions.push(err)
           return null
         }
-      }).filter(Boolean)
+      })
       if (exceptions.length > 0) {
         let message = exceptions.reduce(
           (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
@@ -913,22 +894,22 @@ var GIVe = (function (give) {
         )
         give._verbConsole.warn(message)
         give.fireSignal('warning', { msg: message }, null, this)
+        throw new give.GiveError(message)
       }
-      return linkedDoms
     }
 
     /**
-     * _addTracksFromVisSettings - Add tracks based on the default
+     * _addTrksFromVis - Add tracks based on the default
      *    `visibility` values in the database (via `track.isVisible`).
      *    Note that `this.groupIdList` will determine the track groups that
      *    will be shown here.
      */
-    _addTracksFromVisSettings () {
+    _addTrksFromVis (contexts) {
       let exceptions = []
-      let linkedDoms
       let showTrack = track => {
         try {
-          return track.isVisible ? this._addVisibleTrack(track) : null
+          return track.isVisible
+            ? this._addVisibleTrack(track, contexts) : null
         } catch (err) {
           err.message = '[Adding Track `' + track.id + '`] ' + err.message
           exceptions.push(err)
@@ -936,16 +917,13 @@ var GIVe = (function (give) {
         }
       }
       if (this.groupIdList && this.groupIdList.length > 0) {
-        linkedDoms = this.groupIdList.reduce((prevLinkedDom, groupID) => {
-          if (this._refObj.groups.hasOwnProperty(groupID)) {
-            return prevLinkedDom.concat(
-              this._refObj.groups[groupID].map(showTrack).filter(Boolean)
-            )
+        this.groupIdList.forEach(groupID => {
+          if (this.refObj.groups.hasOwnProperty(groupID)) {
+            this.refObj.groups[groupID].forEach(showTrack)
           }
-          return prevLinkedDom
-        }, [])
+        })
       } else {
-        linkedDoms = this._refObj.tracks.map(showTrack).filter(Boolean)
+        this.refObj.tracks.forEach(showTrack)
       }
       if (exceptions.length > 0) {
         let message = exceptions.reduce(
@@ -954,106 +932,143 @@ var GIVe = (function (give) {
         )
         give._verbConsole.warn(message)
         give.fireSignal('warning', { msg: message }, null, this)
+        throw new give.GiveError(message)
       }
-      return linkedDoms
     }
 
     _setRefObj (refObj) {
-      this._refObj = refObj
+      super._setRefObj(refObj)
       this._initialized = false
-      give.fireSignal('ref-changed', {
-        ref: refObj.db,
-        index: this.index
-      }, null, this)
-      return this._initDomAfterVWinRefReady()
+      // return this.refTracksPromise.then(refObj => {
+      //   if (refObj.db !== this.ref) {
+      //     // Only respond to this call if ref has not been changed
+      //     throw new give.PromiseCanceller(true)
+      //   }
+      //   give.fireSignal('ref-changed', {
+      //     ref: refObj.db,
+      //     index: this.index
+      //   }, null, this)
+      //   this._initDomAfterVWinRefReady()
+      // })
     }
 
     _initDOMCoorTrack () {
-      if (this._refObj) {
+      if (this.refObj) {
         let coorTrack = give.TrackObject.createTrack(
-          'coor_' + this._refObj.db,
-          null, this._refObj, 'coordinate'
+          'coor_' + this.refObj.db,
+          null, this.refObj, 'coordinate'
         )
         this._coorDomSvg = this._addVisibleTrack(coorTrack).TrackSvg
       }
     }
 
     /**
-     * Reset the entire DOM display
+     * Reset the entire DOM display without updating the DOM
      */
-    resetDOM (newWindow) {
-      if (this._initialized) {
-        this._clearDOM()
-        this._readiness = false
-        this._initDOMCoorTrack()
-        return this.addAllTrackDoms(newWindow)
+    resetDOM (newWindow, contexts) {
+      contexts = contexts || []
+      if (!this._initialized) {
+        if (this.refObj &&
+          (newWindow || this._viewWindow || this._pendingVWindow)
+        ) {
+          this._initialized = true
+        } else {
+          this._updateCoordinates()
+          throw new give.GiveError('Reference or window not initialized.')
+        }
+      }
+      this._clearDOM()
+      this._readiness = false
+      this._initDOMCoorTrack()
+      return this._addAllTrackDoms(contexts)
+    }
+
+    _linkHiddenDoms (hiddenDoms, contexts) {
+      // add all hiddenDoms (if not already added)
+      // and if they need to be further linked, put into returned list
+      if (hiddenDoms && hiddenDoms.length) {
+        hiddenDoms.forEach(
+          hiddenDom => this._addHiddenTrackDom(hiddenDom)
+        )
+        return hiddenDoms.filter(hiddenDom =>
+          hiddenDom.hasLinksInTargetView(contexts[this.index + 1])
+        )
       } else {
-        this._readiness = true
-        return Promise.resolve(this._viewWindow)
+        return null
       }
     }
 
-    addAllTrackDoms (newWindow, noRefreshContent, hiddenDoms) {
-      return this._refObj.initTracks().then(refObj => {
-        let newLnkDoms
-        if (refObj.db !== this.ref) {
-          // Only respond to this call if ref has not been changed
-          throw new give.PromiseCanceller(true)
-        }
-        // add all hiddenDoms (if not already added)
-        // and if they need to be further linked, add to newLnkDoms
-        if (hiddenDoms && hiddenDoms.length) {
-          newLnkDoms = hiddenDoms.map(
-            hiddenDom => this._addHiddenTrackDom(hiddenDom)
-          ).filter(Boolean)
-        } else {
-          newLnkDoms = []
-        }
-
-        if (this._needOverrideDefault) {
-          // use this.defaultTrackIdList to directly fill in the DOM array
-          // without sorting by priority (use the defaultTrackIdList order)
-          newLnkDoms = newLnkDoms.concat(this._addTracksFromDefaultList())
+    _addAllTrackDoms (contexts) {
+      if (this._needOverrideDefault) {
+        // use this.defaultTrackIdList to directly fill in the DOM array
+        // without sorting by priority (use the defaultTrackIdList order)
+        try {
+          this._addTrksFromDefList(contexts)
+        } finally {
           delete this._needOverrideDefault
-        } else {
-          // no default tracks supplied, use groupIdList filter and
-          // visibility settings
-          // sort by priorities defined in database (this should be done
-          //    in `this._refObj` already)
-          newLnkDoms = newLnkDoms.concat(this._addTracksFromVisSettings())
         }
-        if (newWindow || !noRefreshContent) {
-          return this.updateTracks(newWindow, null, this.index)
-            .then(() => newLnkDoms)
-        } else {
-          return Promise.resolve(newLnkDoms)
-        }
-      })
+      } else {
+        // no default tracks supplied, use groupIdList filter and
+        // visibility settings
+        // sort by priorities defined in database (this should be done
+        //    in `this.refObj` already)
+        this._addTrksFromVis(contexts)
+      }
     }
 
-    addAllTrackDomsSync
-
-    _removeInvisibleTrackDoms () {
+    _removeInvisibleTrackDoms (contexts) {
       // Find tracks from `this._trackDoms` that become invisible now
       // then call `this._removeTrack` to remove them
       let removedTracks = this._trackDoms.map(trackDom => trackDom.parent)
-        .filter(track => !track.isVisible)
+        .filter(track => (
+          !track.isVisible || !track.checkViewReq(contexts, this.index)
+        ))
       this._removeTrack(removedTracks)
     }
 
-    updateDOM (newWindow, noRefreshContent, hiddenDoms) {
-      if (!this._initialized) {
-        return this._initDomAfterVWinRefReady(newWindow)
-      }
+    updateDOM (contexts) {
       // update existing DOMs, first remove all tracks that should be hidden
       // if noRefreshContent = true, do not refresh content
       // (should be refreshed later)
+      contexts = contexts || []
       if (this._trackDoms && this._trackDoms.length > 0) {
-        this._removeInvisibleTrackDoms()
+        this._removeInvisibleTrackDoms(contexts)
       }
 
       // then add new Tracks (if not there already)
-      return this.addAllTrackDoms(newWindow, noRefreshContent, hiddenDoms)
+      return this._addAllTrackDoms(contexts)
+    }
+
+    /**
+     * @function linkDOMs - link DOMs within this window with those within
+     *    neighboring windows.
+     * @param  {Array<trackDom>} hiddenDoms - The hidden DOM to be linked
+     *    within this window
+     * @param  {Array<object>} contexts - The contexts views the DOMs in
+     *    this window will be linked to. contexts object should have the
+     *    following properties:
+     *    {
+     *      ref: <string> reference of the view
+     *      index: <number> index of the view
+     *    }
+     *    This array should at least include the neighboring windows with
+     *    the same index as in `chart-area`
+     * @param  {Boolean} keepOldLinks - Whether to keep the old hidden DOMs
+     *    (for performance purposes)
+     * @return {Array<trackDom>} Return the DOMs that will be linked within
+     *    the next view
+     */
+    linkDOMs (hiddenDoms, contexts, keepOldLinks) {
+      contexts = contexts || []
+      if (!keepOldLinks) {
+        // remove all existing hidden DOMs to severe old links
+        this._hiddenTrackDomMap.clear()
+        this._hiddenTrackDoms.length = 0
+      }
+      let linkedDoms = this._linkHiddenDoms(hiddenDoms, contexts) || []
+
+      return linkedDoms.comcat(this._trackDoms.filter(trackDom =>
+        trackDom.hasLinksInTargetView(contexts[this.index + 1])))
     }
 
     _updateWindowHandler (e) {
@@ -1062,11 +1077,12 @@ var GIVe = (function (give) {
         if (e.detail.newVWindow instanceof give.ChromRegion ||
           typeof e.detail.newVWindow === 'string'
         ) {
-          if (e.detail.tracks) {
-            return this.updateDOM(e.detail.newWindow)
-          } else {
-            return this.changeViewWindow(e.detail.newVWindow)
+          if (!this._initialized) {
+            this.resetDOM(e.detail.newWindow)
+          } else if (e.detail.tracks) {
+            this.updateDOM(e.detail.newWindow)
           }
+          return this.changeViewWindow(e.detail.newVWindow)
         }
       } catch (err) {
         give._verbConsole.warn(err)

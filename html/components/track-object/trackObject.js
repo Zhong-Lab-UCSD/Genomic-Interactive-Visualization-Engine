@@ -537,6 +537,35 @@ var GIVe = (function (give) {
     }
 
     /**
+     * checkViewReq - Check whether the given view window contexts meet the
+     *    requirement of this track. This is used to determine if the track
+     *    should be displayed at the specific view window.
+     * Notice that for cross-species tracks, the ref criteria should be
+     *    modified accordingly in the implementation.
+     *
+     * @param {Array<object>} contexts - The contexts of the viewWindows to be
+     *    queried. It should contain two properties: <string> ref - the
+     *    reference of the window; <number> index - the index of the window.
+     * @param {number} index - The index of the viewWindow to show this track.
+     * @returns {boolean} Whether this track should be shown in the view
+     *    window under the given window contexts.
+     * @memberof TrackObject
+     */
+    checkViewReq (contexts, index) {
+      if (this.windowSpan <= 1) {
+        return true
+      } else if (contexts.length < index + this.windowSpan) {
+        return false
+      }
+      for (let i = index; i < contexts.length; i++) {
+        if (contexts[i] && contexts[i].ref !== this.ref) {
+          return false
+        }
+      }
+      return true
+    }
+
+    /**
      * ********** Static Properties for TrackObject Below **********
      */
 
