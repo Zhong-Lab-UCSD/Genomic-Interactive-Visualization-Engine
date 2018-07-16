@@ -1108,7 +1108,7 @@ limitations under the License.
       regionInWindow: function (region, svgToDraw) {
         // return true if region overlaps with svgToDraw.viewWindow
         svgToDraw = svgToDraw || this.mainSvg
-        return svgToDraw.viewWindow.overlaps(region) > 0
+        return !!region && svgToDraw.viewWindow.overlaps(region) > 0
       },
 
       regionWindowDirection: function (region, svgToDraw) {
