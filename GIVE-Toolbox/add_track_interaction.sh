@@ -75,7 +75,6 @@ done
 [  -z "$short_label" ] && echo "Error: -s <short_label> is empty" && usage && exit 1 
 [  -z "$priority" ] && echo "Error: -o <priority> is empty" && usage && exit 1 
 [  -z "$visibility" ] && echo "Error: -v <visibility> is empty" && usage && exit 1 
-[  -z "$quantiles" ] && quantiles="autoscale"
 [  -z "$file" ] && echo "Error: -f <file> is empty" && usage && exit 1 
 
 [ ! -e "$file" ] && echo "Error: $file doesn't exist" && exit 1
@@ -118,14 +117,20 @@ if [ $(mysql -N -s -u$mysqlu -p$mysqlp -e \
     exit 1
 fi
 
+
+[ ! -z "$quantiles" ] && quantiles_info='"quantiles" : [ '$quantiles' ]'
+
 settings='"group":"'$group_name'",
             "longLabel":"'$long_label'",
             "priority":'$priority',
             "shortLabel":"'$short_label'",
             "track":"'$track_name'",
             "type":"interaction",
-            "visibility":"'$visibility'",
-            "quantiles": [ '$quantiles' ]'
+            "visibility":"'$visibility'"'
+
+if [[ $quantiles != "" ]]; then                                                                                                                                                                           
+    settings+=', '$quantiles_info                                                                                                                                                           
+fi 
 
 if [[ $meta_info != "" ]]; then
     settings+=', '$meta_info
