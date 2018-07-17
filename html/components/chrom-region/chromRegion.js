@@ -30,388 +30,422 @@ var GIVe = (function (give) {
    *
    * @class give.ChromRegion
    * Data structure for chromosomal region
-   *
-   * @constructor
-   * @param {(ChromRegionLiteral|string)} mainParams -
-   *   Main parameters used in the ChromRegion.
-   *   Either use a string like 'chr1:12345-56789'
-   *   or an object with chr, start, end, and strand or other essential props
-   * @param {give.RefObject} [ref] - Reference genome of the region,
-   *   used for clipping the region, use `null` to omit
-   * @param {object} [additionalParams] - Additional parameters needed
-   *   to be in the ChromRegion
    */
-  give.ChromRegion = function (mainParams, ref, additionalParams, zeroBased) {
-    // usage: new ChromRegionObject(mainParam, ref, additionalParam)
-    //    mainParam:
-    //      either use a string like 'chr1:12345-56789'
-    //      or an object with chr, start, end, and strand or other essential props
-    //    ref:
-    //      used for clipping the region, null if no-clipping needed
-    //    additionalParam:
-    //      some other parameters that may slip into the object
-
-    try {
-      if (typeof mainParams === 'string') {
-        this._regionFromString(mainParams, zeroBased, ref)
-      } else if (typeof mainParams === 'object') {
-        this._regionFromObject(mainParams)
-      } else {
-        throw new give.GiveError(
-          'Must create ChromRegion with object or string!')
-      }
-      if (isNaN(this.start) || isNaN(this.end)) {
-        throw new give.GiveError(
-          'ChromRegion start and/or end number invalid!')
-      }
-      this.clipRegion(ref)
-      var key
-      if (typeof mainParams === 'object') {
-        for (key in mainParams) {
-          if (!this.hasOwnProperty(key) && mainParams.hasOwnProperty(key)) {
-            try {
-              this[key] = mainParams[key]
-            } catch (e) {
-              give._verbConsole.warn(e)
-            }
-          }
-        }
-      }
-      if (typeof additionalParams === 'object') {
-        for (key in additionalParams) {
-          if (!this.hasOwnProperty(key) &&
-            additionalParams.hasOwnProperty(key)
-          ) {
-            try {
-              this[key] = additionalParams[key]
-            } catch (e) {
-              give._verbConsole.warn(e)
-            }
-          }
-        }
-      }
-    } catch (e) {
-      give._verbConsole.warn(e)
-      give._verbConsole.log('Thrown when creating chromosomal regions with:')
-      give._verbConsole.log(mainParams)
-      throw (e)
-    }
-  }
-
-  give.ChromRegion.prototype.clipRegion = function (ref, minLength) {
-    if (this.start < give.ChromRegion.CHROM_BASE) {
-      this.start = give.ChromRegion.CHROM_BASE
-    }
-    if (ref && ref.chromInfo) {
-      if (ref.chromInfo[this.chr.toLowerCase()]) {
-        this.chr = ref.chromInfo[this.chr.toLowerCase()].chrRegion.chr
-        if (ref.chromInfo[this.chr].chrRegion.end < this.end) {
-          this.end = ref.chromInfo[this.chr].chrRegion.end
-        }
-      } else if (!ref.chromInfo[this.chr]) {
-        // this is not a valid chromosome
-        throw (new give.GiveError(
-          this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
-      }
-    }
-    if (this.start > this.end) {
-      if (typeof minLength === 'number') {
-        give._verbConsole.info('Coordinates out of bounds: ' + this.chr + ':' +
-          this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
-        this.start = Math.max(give.ChromRegion.CHROM_BASE, this.end - minLength)
-        give._verbConsole.info('Changed into: ' + this.chr + ':' +
-          this.start + '-' + this.end + '.', give.VERBOSE_WARNING)
-      } else {
-        throw (new give.GiveError(
-          'Coordinates out of bounds: ' + this.chr + ':' +
-          this.start + '-' + this.end + '!'))
-      }
-    }
-    return this
-  }
-
-  give.ChromRegion.prototype.getLength = function () {
-    return this.end - this.start
-  }
-
-  give.ChromRegion.prototype.getStartCoor = function () {
-    return {chr: this.chr, coor: this.start}
-  }
-
-  give.ChromRegion.prototype.getEndCoor = function () {
-    return {chr: this.chr, coor: this.end}
-  }
-
-  give.ChromRegion.prototype.getStart = function () {
-    return this.start
-  }
-
-  give.ChromRegion.prototype.getEnd = function () {
-    return this.end
-  }
-
-  give.ChromRegion.prototype.setStart = function (newStart, forced) {
-    if (!forced && (isNaN(newStart) || newStart >= this.end)) {
-      throw (new give.GiveError('Invalid new start value: ' + newStart))
-    }
-    this.start = newStart
-  }
-
-  give.ChromRegion.prototype.setEnd = function (newEnd, forced) {
-    if (!forced && (isNaN(newEnd) || newEnd <= this.start)) {
-      throw (new give.GiveError('Invalid new end value: ' + newEnd))
-    }
-    this.end = newEnd
-  }
-
-  give.ChromRegion.prototype._regionFromString = function (regionString, zeroBased, ref) {
-    if (ref && ref.chromInfo && ref.chromInfo[regionString.toLowerCase()]) {
-      this.chr = ref.chromInfo[regionString.toLowerCase()].chrRegion.chr
-      this.start = ref.chromInfo[regionString.toLowerCase()].chrRegion.start
-      this.end = ref.chromInfo[regionString.toLowerCase()].chrRegion.end
-      this.setStrand(null)
-    } else {
-      var cleanedChrString = regionString.replace(/,/g, '')
-        .replace(/\(\s*-\s*\)/g, ' NEGSTR').replace(/\(\s*\+\s*\)/g, ' POSSTR')
-      var elements = cleanedChrString.split(/[:\s-]+/)
-
-      this.chr = elements[0]
-      this.start = parseInt(elements[1]) - (zeroBased ? 0 : (1 - give.ChromRegion.CHROM_BASE))
-      this.end = parseInt(elements[2])
-      this.setStrand((elements.length < 4) ? this.strand : !(elements[3] === 'NEGSTR'))
-    }
-  }
-
-  give.ChromRegion.prototype._regionFromObject = function (regionObject) {
-    this.chr = regionObject.chr
-    this.start = parseInt(regionObject.start)
-    this.end = parseInt(regionObject.end)
-    this.setStrand(regionObject.strand)
-    this.name = regionObject.regionname || regionObject.name || ''
-  }
-
-  give.ChromRegion.prototype._regionFromBed = function (bedString) {
-    // notice that this only handle chr, start, end, name, strand in BED 4+ format
-    var tokens = bedString.split(/ +|\t/)
-    this.chr = tokens[0]
-    this.start = parseInt(tokens[1])
-    this.end = parseInt(tokens[2])
-    this.setStrand((tokens.length < 6) ? this.strand : tokens[5])
-    this.name = (tokens[3] && tokens[3] !== '.') ? tokens[3] : (this.name || '')
-  }
-
-  give.ChromRegion.prototype.regionToString = function (includeStrand) {
-    // default is including strand
-    return this.chr + ':' + (this.start + 1 - give.ChromRegion.CHROM_BASE) +
-      '-' + this.end + ((includeStrand === false || this.strand === null)
-      ? '' : (' (' + (this.strand ? '+' : '-') + ')'))
-  }
-
-  give.ChromRegion.prototype.regionToBed = function (includeStrand) {
-    return this.chr + '\t' + this.start + '\t' + this.end + '\t' + (this.name ? this.name : '.') +
-        ((includeStrand !== false && this.strand !== null) ? '\t0\t' + (!this.strand ? '-' : '+') : '')
-  }
-
-  give.ChromRegion.prototype.toString = function () {
-    // default is including strand
-    return this.regionToString(true)
-  }
-
-  give.ChromRegion.prototype.setStrand = function (newStr) {
-    switch (typeof (newStr)) {
-      case 'string':
-        if (newStr === '.' || newStr === '') {
-          this.strand = null
+  class ChromRegion {
+    /**
+     * Creates an instance of ChromRegion.
+     * @param {(ChromRegionLiteral|string)} mainParams -
+     *   Main parameters used in the ChromRegion.
+     *   Either use a string like 'chr1:12345-56789'
+     *   or an object with chr, start, end, and strand or other essential
+     *   props
+     * @param {give.RefObject} [ref] - Reference genome of the region,
+     *   used for clipping the region, use `null` to omit
+     * @param {object} [additionalParams] - Additional parameters needed
+     * @param {boolean} [zeroBased] - Whether this chrom region's coordinate
+     *   is zero based.
+     * @memberof ChromRegion
+     */
+    constructor (mainParams, ref, additionalParams, zeroBased) {
+      // usage: new ChromRegionObject(mainParam, ref, additionalParam)
+      //    mainParam:
+      //      either use a string like 'chr1:12345-56789'
+      //      or an object with chr, start, end, and strand or other essential
+      //      props
+      //    ref:
+      //      used for clipping the region, null if no-clipping needed
+      //    additionalParam:
+      //      some other parameters that may slip into the object
+      try {
+        if (typeof mainParams === 'string') {
+          this._regionFromString(mainParams, zeroBased, ref)
+        } else if (typeof mainParams === 'object') {
+          this._regionFromObject(mainParams)
         } else {
-          this.strand = !(newStr.indexOf('-') >= 0 || newStr.indexOf('0') >= 0)
+          throw new give.GiveError(
+            'Must create ChromRegion with object or string!')
         }
-        break
-      case 'number':
-        this.strand = (newStr > 0)
-        break
-      case 'boolean':
-        this.strand = newStr
-        break
-      case 'undefined':
-        this.strand = null
-        break
-      default:
-        this.strand = (newStr === null ? null : !!(newStr))
+        if (isNaN(this._start) || isNaN(this._end)) {
+          throw new give.GiveError(
+            'ChromRegion start and/or end number invalid!')
+        }
+        this.clipRegion(ref)
+        var key
+        if (typeof mainParams === 'object') {
+          for (key in mainParams) {
+            if (!this.hasOwnProperty(key) && mainParams.hasOwnProperty(key)) {
+              try {
+                this[key] = mainParams[key]
+              } catch (e) {
+                give._verbConsole.warn(e)
+              }
+            }
+          }
+        }
+        if (typeof additionalParams === 'object') {
+          for (key in additionalParams) {
+            if (!this.hasOwnProperty(key) &&
+              additionalParams.hasOwnProperty(key)
+            ) {
+              try {
+                this[key] = additionalParams[key]
+              } catch (e) {
+                give._verbConsole.warn(e)
+              }
+            }
+          }
+        }
+      } catch (e) {
+        give._verbConsole.warn(e)
+        give._verbConsole.log('When creating chromosomal regions with: ')
+        give._verbConsole.log(mainParams)
+        throw (e)
+      }
     }
-    return this.strand
-  }
 
-  give.ChromRegion.prototype.getStrand = function (flankbefore, flankafter) {
-    return (typeof (this.strand) === 'boolean')
-      ? (((typeof (flankbefore) === 'string') ? flankbefore : '') +
-      (this.strand ? '+' : '-') +
-      ((typeof (flankafter) === 'string') ? flankafter : '')) : null
-  }
-
-  give.ChromRegion.prototype.getShortName = function () {
-    return give.shortenString(this.name, give.ChromRegion._REGION_SHORTNAME_LIMIT,
-      give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH,
-      give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH)
-  }
-
-  give.ChromRegion.prototype.overlaps = function (region, strandSpecific) {
-    // this will return the length of overlaps, if not overlapping, return 0
-    // if strandSpecific is specified, then overlap will be 0 if both strands exist and do not match
-    if (this.chr !== region.chr ||
-       (strandSpecific &&
-      (this.strand !== null && region.strand !== null) &&
-      this.strand !== region.strand)) {
-      return 0
-    }
-    if (this.start >= region.end || this.end <= region.start) {
-      return 0
-    }
-    return parseInt(Math.min(this.end, region.end)) -
-      parseInt(Math.max(this.start, region.start))
-  }
-
-  give.ChromRegion.prototype.assimilate = function (region, strandSpecific) {
-    if (!this.overlaps(region, strandSpecific)) {
-      return null
-    }
-    this.start = parseInt(Math.min(this.start, region.start))
-    this.end = parseInt(Math.max(this.end, region.end))
-    return this
-  }
-
-  give.ChromRegion.prototype.concat = function (region, strandSpecific) {
-    if (strandSpecific &&
-      (this.strand !== null && region.strand !== null) &&
-      this.strand !== region.strand) {
-      return null
-    }
-    if (this.end === region.start) {
-      this.end = region.end
-    } else if (this.start === region.end) {
-      this.start = region.start
-    } else {
-      return null
-    }
-    return this
-  }
-
-  give.ChromRegion.prototype.intersect = function (region, strandSpecific) {
-    if (!this.overlaps(region, strandSpecific)) {
-      return null
-    }
-    this.start = parseInt(Math.max(this.start, region.start))
-    this.end = parseInt(Math.min(this.end, region.end))
-    return this
-  }
-
-  give.ChromRegion.prototype.move = function (distance, isProportion, ref) {
-    // isProportion means whether move by proportion
-    // may clip distance to what we have
-    if (isProportion) {
-      distance *= this.getLength()
-    }
-    distance = parseInt(distance + 0.5)
-    if (distance + this.start < give.ChromRegion.CHROM_BASE) {
-      distance = give.ChromRegion.CHROM_BASE - this.start
-    } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-      ref.chromInfo[this.chr].chrRegion.end < this.end + distance) {
-      distance = ref.chromInfo[this.chr].chrRegion.end - this.end
-    }
-    this.start = this.start + distance
-    this.end = this.end + distance
-    return this
-  }
-
-  give.ChromRegion.prototype.clone = function () {
-    return new this.constructor(this)
-  }
-
-  give.ChromRegion.prototype.getShift = function (distance, isProportion, ref) {
-    return this.clone().move(distance, isProportion, ref)
-  }
-
-  give.ChromRegion.prototype.extend = function (sizediff, center, isProportion, ref,
-    minimumSize) {
-    // isProportion means whether extend by proportion
-    minimumSize = minimumSize || 1
-    if (!sizediff) {
+    clipRegion (ref, minLength) {
+      if (this._start < this.constructor.CHROM_BASE) {
+        this._start = this.constructor.CHROM_BASE
+      }
+      if (ref && ref.chromInfo) {
+        if (ref.chromInfo[this.chr.toLowerCase()]) {
+          this.chr = ref.chromInfo[this.chr.toLowerCase()].chrRegion.chr
+          if (ref.chromInfo[this.chr].chrRegion._end < this._end) {
+            this._end = ref.chromInfo[this.chr].chrRegion._end
+          }
+        } else if (!ref.chromInfo[this.chr]) {
+          // this is not a valid chromosome
+          throw (new give.GiveError(
+            this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
+        }
+      }
+      if (this._start > this._end) {
+        if (typeof minLength === 'number') {
+          give._verbConsole.info('Coordinates out of bounds: ' + this.chr +
+            ':' + this._start + '-' + this._end + '.', give.VERBOSE_WARNING)
+          this._start = Math.max(
+            this.constructor.CHROM_BASE, this._end - minLength)
+          give._verbConsole.info('Changed into: ' + this.chr + ':' +
+            this._start + '-' + this._end + '.', give.VERBOSE_WARNING)
+        } else {
+          throw (new give.GiveError(
+            'Coordinates out of bounds: ' + this.chr + ':' +
+            this._start + '-' + this._end + '!'))
+        }
+      }
       return this
     }
-    if (isProportion) {
-      sizediff *= this.getLength()
+
+    get length () {
+      return this._end - this._start
     }
-    sizediff = parseInt(sizediff + 0.5)
-    var newsize = this.getLength() + sizediff
-    center = center || (this.start + this.end) / 2
-    if (center < this.start) {
-      center = this.start
-    } else if (center > this.end) {
-      center = this.end
+
+    get startCoor () {
+      return { chr: this.chr, coor: this._start }
     }
-    if (newsize < minimumSize) {
-      newsize = minimumSize
-      sizediff = newsize - this.getLength()
-    } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-      ref.chromInfo[this.chr].chrRegion.getLength() < newsize) {
-      newsize = ref.chromInfo[this.chr].chrRegion.getLength()
+
+    get endCoor () {
+      return { chr: this.chr, coor: this._end }
     }
-    if (center > this.start) {
-      // extend left
-      this.start = this.start - parseInt(sizediff * (center - this.start) / this.getLength() + 0.5)
-      if (this.start < give.ChromRegion.CHROM_BASE) {
-        this.start = give.ChromRegion.CHROM_BASE
+
+    get start () {
+      return this._start
+    }
+
+    get end () {
+      return this._end
+    }
+
+    set start (newStart) {
+      if (isNaN(newStart) || newStart > this._end) {
+        throw (new give.GiveError('Invalid new start value: ' + newStart))
       }
-      this.end = this.start + newsize
-    } else {
-      this.end = this.end + sizediff
+      this._start = newStart
     }
-    if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-      ref.chromInfo[this.chr].chrRegion.end < this.end) {
-      this.end = ref.chromInfo[this.chr].chrRegion.end
-      this.start = this.end - newsize
+
+    set end (newEnd) {
+      if (isNaN(newEnd) || newEnd < this._start) {
+        throw (new give.GiveError('Invalid new end value: ' + newEnd))
+      }
+      this._end = newEnd
     }
-    return this
-  }
 
-  give.ChromRegion.prototype.getExtension = function (sizediff, center, isProportion, ref, minimumSize) {
-    return this.clone().extend(sizediff, center, isProportion, ref, minimumSize)
-  }
+    _regionFromString (regionString, zeroBased, ref) {
+      if (ref && ref.chromInfo && ref.chromInfo[regionString.toLowerCase()]) {
+        this.chr = ref.chromInfo[regionString.toLowerCase()].chrRegion.chr
+        this._start =
+          ref.chromInfo[regionString.toLowerCase()].chrRegion._start
+        this._end = ref.chromInfo[regionString.toLowerCase()].chrRegion._end
+        this.strand = null
+      } else {
+        var cleanedChrString = regionString.replace(/,/g, '')
+          .replace(/\(\s*-\s*\)/g, ' NEGSTR')
+          .replace(/\(\s*\+\s*\)/g, ' POSSTR')
+        var elements = cleanedChrString.split(/[:\s-]+/)
 
-  give.ChromRegion._REGION_SHORTNAME_LIMIT = 11
-  give.ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH = 6
-  give.ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH = 4
-  give.ChromRegion.CHROM_BASE = 0 // may be 0 for UCSC
-
-  give.ChromRegion.clipCoordinate = function (coor, ref) {
-    // this is to clip single coordinate
-    if (coor.coor < give.ChromRegion.CHROM_BASE) {
-      coor.coor = give.ChromRegion.CHROM_BASE
-    } else if (ref && ref.chromInfo && ref.chromInfo[coor.chr] &&
-      ref.chromInfo[coor.chr].chrRegion.end < coor.coor) {
-      coor.coor = ref.chromInfo[coor.chr].chrRegion.end
+        this.chr = elements[0]
+        this._start = parseInt(elements[1]) -
+          (zeroBased ? 0 : (1 - this.constructor.CHROM_BASE))
+        this._end = parseInt(elements[2])
+        this.strand = (elements.length < 4
+          ? this._strand : !(elements[3] === 'NEGSTR'))
+      }
     }
-    return coor
-  }
 
-  give.ChromRegion.isValidChromRegion = function (chrStr, ref) {
-    try {
-      var tempChrRegion = new give.ChromRegion(chrStr)
-      tempChrRegion.clipRegion(ref)
-    } catch (e) {
-      give._verbConsole.info(e)
-      return false
+    _regionFromObject (regionObject) {
+      this.chr = regionObject.chr
+      this._start = parseInt(regionObject.start)
+      this._end = parseInt(regionObject.end)
+      this.strand = regionObject.strand
+      this.name = regionObject.regionname || regionObject.name || ''
     }
-    return true
+
+    _regionFromBed (bedString) {
+      // notice that this only handle chr, start, end, name, strand in BED 4+
+      //    format
+      var tokens = bedString.split(/ +|\t/)
+      this.chr = tokens[0]
+      this._start = parseInt(tokens[1])
+      this._end = parseInt(tokens[2])
+      this.strand = (tokens.length < 6) ? this._strand : tokens[5]
+      this.name = (tokens[3] && tokens[3] !== '.')
+        ? tokens[3] : (this.name || '')
+    }
+
+    regionToString (includeStrand) {
+      // default is including strand
+      return this.chr + ':' +
+        (this._start + 1 - this.constructor.CHROM_BASE) + '-' + this._end +
+        ((includeStrand === false || this._strand === null)
+          ? '' : (' (' + (this._strand ? '+' : '-') + ')'))
+    }
+
+    regionToBed (includeStrand) {
+      return this.chr + '\t' + this._start + '\t' + this._end + '\t' +
+        (this.name ? this.name : '.') +
+        ((includeStrand !== false && this._strand !== null)
+          ? '\t0\t' + (!this._strand ? '-' : '+') : '')
+    }
+
+    toString () {
+      // default is including strand
+      return this.regionToString(true)
+    }
+
+    set strand (newStr) {
+      switch (typeof (newStr)) {
+        case 'string':
+          if (newStr === '.' || newStr === '') {
+            this._strand = null
+          } else {
+            this._strand = !(newStr.indexOf('-') >= 0 ||
+              newStr.indexOf('0') >= 0)
+          }
+          break
+        case 'number':
+          this._strand = (newStr > 0)
+          break
+        case 'boolean':
+          this._strand = newStr
+          break
+        case 'undefined':
+          this._strand = null
+          break
+        default:
+          this._strand = (newStr === null ? null : !!(newStr))
+      }
+      return this._strand
+    }
+
+    get strand () {
+      return this._strand
+    }
+
+    getStrand (flankbefore, flankafter) {
+      return (typeof this._strand === 'boolean')
+        ? (((typeof flankbefore === 'string') ? flankbefore : '') +
+          (this._strand ? '+' : '-') +
+          ((typeof flankafter === 'string') ? flankafter : ''))
+        : null
+    }
+
+    getShortName () {
+      return give.shortenString(this.name,
+        this.constructor._REGION_SHORTNAME_LIMIT,
+        this.constructor._REGION_SHORTNAME_PREFIX_LENGTH,
+        this.constructor._REGION_SHORTNAME_SUFFIX_LENGTH)
+    }
+
+    overlaps (region, strandSpecific) {
+      // this will return the length of overlaps, if not overlapping, return 0
+      // if strandSpecific is specified, then overlap will be 0 if both
+      //    strands exist and do not match
+      if (this.chr !== region.chr ||
+        (strandSpecific &&
+          (this._strand !== null && region._strand !== null) &&
+          this._strand !== region._strand)) {
+        return 0
+      }
+      if (this._start >= region._end || this._end <= region._start) {
+        return 0
+      }
+      return parseInt(Math.min(this._end, region._end)) -
+        parseInt(Math.max(this._start, region._start))
+    }
+
+    assimilate (region, strandSpecific) {
+      if (!this.overlaps(region, strandSpecific)) {
+        return null
+      }
+      this._start = parseInt(Math.min(this._start, region._start))
+      this._end = parseInt(Math.max(this._end, region._end))
+      return this
+    }
+
+    concat (region, strandSpecific) {
+      if (strandSpecific &&
+        (this._strand !== null && region._strand !== null) &&
+        this._strand !== region._strand) {
+        return null
+      }
+      if (this._end === region._start) {
+        this._end = region._end
+      } else if (this._start === region._end) {
+        this._start = region._start
+      } else {
+        return null
+      }
+      return this
+    }
+
+    intersect (region, strandSpecific) {
+      if (!this.overlaps(region, strandSpecific)) {
+        return null
+      }
+      this._start = parseInt(Math.max(this._start, region._start))
+      this._end = parseInt(Math.min(this._end, region._end))
+      return this
+    }
+
+    move (distance, isProportion, ref) {
+      // isProportion means whether move by proportion
+      // may clip distance to what we have
+      if (isProportion) {
+        distance *= this.length
+      }
+      distance = parseInt(distance + 0.5)
+      if (distance + this._start < this.constructor.CHROM_BASE) {
+        distance = this.constructor.CHROM_BASE - this._start
+      } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+        ref.chromInfo[this.chr].chrRegion._end < this._end + distance) {
+        distance = ref.chromInfo[this.chr].chrRegion._end - this._end
+      }
+      this._start = this._start + distance
+      this._end = this._end + distance
+      return this
+    }
+
+    clone () {
+      return new this.constructor(this)
+    }
+
+    getShift (distance, isProportion, ref) {
+      return this.clone().move(distance, isProportion, ref)
+    }
+
+    extend (sizediff, center, isProportion, ref, minimumSize) {
+      // isProportion means whether extend by proportion
+      minimumSize = minimumSize || 1
+      if (!sizediff) {
+        return this
+      }
+      if (isProportion) {
+        sizediff *= this.length
+      }
+      sizediff = parseInt(sizediff + 0.5)
+      var newsize = this.length + sizediff
+      center = center || (this._start + this._end) / 2
+      if (center < this._start) {
+        center = this._start
+      } else if (center > this._end) {
+        center = this._end
+      }
+      if (newsize < minimumSize) {
+        newsize = minimumSize
+        sizediff = newsize - this.length
+      } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+        ref.chromInfo[this.chr].chrRegion.length < newsize) {
+        newsize = ref.chromInfo[this.chr].chrRegion.length
+      }
+      if (center > this._start) {
+        // extend left
+        this._start = this._start -
+          parseInt(sizediff * (center - this._start) / this.length + 0.5)
+        if (this._start < this.constructor.CHROM_BASE) {
+          this._start = this.constructor.CHROM_BASE
+        }
+        this._end = this._start + newsize
+      } else {
+        this._end = this._end + sizediff
+      }
+      if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
+        ref.chromInfo[this.chr].chrRegion._end < this._end) {
+        this._end = ref.chromInfo[this.chr].chrRegion._end
+        this._start = this._end - newsize
+      }
+      return this
+    }
+
+    getExtension (sizediff, center, isProportion, ref, minimumSize) {
+      return this.clone().extend(
+        sizediff, center, isProportion, ref, minimumSize)
+    }
+
+    static clipCoordinate (coor, ref) {
+      // this is to clip single coordinate
+      if (coor.coor < this.CHROM_BASE) {
+        coor.coor = this.CHROM_BASE
+      } else if (ref && ref.chromInfo && ref.chromInfo[coor.chr] &&
+        ref.chromInfo[coor.chr].chrRegion._end < coor.coor) {
+        coor.coor = ref.chromInfo[coor.chr].chrRegion._end
+      }
+      return coor
+    }
+
+    static isValidChromRegion (chrStr, ref) {
+      try {
+        var tempChrRegion = new this(chrStr)
+        tempChrRegion.clipRegion(ref)
+      } catch (e) {
+        give._verbConsole.info(e)
+        return false
+      }
+      return true
+    }
+
+    static compare (region1, region2) {
+      return ((region1.chr === region2.chr)
+        ? ((region1.start === region2.start)
+          ? ((region1.end === region2.end)
+            ? 0 : ((region1.end > region2.end) ? 1 : -1))
+          : ((region1.start > region2.start) ? 1 : -1))
+        : ((region1.chr > region2.chr) ? 1 : -1)) // chr not the same
+    }
+
+    static isEqual (region1, region2) {
+      return (region1 && region2)
+        ? (region1.chr === region2.chr &&
+          region1.start === region2.start && region1.end === region2.end)
+        : (!!region1 === !!region2)
+    }
   }
 
-  give.ChromRegion.compare = function (region1, region2) {
-    return ((region1.chr === region2.chr)
-      ? ((region1.getStart() === region2.getStart())
-        ? ((region1.getEnd() === region2.getEnd())
-          ? 0 : ((region1.getEnd() > region2.getEnd()) ? 1 : -1))
-        : ((region1.getStart() > region2.getStart()) ? 1 : -1))
-      : ((region1.chr > region2.chr) ? 1 : -1)) // region1.chr !== region2.chr
-  }
+  ChromRegion._REGION_SHORTNAME_LIMIT = 11
+  ChromRegion._REGION_SHORTNAME_PREFIX_LENGTH = 6
+  ChromRegion._REGION_SHORTNAME_SUFFIX_LENGTH = 4
+  ChromRegion.CHROM_BASE = 0 // may be 0 for UCSC
+
+  give.ChromRegion = ChromRegion
 
   return give
 })(GIVe || {})

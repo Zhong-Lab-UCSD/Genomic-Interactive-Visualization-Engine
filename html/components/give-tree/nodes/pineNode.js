@@ -65,11 +65,11 @@ var GIVe = (function (give) {
     give.WitheringNode.apply(this, arguments)
 
     // Note that `this.RevDepth` should be depending on both scaling factors.
-    if (this.getEnd() - this.getStart() <= this.Tree.LeafScalingFactor) {
+    if (this.end - this.start <= this.Tree.LeafScalingFactor) {
       this.RevDepth = 0
     } else {
       this.RevDepth = Math.ceil(
-        (Math.log(this.getEnd() - this.getStart()) -
+        (Math.log(this.end - this.start) -
           Math.log(this.Tree.LeafScalingFactor)
         ) / Math.log(this.Tree.ScalingFactor))
     }
@@ -292,8 +292,8 @@ var GIVe = (function (give) {
     return this.getSummaryData()
       ? this.getSummaryData().attach(new give.ChromRegion({
         chr: chr || this.Tree.Chr,
-        start: this.getStart(),
-        end: this.getEnd()
+        start: this.start,
+        end: this.end
       }, null))
       : null
   }
@@ -363,12 +363,12 @@ var GIVe = (function (give) {
       if (this.resEnough(resolution) && data[0]) {
         // check whether the data summary matches the node boundary
         if (
-          this.getStart() !== data[0].getStart() ||
-          this.getEnd() !== data[0].getEnd()
+          this.start !== data[0].start ||
+          this.end !== data[0].end
         ) {
           throw new give.GiveError('Summary range does not match! `this`: ' +
-            this.getStart() + ' - ' + this.getEnd() + '; data: ' +
-            data[0].getStart() + ' - ' + data[0].getEnd()
+            this.start + ' - ' + this.end + '; data: ' +
+            data[0].start + ' - ' + data[0].end
           )
         }
         // ***** This should fit Summary definition *****
@@ -407,7 +407,7 @@ var GIVe = (function (give) {
 
     // Steps:
     // 1. Find the range where the first child node should be inserted.
-    //    This should be the node where `chrRange.getStart()` falls in.
+    //    This should be the node where `chrRange.start` falls in.
     // 2. Split children if possible to create the dedicated range for the
     //    child.
     // 3. Check if the child node contains actual data (by checking
@@ -417,31 +417,31 @@ var GIVe = (function (give) {
     //    otherwise, use `false` to fill the dedicated range and merge with
     //    previous `false`s if possible.
 
-    while (chrRange.getStart() < chrRange.getEnd()) {
+    while (chrRange.start < chrRange.end) {
       // 1. Find the range where the first child node should be inserted.
-      //    This should be the node where `chrRange.getStart()` falls in.
+      //    This should be the node where `chrRange.start` falls in.
       childRange.setStart(give.PineNode.fitRes(
-        chrRange.getStart(), childRes, Math.floor
+        chrRange.start, childRes, Math.floor
       ), true)
-      childRange.end = Math.min(this.getEnd(),
-        give.PineNode.fitRes(chrRange.getEnd(), childRes, Math.ceil),
+      childRange.end = Math.min(this.end,
+        give.PineNode.fitRes(chrRange.end, childRes, Math.ceil),
         childRange.start + childRes
       )
 
-      while (this.Keys[currIndex + 1] <= childRange.getStart()) {
+      while (this.Keys[currIndex + 1] <= childRange.start) {
         currIndex++
       }
 
       // 2. Split children if possible to create the dedicated range for the
       //    child.
-      if (this.Keys[currIndex] < childRange.getStart()) {
+      if (this.Keys[currIndex] < childRange.start) {
         // If there are spaces before the dedicated range
-        this._splitChild(currIndex++, childRange.getStart())
+        this._splitChild(currIndex++, childRange.start)
       }
 
-      if (this.Keys[currIndex + 1] > childRange.getEnd()) {
+      if (this.Keys[currIndex + 1] > childRange.end) {
         // If there are spaces after the dedicated range
-        this._splitChild(currIndex, childRange.getEnd())
+        this._splitChild(currIndex, childRange.end)
       }
 
       // Now the dedicated range is ready
@@ -458,15 +458,15 @@ var GIVe = (function (give) {
 
       if (
         (data[0] &&
-          data[0].getStart() < childRange.getEnd()
+          data[0].start < childRange.end
         ) || (
           Array.isArray(props.ContList) &&
           props.ContList.some(function (entry) {
-            return entry.getEnd() > childRange.getStart()
+            return entry.end > childRange.start
           }, this)
         ) || (
-          chrRange.getStart() > childRange.getStart() ||
-          chrRange.getEnd() < childRange.getEnd()
+          chrRange.start > childRange.start ||
+          chrRange.end < childRange.end
         )
       ) {
         //    If yes, create a non-leaf node on the dedicated range and call
@@ -475,8 +475,8 @@ var GIVe = (function (give) {
           // try to establish previous nodes
           this.Values[currIndex] = new give.PineNode({
             IsRoot: false,
-            Start: childRange.getStart(),
-            End: childRange.getEnd(),
+            Start: childRange.start,
+            End: childRange.end,
             RevDepth: this.RevDepth - 1,
             Tree: this.Tree,
             LifeSpan: this.LifeSpan
@@ -496,7 +496,7 @@ var GIVe = (function (give) {
         }
       }
 
-      chrRange.setStart(childRange.getEnd(), true)
+      chrRange.setStart(childRange.end, true)
 
       currIndex++
     } // end while(rangeStart < rangeEnd);
@@ -520,63 +520,63 @@ var GIVe = (function (give) {
         '` is not a constructor for a tree node!')
     }
 
-    while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+    while (this.Keys[currIndex + 1] <= chrRange.start) {
       currIndex++
     }
 
-    if (this.Keys[currIndex] < chrRange.getStart()) {
+    if (this.Keys[currIndex] < chrRange.start) {
       // The new rangeStart appears between windows.
       // Shorten the previous data record by inserting the key,
       // and use this.Values[currIndex] to fill the rest
       // (normally it should be `null`)
-      this._splitChild(currIndex++, chrRange.getStart())
+      this._splitChild(currIndex++, chrRange.start)
     }
 
-    if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
+    if (this.Keys[currIndex + 1] > chrRange.end) {
       // The new rangeEnd appears between windows.
       // Shorten the next data record by inserting the key,
       // and use this.Values[currIndex] to fill the current region
       // (normally it should be `null`)
-      this._splitChild(currIndex, chrRange.getEnd())
+      this._splitChild(currIndex, chrRange.end)
     }
 
-    while (chrRange.getStart() < chrRange.getEnd()) {
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+    while (chrRange.start < chrRange.end) {
+      while (this.Keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
       // First get data that should belong to ContList done.
       prevDataIndex = props.DataIndex
       props.DataIndex = give._traverseData(data, props.DataIndex,
         function (dataEntry) {
-          return dataEntry.getStart() < chrRange.getStart()
+          return dataEntry.start < chrRange.start
         }, this, props.Callback, props.ThisVar
       )
       props.ContList = props.ContList.concat(
         data.slice(prevDataIndex, props.DataIndex)
       ).filter(function (entry) {
-        return entry.getEnd() > chrRange.getStart()
+        return entry.end > chrRange.start
       })
 
-      // Now all data entries with `.getStart()` before `nextRangeStart` should
+      // Now all data entries with `.start` before `nextRangeStart` should
       // be already in `props.ContList`
 
-      if (this.Keys[currIndex] < chrRange.getStart()) {
+      if (this.Keys[currIndex] < chrRange.start) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
         // and use `false` to fill the rest
-        this._splitChild(currIndex++, chrRange.getStart(), false)
+        this._splitChild(currIndex++, chrRange.start, false)
       }
 
       if (
         props.DataIndex < data.length &&
-        data[props.DataIndex].getStart() === this.Keys[currIndex]
+        data[props.DataIndex].start === this.Keys[currIndex]
       ) {
         // there are actual data at this location, create a new leaf node
         this.Values[currIndex] = new props.LeafNodeCtor({
           Start: this.Keys[currIndex]
         })
         this.Values[currIndex].insert(data, chrRange, props)
-      } else if (this.Keys[currIndex] < chrRange.getEnd()) {
+      } else if (this.Keys[currIndex] < chrRange.end) {
         // needs to fill the element with `false`, and merge with previous if
         // possible
         this.Values[currIndex] = props.ContList.length <= 0
@@ -592,15 +592,15 @@ var GIVe = (function (give) {
       // Shrink `chrRange` to unprocessed range
       chrRange.setStart((
         props.DataIndex < data.length &&
-        data[props.DataIndex].getStart() < chrRange.getEnd()
-      ) ? data[props.DataIndex].getStart() : chrRange.getEnd(), true)
+        data[props.DataIndex].start < chrRange.end
+      ) ? data[props.DataIndex].start : chrRange.end, true)
     }
 
     // Process `props.ContList` for one last time
     props.ContList = props.ContList.concat(
       data.slice(prevDataIndex, props.DataIndex)
     ).filter(function (entry) {
-      return entry.getEnd() > chrRange.getEnd()
+      return entry.end > chrRange.end
     })
 
     // Remove all processed data from `data`
@@ -611,8 +611,8 @@ var GIVe = (function (give) {
   give.PineNode.prototype.remove = function (data, removeExactMatch, props) {
     props = props || {}
     // Check whether `this` shall be removed
-    if (this.getStart() === data.getStart() &&
-      this.getEnd() === data.getEnd()
+    if (this.start === data.start &&
+      this.end === data.end
     ) {
       if (!removeExactMatch || this._compareData(data, this)) {
         // remove content of this
@@ -631,7 +631,7 @@ var GIVe = (function (give) {
     // data being remove is not self
     // locate the child entry first
     var i = 0
-    while (i < this.Values.length && this.Keys[i + 1] <= data.getStart()) {
+    while (i < this.Values.length && this.Keys[i + 1] <= data.start) {
       i++
     }
     if (this.Values[i]) {
@@ -688,8 +688,8 @@ var GIVe = (function (give) {
     if (chrRange) {
       var resolution = chrRange.Resolution || props.Resolution || 1
       // Rejuvenate `this`
-      if (this.getStart() < chrRange.getEnd() &&
-        this.getEnd() > chrRange.getStart()
+      if (this.start < chrRange.end &&
+        this.end > chrRange.start
       ) {
         this.rejuvenate(props.Rejuvenation)
         // Resolution support: check if the resolution is already enough in this
@@ -779,12 +779,12 @@ var GIVe = (function (give) {
     if (chrRange) {
       var currIndex = 0
       while (currIndex < this.Values.length &&
-        this.Keys[currIndex + 1] <= chrRange.getStart()
+        this.Keys[currIndex + 1] <= chrRange.start
       ) {
         currIndex++
       }
       while (currIndex < this.Values.length &&
-        this.Keys[currIndex] < chrRange.getEnd()
+        this.Keys[currIndex] < chrRange.end
       ) {
         if (this.Values[currIndex] &&
           !this.childResEnough(resolution, currIndex)
@@ -797,12 +797,12 @@ var GIVe = (function (give) {
           // first normalize resolution to branchingFactor
           let res = this._getClosestRes(resolution / props.BufferingRatio)
           let retrieveStart = Math.max(this.Keys[currIndex],
-            give.PineNode.fitRes(chrRange.getStart(), res, Math.floor))
+            give.PineNode.fitRes(chrRange.start, res, Math.floor))
           let retrieveEnd = Math.min(this.Keys[currIndex + 1],
-            give.PineNode.fitRes(chrRange.getEnd(), res, Math.ceil))
+            give.PineNode.fitRes(chrRange.end, res, Math.ceil))
           if (props._Result[props._Result.length - 1] &&
             props._Result[props._Result.length - 1].Resolution === res &&
-            props._Result[props._Result.length - 1].getEnd() === retrieveStart
+            props._Result[props._Result.length - 1].end === retrieveStart
           ) {
             props._Result[props._Result.length - 1].end = retrieveEnd
           } else {

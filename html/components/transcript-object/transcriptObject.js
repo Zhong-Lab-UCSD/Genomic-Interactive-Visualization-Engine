@@ -93,15 +93,15 @@ var GIVe = (function (give) {
       }
       if (this.blockStarts[i] < 0) {
         this.blockStarts[i] = 0
-      } else if (this.blockStarts[i] >= this.getLength()) {
+      } else if (this.blockStarts[i] >= this.length) {
         throw (new give.GiveError('Block #' + i + ' is invalid: ' +
           this.regionToString(false) + ', ' +
           this.blockStarts[i] + ' is greater than length.'))
       } else if (this.blockSizes[i] < 0) {
         throw (new give.GiveError('Block #' + i + ' size is invalid: ' +
           this.regionToString(false) + '!'))
-      } else if (this.blockStarts[i] + this.blockSizes[i] > this.getLength()) {
-        this.blockSizes[i] = this.getLength() - this.blockStarts[i]
+      } else if (this.blockStarts[i] + this.blockSizes[i] > this.length) {
+        this.blockSizes[i] = this.length - this.blockStarts[i]
       }
     }
   }
@@ -136,7 +136,7 @@ var GIVe = (function (give) {
         e.message = (e.message || '') + '(Block processing)'
         throw (e)
       }
-      this.blockSizes = [this.getLength()]
+      this.blockSizes = [this.length]
       this.blockStarts = [0]
     }
   }

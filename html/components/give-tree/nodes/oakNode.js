@@ -91,7 +91,7 @@ var GIVe = (function (give) {
           Keys: this.Keys.slice(-(sibNumOfChildren + 1)),
           Values: this.Values.slice(-sibNumOfChildren),
           RevDepth: this.RevDepth,
-          NextNode: this.getNext(),
+          NextNode: this.next,
           PrevNode: this,
           Tree: this.Tree
         }
@@ -107,9 +107,9 @@ var GIVe = (function (give) {
       if (this.IsRoot) {
         // add `this` to siblings
         siblings.splice(0, 0, this)
-        var newRootKeys = [this.getStart()]
+        var newRootKeys = [this.start]
         siblings.forEach(function (siblingNode) {
-          newRootKeys.push(siblingNode.getEnd())
+          newRootKeys.push(siblingNode.end)
         })
         props = {
           IsRoot: true,
@@ -129,7 +129,7 @@ var GIVe = (function (give) {
         return siblings
       }
     } else { // !(this.Values.length > this.Tree.BranchingFactor)
-      return (!this.IsRoot && this.isEmpty()) ? false : this
+      return (!this.IsRoot && this.isEmpty) ? false : this
     }
   }
 
@@ -142,27 +142,27 @@ var GIVe = (function (give) {
     // Break out chrRange by child, then insert the sub-range into every child
     var currIndex = 0
 
-    while (chrRange.getStart() < chrRange.getEnd()) {
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+    while (chrRange.start < chrRange.end) {
+      while (this.Keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
 
       // Now the start of chrRange is in the range of current child
       var section = chrRange.clone()
-      if (this.Keys[currIndex + 1] < chrRange.getEnd()) {
+      if (this.Keys[currIndex + 1] < chrRange.end) {
         section.end = this.Keys[currIndex + 1]
       }
-      var potentialSibs = this.Values[currIndex].insert(data, section, props)
-      if (Array.isArray(potentialSibs)) {
+      var sibs = this.Values[currIndex].insert(data, section, props)
+      if (Array.isArray(sibs)) {
         // Has siblings, put them into this.Values
-        this.Keys.splice(currIndex + 1, 0, ...potentialSibs.map(function (sib) {
-          return sib.getStart()
+        this.Keys.splice(currIndex + 1, 0, ...sibs.map(function (sib) {
+          return sib.start
         }, this))
-        this.Values.splice(currIndex + 1, 0, ...potentialSibs)
-        currIndex += potentialSibs.length
+        this.Values.splice(currIndex + 1, 0, ...sibs)
+        currIndex += sibs.length
       }
 
-      chrRange.setStart(section.getEnd(), true)
+      chrRange.start = section.end
       currIndex++
     } // end while(rangeStart < rangeEnd);
   }
@@ -184,41 +184,41 @@ var GIVe = (function (give) {
         '` is not a constructor for a tree node!')
     }
 
-    while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+    while (this.Keys[currIndex + 1] <= chrRange.start) {
       currIndex++
     }
 
-    if (this.Keys[currIndex] < chrRange.getStart()) {
+    if (this.Keys[currIndex] < chrRange.start) {
       // The new rangeStart appears between windows.
       // Shorten the previous data record by inserting the key,
       // and use this.Values[currIndex] to fill the rest
       // (normally it should be `null`)
-      this._splitChild(currIndex++, chrRange.getStart())
+      this._splitChild(currIndex++, chrRange.start)
     }
 
-    if (this.Keys[currIndex + 1] > chrRange.getEnd()) {
+    if (this.Keys[currIndex + 1] > chrRange.end) {
       // The new rangeEnd appears between windows.
       // Shorten the next data record by inserting the key,
       // and use this.Values[currIndex] to fill the current region
       // (normally it should be `null`)
-      this._splitChild(currIndex, chrRange.getEnd())
+      this._splitChild(currIndex, chrRange.end)
     }
 
-    while (chrRange.getStart() < chrRange.getEnd()) {
-      while (this.Keys[currIndex + 1] <= chrRange.getStart()) {
+    while (chrRange.start < chrRange.end) {
+      while (this.Keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
-      if (this.Keys[currIndex] < chrRange.getStart()) {
+      if (this.Keys[currIndex] < chrRange.start) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
         // and use `false` to fill the rest
-        this._splitChild(currIndex++, chrRange.getStart(), false)
+        this._splitChild(currIndex++, chrRange.start, false)
       }
 
       if (
         props.ContList.length > 0 ||
         (props.DataIndex < data.length &&
-        data[props.DataIndex].getStart() <= this.Keys[currIndex])
+        data[props.DataIndex].start <= this.Keys[currIndex])
       ) {
         // there are actual data at this location, create a new leaf node
         this.Values[currIndex] = new props.LeafNodeCtor({
@@ -226,7 +226,7 @@ var GIVe = (function (give) {
           End: this.Keys[currIndex + 1]
         })
         this.Values[currIndex].insert(data, chrRange, props)
-        if (this.Values[currIndex].isEmpty()) {
+        if (this.Values[currIndex].isEmpty) {
           this.Values[currIndex] = false
         }
       } else {
@@ -239,10 +239,10 @@ var GIVe = (function (give) {
       }
 
       // Shrink `chrRange` to unprocessed range
-      chrRange.setStart((
+      chrRange.start = (
         props.DataIndex < data.length &&
-        data[props.DataIndex].getStart() < chrRange.getEnd()
-      ) ? data[props.DataIndex].getStart() : chrRange.getEnd(), true)
+        data[props.DataIndex].start < chrRange.end
+      ) ? data[props.DataIndex].start : chrRange.end
     }
 
     this._mergeChild(currIndex, true, true)
@@ -251,7 +251,7 @@ var GIVe = (function (give) {
     props.ContList = props.ContList.concat(
       data.slice(prevDataIndex, props.DataIndex)
     ).filter(function (entry) {
-      return entry.getEnd() > chrRange.getEnd()
+      return entry.end > chrRange.end
     })
 
     // Remove all processed data from `data`
@@ -297,9 +297,7 @@ var GIVe = (function (give) {
     props = props || {}
     props.ConvertTo = props.ConvertTo === false ? false : null
     // Check whether `this` shall be removed
-    if (this.getStart() === data.getStart() &&
-      this.getEnd() === data.getEnd()
-    ) {
+    if (this.start === data.start && this.end === data.end) {
       if (!removeExactMatch || this._compareData(data, this)) {
         // remove content of this
         if (typeof props.Callback === 'function') {
@@ -317,7 +315,7 @@ var GIVe = (function (give) {
     // data being remove is not self
     // locate the child entry first
     var i = 0
-    while (i < this.Values.length && this.Keys[i + 1] <= data.getStart()) {
+    while (i < this.Values.length && this.Keys[i + 1] <= data.start) {
       i++
     }
     if (this.Values[i]) {
@@ -356,12 +354,12 @@ var GIVe = (function (give) {
             var sibFrontNewNum = Math.ceil(sibFront.Values.length / 2)
             sibBack.Keys = sibFront.Keys.splice(sibFrontNewNum)
             sibBack.Values = sibFront.Values.splice(sibFrontNewNum)
-            sibFront.Keys.push(sibBack.getStart())
+            sibFront.Keys.push(sibBack.start)
           } else {
             // needs to merge, remove sibBack
-            sibFront.setNext(sibBack.getNext())
-            sibBack.Next = null
-            sibBack.Prev = null
+            sibFront.next = sibBack.next
+            sibBack.next = null
+            sibBack.prev = null
             this.Values.splice(i, 1)
             this.Keys.splice(i, 1)
           }
@@ -371,9 +369,9 @@ var GIVe = (function (give) {
           }
 
           // Update Keys (because child.Values[0] can be removed).
-          this.Keys[i] = this.Values[i].getStart()
-          if (i === 0 && this.getPrev()) {
-            this.getPrev().setEnd(this.getStart())
+          this.Keys[i] = this.Values[i].start
+          if (i === 0 && this.prev) {
+            this.prev.end = this.start
           }
         }
         this._mergeChild(i, true, true)
@@ -410,16 +408,16 @@ var GIVe = (function (give) {
     if (chrRange) {
       var currIndex = 0
       while (currIndex < this.Values.length &&
-        this.Keys[currIndex + 1] <= chrRange.getStart()
+        this.Keys[currIndex + 1] <= chrRange.start
       ) {
         currIndex++
       }
       if (this.RevDepth) {
-        return (this.Keys[currIndex] < chrRange.getEnd() &&
+        return (this.Keys[currIndex] < chrRange.end &&
           currIndex < this.Values.length) ? this.Values[currIndex] : null
       } else {
         while (
-          this.Keys[currIndex] < chrRange.getEnd() &&
+          this.Keys[currIndex] < chrRange.end &&
           currIndex < this.Values.length
         ) {
           if (this.Values[currIndex]) {
@@ -429,8 +427,8 @@ var GIVe = (function (give) {
           props.NotFirstCall = true
           currIndex++
         }
-        return (this.Keys[currIndex] < chrRange.getEnd())
-          ? this.getNext() : null
+        return (this.Keys[currIndex] < chrRange.end)
+          ? this.next : null
       }
     } else { // !chrRange
       throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))

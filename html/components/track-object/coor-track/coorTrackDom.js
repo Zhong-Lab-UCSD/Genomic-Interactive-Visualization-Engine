@@ -92,7 +92,7 @@ var GIVe = (function (give) {
       viewWindow = viewWindow || this.mainSvg.viewWindow
       maxNumOfTicks = maxNumOfTicks ||
         Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
-      var span = viewWindow.getLength() / maxNumOfTicks
+      var span = viewWindow.length / maxNumOfTicks
       var minorSpan
       if (Math.ceil(span) > 0) {
       // round up to closest [1,2,5] * 10^x

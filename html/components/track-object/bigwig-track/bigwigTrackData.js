@@ -172,9 +172,9 @@ var GIVe = (function (give) {
      * @param  {object} data - the raw data object to be added
      */
     addData (node, data) {
-      this.validCount += node.getLength()
-      this.sumData += data.value * node.getLength()
-      this.sumSquares += data.value * data.value * node.getLength()
+      this.validCount += node.length
+      this.sumData += data.value * node.length
+      this.sumSquares += data.value * data.value * node.length
       this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
       this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
       this.value = this.validCount > 0 ? this.sumData / this.validCount : 0

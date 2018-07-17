@@ -661,7 +661,7 @@ var GIVe = (function (give) {
       try {
         var result =
           (coordinate.coor - windowToDraw.start + 0.5) * this.windowWidth /
-          parseFloat(windowToDraw.getLength())
+          parseFloat(windowToDraw.length)
         if (moveOutsideToBorder) {
           if (result < 0) {
             return -1
@@ -681,7 +681,7 @@ var GIVe = (function (give) {
       var windowToDraw =
         svgToDraw.viewWindow || svgToDraw.parentNode.viewWindow
       return give.ChromRegion.clipCoordinate({chr: windowToDraw.chr,
-        coor: parseInt(x / this.windowWidth * windowToDraw.getLength() +
+        coor: parseInt(x / this.windowWidth * windowToDraw.length +
           windowToDraw.start + 0.5)}, this.parent.ref)
     }
 

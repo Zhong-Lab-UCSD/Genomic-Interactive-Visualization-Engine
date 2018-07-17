@@ -162,7 +162,7 @@ var GIVe = (function (give) {
      */
     getResolution (newVWindow) {
       return Math.max(Math.floor(
-        newVWindow.getLength() / this.windowWidth /
+        newVWindow.length / this.windowWidth /
         this.MIN_RESOLUTION_PER_PIXEL
       ), 1)
     }
@@ -178,7 +178,7 @@ var GIVe = (function (give) {
         // lastElem is a ChromRegion object, may need to add some data
         if (lastElem.overlaps(dataEntry) > 0) {
           lastElem.data.value += dataEntry.data.value *
-            lastElem.overlaps(dataEntry) / lastElem.getLength()
+            lastElem.overlaps(dataEntry) / lastElem.length
         }
         start = lastElem.getEnd()
       }
@@ -197,7 +197,7 @@ var GIVe = (function (give) {
           var newData = chrSpan.clone()
           newData.data = {
             value: dataEntry.data.value * newData.overlaps(dataEntry) /
-              newData.getLength()
+              newData.length
           }
           dataPointArray.push(newData)
           chrSpan.move(span)
@@ -425,7 +425,7 @@ var GIVe = (function (give) {
       // var x = dataEntry.getStart()
       // var y = dataEntry.getEnd()
       // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
-      //   ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value
+      //   ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
       // var vwindow = this.mainSvg.viewWindow
       this.parent.data[vwindowChr].dataPoints.push(dataEntry)
     }
@@ -723,7 +723,7 @@ var GIVe = (function (give) {
         }
         if (dataEntry && dataEntry.chr === windowToDraw.chr) {
           var yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
-            ? dataEntry.data.sumData / dataEntry.getLength() : dataEntry.data.value
+            ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
           if (currPolygon.points.length <= 0) {
           // start a new polygon, push the (x, 0) point of this segment
             currPolygon.points.push(

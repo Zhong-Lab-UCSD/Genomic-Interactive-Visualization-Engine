@@ -115,7 +115,7 @@ var GIVe = (function (give) {
             while (j < mergedGUIRanges.length &&
                (mergedGUIRanges[j].chr < GUIRange.chr ||
                 (mergedGUIRanges[j].chr === GUIRange.chr &&
-                 mergedGUIRanges[j].getEnd() <= GUIRange.getStart()))) {
+                 mergedGUIRanges[j].end <= GUIRange.start))) {
               j++
             }
 
@@ -129,23 +129,23 @@ var GIVe = (function (give) {
                 )
               ) {
                 // GUI has smaller resolution
-                if (queryRange.getStart() < GUIRange.getStart()) {
-                  if (queryRange.getEnd() > GUIRange.getEnd()) {
+                if (queryRange.start < GUIRange.start) {
+                  if (queryRange.end > GUIRange.end) {
                     // queryRange is split into two
                     var newQueryRange = queryRange.clone()
-                    newQueryRange.setStart(GUIRange.getEnd())
+                    newQueryRange.start = GUIRange.end
                     mergedGUIRanges.splice(j + 1, 0, newQueryRange)
                   }
-                  queryRange.setEnd(GUIRange.getStart())
+                  queryRange.end = GUIRange.start
                   j++
                 } else {
-                  if (queryRange.getEnd() <= GUIRange.getEnd()) {
+                  if (queryRange.end <= GUIRange.end) {
                     // queryRange is completely covered by GUIRange,
                     //    remove queryRange
                     mergedGUIRanges.splice(j, 1)
                   } else {
                     // queryRange has something at the end
-                    queryRange.setStart(GUIRange.getEnd())
+                    queryRange.start = GUIRange.end
                   }
                 }
               } else if (typeof GUIRange.Resolution === 'number' &&
@@ -154,28 +154,28 @@ var GIVe = (function (give) {
                 )
               ) {
                 // query has smaller resolution
-                if (queryRange.getStart() <= GUIRange.getStart()) {
-                  if (queryRange.getEnd() >= GUIRange.getEnd()) {
+                if (queryRange.start <= GUIRange.start) {
+                  if (queryRange.end >= GUIRange.end) {
                     // queryRange completely covers GUIRange
                     // remove GUIRange
                     GUIRange = null
                   } else {
                     // GUIRange still has something at the end
-                    GUIRange.setStart(queryRange.getEnd())
+                    GUIRange.start = queryRange.end
                     j++
                   }
                 } else {
-                  if (queryRange.getEnd() < GUIRange.getEnd()) {
+                  if (queryRange.end < GUIRange.end) {
                     // GUIRange will be split into two
                     // push the earlier GUIRange into mergedGUIRanges
                     var newGUIRange = GUIRange.clone()
-                    newGUIRange.setEnd(queryRange.getStart())
+                    newGUIRange.end = queryRange.start
                     mergedGUIRanges.splice(j, 0, newGUIRange)
-                    GUIRange.setStart(queryRange.getEnd())
+                    GUIRange.start = queryRange.end
                     j++
                   } else {
                     // queryRange has something at the end
-                    GUIRange.setEnd(queryRange.getStart())
+                    GUIRange.end = queryRange.start
                   }
                 }
               } else {

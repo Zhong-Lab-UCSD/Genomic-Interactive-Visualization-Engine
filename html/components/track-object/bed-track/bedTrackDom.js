@@ -259,8 +259,8 @@ var GIVe = (function (give) {
         ) {
           // Raster is needed
           this._RasInfo = new give.RasInfo(
-            this.mainSvg.viewWindow.getStart(),
-            this.mainSvg.viewWindow.getEnd(),
+            this.mainSvg.viewWindow.start,
+            this.mainSvg.viewWindow.end,
             this.windowWidth / this.RASTER_SIZE)
         }
         if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
@@ -336,8 +336,8 @@ var GIVe = (function (give) {
       if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE) {
         return true
       }
-      var x0 = this.transformXCoordinate(transcript.getStartCoor(), true)
-      var x1 = this.transformXCoordinate(transcript.getEndCoor(), true)
+      var x0 = this.transformXCoordinate(transcript.startCoor, true)
+      var x1 = this.transformXCoordinate(transcript.endCoor, true)
       var textAtLeft = false
       if (this.activeVisibility >
         give.TrackObject.StatusEnum.VIS_NOTEXT &&
@@ -436,7 +436,7 @@ var GIVe = (function (give) {
      */
     _drawOverflowTriangles (transcript, colorRGB, height, yCoor) {
       var halfHeight = 0.5 * height
-      if (this.transformXCoordinate(transcript.getStartCoor(), false) < 0) {
+      if (this.transformXCoordinate(transcript.startCoor, false) < 0) {
         // left triangles
         this.createRawPolygon([ '0,' + yCoor,
           halfHeight + ',' + (yCoor - halfHeight),
@@ -449,7 +449,7 @@ var GIVe = (function (give) {
         )
       }
 
-      if (this.transformXCoordinate(transcript.getEndCoor(), false) >
+      if (this.transformXCoordinate(transcript.endCoor, false) >
         this.windowWidth
       ) {
         // right triangles
@@ -555,7 +555,7 @@ var GIVe = (function (give) {
           height, halfHeightRatio, lineHeight)
         // draw text
         var newLabel = this.drawText(
-          this.transformXCoordinate(transcript.getStartCoor(), true) -
+          this.transformXCoordinate(transcript.startCoor, true) -
             this.TEXT_MARGIN_GAP,
           yCoor, transcript.getGeneName(true), 'end',
           {style: 'fill: ' + this.rgbToHex(colorRGB)}
@@ -620,8 +620,8 @@ var GIVe = (function (give) {
         ) {
           if (thickStart < blockEnd && thickStart > blockStart) {
             // CDS start is in this block
-            coor.setStart(blockStart, true)
-            coor.setEnd(thickStart)
+            coor.end = thickStart
+            coor.start = blockStart
             this.drawRectangle(coor, colorRGB,
               yCoor, height * halfHeightRatio,
               this.mainSvg, colorRGB,
@@ -631,8 +631,8 @@ var GIVe = (function (give) {
           }
           if (thickEnd < blockEnd && thickEnd > blockStart) {
             // CDS end is in this block
-            coor.setStart(blockStart, true)
-            coor.setEnd(thickEnd)
+            coor.end = thickEnd
+            coor.start = blockStart
             this.drawRectangle(coor, colorRGB, yCoor,
               height, null, colorRGB,
               give.TrackDom.VALIGN_CENTER
@@ -643,31 +643,31 @@ var GIVe = (function (give) {
         } else {
           isThick = true
         }
-        coor.setStart(blockStart, true)
-        coor.setEnd(blockEnd)
+        coor.end = blockEnd
+        coor.start = blockStart
         this.drawRectangle(coor, colorRGB,
           yCoor, height * (isThick ? 1 : halfHeightRatio),
           this.mainSvg, colorRGB, give.TrackDom.VALIGN_CENTER
         )
       }.bind(this)
 
-      var coor = new give.ChromRegion({chr: transcript.chr,
-        start: transcript.getStart(),
-        end: transcript.getEnd(),
+      let coor = new give.ChromRegion({chr: transcript.chr,
+        start: transcript.start,
+        end: transcript.end,
         strand: transcript.strand})
-      var blockStart, blockEnd
+      let blockStart, blockEnd
 
       if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
         // Have different blocks
-        blockEnd = transcript.getStart() + transcript.getBlockStarts()[0]
+        blockEnd = transcript.start + transcript.getBlockStarts()[0]
         // draw thick blocks and connecting lines
         for (let i = 0; i < transcript.getNumOfBlocks(); i++) {
-          blockStart = transcript.getStart() +
+          blockStart = transcript.start +
             transcript.getBlockStarts()[i]
           // first draw connecting lines (intron, if any)
           if (blockEnd < blockStart) {
-            coor.setStart(blockEnd, true)
-            coor.setEnd(blockStart)
+            coor.end = blockStart
+            coor.start = blockEnd
             this._drawSpanningLine(coor, colorRGB, yCoor, height)
           }
           blockEnd = blockStart + transcript.getBlockSizes()[i]
@@ -677,7 +677,7 @@ var GIVe = (function (give) {
         }
       } else {
         // no blocks
-        _processSingleBlock(transcript.getStart(), transcript.getEnd(),
+        _processSingleBlock(transcript.start, transcript.end,
           transcript.thickStart, transcript.thickEnd, coor
         )
       }
@@ -774,7 +774,7 @@ var GIVe = (function (give) {
         return blockStart
       }.bind(this)
 
-      var blockStart = transcript.getStart()
+      var blockStart = transcript.start
       var rasterDrawIndex
 
       try {
@@ -793,7 +793,7 @@ var GIVe = (function (give) {
           // Have different blocks
           let blockEnd = blockStart + transcript.getBlockStarts()[0]
           for (let i = 0; i < transcript.getNumOfBlocks(); i++) {
-            blockStart = transcript.getStart() +
+            blockStart = transcript.start +
               transcript.getBlockStarts()[i]
             // first draw connecting lines (intron, if any)
             if (blockEnd < blockStart) {
@@ -816,7 +816,7 @@ var GIVe = (function (give) {
           }
         } else {
           // no blocks
-          _processSingleBlock(blockStart, transcript.getEnd(),
+          _processSingleBlock(blockStart, transcript.end,
             transcript.thickStart, transcript.thickEnd)
         }
         if (finishRas) {
@@ -837,8 +837,8 @@ var GIVe = (function (give) {
                 end: rasObj.end,
                 strand: transcript.strand
               })
-              coor.setStart(rasObj.start, true)
-              coor.setEnd(rasObj.end)
+              coor.end = rasObj.end
+              coor.start = rasObj.start
               if (rasObj.flag === give.RasInfo.RASTER_STATES.LINE) {
                 // draw spanning line
                 this._drawSpanningLine(coor, colorRGB, yCoor, height)
@@ -863,8 +863,8 @@ var GIVe = (function (give) {
       var windowToDraw = svgToDraw.viewWindow
 
       if (windowToDraw.overlaps(region) > 0) {
-        var x0 = this.transformXCoordinate(region.getStartCoor(), true)
-        var x1 = this.transformXCoordinate(region.getEndCoor(), true)
+        var x0 = this.transformXCoordinate(region.startCoor, true)
+        var x1 = this.transformXCoordinate(region.endCoor, true)
         this.drawLine(x0, y, x1, y, colorRGB)
         this.drawStrandArrows(x0, y - 0.5 * height, x1, y + 0.5 * height,
           region.getStrand(), colorRGB)

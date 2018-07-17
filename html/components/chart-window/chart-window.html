@@ -827,7 +827,7 @@ var GIVe = (function (give) {
         try {
           let newWindow = this.getVerifiedViewWindow(newValue)
           let currWindow = this._pendingVWindow || this._viewWindow
-          if (give.ChromRegion.compare(currWindow, newWindow)) {
+          if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
             this.changeViewWindow(newWindow)
           }
         } catch (err) {
@@ -965,16 +965,14 @@ var GIVe = (function (give) {
     /**
      * Reset the entire DOM display without updating the DOM
      */
-    resetDOM (newWindow, contexts) {
+    resetDOM (contexts) {
       contexts = contexts || []
       if (!this._initialized) {
-        if (this.refObj &&
-          (newWindow || this._viewWindow || this._pendingVWindow)
-        ) {
+        if (this.refObj) {
           this._initialized = true
         } else {
           this._updateCoordinates()
-          throw new give.GiveError('Reference or window not initialized.')
+          throw new give.GiveError('Reference not initialized.')
         }
       }
       this._clearDOM()
@@ -1026,17 +1024,25 @@ var GIVe = (function (give) {
       this._removeTrack(removedTracks)
     }
 
+    /**
+     * @function updateDOM - Update the DOM structure of the window WITHOUT
+     *    REFRESHING THE CONTENTS (so that this function can be kept sync).
+     *    If `this._initialized` is false, reset the whole DOM.
+     * @param  {Array<object>} contexts - Contexts for neighboring windows
+     *    to check if multi-window tracks should be displayed.
+     */
     updateDOM (contexts) {
       // update existing DOMs, first remove all tracks that should be hidden
-      // if noRefreshContent = true, do not refresh content
-      // (should be refreshed later)
+      if (!this._initialized) {
+        return this.resetDOM(null, contexts)
+      }
       contexts = contexts || []
       if (this._trackDoms && this._trackDoms.length > 0) {
         this._removeInvisibleTrackDoms(contexts)
       }
 
       // then add new Tracks (if not there already)
-      return this._addAllTrackDoms(contexts)
+      this._addAllTrackDoms(contexts)
     }
 
     /**
