@@ -25,7 +25,7 @@ var GIVe = (function (give) {
    * self-balanced.
    *
    * See `GIVE.GiveNonLeafNode` for common non-leaf node documentation.
-   * See `GIVE.WitheringNode` for withering node documentation.
+   * See `give.WitheringMixin` for withering node documentation.
    *
    * @typedef {object} PineNode
    * @property {boolean} IsRoot
@@ -50,7 +50,7 @@ var GIVe = (function (give) {
    *
    * @constructor
    * @implements give.GiveNonLeafNode
-   * @implements give.WitheringNode
+   * @implements give.WitheringMixin
    * @param {object} props
    * @param {GiveTree} props.Tree - for `this.Tree`
    * @param {boolean} props.IsRoot
@@ -62,7 +62,7 @@ var GIVe = (function (give) {
     // implementing `GiveNonLeafNode`
     give.GiveNonLeafNode.apply(this, arguments)
     // implementing `WitheringNode`
-    give.WitheringNode.apply(this, arguments)
+    give.WitheringMixin.apply(this, arguments)
 
     // Note that `this.RevDepth` should be depending on both scaling factors.
     if (this.end - this.start <= this.Tree.LeafScalingFactor) {
@@ -78,7 +78,7 @@ var GIVe = (function (give) {
   }
 
   give.extend(give.GiveNonLeafNode, give.PineNode)
-  give.WitheringNode.addWithering.call(give.PineNode)
+  give.WitheringMixin.addWithering.call(give.PineNode)
 
   give.PineNode.prototype.hasData = function () {
     return (typeof this.getSummaryData === 'function' &&
@@ -715,7 +715,7 @@ var GIVe = (function (give) {
     // If current node itself withers,
     // it will cause this and *all the children of this* wither
     // NOTE: Root node may also wither, which causes the whole tree to wither
-    if (!give.WitheringNode.prototype.wither.call(this)) {
+    if (!give.WitheringMixin.prototype.wither.call(this)) {
       this.clear(null)
       // return null so that the parent can remove it
       return null

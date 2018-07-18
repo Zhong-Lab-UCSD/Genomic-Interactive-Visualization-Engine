@@ -45,9 +45,9 @@ var GIVe = (function (give) {
    *    `Values` can be `false` or `null` (unless prohibited by
    *    implementation) indicating empty regions or data not loaded,
    *    respectively.
-   * @property {number} RevDepth - "Reversed depth" of the node. The one holding
-   *    leaf nodes (should be `GIVE.DataNode` or similar implementations) is at
-   *    `0` and root is at maximum.
+   * @property {number} RevDepth - "Reversed depth" of the node. The one
+   *    holding leaf nodes (should be `GIVE.DataNode` or similar
+   *    implementations) is at `0` and root is at maximum.
    * @property {GiveNonLeafNode|null|boolean} Next - The next node (sibling).
    *    Can be `null` or `false`.
    * @property {GiveNonLeafNode|null|boolean} Prev - The previous node
@@ -125,9 +125,9 @@ var GIVe = (function (give) {
      *    truncated
      * @param  {boolean} truncStart - Whether to truncate the start coordinate
      * @param  {boolean} truncEnd   - Whether to truncate the end coordinate
-     * @param  {boolean} doNotThrow - Whether to throw an exception if truncated
-     *    region has a length not greater than 0 (because `chrRange` does not
-     *    overlap with this node at all).
+     * @param  {boolean} doNotThrow - Whether to throw an exception if
+     *    truncated region has a length not greater than 0 (because `chrRange`
+     *    does not overlap with this node at all).
      * @returns {ChromRegionLiteral}  Returns a new chromosomal range with
      *    trancated coordinates.
      */
@@ -231,8 +231,8 @@ var GIVe = (function (give) {
     /**
      * setNext - set the next node and fix all links within the child.
      *
-     * @param  {GiveNonLeafNode|null} nextNode - the node that serves as the next
-     *    node
+     * @param  {GiveNonLeafNode|null} nextNode - the node that serves as the
+     *    next node
      */
     set next (nextNode) {
       if (!this.Tree.neighboringLinks) {
@@ -316,8 +316,8 @@ var GIVe = (function (give) {
     /**
      * _severeChildLinks - break links between all children.
      *
-     * @param  {boolean|null} convertTo convert the link into. Should be either
-     *    `null` (default) or `false`.
+     * @param  {boolean|null} convertTo convert the link into. Should be
+     *    either `null` (default) or `false`.
      * @param  {boolean} noPrev - do not severe links from previous siblings
      * @param  {boolean} noNext - do not severe links from next siblings
      */
@@ -325,7 +325,8 @@ var GIVe = (function (give) {
       convertTo, noPrev, noNext
     ) {
       if (!this.Tree.neighboringLinks) {
-        throw new give.GiveError('No child links to severe in an unlinked tree!')
+        throw new give.GiveError(
+          'No child links to severe in an unlinked tree!')
       }
       if (!noPrev) {
         try {
@@ -343,14 +344,12 @@ var GIVe = (function (give) {
      * _severeLinks - break links between siblings and `this`, and between all
      *    children as well.
      *
-     * @param  {boolean|null} convertTo convert the link into. Should be either
-     *    `null` (default) or `false`.
+     * @param  {boolean|null} convertTo convert the link into. Should be
+     *    either `undefined` (default), `null` or `false`.
      * @param  {boolean} noPrev - do not severe links from previous siblings
      * @param  {boolean} noNext - do not severe links from next siblings
      */
-    _severeLinks (
-      convertTo, noPrev, noNext
-    ) {
+    _severeLinks (convertTo, noPrev, noNext) {
       this._severeChildLinks(convertTo, noPrev, noNext)
       this._severeSelfLinks(convertTo, noPrev, noNext)
     }
@@ -359,14 +358,12 @@ var GIVe = (function (give) {
      * _fixChildLinks - fix sibling links for a specific child.
      *
      * @param  {number} index - the index of the child
-     * @param  {boolean} doNotFixBack - if `true`, the links after this child will
-     *    not be fixed.
-     * @param  {boolean} doNotFixFront - if `true`, the links before this child
+     * @param  {boolean} doNotFixBack - if `true`, the links after this child
      *    will not be fixed.
+     * @param  {boolean} doNotFixFront - if `true`, the links before this
+     *    child will not be fixed.
      */
-    _fixChildLinks (
-      index, doNotFixBack, doNotFixFront
-    ) {
+    _fixChildLinks (index, doNotFixBack, doNotFixFront) {
       if (!this.Tree.neighboringLinks) {
         throw new give.GiveError('No child links to fix in an unlinked tree!')
       }
@@ -432,7 +429,8 @@ var GIVe = (function (give) {
      * @memberof GiveNonLeafNode.prototype
      *
      * @param {number} index - index of the child
-     * @returns {give.GiveTreeNode|boolean|null}  the next sibling of the child
+     * @returns {give.GiveTreeNode|boolean|null}  the next sibling of the
+     *    child
      */
     _getChildNext (index) {
       return (index < (this.Values.length - 1) ? this.Values[index + 1]
@@ -443,29 +441,30 @@ var GIVe = (function (give) {
      * insert - Insert data under this node
      * @memberof GiveNonLeafNode.prototype
      *
-     * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries
-     *    (each should be an extension of `GIVe.ChromRegion`).
+     * @param {Array<ChromRegionLiteral>} data - the sorted array of data
+     *    entries (each should be an extension of `GIVe.ChromRegion`).
      *    `data === null` or `data === []` means there is no data in `chrRange`
      *    and `false`s will be used in actual storage.
-     *    __NOTICE:__ any data overlapping `chrRange` should appear either here or
-     *    in `continuedList`, otherwise `continuedList` in data entries may not
-     *    work properly.
-     *    After insertion, any entry within `data` that overlaps `chrRange` will
-     *    be deleted from the array.
-     * @param {ChromRegionLiteral} chrRange - the chromosomal range that `data`
-     *    corresponds to.
-     *    This is used to mark the empty regions correctly. No `null` will present
-     *    within these regions after this operation.
+     *    __NOTICE:__ any data overlapping `chrRange` should appear either
+     *    here or in `continuedList`, otherwise `continuedList` in data
+     *    entries may not work properly.
+     *    After insertion, any entry within `data` that overlaps `chrRange`
+     *    will be deleted from the array.
+     * @param {ChromRegionLiteral} chrRange - the chromosomal range that
+     *    `data` corresponds to.
+     *    This is used to mark the empty regions correctly. No `null` will
+     *    present within these regions after this operation.
      *    This parameter should be an `Object` with at least two properties:
      *    `{ start: <start coordinate>, end: <end coordinate>, ... }`,
      *    preferably a `GIVe.ChromRegion` object.
-     * @param {object|null} props - additional properties being passed onto nodes.
+     * @param {object|null} props - additional properties being passed onto
+     *    nodes.
      * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
      *    entries that should not start in `chrRange` but are passed from the
      *    earlier regions, this will be useful for later regions if date for
      *    multiple regions are inserted at the same time
-     * @param {function|null} props.Callback - the callback function to be used
-     *    (with the data entry as its sole parameter) when inserting
+     * @param {function|null} props.Callback - the callback function to be
+     *    used (with the data entry as its sole parameter) when inserting
      * @param {object|null} props.ThisVar - `this` used in calling
      *    `props.Callback`.
      * @param {function|null} props.LeafNodeCtor - the constructor function of
@@ -509,23 +508,25 @@ var GIVe = (function (give) {
     /**
      * _restructure - The function to be called after adding/removing data to
      *    the node.
-     *    This is used in implementations that involve post-insertion processes
-     *    of the tree (for example, rebalancing in B+ tree derivatives).
-     *    For trees that do not implement post-insertion processes, return `this`.
+     *    This is used in implementations that involve post-insertion
+     *    processes of the tree (for example, rebalancing in B+ tree
+     *    derivatives).
+     *    For trees that do not implement post-insertion processes, return
+     *    `this`.
      * @memberof GiveNonLeafNode.prototype
      *
      * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>|false}
-     *    This shall reflect whether there are any changes in the tree structure.
-     *    for root and non-root nodes:
-     *    * For root nodes, always return `this` (cannot delete root even without
-     *      any children).
-     *    * for inner nodes (or leaf), if the node should be removed (being merged
-     *      with its sibling(s) or becoming an empty node, for example), return
-     *      `false`. Return `this` in all other cases.
+     *    This shall reflect whether there are any changes in the tree
+     *    structure for root and non-root nodes:
+     *    * For root nodes, always return `this` (cannot delete root even
+     *      without any children).
+     *    * For inner nodes (or leaf), if the node should be removed (being
+     *      merged with its sibling(s) or becoming an empty node, for
+     *      example), return `false`. Return `this` in all other cases.
      */
     _restructure () {
-      // for non-auto-balancing trees, return false if this node has no data any
-      //    more
+      // for non-auto-balancing trees, return false if this node has no data
+      //    any more
       if (this.Values[0] && this.Values[0].isEmpty) {
         this.Values[0] = false
       }
@@ -536,8 +537,8 @@ var GIVe = (function (give) {
      * _addNonLeafRecords - add records to a non-leaf node
      * @memberof GiveNonLeafNode.prototype
      *
-     * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries.
-     *    See `this.insert` for detailed description.
+     * @param {Array<ChromRegionLiteral>} data - the sorted array of data
+     *    entries. See `this.insert` for detailed description.
      * @param {ChromRegionLiteral} chrRange - see `this.insert`
      * @param {object} props - additional properties being passed onto nodes.
      * @param {Array<ChromRegionLiteral>} props.ContList - see `this.insert`
@@ -545,16 +546,16 @@ var GIVe = (function (give) {
      * @param {object|null} props.ThisVar - see `this.insert`
      */
     _addNonLeafRecords (data, chrRange, props) {
-      throw new give.GiveError('GiveNonLeafNode._addNonLeafRecords not implemented in `' +
-        this.constructor.name + '`!')
+      throw new give.GiveError('GiveNonLeafNode._addNonLeafRecords not ' +
+        'implemented in `' + this.constructor.name + '`!')
     }
 
     /**
      * _addLeafRecords - add records to a leaf node (with `revDepth === 0`)
      * @memberof GiveNonLeafNode.prototype
      *
-     * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries.
-     *    See `this.insert` for detailed description.
+     * @param {Array<ChromRegionLiteral>} data - the sorted array of data
+     *    entries. See `this.insert` for detailed description.
      * @param {ChromRegionLiteral} chrRange - see `this.insert`
      * @param {object} props - additional properties being passed onto nodes.
      * @param {Array<ChromRegionLiteral>} props.ContList - see `this.insert`
@@ -563,8 +564,8 @@ var GIVe = (function (give) {
      * @param {function|null} props.LeafNodeCtor - see `this.insert`
      */
     _addLeafRecords (data, chrRange, props) {
-      throw new give.GiveError('GiveNonLeafNode._addLeafRecords not implemented in `' +
-        this.constructor.name + '`!')
+      throw new give.GiveError('GiveNonLeafNode._addLeafRecords not ' +
+        'implemented in `' + this.constructor.name + '`!')
     }
 
     /**
@@ -576,8 +577,8 @@ var GIVe = (function (give) {
      *
      * @param  {ChromRegionLiteral|GiveTreeNode} data - the data entry being
      *    removed.
-     * @param  {boolean} removeExactMatch - whether an exact match is needed to
-     *    remove multiple data entries with the same start and end values.
+     * @param  {boolean} removeExactMatch - whether an exact match is needed
+     *    to remove multiple data entries with the same start and end values.
      *    If `true`, `data` will be compared by `.equalTo(data)` if exists,
      *    `===` if not. (this is done via calling
      *    `this.constructor._compareData(dataIn, dataEx)`)
@@ -585,14 +586,14 @@ var GIVe = (function (give) {
      *    removed.
      * @param  {object|null} props - additional properties being
      *    passed onto nodes.
-     * @param {function|null} props.Callback - the callback function to be used
-     *    (with the data entry as its sole parameter) when deleting
+     * @param {function|null} props.Callback - the callback function to be
+     *    used (with the data entry as its sole parameter) when deleting
      * @param {object|null} props.ThisVar - `this` used in calling
      *    `props.Callback`.
      * @returns {give.GiveTreeNode|boolean}
      *    This shall reflect whether auto-balancing is supported for the tree.
-     *    If structure of the tree needs to be changed, return `false` and let the
-     *    caller (likely the parent node) handle the upper structure.
+     *    If structure of the tree needs to be changed, return `false` and let
+     *    the caller (likely the parent node) handle the upper structure.
      */
     remove (data, removeExactMatch, props) {
       throw new give.GiveError('GiveNonLeafNode.remove not implemented in `' +
@@ -608,23 +609,23 @@ var GIVe = (function (give) {
 
     /**
      * _splitChild - split a child into two
-     * If the old child at `index` is not `null` or `false`, both `newLatterChild`
-     *    and `newFormerChild` will be needed (otherwise the tree structure may
-     *    be corrupted).
+     * If the old child at `index` is not `null` or `false`, both
+     *    `newLatterChild` and `newFormerChild` will be needed (otherwise the
+     *    tree structure may be corrupted).
      *
      * @param  {number} index - index of the child to be split.
      * @param  {number} newKey - the new key separating the two children
-     * @param  {give.GiveTreeNode|false|null} [newLatterChild] - the new latter
-     *    child. If `undefined`, use the old child.
-     * @param  {give.GiveTreeNode|false|null} [newFormerChild] - the new former
-     *    child. If `undefined`, use the old child.
+     * @param  {give.GiveTreeNode|false|null} [newLatterChild] - the new
+     *    latter child. If `undefined`, use the old child.
+     * @param  {give.GiveTreeNode|false|null} [newFormerChild] - the new
+     *    former child. If `undefined`, use the old child.
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
       if (this.Values[index] &&
         (newLatterChild === undefined && newFormerChild === undefined)
       ) {
-        throw new give.GiveError('Cannot split an existing child without providing both' +
-          ' resulting siblings!')
+        throw new give.GiveError('Cannot split an existing child without ' +
+          'providing both resulting siblings!')
       }
       this.Keys.splice(index + 1, 0, newKey)
       this.Values.splice(index + 1, 0,
@@ -645,7 +646,8 @@ var GIVe = (function (give) {
     /**
      * _childMergable - determine whether two children are mergable.
      *
-     * @param  {type} childFront - the child at front being considered to merge.
+     * @param  {type} childFront - the child at front being considered to
+     *    merge.
      * @param  {type} childBack - the child at back being considered to merge.
      * @returns {type}            return whether the children are mergable.
      *    If both are `null` or both are `false`, return `true`.
@@ -655,7 +657,8 @@ var GIVe = (function (give) {
      */
     static _childMergable (childFront, childBack) {
       return (
-        childFront === childBack && (childFront === null || childFront === false)
+        childFront === childBack &&
+        (childFront === null || childFront === false)
       ) || (
         childFront && (typeof childFront.mergeAfter === `function`) &&
         childFront.mergeAfter(childBack)
@@ -668,18 +671,19 @@ var GIVe = (function (give) {
      *
      * @param  {number} index - index of the child
      * @param  {boolean} mergeNext - whether merge the next child as well
-     * @param  {boolean} crossBorder - whether merging can happen across parent
-     *    borders. If so, the children nodes in siblings of this may be expanded.
-     *    (The number of children will not be affected in sibling nodes, so that
-     *    the structure of neighboring nodes are not messed up.)
+     * @param  {boolean} crossBorder - whether merging can happen across
+     *    parent borders. If so, the children nodes in siblings of this may be
+     *    expanded. (The number of children will not be affected in sibling
+     *    nodes, so that the structure of neighboring nodes are not messed
+     *    up.)
      *    __Note:__ `crossBorder` can only be used when
      *    `this.Tree.neighboringLinks === true`.
      *    If `this.Tree.neighboringLinks === false`, this argument will be
      *    ignored, because `this` has no way of knowing its own siblings, thus
      *    unable to merge children across sibling
      *    borders.
-     * @returns {boolean} whether merge happened to the previous child (this is
-     *    used for calling function to correct indices when merging during
+     * @returns {boolean} whether merge happened to the previous child (this
+     *    is used for calling function to correct indices when merging during
      *    traversing.)
      */
     _mergeChild (index, mergeNext, crossBorder) {
@@ -753,8 +757,36 @@ var GIVe = (function (give) {
           currIndex < this.Values.length
         ) {
           if (this.Values[currIndex]) {
-            this.Values[currIndex].traverse(chrRange, callback, thisVar, filter,
-              breakOnFalse, props)
+            this.Values[currIndex].traverse(chrRange, callback, thisVar,
+              filter, breakOnFalse, props)
+          }
+          props.NotFirstCall = true
+          currIndex++
+        }
+        return true
+      } else { // !chrRange
+        throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      } // end if(chrRange)
+    }
+
+    traverseNode (chrRange, func, filter, breakOnFalse, props) {
+      if (!func(this) && breakOnFalse) {
+        return false
+      }
+      if (chrRange) {
+        var currIndex = 0
+        while (currIndex < this.Values.length &&
+          this.Keys[currIndex + 1] <= chrRange.start
+        ) {
+          currIndex++
+        }
+        while (
+          this.Keys[currIndex] < chrRange.end &&
+          currIndex < this.Values.length
+        ) {
+          if (this.Values[currIndex]) {
+            this.Values[currIndex].traverse(chrRange, callback, thisVar,
+              filter, breakOnFalse, props)
           }
           props.NotFirstCall = true
           currIndex++
@@ -766,15 +798,16 @@ var GIVe = (function (give) {
     }
 
     /**
-     * getUncachedRange - Return an array of chrRegions that does not have data
-     *   loaded to allow buffered loading of data
+     * getUncachedRange - Return an array of chrRegions that does not have
+     *   data loaded to allow buffered loading of data
      *
      * @param  {GIVE.ChromRegion} chrRange - The range of query.
-     * @param  {object|null} props - additional properties being passed onto nodes
+     * @param  {object|null} props - additional properties being passed onto
+     *    nodes
      * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
      *    regions. This will be appended to the front of returned value.
-     *    This array will be updated if it gets appended to reduce memory usage
-     *    and GC.
+     *    This array will be updated if it gets appended to reduce memory
+     *    usage and GC.
      * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
      *    does not have the data at the current resolution requirement.
      *    If no non-data ranges are found, return []

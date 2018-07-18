@@ -28,14 +28,23 @@ var GIVe = (function (give) {
    * @typedef {object} WitheringNode
    * @property {number} _life - life of this node.
    *
-   * @class give.WitheringNode
+   * @class give.WitheringMixin
    *
    * @constructor
    * @param {object} props - properties that will be passed to the individual
    *    implementations
    * @param {object} props.LifeSpan - for `this._life`
    */
-  give.WitheringNode = function (props) {
+  class WitheringNode extends give.GiveTreeNode {
+    constructor (props) {
+      super(...arguments)
+      this._life = props.LifeSpan
+    }
+  }
+  var witheringMixin = Base => class extends Base {
+    constructor (...args) {
+      super(...args)
+      if
     // start and length is for the corresponding region
     give.GiveTreeNode.apply(this, arguments)
     this._life = props.LifeSpan
@@ -43,17 +52,17 @@ var GIVe = (function (give) {
 
   /**
    * addWithering - add withering support to `this`. Use
-   *    `give.WitheringNode.addWithering.call` to add withering support to any
+   *    `give.WitheringMixin.addWithering.call` to add withering support to any
    *    class.
    */
-  give.WitheringNode.addWithering = function () {
+  give.WitheringMixin.addWithering = function () {
     /**
      * wither - reduces life of self and sub-branches and prune branches that
      *    are too old. Implemented as a caching feature.
      *
      * @param  {number} [amount] - the amount to be deducted from life.
      *    Default is 1.
-     * @returns {give.WitheringNode|null} return `this` if the whole tree has
+     * @returns {give.WitheringMixin|null} return `this` if the whole tree has
      *    not withered yet. Otherwise return `null`
      */
     this.prototype.wither = function (amount) {
@@ -81,7 +90,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.WitheringNode.addWithering()
+  give.WitheringMixin.addWithering()
 
   return give
 })(GIVe || {})

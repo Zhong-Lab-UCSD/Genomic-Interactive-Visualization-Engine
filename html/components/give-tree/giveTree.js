@@ -40,6 +40,8 @@ var GIVe = (function (give) {
      * @param {function} NonLeafNodeCtor - for `this._NonLeafNodeCtor`
      * @param {object} props - properties that will be passed to the
      *    individual implementations
+     * @param {number} props.LifeSpan - Whether this tree shall wither.
+     *    if `props
      * @param {function} props.LeafNodeCtor - if omitted, the constructor of
      *    `this.root` will be used
      * @memberof GiveTree
@@ -51,12 +53,28 @@ var GIVe = (function (give) {
       props.End = chrRange.end
       props.Tree = this
       props.IsRoot = true
-      this._root = new NonLeafNodeCtor(props)
+      if (props.LifeSpan && props.LifeSpan > 0) {
+        this._currGen = 0
+        this.lifeSpan = props.lifeSpan
+        props._currGen = this._currGen
+        this._root = new give.WitheringMixin(NonLeafNodeCtor)(props)
+      } else {
+        this._currGen = null
+        this._root = new NonLeafNodeCtor(props)
+      }
       this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
     }
 
     get neighboringLinks () {
       return this.constructor.neighboringLinks
+    }
+
+    get coveringRange () {
+      return new give.ChromRegion({
+        chr: this.Chr,
+        start: this._root.start,
+        end: this._root.end
+      })
     }
 
     /**
@@ -115,14 +133,38 @@ var GIVe = (function (give) {
      *    leaf nodes if they are not the same as the non-leaf nodes.
      */
     insert (data, chrRanges, props) {
+      this._advanceGen()
+      let exceptions = []
       if (Array.isArray(chrRanges)) {
-        chrRanges.forEach(function (range, index) {
-          this._insertSingleRange(data, range,
-            Array.isArray(props) ? props[index] : props)
-        }, this)
+        chrRanges.forEach((range, index) => {
+          try {
+            this._insertSingleRange(data, range,
+              Array.isArray(props) ? props[index] : props)
+          } catch (err) {
+            err.message = '[insert] ' + err.message
+            exceptions.push(err)
+            return null
+          }
+        })
       } else {
-        this._insertSingleRange(data, chrRanges, props)
+        try {
+          this._insertSingleRange(data, chrRanges, props)
+        } catch (err) {
+          err.message = '[insert] ' + err.message
+          exceptions.push(err)
+          return null
+        }
       }
+      if (exceptions.length > 0) {
+        let message = exceptions.reduce(
+          (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
+          'Exception occured during insertion:'
+        )
+        give._verbConsole.warn(message)
+        give.fireSignal('warning', { msg: message }, null, this)
+        throw new give.GiveError(message)
+      }
+      this._wither()
     }
 
     /**
@@ -147,13 +189,29 @@ var GIVe = (function (give) {
       this._root = this._root.remove(data, removeExactMatch, callback, props)
     }
 
+    _advanceGen (amount) {
+      if (this._currGen !== null) {
+        this._currGen += (amount || 1)
+        if (this._currGen >= this.constructor._MAX_GENERATION) {
+          this._currGen = 0
+        }
+      }
+    }
+
+    _wither () {
+      if (this._currGen !== null) {
+        this._root.traverse(null, )
+      }
+    }
+
     /**
      * traverse - traverse given chromosomal range to apply functions to all
      * overlapping data entries.
      * @memberof GiveTreeBase.prototype
      *
-     * @param {ChromRegionLiteral} chrRanges - the chromosomal range to
-     *    traverse
+     * @param {ChromRegionLiteral} chrRange - the chromosomal range to
+     *    traverse. If omitted or falsey value is supplied, use the entire
+     *    range.
      * @param {function} callback - the callback function to be used (with the
      *    data entry as its sole parameter) on all overlapping data entries
      *    (that pass `filter` if it exists).
@@ -171,13 +229,24 @@ var GIVe = (function (give) {
      */
     traverse (chrRange, callback, thisVar, filter, breakOnFalse, props) {
       props = props || {}
-      if (!chrRange.chr || chrRange.chr === this.Chr) {
+      if (!chrRange || !chrRange.chr || chrRange.chr === this.Chr) {
+        this._advanceGen()
         try {
-          chrRange = this._root.truncateChrRange(chrRange, true, false)
+          chrRange = chrRange
+            ? this._root.truncateChrRange(chrRange, true, false)
+            : this.coveringRange
           this._root.traverse(chrRange, callback, thisVar, filter,
             breakOnFalse, props)
         } catch (err) {
+          give._verbConsole.warn(err)
+          give.fireSignal('warning', { msg: err.toString() }, null, this)
           return false
+        } finally {
+          // implement withering parts:
+          // 1. Advance `this._currGen` by 1
+          // 2. try to find any child that is too old
+          //    (`this._currGen - birthGen > this.lifeSpan`) and remove them.
+          this._wither()
         }
       }
       return true
@@ -207,6 +276,8 @@ var GIVe = (function (give) {
       }
     }
   }
+
+  GiveTree._MAX_GENERATION = Number.MAX_SAFE_INTEGER
 
   give.GiveTree = GiveTree
 
