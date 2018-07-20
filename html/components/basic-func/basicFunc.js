@@ -186,13 +186,8 @@ var GIVe = (function (give) {
   give.postAjax = give.postAjax || function (target, params, responseFunc, responseType, method, errorFunc, thisVar) {
     // this is a wrapper for Ajax calls throughout GIVe
     method = method || 'POST'
-    responseType = (responseType || 'text').toLowerCase()
+    responseType = (responseType || '').toLowerCase()
     var xhr = new window.XMLHttpRequest()
-    try {
-      xhr.responseType = responseType
-    } catch (err) {
-      xhr.responseType = 'text'
-    }
     xhr.onload = function () {
       var responses = xhr.response
       if (xhr.status >= 200 && xhr.status < 400) {
@@ -223,6 +218,11 @@ var GIVe = (function (give) {
       }
     }
     xhr.open(method, target)
+    try {
+      xhr.responseType = responseType
+    } catch (err) {
+      xhr.responseType = ''
+    }
     if (params instanceof window.FormData) {
       xhr.send(params)
     } else {
