@@ -628,7 +628,7 @@ var GIVe = (function (give) {
         childFront === childBack &&
         (childFront === null || childFront === false)
       ) || (
-        childFront && (typeof childFront.mergeAfter === `function`) &&
+        childFront && (typeof childFront.mergeAfter === 'function') &&
         childFront.mergeAfter(childBack)
       )
     }
