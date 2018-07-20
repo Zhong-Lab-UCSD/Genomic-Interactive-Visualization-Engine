@@ -186,15 +186,17 @@ var GIVe = (function (give) {
   give.postAjax = give.postAjax || function (target, params, responseFunc, responseType, method, errorFunc, thisVar) {
     // this is a wrapper for Ajax calls throughout GIVe
     method = method || 'POST'
+    responseType = (responseType || '').toLowerCase()
     var xhr = new window.XMLHttpRequest()
-    xhr.responseType = responseType || ''
+    try {
+      xhr.responseType = responseType
+    } catch (err) {
+      xhr.responseType = ''
+    }
     xhr.onload = function () {
       var responses = xhr.response
       if (xhr.status >= 200 && xhr.status < 400) {
-        if (xhr.responseType.toLowerCase() === 'json' &&
-           (navigator.appName === 'Microsoft Internet Explorer' ||
-          !!(navigator.userAgent.match(/Trident/) ||
-             navigator.userAgent.match(/rv 11/)))) {
+        if (responseType === 'json' && responseType !== xhr.responseType) {
           // IE detected (should be IE 11), fix the json return issue
           give._verboseConsole(
             'You are currently using IE 11 to visit this site. ' +

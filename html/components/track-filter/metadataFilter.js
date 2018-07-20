@@ -20,7 +20,7 @@ var GIVe = (function (give) {
 
   class MetadataFilter extends give.DataFilter {
     constructor (metaKeyArr, criteriaValue, compFunction, metaFetchFunction) {
-      super(...arguments)
+      super.apply(this, arguments)
       this.MetaKeys = metaKeyArr
       this.Criteria = criteriaValue
       this.CompFunc = compFunction
