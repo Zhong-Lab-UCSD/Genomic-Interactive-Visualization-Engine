@@ -20,9 +20,9 @@ var GIVe = (function (give) {
 
   /**
    * Object for data storage
-   * Every record will serve as a bin, with a start and end coordinate, and all
-   * records combined will serve as a division of the chromosome (no gap, no
-   * overlap) with all the start value for dividing points.
+   * Every record will serve as a bin, with a start and end coordinate, and
+   * all records combined will serve as a division of the chromosome (no gap,
+   * no overlap) with all the start value for dividing points.
    *
    * For example:
    * bins:   << |                      |       |          |       >>
@@ -38,274 +38,269 @@ var GIVe = (function (give) {
    *                                                      [-]
    *
    * Records can have value of:
-   *    `null`:   data not loaded yet, when upper layer encounter this, the code
-   *              there needs to retrieve potential data;
+   *    `null`:   data not loaded yet, when upper layer encounter this, the
+   *              code there needs to retrieve potential data;
    *    `false`:  there is no data in this bin;
    *    A `GIVe.DataNode` instance:
    *              the instance of a class described in this file
    *
    * @typedef {object} GiveDataNodeBase
    * @property {number} Start - the starting coordinate of this data node.
-   * @property {Array<ChromRegionLiteral>} StartList - A list of data entries
+   * @property {Array<ChromRegionLiteral>} startList - A list of data entries
    *    that __start exactly at__ the start coordinate of this node.
-   *    `StartList` will become an empty array only if the previous bin is
-   *    `null` (because otherwise this bin can be merged with the previous one),
-   *    or this is the first bin of the storage unit;
-   * @property {Array<ChromRegionLiteral>} ContList - A list of data entries
+   *    `startList` will become an empty array only if the previous bin is
+   *    `null` (because otherwise this bin can be merged with the previous
+   *    one), or this is the first bin of the storage unit;
+   * @property {Array<ChromRegionLiteral>} contList - A list of data entries
    *    that __continue into__ the start coordinate of this node. This array
    *    will be sorted by the actual starting points, `[]` will have the same
-   *    effect as `undefined`. This is used in `GiveDataNodeBase.traverse` only
-   *    at the first node. See `GiveDataNodeBase.traverse` for details.
+   *    effect as `undefined`. This is used in `GiveDataNodeBase.traverse`
+   *    only at the first node. See `GiveDataNodeBase.traverse` for details.
    * @class give.DataNode
    *
-   * @constructor
    * @implements give.GiveTreeNode
-   * @param {object} props - properties that will be passed to the individual
-   *    implementations. For `GIVE.DataNode`, three properties will be used:
-   * @param {number} props.Start - for `this.Start`
-   * @param {Array<ChromRegionLiteral>|null} props.StartList - for
-   *    `this.StartList`
-   * @param {Array<ChromRegionLiteral>|null} props.ContList - for
-   *    `this.ContList`
-   *
    */
-  give.DataNode = function (props) {
-    give.GiveTreeNode.call(this, arguments)
-    this.Start = props.Start
-    this.StartList = props.StartList || []
-    this.ContList = props.ContList || []
-  }
-
-  give.extend(give.GiveTreeNode, give.DataNode)
-
-  /**
-   * Implementing GIVE.GiveTreeNode methods
-   */
-
-  /**
-   * hasData - get whether this data node has data stored.
-   *
-   * @returns {type}  Because data node is populated with actual data,
-   *    it will always return `true` (always has data).
-   */
-  give.DataNode.prototype.hasData = function () {
-    return true
-  }
-
-  give.DataNode.prototype.getStart = function () {
-    return this.Start
-  }
-
-  /**
-   * insert - Insert data under this node
-   * @memberof GiveNonLeafNode.prototype
-   *
-   * @param {Array<ChromRegionLiteral>} data - the sorted array of data entries
-   *    (each should be an extension of `GIVe.ChromRegion`).
-   *    `data === null` or `data === []` means there is no data in `chrRange`
-   *    and `false`s will be used in actual storage.
-   *    __NOTICE:__ any data overlapping `chrRange` should appear either here or
-   *    in `continuedList`, otherwise `continuedList` in data entries may not
-   *    work properly.
-   *    After insertion, any entry within `data` that has `.getStart()` value
-   *    larger than `this.getStart()` will be deleted from the array or marked
-   *    for deletion via `props.DataIndex`. See `props.DataIndex` for details.
-   * @param {ChromRegionLiteral} chrRanges - DataNode should not handle this.
-   * @param {object} props - additional properties being passed onto nodes.
-   * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
-   *    entries that should not start in `chrRange` but are passed from the
-   *    earlier regions, this will be useful for later regions if date for
-   *    multiple regions are inserted at the same time
-   * @param {function|null} props.Callback - the callback function to be used
-   *    (with the data entry as its sole parameter) when inserting
-   * @param {object|null} props.ThisVar - `this` used in calling
-   *    `props.Callback`.
-   * @param {number|null} props.DataIndex - current index of `data` to start
-   *    insertion. This is to optimize large insertions.
-   *    If this is specified, after insertion it will be moved to the first
-   *    data entry whose `.getStart()` is greater than `this.getStart()`, if no
-   *    such entry exists, it will be moved to `data.length`.
-   *    If this is not specified, after insertion, `data[0]` will become the
-   *    first data entry whose `.getStart()` is greater than `this.getStart()`.
-   *    Or `data` will become `[]` if no such entry exists.
-   * @returns {give.DataNode} Always return `this`.
-   */
-  give.DataNode.prototype.insert = function (data, chrRange, props) {
-    // Steps:
-    // 1. Push everything in `data` that has `getStart()` value smalled than
-    //    `this.getStart()` into `contList`
-    // 2. Check all `contList` to ensure they still overlap with `this`
-    //    (getEnd() should be greater than `this.getStart()`), remove those who
-    //    don't, copy those who do to `this.ContList`;
-    // 3. Find all `data` entries that have same `getStart()` value as `this`,
-    //    and copy those to `this.StartList`, move them from `data` to
-    //    `contList`;
-
-    // Helper function: find `entries` in `data` that returns `true` with
-    //    `critFunc.call(thisVarCriteria, entry)`, call `callback` on `entry`
-    //    if `callback` exists and advance `currIndex`.
-
-    // 1. Push everything in `data` that has `getStart()` value smaller than
-    //    `this.getStart()` into `contList`
-    props = props || {}
-    var currIndex = (typeof props.DataIndex === 'number' ? props.DataIndex : 0)
-    var prevIndex = currIndex
-    currIndex = give._traverseData(data, currIndex, function (dataEntry) {
-      return dataEntry.getStart() < this.getStart()
-    }, this, props.Callback, props.ThisVar)
-
-    // 2. Check all `contList` to ensure they still overlap with `this`
-    //    (getEnd() should be greater than `this.getStart()`), remove those who
-    //    don't, copy those who do to `this.ContList`;
-    props.ContList = (props.ContList || [])
-      .concat(data.slice(prevIndex, currIndex))
-      .filter(
-        function (entry) {
-          return entry.getEnd() > this.getStart()
-        }, this
-      )
-    this.ContList = props.ContList.slice()
-
-    // 3. Find all `data` entries that have same `getStart()` value as `this`,
-    //    and copy those to `this.StartList`, move them from `data` to
-    //    `contList`;
-    prevIndex = currIndex
-    currIndex = give._traverseData(data, currIndex, function (dataEntry) {
-      return dataEntry.getStart() === this.getStart()
-    }, this, props.Callback, props.ThisVar)
-    this.StartList = data.slice(prevIndex, currIndex)
-    props.ContList = props.ContList.concat(this.StartList)
-
-    if (typeof props.DataIndex !== 'number') {
-      // remove data if props.currIndex is not specified
-      data.splice(0, currIndex)
-    } else {
-      // update `props.currIndex`
-      props.DataIndex = currIndex
+  class DataNode extends give.GiveTreeNode {
+    /**
+     * Creates an instance of DataNode.
+     * @constructor
+     * @param {object} props - properties that will be passed to the
+     *    individual implementations. For `GIVE.DataNode`, three properties
+     *    will be used:
+     * @param {number} props.Start - for `this.Start`
+     * @param {Array<ChromRegionLiteral>|null} props.startList - for
+     *    `this.startList`
+     * @param {Array<ChromRegionLiteral>|null} props.contList - for
+     *    `this.contList`
+     * @memberof DataNode
+     */
+    constructor (props) {
+      super(props)
+      this._start = props.Start
+      this.startList = props.startList || []
+      this.contList = props.contList || []
     }
 
-    return this
-  }
+    /**
+     * Implementing GIVE.GiveTreeNode methods
+     */
 
-  give.DataNode.prototype.remove = function (
-    data, removeExactMatch, props
-  ) {
-    props = props || {}
-    if (data instanceof this.constructor &&
-      this.getStart() === data.getStart() && (
+    /**
+     * hasData - get whether this data node has data stored.
+     *
+     * @returns {type}  Because data node is populated with actual data,
+     *    it will always return `true` (always has data).
+     */
+    hasData () {
+      return true
+    }
+
+    get start () {
+      return this._start
+    }
+
+    /**
+     * insert - Insert data under this node
+     * @memberof GiveNonLeafNode.prototype
+     *
+     * @param {Array<ChromRegionLiteral>} data - the sorted array of data
+     *    entries (each should be an extension of `GIVe.ChromRegion`).
+     *    `data === null` or `data === []` means there is no data in
+     *    `chrRange` and `false`s will be used in actual storage.
+     *    __NOTICE:__ any data overlapping `chrRange` should appear either
+     *    here or in `continuedList`, otherwise `continuedList` in data
+     *    entries may not work properly.
+     *    After insertion, any entry within `data` that has `.start` value
+     *    larger than `this.start` will be deleted from the array or marked
+     *    for deletion via `props.DataIndex`. See `props.DataIndex` for
+     *    details.
+     * @param {ChromRegionLiteral} chrRanges - DataNode should not handle
+     *    this.
+     * @param {object} props - additional properties being passed onto nodes.
+     * @param {Array<ChromRegionLiteral>} props.contList - the list of data
+     *    entries that should not start in `chrRange` but are passed from the
+     *    earlier regions, this will be useful for later regions if date for
+     *    multiple regions are inserted at the same time
+     * @param {function|null} props.Callback - the callback function to be
+     *    used (with the data entry as its sole parameter) when inserting
+     * @param {number|null} props.DataIndex - current index of `data` to start
+     *    insertion. This is to optimize large insertions.
+     *    If this is specified, after insertion it will be moved to the first
+     *    data entry whose `.start` is greater than `this.start`, if no
+     *    such entry exists, it will be moved to `data.length`.
+     *    If this is not specified, after insertion, `data[0]` will become the
+     *    first data entry whose `.start` is greater than `this.start`.
+     *    Or `data` will become `[]` if no such entry exists.
+     * @returns {give.DataNode} Always return `this`.
+     */
+    insert (data, chrRange, props) {
+      // Steps:
+      // 1. Push everything in `data` that has `start` value smaller than
+      //    `this.start` into `contList`
+      props = props || {}
+      var currIndex =
+        (typeof props.DataIndex === 'number' ? props.DataIndex : 0)
+      var prevIndex = currIndex
+      currIndex = give._traverseData(data, currIndex,
+        dataEntry => dataEntry.start < this.start, props.Callback)
+
+      // 2. Check all `contList` to ensure they still overlap with `this`
+      //    (getEnd() should be greater than `this.start`), remove those who
+      //    don't, copy those who do to `this.contList`;
+      props.contList = (props.contList || [])
+        .concat(data.slice(prevIndex, currIndex))
+        .filter(entry => entry.end > this.start)
+      this.contList = props.contList.slice()
+
+      // 3. Find all `data` entries that have same `start` value as `this`,
+      //    and copy those to `this.startList`, move them from `data` to
+      //    `contList`;
+      prevIndex = currIndex
+      currIndex = give._traverseData(data, currIndex,
+        dataEntry => dataEntry.start === this.start, props.Callback)
+      this.startList = data.slice(prevIndex, currIndex)
+      props.contList = props.contList.concat(this.startList)
+
+      if (typeof props.DataIndex !== 'number') {
+        // remove data if props.currIndex is not specified
+        data.splice(0, currIndex)
+      } else {
+        // update `props.currIndex`
+        props.DataIndex = currIndex
+      }
+
+      return this
+    }
+
+    remove (data, removeExactMatch, props) {
+      props = props || {}
+      if (data instanceof this.constructor && this.start === data.start && (
         (!removeExactMatch) || this._compareData(data, this)
-      )
-    ) {
-      // this node should be removed
-      this.clear()
-      return false
-    }
-    if (data.getStart() === this.getStart()) {
-      this.StartList = this.StartList.filter(function (dataIn) {
-        if (!removeExactMatch || this._compareData(data, dataIn)) {
+      )) {
+        // this node should be removed
+        this.clear()
+        return false
+      }
+      if (data.start === this.start) {
+        this.startList = this.startList.filter(dataIn => {
+          if (!removeExactMatch || this._compareData(data, dataIn)) {
+            if (typeof props.Callback === 'function') {
+              props.Callback(dataIn)
+            }
+            return false
+          }
+          return true
+        })
+      }
+      this.contList = this.contList.filter(dataIn => {
+        if (dataIn.start === data.start && (
+          !removeExactMatch || this._compareData(data, dataIn)
+        )) {
           if (typeof props.Callback === 'function') {
-            props.Callback.call(props.ThisVar, dataIn)
+            props.Callback(dataIn)
           }
           return false
         }
         return true
-      }, this)
+      })
+      return (this.startList.length > 0 || this.contList.length > 0)
+        ? this : false
     }
-    this.ContList = this.ContList.filter(function (dataIn) {
-      if (dataIn.getStart() === data.getStart() && (
-        (!removeExactMatch) || this._compareData(data, dataIn)
-      )) {
-        if (typeof props.Callback === 'function') {
-          props.Callback.call(props.ThisVar, dataIn)
+
+    clear (convertTo) {
+      this.startList = []
+      this.contList = []
+    }
+
+    /**
+     * traverse - traverse all nodes / data entries within `this` and calling
+     *    functions on them.
+     *
+     * When traversing, everything in 'contList' of *the starting record only*
+     * will be processed first, then everything in 'startList' in all
+     * overlapping records will be processed.
+     * @memberof DataNode.prototype
+     *
+     * @param  {ChromRegionLiteral} chrRange - the chromosomal range
+     *    totraverse.
+     * @param  {function} callback - the callback function, takes a
+     *    `GIVE.ChromRegion` object as its sole parameter and returns
+     *    something that can be evaluated as a boolean value to determine
+     *    whether the call shall continue (if `breakOnFalse === true`).
+     * @param  {function|null} filter - a filter function that takes a
+     *    `GIVE.ChromRegion` object as its sole parameter and returns whether
+     *    the region should be included in traverse.
+     * @param  {boolean} breakOnFalse - whether the traverse should be stopped
+     *    if `false` is returned from the callback function.
+     * @param  {object|null} props - additional properties being
+     *    passed onto nodes.
+     * @param  {...any} args - additional args being passed onto `callback`
+     *    and `filter`
+     * @param  {boolean} props.NotFirstCall - whether this is not the first
+     *    call of a series of `traverse` calls.
+     * @returns {boolean} - whether future traverses should be conducted.
+     */
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      // helper function
+      let callFunc = entry => {
+        // First determine if `chrRange` exists and does not overlap
+        // `dataEntry`. If so, return `true` to proceed with the next
+        if (chrRange &&
+          (chrRange.start >= entry.end || entry.start >= chrRange.end)
+        ) {
+          return true
         }
-        return false
+        // If `chrRange` does not exist or overlaps `dataEntry`
+        // call `callback` and return its value (applying `filter` and
+        // `breakOnFalse`).
+        return this._callFuncOnDataEntry(callback, filter, breakOnFalse,
+          entry, props, ...args)
       }
-      return true
-    }, this)
-    return (this.StartList.length > 0 || this.ContList.length > 0)
-      ? this : false
-  }
-
-  give.DataNode.prototype.clear = function (convertTo) {
-    this.StartList = []
-    this.ContList = []
-  }
-
-  /**
-   * traverse - traverse all nodes / data entries within `this` and calling
-   *    functions on them.
-   *
-   * When traversing, everything in 'ContList' of *the starting record only*
-   * will be processed first, then everything in 'StartList' in all overlapping
-   * records will be processed.
-   * @memberof DataNode.prototype
-   *
-   * @param  {ChromRegionLiteral} chrRange - the chromosomal range to traverse.
-   * @param  {function} callback - the callback function, takes a
-   *    `GIVE.ChromRegion` object as its sole parameter and returns something
-   *    that can be evaluated as a boolean value to determine whether the call
-   *    shall continue (if `breakOnFalse === true`).
-   * @param  {object|null} thisVar - `this` used in calling both `filter` and
-   *    `callback`.
-   * @param  {function|null} filter - a filter function that takes a
-   *    `GIVE.ChromRegion` object as its sole parameter and returns whether the
-   *    region should be included in traverse.
-   * @param  {boolean} breakOnFalse - whether the traverse should be stopped if
-   *    `false` is returned from the callback function.
-   * @param  {object|null} props - additional properties being
-   *    passed onto nodes.
-   * @param  {boolean} props.NotFirstCall - whether this is not the first call
-   *    of a series of `traverse` calls.
-   * @returns {boolean} - whether future traverses should be conducted.
-   */
-  give.DataNode.prototype.traverse = function (
-    chrRange, callback, thisVar, filter, breakOnFalse, props
-  ) {
-    // helper function
-    var callFunc = this._callFuncOnDataEntry.bind(
-      this, chrRange, callback, thisVar, filter, breakOnFalse)
-    // needs to traverse on ContList if `!props.NotFirstCall`
-    if (!props.NotFirstCall) {
-      this.ContList.forEach(callFunc, this)
+      // needs to traverse on contList if `!props.NotFirstCall`
+      if (!props.NotFirstCall) {
+        if (!this.contList.every(callFunc)) {
+          return false
+        }
+      }
+      props.NotFirstCall = true
+      return this.startList.every(callFunc)
     }
-    this.StartList.forEach(callFunc, this)
-    props.NotFirstCall = true
-    return true
-  }
 
-  give.DataNode.prototype.getUncachedRange = function (chrRange, props) {
-    return props._Result || []
-  }
+    getUncachedRange (chrRange, props) {
+      return props._Result || []
+    }
 
-  /**
-   * mergeAfter - merge this node with `node`
-   * If `node` doesn't have any data or anything in `StartList`, merge.
-   * Actually because of the structure of `GIVE.DataNode`, nothing needs
-   *    to be changed in `this` if merge is successful. Just return `true`
-   *    to let the caller handle `node`.
-   *
-   * @param  {null|boolean|GiveDataNodeBase} node - node to be merged.
-   *    Note that this node has to be positioned after `this`.
-   * @returns {boolean}      whether the merge is successful
-   */
-  give.DataNode.prototype.mergeAfter = function (node) {
-    return (
-      node === false || (
-        node instanceof this.constructor && node.StartList.length <= 0
+    /**
+     * mergeAfter - merge this node with `node`
+     * If `node` doesn't have any data or anything in `startList`, merge.
+     * Actually because of the structure of `GIVE.DataNode`, nothing needs
+     *    to be changed in `this` if merge is successful. Just return `true`
+     *    to let the caller handle `node`.
+     *
+     * @param  {null|boolean|GiveDataNodeBase} node - node to be merged.
+     *    Note that this node has to be positioned after `this`.
+     * @returns {boolean}      whether the merge is successful
+     */
+    mergeAfter (node) {
+      return (
+        node === false || (
+          node instanceof this.constructor && node.startList.length <= 0
+        )
       )
-    )
+    }
+
+    /**
+     * isEmpty - return whether this node is empty
+     * If there is no entry in both `this.startList` and `this.contList` then
+     *    the node is considered empty.
+     *
+     * @returns {boolean}      whether the node is empty
+     */
+    get isEmpty () {
+      return this.startList.length <= 0 && this.contList.length <= 0
+    }
   }
 
-  /**
-   * isEmpty - return whether this node is empty
-   * If there is no entry in both `this.StartList` and `this.ContList` then the
-   *    node is considered empty.
-   *
-   * @returns {boolean}      whether the node is empty
-   */
-  give.DataNode.prototype.isEmpty = function () {
-    return this.StartList.length <= 0 && this.ContList.length <= 0
-  }
-
+  give.DataNode = DataNode
   return give
 })(GIVe || {})

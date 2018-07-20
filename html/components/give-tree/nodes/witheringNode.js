@@ -25,72 +25,60 @@ var GIVe = (function (give) {
    *    short, the node will be pruned (this will be implemented by caller).
    * `_life` can be rejuvenated by calling `.rejuvenate()` to delay withering.
    *
-   * @typedef {object} WitheringNode
-   * @property {number} _life - life of this node.
+   * @typedef {object} WitheringMixin
+   * @property {number} _lastUpdateGen - last updated generation of this node
    *
-   * @class give.WitheringMixin
+   * @class give.witheringMixin
    *
    * @constructor
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {object} props.LifeSpan - for `this._life`
+   * @param {object} props._currGen - the current generation
    */
-  class WitheringNode extends give.GiveTreeNode {
-    constructor (props) {
+  give.WitheringMixin = Base => class extends Base {
+    constructor (props, ...args) {
       super(...arguments)
-      this._life = props.LifeSpan
-    }
-  }
-  var witheringMixin = Base => class extends Base {
-    constructor (...args) {
-      super(...args)
-      if
-    // start and length is for the corresponding region
-    give.GiveTreeNode.apply(this, arguments)
-    this._life = props.LifeSpan
-  }
-
-  /**
-   * addWithering - add withering support to `this`. Use
-   *    `give.WitheringMixin.addWithering.call` to add withering support to any
-   *    class.
-   */
-  give.WitheringMixin.addWithering = function () {
-    /**
-     * wither - reduces life of self and sub-branches and prune branches that
-     *    are too old. Implemented as a caching feature.
-     *
-     * @param  {number} [amount] - the amount to be deducted from life.
-     *    Default is 1.
-     * @returns {give.WitheringMixin|null} return `this` if the whole tree has
-     *    not withered yet. Otherwise return `null`
-     */
-    this.prototype.wither = function (amount) {
-      // this will cause this and *all the children of this* wither
-      amount = amount || 1
-      if (!isNaN(this._life)) {
-        this._life -= amount
-        if (this._life <= 0) {
-          // signal parent to remove this
-          return null
-        }
-      }
-      return this
-    }
-
-    /**
-     * rejuvenate - rejuvenate life of `this` to a given value
-     *
-     * @param  {number} life - target life rejuvenation value
-     */
-    this.prototype.rejuvenate = function (life) {
-      if (!isNaN(this._life)) {
-        this._life = life || this._life
+      if (props._currGen || (this.Tree && this.Tree._currGen)) {
+        this._lastUpdateGen = props._currGen || this.Tree._currGen
       }
     }
-  }
 
-  give.WitheringMixin.addWithering()
+    wither () {
+      // If current node itself withers,
+      // it will cause this and *all the children of this* wither
+      // NOTE: Root node may also wither, which causes the whole tree to wither
+      if (this._shouldWither) {
+        this.clear(null)
+        return null
+      }
+      // For children, mark all children that needs to be withered
+      // then call `this.delete` on all children marked.
+      this.Values.filter(value => (value && value._shouldWither))
+        .forEach(value => this.delete(value, true))
+      return this.isEmpty ? null : this
+    }
+
+    get _shouldWither () {
+      if (!this.Tree || !this.Tree.lifeSpan) {
+        return false
+      }
+      return this.Tree._currGen >= this._lastUpdateGen
+        ? this.Tree._currGen - this._lastUpdateGen > this.Tree.lifeSpan
+        : this.Tree._currGen -
+          (this._lastUpdateGen - this.Tree.constructor._MAX_GENERATION) >
+          this.Tree.lifeSpan
+    }
+
+    rejuvenate () {
+      if (this.Tree && this.Tree._currGen) {
+        this._lastUpdateGen = this.Tree._currGen
+      }
+    }
+
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      this.rejuvenate()
+      return super.traverse(...arguments)
+  }
 
   return give
 })(GIVe || {})

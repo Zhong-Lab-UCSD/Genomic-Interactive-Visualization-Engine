@@ -277,14 +277,12 @@ var GIVe = (function (give) {
    *    `this.constructor._compareData(dataIn, dataEx)`)
    *    If `false`, all entries matching the start and end values will be
    *    removed.
-   * @param  {object|null} props - additional properties being
+   * @param {boolean|null} convertTo - what shall be used to replace
+   *    the removed nodes, should be either `null` (default) or `false`.
+   * @param  {object|null} [props] - additional properties being
    *    passed onto nodes.
    * @param {function|null} props.Callback - the callback function to be used
    *    (with the data entry as its sole parameter) when deleting
-   * @param {object|null} props.ThisVar - `this` used in calling
-   *    `props.Callback`.
-   * @param {boolean|null} props.ConvertTo - what shall be used to replace
-   *    the removed nodes, should be either `null` (default) or `false`.
    * @returns {give.GiveTreeNode|boolean}
    *    This shall reflect whether auto-balancing is supported for the tree.
    *    * For root nodes, return `this` if no decreasing height happen,
@@ -320,9 +318,7 @@ var GIVe = (function (give) {
     }
     if (this.Values[i]) {
       // data must fall within `this.Values[i]`
-      if (!this.Values[i].remove(
-        data, removeExactMatch, props)
-      ) {
+      if (!this.Values[i].remove(data, removeExactMatch, props)) {
         // this node will be removed if it is not literally the first node
         //    of the tree
         if (this.RevDepth <= 0) {
@@ -420,9 +416,12 @@ var GIVe = (function (give) {
           this.Keys[currIndex] < chrRange.end &&
           currIndex < this.Values.length
         ) {
-          if (this.Values[currIndex]) {
-            this.Values[currIndex].traverse(chrRange, callback, thisVar,
-              filter, breakOnFalse, props)
+          if (this.Values[currIndex] &&
+            (!this.Values[currIndex].traverse(chrRange, callback,
+              filter, breakOnFalse, props) && breakOnFalse
+            )
+          ) {
+            return false
           }
           props.NotFirstCall = true
           currIndex++

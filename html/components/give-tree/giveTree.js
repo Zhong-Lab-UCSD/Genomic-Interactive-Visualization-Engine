@@ -56,7 +56,6 @@ var GIVe = (function (give) {
       if (props.LifeSpan && props.LifeSpan > 0) {
         this._currGen = 0
         this.lifeSpan = props.lifeSpan
-        props._currGen = this._currGen
         this._root = new give.WitheringMixin(NonLeafNodeCtor)(props)
       } else {
         this._currGen = null
@@ -178,15 +177,21 @@ var GIVe = (function (give) {
      *    exists) will be used to evaluate whether a data entry should be
      *    removed. If `false`, then all data entries at the same location
      *    (start and end) will be removed.
+     * @param {boolean|null} convertTo - what shall be used to replace
+     *    the removed nodes, should be either `null` (default) or `false`.
      * @param  {function|null} callback - the callback function to be used
      *    (with the data entry as its sole parameter) when the data entry
      *    is/entries are being removed.
      * @param  {object|null} props - additional properties being passed onto
      *    nodes
      */
-    remove (data, removeExactMatch, callback, props) {
+    remove (data, removeExactMatch, convertTo, callback, props) {
+      if (convertTo === undefined) {
+        convertTo = null
+      }
       props = props || {}
-      this._root = this._root.remove(data, removeExactMatch, callback, props)
+      props.Callback = callback
+      this._root = this._root.remove(data, removeExactMatch, convertTo, props)
     }
 
     _advanceGen (amount) {
@@ -236,7 +241,7 @@ var GIVe = (function (give) {
             ? this._root.truncateChrRange(chrRange, true, false)
             : this.coveringRange
           this._root.traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props)
+            breakOnFalse, false, props)
         } catch (err) {
           give._verbConsole.warn(err)
           give.fireSignal('warning', { msg: err.toString() }, null, this)
@@ -277,7 +282,7 @@ var GIVe = (function (give) {
     }
   }
 
-  GiveTree._MAX_GENERATION = Number.MAX_SAFE_INTEGER
+  GiveTree._MAX_GENERATION = Number.MAX_SAFE_INTEGER - 100
 
   give.GiveTree = GiveTree
 

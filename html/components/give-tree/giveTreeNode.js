@@ -148,21 +148,19 @@ var GIVe = (function (give) {
      *    `this.constructor._compareData(dataIn, dataEx)`)
      *    If `false`, all entries matching the start and end values will be
      *    removed.
-     * @param  {object|null} props - additional properties being
-     *    passed onto nodes.
-     * @param {boolean|null} props.ConvertTo - what shall be used to replace
+     * @param {boolean|null} convertTo - what shall be used to replace
      *    the removed nodes, should be either `null` (default) or `false`.
+     * @param  {object|null} [props] - additional properties being
+     *    passed onto nodes.
      * @param {function|null} props.Callback - the callback function to be
      *    used (with the data entry as its sole parameter) when deleting
-     * @param {object|null} props.ThisVar - `this` used in calling
-     *    `props.Callback`.
      * @returns {give.GiveTreeNode|boolean}
      *    This shall reflect whether auto-balancing is supported for the tree.
      *    See `give.GiveNonLeafNode.prototype._restructure` for details.
      *    If `this` gets deleted and is not root, return `false` and let the
      *    caller (likely the parent node) handle the upper structure.
      */
-    remove (data, removeExactMatch, props) {
+    remove (data, removeExactMatch, convertTo, props) {
       throw new give.GiveError('GiveTreeNode.remove not implemented in `' +
         this.constructor.name + '`!')
     }
@@ -179,8 +177,8 @@ var GIVe = (function (give) {
      */
     _compareData (dataEx, dataIn) {
       return dataIn &&
-      ((typeof dataIn.equalTo === 'function' && dataIn.equalTo(dataEx)) ||
-      dataIn === dataEx)
+        ((typeof dataIn.equalTo === 'function' && dataIn.equalTo(dataEx)) ||
+        dataIn === dataEx)
     }
 
     /**
@@ -205,30 +203,26 @@ var GIVe = (function (give) {
      *    `GIVE.ChromRegion` object as its sole parameter and returns
      *    something that can be evaluated as a boolean value to determine
      *    whether the call shall continue (if `breakOnFalse === true`).
-     * @param  {object|null} thisVar - `this` used in calling both `filter`
-     *    and `callback`.
      * @param  {function|null} filter - a filter function that takes a
      *    `GIVE.ChromRegion` object as its sole parameter and returns whether
      *    the region should be included in traverse.
-     * @param  {boolean} breakOnFalse - whether the traverse should be stopped
-     *    if `false` is returned from the callback function.
-     * @param  {ChromRegionLiteral|GiveTreeNode} dataEntry - the data entry
+     * @param  {boolean} breakOnFalse - whether this function should return
+     *    `false` if `callback` returns `false`.
+     * @param  {ChromRegionLiteral|GiveTreeNode} entry - the data entry
      *    `callback` is going to be called upon.
+     * @param  {object|null} props - additional properties being
+     *    passed onto nodes.
+     * @param  {...object} args - additional args being passed onto `callback`
+     *    and `filter`
      * @returns {boolean} - whether future traverses should be conducted.
      */
     _callFuncOnDataEntry (
-      chrRange, callback, thisVar, filter, breakOnFalse, dataEntry
+      callback, filter, returnFalse, entry, props, ...args
     ) {
-      if (
-        (!chrRange || (chrRange.start < dataEntry.end &&
-        dataEntry.start < chrRange.end)) &&
-        (typeof filter !== 'function' || filter.call(thisVar, dataEntry))
-      ) {
-        if (!callback.call(thisVar, dataEntry) && breakOnFalse) {
-          throw new give.GiveError('False returned. Break traversing.')
-        }
+      if (typeof filter === 'function' || !filter(entry, props, ...args)) {
+        return true
       }
-      return true
+      return callback(entry, props, ...args) || !returnFalse
     }
 
     /**
@@ -242,51 +236,20 @@ var GIVe = (function (give) {
      *    `GIVE.ChromRegion` object as its sole parameter and returns
      *    something that can be evaluated as a boolean value to determine
      *    whether the call shall continue (if `breakOnFalse === true`).
-     * @param  {object|null} thisVar - `this` used in calling both `filter`
-     *    and `callback`.
      * @param  {function|null} filter - a filter function that takes a
      *    `GIVE.ChromRegion` object as its sole parameter and returns
      *    whether the region should be included in traverse.
      * @param  {boolean} breakOnFalse - whether the traverse should be
      *    stopped if `false` is returned from the callback function.
-     * @param  {boolean} includeSelf - whether the callback function and the
-     *    filter function should be applied to self.
      * @param  {object|null} props - additional properties being
      *    passed onto nodes.
      * @param  {boolean} props.NotFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
      * @returns {boolean} - whether future traverses should be conducted.
      */
-    traverse (chrRange, callback, thisVar, filter, breakOnFalse, props) {
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       throw new give.GiveError('GiveTreeNode.traverse not implemented in `' +
         this.constructor.name + '`!')
-    }
-
-    /**
-     * traverseNode - traverse all nodes / data entries within `this` and
-     *    calling functions on them.
-     * @memberof GiveTreeNode.prototype
-     *
-     * @param  {ChromRegionLiteral} chrRange - the chromosomal range to
-     *    traverse.
-     * @param  {function} func - the callback function, takes a
-     *    `GIVE.ChromRegion` object as its sole parameter and returns
-     *    something that can be evaluated as a boolean value to determine
-     *    whether the call shall continue (if `breakOnFalse === true`).
-     * @param  {function|null} filter - a filter function that takes a
-     *    `GIVE.ChromRegion` object as its sole parameter and returns
-     *    whether the region (or its children) should be included in traverse.
-     * @param  {boolean} breakOnFalse - whether the traverse should be
-     *    stopped if `false` is returned from the callback function.
-     * @param  {object|null} props - additional properties being
-     *    passed onto nodes.
-     * @param  {boolean} props.NotFirstCall - whether this is not the first
-     *    call of a series of `traverse` calls.
-     * @returns {boolean} - whether future traverses should be conducted.
-     */
-    traverseNode (chrRange, func, filter, breakOnFalse, props) {
-      throw new give.GiveError('GiveTreeNode.traverseNode not implemented ' +
-        'in `' + this.constructor.name + '`!')
     }
 
     /**

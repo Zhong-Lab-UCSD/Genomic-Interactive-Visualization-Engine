@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 var GIVe = (function (give) {
   'use strict'
 
@@ -347,14 +346,14 @@ var GIVe = (function (give) {
     }
   }
 
-  give._traverseData = function (
-    data, currIndex, critFunc, thisVarCriteria, callback, thisVar
-  ) {
-    while (currIndex < data.length &&
-      critFunc.call(thisVarCriteria, data[currIndex])
-    ) {
+  give._traverseData = function (data, currIndex, critFunc, callback) {
+    // Helper function: find `entries` in `data` that returns `true` with
+    //    `critFunc.call(thisVarCriteria, entry)`, call `callback` on
+    //    `entry` if `callback` exists and advance `currIndex`.
+
+    while (currIndex < data.length && critFunc(data[currIndex])) {
       if (typeof callback === 'function') {
-        callback.call(thisVar, data[currIndex])
+        callback(data[currIndex])
       }
       currIndex++
     }

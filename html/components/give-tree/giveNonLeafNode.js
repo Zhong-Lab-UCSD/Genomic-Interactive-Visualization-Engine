@@ -25,7 +25,7 @@ var GIVe = (function (give) {
    *
    * When traversing, everything in `ContList` of __the starting record entry
    * (see `GIVE.DataNode`) only__ will be processed first, then everything in
-   * `StartList` in all overlapping records will be processed.
+   * `startList` in all overlapping records will be processed.
    *
    * @typedef {object} GiveNonLeafNode
    * @property {GiveTree} Tree - Link to the `GiveTree` object to access tree-
@@ -568,38 +568,6 @@ var GIVe = (function (give) {
         'implemented in `' + this.constructor.name + '`!')
     }
 
-    /**
-     * remove - Remove data entries from the node.
-     *    Data entries with the same start (and end values if exists) will be
-     *    removed. If multiple entries are found with the same start (and end
-     *    values), the behavior will be defined by `removeExactMatch`.
-     * @memberof GiveTreeNode.prototype
-     *
-     * @param  {ChromRegionLiteral|GiveTreeNode} data - the data entry being
-     *    removed.
-     * @param  {boolean} removeExactMatch - whether an exact match is needed
-     *    to remove multiple data entries with the same start and end values.
-     *    If `true`, `data` will be compared by `.equalTo(data)` if exists,
-     *    `===` if not. (this is done via calling
-     *    `this.constructor._compareData(dataIn, dataEx)`)
-     *    If `false`, all entries matching the start and end values will be
-     *    removed.
-     * @param  {object|null} props - additional properties being
-     *    passed onto nodes.
-     * @param {function|null} props.Callback - the callback function to be
-     *    used (with the data entry as its sole parameter) when deleting
-     * @param {object|null} props.ThisVar - `this` used in calling
-     *    `props.Callback`.
-     * @returns {give.GiveTreeNode|boolean}
-     *    This shall reflect whether auto-balancing is supported for the tree.
-     *    If structure of the tree needs to be changed, return `false` and let
-     *    the caller (likely the parent node) handle the upper structure.
-     */
-    remove (data, removeExactMatch, props) {
-      throw new give.GiveError('GiveNonLeafNode.remove not implemented in `' +
-        this.constructor.name + '`!')
-    }
-
     clear (convertTo) {
       convertTo = convertTo === false ? false : null
       this._severeChildLinks(convertTo)
@@ -741,60 +709,30 @@ var GIVe = (function (give) {
       return mergedFront
     }
 
-    traverse (chrRange, callback, thisVar, filter, breakOnFalse, props) {
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       // Implementation without resolution support
       // Because this is a non-leaf node, it always descends to its children
       // until some leaf node is reached.
-      if (chrRange) {
-        var currIndex = 0
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex + 1] <= chrRange.start
-        ) {
-          currIndex++
-        }
-        while (
-          this.Keys[currIndex] < chrRange.end &&
-          currIndex < this.Values.length
-        ) {
-          if (this.Values[currIndex]) {
-            this.Values[currIndex].traverse(chrRange, callback, thisVar,
-              filter, breakOnFalse, props)
-          }
-          props.NotFirstCall = true
-          currIndex++
-        }
-        return true
-      } else { // !chrRange
+      if (!chrRange) {
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
-      } // end if(chrRange)
-    }
-
-    traverseNode (chrRange, func, filter, breakOnFalse, props) {
-      if (!func(this) && breakOnFalse) {
-        return false
       }
-      if (chrRange) {
-        var currIndex = 0
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex + 1] <= chrRange.start
+      let index = 0
+      while (index < this.Values.length &&
+        this.Keys[index + 1] <= chrRange.start
+      ) {
+        index++
+      }
+      while (this.Keys[index] < chrRange.end && index < this.Values.length) {
+        if (this.Values[index] &&
+          !this.Values[index].traverse(chrRange, callback, filter,
+            breakOnFalse, props, ...args)
         ) {
-          currIndex++
+          return false
         }
-        while (
-          this.Keys[currIndex] < chrRange.end &&
-          currIndex < this.Values.length
-        ) {
-          if (this.Values[currIndex]) {
-            this.Values[currIndex].traverse(chrRange, callback, thisVar,
-              filter, breakOnFalse, props)
-          }
-          props.NotFirstCall = true
-          currIndex++
-        }
-        return true
-      } else { // !chrRange
-        throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
-      } // end if(chrRange)
+        props.NotFirstCall = true
+        index++
+      }
+      return true
     }
 
     /**
@@ -815,21 +753,21 @@ var GIVe = (function (give) {
     getUncachedRange (chrRange, props) {
       props._Result = props._Result || []
       if (chrRange) {
-        var currIndex = 0
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex + 1] <= chrRange.start
+        var index = 0
+        while (index < this.Values.length &&
+          this.Keys[index + 1] <= chrRange.start
         ) {
-          currIndex++
+          index++
         }
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex] < chrRange.end
+        while (index < this.Values.length &&
+          this.Keys[index] < chrRange.end
         ) {
-          if (this.Values[currIndex]) {
+          if (this.Values[index]) {
             // there is a child node here, descend
-            this.Values[currIndex].getUncachedRange(chrRange, props)
-          } else if (this.Values[currIndex] === null) {
-            let newStart = Math.max(this.Keys[currIndex], chrRange.start)
-            let newEnd = Math.min(this.Keys[currIndex + 1], chrRange.end)
+            this.Values[index].getUncachedRange(chrRange, props)
+          } else if (this.Values[index] === null) {
+            let newStart = Math.max(this.Keys[index], chrRange.start)
+            let newEnd = Math.min(this.Keys[index + 1], chrRange.end)
             if (props._Result[props._Result.length - 1] &&
               props._Result[props._Result.length - 1].end === newStart
             ) {
@@ -842,7 +780,7 @@ var GIVe = (function (give) {
               }))
             }
           }
-          currIndex++
+          index++
         }
         return props._Result
       } else { // chrRange
@@ -852,7 +790,7 @@ var GIVe = (function (give) {
 
     /**
      * isEmpty - return whether this node is empty
-     * If there is no entry in both `this.StartList` and `this.ContList` then
+     * If there is no entry in both `this.startList` and `this.ContList` then
      *    the node is considered empty.
      *
      * @returns {boolean}      whether the node is empty

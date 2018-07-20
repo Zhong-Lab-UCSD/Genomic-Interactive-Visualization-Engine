@@ -58,6 +58,9 @@ var GIVe = (function (give) {
    * @param {number} props.End
    * @param {number|null} props.RevDepth
    */
+  class PineNode extends give.GiveNonLeafNode {
+    
+  }
   give.PineNode = function (props) {
     // implementing `GiveNonLeafNode`
     give.GiveNonLeafNode.apply(this, arguments)
@@ -683,7 +686,7 @@ var GIVe = (function (give) {
    * @returns {boolean} - whether future traverses should be conducted.
    */
   give.PineNode.prototype.traverse = function (
-    chrRange, callback, thisVar, filter, breakOnFalse, props
+    chrRange, callback, filter, breakOnFalse, props, ...args
   ) {
     if (chrRange) {
       var resolution = chrRange.Resolution || props.Resolution || 1
@@ -697,13 +700,13 @@ var GIVe = (function (give) {
         // `this.getSummaryChromRegion()`
         if (this.resEnough(resolution) && this.hasData()) {
           // Resolution enough
-          return this._callFuncOnDataEntry(chrRange, callback, thisVar, filter,
+          return this._callFuncOnDataEntry(chrRange, callback, filter,
             breakOnFalse, this.getSummaryChromRegion()
           )
         } else {
           // call `GIVE.GiveNonLeafNode.prototype.traverse`
-          return give.GiveNonLeafNode.prototype.traverse.call(
-            this, chrRange, callback, thisVar, filter, breakOnFalse, props)
+          return super.traverse.(
+            this, chrRange, callback, filter, breakOnFalse, props)
         }
       }
     } else { // !chrRange
@@ -824,7 +827,7 @@ var GIVe = (function (give) {
 
   /**
    * isEmpty - return whether this node is empty
-   * If there is no entry in both `this.StartList` and `this.ContList` then the
+   * If there is no entry in both `this.startList` and `this.ContList` then the
    *    node is considered empty.
    *
    * @returns {boolean}      whether the node is empty
