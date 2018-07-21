@@ -36,7 +36,7 @@ var GIVe = (function (give) {
    * @param {object} props._currGen - the current generation
    */
   give.WitheringMixin = Base => class extends Base {
-    constructor (props, ...args) {
+    constructor (props) {
       super(...arguments)
       if (props._currGen || (this.Tree && this.Tree._currGen)) {
         this._lastUpdateGen = props._currGen || this.Tree._currGen
@@ -53,7 +53,7 @@ var GIVe = (function (give) {
       }
       // For children, mark all children that needs to be withered
       // then call `this.delete` on all children marked.
-      this.Values.filter(value => (value && value._shouldWither))
+      this.Values.filter(value => (value && value.wither && !value.wither()))
         .forEach(value => this.delete(value, true))
       return this.isEmpty ? null : this
     }

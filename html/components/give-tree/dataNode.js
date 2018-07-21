@@ -172,10 +172,10 @@ var GIVe = (function (give) {
       return this
     }
 
-    remove (data, removeExactMatch, props) {
+    remove (data, exactMatch, props) {
       props = props || {}
       if (data instanceof this.constructor && this.start === data.start && (
-        (!removeExactMatch) || this._compareData(data, this)
+        (!exactMatch) || this._compareData(data, this)
       )) {
         // this node should be removed
         this.clear()
@@ -183,7 +183,7 @@ var GIVe = (function (give) {
       }
       if (data.start === this.start) {
         this.startList = this.startList.filter(dataIn => {
-          if (!removeExactMatch || this._compareData(data, dataIn)) {
+          if (!exactMatch || this._compareData(data, dataIn)) {
             if (typeof props.Callback === 'function') {
               props.Callback(dataIn)
             }
@@ -194,7 +194,7 @@ var GIVe = (function (give) {
       }
       this.contList = this.contList.filter(dataIn => {
         if (dataIn.start === data.start && (
-          !removeExactMatch || this._compareData(data, dataIn)
+          !exactMatch || this._compareData(data, dataIn)
         )) {
           if (typeof props.Callback === 'function') {
             props.Callback(dataIn)

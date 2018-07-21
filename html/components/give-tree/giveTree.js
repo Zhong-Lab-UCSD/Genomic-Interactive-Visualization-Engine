@@ -171,7 +171,7 @@ var GIVe = (function (give) {
      * @memberof GiveTreeBase.prototype
      *
      * @param  {ChromRegionLiteral} data - the data that needs to be removed
-     * @param  {boolean} removeExactMatch - whether an exact match is needed
+     * @param  {boolean} exactMatch - whether an exact match is needed
      *    to remove the entry. If `true`, then `.equalTo(data)` method (if
      *    exists within the data entry) or `===` (if no `equalTo` method
      *    exists) will be used to evaluate whether a data entry should be
@@ -185,13 +185,13 @@ var GIVe = (function (give) {
      * @param  {object|null} props - additional properties being passed onto
      *    nodes
      */
-    remove (data, removeExactMatch, convertTo, callback, props) {
+    remove (data, exactMatch, convertTo, callback, props) {
       if (convertTo === undefined) {
         convertTo = null
       }
       props = props || {}
       props.Callback = callback
-      this._root = this._root.remove(data, removeExactMatch, convertTo, props)
+      this._root = this._root.remove(data, exactMatch, convertTo, props)
     }
 
     _advanceGen (amount) {

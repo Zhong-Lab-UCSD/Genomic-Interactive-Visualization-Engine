@@ -624,11 +624,9 @@ var GIVe = (function (give) {
      *    Return false on all other cases.
      */
     static _childMergable (childFront, childBack) {
-      return (
-        childFront === childBack &&
+      return (childFront === childBack &&
         (childFront === null || childFront === false)
-      ) || (
-        childFront && (typeof childFront.mergeAfter === 'function') &&
+      ) || (childFront && (typeof childFront.mergeAfter === 'function') &&
         childFront.mergeAfter(childBack)
       )
     }
@@ -656,8 +654,7 @@ var GIVe = (function (give) {
      */
     _mergeChild (index, mergeNext, crossBorder) {
       var mergedFront = false
-      if (
-        index > 0 ||
+      if (index > 0 ||
         (this.Tree.neighboringLinks && crossBorder && this.Values.length > 1)
       ) {
         // merge previous child first

@@ -136,12 +136,12 @@ var GIVe = (function (give) {
      * remove - Remove data entries from the node.
      *    Data entries with the same start (and end values if exists) will be
      *    removed. If multiple entries are found with the same start (and end
-     *    values), the behavior will be defined by `removeExactMatch`.
+     *    values), the behavior will be defined by `exactMatch`.
      * @memberof GiveTreeNode.prototype
      *
      * @param  {ChromRegionLiteral|GiveTreeNode} data - the data entry being
      *    removed.
-     * @param  {boolean} removeExactMatch - whether an exact match is needed
+     * @param  {boolean} exactMatch - whether an exact match is needed
      *    to remove multiple data entries with the same start and end values.
      *    If `true`, `data` will be compared by `.equalTo(data)` if exists,
      *    `===` if not. (this is done via calling
@@ -160,7 +160,7 @@ var GIVe = (function (give) {
      *    If `this` gets deleted and is not root, return `false` and let the
      *    caller (likely the parent node) handle the upper structure.
      */
-    remove (data, removeExactMatch, convertTo, props) {
+    remove (data, exactMatch, convertTo, props) {
       throw new give.GiveError('GiveTreeNode.remove not implemented in `' +
         this.constructor.name + '`!')
     }
