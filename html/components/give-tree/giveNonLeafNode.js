@@ -369,24 +369,24 @@ var GIVe = (function (give) {
       }
       if (this.RevDepth > 0) {
         if (!doNotFixBack) {
-          var nextChild = this._getChildNext(index)
-          if (this.Values[index]) {
-            this.Values[index].next = nextChild
-          } else {
-            try {
+          try {
+            let nextChild = this._getChildNext(index)
+            if (this.Values[index]) {
+              this.Values[index].next = nextChild
+            } else {
               nextChild.prev = this.Values[index]
-            } catch (ignore) { }
-          }
+            }
+          } catch (ignore) { }
         }
         if (!doNotFixFront) {
-          var prevChild = this._getChildPrev(index)
-          if (this.Values[index]) {
-            this.Values[index].prev = prevChild
-          } else {
-            try {
+          try {
+            let prevChild = this._getChildPrev(index)
+            if (this.Values[index]) {
+              this.Values[index].prev = prevChild
+            } else {
               prevChild.next = this.Values[index]
-            } catch (ignore) { }
-          }
+            }
+          } catch (ignore) { }
         }
       }
     }
@@ -401,6 +401,10 @@ var GIVe = (function (give) {
       return this.Values[0]
     }
 
+    get firstLeaf () {
+      return this.RevDepth > 0 ? this.firstChild.firstLeaf : this.firstChild
+    }
+
     /**
      * getLastChild - get the last child element of `this`.
      * @memberof GiveNonLeafNode.prototype
@@ -411,6 +415,10 @@ var GIVe = (function (give) {
       return this.Values[this.Values.length - 1]
     }
 
+    get lastLeaf () {
+      return this.RevDepth > 0 ? this.lastChild.lastLeaf : this.lastChild
+    }
+
     /**
      * _getChildPrev - get the previous sibling of child at `index`.
      * @memberof GiveNonLeafNode.prototype
@@ -418,10 +426,16 @@ var GIVe = (function (give) {
      * @param {number} index - index of the child
      * @returns {give.GiveTreeNode|boolean|null}  the previous sibling of the
      *    child
+     * @throws {give.GiveError} If no children available, throw an error
      */
     _getChildPrev (index) {
-      return (index > 0 ? this.Values[index - 1]
-        : (this.prev ? this.prev.lastChild : this.prev))
+      if (index > 0) {
+        return this.Values[index - 1]
+      }
+      if (this.prev) {
+        return this.prev.lastChild
+      }
+      throw new give.GiveError('No previous children!')
     }
 
     /**
@@ -431,10 +445,16 @@ var GIVe = (function (give) {
      * @param {number} index - index of the child
      * @returns {give.GiveTreeNode|boolean|null}  the next sibling of the
      *    child
+     * @throws {give.GiveError} If no children available, throw an error
      */
     _getChildNext (index) {
-      return (index < (this.Values.length - 1) ? this.Values[index + 1]
-        : (this.next ? this.next.firstChild : this.next))
+      if (index < (this.Values.length - 1)) {
+        return this.Values[index + 1]
+      }
+      if (this.next) {
+        return this.next.firstChild
+      }
+      throw new give.GiveError('No next children!')
     }
 
     /**
@@ -495,6 +515,9 @@ var GIVe = (function (give) {
         if (this.RevDepth > 0) {
           // case 2
           this._addNonLeafRecords(data, chrRange, props)
+          // Note: keys may change after adding leaf records
+          this.Keys = this.Values.map(node => node.start)
+            .push(this.lastChild.end)
         } else {
           // case 1
           this._addLeafRecords(data, chrRange, props)
@@ -633,7 +656,10 @@ var GIVe = (function (give) {
 
     /**
      * _mergeChild - merge neighboring children that are the same as
-     *    `this.Values[index]`, if they are `false` or `null`
+     *    `this.Values[index]`, if they are `false` or `null`.
+     *    This function will always merge with the child __before__ `index`
+     *    first, then, if `mergeNext === true`, merge with the child after
+     *    `index`.
      *
      * @param  {number} index - index of the child
      * @param  {boolean} mergeNext - whether merge the next child as well
@@ -658,19 +684,25 @@ var GIVe = (function (give) {
         (this.Tree.neighboringLinks && crossBorder && this.Values.length > 1)
       ) {
         // merge previous child first
-        var prevChild = this._getChildPrev(index)
-        if (this.constructor._childMergable(prevChild, this.Values[index])) {
-          // remove child at `index`
-          this.Keys.splice(index, 1)
-          this.Values.splice(index, 1)
-          if (this.Tree.neighboringLinks) {
-            if (this.prev) {
-              this.prev.end = this.start
+        try {
+          let prevChild = this._getChildPrev(index)
+          if (this.constructor._childMergable(
+            prevChild, this.Values[index]
+          )) {
+            // remove child at `index`
+            this.Keys.splice(index, 1)
+            this.Values.splice(index, 1)
+            if (this.Tree.neighboringLinks) {
+              if (index === 0) {
+                this.prev.end = this.start
+                this._fixChildLinks(index, true)
+              } else {
+                this._fixChildLinks(index - 1, false, true)
+              }
             }
-            this._fixChildLinks(index > 0 ? index - 1 : index, true)
+            mergedFront = true
           }
-          mergedFront = true
-        }
+        } catch (ignore) {}
       }
 
       // if `mergeNext` is `true`, do the same to the next node
@@ -687,7 +719,6 @@ var GIVe = (function (give) {
             this._fixChildLinks(index, false, true)
           }
         } else if (
-          this.Tree.neighboringLinks &&
           crossBorder && index === this.Values.length - 1 &&
           this.next && this.Values.length > 1 &&
           this.constructor._childMergable(
@@ -696,11 +727,13 @@ var GIVe = (function (give) {
         ) {
           this.next.Keys[0] = this.Keys[index]
           this.next.Values[0] = this.Values[index]
-          this.Keys.splice(index, 1)
-          this.Values.splice(index, 1)
+          this.Keys.splice(-1)
+          this.Values.splice(-1)
           // needs to change the boundary of sibling node
           this.end = this.next.start
-          this.next._fixChildLinks(0, false, true)
+          if (this.Tree.neighboringLinks) {
+            this.next._fixChildLinks(0, false, true)
+          }
         }
       }
       return mergedFront
