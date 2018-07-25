@@ -730,7 +730,7 @@ var GIVe = (function (give) {
           } else if (!this.childHasData(currIndex)) {
             // either no child at all or child does not have summary data
             // calculate the closest range needed for the resolution
-            // first normalize resolution to branchingFactor
+            // first normalize resolution to BFactor
             let res = this._getClosestRes(resolution / props.BufferingRatio)
             let retrieveStart = Math.max(this.Keys[currIndex],
               give.PineNode.fitRes(chrRange.start, res, Math.floor))

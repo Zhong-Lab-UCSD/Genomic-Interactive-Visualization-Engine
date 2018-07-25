@@ -36,11 +36,11 @@ var GIVe = (function (give) {
    * @property {Array<GiveTreeNode|null|boolean>} Values - A list of data
    *    entries, can be `null` or `false` to represent data not loaded and
    *    empty nodes respectively.
-   *    `Keys.length` will be `1` more than `Values.length`;
+   *    `Keys.length` will be `1` more than `childNum`;
    *    `Keys[i]` will be the start coordinate of `Values[i]` and end
    *      coordinate of `Values[i - 1]`;
    *    `Keys[Keys.length - 1]` will be the end coordinate of
-   *      `Values[Values.length - 1]`.
+   *      `Values[childNum - 1]`.
    *    Therefore, neighboring nodes will have exactly one overlapping key.
    *    `Values` can be `false` or `null` (unless prohibited by
    *    implementation) indicating empty regions or data not loaded,
@@ -90,7 +90,7 @@ var GIVe = (function (give) {
       this.Tree = props.Tree
       if (
         Array.isArray(props.Keys) && Array.isArray(props.Values) &&
-        props.Values.length === props.Keys.length - 1
+        props.childNum === props.Keys.length - 1
       ) {
         // TODO: Sanity check for `this.Keys`?
         this.Keys = props.Keys
@@ -180,6 +180,16 @@ var GIVe = (function (give) {
      */
     get length () {
       return this.end - this.start
+    }
+
+    /**
+     * get childNum - get the number of children under this node.
+     * @memberof GiveNonLeafNode.prototype
+     *
+     * @returns {number}  The number of children
+     */
+    get childNum () {
+      return this.childNum
     }
 
     /**
@@ -412,7 +422,7 @@ var GIVe = (function (give) {
      * @returns {give.GiveTreeNode|boolean|null}  The last child element
      */
     get lastChild () {
-      return this.Values[this.Values.length - 1]
+      return this.Values[this.childNum - 1]
     }
 
     get lastLeaf () {
@@ -448,7 +458,7 @@ var GIVe = (function (give) {
      * @throws {give.GiveError} If no children available, throw an error
      */
     _getChildNext (index) {
-      if (index < (this.Values.length - 1)) {
+      if (index < (this.childNum - 1)) {
         return this.Values[index + 1]
       }
       if (this.next) {
@@ -491,7 +501,7 @@ var GIVe = (function (give) {
      *    leaf nodes if they are not the same as the non-leaf nodes.
      * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
      *    This shall reflect whether auto-balancing is supported for the tree.
-     *    See `give.GiveNonLeafNode.prototype._restructure` for details.
+     *    See `give.GiveNonLeafNode.prototype._restructureSingleLayer` for details.
      */
     insert (data, chrRange, props) {
       props = props || {}
@@ -525,15 +535,18 @@ var GIVe = (function (give) {
       } else { // chrRange
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       } // end if(chrRange)
-      return this._restructure()
+      return this._restructureSingleLayer()
     }
 
     /**
-     * _restructure - The function to be called after adding/removing data to
-     *    the node.
+     * _restructureSingleLayer - The function to be called after
+     *    adding/removing data to the node.
      *    This is used in implementations that involve post-insertion
      *    processes of the tree (for example, rebalancing in B+ tree
      *    derivatives).
+     *    The function will only restructure the immediate children of `this`
+     *    or `this` if it is a root node. It will assume all grandchildren
+     *    (if any) has been already restructured correctly.
      *    For trees that do not implement post-insertion processes, return
      *    `this`.
      * @memberof GiveNonLeafNode.prototype
@@ -547,7 +560,7 @@ var GIVe = (function (give) {
      *      merged with its sibling(s) or becoming an empty node, for
      *      example), return `false`. Return `this` in all other cases.
      */
-    _restructure () {
+    _restructureSingleLayer () {
       // for non-auto-balancing trees, return false if this node has no data
       //    any more
       if (this.Values[0] && this.Values[0].isEmpty) {
@@ -593,7 +606,9 @@ var GIVe = (function (give) {
 
     clear (convertTo) {
       convertTo = convertTo === false ? false : null
-      this._severeChildLinks(convertTo)
+      if (this.Tree.neighboringLinks) {
+        this._severeChildLinks(convertTo)
+      }
       this.Keys = [this.start, this.end]
       this.Values = [convertTo]
     }
@@ -610,6 +625,7 @@ var GIVe = (function (give) {
      *    latter child. If `undefined`, use the old child.
      * @param  {give.GiveTreeNode|false|null} [newFormerChild] - the new
      *    former child. If `undefined`, use the old child.
+     * @returns {number} Number of split children (2 in this case)
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
       if (this.Values[index] &&
@@ -632,6 +648,7 @@ var GIVe = (function (give) {
           this._fixChildLinks(index, newLatterChild === undefined, false)
         }
       }
+      return 2
     }
 
     /**
@@ -642,8 +659,8 @@ var GIVe = (function (give) {
      * @param  {type} childBack - the child at back being considered to merge.
      * @returns {type}            return whether the children are mergable.
      *    If both are `null` or both are `false`, return `true`.
-     *    If `childFront` has `.merge(child)` function and returns true when
-     *      called with `childBack`, return `true`.
+     *    If `childFront` has `.mergeAfter(child)` function and returns true
+     *      when called with `childBack`, return `true`.
      *    Return false on all other cases.
      */
     static _childMergable (childFront, childBack) {
@@ -681,13 +698,12 @@ var GIVe = (function (give) {
     _mergeChild (index, mergeNext, crossBorder) {
       var mergedFront = false
       if (index > 0 ||
-        (this.Tree.neighboringLinks && crossBorder && this.Values.length > 1)
+        (this.Tree.neighboringLinks && crossBorder && this.childNum > 1)
       ) {
         // merge previous child first
         try {
-          let prevChild = this._getChildPrev(index)
           if (this.constructor._childMergable(
-            prevChild, this.Values[index]
+            this._getChildPrev(index), this.Values[index]
           )) {
             // remove child at `index`
             this.Keys.splice(index, 1)
@@ -707,7 +723,7 @@ var GIVe = (function (give) {
 
       // if `mergeNext` is `true`, do the same to the next node
       if (mergeNext) {
-        if (index < this.Values.length - 1 &&
+        if (index < this.childNum - 1 &&
           this.constructor._childMergable(
             this.Values[index], this.Values[index + 1]
           )
@@ -719,8 +735,8 @@ var GIVe = (function (give) {
             this._fixChildLinks(index, false, true)
           }
         } else if (
-          crossBorder && index === this.Values.length - 1 &&
-          this.next && this.Values.length > 1 &&
+          crossBorder && index === this.childNum - 1 &&
+          this.next && this.childNum > 1 &&
           this.constructor._childMergable(
             this.Values[index], this._getChildNext(index)
           )
@@ -747,12 +763,12 @@ var GIVe = (function (give) {
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       }
       let index = 0
-      while (index < this.Values.length &&
+      while (index < this.childNum &&
         this.Keys[index + 1] <= chrRange.start
       ) {
         index++
       }
-      while (this.Keys[index] < chrRange.end && index < this.Values.length) {
+      while (this.Keys[index] < chrRange.end && index < this.childNum) {
         if (this.Values[index] &&
           !this.Values[index].traverse(chrRange, callback, filter,
             breakOnFalse, props, ...args)
@@ -784,12 +800,12 @@ var GIVe = (function (give) {
       props._Result = props._Result || []
       if (chrRange) {
         var index = 0
-        while (index < this.Values.length &&
+        while (index < this.childNum &&
           this.Keys[index + 1] <= chrRange.start
         ) {
           index++
         }
-        while (index < this.Values.length &&
+        while (index < this.childNum &&
           this.Keys[index] < chrRange.end
         ) {
           if (this.Values[index]) {
@@ -826,7 +842,7 @@ var GIVe = (function (give) {
      * @returns {boolean}      whether the node is empty
      */
     get isEmpty () {
-      return this.Values.length <= 0 || (this.Values.length === 1 &&
+      return this.childNum <= 0 || (this.childNum === 1 &&
         (this.Values[0] === false ||
           (this.Values[0] && this.Values[0].isEmpty)))
     }

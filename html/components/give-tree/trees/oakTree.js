@@ -22,10 +22,10 @@ var GIVe = (function (give) {
    * Oak tree for data storage, derived from B+ tree.
    * See `GIVE.GiveTree` for other properties and methods.
    * @typedef {object} OakTree
-   * @property {number} BranchingFactor - branching factor for the tree. The
+   * @property {number} BFactor - branching factor for the tree. The
    *    number of children for all non-root nodes will be equal to or greater
-   *    than `this.BranchingFactor / 2`. The number of children for all nodes
-   *    will be smaller than `this.BranchingFactor`. This is adapted from B+
+   *    than `this.BFactor / 2`. The number of children for all nodes
+   *    will be smaller than `this.BFactor`. This is adapted from B+
    *    tree to achieve auto-balancing.
    * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes. Should be `GIVE.OakNode` all the time. Can be overridden but not
@@ -41,7 +41,7 @@ var GIVe = (function (give) {
    *    will be responsible for.
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} props.BranchingFactor - for `this.BranchingFactor`
+   * @param {number} props.BFactor - for `this.BFactor`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.
    * @param {function} props.LeafNodeCtor - if omitted, the constructor of
@@ -53,13 +53,13 @@ var GIVe = (function (give) {
     props = props || {}
     props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
     if (
-      !Number.isInteger(props.BranchingFactor) || props.BranchingFactor <= 2
+      !Number.isInteger(props.BFactor) || props.BFactor <= 2
     ) {
       give._verbConsole.info('Default branching factor is chosen instead of ' +
-        props.BranchingFactor)
-      this.BranchingFactor = give.OakTree._DEFAULT_B_FACTOR
+        props.BFactor)
+      this.BFactor = give.OakTree._DEFAULT_B_FACTOR
     } else {
-      this.BranchingFactor = props.BranchingFactor
+      this.BFactor = props.BFactor
     }
     this.NeighboringLinks = true
     give.GiveTree.call(

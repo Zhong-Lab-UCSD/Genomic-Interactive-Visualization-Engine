@@ -43,6 +43,25 @@ var GIVe = (function (give) {
       }
     }
 
+    mergeAfter (node) {
+      let nodeGen = node
+        ? (node._lastUpdateGen || this._lastUpdateGen) : this._lastUpdateGen
+      if (super.mergeAfter) {
+        let result = super.mergeAfter(...arguments)
+        if (result) {
+          if (nodeGen > this._lastUpdateGen &&
+            ((nodeGen <= this.Tree._currGen) ===
+              (this._lastUpdateGen <= this.Tree._currGen)
+            )
+          ) {
+            this._lastUpdateGen = nodeGen
+          }
+          return result
+        }
+      } 
+      return false
+    }
+
     wither () {
       // If current node itself withers,
       // it will cause this and *all the children of this* wither
@@ -53,7 +72,7 @@ var GIVe = (function (give) {
       }
       // For children, mark all children that needs to be withered
       // then call `this.delete` on all children marked.
-      this.Values.filter(value => (value && value.wither && !value.wither()))
+      this.Values.filter(value => (value && value._shouldWither))
         .forEach(value => this.delete(value, true))
       return this.isEmpty ? null : this
     }

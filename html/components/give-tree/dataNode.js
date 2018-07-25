@@ -203,8 +203,7 @@ var GIVe = (function (give) {
         }
         return true
       })
-      return (this.startList.length > 0 || this.contList.length > 0)
-        ? this : false
+      return this.isEmpty ? false : this
     }
 
     clear (convertTo) {

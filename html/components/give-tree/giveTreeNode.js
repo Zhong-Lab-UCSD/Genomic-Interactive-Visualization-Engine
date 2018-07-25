@@ -155,10 +155,8 @@ var GIVe = (function (give) {
      * @param {function|null} props.Callback - the callback function to be
      *    used (with the data entry as its sole parameter) when deleting
      * @returns {give.GiveTreeNode|boolean}
-     *    This shall reflect whether auto-balancing is supported for the tree.
-     *    See `give.GiveNonLeafNode.prototype._restructure` for details.
-     *    If `this` gets deleted and is not root, return `false` and let the
-     *    caller (likely the parent node) handle the upper structure.
+     *    If the node itself shall be removed, return a falsey value to allow
+     *    parents to take additional steps.
      */
     remove (data, exactMatch, convertTo, props) {
       throw new give.GiveError('GiveTreeNode.remove not implemented in `' +
