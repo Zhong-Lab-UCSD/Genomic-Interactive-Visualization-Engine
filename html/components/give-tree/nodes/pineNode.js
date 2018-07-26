@@ -25,24 +25,23 @@ var GIVe = (function (give) {
    * self-balanced.
    *
    * See `GIVE.GiveNonLeafNode` for common non-leaf node documentation.
-   * See `give.WitheringMixin` for withering node documentation.
    *
    * @typedef {object} PineNode
-   * @property {boolean} IsRoot
-   * @property {Array<number>} Keys
-   * @property {Array<GiveTreeNode|null|boolean>} Values
-   * @property {number} RevDepth
-   * @property {GiveTree} Tree - Link to the `GiveTree` object to access tree-
+   * @property {boolean} isRoot
+   * @property {Array<number>} keys
+   * @property {Array<GiveTreeNode|null|boolean>} values
+   * @property {number} reverseDepth
+   * @property {GiveTree} tree - Link to the `GiveTree` object to access tree-
    *    wise properties.
-   * @property {number} Tree.ScalingFactor - The scaling factor for the pine
+   * @property {number} tree.scalingFactor - The scaling factor for the pine
    *    tree.
    *    This is the factor for non-leaf nodes (this will be used to initialize
-   *    `this.Tree.LeafScalingFactor` if the latter is not initialized.).
-   * @property {number} Tree.LeafScalingFactor - The scaling factor for the
+   *    `this.tree.leafScalingFactor` if the latter is not initialized.).
+   * @property {number} tree.leafScalingFactor - The scaling factor for the
    *    leaf nodes of the pine tree.
-   *    For example, if `this.Tree.LeafScalingFactor === 100`, each leaf node
+   *    For example, if `this.tree.leafScalingFactor === 100`, each leaf node
    *    (`give.DataNode`) shall cover 100bp.
-   * @property {function|null} Tree._summaryCtor - The constructor for a data
+   * @property {function|null} tree._SummaryCtor - The constructor for a data
    *    summary.
    * @property {object|null} Summary - The data summary for this node.
    *
@@ -54,24 +53,25 @@ var GIVe = (function (give) {
      * Creates an instance of PineNode.
      * @constructor
      * @param {object} props
-     * @param {GiveTree} props.Tree - for `this.Tree`
-     * @param {boolean} props.IsRoot
-     * @param {number} props.Start
-     * @param {number} props.End
-     * @param {number|null} props.RevDepth
+     * @param {GiveTree} props.tree - for `this.tree`
+     * @param {boolean} props.isRoot
+     * @param {number} props.start
+     * @param {number} props.end
+     * @param {number|null} props.reverseDepth
      * @memberof PineNode
      */
     constructor (props) {
       super(...arguments)
 
-      // Note that `this.RevDepth` should be depending on both scaling factors.
-      if (this.end - this.start <= this.Tree.LeafScalingFactor) {
-        this.RevDepth = 0
+      // Note that `this.reverseDepth` should be depending on both scaling
+      //    factors.
+      if (this.end - this.start <= this.tree.leafScalingFactor) {
+        this.reverseDepth = 0
       } else {
-        this.RevDepth = Math.ceil(
+        this.reverseDepth = Math.ceil(
           (Math.log(this.end - this.start) -
-            Math.log(this.Tree.LeafScalingFactor)
-          ) / Math.log(this.Tree.ScalingFactor))
+            Math.log(this.tree.leafScalingFactor)
+          ) / Math.log(this.tree.scalingFactor))
       }
 
       this._summary = null
@@ -88,8 +88,8 @@ var GIVe = (function (give) {
      * @returns {boolean} - `true` if the data is ready, `false` if not.
      */
     childHasData (index) {
-      return this.Values[index] === false ||
-        (this.Values[index] !== null && this.Values[index].hasData)
+      return this.values[index] === false ||
+        (this.values[index] !== null && this.values[index].hasData)
     }
 
     /**
@@ -101,8 +101,8 @@ var GIVe = (function (give) {
      *    1 is the smallest (finest)
      */
     _getResolutionAtDepth (revDepth) {
-      return parseInt(Math.floor(Math.pow(this.Tree.ScalingFactor, revDepth) *
-        this.Tree.LeafScalingFactor))
+      return parseInt(Math.floor(Math.pow(this.tree.scalingFactor, revDepth) *
+        this.tree.leafScalingFactor))
     }
 
     /**
@@ -112,7 +112,7 @@ var GIVe = (function (give) {
      *    1 is the smallest (finest)
      */
     get resolution () {
-      return this._getResolutionAtDepth(this.RevDepth)
+      return this._getResolutionAtDepth(this.reverseDepth)
     }
 
     /**
@@ -128,15 +128,15 @@ var GIVe = (function (give) {
       //   specific child, otherwise it's a generalized child resolution
       if (!isNaN(index) && parseInt(index) === index) {
         // Specialized child resolution
-        if (this.RevDepth <= 0 || this.Values[index] === false) {
+        if (this.reverseDepth <= 0 || this.values[index] === false) {
           return 1
-        } else if (this.Values[index] && this.Values[index].getResolution) {
-          return this.Values[index].resolution
+        } else if (this.values[index] && this.values[index].resolution) {
+          return this.values[index].resolution
         }
       }
       // Generalized child resolution
-      return this.RevDepth > 0
-        ? this._getResolutionAtDepth(this.RevDepth - 1)
+      return this.reverseDepth > 0
+        ? this._getResolutionAtDepth(this.reverseDepth - 1)
         : 1
     }
 
@@ -144,8 +144,8 @@ var GIVe = (function (give) {
      * resEnough - get whether the resolution of this data node is enough
      *    for the given resolution requirement.
      *
-     * @param  {number|null} resolution - the resolution required, if `null`, use
-     *    `1` (the finest) instead
+     * @param  {number|null} resolution - the resolution required, if `null`,
+     *    use `1` (the finest) instead
      * @returns {boolean}  Return `true` if the resolution is enough,
      *    otherwise `false`.
      */
@@ -159,8 +159,8 @@ var GIVe = (function (give) {
      * childResEnough - get whether the resolution of a child is enough
      *    for the given resolution requirement.
      *
-     * @param  {number|null} resolution - the resolution required, if `null`, use
-     *    `1` (the finest) instead for the required resolution.
+     * @param  {number|null} resolution - the resolution required, if `null`,
+     *    use `1` (the finest) instead for the required resolution.
      * @param  {number|null} index - index of the child node, if `null`, then
      *    return the supposed child resolution (because it should be fixed in
      *    pine trees.)
@@ -182,10 +182,10 @@ var GIVe = (function (give) {
      *    to `requiredRes`.
      */
     _getClosestRes (requiredRes) {
-      if (requiredRes >= this.Tree.LeafScalingFactor) {
-        return parseInt(Math.floor(Math.pow(this.Tree.ScalingFactor,
-          Math.floor((Math.log(requiredRes / this.Tree.LeafScalingFactor)) /
-            Math.log(this.Tree.ScalingFactor))) * this.Tree.LeafScalingFactor
+      if (requiredRes >= this.tree.leafScalingFactor) {
+        return parseInt(Math.floor(Math.pow(this.tree.scalingFactor,
+          Math.floor((Math.log(requiredRes / this.tree.leafScalingFactor)) /
+            Math.log(this.tree.scalingFactor))) * this.tree.leafScalingFactor
         ))
       }
       return 1
@@ -194,10 +194,10 @@ var GIVe = (function (give) {
     /**
      * fitRes - fit coordinates to resolution requirements.
      *    This is mainly used in cases when a value is put into a series of
-     *    consecutive bins of `resolution` size, and we need to find the boundary
-     *    of the bin. For example, if we put 12 into bins of 10, then we'll need
-     *    either 10 or 20, depending on whether we need the lower boundary or the
-     *    upper one.
+     *    consecutive bins of `resolution` size, and we need to find the
+     *    boundary of the bin. For example, if we put 12 into bins of 10, then
+     *    we'll need either 10 or 20, depending on whether we need the lower
+     *    boundary or the upper one.
      *
      * @static
      * @memberof GIVE.PineNode
@@ -226,12 +226,12 @@ var GIVe = (function (give) {
      * @returns {boolean} - return `true` if summary has been updated.
      */
     updateSummary (chromEntry) {
-      if (typeof this.Tree._summaryCtor === 'function') {
+      if (typeof this.tree._SummaryCtor === 'function') {
         var summary
         if (chromEntry) {
-          summary = this.Tree._summaryCtor.extract(chromEntry)
+          summary = this.tree._SummaryCtor.extract(chromEntry)
         }
-        if (summary instanceof this.Tree._summaryCtor) {
+        if (summary instanceof this.tree._SummaryCtor) {
           // summary provided, just replace
           this._summary = summary
         } else if (!this.summary) {
@@ -240,22 +240,22 @@ var GIVe = (function (give) {
             give._verbConsole.info(summary + ' is not a correct summary ' +
               'type. Will be regenerated from tree data.')
           }
-          var newSummary = new this.Tree._summaryCtor(this)
-          if (this.Values.every((nodeEntry, index) => {
+          var newSummary = new this.tree._SummaryCtor(this)
+          if (this.values.every((nodeEntry, index) => {
             if (nodeEntry === false) {
               // Child is zero, just return true
               return true
             }
             if (nodeEntry === null ||
-              (this.RevDepth > 0 && nodeEntry.summary === null)) {
+              (this.reverseDepth > 0 && nodeEntry.summary === null)) {
               return false
             }
-            if (this.RevDepth > 0) {
+            if (this.reverseDepth > 0) {
               newSummary.addSummary(this, nodeEntry.summary)
             } else {
               nodeEntry.traverse(null, chromEntryInDataNode =>
                 newSummary.addDataFromChromEntry(this, chromEntryInDataNode),
-              null, false, { NotFirstCall: true })
+              null, false, { notFirstCall: true })
             }
             return true
           })) {
@@ -287,7 +287,7 @@ var GIVe = (function (give) {
     getSummaryChromRegion (chr) {
       return this.summary
         ? this.summary.attach(new give.ChromRegion({
-          chr: chr || this.Tree.Chr,
+          chr: chr || this.tree.chr,
           start: this.start,
           end: this.end
         }, null))
@@ -312,23 +312,21 @@ var GIVe = (function (give) {
      *    This is used to mark the empty regions correctly. No `null` will
      *    present within these regions after this operation.
      *    This parameter should be a `GIVe.ChromRegion` object.
-     * @param {number} chrRange.Resolution - the resolution provided for the
+     * @param {number} chrRange.resolution - the resolution provided for the
      *    insertion. 1 is finest. This is used in case of mixed resolutions
-     *    for different `chrRange`s, This will override `props.Resolution` if
+     *    for different `chrRange`s, This will override `props.resolution` if
      *    both exist.
      * @param {object|null} props - additional properties being passed onto
      *    nodes.
-     * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
+     * @param {Array<ChromRegionLiteral>} props.contList - the list of data
      *    entries that should not start in `chrRange` but are passed from the
      *    earlier regions, this will be useful for later regions if date for
      *    multiple regions are inserted at the same time
-     * @param {function|null} props.Callback - the callback function to be
+     * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when inserting
-     * @param {object|null} props.ThisVar - `this` used in calling
-     *    `props.Callback`.
-     * @param {number} props.Resolution - the resolution provided for the
+     * @param {number} props.resolution - the resolution provided for the
      *    insertion. 1 is finest. This will be overridden by
-     *    `chrRange.Resolution` if both exist.
+     *    `chrRange.resolution` if both exist.
      * @param {function|null} props.LeafNodeCtor - the constructor function of
      *    leaf nodes if they are not the same as the non-leaf nodes.
      * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
@@ -343,11 +341,11 @@ var GIVe = (function (give) {
 
       if (data && !Array.isArray(data)) {
         throw (new give.GiveError('Data is not an array! ' +
-          'This will cause problems in ContList.'))
+          'This will cause problems in contList.'))
       }
 
       if (chrRange) {
-        var resolution = chrRange.Resolution || props.Resolution || 1
+        var resolution = chrRange.resolution || props.resolution || 1
         // clip chrRegion first (should never happen)
         chrRange = this.truncateChrRange(chrRange, true, true)
         // First, if this 'insertion' is just updating the summary data of
@@ -367,11 +365,11 @@ var GIVe = (function (give) {
           }
           // ***** This should fit Summary definition *****
           this.updateSummary(data[0])
-          if (typeof props.Callback === 'function') {
-            props.Callback(data[0])
+          if (typeof props.callback === 'function') {
+            props.callback(data[0])
           }
           data.splice(0, 1)
-        } else if (this.RevDepth > 0) {
+        } else if (this.reverseDepth > 0) {
           // case 2
           this._addNonLeafRecords(data, chrRange, props)
         } else {
@@ -388,8 +386,8 @@ var GIVe = (function (give) {
     _addNonLeafRecords (data, chrRange, props) {
       // This function adds record(s), and structures of the tree
 
-      // In leaf nodes, the actual record trunks may need to be split before range
-      // just to keep the loaded status correct.
+      // In leaf nodes, the actual record trunks may need to be split before
+      //    range just to keep the loaded status correct.
 
       // Find the range of child that rangeStart is in
       var currIndex = 0
@@ -419,18 +417,18 @@ var GIVe = (function (give) {
           chrRange.start, childRes, Math.floor
         )
 
-        while (this.Keys[currIndex + 1] <= childRange.start) {
+        while (this.keys[currIndex + 1] <= childRange.start) {
           currIndex++
         }
 
         // 2. Split children if possible to create the dedicated range for the
         //    child.
-        if (this.Keys[currIndex] < childRange.start) {
+        if (this.keys[currIndex] < childRange.start) {
           // If there are spaces before the dedicated range
           this._splitChild(currIndex++, childRange.start)
         }
 
-        if (this.Keys[currIndex + 1] > childRange.end) {
+        if (this.keys[currIndex + 1] > childRange.end) {
           // If there are spaces after the dedicated range
           this._splitChild(currIndex, childRange.end)
         }
@@ -442,29 +440,29 @@ var GIVe = (function (give) {
         //    within child range.
         //    otherwise, use `false` to fill the dedicated range and merge with
         //    previous `false`s if possible.
-        //    Note that if `props.ContList` has stuff, this should be considered
+        //    Note that if `props.contList` has stuff, this should be considered
         //    as CONTAIN data, so it should still goes all the way down to
         //    `give.DataNode`
         var fixChildFlag = false
 
         if ((data[0] && data[0].start < childRange.end) ||
-          (Array.isArray(props.ContList) &&
-            props.ContList.some(entry => entry.end > childRange.start)) ||
+          (Array.isArray(props.contList) &&
+            props.contList.some(entry => entry.end > childRange.start)) ||
           (chrRange.start > childRange.start || chrRange.end < childRange.end)
         ) {
           // If yes, create a non-leaf node on the dedicated range and call
           // `child.insert` on the dedicated range, `data` and `props`;
-          if (!this.Values[currIndex]) {
+          if (!this.values[currIndex]) {
             // try to establish previous nodes
-            this.Values[currIndex] = new give.PineNode({
-              IsRoot: false,
-              Start: childRange.start,
-              End: childRange.end,
-              RevDepth: this.RevDepth - 1,
-              Tree: this.Tree
+            this.values[currIndex] = new give.PineNode({
+              isRoot: false,
+              start: childRange.start,
+              end: childRange.end,
+              reverseDepth: this.reverseDepth - 1,
+              tree: this.tree
             })
           }
-          fixChildFlag = !this.Values[currIndex].insert(data, chrRange, props)
+          fixChildFlag = !this.values[currIndex].insert(data, chrRange, props)
         } else {
           fixChildFlag = true
         }
@@ -472,7 +470,7 @@ var GIVe = (function (give) {
         if (fixChildFlag) {
           // otherwise, use `false` to fill the dedicated range and merge with
           // previous `false`s if possible.
-          this.Values[currIndex] = false
+          this.values[currIndex] = false
           if (this._mergeChild(currIndex, true, false)) {
             currIndex--
           }
@@ -489,9 +487,9 @@ var GIVe = (function (give) {
 
       // Find the range of child that rangeStart is in
       var currIndex = 0
-      props.DataIndex = 0
+      props.dataIndex = 0
       var prevDataIndex
-      props.ContList = props.ContList || []
+      props.contList = props.contList || []
       if (!(give.GiveTreeNode.prototype.isPrototypeOf(
         props.LeafNodeCtor.prototype
       ))) {
@@ -499,42 +497,42 @@ var GIVe = (function (give) {
           '` is not a constructor for a tree node!')
       }
 
-      while (this.Keys[currIndex + 1] <= chrRange.start) {
+      while (this.keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
 
-      if (this.Keys[currIndex] < chrRange.start) {
+      if (this.keys[currIndex] < chrRange.start) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
-        // and use this.Values[currIndex] to fill the rest
+        // and use this.values[currIndex] to fill the rest
         // (normally it should be `null`)
         this._splitChild(currIndex++, chrRange.start)
       }
 
-      if (this.Keys[currIndex + 1] > chrRange.end) {
+      if (this.keys[currIndex + 1] > chrRange.end) {
         // The new rangeEnd appears between windows.
         // Shorten the next data record by inserting the key,
-        // and use this.Values[currIndex] to fill the current region
+        // and use this.values[currIndex] to fill the current region
         // (normally it should be `null`)
         this._splitChild(currIndex, chrRange.end)
       }
 
       while (chrRange.start < chrRange.end) {
-        while (this.Keys[currIndex + 1] <= chrRange.start) {
+        while (this.keys[currIndex + 1] <= chrRange.start) {
           currIndex++
         }
-        // First get data that should belong to ContList done.
-        prevDataIndex = props.DataIndex
-        props.DataIndex = give._traverseData(data, props.DataIndex,
-          dataEntry => dataEntry.start < chrRange.start, props.Callback)
-        props.ContList = props.ContList.concat(
-          data.slice(prevDataIndex, props.DataIndex)
+        // First get data that should belong to contList done.
+        prevDataIndex = props.dataIndex
+        props.dataIndex = give._traverseData(data, props.dataIndex,
+          dataEntry => dataEntry.start < chrRange.start, props.callback)
+        props.contList = props.contList.concat(
+          data.slice(prevDataIndex, props.dataIndex)
         ).filter(entry => entry.end > chrRange.start)
 
         // Now all data entries with `.start` before `nextRangeStart` should
-        // be already in `props.ContList`
+        // be already in `props.contList`
 
-        if (this.Keys[currIndex] < chrRange.start) {
+        if (this.keys[currIndex] < chrRange.start) {
           // The new rangeStart appears between windows.
           // Shorten the previous data record by inserting the key,
           // and use `false` to fill the rest
@@ -542,21 +540,21 @@ var GIVe = (function (give) {
         }
 
         if (
-          props.DataIndex < data.length &&
-          data[props.DataIndex].start === this.Keys[currIndex]
+          props.dataIndex < data.length &&
+          data[props.dataIndex].start === this.keys[currIndex]
         ) {
           // there are actual data at this location, create a new leaf node
-          this.Values[currIndex] = new props.LeafNodeCtor({
-            Start: this.Keys[currIndex]
+          this.values[currIndex] = new props.LeafNodeCtor({
+            start: this.keys[currIndex]
           })
-          this.Values[currIndex].insert(data, chrRange, props)
-        } else if (this.Keys[currIndex] < chrRange.end) {
+          this.values[currIndex].insert(data, chrRange, props)
+        } else if (this.keys[currIndex] < chrRange.end) {
           // needs to fill the element with `false`, and merge with previous if
           // possible
-          this.Values[currIndex] = props.ContList.length <= 0
+          this.values[currIndex] = props.contList.length <= 0
             ? false : new props.LeafNodeCtor({
-              Start: this.Keys[currIndex],
-              ContList: props.ContList.slice()
+              start: this.keys[currIndex],
+              contList: props.contList.slice()
             })
           if (this._mergeChild(currIndex, false, false)) {
             currIndex--
@@ -565,19 +563,19 @@ var GIVe = (function (give) {
 
         // Shrink `chrRange` to unprocessed range
         chrRange.setStart((
-          props.DataIndex < data.length &&
-          data[props.DataIndex].start < chrRange.end
-        ) ? data[props.DataIndex].start : chrRange.end, true)
+          props.dataIndex < data.length &&
+          data[props.dataIndex].start < chrRange.end
+        ) ? data[props.dataIndex].start : chrRange.end, true)
       }
 
-      // Process `props.ContList` for one last time
-      props.ContList = props.ContList.concat(
-        data.slice(prevDataIndex, props.DataIndex)
+      // Process `props.contList` for one last time
+      props.contList = props.contList.concat(
+        data.slice(prevDataIndex, props.dataIndex)
       ).filter(entry => entry.end > chrRange.end)
 
       // Remove all processed data from `data`
-      data.splice(0, props.DataIndex)
-      delete props.DataIndex
+      data.splice(0, props.dataIndex)
+      delete props.dataIndex
     }
 
     remove (data, exactMatch, convertTo, props) {
@@ -586,30 +584,30 @@ var GIVe = (function (give) {
       if (this.start === data.start && this.end === data.end) {
         if (!exactMatch || this._compareData(data, this)) {
           // remove content of this
-          if (typeof props.Callback === 'function') {
-            props.Callback(this)
+          if (typeof props.callback === 'function') {
+            props.callback(this)
           }
           this.clear(convertTo)
-          return !!this.IsRoot
+          return !!this.isRoot
         }
       }
 
       // data being remove is not self
       // locate the child entry first
       let i = 0
-      while (i < this.Values.length && this.Keys[i + 1] <= data.start) {
+      while (i < this.values.length && this.keys[i + 1] <= data.start) {
         i++
       }
-      if (this.Values[i]) {
-        // data must fall within `this.Values[i]`
-        if (!this.Values[i].remove(data, exactMatch, convertTo, props)) {
-          this.Values[i] = convertTo
+      if (this.values[i]) {
+        // data must fall within `this.values[i]`
+        if (!this.values[i].remove(data, exactMatch, convertTo, props)) {
+          this.values[i] = convertTo
           this._mergeChild(i, true, false)
         }
       } else {
         give._verbConsole.warn('Data ' + data + ' is not found in the tree.')
       }
-      return (this.Values.length > 1 || (
+      return (this.values.length > 1 || (
         this.firstChild !== null && this.firstChild !== false
       )) ? this : false
     }
@@ -622,16 +620,14 @@ var GIVe = (function (give) {
      *
      * @param  {ChromRegionLiteral} chrRange - the chromosomal range to
      *    traverse.
-     * @param  {number} [chrRange.Resolution] - the resolution required for
+     * @param  {number} [chrRange.resolution] - the resolution required for
      *    the traverse. 1 is finest. This is used in case of mixed resolutions
-     *    for different `chrRange`s, This will override `props.Resolution` if
+     *    for different `chrRange`s, This will override `props.resolution` if
      *    both exist.
      * @param  {function} callback - the callback function, takes a
      *    `GIVE.ChromRegion` object as its sole parameter and returns
      *    something that can be evaluated as a boolean value to determine
      *    whether the call shall continue (if `breakOnFalse === true`).
-     * @param  {object|null} thisVar - `this` used in calling both `filter`
-     *    and `callback`.
      * @param  {function|null} filter - a filter function that takes a
      *    `GIVE.ChromRegion` object as its sole parameter and returns whether
      *    the region should be included in traverse.
@@ -639,16 +635,16 @@ var GIVe = (function (give) {
      *    if `false` is returned from the callback function.
      * @param  {object|null} props - additional properties being
      *    passed onto nodes.
-     * @param  {boolean} props.NotFirstCall - whether this is not the first
+     * @param  {boolean} props.notFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
-     * @param  {number} [props.Resolution] - the resolution required for this
+     * @param  {number} [props.resolution] - the resolution required for this
      *    traverse. 1 is finest. This will be overridden by
-     *    `chrRange.Resolution` if both exist.
+     *    `chrRange.resolution` if both exist.
      * @returns {boolean} - whether future traverses should be conducted.
      */
     traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       if (chrRange) {
-        var resolution = chrRange.Resolution || props.Resolution || 1
+        var resolution = chrRange.resolution || props.resolution || 1
         // Rejuvenate `this`
         if (this.start < chrRange.end && this.end > chrRange.start) {
           // Resolution support: check if the resolution is already enough in
@@ -675,25 +671,25 @@ var GIVe = (function (give) {
      *    data loaded to allow buffered loading of data
      *
      * @param  {GIVE.ChromRegion} chrRange - The range of query.
-     * @param  {number} chrRange.Resolution - the resolution required for the
+     * @param  {number} chrRange.resolution - the resolution required for the
      *    uncached range. 1 is finest. This is used in case of mixed
      *    resolutions for different `chrRange`s, This will override
-     *    `props.Resolution` if both exist.
+     *    `props.resolution` if both exist.
      * @param  {object|null} props - additional properties being passed onto
      *    nodes
-     * @param  {number|null} props.Resolution - Resolution required for the
-     *    query, will be overridden by `chrRange.Resolution` if both exist.
-     * @param  {number|null} props.BufferingRatio - Ratio of desired
+     * @param  {number|null} props.resolution - resolution required for the
+     *    query, will be overridden by `chrRange.resolution` if both exist.
+     * @param  {number|null} props.bufferingRatio - Ratio of desired
      *    resolution if the data is not available. This would allow a
      *    "resolution buffering" by requesting data at a slightly finer
      *    resolution than currently required.
-     * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
+     * @param  {Array<GIVE.ChromRegion>} props._result - previous unloaded
      *    regions. This will be appended to the front of returned value.
      *    This array will be updated if it gets appended to reduce memory
      *    usage and GC.
      * @returns {Array<GIVE.ChromRegion>} An ordered array of the regions that
      *    does not have the data at the current resolution requirement.
-     *    __Regions will have a `.Resolution` property indicating their
+     *    __Regions will have a `.resolution` property indicating their
      *    intended resolutions. This shall be observed by the server so that
      *    summary of data shall work.__
      *    If no non-data ranges are found, return []
@@ -702,57 +698,61 @@ var GIVe = (function (give) {
       // return the range list with range(s) without any data
       // if no non-data ranges are found, return []
 
-      var resolution = chrRange.Resolution || props.Resolution || 1
-      props._Result = props._Result || []
-      props.BufferingRatio = props.BufferingRatio || 1
-      if (props.BufferingRatio < 1) {
+      let resolution = chrRange.resolution || props.resolution || 1
+      props._result = props._result || []
+      props.bufferingRatio = props.bufferingRatio || 1
+      if (props.bufferingRatio < 1) {
         give._verbConsole.warn(
-          'Invalid bufferingRatio: ' + props.BufferingRatio +
+          'Invalid bufferingRatio: ' + props.bufferingRatio +
           '. Should be greater than 1. Changed to 1 instead.')
-        props.BufferingRatio = 1
+        props.bufferingRatio = 1
       }
 
       if (chrRange) {
         var currIndex = 0
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex + 1] <= chrRange.start
+        while (currIndex < this.values.length &&
+          this.keys[currIndex + 1] <= chrRange.start
         ) {
           currIndex++
         }
-        while (currIndex < this.Values.length &&
-          this.Keys[currIndex] < chrRange.end
+        while (currIndex < this.values.length &&
+          this.keys[currIndex] < chrRange.end
         ) {
-          if (this.Values[currIndex] &&
+          if (this.values[currIndex] &&
             !this.childResEnough(resolution, currIndex)
           ) {
             // child has not enough resolution
-            this.Values[currIndex].getUncachedRange(chrRange, props)
+            this.values[currIndex].getUncachedRange(chrRange, props)
           } else if (!this.childHasData(currIndex)) {
             // either no child at all or child does not have summary data
             // calculate the closest range needed for the resolution
-            // first normalize resolution to BFactor
-            let res = this._getClosestRes(resolution / props.BufferingRatio)
-            let retrieveStart = Math.max(this.Keys[currIndex],
-              give.PineNode.fitRes(chrRange.start, res, Math.floor))
-            let retrieveEnd = Math.min(this.Keys[currIndex + 1],
-              give.PineNode.fitRes(chrRange.end, res, Math.ceil))
-            if (props._Result[props._Result.length - 1] &&
-              props._Result[props._Result.length - 1].Resolution === res &&
-              props._Result[props._Result.length - 1].end === retrieveStart
+            // first normalize resolution to scalingFactor
+            let closestResolution = this._getClosestRes(
+              resolution / props.bufferingRatio)
+            let retrieveStart = Math.max(this.keys[currIndex],
+              give.PineNode.fitRes(
+                chrRange.start, closestResolution, Math.floor))
+            let retrieveEnd = Math.min(this.keys[currIndex + 1],
+              give.PineNode.fitRes(
+                chrRange.end, closestResolution, Math.ceil))
+            if (props._result[props._result.length - 1] &&
+              props._result[props._result.length - 1].resolution ===
+                closestResolution &&
+              props._result[props._result.length - 1].end === retrieveStart
             ) {
-              props._Result[props._Result.length - 1].end = retrieveEnd
+              props._result[props._result.length - 1].end = retrieveEnd
             } else {
-              props._Result.push(new give.ChromRegion({
+              props._result.push(new give.ChromRegion({
                 chr: chrRange.chr,
                 start: retrieveStart,
                 end: retrieveEnd,
-                Resolution: res
+                resolution: closestResolution
               }))
             }
           }
           currIndex++
         }
-        return props._Result
+        return props._result
       } else { // chrRange
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       }
@@ -760,7 +760,7 @@ var GIVe = (function (give) {
 
     /**
      * isEmpty - return whether this node is empty
-     * If there is no entry in both `this.startList` and `this.ContList` then
+     * If there is no entry in both `this.startList` and `this.contList` then
      *    the node is considered empty.
      *
      * @returns {boolean}      whether the node is empty

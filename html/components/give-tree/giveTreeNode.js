@@ -107,17 +107,15 @@ var GIVe = (function (give) {
      *    preferably a `GIVe.ChromRegion` object.
      * @param {object|null} props - additional properties being
      *    passed onto nodes.
-     * @param {Array<ChromRegionLiteral>} [props.ContList] - the list of
+     * @param {Array<ChromRegionLiteral>} [props.contList] - the list of
      *    data entries that should not start in `chrRange` but are passed
      *    from the earlier regions, this will be useful for later regions if
      *    date for multiple regions are inserted at the same time.
-     * @param {function} [props.Callback] - the callback function to be used
+     * @param {function} [props.callback] - the callback function to be used
      *    (with the data entry as its sole parameter) when inserting
-     * @param {object} [props.ThisVar] - `this` used in calling
-     *    `props.Callback`.
      * @param {function} [props.LeafNodeCtor] - the constructor function of
      *    leaf nodes if they are not the same as the non-leaf nodes.
-     * @param {number} [props.DataIndex] - the current index of `data`.
+     * @param {number} [props.dataIndex] - the current index of `data`.
      *    If this is specified, no array splicing will be done on `data` to
      *    improve performance. `props.currIndex` will be shifted (and passed
      *    back).
@@ -152,7 +150,7 @@ var GIVe = (function (give) {
      *    the removed nodes, should be either `null` (default) or `false`.
      * @param  {object|null} [props] - additional properties being
      *    passed onto nodes.
-     * @param {function|null} props.Callback - the callback function to be
+     * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when deleting
      * @returns {give.GiveTreeNode|boolean}
      *    If the node itself shall be removed, return a falsey value to allow
@@ -241,7 +239,7 @@ var GIVe = (function (give) {
      *    stopped if `false` is returned from the callback function.
      * @param  {object|null} props - additional properties being
      *    passed onto nodes.
-     * @param  {boolean} props.NotFirstCall - whether this is not the first
+     * @param  {boolean} props.notFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
      * @returns {boolean} - whether future traverses should be conducted.
      */

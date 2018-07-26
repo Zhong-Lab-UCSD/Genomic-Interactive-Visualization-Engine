@@ -20,10 +20,16 @@ var GIVe = (function (give) {
 
   /**
    * Withering nodes.
-   * These nodes have a property called `_life` to show their life span. When
-   *    `.wither()` is called, the life span will shorten and if it gets too
-   *    short, the node will be pruned (this will be implemented by caller).
-   * `_life` can be rejuvenated by calling `.rejuvenate()` to delay withering.
+   * These nodes have a property called `_lastUpdateGen` to show their last
+   *    updated generation number. When `.wither()` is called, the age will
+   *    be calculated by `this.tree._currGen` and then compared with
+   *    `this.tree.lifeSpan`. If the node is older than expected, then the
+   *    content of the node will be purged with `null` with `.clear(null)`.
+   * The node is also responsible for withering of all its children. For any
+   *    child that returns `true` for its `.wither()` call, call
+   *    `.remove(child, true)` to remove them.
+   * `_lastUpdateGen` will be updated when `.insert()` or `.traverse()` is
+   *    called so that active branches won't wither easily.
    *
    * @typedef {object} WitheringMixin
    * @property {number} _lastUpdateGen - last updated generation of this node
@@ -31,22 +37,22 @@ var GIVe = (function (give) {
    * @class give.witheringMixin
    *
    * @constructor
-   * @param {object} props - properties that will be passed to the individual
+   * @param {object} [props] - properties that will be passed to the individual
    *    implementations
-   * @param {object} props._currGen - the current generation
+   * @param {object} [props._currGen] - the current generation
    */
   give.WitheringMixin = Base => class extends Base {
     constructor (props) {
       super(...arguments)
-      if (props._currGen || (this.Tree && this.Tree.lifeSpan)) {
-        this._lastUpdateGen = props._currGen || this.Tree._currGen
+      if ((props && props._currGen) || (this.tree && this.tree.lifeSpan)) {
+        this._lastUpdateGen = props._currGen || this.tree._currGen
       }
     }
 
     mergeAfter (node) {
       let nodeGen = node
         ? (node._lastUpdateGen || this._lastUpdateGen) : this._lastUpdateGen
-      if (super.mergeAfter) {
+      if (typeof super.mergeAfter === 'function') {
         let result = super.mergeAfter(...arguments)
         if (result) {
           if (this._genOlderThan(nodeGen)) {
@@ -59,57 +65,67 @@ var GIVe = (function (give) {
     }
 
     _genOlderThan (generationToComp) {
-      return this.Tree && this.tree.lifeSpan &&
+      return this.tree && this.tree.lifeSpan &&
         generationToComp > this._lastUpdateGen &&
-        ((generationToComp <= this.Tree._currGen) ===
-          (this._lastUpdateGen <= this.Tree._currGen)
+        ((generationToComp <= this.tree._currGen) ===
+          (this._lastUpdateGen <= this.tree._currGen)
         )
     }
 
     insert () {
       let result
-      if (super.insert) {
+      if (typeof super.insert === 'function') {
         result = super.insert(...arguments)
       }
       this.rejuvenate()
       return result
     }
 
+    /**
+     * wither - Let nodes and/or their children that are too old wither
+     *    Note that this withering only removes nodes, it does not do any
+     *    restructuring that may be required for some trees. The restructuring
+     *    needs to happen in the __`GiveTree`__ object calling this.
+     *
+     * @returns {boolean} `true` if the node itself has withered and should
+     *    be removed from its parent.
+     */
     wither () {
       // If current node itself withers,
       // it will cause this and *all the children of this* wither
       // NOTE: Root node may also wither, which causes the whole tree to wither
       if (this._shouldWither) {
         this.clear(null)
-        return null
+        return true
       }
       // For children, mark all children that needs to be withered
       // then call `this.delete` on all children marked.
-      this.Values.filter(value => (value && value._shouldWither))
-        .forEach(value => this.remove(value, true))
-      return this.isEmpty ? null : this
+      this.values.filter(value => (
+        value && (typeof value.wither === 'function') && value.wither()
+      )).forEach(value => this.remove(value, true))
+      return this.isEmpty
     }
 
     get _shouldWither () {
-      if (!this.Tree || !this.Tree.lifeSpan) {
+      if (!this.tree || !this.tree.lifeSpan) {
         return false
       }
-      return this.Tree._currGen >= this._lastUpdateGen
-        ? this.Tree._currGen - this._lastUpdateGen > this.Tree.lifeSpan
-        : this.Tree._currGen -
-          (this._lastUpdateGen - this.Tree.constructor._MAX_GENERATION) >
-          this.Tree.lifeSpan
+      return this.tree._currGen >= this._lastUpdateGen
+        ? this.tree._currGen - this._lastUpdateGen > this.tree.lifeSpan
+        : this.tree._currGen -
+          (this._lastUpdateGen - this.tree.constructor._MAX_GENERATION) >
+          this.tree.lifeSpan
     }
 
     rejuvenate () {
-      if (this.Tree && this.tree.lifeSpan) {
-        this._lastUpdateGen = this.Tree._currGen
+      if (this.tree && this.tree.lifeSpan) {
+        this._lastUpdateGen = this.tree._currGen
       }
     }
 
     traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       let result
-      if (super.traverse) {
+      if (typeof super.traverse === 'function') {
         result = super.traverse(...arguments)
       }
       this.rejuvenate()

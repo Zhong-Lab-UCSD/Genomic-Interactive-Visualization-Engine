@@ -1240,7 +1240,7 @@ var GIVe = (function (give) {
         this._pendingNewVWArr = Array.isArray(viewWindow)
           ? viewWindow.slice() : [viewWindow]
         this._pendingNewVWArr.forEach(range => {
-          range.Resolution = this.getResolution(range) || 1
+          range.resolution = this.getResolution(range) || 1
         })
 
         this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(

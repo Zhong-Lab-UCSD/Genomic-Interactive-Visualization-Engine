@@ -45,7 +45,7 @@ var GIVe = (function (give) {
    *              the instance of a class described in this file
    *
    * @typedef {object} GiveDataNodeBase
-   * @property {number} Start - the starting coordinate of this data node.
+   * @property {number} start - the starting coordinate of this data node.
    * @property {Array<ChromRegionLiteral>} startList - A list of data entries
    *    that __start exactly at__ the start coordinate of this node.
    *    `startList` will become an empty array only if the previous bin is
@@ -67,7 +67,7 @@ var GIVe = (function (give) {
      * @param {object} props - properties that will be passed to the
      *    individual implementations. For `GIVE.DataNode`, three properties
      *    will be used:
-     * @param {number} props.Start - for `this.Start`
+     * @param {number} props.start - for `this.start`
      * @param {Array<ChromRegionLiteral>|null} props.startList - for
      *    `this.startList`
      * @param {Array<ChromRegionLiteral>|null} props.contList - for
@@ -76,7 +76,7 @@ var GIVe = (function (give) {
      */
     constructor (props) {
       super(props)
-      this._start = props.Start
+      this._start = props.start
       this.startList = props.startList || []
       this.contList = props.contList || []
     }
@@ -112,7 +112,7 @@ var GIVe = (function (give) {
      *    entries may not work properly.
      *    After insertion, any entry within `data` that has `.start` value
      *    larger than `this.start` will be deleted from the array or marked
-     *    for deletion via `props.DataIndex`. See `props.DataIndex` for
+     *    for deletion via `props.dataIndex`. See `props.dataIndex` for
      *    details.
      * @param {ChromRegionLiteral} chrRanges - DataNode should not handle
      *    this.
@@ -121,9 +121,9 @@ var GIVe = (function (give) {
      *    entries that should not start in `chrRange` but are passed from the
      *    earlier regions, this will be useful for later regions if date for
      *    multiple regions are inserted at the same time
-     * @param {function|null} props.Callback - the callback function to be
+     * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when inserting
-     * @param {number|null} props.DataIndex - current index of `data` to start
+     * @param {number|null} props.dataIndex - current index of `data` to start
      *    insertion. This is to optimize large insertions.
      *    If this is specified, after insertion it will be moved to the first
      *    data entry whose `.start` is greater than `this.start`, if no
@@ -139,10 +139,10 @@ var GIVe = (function (give) {
       //    `this.start` into `contList`
       props = props || {}
       var currIndex =
-        (typeof props.DataIndex === 'number' ? props.DataIndex : 0)
+        (typeof props.dataIndex === 'number' ? props.dataIndex : 0)
       var prevIndex = currIndex
       currIndex = give._traverseData(data, currIndex,
-        dataEntry => dataEntry.start < this.start, props.Callback)
+        dataEntry => dataEntry.start < this.start, props.callback)
 
       // 2. Check all `contList` to ensure they still overlap with `this`
       //    (getEnd() should be greater than `this.start`), remove those who
@@ -157,16 +157,16 @@ var GIVe = (function (give) {
       //    `contList`;
       prevIndex = currIndex
       currIndex = give._traverseData(data, currIndex,
-        dataEntry => dataEntry.start === this.start, props.Callback)
+        dataEntry => dataEntry.start === this.start, props.callback)
       this.startList = data.slice(prevIndex, currIndex)
       props.contList = props.contList.concat(this.startList)
 
-      if (typeof props.DataIndex !== 'number') {
+      if (typeof props.dataIndex !== 'number') {
         // remove data if props.currIndex is not specified
         data.splice(0, currIndex)
       } else {
         // update `props.currIndex`
-        props.DataIndex = currIndex
+        props.dataIndex = currIndex
       }
 
       return this
@@ -184,8 +184,8 @@ var GIVe = (function (give) {
       if (data.start === this.start) {
         this.startList = this.startList.filter(dataIn => {
           if (!exactMatch || this._compareData(data, dataIn)) {
-            if (typeof props.Callback === 'function') {
-              props.Callback(dataIn)
+            if (typeof props.callback === 'function') {
+              props.callback(dataIn)
             }
             return false
           }
@@ -196,8 +196,8 @@ var GIVe = (function (give) {
         if (dataIn.start === data.start && (
           !exactMatch || this._compareData(data, dataIn)
         )) {
-          if (typeof props.Callback === 'function') {
-            props.Callback(dataIn)
+          if (typeof props.callback === 'function') {
+            props.callback(dataIn)
           }
           return false
         }
@@ -235,7 +235,7 @@ var GIVe = (function (give) {
      *    passed onto nodes.
      * @param  {...any} args - additional args being passed onto `callback`
      *    and `filter`
-     * @param  {boolean} props.NotFirstCall - whether this is not the first
+     * @param  {boolean} props.notFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
      * @returns {boolean} - whether future traverses should be conducted.
      */
@@ -255,18 +255,18 @@ var GIVe = (function (give) {
         return this._callFuncOnDataEntry(callback, filter, breakOnFalse,
           entry, props, ...args)
       }
-      // needs to traverse on contList if `!props.NotFirstCall`
-      if (!props.NotFirstCall) {
+      // needs to traverse on contList if `!props.notFirstCall`
+      if (!props.notFirstCall) {
         if (!this.contList.every(callFunc)) {
           return false
         }
       }
-      props.NotFirstCall = true
+      props.notFirstCall = true
       return this.startList.every(callFunc)
     }
 
     getUncachedRange (chrRange, props) {
-      return props._Result || []
+      return props._result || []
     }
 
     /**

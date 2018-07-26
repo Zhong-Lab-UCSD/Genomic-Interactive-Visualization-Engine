@@ -22,10 +22,10 @@ var GIVe = (function (give) {
    * Oak tree for data storage, derived from B+ tree.
    * See `GIVE.GiveTree` for other properties and methods.
    * @typedef {object} OakTree
-   * @property {number} BFactor - branching factor for the tree. The
+   * @property {number} branchingFactor - branching factor for the tree. The
    *    number of children for all non-root nodes will be equal to or greater
-   *    than `this.BFactor / 2`. The number of children for all nodes
-   *    will be smaller than `this.BFactor`. This is adapted from B+
+   *    than `this.branchingFactor / 2`. The number of children for all nodes
+   *    will be smaller than `this.branchingFactor`. This is adapted from B+
    *    tree to achieve auto-balancing.
    * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes. Should be `GIVE.OakNode` all the time. Can be overridden but not
@@ -41,7 +41,7 @@ var GIVe = (function (give) {
    *    will be responsible for.
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} props.BFactor - for `this.BFactor`
+   * @param {number} props.branchingFactor - for `this.branchingFactor`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.
    * @param {function} props.LeafNodeCtor - if omitted, the constructor of
@@ -53,13 +53,13 @@ var GIVe = (function (give) {
     props = props || {}
     props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
     if (
-      !Number.isInteger(props.BFactor) || props.BFactor <= 2
+      !Number.isInteger(props.branchingFactor) || props.branchingFactor <= 2
     ) {
       give._verbConsole.info('Default branching factor is chosen instead of ' +
-        props.BFactor)
-      this.BFactor = give.OakTree._DEFAULT_B_FACTOR
+        props.branchingFactor)
+      this.branchingFactor = give.OakTree._DEFAULT_B_FACTOR
     } else {
-      this.BFactor = props.BFactor
+      this.branchingFactor = props.branchingFactor
     }
     this.NeighboringLinks = true
     give.GiveTree.call(
@@ -78,8 +78,6 @@ var GIVe = (function (give) {
    * @param {function} callback - the callback function to be used (with the
    *    data entry as its sole parameter) on all overlapping data entries
    *    (that pass `filter` if it exists).
-   * @param {Object} thisVar - `this` element to be used in `callback` and
-   *    `filter`.
    * @param {function} filter - the filter function to be used (with the data
    *    entry as its sole parameter), return `false` to exclude the entry from
    *    being called with `callback`.
@@ -90,22 +88,25 @@ var GIVe = (function (give) {
    *    otherwise `true`
    */
   give.OakTree.prototype.traverse = function (
-    chrRange, callback, thisVar, filter, breakOnFalse, props
+    chrRange, callback, filter, breakOnFalse, props, ...args
   ) {
     props = props || {}
-    if (!chrRange.chr || chrRange.chr === this.Chr) {
+    let currNode = this._root
+    if (!chrRange.chr || chrRange.chr === this.chr) {
+      this._advanceGen()
       try {
         chrRange = this._root.truncateChrRange(chrRange, true, false)
-        var currNode = this._root
         while (currNode) {
-          currNode = currNode.traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props)
+          currNode = currNode.traverse(chrRange, callback, filter,
+            breakOnFalse, props, ...args)
         }
       } catch (exception) {
         return false
+      } finally {
+        this._wither()
       }
     }
-    return true
+    return currNode === null
   }
 
   give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked

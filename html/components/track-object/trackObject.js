@@ -487,7 +487,7 @@ var GIVe = (function (give) {
      * @param  {Array<ChromRegionLiteral>|ChromRegionLiteral} ranges -
      *   An array of `give.ChromRegion`s to get the data for.
      *   For each `ChromRegion` element, resolution can be individually
-     *   assigned by setting `.Resolution` property of the element.
+     *   assigned by setting `.resolution` property of the element.
      * @param  {string} callerID    The element ID calling `this.fetchData`,
      *   this is used to collapse multiple calls from the same element.
      * @returns {Promise<object>}  Returns a promise that resolves to an object

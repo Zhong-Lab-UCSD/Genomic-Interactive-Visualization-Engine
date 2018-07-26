@@ -123,9 +123,9 @@ var GIVe = (function (give) {
                 GUIRange.overlaps(mergedGUIRanges[j])) {
               // needs to determine which one should take the resolution
               var queryRange = mergedGUIRanges[j]
-              if (typeof queryRange.Resolution === 'number' &&
-                (typeof GUIRange.Resolution !== 'number' ||
-                  GUIRange.Resolution < queryRange.Resolution
+              if (typeof queryRange.resolution === 'number' &&
+                (typeof GUIRange.resolution !== 'number' ||
+                  GUIRange.resolution < queryRange.resolution
                 )
               ) {
                 // GUI has smaller resolution
@@ -148,9 +148,9 @@ var GIVe = (function (give) {
                     queryRange.start = GUIRange.end
                   }
                 }
-              } else if (typeof GUIRange.Resolution === 'number' &&
-                (typeof queryRange.Resolution !== 'number' ||
-                  queryRange.Resolution < GUIRange.Resolution
+              } else if (typeof GUIRange.resolution === 'number' &&
+                (typeof queryRange.resolution !== 'number' ||
+                  queryRange.resolution < GUIRange.resolution
                 )
               ) {
                 // query has smaller resolution
@@ -214,14 +214,14 @@ var GIVe = (function (give) {
           if (this.getData(chrRange.chr, true).getUncachedRange) {
             var uncachedRanges = this.getData(chrRange.chr).getUncachedRange(
               chrRange, {
-                BufferingRatio: this.resBufferRatio
+                bufferingRatio: this.resBufferRatio
               }
             )
             totalUncachedRanges = totalUncachedRanges.concat(uncachedRanges)
           } else {
-            chrRange.Resolution = typeof chrRange.Resolution === 'number'
-              ? chrRange.Resolution / this.resBufferRatio
-              : chrRange.Resolution
+            chrRange.resolution = typeof chrRange.resolution === 'number'
+              ? chrRange.resolution / this.resBufferRatio
+              : chrRange.resolution
             totalUncachedRanges.push(chrRange)
           }
         }, this)
@@ -244,9 +244,9 @@ var GIVe = (function (give) {
         type: this.parent.typeTrunk,
         window: regions.map(region => region.regionToString(false))
       }
-      if (regions.some(region => region.Resolution)) {
+      if (regions.some(region => region.resolution)) {
         query.params = {
-          resolutions: regions.map(region => region.Resolution)
+          resolutions: regions.map(region => region.resolution)
         }
       }
       if (this.getTrackSetting('isCustom')) {

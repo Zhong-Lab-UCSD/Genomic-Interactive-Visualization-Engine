@@ -37,26 +37,27 @@ var GIVe = (function (give) {
      * @constructor
      * @param {ChromRegionLiteral} chrRange - The range this data storage unit
      *    will be responsible for.
-     * @param {function} NonLeafNodeCtor - for `this._NonLeafNodeCtor`
+     * @param {function} NonLeafNodeCtor - Constructor for `this._root`
      * @param {object} props - properties that will be passed to the
      *    individual implementations
-     * @param {number} props.LifeSpan - Whether this tree shall wither.
+     * @param {number} props.lifeSpan - Whether this tree shall wither.
      *    if `props
      * @param {function} props.LeafNodeCtor - if omitted, the constructor of
      *    `this.root` will be used
      * @memberof GiveTree
      */
     constructor (chrRange, NonLeafNodeCtor, props) {
-      this.Chr = chrRange.chr
+      this.chr = chrRange.chr
       props = props || {}
-      props.Start = chrRange.start
-      props.End = chrRange.end
-      props.Tree = this
-      props.IsRoot = true
-      if (props.LifeSpan && props.LifeSpan > 0) {
+      props.start = chrRange.start
+      props.end = chrRange.end
+      props.tree = this
+      props.isRoot = true
+      if (typeof props.lifeSpan === 'number' && props.lifeSpan > 0) {
         this._currGen = 0
         this.lifeSpan = props.lifeSpan
         this._root = new give.WitheringMixin(NonLeafNodeCtor)(props)
+        this._witheringPromise = null
       } else {
         this._currGen = null
         this._root = new NonLeafNodeCtor(props)
@@ -70,7 +71,7 @@ var GIVe = (function (give) {
 
     get coveringRange () {
       return new give.ChromRegion({
-        chr: this.Chr,
+        chr: this.chr,
         start: this._root.start,
         end: this._root.end
       })
@@ -89,9 +90,9 @@ var GIVe = (function (give) {
      * @param {object|null} props
      */
     _insertSingleRange (data, chrRange, props) {
-      if (!chrRange.chr || chrRange.chr === this.Chr) {
+      if (!chrRange.chr || chrRange.chr === this.chr) {
         props = props || {}
-        props.ContList = props.ContList || []
+        props.contList = props.contList || []
         props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
         this._root = this._root.insert(data, ((!chrRange && data.length === 1)
           ? data[0] : chrRange), props)
@@ -190,22 +191,29 @@ var GIVe = (function (give) {
         convertTo = null
       }
       props = props || {}
-      props.Callback = callback
+      props.callback = callback
       this._root = this._root.remove(data, exactMatch, convertTo, props)
     }
 
     _advanceGen (amount) {
       if (this._currGen !== null) {
-        this._currGen += (amount || 1)
-        if (this._currGen >= this.constructor._MAX_GENERATION) {
-          this._currGen = 0
+        if (!this._witheringPromise) {
+          this._currGen += (amount || 1)
+          if (this._currGen >= this.constructor._MAX_GENERATION) {
+            this._currGen = 0
+          }
         }
       }
     }
 
     _wither () {
       if (this._currGen !== null) {
-        this._root.traverse(null, )
+        this._witheringPromise = this._witheringPromise || Promise.resolve()
+          .then(() => {
+            this._root.wither()
+            this._root = this._root.restructure()
+            this._witheringPromise = null
+          })
       }
     }
 
@@ -220,8 +228,6 @@ var GIVe = (function (give) {
      * @param {function} callback - the callback function to be used (with the
      *    data entry as its sole parameter) on all overlapping data entries
      *    (that pass `filter` if it exists).
-     * @param {Object} thisVar - `this` element to be used in `callback` and
-     *    `filter`.
      * @param {function} filter - the filter function to be used (with the
      *    data entry as its sole parameter), return `false` to exclude the
      *    entry from being called with `callback`.
@@ -232,15 +238,15 @@ var GIVe = (function (give) {
      * @returns {boolean} If the traverse breaks on `false`, returns `false`,
      *    otherwise `true`
      */
-    traverse (chrRange, callback, thisVar, filter, breakOnFalse, props) {
+    traverse (chrRange, callback, filter, breakOnFalse, props) {
       props = props || {}
-      if (!chrRange || !chrRange.chr || chrRange.chr === this.Chr) {
+      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
         this._advanceGen()
         try {
           chrRange = chrRange
             ? this._root.truncateChrRange(chrRange, true, false)
             : this.coveringRange
-          this._root.traverse(chrRange, callback, thisVar, filter,
+          this._root.traverse(chrRange, callback, filter,
             breakOnFalse, false, props)
         } catch (err) {
           give._verbConsole.warn(err)
@@ -273,7 +279,7 @@ var GIVe = (function (give) {
      */
     getUncachedRange (chrRange, props) {
       props = props || {}
-      if (!chrRange.chr || chrRange.chr === this.Chr) {
+      if (!chrRange.chr || chrRange.chr === this.chr) {
         chrRange = this._root.truncateChrRange(chrRange, true, true)
         return this._root.getUncachedRange(chrRange, props)
       } else {

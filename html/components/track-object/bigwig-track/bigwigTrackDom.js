@@ -183,7 +183,7 @@ var GIVe = (function (give) {
         start = lastElem.getEnd()
       }
       if (start < dataEntry.end) {
-        var span = Math.max(parseInt(chrRange.Resolution) || 1, 1)
+        var span = Math.max(parseInt(chrRange.resolution) || 1, 1)
         var chrSpan = new give.ChromRegion({
           chr: chrRange.chr,
           start: start,
@@ -219,9 +219,9 @@ var GIVe = (function (give) {
         rawDataPoints.push(new give.ChromRegion({
           chr: vwindow.chr,
           start: lastEnd,
-          end: lastEnd + vwindow.Resolution
+          end: lastEnd + vwindow.resolution
         }, this.parent.ref, { data: { value: 0.0 } }))
-        lastEnd += vwindow.Resolution
+        lastEnd += vwindow.resolution
       }
       return rawDataPoints
     }
@@ -235,7 +235,7 @@ var GIVe = (function (give) {
         this.MIN_RESOLUTION_PER_PIXEL / 2)
       var extendedWindow = vwindow.getExtension(slidingWindowSpan)
         .clipRegion(this.parent.ref)
-      extendedWindow.Resolution = this.getResolution(vwindow)
+      extendedWindow.resolution = this.getResolution(vwindow)
 
       // Get the raw points list first
       var rawDataPoints = this._generateRawPointsList(extendedWindow)

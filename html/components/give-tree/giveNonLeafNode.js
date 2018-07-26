@@ -23,29 +23,29 @@ var GIVe = (function (give) {
    * This is an interface for all nodes that belongs to GIVE Trees, including
    * insertion, deletion, traversing, and other functionalities.
    *
-   * When traversing, everything in `ContList` of __the starting record entry
+   * When traversing, everything in `contList` of __the starting record entry
    * (see `GIVE.DataNode`) only__ will be processed first, then everything in
    * `startList` in all overlapping records will be processed.
    *
    * @typedef {object} GiveNonLeafNode
-   * @property {GiveTree} Tree - Link to the `GiveTree` object to access tree-
+   * @property {GiveTree} tree - Link to the `GiveTree` object to access tree-
    *    wise properties.
-   * @property {boolean} IsRoot - Whether this node is a root node (needed to
+   * @property {boolean} isRoot - Whether this node is a root node (needed to
    *    handle changes in tree structure)
-   * @property {Array<number>} Keys - A list of keys of children
-   * @property {Array<GiveTreeNode|null|boolean>} Values - A list of data
+   * @property {Array<number>} keys - A list of keys of children
+   * @property {Array<GiveTreeNode|null|boolean>} values - A list of data
    *    entries, can be `null` or `false` to represent data not loaded and
    *    empty nodes respectively.
-   *    `Keys.length` will be `1` more than `childNum`;
-   *    `Keys[i]` will be the start coordinate of `Values[i]` and end
-   *      coordinate of `Values[i - 1]`;
-   *    `Keys[Keys.length - 1]` will be the end coordinate of
-   *      `Values[childNum - 1]`.
+   *    `keys.length` will be `1` more than `childNum`;
+   *    `keys[i]` will be the start coordinate of `values[i]` and end
+   *      coordinate of `values[i - 1]`;
+   *    `keys[keys.length - 1]` will be the end coordinate of
+   *      `values[childNum - 1]`.
    *    Therefore, neighboring nodes will have exactly one overlapping key.
-   *    `Values` can be `false` or `null` (unless prohibited by
+   *    `values` can be `false` or `null` (unless prohibited by
    *    implementation) indicating empty regions or data not loaded,
    *    respectively.
-   * @property {number} RevDepth - "Reversed depth" of the node. The one
+   * @property {number} reverseDepth - "Reversed depth" of the node. The one
    *    holding leaf nodes (should be `GIVE.DataNode` or similar
    *    implementations) is at `0` and root is at maximum.
    * @property {GiveNonLeafNode|null|boolean} Next - The next node (sibling).
@@ -64,55 +64,55 @@ var GIVe = (function (give) {
      * @param {object} props - properties that will be passed to the
      *    individual implementations. For `GIVE.GiveNonLeafNode`, these
      *    properties will be used:
-     * @param {boolean} props.IsRoot - for `this.IsRoot`
-     * @param {GiveTree} props.Tree - for `this.Tree`
-     * @param {number} props.Start - The start coordinate this node will
-     *    cover. Equals to `this.Keys[0]`.
-     * @param {number} props.End - The end coordinate this node will cover.
-     *    Equals to `this.Keys[this.Keys.length - 1]`.
-     *    Exceptions will be thrown if `props.Start` or `props.End` is not an
-     *    positive integer number or `props.Start >= props.End` (zero-length
+     * @param {boolean} props.isRoot - for `this.isRoot`
+     * @param {GiveTree} props.tree - for `this.tree`
+     * @param {number} props.start - The start coordinate this node will
+     *    cover. Equals to `this.keys[0]`.
+     * @param {number} props.end - The end coordinate this node will cover.
+     *    Equals to `this.keys[this.keys.length - 1]`.
+     *    Exceptions will be thrown if `props.start` or `props.end` is not an
+     *    positive integer number or `props.start >= props.end` (zero-length
      *    regions not allowed).
-     * @param {number|null} props.RevDepth - for `this.RevDepth`
-     * @param {GiveNonLeafNode|null|boolean} props.NextNode - for `this._next`
-     * @param {GiveNonLeafNode|null|boolean} props.PrevNode - for `this._prev`
-     * @param {Array<number>|null} props.Keys - for `this.Keys`
-     * @param {Array<GiveTreeNode>|null} props.Values - for `this.Values`
-     *    Note that if `Keys` and `Values` are provided, `Start` and `End`
-     *    will be overridden as they are already provided in `Keys`.
+     * @param {number|null} props.reverseDepth - for `this.reverseDepth`
+     * @param {GiveNonLeafNode|null|boolean} props.nextNode - for `this._next`
+     * @param {GiveNonLeafNode|null|boolean} props.prevNode - for `this._prev`
+     * @param {Array<number>|null} props.keys - for `this.keys`
+     * @param {Array<GiveTreeNode>|null} props.values - for `this.values`
+     *    Note that if `keys` and `values` are provided, `start` and `end`
+     *    will be overridden as they are already provided in `keys`.
      * @memberof GiveNonLeafNode
      */
     constructor (props) {
       super(...arguments)
       // start and length is for the corresponding region
       props = props || {}
-      this.IsRoot = !!props.IsRoot
-      this.Tree = props.Tree
+      this.isRoot = !!props.isRoot
+      this.tree = props.tree
       if (
-        Array.isArray(props.Keys) && Array.isArray(props.Values) &&
-        props.childNum === props.Keys.length - 1
+        Array.isArray(props.keys) && Array.isArray(props.values) &&
+        props.childNum === props.keys.length - 1
       ) {
-        // TODO: Sanity check for `this.Keys`?
-        this.Keys = props.Keys
-        this.Values = props.Values
+        // TODO: Sanity check for `this.keys`?
+        this.keys = props.keys
+        this.values = props.values
       } else {
-        if (!Number.isInteger(props.Start) || !Number.isInteger(props.End)) {
-          throw (new give.GiveError('Start or End is not an integer number ' +
+        if (!Number.isInteger(props.start) || !Number.isInteger(props.end)) {
+          throw (new give.GiveError('start or end is not an integer number ' +
             'in non-leaf node construction!'))
-        } else if (props.Start < 0 || props.End < 0 ||
-          props.Start >= props.End
+        } else if (props.start < 0 || props.end < 0 ||
+          props.start >= props.end
         ) {
-          throw (new give.GiveError('Range error. Start: ' + props.Start +
-            ', end: ' + props.End))
+          throw (new give.GiveError('Range error. start: ' + props.start +
+            ', end: ' + props.end))
         }
-        this.Keys = [props.Start, props.End]
-        this.Values = [null]
+        this.keys = [props.start, props.end]
+        this.values = [null]
       }
-      this.RevDepth = (Number.isInteger(props.RevDepth) && props.RevDepth > 0)
-        ? props.RevDepth : 0
-      if (this.Tree.neighboringLinks) {
-        this.next = props.NextNode
-        this.prev = props.PrevNode
+      this.reverseDepth = (Number.isInteger(props.reverseDepth) && props.reverseDepth > 0)
+        ? props.reverseDepth : 0
+      if (this.tree.neighboringLinks) {
+        this.next = props.nextNode
+        this.prev = props.prevNode
       }
     }
 
@@ -159,7 +159,7 @@ var GIVe = (function (give) {
      * @returns {number}  The start coordinate.
      */
     get start () {
-      return this.Keys[0]
+      return this.keys[0]
     }
 
     /**
@@ -169,7 +169,7 @@ var GIVe = (function (give) {
      * @returns {number}  The end coordinate.
      */
     get end () {
-      return this.Keys[this.Keys.length - 1]
+      return this.keys[this.keys.length - 1]
     }
 
     /**
@@ -199,7 +199,7 @@ var GIVe = (function (give) {
      * @param {number} newStart - The new start coordinate.
      */
     set start (newStart) {
-      this.Keys[0] = newStart
+      this.keys[0] = newStart
     }
 
     /**
@@ -209,7 +209,7 @@ var GIVe = (function (give) {
      * @param {number} newEnd - The new end coordinate.
      */
     set end (newEnd) {
-      this.Keys[this.Keys.length - 1] = newEnd
+      this.keys[this.keys.length - 1] = newEnd
     }
 
     /**
@@ -218,7 +218,7 @@ var GIVe = (function (give) {
      * @returns {GiveNonLeafNode|null}  the next node
      */
     get next () {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'Cannot get the next sibling in an unlinked tree!')
       }
@@ -231,7 +231,7 @@ var GIVe = (function (give) {
      * @returns {GiveNonLeafNode|null}  the previous node
      */
     get prev () {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'Cannot get the previous sibling in an unlinked tree!')
       }
@@ -245,7 +245,7 @@ var GIVe = (function (give) {
      *    next node
      */
     set next (nextNode) {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'Cannot set the next sibling in an unlinked tree!')
       }
@@ -275,7 +275,7 @@ var GIVe = (function (give) {
      *    previous node
      */
     set prev (prevNode) {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'Cannot set the previous sibling in an unlinked tree!')
       }
@@ -307,7 +307,7 @@ var GIVe = (function (give) {
      * @param  {boolean} noNext - do not severe links from next siblings
      */
     _severeSelfLinks (convertTo, noPrev, noNext) {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'No sibling links to severe in an unlinked tree!')
       }
@@ -334,7 +334,7 @@ var GIVe = (function (give) {
     _severeChildLinks (
       convertTo, noPrev, noNext
     ) {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError(
           'No child links to severe in an unlinked tree!')
       }
@@ -374,27 +374,27 @@ var GIVe = (function (give) {
      *    child will not be fixed.
      */
     _fixChildLinks (index, doNotFixBack, doNotFixFront) {
-      if (!this.Tree.neighboringLinks) {
+      if (!this.tree.neighboringLinks) {
         throw new give.GiveError('No child links to fix in an unlinked tree!')
       }
-      if (this.RevDepth > 0) {
+      if (this.reverseDepth > 0) {
         if (!doNotFixBack) {
           try {
             let nextChild = this._getChildNext(index)
-            if (this.Values[index]) {
-              this.Values[index].next = nextChild
+            if (this.values[index]) {
+              this.values[index].next = nextChild
             } else {
-              nextChild.prev = this.Values[index]
+              nextChild.prev = this.values[index]
             }
           } catch (ignore) { }
         }
         if (!doNotFixFront) {
           try {
             let prevChild = this._getChildPrev(index)
-            if (this.Values[index]) {
-              this.Values[index].prev = prevChild
+            if (this.values[index]) {
+              this.values[index].prev = prevChild
             } else {
-              prevChild.next = this.Values[index]
+              prevChild.next = this.values[index]
             }
           } catch (ignore) { }
         }
@@ -408,11 +408,11 @@ var GIVe = (function (give) {
      * @returns {give.GiveTreeNode|boolean|null}  The first child element
      */
     get firstChild () {
-      return this.Values[0]
+      return this.values[0]
     }
 
     get firstLeaf () {
-      return this.RevDepth > 0 ? this.firstChild.firstLeaf : this.firstChild
+      return this.reverseDepth > 0 ? this.firstChild.firstLeaf : this.firstChild
     }
 
     /**
@@ -422,11 +422,11 @@ var GIVe = (function (give) {
      * @returns {give.GiveTreeNode|boolean|null}  The last child element
      */
     get lastChild () {
-      return this.Values[this.childNum - 1]
+      return this.values[this.childNum - 1]
     }
 
     get lastLeaf () {
-      return this.RevDepth > 0 ? this.lastChild.lastLeaf : this.lastChild
+      return this.reverseDepth > 0 ? this.lastChild.lastLeaf : this.lastChild
     }
 
     /**
@@ -440,7 +440,7 @@ var GIVe = (function (give) {
      */
     _getChildPrev (index) {
       if (index > 0) {
-        return this.Values[index - 1]
+        return this.values[index - 1]
       }
       if (this.prev) {
         return this.prev.lastChild
@@ -459,7 +459,7 @@ var GIVe = (function (give) {
      */
     _getChildNext (index) {
       if (index < (this.childNum - 1)) {
-        return this.Values[index + 1]
+        return this.values[index + 1]
       }
       if (this.next) {
         return this.next.firstChild
@@ -489,14 +489,12 @@ var GIVe = (function (give) {
      *    preferably a `GIVe.ChromRegion` object.
      * @param {object|null} props - additional properties being passed onto
      *    nodes.
-     * @param {Array<ChromRegionLiteral>} props.ContList - the list of data
+     * @param {Array<ChromRegionLiteral>} props.contList - the list of data
      *    entries that should not start in `chrRange` but are passed from the
      *    earlier regions, this will be useful for later regions if date for
      *    multiple regions are inserted at the same time
-     * @param {function|null} props.Callback - the callback function to be
+     * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when inserting
-     * @param {object|null} props.ThisVar - `this` used in calling
-     *    `props.Callback`.
      * @param {function|null} props.LeafNodeCtor - the constructor function of
      *    leaf nodes if they are not the same as the non-leaf nodes.
      * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>}
@@ -511,7 +509,7 @@ var GIVe = (function (give) {
 
       if (data && !Array.isArray(data)) {
         throw (new give.GiveError('Data is not an array! ' +
-          'This will cause problems in ContList.'))
+          'This will cause problems in contList.'))
       }
 
       if (chrRange) {
@@ -522,11 +520,11 @@ var GIVe = (function (give) {
         // 2. non-leaf nodes:
         //    go deep to generate branch structure, or update summary
         //    (for trees that support summary and resolutions)
-        if (this.RevDepth > 0) {
+        if (this.reverseDepth > 0) {
           // case 2
           this._addNonLeafRecords(data, chrRange, props)
           // Note: keys may change after adding leaf records
-          this.Keys = this.Values.map(node => node.start)
+          this.keys = this.values.map(node => node.start)
             .push(this.lastChild.end)
         } else {
           // case 1
@@ -563,10 +561,10 @@ var GIVe = (function (give) {
     _restructureSingleLayer () {
       // for non-auto-balancing trees, return false if this node has no data
       //    any more
-      if (this.Values[0] && this.Values[0].isEmpty) {
-        this.Values[0] = false
+      if (this.values[0] && this.values[0].isEmpty) {
+        this.values[0] = false
       }
-      return (!this.IsRoot && this.isEmpty) ? false : this
+      return (!this.isRoot && this.isEmpty) ? false : this
     }
 
     /**
@@ -577,9 +575,8 @@ var GIVe = (function (give) {
      *    entries. See `this.insert` for detailed description.
      * @param {ChromRegionLiteral} chrRange - see `this.insert`
      * @param {object} props - additional properties being passed onto nodes.
-     * @param {Array<ChromRegionLiteral>} props.ContList - see `this.insert`
-     * @param {function|null} props.Callback - see `this.insert`
-     * @param {object|null} props.ThisVar - see `this.insert`
+     * @param {Array<ChromRegionLiteral>} props.contList - see `this.insert`
+     * @param {function|null} props.callback - see `this.insert`
      */
     _addNonLeafRecords (data, chrRange, props) {
       throw new give.GiveError('GiveNonLeafNode._addNonLeafRecords not ' +
@@ -594,9 +591,8 @@ var GIVe = (function (give) {
      *    entries. See `this.insert` for detailed description.
      * @param {ChromRegionLiteral} chrRange - see `this.insert`
      * @param {object} props - additional properties being passed onto nodes.
-     * @param {Array<ChromRegionLiteral>} props.ContList - see `this.insert`
-     * @param {function|null} props.Callback - see `this.insert`
-     * @param {object|null} props.ThisVar - see `this.insert`
+     * @param {Array<ChromRegionLiteral>} props.contList - see `this.insert`
+     * @param {function|null} props.callback - see `this.insert`
      * @param {function|null} props.LeafNodeCtor - see `this.insert`
      */
     _addLeafRecords (data, chrRange, props) {
@@ -606,11 +602,11 @@ var GIVe = (function (give) {
 
     clear (convertTo) {
       convertTo = convertTo === false ? false : null
-      if (this.Tree.neighboringLinks) {
+      if (this.tree.neighboringLinks) {
         this._severeChildLinks(convertTo)
       }
-      this.Keys = [this.start, this.end]
-      this.Values = [convertTo]
+      this.keys = [this.start, this.end]
+      this.values = [convertTo]
     }
 
     /**
@@ -628,23 +624,23 @@ var GIVe = (function (give) {
      * @returns {number} Number of split children (2 in this case)
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
-      if (this.Values[index] &&
+      if (this.values[index] &&
         (newLatterChild === undefined && newFormerChild === undefined)
       ) {
         throw new give.GiveError('Cannot split an existing child without ' +
           'providing both resulting siblings!')
       }
-      this.Keys.splice(index + 1, 0, newKey)
-      this.Values.splice(index + 1, 0,
-        newLatterChild === undefined ? this.Values[index] : newLatterChild)
+      this.keys.splice(index + 1, 0, newKey)
+      this.values.splice(index + 1, 0,
+        newLatterChild === undefined ? this.values[index] : newLatterChild)
       if (newLatterChild !== undefined) {
-        if (this.Tree.neighboringLinks) {
+        if (this.tree.neighboringLinks) {
           this._fixChildLinks(index + 1, false, true)
         }
       }
       if (newFormerChild !== undefined) {
         this.Value[index] = newFormerChild
-        if (this.Tree.neighboringLinks) {
+        if (this.tree.neighboringLinks) {
           this._fixChildLinks(index, newLatterChild === undefined, false)
         }
       }
@@ -673,7 +669,7 @@ var GIVe = (function (give) {
 
     /**
      * _mergeChild - merge neighboring children that are the same as
-     *    `this.Values[index]`, if they are `false` or `null`.
+     *    `this.values[index]`, if they are `false` or `null`.
      *    This function will always merge with the child __before__ `index`
      *    first, then, if `mergeNext === true`, merge with the child after
      *    `index`.
@@ -686,8 +682,8 @@ var GIVe = (function (give) {
      *    nodes, so that the structure of neighboring nodes are not messed
      *    up.)
      *    __Note:__ `crossBorder` can only be used when
-     *    `this.Tree.neighboringLinks === true`.
-     *    If `this.Tree.neighboringLinks === false`, this argument will be
+     *    `this.tree.neighboringLinks === true`.
+     *    If `this.tree.neighboringLinks === false`, this argument will be
      *    ignored, because `this` has no way of knowing its own siblings, thus
      *    unable to merge children across sibling
      *    borders.
@@ -698,17 +694,17 @@ var GIVe = (function (give) {
     _mergeChild (index, mergeNext, crossBorder) {
       var mergedFront = false
       if (index > 0 ||
-        (this.Tree.neighboringLinks && crossBorder && this.childNum > 1)
+        (this.tree.neighboringLinks && crossBorder && this.childNum > 1)
       ) {
         // merge previous child first
         try {
           if (this.constructor._childMergable(
-            this._getChildPrev(index), this.Values[index]
+            this._getChildPrev(index), this.values[index]
           )) {
             // remove child at `index`
-            this.Keys.splice(index, 1)
-            this.Values.splice(index, 1)
-            if (this.Tree.neighboringLinks) {
+            this.keys.splice(index, 1)
+            this.values.splice(index, 1)
+            if (this.tree.neighboringLinks) {
               if (index === 0) {
                 this.prev.end = this.start
                 this._fixChildLinks(index, true)
@@ -725,29 +721,29 @@ var GIVe = (function (give) {
       if (mergeNext) {
         if (index < this.childNum - 1 &&
           this.constructor._childMergable(
-            this.Values[index], this.Values[index + 1]
+            this.values[index], this.values[index + 1]
           )
         ) {
           // remove child at `index + 1`
-          this.Keys.splice(index + 1, 1)
-          this.Values.splice(index + 1, 1)
-          if (this.Tree.neighboringLinks) {
+          this.keys.splice(index + 1, 1)
+          this.values.splice(index + 1, 1)
+          if (this.tree.neighboringLinks) {
             this._fixChildLinks(index, false, true)
           }
         } else if (
           crossBorder && index === this.childNum - 1 &&
           this.next && this.childNum > 1 &&
           this.constructor._childMergable(
-            this.Values[index], this._getChildNext(index)
+            this.values[index], this._getChildNext(index)
           )
         ) {
-          this.next.Keys[0] = this.Keys[index]
-          this.next.Values[0] = this.Values[index]
-          this.Keys.splice(-1)
-          this.Values.splice(-1)
+          this.next.keys[0] = this.keys[index]
+          this.next.values[0] = this.values[index]
+          this.keys.splice(-1)
+          this.values.splice(-1)
           // needs to change the boundary of sibling node
           this.end = this.next.start
-          if (this.Tree.neighboringLinks) {
+          if (this.tree.neighboringLinks) {
             this.next._fixChildLinks(0, false, true)
           }
         }
@@ -764,18 +760,18 @@ var GIVe = (function (give) {
       }
       let index = 0
       while (index < this.childNum &&
-        this.Keys[index + 1] <= chrRange.start
+        this.keys[index + 1] <= chrRange.start
       ) {
         index++
       }
-      while (this.Keys[index] < chrRange.end && index < this.childNum) {
-        if (this.Values[index] &&
-          !this.Values[index].traverse(chrRange, callback, filter,
+      while (this.keys[index] < chrRange.end && index < this.childNum) {
+        if (this.values[index] &&
+          !this.values[index].traverse(chrRange, callback, filter,
             breakOnFalse, props, ...args)
         ) {
           return false
         }
-        props.NotFirstCall = true
+        props.notFirstCall = true
         index++
       }
       return true
@@ -788,7 +784,7 @@ var GIVe = (function (give) {
      * @param  {GIVE.ChromRegion} chrRange - The range of query.
      * @param  {object|null} props - additional properties being passed onto
      *    nodes
-     * @param  {Array<GIVE.ChromRegion>} props._Result - previous unloaded
+     * @param  {Array<GIVE.ChromRegion>} props._result - previous unloaded
      *    regions. This will be appended to the front of returned value.
      *    This array will be updated if it gets appended to reduce memory
      *    usage and GC.
@@ -797,29 +793,29 @@ var GIVe = (function (give) {
      *    If no non-data ranges are found, return []
      */
     getUncachedRange (chrRange, props) {
-      props._Result = props._Result || []
+      props._result = props._result || []
       if (chrRange) {
         var index = 0
         while (index < this.childNum &&
-          this.Keys[index + 1] <= chrRange.start
+          this.keys[index + 1] <= chrRange.start
         ) {
           index++
         }
         while (index < this.childNum &&
-          this.Keys[index] < chrRange.end
+          this.keys[index] < chrRange.end
         ) {
-          if (this.Values[index]) {
+          if (this.values[index]) {
             // there is a child node here, descend
-            this.Values[index].getUncachedRange(chrRange, props)
-          } else if (this.Values[index] === null) {
-            let newStart = Math.max(this.Keys[index], chrRange.start)
-            let newEnd = Math.min(this.Keys[index + 1], chrRange.end)
-            if (props._Result[props._Result.length - 1] &&
-              props._Result[props._Result.length - 1].end === newStart
+            this.values[index].getUncachedRange(chrRange, props)
+          } else if (this.values[index] === null) {
+            let newStart = Math.max(this.keys[index], chrRange.start)
+            let newEnd = Math.min(this.keys[index + 1], chrRange.end)
+            if (props._result[props._result.length - 1] &&
+              props._result[props._result.length - 1].end === newStart
             ) {
-              props._Result[props._Result.length - 1].end = newEnd
+              props._result[props._result.length - 1].end = newEnd
             } else {
-              props._Result.push(new give.ChromRegion({
+              props._result.push(new give.ChromRegion({
                 chr: chrRange.chr,
                 start: newStart,
                 end: newEnd
@@ -828,7 +824,7 @@ var GIVe = (function (give) {
           }
           index++
         }
-        return props._Result
+        return props._result
       } else { // chrRange
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       }
@@ -836,15 +832,15 @@ var GIVe = (function (give) {
 
     /**
      * isEmpty - return whether this node is empty
-     * If there is no entry in both `this.startList` and `this.ContList` then
+     * If there is no entry in both `this.startList` and `this.contList` then
      *    the node is considered empty.
      *
      * @returns {boolean}      whether the node is empty
      */
     get isEmpty () {
       return this.childNum <= 0 || (this.childNum === 1 &&
-        (this.Values[0] === false ||
-          (this.Values[0] && this.Values[0].isEmpty)))
+        (this.values[0] === false ||
+          (this.values[0] && this.values[0].isEmpty)))
     }
   }
 

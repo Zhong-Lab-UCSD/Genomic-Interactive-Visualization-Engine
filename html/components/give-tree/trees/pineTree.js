@@ -21,13 +21,13 @@ var GIVe = (function (give) {
    * Oak tree for data storage, derived from B+ tree.
    * See `GIVE.GiveTree` for other properties and methods.
    * @typedef {object} OakTree
-   * @property {number} ScalingFactor - The scaling factor for the pine
+   * @property {number} scalingFactor - The scaling factor for the pine
    *    tree.
    *    This is the factor for non-leaf nodes (this will be used to initialize
-   *    `this.Tree.LeafScalingFactor` if the latter is not initialized.).
-   * @property {number} LeafScalingFactor - The scaling factor for the
+   *    `this.tree.leafScalingFactor` if the latter is not initialized.).
+   * @property {number} leafScalingFactor - The scaling factor for the
    *    leaf nodes of the pine tree.
-   *    For example, if `this.Tree.LeafScalingFactor === 100`, each leaf node
+   *    For example, if `this.tree.leafScalingFactor === 100`, each leaf node
    *    (`give.DataNode`) shall cover 100bp.
    * @property {function} SummaryCtor - The constructor for a data
    *    summary object.
@@ -45,10 +45,10 @@ var GIVe = (function (give) {
    *    will be responsible for.
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} props.ScalingFactor - for `this.BFactor`
-   * @param {number} props.LeafScalingFactor - for `this.LeafBFactor`
+   * @param {number} props.scalingFactor - for `this.scalingFactor`
+   * @param {number} props.leafScalingFactor - for `this.leafScalingFactor`
    * @param {function} props.SummaryCtor - for `this.SummaryCtor`
-   * @param {number} props.LifeSpan - for `this.LifeSpan`
+   * @param {number} props.lifeSpan - for `this.lifeSpan`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.
    * @param {function} props.LeafNodeCtor - if omitted, the constructor of
@@ -64,35 +64,35 @@ var GIVe = (function (give) {
     //    for the tree, the node will be deleted (wither)
     // If lifeSpan < 0, then no node will be deleted (no withering)
 
-    if (isNaN(props.LifeSpan) ||
-      parseInt(props.LifeSpan) !== props.LifeSpan ||
-      props.LifeSpan < 0
+    if (isNaN(props.lifeSpan) ||
+      parseInt(props.lifeSpan) !== props.lifeSpan ||
+      props.lifeSpan < 0
     ) {
       give._verbConsole.info('Default life span is chosen instead of ' +
-        props.LifeSpan)
-      props.LifeSpan = give.PineTree._DEFAULT_LIFESPAN
+        props.lifeSpan)
+      props.lifeSpan = give.PineTree._DEFAULT_LIFESPAN
     }
-    this.LifeSpan = props.LifeSpan
+    this.lifeSpan = props.lifeSpan
     // Scaling factor
     if (
-      !Number.isInteger(props.ScalingFactor) || props.ScalingFactor <= 2
+      !Number.isInteger(props.scalingFactor) || props.scalingFactor <= 2
     ) {
       give._verbConsole.info('Default scaling factor is chosen instead of ' +
-        props.ScalingFactor)
-      this.ScalingFactor = give.PineTree._DEFAULT_S_FACTOR
+        props.scalingFactor)
+      this.scalingFactor = give.PineTree._DEFAULT_S_FACTOR
     } else {
-      this.ScalingFactor = props.ScalingFactor
+      this.scalingFactor = props.scalingFactor
     }
 
     // Leaf scaling factor
     if (
-      !Number.isInteger(props.LeafScalingFactor) || props.LeafScalingFactor <= 2
+      !Number.isInteger(props.leafScalingFactor) || props.leafScalingFactor <= 2
     ) {
       give._verbConsole.info('Non-leaf scaling factor is chosen for leaves ' +
-        'instead of ' + props.LeafScalingFactor)
-      this.LeafScalingFactor = give.PineTree._DEFAULT_LS_FACTOR
+        'instead of ' + props.leafScalingFactor)
+      this.leafScalingFactor = give.PineTree._DEFAULT_LS_FACTOR
     } else {
-      this.LeafScalingFactor = props.LeafScalingFactor
+      this.leafScalingFactor = props.leafScalingFactor
     }
 
     if (typeof props.SummaryCtor === 'function') {
@@ -114,34 +114,34 @@ var GIVe = (function (give) {
    * @param {Array<ChromRegionLiteral>} data
    * @param {ChromRegionLiteral|null} chrRange -
    *    the chromosomal range that `data` corresponds to.
-   * @param {number} [chrRange.Resolution] - the resolution of the data being
-   *    inserted. Will override `props.Resolution` if both exists.
+   * @param {number} [chrRange.resolution] - the resolution of the data being
+   *    inserted. Will override `props.resolution` if both exists.
    * @param {Array<ChromRegionLiteral>} continuedList
-   * @param {Array<ChromRegionLiteral>} [props.ContList] - the list of data
+   * @param {Array<ChromRegionLiteral>} [props.contList] - the list of data
    *    entries that should not start in `chrRange` but are passed from the
    *    earlier regions, this will be useful for later regions if date for
    *    multiple regions are inserted at the same time
-   * @param {function} [props.Callback] - the callback function to be used
+   * @param {function} [props.callback] - the callback function to be used
    *    (with the data entry as its sole parameter) when inserting
    * @param {object} [props.ThisVar] - `this` used in calling
-   *    `props.Callback`.
+   *    `props.callback`.
    * @param {function} [props.LeafNodeCtor] - the constructor function of
    *    leaf nodes if they are not the same as the non-leaf nodes.
-   * @param {number} [props.DataIndex] - the current index of `data`.
+   * @param {number} [props.dataIndex] - the current index of `data`.
    *    If this is specified, no array splicing will be done on `data` to
    *    improve performance. `props.currIndex` will be shifted (and passed
    *    back).
-   * @param {number} [props.LifeSpan] - the life span for inserted nodes.
-   * @param {number} [props.Resolution] - the resolution of the data being
-   *    inserted. Will be overridden by `chrRange.Resolution` if both exists.
+   * @param {number} [props.lifeSpan] - the life span for inserted nodes.
+   * @param {number} [props.resolution] - the resolution of the data being
+   *    inserted. Will be overridden by `chrRange.resolution` if both exists.
    */
   give.PineTree.prototype._insertSingleRange = function (
     data, chrRange, props
   ) {
-    if (!chrRange.chr || chrRange.chr === this.Chr) {
+    if (!chrRange.chr || chrRange.chr === this.chr) {
       props = props || {}
-      // Provide props.LifeSpan for the nodes
-      props.LifeSpan = props.LifeSpan || this.LifeSpan
+      // Provide props.lifeSpan for the nodes
+      props.lifeSpan = props.lifeSpan || this.lifeSpan
       props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
       this._root = this._root.insert(data, ((!chrRange && data.length === 1)
         ? data[0] : chrRange), props)
@@ -154,24 +154,22 @@ var GIVe = (function (give) {
    * @memberof GiveTreeBase.prototype
    *
    * @param {ChromRegionLiteral} chrRanges - the chromosomal range to traverse
-   * @param {number} [chrRange.Resolution] - the resolution required for the
+   * @param {number} [chrRange.resolution] - the resolution required for the
    *    traverse. 1 is finest. This is used in case of mixed resolutions for
-   *    different `chrRange`s, This will override `props.Resolution` if both
+   *    different `chrRange`s, This will override `props.resolution` if both
    *    exist.
    * @param {function} callback - the callback function to be used (with the
    *    data entry as its sole parameter) on all overlapping data entries
    *    (that pass `filter` if it exists).
-   * @param {Object} thisVar - `this` element to be used in `callback` and
-   *    `filter`.
    * @param {function} filter - the filter function to be used (with the data
    *    entry as its sole parameter), return `false` to exclude the entry from
    *    being called with `callback`.
    * @param {boolean} breakOnFalse - whether the traversing should break if
    *    `false` has been returned from `callback`
    * @param {object|null} props - additional properties being passed onto nodes
-   * @param {number} [props.Resolution] - the resolution that is required,
+   * @param {number} [props.resolution] - the resolution that is required,
    *    data entry (or summary entries) that can just meet this requirement will
-   *    be chosen. Smaller is finer. Will be overridden by `chrRange.Resolution`
+   *    be chosen. Smaller is finer. Will be overridden by `chrRange.resolution`
    *    if both exists.
    * @param {boolean} [props.Wither] - the resolution that is required,
    *    data entry (or summary entries) that can just meet this requirement will
@@ -180,18 +178,18 @@ var GIVe = (function (give) {
    *    otherwise `true`
    */
   give.PineTree.prototype.traverse = function (
-    chrRange, callback, thisVar, filter, breakOnFalse, props
+    chrRange, callback, filter, breakOnFalse, props
   ) {
     props = props || {}
     // replace `props.Wither` flag with `props.Rejuvenation`
     if (props.Wither) {
-      props.Rejuvenation = this.LifeSpan + 1
+      props.Rejuvenation = this.lifeSpan + 1
     }
     // wither is a flag whether to reduce life for nodes not traversed
-    if (!chrRange.chr || chrRange.chr === this.Chr) {
+    if (!chrRange.chr || chrRange.chr === this.chr) {
       try {
         chrRange = this._root.truncateChrRange(chrRange, true, false)
-        this._root.traverse(chrRange, callback, thisVar, filter,
+        this._root.traverse(chrRange, callback, filter,
           breakOnFalse, props)
         if (props.Wither) {
           this.wither()
@@ -226,22 +224,22 @@ var GIVe = (function (give) {
    * @memberof PineTree.prototype
    *
    * @param {ChromRegionLiteral} chrRange - the chromosomal range to query
-   * @param  {number} [chrRange.Resolution] - the resolution required for the
+   * @param  {number} [chrRange.resolution] - the resolution required for the
    *    cached range. 1 is finest. This is recommended in case of mixed
    *    resolutions for different `chrRange`s, This will override
-   *    `props.Resolution` if both exist.
+   *    `props.resolution` if both exist.
    * @param {object|null} props - additional properties being passed onto nodes
-   * @param {number|null} [props.Resolution] - the resolution that is required.
-   *    Smaller is finer. Will be overridden by `chrRange.Resolution` if both
+   * @param {number|null} [props.resolution] - the resolution that is required.
+   *    Smaller is finer. Will be overridden by `chrRange.resolution` if both
    *    exists.
-   * @param {number|null} [props.BufferingRatio] - the ratio to 'boost'
+   * @param {number|null} [props.bufferingRatio] - the ratio to 'boost'
    *    `resolution` so that less data fetching may be needed.
    * @returns {Array<ChromRegionLiteral>} the chromosomal ranges that do not
    *    have their data ready in this data storage unit (therefore need to be
    *    fetched from sources). If all the data needed is ready, `[]` will be
    *    returned.
    *    Every returned chromosomal range will also have its corrsponding
-   *    resolution in its `.Resolution` property.
+   *    resolution in its `.resolution` property.
    */
   give.PineTree.prototype.getUncachedRange = function (chrRange, props) {
     return give.GiveTree.prototype.getUncachedRange.apply(this, arguments)
@@ -253,15 +251,15 @@ var GIVe = (function (give) {
    */
 
   /**
-   * _DEFAULT_S_FACTOR - Default value for ScalingFactor
+   * _DEFAULT_S_FACTOR - Default value for scalingFactor
    */
   give.PineTree._DEFAULT_S_FACTOR = 20
   /**
-   * _DEFAULT_LS_FACTOR - Default value for LeafScalingFactor
+   * _DEFAULT_LS_FACTOR - Default value for leafScalingFactor
    */
   give.PineTree._DEFAULT_LS_FACTOR = 100
   /**
-   * _DEFAULT_LIFESPAN - Default value for LifeSpan
+   * _DEFAULT_LIFESPAN - Default value for lifeSpan
    */
   give.PineTree._DEFAULT_LIFESPAN = 10
 

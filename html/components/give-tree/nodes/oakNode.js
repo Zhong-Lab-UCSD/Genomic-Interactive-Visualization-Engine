@@ -35,29 +35,29 @@ var GIVe = (function (give) {
    * See `GIVE.GiveNonLeafNode` for common non-leaf node documentation.
    *
    * @typedef {object} OakNode
-   * @property {boolean} IsRoot
-   * @property {Array<number>} Keys
-   * @property {Array<GiveTreeNode|null|boolean>} Values
-   * @property {number} RevDepth
+   * @property {boolean} isRoot
+   * @property {Array<number>} keys
+   * @property {Array<GiveTreeNode|null|boolean>} values
+   * @property {number} reverseDepth
    * @property {OakNode|null|boolean} Next
    * @property {OakNode|null|boolean} Prev
-   * @property {number} Tree.BFactor - The branching factor for the B+
+   * @property {number} tree.branchingFactor - The branching factor for the B+
    *    tree.
    *    It indicates how many children at most can a node have, and how many
-   *    children at least should a node have (`BFactor / 2`)
+   *    children at least should a node have (`branchingFactor / 2`)
    *
    * @class give.OakNode
    *
    * @constructor
    * @implements give.GiveNonLeafNode
    * @param {object} props
-   * @param {GiveTree} props.Tree
-   * @param {boolean} props.IsRoot
-   * @param {number} props.Start
-   * @param {number} props.End
-   * @param {number|null} props.RevDepth
-   * @param {GiveNonLeafNode|null|boolean} props.NextNode
-   * @param {GiveNonLeafNode|null|boolean} props.PrevNode
+   * @param {GiveTree} props.tree
+   * @param {boolean} props.isRoot
+   * @param {number} props.start
+   * @param {number} props.end
+   * @param {number|null} props.reverseDepth
+   * @param {GiveNonLeafNode|null|boolean} props.nextNode
+   * @param {GiveNonLeafNode|null|boolean} props.prevNode
    *
    */
   class OakNode extends give.GiveNonLeafNode {
@@ -65,30 +65,30 @@ var GIVe = (function (give) {
       let extendHappened = false
       if (typeof start === 'number' && start < this.start) {
         // extend start to new start
-        if (this.RevDepth > 0) {
+        if (this.reverseDepth > 0) {
           this.firstChild._extendBoundary(convertTo, start, null)
           this.start = start
         } else {
           if (this.firstChild === convertTo) {
             this.start = start
           } else {
-            this.Values.unshift(convertTo)
-            this.Keys.unshift(start)
+            this.values.unshift(convertTo)
+            this.keys.unshift(start)
           }
         }
         extendHappened = true
       }
       if (typeof end === 'number' && end > this.end) {
         // extend start to new start
-        if (this.RevDepth > 0) {
+        if (this.reverseDepth > 0) {
           this.lastChild._extendBoundary(convertTo, null, end)
           this.end = end
         } else {
           if (this.lastChild === convertTo) {
             this.end = end
           } else {
-            this.Values.push(convertTo)
-            this.Keys.push(end)
+            this.values.push(convertTo)
+            this.keys.push(end)
           }
         }
         extendHappened = true
@@ -102,17 +102,17 @@ var GIVe = (function (give) {
 
     mergeAfter (node) {
       if (node instanceof this.constructor && this.end === node.start) {
-        if (this.childNum === 1 && !this.Values[0]) {
+        if (this.childNum === 1 && !this.values[0]) {
           // `this` is an empty node, assimilate everything from node, then
           // extend start
-          node._extendBoundary(this.Values[0], this.start)
-          this.Keys = node.Keys
-          this.Values = node.Values
-        } else if (node.childNum === 1 && !node.Values[0]) {
-          this._extendBoundary(node.Values[0], null, node.end)
-        } else if (this.childNum + node.childNum <= this.Tree.BFactor) {
-          this.Keys = this.Keys.concat(node.Keys.slice(1))
-          this.Values = this.Values.concat(node.Values)
+          node._extendBoundary(this.values[0], this.start)
+          this.keys = node.keys
+          this.values = node.values
+        } else if (node.childNum === 1 && !node.values[0]) {
+          this._extendBoundary(node.values[0], null, node.end)
+        } else if (this.childNum + node.childNum <= this.tree.branchingFactor) {
+          this.keys = this.keys.concat(node.keys.slice(1))
+          this.values = this.values.concat(node.values)
         }
         return this
       } 
@@ -138,107 +138,107 @@ var GIVe = (function (give) {
      * @memberof OakNode
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
-      if (this.RevDepth <= 0) {
+      if (this.reverseDepth <= 0) {
         return super._splitChild(...arguments)
       }
-      if (this.Values[index].length <= this.Tree.BFactor) {
+      if (this.values[index].length <= this.tree.branchingFactor) {
         return 1
       }
       // Node is over-capacity, split into sibling nodes
       // Calculate the number of siblings this node will split into
       let numOfSibs =
-        Math.floor(this.Values[index].childNum * 2 / this.Tree.BFactor)
+        Math.floor(this.values[index].childNum * 2 / this.tree.branchingFactor)
       // chop off children from the end
       for (let sibsLeft = numOfSibs - 1; sibsLeft > 0; sibsLeft--) {
         // get the number of children to be put into this sibling
         let sibNumOfChildren =
-          Math.floor(this.Values[index].childNum / (sibsLeft + 1))
+          Math.floor(this.values[index].childNum / (sibsLeft + 1))
         let props = {
-          IsRoot: false,
-          // Extract one more key from this.Keys
-          Keys: this.Values[index].Keys.slice(-(sibNumOfChildren + 1)),
-          Values: this.Values[index].Values.slice(-sibNumOfChildren),
-          RevDepth: this.Values[index].RevDepth,
-          NextNode: this.Values[index + 1],
-          PrevNode: this.Values[index],
-          Tree: this.Tree
+          isRoot: false,
+          // Extract one more key from this.keys
+          keys: this.values[index].keys.slice(-(sibNumOfChildren + 1)),
+          values: this.values[index].values.slice(-sibNumOfChildren),
+          reverseDepth: this.values[index].reverseDepth,
+          nextNode: this.values[index + 1],
+          prevNode: this.values[index],
+          tree: this.tree
         }
-        this.Values[index].Keys.splice(-sibNumOfChildren)
-        this.Values[index].Values.splice(-sibNumOfChildren)
+        this.values[index].keys.splice(-sibNumOfChildren)
+        this.values[index].values.splice(-sibNumOfChildren)
 
-        this.Values.splice(index + 1, 0, new this.constructor(props))
-        this.Keys.splice(index + 1, 0, this.Values[index].end)
+        this.values.splice(index + 1, 0, new this.constructor(props))
+        this.keys.splice(index + 1, 0, this.values[index].end)
       }
       return numOfSibs
     }
 
     _redistributeGrandChildren (index) {
       let sibNumOfChildren = Math.floor(
-        (this.Values[index - 1].childNum +
-          this.Values[index].childNum) / 2)
-      if (sibNumOfChildren > this.Tree.BFactor) {
-        sibNumOfChildren = this.Tree.BFactor
+        (this.values[index - 1].childNum +
+          this.values[index].childNum) / 2)
+      if (sibNumOfChildren > this.tree.branchingFactor) {
+        sibNumOfChildren = this.tree.branchingFactor
       }
-      let deltaNum = sibNumOfChildren - this.Values[index - 1].childNum
+      let deltaNum = sibNumOfChildren - this.values[index - 1].childNum
       if (deltaNum > 0) {
         // move from the latter sibling to the former
-        this.Values[index - 1].Values = this.Values[index - 1].Values.concat(
-          this.Values[index].Values.slice(0, deltaNum)
+        this.values[index - 1].values = this.values[index - 1].values.concat(
+          this.values[index].values.slice(0, deltaNum)
         )
-        this.Values[index - 1].Keys = this.Values[index - 1].Keys.concat(
-          this.Values[index].Keys.slice(1, deltaNum + 1)
+        this.values[index - 1].keys = this.values[index - 1].keys.concat(
+          this.values[index].keys.slice(1, deltaNum + 1)
         )
-        this.Values[index].Values.splice(0, deltaNum)
-        this.Values[index].Keys.splice(0, deltaNum)
+        this.values[index].values.splice(0, deltaNum)
+        this.values[index].keys.splice(0, deltaNum)
       } else {
         // move from the latter sibling to the former
         // (notice that deltaNum < 0)
-        this.Values[index].Values =
-          this.Values[index - 1].Values.slice(deltaNum).concat(
-            this.Values[index].Values
+        this.values[index].values =
+          this.values[index - 1].values.slice(deltaNum).concat(
+            this.values[index].values
           )
-        this.Values[index].Keys =
-          this.Values[index - 1].Keys.slice(deltaNum - 1, -1).concat(
-            this.Values[index].Keys
+        this.values[index].keys =
+          this.values[index - 1].keys.slice(deltaNum - 1, -1).concat(
+            this.values[index].keys
           )
-        this.Values[index - 1].Values.splice(deltaNum)
-        this.Values[index - 1].Keys.splice(deltaNum)
+        this.values[index - 1].values.splice(deltaNum)
+        this.values[index - 1].keys.splice(deltaNum)
       }
-      this.Keys[index] = this.Values[index].start
+      this.keys[index] = this.values[index].start
     }
 
     _restructureRoot () {
       // If this is root, then it needs to be responsible for itself
-      if (this.IsRoot) {
+      if (this.isRoot) {
         let oldRoot
         let newRoot = this
-        if (this.childNum > this.Tree.BFactor) {
+        if (this.childNum > this.tree.branchingFactor) {
           // add a new layer of tree and return new root
           do {
             oldRoot = newRoot
-            oldRoot.IsRoot = false
+            oldRoot.isRoot = false
             newRoot = new this.constructor({
-              IsRoot: true,
+              isRoot: true,
               // Put `this` and all siblings under the new root
-              Keys: [oldRoot.start, oldRoot.end],
-              Values: [oldRoot],
-              RevDepth: oldRoot.RevDepth + 1,
-              NextNode: null,
-              PrevNode: null,
-              Tree: oldRoot.Tree
+              keys: [oldRoot.start, oldRoot.end],
+              values: [oldRoot],
+              reverseDepth: oldRoot.reverseDepth + 1,
+              nextNode: null,
+              prevNode: null,
+              tree: oldRoot.tree
             })
             newRoot._splitChild(0)
-          } while (newRoot.childNum > this.Tree.BFactor)
-        } else if (this.childNum <= 1 && this.RevDepth > 0) {
+          } while (newRoot.childNum > this.tree.branchingFactor)
+        } else if (this.childNum <= 1 && this.reverseDepth > 0) {
           // reduce the number of layer of the tree to the first child
-          // with `childNum > 1 || RevDepth <= 0`
-          this.IsRoot = false
+          // with `childNum > 1 || reverseDepth <= 0`
+          this.isRoot = false
           do {
             oldRoot = newRoot
-            newRoot = oldRoot.Values[0]
+            newRoot = oldRoot.values[0]
             oldRoot.clear(null)
-          } while (newRoot.childNum <= 1 && newRoot.RevDepth > 0)
-          newRoot.IsRoot = true
+          } while (newRoot.childNum <= 1 && newRoot.reverseDepth > 0)
+          newRoot.isRoot = true
         }
         return newRoot
       }
@@ -290,13 +290,13 @@ var GIVe = (function (give) {
       // 1. Iterate over all children to see if any of them need updating
       // 2. Redistribute / merge / split children depending on it and its
       //    siblings
-      if (this.RevDepth > 0) {
+      if (this.reverseDepth > 0) {
         for (let i = 0; i < this.childNum; i++) {
           let sibNext = (i < (this.childNum - 1)) ? i + 1 : i
           let sibPrev = (i < (this.childNum - 1)) ? i : i - 1
-          if (this.Values[i].childNum < this.Tree.BFactor / 2) {
+          if (this.values[i].childNum < this.tree.branchingFactor / 2) {
             if (this.childNum <= 1) {
-              if (!intermediate || this.Values[i].childNum <= 1) {
+              if (!intermediate || this.values[i].childNum <= 1) {
                 // If this call is an intermediate adjustment, throw error
                 //    only when `this` has one grandchild (therefore
                 //    adjustment is not possible).
@@ -306,9 +306,9 @@ var GIVe = (function (give) {
               }
             } else {
               // not enough grand-children for the child, redistribute / merge
-              if (this.Values[sibPrev].childNum +
-                this.Values[sibNext].childNum >
-                this.Tree.BFactor
+              if (this.values[sibPrev].childNum +
+                this.values[sibNext].childNum >
+                this.tree.branchingFactor
               ) {
                 // redistribution is enough
                 this._redistributeGrandChildren(sibNext)
@@ -318,11 +318,11 @@ var GIVe = (function (give) {
                 i--
               }
             }
-          } else if (this.Values[i].childNum > this.Tree.BFactor) {
+          } else if (this.values[i].childNum > this.tree.branchingFactor) {
             // too many grand-children, redistribute / split
-            if (this.Values[sibPrev].childNum +
-              this.Values[sibNext].childNum <
-              this.Tree.BFactor * 2
+            if (this.values[sibPrev].childNum +
+              this.values[sibNext].childNum <
+              this.tree.branchingFactor * 2
             ) {
               // redistribution is enough
               this._redistributeGrandChildren(sibNext)
@@ -341,11 +341,11 @@ var GIVe = (function (give) {
 
     _restructure () {
       try {
-        if (this.RevDepth > 0) {
+        if (this.reverseDepth > 0) {
           let grandChildrenCompliant = false
           do {
             try {
-              this.Values.forEach(node => node._restructure())
+              this.values.forEach(node => node._restructure())
               grandChildrenCompliant = true
             } catch (err) {
               if (err instanceof CannotBalanceError) {
@@ -355,7 +355,7 @@ var GIVe = (function (give) {
           } while (!grandChildrenCompliant)
         }
       } catch (err) {
-        if (err instanceof CannotBalanceError && !this.IsRoot) {
+        if (err instanceof CannotBalanceError && !this.isRoot) {
           throw err
         }
       }
@@ -371,20 +371,20 @@ var GIVe = (function (give) {
       let currIndex = 0
 
       while (chrRange.start < chrRange.end) {
-        while (this.Keys[currIndex + 1] <= chrRange.start) {
+        while (this.keys[currIndex + 1] <= chrRange.start) {
           currIndex++
         }
 
         // Now the start of chrRange is in the range of current child
         let section = chrRange.clone()
-        if (this.Keys[currIndex + 1] < chrRange.end) {
-          section.end = this.Keys[currIndex + 1]
+        if (this.keys[currIndex + 1] < chrRange.end) {
+          section.end = this.keys[currIndex + 1]
         }
-        let sibs = this.Values[currIndex].insert(data, section, props)
+        let sibs = this.values[currIndex].insert(data, section, props)
         if (Array.isArray(sibs)) {
-          // Has siblings, put them into this.Values
-          this.Keys.splice(currIndex + 1, 0, ...sibs.map(sib => sib.start))
-          this.Values.splice(currIndex + 1, 0, ...sibs)
+          // Has siblings, put them into this.values
+          this.keys.splice(currIndex + 1, 0, ...sibs.map(sib => sib.start))
+          this.values.splice(currIndex + 1, 0, ...sibs)
           currIndex += sibs.length
         }
 
@@ -398,9 +398,9 @@ var GIVe = (function (give) {
 
       // Find the range of child that rangeStart is in
       let currIndex = 0
-      props.DataIndex = 0
+      props.dataIndex = 0
       let prevDataIndex
-      props.ContList = props.ContList || []
+      props.contList = props.contList || []
       if (!(give.GiveTreeNode.prototype.isPrototypeOf(
         props.LeafNodeCtor.prototype
       ))) {
@@ -408,31 +408,31 @@ var GIVe = (function (give) {
           '` is not a constructor for a tree node!')
       }
 
-      while (this.Keys[currIndex + 1] <= chrRange.start) {
+      while (this.keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
 
-      if (this.Keys[currIndex] < chrRange.start) {
+      if (this.keys[currIndex] < chrRange.start) {
         // The new rangeStart appears between windows.
         // Shorten the previous data record by inserting the key,
-        // and use this.Values[currIndex] to fill the rest
+        // and use this.values[currIndex] to fill the rest
         // (normally it should be `null`)
         this._splitChild(currIndex++, chrRange.start)
       }
 
-      if (this.Keys[currIndex + 1] > chrRange.end) {
+      if (this.keys[currIndex + 1] > chrRange.end) {
         // The new rangeEnd appears between windows.
         // Shorten the next data record by inserting the key,
-        // and use this.Values[currIndex] to fill the current region
+        // and use this.values[currIndex] to fill the current region
         // (normally it should be `null`)
         this._splitChild(currIndex, chrRange.end)
       }
 
       while (chrRange.start < chrRange.end) {
-        while (this.Keys[currIndex + 1] <= chrRange.start) {
+        while (this.keys[currIndex + 1] <= chrRange.start) {
           currIndex++
         }
-        if (this.Keys[currIndex] < chrRange.start) {
+        if (this.keys[currIndex] < chrRange.start) {
           // The new rangeStart appears between windows.
           // Shorten the previous data record by inserting the key,
           // and use `false` to fill the rest
@@ -440,23 +440,23 @@ var GIVe = (function (give) {
         }
 
         if (
-          props.ContList.length > 0 ||
-          (props.DataIndex < data.length &&
-            data[props.DataIndex].start <= this.Keys[currIndex])
+          props.contList.length > 0 ||
+          (props.dataIndex < data.length &&
+            data[props.dataIndex].start <= this.keys[currIndex])
         ) {
           // there are actual data at this location, create a new leaf node
-          this.Values[currIndex] = new props.LeafNodeCtor({
-            Start: this.Keys[currIndex],
-            End: this.Keys[currIndex + 1]
+          this.values[currIndex] = new props.LeafNodeCtor({
+            start: this.keys[currIndex],
+            end: this.keys[currIndex + 1]
           })
-          this.Values[currIndex].insert(data, chrRange, props)
-          if (this.Values[currIndex].isEmpty) {
-            this.Values[currIndex] = false
+          this.values[currIndex].insert(data, chrRange, props)
+          if (this.values[currIndex].isEmpty) {
+            this.values[currIndex] = false
           }
         } else {
           // needs to fill the element with `false`, and merge with previous
           // if possible
-          this.Values[currIndex] = false
+          this.values[currIndex] = false
         }
         if (this._mergeChild(currIndex, false, true)) {
           currIndex--
@@ -464,21 +464,21 @@ var GIVe = (function (give) {
 
         // Shrink `chrRange` to unprocessed range
         chrRange.start = (
-          props.DataIndex < data.length &&
-          data[props.DataIndex].start < chrRange.end
-        ) ? data[props.DataIndex].start : chrRange.end
+          props.dataIndex < data.length &&
+          data[props.dataIndex].start < chrRange.end
+        ) ? data[props.dataIndex].start : chrRange.end
       }
 
       this._mergeChild(currIndex, true, true)
 
-      // Process `props.ContList` for one last time
-      props.ContList = props.ContList.concat(
-        data.slice(prevDataIndex, props.DataIndex)
+      // Process `props.contList` for one last time
+      props.contList = props.contList.concat(
+        data.slice(prevDataIndex, props.dataIndex)
       ).filter(entry => entry.end > chrRange.end)
 
       // Remove all processed data from `data`
-      data.splice(0, props.DataIndex)
-      delete props.DataIndex
+      data.splice(0, props.dataIndex)
+      delete props.dataIndex
     }
 
     /**
@@ -505,7 +505,7 @@ var GIVe = (function (give) {
      *    the removed nodes, should be either `null` (default) or `false`.
      * @param  {object|null} [props] - additional properties being
      *    passed onto nodes.
-     * @param {function|null} props.Callback - the callback function to be
+     * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when deleting
      * @returns {give.GiveTreeNode|boolean}
      *    If the node itself shall be removed, return a falsey value to allow
@@ -519,33 +519,33 @@ var GIVe = (function (give) {
       if (this.start === data.start && this.end === data.end) {
         if (!exactMatch || this._compareData(data, this)) {
           // remove content of this
-          if (typeof props.Callback === 'function') {
-            props.Callback(this)
+          if (typeof props.callback === 'function') {
+            props.callback(this)
           }
           this.clear(convertTo)
-          return !!this.IsRoot
+          return !!this.isRoot
         }
       }
 
       // data being remove is not self
       // locate the child entry first
       let i = 0
-      while (i < this.childNum && this.Keys[i + 1] <= data.start) {
+      while (i < this.childNum && this.keys[i + 1] <= data.start) {
         i++
       }
-      if (this.Values[i]) {
-        // data must fall within `this.Values[i]`
-        if (!this.Values[i].remove(data, exactMatch, convertTo, props)) {
+      if (this.values[i]) {
+        // data must fall within `this.values[i]`
+        if (!this.values[i].remove(data, exactMatch, convertTo, props)) {
           // this node will be removed if it is not literally the first node
           //    of the tree
-          if (this.RevDepth <= 0) {
-            this.Values[i] = convertTo
+          if (this.reverseDepth <= 0) {
+            this.values[i] = convertTo
             this._mergeChild(i, true, true)
             return this
           } else {
             // a branch need to be deleted, replace the region with `null`
             if (i < this.childNum - 1 &&
-              (this.Values[i + 1].firstLeaf === convertTo || i <= 0)
+              (this.values[i + 1].firstLeaf === convertTo || i <= 0)
             ) {
               this._mergeChild(i + 1)
             } else if (i > 0) {
@@ -553,7 +553,7 @@ var GIVe = (function (give) {
             } else {
               // only one child, remove `this` as well
               this.clear(convertTo)
-              return !!this.IsRoot
+              return !!this.isRoot
             }
           }
         }
@@ -563,9 +563,7 @@ var GIVe = (function (give) {
       return this
     }
 
-    traverse (
-      chrRange, callback, thisVar, filter, breakOnFalse, props
-    ) {
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       // Implementation without resolution support
       // Because this is a non-leaf node, it always descends to its children
       // until some leaf node is reached.
@@ -573,29 +571,29 @@ var GIVe = (function (give) {
       if (chrRange) {
         var currIndex = 0
         while (currIndex < this.childNum &&
-          this.Keys[currIndex + 1] <= chrRange.start
+          this.keys[currIndex + 1] <= chrRange.start
         ) {
           currIndex++
         }
-        if (this.RevDepth) {
-          return (this.Keys[currIndex] < chrRange.end &&
-            currIndex < this.childNum) ? this.Values[currIndex] : null
+        if (this.reverseDepth) {
+          return (this.keys[currIndex] < chrRange.end &&
+            currIndex < this.childNum) ? this.values[currIndex] : null
         } else {
           while (
-            this.Keys[currIndex] < chrRange.end &&
+            this.keys[currIndex] < chrRange.end &&
             currIndex < this.childNum
           ) {
-            if (this.Values[currIndex] &&
-              (!this.Values[currIndex].traverse(chrRange, callback,
-                filter, breakOnFalse, props) && breakOnFalse
-              )
-            ) {
-              return false
+            if (this.values[currIndex]) {
+              if (!this.values[currIndex].traverse(chrRange, callback,
+                filter, breakOnFalse, props, ...args) && breakOnFalse
+              ) {
+                return false
+              }
             }
-            props.NotFirstCall = true
+            props.notFirstCall = true
             currIndex++
           }
-          return (this.Keys[currIndex] < chrRange.end)
+          return (this.keys[currIndex] < chrRange.end)
             ? this.next : null
         }
       } else { // !chrRange
