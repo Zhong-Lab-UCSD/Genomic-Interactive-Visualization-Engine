@@ -38,7 +38,7 @@ var GIVe = (function (give) {
   give.WitheringMixin = Base => class extends Base {
     constructor (props) {
       super(...arguments)
-      if (props._currGen || (this.Tree && this.Tree._currGen)) {
+      if (props._currGen || (this.Tree && this.Tree.lifeSpan)) {
         this._lastUpdateGen = props._currGen || this.Tree._currGen
       }
     }
@@ -49,17 +49,30 @@ var GIVe = (function (give) {
       if (super.mergeAfter) {
         let result = super.mergeAfter(...arguments)
         if (result) {
-          if (nodeGen > this._lastUpdateGen &&
-            ((nodeGen <= this.Tree._currGen) ===
-              (this._lastUpdateGen <= this.Tree._currGen)
-            )
-          ) {
+          if (this._genOlderThan(nodeGen)) {
             this._lastUpdateGen = nodeGen
           }
-          return result
         }
+        return result
       } 
       return false
+    }
+
+    _genOlderThan (generationToComp) {
+      return this.Tree && this.tree.lifeSpan &&
+        generationToComp > this._lastUpdateGen &&
+        ((generationToComp <= this.Tree._currGen) ===
+          (this._lastUpdateGen <= this.Tree._currGen)
+        )
+    }
+
+    insert () {
+      let result
+      if (super.insert) {
+        result = super.insert(...arguments)
+      }
+      this.rejuvenate()
+      return result
     }
 
     wither () {
@@ -73,7 +86,7 @@ var GIVe = (function (give) {
       // For children, mark all children that needs to be withered
       // then call `this.delete` on all children marked.
       this.Values.filter(value => (value && value._shouldWither))
-        .forEach(value => this.delete(value, true))
+        .forEach(value => this.remove(value, true))
       return this.isEmpty ? null : this
     }
 
@@ -89,14 +102,19 @@ var GIVe = (function (give) {
     }
 
     rejuvenate () {
-      if (this.Tree && this.Tree._currGen) {
+      if (this.Tree && this.tree.lifeSpan) {
         this._lastUpdateGen = this.Tree._currGen
       }
     }
 
     traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      let result
+      if (super.traverse) {
+        result = super.traverse(...arguments)
+      }
       this.rejuvenate()
-      return super.traverse(...arguments)
+      return result
+    }
   }
 
   return give

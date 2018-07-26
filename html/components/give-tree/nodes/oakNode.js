@@ -207,85 +207,7 @@ var GIVe = (function (give) {
       this.Keys[index] = this.Values[index].start
     }
 
-    /**
-     * _restructureSingleLayer - The function to be called after
-     *    adding/removing data to the node.
-     *    In OakNodes, auto-balancing is implemented according to B+ tree
-     *    specs. `this._restructureSingleLayer()` actually only rearranges
-     *    children to make sure they meet B+ tree requirements. `this` may not
-     *    meet B+ tree requirement if it's an intermediate node, which will be
-     *    handled by its immediate parent.
-     *    If `this` is a root node and needs splitting / reducing length, a
-     *    new root node will be created to fix the tree structure and
-     *    returned.
-     *    If there is no way to arrange children to make all children meet
-     *    B+ tree requirements, a `CannotBalanceError` will be thrown to allow
-     *    redistribution of children from parent nodes.
-     * @memberof OakNode.prototype
-     *
-     * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>|false}
-     *    Since auto-balancing is supported, the return value will be
-     *    different for root and non-root nodes:
-     *    * For root nodes, this will return a new root if split/merge
-     *      happens;
-     *    * In all other cases, return `this`.
-     *    * For inner nodes (or leaf), Return an ordered array of (one or
-     *      more) siblings if splitting happens for the calling function to
-     *      handle. If the node should be merged with its sibling(s), return
-     *      `false`. Return `this` in all other cases.
-     * @throws {CannotBalanceError} Throw an error if after doing everything
-     *    it can, it still cannot make all its children meet the B+ tree
-     *    requirement. This would happen if a large number of nodes under
-     *    this node were deleted and after merging all direct children, there
-     *    is still not enough grandchildren for the child.
-     */
-    _restructureSingleLayer (intermediate) {
-      // Procedures:
-      // 1. Iterate over all children to see if any of them need updating
-      // 2. Redistribute / merge / split children depending on it and its
-      //    siblings
-      if (this.RevDepth > 0) {
-        for (let i = 0; i < this.childNum; i++) {
-          let sibNext = (i < (this.childNum - 1)) ? i + 1 : i
-          let sibPrev = (i < (this.childNum - 1)) ? i : i - 1
-          if (this.Values[i].childNum < this.Tree.BFactor / 2) {
-            if (this.childNum <= 1) {
-              if (!this.IsRoot &&
-                (!intermediate || this.Values[i].childNum <= 1)
-              ) {
-                // not enough grand-children overall, throw to let parent
-                //    handle
-                throw new CannotBalanceError()
-              }
-            } else {
-              // not enough grand-children for the child, redistribute / merge
-              if (this.Values[sibPrev].childNum +
-                this.Values[sibNext].childNum >
-                this.Tree.BFactor
-              ) {
-                // redistribution is enough
-                this._redistributeGrandChildren(sibNext)
-              } else {
-                // needs merge
-                this._mergeChild(sibNext)
-                i--
-              }
-            }
-          } else if (this.Values[i].childNum > this.Tree.BFactor) {
-            // too many grand-children, redistribute / split
-            if (this.Values[sibPrev].childNum +
-              this.Values[sibNext].childNum <
-              this.Tree.BFactor * 2
-            ) {
-              // redistribution is enough
-              this._redistributeGrandChildren(sibNext)
-            } else {
-              // needs split
-              i += this._splitChild(i) - 1
-            }
-          }
-        }
-      }
+    _restructureRoot () {
       // If this is root, then it needs to be responsible for itself
       if (this.IsRoot) {
         let oldRoot
@@ -323,19 +245,119 @@ var GIVe = (function (give) {
       return this.isEmpty ? false : this
     }
 
-    _restructure () {
+    /**
+     * _restructureSingleLayer - The function to be called after
+     *    adding/removing data to the node.
+     *    In OakNodes, auto-balancing is implemented according to B+ tree
+     *    specs. `this._restructureSingleLayer()` actually only rearranges
+     *    children to make sure they meet B+ tree requirements. `this` may not
+     *    meet B+ tree requirement if it's an intermediate node, which will be
+     *    handled by its immediate parent.
+     *    If `this` is a root node and needs splitting / reducing length, a
+     *    new root node will be created to fix the tree structure and
+     *    returned.
+     *    If there is no way to arrange children to make all children meet
+     *    B+ tree requirements, a `CannotBalanceError` will be thrown to allow
+     *    redistribution of children from parent nodes.
+     * @param {boolean} intermediate - Whether this restructuring is an
+     *    intermediate approach.
+     *    If this is true, then the function is called to rearrange in parent
+     *    nodes because their children cannot get their grandchildren
+     *    conforming to B+ tree requirements. If this is the case, the
+     *    children in this call does not need to completely conform to B+
+     *    tree requirements since the function flow will come back once the
+     *    grandchildren have been rearranged.
+     * @memberof OakNode.prototype
+     *
+     * @returns {give.GiveNonLeafNode|Array<give.GiveNonLeafNode>|false}
+     *    Since auto-balancing is supported, the return value will be
+     *    different for root and non-root nodes:
+     *    * For root nodes, this will return a new root if split/merge
+     *      happens;
+     *    * In all other cases, return `this`.
+     *    * For inner nodes (or leaf), Return an ordered array of (one or
+     *      more) siblings if splitting happens for the calling function to
+     *      handle. If the node should be merged with its sibling(s), return
+     *      `false`. Return `this` in all other cases.
+     * @throws {CannotBalanceError} Throw an error if after doing everything
+     *    it can, it still cannot make all its children meet the B+ tree
+     *    requirement. This would happen if a large number of nodes under
+     *    this node were deleted and after merging all direct children, there
+     *    is still not enough grandchildren for the child.
+     */
+    _restructureSingleLayer (intermediate) {
+      // Procedures:
+      // 1. Iterate over all children to see if any of them need updating
+      // 2. Redistribute / merge / split children depending on it and its
+      //    siblings
       if (this.RevDepth > 0) {
-        let grandChildrenCompliant = false
-        do {
-          try {
-            this.Values.forEach(node => node._restructure())
-            grandChildrenCompliant = true
-          } catch (err) {
-            if (err instanceof CannotBalanceError) {
-              this._restructureSingleLayer(true)
+        for (let i = 0; i < this.childNum; i++) {
+          let sibNext = (i < (this.childNum - 1)) ? i + 1 : i
+          let sibPrev = (i < (this.childNum - 1)) ? i : i - 1
+          if (this.Values[i].childNum < this.Tree.BFactor / 2) {
+            if (this.childNum <= 1) {
+              if (!intermediate || this.Values[i].childNum <= 1) {
+                // If this call is an intermediate adjustment, throw error
+                //    only when `this` has one grandchild (therefore
+                //    adjustment is not possible).
+                // Otherwise throw when not all children can be rearranged
+                //    to make them meet B+ tree requirements.
+                throw new CannotBalanceError()
+              }
+            } else {
+              // not enough grand-children for the child, redistribute / merge
+              if (this.Values[sibPrev].childNum +
+                this.Values[sibNext].childNum >
+                this.Tree.BFactor
+              ) {
+                // redistribution is enough
+                this._redistributeGrandChildren(sibNext)
+              } else {
+                // needs merge
+                this._mergeChild(sibNext)
+                i--
+              }
+            }
+          } else if (this.Values[i].childNum > this.Tree.BFactor) {
+            // too many grand-children, redistribute / split
+            if (this.Values[sibPrev].childNum +
+              this.Values[sibNext].childNum <
+              this.Tree.BFactor * 2
+            ) {
+              // redistribution is enough
+              this._redistributeGrandChildren(sibNext)
+            } else {
+              // needs split
+              i += this._splitChild(i) - 1
             }
           }
-        } while (!grandChildrenCompliant)
+        }
+      }
+      if (!intermediate) {
+        return this._restructureRoot()
+      }
+      return this.isEmpty ? false : this
+    }
+
+    _restructure () {
+      try {
+        if (this.RevDepth > 0) {
+          let grandChildrenCompliant = false
+          do {
+            try {
+              this.Values.forEach(node => node._restructure())
+              grandChildrenCompliant = true
+            } catch (err) {
+              if (err instanceof CannotBalanceError) {
+                this._restructureSingleLayer(true)
+              }
+            }
+          } while (!grandChildrenCompliant)
+        }
+      } catch (err) {
+        if (err instanceof CannotBalanceError && !this.IsRoot) {
+          throw err
+        }
       }
       return this._restructureSingleLayer()
     }
@@ -464,7 +486,9 @@ var GIVe = (function (give) {
      *    Data entries with the same start (and end values if exists) will be
      *    removed. If multiple entries are found with the same start (and end
      *    values), the behavior will be defined by `exactMatch`.
-     *
+     *    __NOTE:__ The tree will not be restructured due to the fact that
+     *    multiple remove calls may happen within one action and restructuring
+     *    every time incurs unnecessary computational burden.
      *
      * @memberof GiveTreeNode.prototype
      *
@@ -487,8 +511,6 @@ var GIVe = (function (give) {
      *    If the node itself shall be removed, return a falsey value to allow
      *    parents to take additional steps. If the node is root, return the
      *    new root if decreasing of tree height happened.
-     * @throws {CannotBalanceError} If the node itself cannot get all its
-     *    grand-children balanced, a `CannotBalanceError` will be thrown.
      */
     remove (data, exactMatch, convertTo, props) {
       props = props || {}
