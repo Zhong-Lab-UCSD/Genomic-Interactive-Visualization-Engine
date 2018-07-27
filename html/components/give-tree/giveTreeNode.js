@@ -208,6 +208,8 @@ var GIVe = (function (give) {
      *    `callback` is going to be called upon.
      * @param  {object|null} props - additional properties being
      *    passed onto nodes.
+     * @param  {boolean} props.notFirstCall - whether this is not the first
+     *    call of a series of `traverse` calls.
      * @param  {...object} args - additional args being passed onto `callback`
      *    and `filter`
      * @returns {boolean} - whether future traverses should be conducted.

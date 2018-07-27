@@ -53,7 +53,10 @@ var GIVe = (function (give) {
       props.end = chrRange.end
       props.tree = this
       props.isRoot = true
-      if (typeof props.lifeSpan === 'number' && props.lifeSpan > 0) {
+      if ((typeof props.lifeSpan === 'number' && props.lifeSpan > 0) ||
+        !props.lifeSpan
+      ) {
+        props.lifeSpan = props.lifeSpan || this.constructor.DEFAULT_LIFE_SPAN
         this._currGen = 0
         this.lifeSpan = props.lifeSpan
         this._root = new give.WitheringMixin(NonLeafNodeCtor)(props)
@@ -90,12 +93,14 @@ var GIVe = (function (give) {
      * @param {object|null} props
      */
     _insertSingleRange (data, chrRange, props) {
-      if (!chrRange.chr || chrRange.chr === this.chr) {
+      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
         props = props || {}
         props.contList = props.contList || []
         props.LeafNodeCtor = props.LeafNodeCtor || this._LeafNodeCtor
-        this._root = this._root.insert(data, ((!chrRange && data.length === 1)
-          ? data[0] : chrRange), props)
+        chrRange = chrRange
+          ? this._root.truncateChrRange(chrRange, true, false)
+          : (data.length === 1 ? data[0] : this.coveringRange)
+        this._root = this._root.insert(data, chrRange, props)
       }
     }
 
@@ -129,11 +134,15 @@ var GIVe = (function (give) {
      * @param {Array<object>|object|null} props - additional properties being
      *    passed onto nodes. If this is an `Array`, it should have the same
      *    `length` as `chrRanges` does.
+     * @param {boolean} props.doNotWither - If `true`, the tree will not advance
+     *    its generation or trigger withering.
      * @param {function|null} props.LeafNodeCtor - the constructor function of
      *    leaf nodes if they are not the same as the non-leaf nodes.
      */
     insert (data, chrRanges, props) {
-      this._advanceGen()
+      if (!props || !props.doNotWither) {
+        this._advanceGen()
+      }
       let exceptions = []
       if (Array.isArray(chrRanges)) {
         chrRanges.forEach((range, index) => {
@@ -155,6 +164,9 @@ var GIVe = (function (give) {
           return null
         }
       }
+      if (!props || !props.doNotWither) {
+        this._wither()
+      }
       if (exceptions.length > 0) {
         let message = exceptions.reduce(
           (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
@@ -164,7 +176,6 @@ var GIVe = (function (give) {
         give.fireSignal('warning', { msg: message }, null, this)
         throw new give.GiveError(message)
       }
-      this._wither()
     }
 
     /**
@@ -199,7 +210,7 @@ var GIVe = (function (give) {
       if (this._currGen !== null) {
         if (!this._witheringPromise) {
           this._currGen += (amount || 1)
-          if (this._currGen >= this.constructor._MAX_GENERATION) {
+          if (this._currGen >= this.constructor.MAX_GENERATION) {
             this._currGen = 0
           }
         }
@@ -235,32 +246,65 @@ var GIVe = (function (give) {
      *    `false` has been returned from `callback`
      * @param {object|null} props - additional properties being passed onto
      *    nodes
+     * @param {boolean} props.doNotWither - If `true`, the tree will not advance
+     *    its generation or trigger withering.
      * @returns {boolean} If the traverse breaks on `false`, returns `false`,
      *    otherwise `true`
      */
-    traverse (chrRange, callback, filter, breakOnFalse, props) {
+    traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       props = props || {}
       if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
-        this._advanceGen()
+        // implement withering parts:
+        // 1. Advance `this._currGen` by 1
+        if (!props.doNotWither) {
+          this._advanceGen()
+        }
         try {
           chrRange = chrRange
             ? this._root.truncateChrRange(chrRange, true, false)
             : this.coveringRange
-          this._root.traverse(chrRange, callback, filter,
-            breakOnFalse, false, props)
+          return this._traverse(chrRange, callback, filter,
+            breakOnFalse, props, ...args)
         } catch (err) {
           give._verbConsole.warn(err)
           give.fireSignal('warning', { msg: err.toString() }, null, this)
-          return false
+          throw err
+          // return false
         } finally {
-          // implement withering parts:
-          // 1. Advance `this._currGen` by 1
           // 2. try to find any child that is too old
           //    (`this._currGen - birthGen > this.lifeSpan`) and remove them.
-          this._wither()
+          if (!props.doNotWither) {
+            this._wither()
+          }
         }
       }
       return true
+    }
+
+    /**
+     * _traverse - The actual function doing the traversing and should be
+     *    overriden by sub classes.
+     * @memberof GiveTreeBase.prototype
+     *
+     * @param {ChromRegionLiteral} chrRange - the chromosomal range to
+     *    traverse. If omitted or falsey value is supplied, use the entire
+     *    range.
+     * @param {function} callback - the callback function to be used (with the
+     *    data entry as its sole parameter) on all overlapping data entries
+     *    (that pass `filter` if it exists).
+     * @param {function} filter - the filter function to be used (with the
+     *    data entry as its sole parameter), return `false` to exclude the
+     *    entry from being called with `callback`.
+     * @param {boolean} breakOnFalse - whether the traversing should break if
+     *    `false` has been returned from `callback`
+     * @param {object|null} props - additional properties being passed onto
+     *    nodes
+     * @returns {boolean} If the traverse breaks on `false`, returns `false`,
+     *    otherwise `true`
+     */
+    _traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      return this._root.traverse(chrRange, callback, filter,
+        breakOnFalse, props, ...args)
     }
 
     /**
@@ -279,8 +323,10 @@ var GIVe = (function (give) {
      */
     getUncachedRange (chrRange, props) {
       props = props || {}
-      if (!chrRange.chr || chrRange.chr === this.chr) {
-        chrRange = this._root.truncateChrRange(chrRange, true, true)
+      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
+        chrRange = chrRange
+          ? this._root.truncateChrRange(chrRange, true, false)
+          : this.coveringRange
         return this._root.getUncachedRange(chrRange, props)
       } else {
         return []
@@ -288,7 +334,8 @@ var GIVe = (function (give) {
     }
   }
 
-  GiveTree._MAX_GENERATION = Number.MAX_SAFE_INTEGER - 100
+  GiveTree.MAX_GENERATION = Number.MAX_SAFE_INTEGER - 100
+  GiveTree.DEFAULT_LIFE_SPAN = 10
 
   give.GiveTree = GiveTree
 

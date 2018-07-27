@@ -128,7 +128,7 @@ var GIVe = (function (give) {
       return this.tree._currGen >= this._lastUpdateGen
         ? this.tree._currGen - this._lastUpdateGen > this.tree.lifeSpan
         : this.tree._currGen +
-          (this.tree.constructor._MAX_GENERATION - this._lastUpdateGen) >
+          (this.tree.constructor.MAX_GENERATION - this._lastUpdateGen) >
           this.tree.lifeSpan
     }
 
@@ -143,7 +143,9 @@ var GIVe = (function (give) {
       if (typeof super.traverse === 'function') {
         result = super.traverse(...arguments)
       }
-      this.rejuvenate()
+      if (!props || !props.doNotWither) {
+        this.rejuvenate()
+      }
       return result
     }
   }

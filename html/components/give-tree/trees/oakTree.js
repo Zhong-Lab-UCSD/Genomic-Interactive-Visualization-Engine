@@ -47,69 +47,37 @@ var GIVe = (function (give) {
    * @param {function} props.LeafNodeCtor - if omitted, the constructor of
    *    `GIVE.DataNode` will be used
    */
-  give.OakTree = function (chrRange, props) {
-    // start and length is for the corresponding region
-    // note that `OakTree` should be populated with `OakNode`s
-    props = props || {}
-    props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
-    if (
-      !Number.isInteger(props.branchingFactor) || props.branchingFactor <= 2
-    ) {
-      give._verbConsole.info('Default branching factor is chosen instead of ' +
-        props.branchingFactor)
-      this.branchingFactor = give.OakTree._DEFAULT_B_FACTOR
-    } else {
-      this.branchingFactor = props.branchingFactor
-    }
-    this.NeighboringLinks = true
-    give.GiveTree.call(
-      this, chrRange, props.NonLeafNodeCtor || give.OakNode, props
-    )
-  }
-
-  give.extend(give.GiveTree, give.OakTree)
-
-  /**
-   * traverse - traverse given chromosomal range to apply functions to all
-   * overlapping data entries.
-   * @memberof GiveTreeBase.prototype
-   *
-   * @param {ChromRegionLiteral} chrRanges - the chromosomal range to traverse
-   * @param {function} callback - the callback function to be used (with the
-   *    data entry as its sole parameter) on all overlapping data entries
-   *    (that pass `filter` if it exists).
-   * @param {function} filter - the filter function to be used (with the data
-   *    entry as its sole parameter), return `false` to exclude the entry from
-   *    being called with `callback`.
-   * @param {boolean} breakOnFalse - whether the traversing should break if
-   *    `false` has been returned from `callback`
-   * @param {object|null} props - additional properties being passed onto nodes
-   * @returns {boolean} If the traverse breaks on `false`, returns `false`,
-   *    otherwise `true`
-   */
-  give.OakTree.prototype.traverse = function (
-    chrRange, callback, filter, breakOnFalse, props, ...args
-  ) {
-    props = props || {}
-    let currNode = this._root
-    if (!chrRange.chr || chrRange.chr === this.chr) {
-      this._advanceGen()
-      try {
-        chrRange = this._root.truncateChrRange(chrRange, true, false)
-        while (currNode) {
-          currNode = currNode.traverse(chrRange, callback, filter,
-            breakOnFalse, props, ...args)
-        }
-      } catch (exception) {
-        return false
-      } finally {
-        this._wither()
+  class OakTree extends give.GiveTree {
+    constructor (chrRange, props) {
+      // start and length is for the corresponding region
+      // note that `OakTree` should be populated with `OakNode`s
+      props = props || {}
+      props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
+      super(chrRange, props.NonLeafNodeCtor || give.OakNode, props)
+      if (
+        !Number.isInteger(props.branchingFactor) || props.branchingFactor <= 2
+      ) {
+        give._verbConsole.info('Default branching factor chosen instead of ' +
+          props.branchingFactor)
+        this.branchingFactor = this.constructor._DEFAULT_B_FACTOR
+      } else {
+        this.branchingFactor = props.branchingFactor
       }
+      this.neighboringLinks = true
     }
-    return currNode === null
+
+    _traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      let currNode = this._root
+      while (currNode) {
+        currNode = currNode.traverse(chrRange, callback, filter,
+          breakOnFalse, props, ...args)
+      }
+      return currNode === null
+    }
   }
 
-  give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked
+  OakTree._DEFAULT_B_FACTOR = 50 // this value may need to be tweaked
+  give.OakTree = OakTree
 
   return give
 })(GIVe || {})

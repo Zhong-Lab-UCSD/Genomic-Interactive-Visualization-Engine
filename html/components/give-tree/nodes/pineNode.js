@@ -101,7 +101,7 @@ var GIVe = (function (give) {
      *    1 is the smallest (finest)
      */
     _getResolutionAtDepth (revDepth) {
-      return parseInt(Math.floor(Math.pow(this.tree.scalingFactor, revDepth) *
+      return parseInt(Math.floor(this.tree.scalingFactor ** revDepth *
         this.tree.leafScalingFactor))
     }
 
@@ -141,7 +141,7 @@ var GIVe = (function (give) {
     }
 
     /**
-     * resEnough - get whether the resolution of this data node is enough
+     * resolutionEnough - get whether the resolution of this data node is enough
      *    for the given resolution requirement.
      *
      * @param  {number|null} resolution - the resolution required, if `null`,
@@ -149,14 +149,14 @@ var GIVe = (function (give) {
      * @returns {boolean}  Return `true` if the resolution is enough,
      *    otherwise `false`.
      */
-    resEnough (resolution) {
+    resolutionEnough (resolution) {
       resolution = (typeof resolution === 'number' && !isNaN(resolution))
         ? resolution : 1
       return this.resolution <= resolution
     }
 
     /**
-     * childResEnough - get whether the resolution of a child is enough
+     * childResolutionEnough - get whether the resolution of a child is enough
      *    for the given resolution requirement.
      *
      * @param  {number|null} resolution - the resolution required, if `null`,
@@ -167,32 +167,32 @@ var GIVe = (function (give) {
      * @returns {boolean}  Return `true` if the resolution is enough,
      *    otherwise `false`.
      */
-    childResEnough (resolution, index) {
+    childResolutionEnough (resolution, index) {
       resolution = (typeof resolution === 'number' && !isNaN(resolution))
         ? resolution : 1
       return this.getChildResolution(index) <= resolution
     }
 
     /**
-     * _getClosestRes - get the closest resolution that is adequate for the
+     * _getClosestResolution - get the closest resolution that is adequate for the
      *    required resolution.
      *
      * @param {number} requiredRes - the required resolution.
      * @returns {number}  Return the closest resolution that is smaller or equal
      *    to `requiredRes`.
      */
-    _getClosestRes (requiredRes) {
+    _getClosestResolution (requiredRes) {
       if (requiredRes >= this.tree.leafScalingFactor) {
-        return parseInt(Math.floor(Math.pow(this.tree.scalingFactor,
+        return parseInt(Math.floor(this.tree.scalingFactor **
           Math.floor((Math.log(requiredRes / this.tree.leafScalingFactor)) /
-            Math.log(this.tree.scalingFactor))) * this.tree.leafScalingFactor
+            Math.log(this.tree.scalingFactor)) * this.tree.leafScalingFactor
         ))
       }
       return 1
     }
 
     /**
-     * fitRes - fit coordinates to resolution requirements.
+     * fitResolution - fit coordinates to resolution requirements.
      *    This is mainly used in cases when a value is put into a series of
      *    consecutive bins of `resolution` size, and we need to find the
      *    boundary of the bin. For example, if we put 12 into bins of 10, then
@@ -211,7 +211,7 @@ var GIVe = (function (give) {
      *    `Math.floor` is used by default.
      * @returns {number} returns the fitted value
      */
-    static fitRes (value, resolution, roundingFunc) {
+    static fitResolution (value, resolution, roundingFunc) {
       // use roundingFunc to fit value to the closest resolution
       // roundingFunc can be Math.floor, Math.ceil or Math.round
       roundingFunc = roundingFunc || Math.round
@@ -355,7 +355,7 @@ var GIVe = (function (give) {
         // 2. non-leaf nodes:
         //    go deep to generate branch structure, or update summary
         //    (for trees that support summary and resolutions)
-        if (this.resEnough(resolution) && data[0]) {
+        if (this.resolutionEnough(resolution) && data[0]) {
           // check whether the data summary matches the node boundary
           if (this.start !== data[0].start || this.end !== data[0].end) {
             throw new give.GiveError('Summary range does not match! ' +
@@ -410,10 +410,10 @@ var GIVe = (function (give) {
         // 1. Find the range where the first child node should be inserted.
         //    This should be the node where `chrRange.start` falls in.
         childRange.end = Math.min(this.end,
-          this.constructor.fitRes(chrRange.end, childRes, Math.ceil),
+          this.constructor.fitResolution(chrRange.end, childRes, Math.ceil),
           childRange.start + childRes
         )
-        childRange.start = this.constructor.fitRes(
+        childRange.start = this.constructor.fitResolution(
           chrRange.start, childRes, Math.floor
         )
 
@@ -650,7 +650,7 @@ var GIVe = (function (give) {
           // Resolution support: check if the resolution is already enough in
           // this node. If so, call `this._callFuncOnDataEntry` on
           // `this.getSummaryChromRegion()`
-          if (this.resEnough(resolution) && this.hasData) {
+          if (this.resolutionEnough(resolution) && this.hasData) {
             // Resolution enough
             return this._callFuncOnDataEntry(callback, filter, breakOnFalse,
               this.getSummaryChromRegion(), props, ...args
@@ -719,7 +719,7 @@ var GIVe = (function (give) {
           this.keys[currIndex] < chrRange.end
         ) {
           if (this.values[currIndex] &&
-            !this.childResEnough(resolution, currIndex)
+            !this.childResolutionEnough(resolution, currIndex)
           ) {
             // child has not enough resolution
             this.values[currIndex].getUncachedRange(chrRange, props)
@@ -727,13 +727,13 @@ var GIVe = (function (give) {
             // either no child at all or child does not have summary data
             // calculate the closest range needed for the resolution
             // first normalize resolution to scalingFactor
-            let closestResolution = this._getClosestRes(
+            let closestResolution = this._getClosestResolution(
               resolution / props.bufferingRatio)
             let retrieveStart = Math.max(this.keys[currIndex],
-              give.PineNode.fitRes(
+              give.PineNode.fitResolution(
                 chrRange.start, closestResolution, Math.floor))
             let retrieveEnd = Math.min(this.keys[currIndex + 1],
-              give.PineNode.fitRes(
+              give.PineNode.fitResolution(
                 chrRange.end, closestResolution, Math.ceil))
             if (props._result[props._result.length - 1] &&
               props._result[props._result.length - 1].resolution ===
