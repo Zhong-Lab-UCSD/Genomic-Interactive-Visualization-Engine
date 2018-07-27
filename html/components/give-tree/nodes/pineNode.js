@@ -730,10 +730,10 @@ var GIVe = (function (give) {
             let closestResolution = this._getClosestResolution(
               resolution / props.bufferingRatio)
             let retrieveStart = Math.max(this.keys[currIndex],
-              give.PineNode.fitResolution(
+              this.constructor.fitResolution(
                 chrRange.start, closestResolution, Math.floor))
             let retrieveEnd = Math.min(this.keys[currIndex + 1],
-              give.PineNode.fitResolution(
+              this.constructor.fitResolution(
                 chrRange.end, closestResolution, Math.ceil))
             if (props._result[props._result.length - 1] &&
               props._result[props._result.length - 1].resolution ===
