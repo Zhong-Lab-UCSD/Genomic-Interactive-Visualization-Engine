@@ -828,7 +828,7 @@ var GIVe = (function (give) {
           let newWindow = this.getVerifiedViewWindow(newValue)
           let currWindow = this._pendingVWindow || this._viewWindow
           if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
-            this.changeViewWindow(newWindow)
+            return this.changeViewWindow(newWindow)
           }
         } catch (err) {
           err.data = err.data || {}
@@ -862,11 +862,11 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _addTrksFromDefList - Add tracks based on
+     * _addTracksFromDefaultList - Add tracks based on
      *    `this.defaultTrackIdList` instead of the default values in
      *    the database
      */
-    _addTrksFromDefList (contexts) {
+    _addTracksFromDefaultList (contexts) {
       this.refObj.tracks.forEach(
         track => track.setSetting('visibility', false)
       )
@@ -899,12 +899,12 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _addTrksFromVis - Add tracks based on the default
+     * _addTracksFromVisibility - Add tracks based on the default
      *    `visibility` values in the database (via `track.isVisible`).
      *    Note that `this.groupIdList` will determine the track groups that
      *    will be shown here.
      */
-    _addTrksFromVis (contexts) {
+    _addTracksFromVisibility (contexts) {
       let exceptions = []
       let showTrack = track => {
         try {
@@ -980,7 +980,22 @@ var GIVe = (function (give) {
       this._initDOMCoorTrack()
       return this._addAllTrackDoms(contexts)
     }
-
+    /**
+     * link hidden DOMs to the window
+     * @param  {Array<TrackDom>} hiddenDoms - The hidden DOM to be linked
+     *    within this window
+     * @param  {Array<object>} contexts - The contexts views the DOMs in
+     *    this window will be linked to. contexts object should have the
+     *    following properties:
+     *    {
+     *      ref: <string> reference of the view
+     *      index: <number> index of the view
+     *    }
+     *    This array should at least include the neighboring windows with
+     *    the same index as in `chart-area`
+     * @returns {Array<TrackDom>} An array of hidden Track DOMs that needs to be
+     *    linked to lower windows.
+     */
     _linkHiddenDoms (hiddenDoms, contexts) {
       // add all hiddenDoms (if not already added)
       // and if they need to be further linked, put into returned list
@@ -992,7 +1007,7 @@ var GIVe = (function (give) {
           hiddenDom.hasLinksInTargetView(contexts[this.index + 1])
         )
       } else {
-        return null
+        return []
       }
     }
 
@@ -1001,7 +1016,7 @@ var GIVe = (function (give) {
         // use this.defaultTrackIdList to directly fill in the DOM array
         // without sorting by priority (use the defaultTrackIdList order)
         try {
-          this._addTrksFromDefList(contexts)
+          this._addTracksFromDefaultList(contexts)
         } finally {
           delete this._needOverrideDefault
         }
@@ -1010,7 +1025,7 @@ var GIVe = (function (give) {
         // visibility settings
         // sort by priorities defined in database (this should be done
         //    in `this.refObj` already)
-        this._addTrksFromVis(contexts)
+        this._addTracksFromVisibility(contexts)
       }
     }
 

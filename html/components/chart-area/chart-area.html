@@ -100,7 +100,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
     <paper-material>
       <div id="windowHolding" hidden$="[[!_initialized]]">
         <template id="windowsHolder" is="dom-repeat"
-          items="[[_chartWindows]]" index-as="index">
+          items="[[_chartWindowItems]]" index-as="index">
           <chart-window id="[[_calcCWId(index)]]"
             coordinate="{{item.coordinate}}" index="[[index]]"
             total-windows="[[numOfSubs]]"
@@ -133,6 +133,7 @@ var GIVe = (function (give) {
       this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
       this._updatingWindows = false
       this._idEnforcedSet = new Set()
+      this._trackWindows = []
     }
 
     static get is () {
@@ -146,7 +147,7 @@ var GIVe = (function (give) {
          * The members of the properties should be `GIVE.ChromRegion` Objects
          * @type {object}
          */
-        _chartWindows: {
+        _chartWindowItems: {
           type: Array,
           value: function () {
             return []
@@ -262,7 +263,7 @@ var GIVe = (function (give) {
 
     static get observers () {
       return [
-        '_windowChanged(_chartWindows.*)'
+        '_windowChanged(_chartWindowItems.*)'
       ]
     }
 
@@ -303,7 +304,8 @@ var GIVe = (function (give) {
       })
     }
 
-    _getValueArray (strVal) {
+    _getValueArray (strVal, arrayLength) {
+      arrayLength = arrayLength || this.numOfSubs
       let arr = [strVal]
       try {
         let parsed = JSON.parse(strVal)
@@ -315,10 +317,10 @@ var GIVe = (function (give) {
         arr[0] = null
       }
       // repeat arr until it is at least as long as `this.numOfSubs`
-      while (arr.length < this.numOfSubs) {
+      while (arr.length < arrayLength) {
         arr = arr.concat(arr)
       }
-      return arr.slice(0, this.numOfSubs)
+      return arr.slice(0, arrayLength)
     }
 
     _calcCWId (index) {
@@ -672,6 +674,48 @@ var GIVe = (function (give) {
       delete this._needOverrideDefault
     }
 
+    _updateTrackWindowArray () {
+      this.$.windowsHolder.render()
+      this.trackWindows =
+        [...this.$.windowsHolder.querySelectorAll('chart-window')]
+    }
+
+    _expandChartWindows (newNumOfWindows) {
+      let refs = this._getValueArray(this.ref, newNumOfWindows)
+      let coordinates = this._getValueArray(this.coordinate, newNumOfWindows)
+      for (let index = this._chartWindowItems.length;
+        index < newNumOfWindows;
+        index++
+      ) {
+        let newWindowItem = {
+          ref: refs[index],
+          coordinate: coordinates[index],
+          defaultTrackIdList: this.defaultTrackIdList,
+          groupIdList: this.groupIdList
+        }
+        this.push('_chartWindowItems', newWindowItem)
+      }
+      this._updateTrackWindowArray()
+    }
+
+    _shrinkChartWindows (newNumOfWindows) {
+      this.splice('_chartWindowItems', newNumOfWindows)
+      this._updateTrackWindowArray()
+    }
+
+    _resetWindowsDom () {
+      // 2. Then update the track DOMs within the chart-windows
+      // (because the surrounding environment has changed, some of the tracks,
+      // especially multi-window ones, may have its requirement conditions
+      // changed)
+      let contexts = this._chartWindows.map(window => window.context)
+      this._chartWindows.forEach(window => window.addAllTrackDOMs(contexts))
+      // 3. Then link the multi-window track DOMs through the chart-windows
+      this._chartWindows.reduce(
+        (hiddenDoms, window) => window.linkDOMs(hiddenDoms, contexts, false),
+        [])
+    }
+
     /**
      * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
      *
@@ -680,53 +724,28 @@ var GIVe = (function (give) {
      */
     _numOfSubsChanged (newValue, oldValue) {
       this._initialized = false
-      let refs = this._getValueArray(this.ref)
-      let coordinates = this._getValueArray(this.coordinate)
-      let exceptionList = []
-      // 1. First update the number of chart-windows
-      if (newValue > oldValue) {
-        // refresh hidden dom list
-        for (let i = this._chartWindows.length; i < newValue; i++) {
-          try {
-            let newWindowItem = {
-              ref: refs[i],
-              coordinate: coordinates[i],
-              defaultTrackIdList: this.defaultTrackIdList,
-              groupIdList: this.groupIdList
-            }
-            this.push('_chartWindows', newWindowItem)
-          } catch (err) {
-            exceptionList.push({ index: i, error: err })
-          }
+      try {
+        // 1. First update the number of chart-windows
+        if (newValue > oldValue) {
+          // refresh hidden dom list
+          this._expandChartWindows(newValue)
+        } else {
+          // less window, remove the excessive ones
+          this._shrinkChartWindows(newValue)
         }
-      } else {
-        // less window, remove the excessive ones
-        for (let i = this._chartWindows.length - 1; i >= newValue; i--) {
-          this.pop('_chartWindows')
-        }
-      }
-      // 2. Then update the track DOMs within the chart-windows
-      // (because the surrounding environment has changed, some of the tracks,
-      // especially multi-window ones, may have its requirement conditions
-      // changed)
-      // 3. Then link the multi-window track DOMs through the chart-windows
-      // 4. Update all the windows
-      if (exceptionList.length > 0) {
+        // 2. Reset all DOMs among windows (display and link)
+        this._resetWindowsDom()
+        // 3. Update all the windows
+        return this.updateWindows()
+      } catch (err) {
         // some exception has happended during the conversion
         // throw an exception telling calling procedures
         if (this.passExceptions) {
-          var error = new give.GiveError('Exception occured during window' +
-            ' number change.')
-          error.data = error.data || {}
-          error.data.exceptionList = exceptionList
-          error.data.updatedCoors = this.coordinate
-          error.data.updatedRefs = this.ref
-          throw error
+          throw err
         } else {
           // TODO: gracefully handle the exception
         }
       }
-      return this.updateWindows()
     }
 
     _setRefObj (refObj) {
