@@ -817,7 +817,8 @@ var GIVe = (function (give) {
      */
     changeViewWindow (viewWindow) {
       if (!this._initialized) {
-        this.resetDOM(viewWindow)
+        return this.resetDom(viewWindow)
+          .then(() => this.updateTracks(viewWindow, null, this.index))
       }
       return this.updateTracks(viewWindow, null, this.index)
     }
@@ -937,8 +938,10 @@ var GIVe = (function (give) {
     }
 
     _setRefObj (refObj) {
-      super._setRefObj(refObj)
-      this._initialized = false
+      let result = super._setRefObj(refObj)
+      if (result) {
+        this._initialized = false
+      }
       // return this.refTracksPromise.then(refObj => {
       //   if (refObj.db !== this.ref) {
       //     // Only respond to this call if ref has not been changed
@@ -950,6 +953,7 @@ var GIVe = (function (give) {
       //   }, null, this)
       //   this._initDomAfterVWinRefReady()
       // })
+      return result
     }
 
     _initDOMCoorTrack () {
@@ -964,21 +968,27 @@ var GIVe = (function (give) {
 
     /**
      * Reset the entire DOM display without updating the DOM
+     * @async If reference has not have its tracks initialized.
      */
-    resetDOM (contexts) {
+    resetDom (contexts) {
       contexts = contexts || []
+      let refTracksPromise = Promise.resolve()
       if (!this._initialized) {
         if (this.refObj) {
-          this._initialized = true
+          refTracksPromise = this.refObj.initTracks().then(() => {
+            this._initialized = true
+          })
         } else {
           this._updateCoordinates()
           throw new give.GiveError('Reference not initialized.')
         }
       }
-      this._clearDOM()
-      this._readiness = false
-      this._initDOMCoorTrack()
-      return this._addAllTrackDoms(contexts)
+      return refTracksPromise.then(() => {
+        this._clearDOM()
+        this._readiness = false
+        this._initDOMCoorTrack()
+        return this._addAllTrackDoms(contexts)
+      })
     }
     /**
      * link hidden DOMs to the window
@@ -1040,17 +1050,15 @@ var GIVe = (function (give) {
     }
 
     /**
-     * @function updateDOM - Update the DOM structure of the window WITHOUT
+     * @function updateDom - Update the DOM structure of the window WITHOUT
      *    REFRESHING THE CONTENTS (so that this function can be kept sync).
-     *    If `this._initialized` is false, reset the whole DOM.
+     *    This should be always called when `this._initialized` is `true`,
+     *    otherwise `this.resetDom` (an async function) should be used.
      * @param  {Array<object>} contexts - Contexts for neighboring windows
      *    to check if multi-window tracks should be displayed.
      */
-    updateDOM (contexts) {
+    updateDom (contexts) {
       // update existing DOMs, first remove all tracks that should be hidden
-      if (!this._initialized) {
-        return this.resetDOM(null, contexts)
-      }
       contexts = contexts || []
       if (this._trackDoms && this._trackDoms.length > 0) {
         this._removeInvisibleTrackDoms(contexts)
@@ -1099,14 +1107,20 @@ var GIVe = (function (give) {
           typeof e.detail.newVWindow === 'string'
         ) {
           if (!this._initialized) {
-            this.resetDOM(e.detail.newWindow)
+            this.resetDom(e.detail.newWindow)
+              .then(() => this.changeViewWindow(e.detail.newVWindow))
+              .catch(err => {
+                give._verbConsole.warn(err)
+                throw err
+              })
           } else if (e.detail.tracks) {
-            this.updateDOM(e.detail.newWindow)
+            this.updateDom(e.detail.newWindow)
+            return this.changeViewWindow(e.detail.newVWindow)
           }
-          return this.changeViewWindow(e.detail.newVWindow)
         }
       } catch (err) {
         give._verbConsole.warn(err)
+        throw err
       }
     }
 

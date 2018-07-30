@@ -134,6 +134,8 @@ var GIVe = (function (give) {
       this._updatingWindows = false
       this._idEnforcedSet = new Set()
       this._trackWindows = []
+      this._refArray = []
+      this._coordinateArray = []
     }
 
     static get is () {
@@ -327,21 +329,31 @@ var GIVe = (function (give) {
       return '_chart-window-' + index
     }
 
-    _checkVWindowsInit () {
-      if (!this._initialized) {
-        if (this._refObj && this._viewWindows.every(function (vwindow) {
-          return !!vwindow
-        }, this)) {
-          this._initialized = true
-          this.resetDOM()
-          return true
-        } else {
-          this._initialized = false
-          return false
-        }
+    _errorHandler (err) {
+      // some exception has happended during the conversion
+      // throw an exception telling calling procedures
+      if (this.passExceptions) {
+        throw err
+      } else {
+        // TODO: gracefully handle the exception
       }
-      return true
     }
+
+    // _checkVWindowsInit () {
+    //   if (!this._initialized) {
+    //     if (this._refObj && this._viewWindows.every(function (vwindow) {
+    //       return !!vwindow
+    //     }, this)) {
+    //       this._initialized = true
+    //       this.resetDOM()
+    //       return true
+    //     } else {
+    //       this._initialized = false
+    //       return false
+    //     }
+    //   }
+    //   return true
+    // }
 
     /**
      * Merge properties together
@@ -360,329 +372,315 @@ var GIVe = (function (give) {
       return original
     }
 
-    _createTrackProp (viewWindowIndex, props) {
-      props = props || {}
-      props.windowIndex = viewWindowIndex
-      props.width = this.$.chartHolding.clientWidth
-      props.textMargin = this.textMargin
-      return props
-    }
+    // _createTrackProp (viewWindowIndex, props) {
+    //   props = props || {}
+    //   props.windowIndex = viewWindowIndex
+    //   props.width = this.$.chartHolding.clientWidth
+    //   props.textMargin = this.textMargin
+    //   return props
+    // }
 
-    _addTrackDOM (trackDOM, viewWindowIndex) {
-      if (trackDOM.parent.windowSpan > 1) {
-        // this track involves multiple windows for display
-        // (e.g. interaction tracks)
-        this._addMultiWindowTrackDOM(trackDOM, viewWindowIndex)
-      } else {
-        this._addSingleWindowTrackDOM(trackDOM, viewWindowIndex)
-      }
-      this._trackDOMsByWindow[viewWindowIndex]
-        .map[trackDOM.parent.id] = true
-    }
+    // _addTrackDOM (trackDOM, viewWindowIndex) {
+    //   if (trackDOM.parent.windowSpan > 1) {
+    //     // this track involves multiple windows for display
+    //     // (e.g. interaction tracks)
+    //     this._addMultiWindowTrackDOM(trackDOM, viewWindowIndex)
+    //   } else {
+    //     this._addSingleWindowTrackDOM(trackDOM, viewWindowIndex)
+    //   }
+    //   this._trackDOMsByWindow[viewWindowIndex]
+    //     .map[trackDOM.parent.id] = true
+    // }
 
-    _addSingleWindowTrackDOM (trackDOM, viewWindowIndex) {
-      var holder
-      if (trackDOM.pin === 'top') {
-        holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
-      } else if (trackDOM.pin === 'bottom') {
-        holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
-      } else {
-        holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
-      }
-      holder.splice(
-        give.locationOf(trackDOM, holder, null, null,
-          function (trackDOM1, trackDOM2) {
-            return give.TrackObject.comparePriorities(trackDOM1.parent,
-              trackDOM2.parent, this._refObj.groups)
-          }.bind(this)
-        ) + 1, 0, trackDOM)
-    }
+    // _addSingleWindowTrackDOM (trackDOM, viewWindowIndex) {
+    //   var holder
+    //   if (trackDOM.pin === 'top') {
+    //     holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
+    //   } else if (trackDOM.pin === 'bottom') {
+    //     holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
+    //   } else {
+    //     holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
+    //   }
+    //   holder.splice(
+    //     give.locationOf(trackDOM, holder, null, null,
+    //       function (trackDOM1, trackDOM2) {
+    //         return give.TrackObject.comparePriorities(trackDOM1.parent,
+    //           trackDOM2.parent, this._refObj.groups)
+    //       }.bind(this)
+    //     ) + 1, 0, trackDOM)
+    // }
 
-    _addMultiWindowTrackDOM (trackDOM, viewWindowIndex) {
-      // actually this will enum all viewWindowIndices
-      this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
-      for (var i = 1; i < trackDOM.parent.windowSpan; i++) {
-        this._trackDOMsByWindow[viewWindowIndex + i]
-          .hiddenTrackComponents.push(trackDOM)
-      }
-    }
+    // _addMultiWindowTrackDOM (trackDOM, viewWindowIndex) {
+    //   // actually this will enum all viewWindowIndices
+    //   this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
+    //   for (var i = 1; i < trackDOM.parent.windowSpan; i++) {
+    //     this._trackDOMsByWindow[viewWindowIndex + i]
+    //       .hiddenTrackComponents.push(trackDOM)
+    //   }
+    // }
 
-    _addVisibleTrack (track, viewWindowIndex, forceAdd, props) {
-      if (forceAdd || (
-        !this._trackDOMsByWindow[viewWindowIndex].map
-          .hasOwnProperty(track.id) &&
-        viewWindowIndex + track.windowSpan <= this._viewWindows.length
-      )) {
-        try {
-          let newTrackDOM = track.createDomObj(
-            this._createTrackProp(viewWindowIndex, props))
-          if (newTrackDOM) {
-            this._addTrackDOM(newTrackDOM, viewWindowIndex)
-          }
-          return newTrackDOM
-        } catch (err) {
-          give._verbConsole.warn(err)
-          give.fireSignal('warning', { msg: err.message })
-          return null
-        }
-      }
-    }
+    // _addVisibleTrack (track, viewWindowIndex, forceAdd, props) {
+    //   if (forceAdd || (
+    //     !this._trackDOMsByWindow[viewWindowIndex].map
+    //       .hasOwnProperty(track.id) &&
+    //     viewWindowIndex + track.windowSpan <= this._viewWindows.length
+    //   )) {
+    //     try {
+    //       let newTrackDOM = track.createDomObj(
+    //         this._createTrackProp(viewWindowIndex, props))
+    //       if (newTrackDOM) {
+    //         this._addTrackDOM(newTrackDOM, viewWindowIndex)
+    //       }
+    //       return newTrackDOM
+    //     } catch (err) {
+    //       give._verbConsole.warn(err)
+    //       give.fireSignal('warning', { msg: err.message })
+    //       return null
+    //     }
+    //   }
+    // }
 
-    /**
-     * Update the height and location of individual tracks
-     *
-     * @param  {number} width - Width of the current area
-     */
-    updateHeightLocation (changeWindow) {
-      // calculate the heights for all tracks
-      // note that by the time this is called, all tracks should be ready
-      // (this is handled in track-ready event handler)
-      // this will also rearrange the y value for all tracks as well
-      give._verbConsole.info('UpdateHeightLocation(' + changeWindow + ')')
-      if (!this._trackDOMsByWindow.every(
-        this._updateDomHeightInWindow.bind(this, changeWindow), this)
-      ) {
-        // resizing is needed for all the windows
-        // note that new width is already stored in `this._svgWidth`
-        this._trackDOMsByWindow.forEach(
-          this._updateDomHeightInWindow.bind(this, changeWindow), this)
-      }
-      if (changeWindow) {
-        this.fire('update-coordinate', {
-          newWindow: this.getViewWindowStrings()
-        })
-      }
-      delete this.resizeAsyncProcess
-    }
+    // /**
+    //  * Update the height and location of individual tracks
+    //  *
+    //  * @param  {number} width - Width of the current area
+    //  */
+    // updateHeightLocation (changeWindow) {
+    //   // calculate the heights for all tracks
+    //   // note that by the time this is called, all tracks should be ready
+    //   // (this is handled in track-ready event handler)
+    //   // this will also rearrange the y value for all tracks as well
+    //   give._verbConsole.info('UpdateHeightLocation(' + changeWindow + ')')
+    //   if (!this._trackDOMsByWindow.every(
+    //     this._updateDomHeightInWindow.bind(this, changeWindow), this)
+    //   ) {
+    //     // resizing is needed for all the windows
+    //     // note that new width is already stored in `this._svgWidth`
+    //     this._trackDOMsByWindow.forEach(
+    //       this._updateDomHeightInWindow.bind(this, changeWindow), this)
+    //   }
+    //   if (changeWindow) {
+    //     this.fire('update-coordinate', {
+    //       newWindow: this.getViewWindowStrings()
+    //     })
+    //   }
+    //   delete this.resizeAsyncProcess
+    // }
 
-    /**
-     * Refresh all tracks in a certain view or all views
-     *
-     * @param  {number|null} index - The index for the view being updated, use null for all views
-     */
-    _updateTracks (index) {
-      // index is the window index
-      // only need to update tracks involved with that index
-      if (typeof index === 'number') {
-        this._updateTracksInWindow(index)
-      } else {
-        this._trackDOMsByWindow.forEach(function (trackDOMs, windex) {
-          this._updateTracksInWindow(windex)
-        }, this)
-      }
-    }
+    // /**
+    //  * Refresh all tracks in a certain view or all views
+    //  *
+    //  * @param  {number|null} index - The index for the view being updated, use null for all views
+    //  */
+    // _updateTracks (index) {
+    //   // index is the window index
+    //   // only need to update tracks involved with that index
+    //   if (typeof index === 'number') {
+    //     this._updateTracksInWindow(index)
+    //   } else {
+    //     this._trackDOMsByWindow.forEach(function (trackDOMs, windex) {
+    //       this._updateTracksInWindow(windex)
+    //     }, this)
+    //   }
+    // }
 
-    /**
-     * Refresh all tracks in a certain view
-     *
-     * @param  {number} index - The index for the view being updated
-     */
-    _updateTracksInWindow (index) {
-      // index is the window index
-      // only need to update tracks involved with that index
-      this._readiness = false
-      delete this._svgWidth
-      this._callForeachFuncOnDomInWindowEntry(
-        function (trackDOM, trackDomIndex) {
-          trackDOM.updateTrack(this._viewWindows[index],
-            index, this._threshold)
-        }.bind(this), this._trackDOMsByWindow[index], index)
-    }
+    // /**
+    //  * Refresh all tracks in a certain view
+    //  *
+    //  * @param  {number} index - The index for the view being updated
+    //  */
+    // _updateTracksInWindow (index) {
+    //   // index is the window index
+    //   // only need to update tracks involved with that index
+    //   this._readiness = false
+    //   delete this._svgWidth
+    //   this._callForeachFuncOnDomInWindowEntry(
+    //     function (trackDOM, trackDomIndex) {
+    //       trackDOM.updateTrack(this._viewWindows[index],
+    //         index, this._threshold)
+    //     }.bind(this), this._trackDOMsByWindow[index], index)
+    // }
 
-    _trackReadyHandler (e) {
-      // check if all tracks are ready, otherwise do nothing
-      if (this._trackDOMsByWindow.every(
-        this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
-          return trackDOM.isReady
-        }), this)
-      ) {
-        this.updateHeightLocation()
-        try {
-          if (this._firstRun && this.coorTrackZeroDOM &&
-            this.coorTrackZeroDOM.getTrackSvg()
-          ) {
-            this.$.coorTrackTutorial.domTargetId =
-              this.coorTrackZeroDOM.getTrackSvg().id
-            this.$.coorTrackTutorial.showTutorial()
-          }
-          this._firstRun = false
-        } catch (e) {
-          give._verbConsole.warn(e)
-          give.fireSignal('warning', { msg: e.message })
-        } finally {
-          this._readiness = true
-        }
-      }
-    }
+    // _trackReadyHandler (e) {
+    //   // check if all tracks are ready, otherwise do nothing
+    //   if (this._trackDOMsByWindow.every(
+    //     this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
+    //       return trackDOM.isReady
+    //     }), this)
+    //   ) {
+    //     this.updateHeightLocation()
+    //     try {
+    //       if (this._firstRun && this.coorTrackZeroDOM &&
+    //         this.coorTrackZeroDOM.getTrackSvg()
+    //       ) {
+    //         this.$.coorTrackTutorial.domTargetId =
+    //           this.coorTrackZeroDOM.getTrackSvg().id
+    //         this.$.coorTrackTutorial.showTutorial()
+    //       }
+    //       this._firstRun = false
+    //     } catch (e) {
+    //       give._verbConsole.warn(e)
+    //       give.fireSignal('warning', { msg: e.message })
+    //     } finally {
+    //       this._readiness = true
+    //     }
+    //   }
+    // }
 
-    /**
-     * _changeViewWindowObj - Change the range of a sub view.
-     *   The range should be a `GIVE.ChromRegion` object and clipped.
-     *   No exceptions should be thrown from this function.
-     *
-     * @param  {ChromRegionLiteral} viewWindow - The target range
-     * @param  {number} index - Index of the viewWindow.
-     * @return {string} The actual range (may be cropped by reference),
-     *                   converted to string.
-     */
-    _changeViewWindowObj (viewWindow, index) {
-      this.splice('_viewWindows', index, 1, viewWindow.clone())
-      this.splice('coordinates', index, 1,
-        this._viewWindows[index].regionToString(false))
-      if (this._initialized) {
-        this._updateTracksInWindow(index)
-      } else {
-        this._checkVWindowsInit()
-      }
-      return this._viewWindows[index].regionToString(false)
-    }
+    // /**
+    //  * _changeViewWindowObj - Change the range of a sub view.
+    //  *   The range should be a `GIVE.ChromRegion` object and clipped.
+    //  *   No exceptions should be thrown from this function.
+    //  *
+    //  * @param  {ChromRegionLiteral} viewWindow - The target range
+    //  * @param  {number} index - Index of the viewWindow.
+    //  * @return {string} The actual range (may be cropped by reference),
+    //  *                   converted to string.
+    //  */
+    // _changeViewWindowObj (viewWindow, index) {
+    //   this.splice('_viewWindows', index, 1, viewWindow.clone())
+    //   this.splice('coordinates', index, 1,
+    //     this._viewWindows[index].regionToString(false))
+    //   if (this._initialized) {
+    //     this._updateTracksInWindow(index)
+    //   } else {
+    //     this._checkVWindowsInit()
+    //   }
+    //   return this._viewWindows[index].regionToString(false)
+    // }
 
-    /**
-     * Change the range of a sub view.
-     * Range may be cropped if it exceed the maximum range allowed by the reference.
-     *
-     * @param  {string|ChromRegionLiteral} viewWindow - The range to change into.
-     * @param  {number} index - Index of the viewWindow.
-     * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
-     * @return {string} The actual range (may be cropped by reference),
-     *                   converted to string.
-     */
-    changeViewWindow (viewWindow, index, forceDomReset) {
-      if (forceDomReset) {
-        this._initialized = false
-      }
-      try {
-        // This may throw some exceptions
-        // (when invalid view windows are supplied)
-        var viewWindowObj = new give.ChromRegion(viewWindow, this._refObj)
-      } catch (err) {
-        // Invalid view windows are supplied, fail gracefully
-        if (!this.passExceptions) {
-          // TODO: gracefully handle the exception
-        } else {
-          err.data = err.data || {}
-          err.data.updatedCoor =
-            (this._viewWindows[index] &&
-              this._viewWindows[index].regionToString
-            ) ? this._viewWindows[index].regionToString(false) : null
-          throw err
-        }
-      }
-      return this._changeViewWindowObj(viewWindowObj, index)
-    }
+    // /**
+    //  * Change the range of a sub view.
+    //  * Range may be cropped if it exceed the maximum range allowed by the reference.
+    //  *
+    //  * @param  {string|ChromRegionLiteral} viewWindow - The range to change into.
+    //  * @param  {number} index - Index of the viewWindow.
+    //  * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
+    //  * @return {string} The actual range (may be cropped by reference),
+    //  *                   converted to string.
+    //  */
+    // changeViewWindow (viewWindow, index, forceDomReset) {
+    //   if (forceDomReset) {
+    //     this._initialized = false
+    //   }
+    //   try {
+    //     // This may throw some exceptions
+    //     // (when invalid view windows are supplied)
+    //     var viewWindowObj = new give.ChromRegion(viewWindow, this._refObj)
+    //   } catch (err) {
+    //     // Invalid view windows are supplied, fail gracefully
+    //     if (!this.passExceptions) {
+    //       // TODO: gracefully handle the exception
+    //     } else {
+    //       err.data = err.data || {}
+    //       err.data.updatedCoor =
+    //         (this._viewWindows[index] &&
+    //           this._viewWindows[index].regionToString
+    //         ) ? this._viewWindows[index].regionToString(false) : null
+    //       throw err
+    //     }
+    //   }
+    //   return this._changeViewWindowObj(viewWindowObj, index)
+    // }
 
-    /**
-     * Change ranges in all views at once
-     *
-     * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
-     * @return {Array<string>} The actual ranges, converted to `string`.
-     */
-    changeAllViewWindows (viewWindows) {
-      var exceptionList = []
-      var viewWindowObjs = viewWindows.map(function (vWindow, index) {
-        var vWindowObj = null
-        try {
-          vWindowObj = new give.ChromRegion(vWindow, this._refObj)
-        } catch (err) {
-          exceptionList.push(index, err)
-        }
-        return vWindowObj
-      }, this)
-      if (exceptionList.length > 0) {
-        // some exception has happended during the conversion
-        // throw an exception telling calling procedures
-        if (this.passExceptions) {
-          var error = new give.GiveError('Exception occured during ChromRegion' +
-            ' conversion.')
-          error.data = error.data || {}
-          error.data.exceptionList = exceptionList
-          error.data.updatedCoors = viewWindowObjs.map(
-            function (vWindowObj) {
-              return ((vWindowObj && vWindowObj.regionToString)
-                ? vWindowObj.regionToString(false) : null)
-            }
-          )
-          throw error
-        } else {
-          // TODO: gracefully handle the exception
-        }
-      } else {
-        viewWindowObjs.forEach(function (vwindow, index) {
-          this._changeViewWindowObj(vwindow, index)
-        }, this)
-      }
-      return this.getViewWindowStrings()
-    }
+    // /**
+    //  * Change ranges in all views at once
+    //  *
+    //  * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
+    //  * @return {Array<string>} The actual ranges, converted to `string`.
+    //  */
+    // changeAllViewWindows (viewWindows) {
+    //   var exceptionList = []
+    //   var viewWindowObjs = viewWindows.map(function (vWindow, index) {
+    //     var vWindowObj = null
+    //     try {
+    //       vWindowObj = new give.ChromRegion(vWindow, this._refObj)
+    //     } catch (err) {
+    //       exceptionList.push(index, err)
+    //     }
+    //     return vWindowObj
+    //   }, this)
+    //   if (exceptionList.length > 0) {
+    //     // some exception has happended during the conversion
+    //     // throw an exception telling calling procedures
+    //     if (this.passExceptions) {
+    //       var error = new give.GiveError('Exception occured during ChromRegion' +
+    //         ' conversion.')
+    //       error.data = error.data || {}
+    //       error.data.exceptionList = exceptionList
+    //       error.data.updatedCoors = viewWindowObjs.map(
+    //         function (vWindowObj) {
+    //           return ((vWindowObj && vWindowObj.regionToString)
+    //             ? vWindowObj.regionToString(false) : null)
+    //         }
+    //       )
+    //       throw error
+    //     } else {
+    //       // TODO: gracefully handle the exception
+    //     }
+    //   } else {
+    //     viewWindowObjs.forEach(function (vwindow, index) {
+    //       this._changeViewWindowObj(vwindow, index)
+    //     }, this)
+    //   }
+    //   return this.getViewWindowStrings()
+    // }
 
-    _changeThreshold (_threshold) {
-      this._threshold = _threshold || this._threshold
-      this._trackDOMsByWindow.forEach(
-        this._callForeachFuncOnDomInWindowEntry.bind(
-          function (trackDOM, index) {
-            if (trackDOM.updateThreshold) {
-            // is an interaction track
-              trackDOM.updateThreshold(this._threshold)
-            }
-          }.bind(this)
-        ), this
-      )
-    }
+    // _changeThreshold (_threshold) {
+    //   this._threshold = _threshold || this._threshold
+    //   this._trackDOMsByWindow.forEach(
+    //     this._callForeachFuncOnDomInWindowEntry.bind(
+    //       function (trackDOM, index) {
+    //         if (trackDOM.updateThreshold) {
+    //         // is an interaction track
+    //           trackDOM.updateThreshold(this._threshold)
+    //         }
+    //       }.bind(this)
+    //     ), this
+    //   )
+    // }
 
-    refreshAll (viewWindows, threshold) {
-      if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
-        // only update _threshold only
-        this._changeThreshold(threshold)
-        return this.getViewWindowStrings()
-      } else {
-        this._threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this._threshold)
-        if (viewWindows) {
-          this.changeAllViewWindows(viewWindows)
-        } else {
-          this._updateTracks()
-        }
-      }
-      return this.getViewWindowStrings()
-    }
+    // refreshAll (viewWindows, threshold) {
+    //   if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
+    //     // only update _threshold only
+    //     this._changeThreshold(threshold)
+    //     return this.getViewWindowStrings()
+    //   } else {
+    //     this._threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this._threshold)
+    //     if (viewWindows) {
+    //       this.changeAllViewWindows(viewWindows)
+    //     } else {
+    //       this._updateTracks()
+    //     }
+    //   }
+    //   return this.getViewWindowStrings()
+    // }
 
-    /**
-     * Get the `string` of ranges in all views
-     *
-     * @returns {Array<string>} The ranges, converted to `string`.
-     */
-    getViewWindowStrings () {
-      return this._viewWindows.map(function (vwindow, index) {
-        return vwindow.regionToString(false)
-      }, this)
-    }
-
-    /**
-     * _overrideTrackDefaultVis - Override default shown tracks
-     */
-    _overrideTrackDefaultVis () {
-      if (this._refObj && this.defaultTrackIdList.length > 0) {
-        this._refObj.setTrackSettings('visibility', false, null)
-        this.defaultTrackIdList.forEach(function (id) {
-          try {
-            this._refObj.tracks.get(id).setSetting('visibility', true)
-          } catch (e) {
-            give._verbConsole.warn('Track `' + id + '` does not exist!\n' + e)
-            give.fireSignal('warning',
-              { msg: 'Track `' + id + '` does not exist!' })
-          }
-        }, this)
-      }
-      delete this._needOverrideDefault
-    }
+    // /**
+    //  * Get the `string` of ranges in all views
+    //  *
+    //  * @returns {Array<string>} The ranges, converted to `string`.
+    //  */
+    // getViewWindowStrings () {
+    //   return this._viewWindows.map(function (vwindow, index) {
+    //     return vwindow.regionToString(false)
+    //   }, this)
+    // }
 
     _updateTrackWindowArray () {
       this.$.windowsHolder.render()
-      this.trackWindows =
+      this._trackWindows =
         [...this.$.windowsHolder.querySelectorAll('chart-window')]
     }
 
+    _syncRefCoordinates(numOfWindows) {
+      numOfWindows = numOfWindows || this.numOfSubs
+      this._refArray = this._getValueArray(this.ref, numOfWindows)
+      this._coordinateArray =
+        this._getValueArray(this.coordinate, numOfWindows)
+    }
+
     _expandChartWindows (newNumOfWindows) {
-      let refs = this._getValueArray(this.ref, newNumOfWindows)
-      let coordinates = this._getValueArray(this.coordinate, newNumOfWindows)
       for (let index = this._chartWindowItems.length;
         index < newNumOfWindows;
         index++
@@ -703,17 +701,26 @@ var GIVe = (function (give) {
       this._updateTrackWindowArray()
     }
 
-    _resetWindowsDom () {
-      // 2. Then update the track DOMs within the chart-windows
-      // (because the surrounding environment has changed, some of the tracks,
-      // especially multi-window ones, may have its requirement conditions
-      // changed)
+    _updateWindowsDom () {
+      // Update the track DOMs within the chart-windows (because the
+      // surrounding environment has changed, some of the tracks, especially
+      // multi-window ones, may have its requirement conditions changed)
       let contexts = this._chartWindows.map(window => window.context)
-      this._chartWindows.forEach(window => window.addAllTrackDOMs(contexts))
-      // 3. Then link the multi-window track DOMs through the chart-windows
-      this._chartWindows.reduce(
-        (hiddenDoms, window) => window.linkDOMs(hiddenDoms, contexts, false),
-        [])
+      return Promise.all(
+        this._chartWindows.map(window => {
+          if (!window.initialized) {
+            return window.resetDom(contexts)
+          } else {
+            return window.updateDOM(contexts)
+          }
+        })
+      )
+        // Then link the multi-window track DOMs through the chart-windows
+        .then(() => this._chartWindows.reduce((hiddenDoms, window) =>
+          window.linkDOMs(hiddenDoms, contexts, false), []))
+        .then(() => (this._initialized = true))
+        // Then update all the windows
+        .then(() => this._updateWindowsCoordinate())
     }
 
     /**
@@ -724,35 +731,37 @@ var GIVe = (function (give) {
      */
     _numOfSubsChanged (newValue, oldValue) {
       this._initialized = false
-      try {
+      return Promise.resolve()
         // 1. First update the number of chart-windows
-        if (newValue > oldValue) {
-          // refresh hidden dom list
-          this._expandChartWindows(newValue)
-        } else {
-          // less window, remove the excessive ones
-          this._shrinkChartWindows(newValue)
-        }
-        // 2. Reset all DOMs among windows (display and link)
-        this._resetWindowsDom()
-        // 3. Update all the windows
-        return this.updateWindows()
-      } catch (err) {
-        // some exception has happended during the conversion
-        // throw an exception telling calling procedures
-        if (this.passExceptions) {
-          throw err
-        } else {
-          // TODO: gracefully handle the exception
-        }
-      }
+        //    Although this part is all sync code, put it into the async
+        //    pipeline to streamline the exception catching process.
+        .then(() => {
+          this._syncRefCoordinates(newValue)
+          if (newValue > oldValue) {
+            // refresh hidden dom list
+            this._expandChartWindows(newValue)
+          } else {
+            // less window, remove the excessive ones
+            this._shrinkChartWindows(newValue)
+          }
+        })
+        // 2. Reset all DOMs among windows (display and link),
+        //    then update window contents.
+        .then(() => this._updateWindowsDom())
+        .catch(err => this._errorHandler(err))
     }
 
-    _setRefObj (refObj) {
-      this._refObj = refObj
-      this._numOfSubsChanged(this.numOfSubs)
+    _refChanged (newValue, oldValue) {
       this._initialized = false
-      this._checkVWindowsInit()
+      return Promise.resolve().then(() => this._syncRefCoordinates())
+        .then(() => this._updateWindowsDom())
+        .catch(err => this._errorHandler(err))
+    }
+
+    _coorChanged (newValue, oldValue) {
+      return Promise.resolve().then(() => this._syncRefCoordinates())
+        .then(() => this._updateWindowsCoordinate())
+        .catch(err => this._errorHandler(err))
     }
 
     _initDOMCoorTracks () {

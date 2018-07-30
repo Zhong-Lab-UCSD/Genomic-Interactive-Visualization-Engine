@@ -3,8 +3,8 @@ var GIVe = (function (give) {
   'use strict'
 
   class RefObject {
-    constructor (DB, Name, CommonName, IsEncode, Ref, ChromInfo, settings) {
-      // notice that ChromInfo is the JSON encoded object
+    constructor (DB, Name, CommonName, IsEncode, Ref, chromInfo, settings) {
+      // notice that chromInfo is the JSON encoded object
       //    for chromosome information from chromInfo.php
 
       // this is for navigation thing
@@ -29,8 +29,8 @@ var GIVe = (function (give) {
         tissueMap: {}
       }
       // read Object for ref chrom info (if there)
-      this._ChromInfoPromise =
-        this.initChromInfo(ChromInfo, settings.initChromTarget)
+      this._chromInfoPromise =
+        this.initChromInfo(chromInfo, settings.initChromTarget)
 
       this.groups = {} // this is used to get all the groups
       this.tracksUpdated = false // regardless of whether user has selected
@@ -63,48 +63,54 @@ var GIVe = (function (give) {
       if (typeof this.settings.defaultViewWindows === 'string') {
         this.settings.defaultViewWindows = [this.settings.defaultViewWindows]
       }
+
+      this._trackPromise = null
     }
 
     get cleanId () {
       return this.db.replace(/[\s()+/]/g, '')
     }
 
-    initChromInfo (ChromInfo, target) {
-      if (ChromInfo) {
-        try {
-          this.chromInfo = {}
-          for (var chrom in ChromInfo) {
-            if (ChromInfo.hasOwnProperty(chrom)) {
-              this.chromInfo[chrom] = {}
-              this.chromInfo[chrom].name = chrom
-              this.chromInfo[chrom].chrRegion =
-                new give.ChromRegion(ChromInfo[chrom].chrRegion)
-              if (ChromInfo[chrom].cent) {
-                this.chromInfo[chrom].cent =
-                  new give.ChromRegion(ChromInfo[chrom].cent)
-              }
-              if (chrom.toLowerCase() !== chrom) {
-                this.chromInfo[chrom.toLowerCase()] = this.chromInfo[chrom]
-              }
-            }
-          }
-        } catch (err) {
-          this.ChromInfo = null
-          give._verbConsole.warn(err)
-          give.fireSignal('warning', { msg: err.message })
-        }
-        return this.ChromInfo
+    initChromInfo (chromInfo, target) {
+      if (chromInfo) {
+        return Promise.resolve(this._initChromInfoFromData(chromInfo))
       } else {
-        return this.initChromInfoFromServer(target)
+        return this._initChromInfoFromServer(target)
       }
     }
 
-    initChromInfoFromServer (target) {
+    _initChromInfoFromData (data) {
+      try {
+        this.chromInfo = {}
+        for (var chrom in chromInfo) {
+          if (chromInfo.hasOwnProperty(chrom)) {
+            this.chromInfo[chrom] = {}
+            this.chromInfo[chrom].name = chrom
+            this.chromInfo[chrom].chrRegion =
+              new give.ChromRegion(chromInfo[chrom].chrRegion)
+            if (chromInfo[chrom].cent) {
+              this.chromInfo[chrom].cent =
+                new give.ChromRegion(chromInfo[chrom].cent)
+            }
+            if (chrom.toLowerCase() !== chrom) {
+              this.chromInfo[chrom.toLowerCase()] = this.chromInfo[chrom]
+            }
+          }
+        }
+      } catch (err) {
+        this.chromInfo = null
+        give._verbConsole.warn(err)
+        give.fireSignal('warning', { msg: err.message })
+      }
+      return this.chromInfo
+    }
+
+    _initChromInfoFromServer (target) {
       return give.postAjax(
         target || give.RefObject.initChromTarget,
         {db: this.db},
         'json', 'GET'
-      ).then(data => this.initChromInfo(data))
+      ).then(data => this._initChromInfoFromData(data))
     }
 
     fillTracks (groupInfo, keepOld, requestUrl) {
@@ -177,8 +183,8 @@ var GIVe = (function (give) {
 
     initTracks (target) {
       // callback is the callback function taking no argument (already bound)
-      if (!this._TrackPromise) {
-        this._TrackPromise = give.postAjax(
+      if (!this._trackPromise) {
+        this._trackPromise = give.postAjax(
           target || give.RefObject.initTrackTarget, {db: this.db},
           'json'
         ).then(data => {
@@ -189,7 +195,7 @@ var GIVe = (function (give) {
         })
         this.initMetaFilter()
       }
-      return this._TrackPromise
+      return this._trackPromise
     }
 
     initMetaFilter () {
@@ -197,8 +203,8 @@ var GIVe = (function (give) {
         if (!this._MetaPromise) {
           this._MetaPromise = Promise.all([
             give.mainMetaDataEntries.DataPromise,
-            this._ChromInfoPromise,
-            this._TrackPromise
+            this._chromInfoPromise,
+            this.initTracks()
           ]).then(dataArr => this.fillMetaFilter(dataArr[0]))
         }
         return this._MetaPromise
@@ -302,10 +308,10 @@ var GIVe = (function (give) {
 
     static initAllRefFromServer (target, filter) {
       return give.postAjax(target || this.initAllTarget, {}, 'json')
-        .then(this.initAllRef.bind(this, filter))
+        .then(data => this.initAllRef(data, filter))
     }
 
-    static initAllRef (filter, data) {
+    static initAllRef (data, filter) {
       // initialize all ref from db
       // return an array of ref
       // callback is the callback function taking refArray as argument

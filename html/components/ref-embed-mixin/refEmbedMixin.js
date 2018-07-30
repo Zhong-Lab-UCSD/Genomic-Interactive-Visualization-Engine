@@ -122,19 +122,21 @@ var GIVe = (function (give) {
        * Simple function to set reference directly.
        *
        * @param  {GIVe.RefObject} refObj the reference object
+       * @returns {boolean} Whether the reference object has been changed.
        */
       _setRefObj (refObj) {
         if (!this.refObj || this.refObj.db !== refObj.db) {
           if (!this.needsChromInfo || refObj.chromInfo) {
             // reference has been changed, needs to switch
             this._refObj = refObj
-            this.refTracksPromise = refObj.initTracks().then(
-              () => (this.refTracksPromise = true))
+            this.refTracksPromise = refObj.initTracks()
           } else {
             throw new give.GiveError('No ChromInfo available for ref "' +
               refObj.db + '"!')
           }
+          return true
         }
+        return false
       }
     }
   )
