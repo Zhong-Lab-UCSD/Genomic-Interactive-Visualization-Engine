@@ -92,6 +92,20 @@ limitations under the License.
 var GIVe = (function (give) {
   'use strict'
 
+  class ResetWidthError extends Error {
+    constructor (newWidth) {
+      super(...arguments)
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, ResetWidthError)
+      }
+      this.newWidth = newWidth
+    }
+    toString () {
+      return super.toString() + '\n' + this.stack + '\nNew width:' +
+        this.newWidth
+    }
+  }
+
   /**
    * ### Overview
    *
@@ -99,12 +113,13 @@ var GIVe = (function (give) {
    * genomic data.
    *
    * ```html
-   * <chart-window group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
+   * <chart-window group-id-list='["genes", "singleCell"]' ref="mm10">
+   * </chart-window>
    * ```
    *
-   * Although `<chart-window>` does not contain the navigational control elements as
-   * in `<chart-controller>`, users may still navigate by dragging and
-   * mouse-wheeling on the coordinates to move around.
+   * Although `<chart-window>` does not contain the navigational control
+   * elements as in `<chart-controller>`, users may still navigate by dragging
+   * and mouse-wheeling on the coordinates to move around.
    *
    * Please refer to
    * [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for details
@@ -112,32 +127,33 @@ var GIVe = (function (give) {
    *
    * ### Managing Track Priorities
    *
-   * `<chart-window>` will manage track order once a view has been generated. Its
-   * behavior regarding to track order will be discussed within this section.
+   * `<chart-window>` will manage track order once a view has been generated.
+   * Its behavior regarding to track order will be discussed within this
+   * section.
    *
    * #### Before generating a view
    *
-   * `<chart-window>` shall receive an ordered list of all visible tracks from its
-   * embedded `refObject`, the visibility of tracks will be supplied by its
+   * `<chart-window>` shall receive an ordered list of all visible tracks from
+   * its embedded `refObject`, the visibility of tracks will be supplied by its
    * `defaultTrackIdList` property, or (if said property is not set) by the
    * default `visibility` property of individual tracks.
    *
-   * When the visibility of tracks have been determined, `refObject` will provide
-   * a sorted list (by relative `priorities` property of the tracks) of visible
-   * tracks to start with.
+   * When the visibility of tracks have been determined, `refObject` will
+   * provide a sorted list (by relative `priorities` property of the tracks) of
+   * visible tracks to start with.
    *
    * #### Populating the view with tracks
    *
    * Once `<chart-window>` receives the ordered list of visible tracks, it will:
    * *   Assign every track's `trackDom`'s `<svg>` element into its
    *     corresponding slot (`top`, `scroll`, `bottom`, and `inbetween`) by
-   *     inserting it into the corresponding DOM node. Notice that if this window
-   *     is the last window in the view, the slots and track order will be
-   *     reversed to preserve a certain degree of symmetry.
+   *     inserting it into the corresponding DOM node. Notice that if this
+   *     window is the last window in the view, the slots and track order will
+   *     be reversed to preserve a certain degree of symmetry.
    * *   Keep record of the relative order for every `<svg>` element within its
    *     own slot.
-   *     Every track object will have an __`effective priority`__ value consists of
-   *     its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
+   *     Every track object will have an __`effective priority`__ value consists
+   *     of its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
    *     and its position within the slot.
    * *   Assign the `y` property for every `<svg>` when drawing the DOM element
    *     so that it appears in the correct order regardless of its order in the
@@ -149,8 +165,8 @@ var GIVe = (function (give) {
    *
    * This action may only come from the parent element.
    *
-   * When a new track is being added to the visible list, it will be allocated to
-   * its corresponding slot but __added to the very end of the list__. The
+   * When a new track is being added to the visible list, it will be allocated
+   * to its corresponding slot but __added to the very end of the list__. The
    * `effective priority` value of the new track will be set if not done yet.
    *
    * ##### Removing a track
@@ -159,21 +175,21 @@ var GIVe = (function (give) {
    * itself (via a "delete" button, to be implemented).
    *
    * When an existing track is being removed, it will be delisted from the slot,
-   * the `trackDom` object will be put into a recycled list (previous recycled list
-   * will be cleared) and all the `visibility` values and `effective priority`
-   * values will be updated accordingly.
+   * the `trackDom` object will be put into a recycled list (previous recycled
+   * list will be cleared) and all the `visibility` values and `effective
+   * priority` values will be updated accordingly.
    *
-   * If this action comes from the `<chart-window>` itself, notify its parent about
-   * this change.
+   * If this action comes from the `<chart-window>` itself, notify its parent
+   * about this change.
    *
-   * ##### Restoring a track previously removed
+   * ##### Restoring a track previously removed (proposed, to be implemented)
    *
    * This action may only come from the parent element.
    *
    * When a restoring command was received, all `trackDom`s in the recycled list
-   * will be restored to their corresponding location, their `track`'s `visibility`
-   * properties and `effective priority` values will be adjusted. After that, the
-   * recycled list will be cleared.
+   * will be restored to their corresponding location, their `track`'s
+   * `visibility` properties and `effective priority` values will be adjusted.
+   * After that, the recycled list will be cleared.
    *
    * ##### Changing the location of a track
    *
@@ -181,13 +197,14 @@ var GIVe = (function (give) {
    * itself (via drag-drop, to be implemented).
    *
    * The `effective priority` will be updated to the new locations if the action
-   * comes from `<chart-window>` itself (this happens when user tries to alter the
-   * order of the tracks).
+   * comes from `<chart-window>` itself (this happens when user tries to alter
+   * the order of the tracks).
    *
-   * Then the actual `svg` `y` values will be updated to reflect the new location.
+   * Then the actual `svg` `y` values will be updated to reflect the new
+   * location.
    *
-   * If this action comes from the `<chart-window>` itself, notify its parent about
-   * this change.
+   * If this action comes from the `<chart-window>` itself, notify its parent
+   * about this change.
    *
    * @customElement
    * @polymer
@@ -263,7 +280,8 @@ var GIVe = (function (give) {
          * specified in the data source. The data source on our server currently
          * provides these track groups:
          * *  `'genes'`: gene annotation tracks, for all available references
-         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
+         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and
+         *    `hg19` only
          * *  `'interaction'`: genomic interaction data sets, including those
          * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
          * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
@@ -670,7 +688,8 @@ var GIVe = (function (give) {
         width === this.querySelector('#chartHolding').clientWidth &&
         this.querySelector('.scrollingParts').clientWidth < width
       ) {
-        throw this.querySelector('.scrollingParts').clientWidth
+        throw new ResetWidthError(
+          this.querySelector('.scrollingParts').clientWidth)
       }
       this.windowWidth = width
     }
@@ -701,6 +720,9 @@ var GIVe = (function (give) {
       give._verbConsole.info(
         'updateTracks(' + width + ', ' + newVWindow + ')')
 
+      if (!(newVWindow instanceof give.ChromRegion)) {
+        newVWindow = this.getVerifiedViewWindow(newVWindow)
+      }
       // prepare element widths and heights
       this._pendingVWindow = newVWindow || this._pendingVWindow || false
       this._updateCoordinates()
@@ -766,7 +788,7 @@ var GIVe = (function (give) {
       if (pendingVWindow && Array.isArray(windows) && windows.some(
         window => give.ChromRegion.compare(window, this._pendingVWindow)
       )) {
-        throw new give.PromiseCanceller(true)
+        throw new give.PromiseCanceller()
       }
       // update `this._viewWindow` and clear `this.drawingPromise`
       // `windows` is the array returned by Promise.all()
@@ -818,28 +840,33 @@ var GIVe = (function (give) {
     changeViewWindow (viewWindow) {
       if (!this._initialized) {
         return this.resetDom(viewWindow)
-          .then(() => this.updateTracks(viewWindow, null, this.index))
+          .then(() => this.updateTracks(viewWindow))
       }
-      return this.updateTracks(viewWindow, null, this.index)
+      return this.updateTracks(viewWindow)
     }
 
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoor) {
-        try {
-          let newWindow = this.getVerifiedViewWindow(newValue)
-          let currWindow = this._pendingVWindow || this._viewWindow
-          if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
-            return this.changeViewWindow(newWindow)
-          }
-        } catch (err) {
-          err.data = err.data || {}
-          err.data.updatedCoor =
-            (this._viewWindow && this._viewWindow.regionToString)
-              ? this._viewWindow.regionToString(false) : null
-          this._updateCoordinates()
-          throw err
-        }
+        this.changeCoordinate(newValue)
       }
+    }
+
+    changeCoordinate (newCoordinate) {
+      try {
+        let newWindow = this.getVerifiedViewWindow(newCoordinate)
+        let currWindow = this._pendingVWindow || this._viewWindow
+        if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
+          return this.changeViewWindow(newWindow)
+        }
+      } catch (err) {
+        err.data = err.data || {}
+        err.data.updatedCoor =
+          (this._viewWindow && this._viewWindow.regionToString)
+            ? this._viewWindow.regionToString(false) : null
+        this._updateCoordinates()
+        throw err
+      }
+      return Promise.resolve()
     }
 
     _updateCoordinates (window) {
@@ -945,7 +972,7 @@ var GIVe = (function (give) {
       // return this.refTracksPromise.then(refObj => {
       //   if (refObj.db !== this.ref) {
       //     // Only respond to this call if ref has not been changed
-      //     throw new give.PromiseCanceller(true)
+      //     throw new give.PromiseCanceller()
       //   }
       //   give.fireSignal('ref-changed', {
       //     ref: refObj.db,
@@ -1103,19 +1130,24 @@ var GIVe = (function (give) {
     _updateWindowHandler (e) {
       // update the windows by events bubbled up from bottom tracks
       try {
-        if (e.detail.newVWindow instanceof give.ChromRegion ||
-          typeof e.detail.newVWindow === 'string'
+        let newVWindow = e.detail.newVWindow
+        if (newVWindow instanceof give.ChromRegion ||
+          typeof newVWindow === 'string'
         ) {
           if (!this._initialized) {
-            this.resetDom(e.detail.newWindow)
-              .then(() => this.changeViewWindow(e.detail.newVWindow))
+            return this.resetDom(newVWindow)
+              .then(() => this.changeViewWindow(newVWindow))
               .catch(err => {
                 give._verbConsole.warn(err)
                 throw err
               })
-          } else if (e.detail.tracks) {
-            this.updateDom(e.detail.newWindow)
-            return this.changeViewWindow(e.detail.newVWindow)
+          } else {
+            if (e.detail.tracks) {
+              this.updateDom(newWindow)
+            }
+            this.coordinate =
+              (newVWindow instanceof give.ChromRegion
+                ? newVWindow.regionToString(false) : newVWindow)
           }
         }
       } catch (err) {
@@ -1128,6 +1160,8 @@ var GIVe = (function (give) {
       return this._updateWindowHandler(e)
     }
   }
+
+  ChartWindow.ResetWidthError = ResetWidthError
 
   give.ChartWindow = ChartWindow
   window.customElements.define('chart-window', give.ChartWindow)

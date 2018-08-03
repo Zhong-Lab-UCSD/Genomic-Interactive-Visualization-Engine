@@ -121,6 +121,18 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 var GIVe = (function (give) {
   'use strict'
 
+  class WindowNotInitialized extends Error {
+    constructor () {
+      super(...arguments)
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, ResetWidthError)
+      }
+    }
+    toString () {
+      return super.toString() + '\n' + this.stack
+    }
+  }
+
   /**
    * The actual chart area element, with potential multiple windows for
    *    side-by-side view
@@ -131,11 +143,12 @@ var GIVe = (function (give) {
     constuctor () {
       super()
       this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
-      this._updatingWindows = false
+      this._windowUpdatePromises = []
       this._idEnforcedSet = new Set()
-      this._trackWindows = []
+      this._chartWindows = []
       this._refArray = []
       this._coordinateArray = []
+      this.updatePromise = null
     }
 
     static get is () {
@@ -669,15 +682,22 @@ var GIVe = (function (give) {
 
     _updateTrackWindowArray () {
       this.$.windowsHolder.render()
-      this._trackWindows =
+      this._chartWindows =
         [...this.$.windowsHolder.querySelectorAll('chart-window')]
     }
 
-    _syncRefCoordinates(numOfWindows) {
+    _syncRefCoordinates (numOfWindows) {
       numOfWindows = numOfWindows || this.numOfSubs
       this._refArray = this._getValueArray(this.ref, numOfWindows)
       this._coordinateArray =
         this._getValueArray(this.coordinate, numOfWindows)
+    }
+
+    _setRefsInWindow () {
+      this._chartWindows.forEach(
+        (window, index) => (window.ref = this._refArray[index]))
+      this._refArray = this._chartWindows.map(window => window.ref)
+      this._updateRefsAttr()
     }
 
     _expandChartWindows (newNumOfWindows) {
@@ -686,8 +706,8 @@ var GIVe = (function (give) {
         index++
       ) {
         let newWindowItem = {
-          ref: refs[index],
-          coordinate: coordinates[index],
+          ref: this._refArray[index],
+          coordinate: this._coordinateArray[index],
           defaultTrackIdList: this.defaultTrackIdList,
           groupIdList: this.groupIdList
         }
@@ -699,6 +719,19 @@ var GIVe = (function (give) {
     _shrinkChartWindows (newNumOfWindows) {
       this.splice('_chartWindowItems', newNumOfWindows)
       this._updateTrackWindowArray()
+    }
+
+    _updateCoordinatesAttr (coordinateArray) {
+      this._coordinateArray = coordinateArray || this._coordinateArray
+      this._updatingCoordinates = true
+      this.coordinate = JSON.stringify(this._coordinateArray)
+      this._updatingCoordinates = false
+    }
+
+    _updateRefsAttr () {
+      this._updatingRefs = true
+      this.ref = JSON.stringify(this._refArray)
+      this._updatingRefs = false
     }
 
     _updateWindowsDom () {
@@ -718,9 +751,52 @@ var GIVe = (function (give) {
         // Then link the multi-window track DOMs through the chart-windows
         .then(() => this._chartWindows.reduce((hiddenDoms, window) =>
           window.linkDOMs(hiddenDoms, contexts, false), []))
-        .then(() => (this._initialized = true))
         // Then update all the windows
-        .then(() => this._updateWindowsCoordinate())
+        .then(() => this._updateTracks())
+    }
+
+    _windowWidthChangeHandler (windowUpdatePromise) {
+      return windowUpdatePromise.catch(err => {
+        if (err instanceof give.ChartWindow.ResetWidthError) {
+          return give.getAggregatedUpdatePromise(
+            this._windowUpdatePromises,
+            this._chartWindows,
+            (window, index) =>
+              window.updateTracks(this._coordinateArray[index], err.newWidth)
+          )
+        } else {
+          throw err
+        }
+      }).then(correctedWindows =>
+        this._updateCoordinatesAttr(
+          correctedWindows.map(window => window.regionToString(false))
+        )
+      ).finally(() => (this._readiness = true))
+    }
+
+    _redrawWindows (redrawWindowMethod) {
+      if (!this._coordinateArray.every(coordinate => !!coordinate)) {
+        return Promise.reject(new WindowNotInitialized())
+      }
+      this._initialized = true
+      this._readiness = false
+      let newWindowPromise = give.getAggregatedUpdatePromise(
+        this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
+      )
+      if (newWindowPromise) {
+        this.updatePromise = this._windowWidthChangeHandler(newWindowPromise)
+      }
+      return this.updatePromise
+    }
+
+    _updateTracks () {
+      return this._redrawWindows((window, index) =>
+        window.updateTracks(this._coordinateArray[index]))
+    }
+
+    _updateWindowCoordinates () {
+      return this._redrawWindows((window, index) =>
+        window.changeCoordinate(this._coordinateArray[index]))
     }
 
     /**
@@ -735,9 +811,9 @@ var GIVe = (function (give) {
         // 1. First update the number of chart-windows
         //    Although this part is all sync code, put it into the async
         //    pipeline to streamline the exception catching process.
-        .then(() => {
-          this._syncRefCoordinates(newValue)
-          if (newValue > oldValue) {
+        .then(() => this._syncRefCoordinates(newValue))
+        .finally(() => {
+          if (newValue > this.numOfSubs) {
             // refresh hidden dom list
             this._expandChartWindows(newValue)
           } else {
@@ -752,368 +828,373 @@ var GIVe = (function (give) {
     }
 
     _refChanged (newValue, oldValue) {
-      this._initialized = false
-      return Promise.resolve().then(() => this._syncRefCoordinates())
-        .then(() => this._updateWindowsDom())
-        .catch(err => this._errorHandler(err))
+      if (!this._updatingRefs) {
+        this._initialized = false
+        return Promise.resolve().then(() => this._syncRefCoordinates())
+          .then(() => this._setRefsInWindow())
+          .then(() => this._updateWindowsDom())
+          .catch(err => this._errorHandler(err))
+      }
     }
 
     _coorChanged (newValue, oldValue) {
-      return Promise.resolve().then(() => this._syncRefCoordinates())
-        .then(() => this._updateWindowsCoordinate())
-        .catch(err => this._errorHandler(err))
-    }
-
-    _initDOMCoorTracks () {
-      if (this._refObj) {
-        this._viewWindows.forEach(function (vwindow, windowIndex) {
-          // coordinate track
-          var coorTrackDOM = this._addVisibleTrack(
-            give.TrackObject.createTrack(
-              'coor_' + this._refObj.db + '_' + windowIndex,
-              this._createTrackProp(windowIndex,
-                { type: 'coordinate', priority: 0 }
-              ), this._refObj
-            ), windowIndex)
-          if (!windowIndex) {
-            this.coorTrackZeroDOM = coorTrackDOM
-          }
-        }, this)
+      if (!this._updatingCoordinates) {
+        return Promise.resolve().then(() => this._syncRefCoordinates())
+          .then(() => this._updateWindowCoordinates())
+          .catch(err => this._errorHandler(err))
       }
     }
 
-    /**
-     * Reset the entire DOM display
-     */
-    resetDOM () {
-      if (this._initialized) {
-        this._readiness = false
-        this._initDOMArray()
-      } else {
-        this._readiness = true
-      }
-    }
+    // _initDOMCoorTracks () {
+    //   if (this._refObj) {
+    //     this._viewWindows.forEach(function (vwindow, windowIndex) {
+    //       // coordinate track
+    //       var coorTrackDOM = this._addVisibleTrack(
+    //         give.TrackObject.createTrack(
+    //           'coor_' + this._refObj.db + '_' + windowIndex,
+    //           this._createTrackProp(windowIndex,
+    //             { type: 'coordinate', priority: 0 }
+    //           ), this._refObj
+    //         ), windowIndex)
+    //       if (!windowIndex) {
+    //         this.coorTrackZeroDOM = coorTrackDOM
+    //       }
+    //     }, this)
+    //   }
+    // }
 
-    _clearDOM () {
-      var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
-      svgList.forEach(function (svgElem, index) {
-        while (Polymer.dom(svgElem).firstChild) {
-          Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
-        }
-      }, this)
-      while (Polymer.dom(this.$.trackDOMHolder).firstChild) {
-        Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild)
-      }
-    }
+    // /**
+    //  * Reset the entire DOM display
+    //  */
+    // resetDOM () {
+    //   if (this._initialized) {
+    //     this._readiness = false
+    //     this._initDOMArray()
+    //   } else {
+    //     this._readiness = true
+    //   }
+    // }
 
-    _addAllTrackDOMsTracksReady (noRefreshContent, ref) {
-      // function called when tracks are ready for this._refObj
-      if (ref === this.ref) {
-        // Only respond to this call if ref has not been changed
-        if (this._needOverrideDefault) {
-          this._overrideTrackDefaultVis()
-        }
-        var showTrack = function (wIndex, track, index) {
-          // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
-          if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
-            this._addVisibleTrack(track, wIndex)
-          }
-        }
-        this._viewWindows.forEach(function (vwindow, windowIndex) {
-          if (this.groupIdList && this.groupIdList.length > 0) {
-            this.groupIdList.forEach(function (groupID) {
-              if (this._refObj.groups.hasOwnProperty(groupID)) {
-                this._refObj.groups[groupID].forEach(
-                  showTrack.bind(this, windowIndex), this)
-              }
-            }, this)
-          } else {
-            this._refObj.tracks.forEach(
-              showTrack.bind(this, windowIndex), this)
-          }
-        }, this)
-        this.populateDOM(noRefreshContent)
-      }
-    }
+    // _clearDOM () {
+    //   var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
+    //   svgList.forEach(function (svgElem, index) {
+    //     while (Polymer.dom(svgElem).firstChild) {
+    //       Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
+    //     }
+    //   }, this)
+    //   while (Polymer.dom(this.$.trackDOMHolder).firstChild) {
+    //     Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild)
+    //   }
+    // }
 
-    addAllTrackDOMs (noRefreshContent) {
-      this._refObj.initTracks().then(
-        () => this._addAllTrackDOMsTracksReady(noRefreshContent, this.ref))
-    }
+    // _addAllTrackDOMsTracksReady (noRefreshContent, ref) {
+    //   // function called when tracks are ready for this._refObj
+    //   if (ref === this.ref) {
+    //     // Only respond to this call if ref has not been changed
+    //     if (this._needOverrideDefault) {
+    //       this._overrideTrackDefaultVis()
+    //     }
+    //     var showTrack = function (wIndex, track, index) {
+    //       // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
+    //       if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
+    //         this._addVisibleTrack(track, wIndex)
+    //       }
+    //     }
+    //     this._viewWindows.forEach(function (vwindow, windowIndex) {
+    //       if (this.groupIdList && this.groupIdList.length > 0) {
+    //         this.groupIdList.forEach(function (groupID) {
+    //           if (this._refObj.groups.hasOwnProperty(groupID)) {
+    //             this._refObj.groups[groupID].forEach(
+    //               showTrack.bind(this, windowIndex), this)
+    //           }
+    //         }, this)
+    //       } else {
+    //         this._refObj.tracks.forEach(
+    //           showTrack.bind(this, windowIndex), this)
+    //       }
+    //     }, this)
+    //     this.populateDOM(noRefreshContent)
+    //   }
+    // }
 
-    _removeInvisibleTrackDOMs () {
-      this._trackDOMsByWindow.forEach(function (domInWindowEntry, windowIndex) {
-        // notice that because tracks may get deleted, don't use forEach with splice
-        for (var key in domInWindowEntry) {
-          if (domInWindowEntry.hasOwnProperty(key) &&
-            Array.isArray(domInWindowEntry[key])
-          ) {
-            // filter out all tracks with visibility set as 0
-            // delete entries in domInWindowEntry.map first
-            for (var i = 0; i < domInWindowEntry[key].length; i++) {
-              if (domInWindowEntry[key][i].getTrackSetting('visibility') ===
-                give.TrackObject.StatusEnum.VIS_NONE) {
-                delete domInWindowEntry.map[domInWindowEntry[key][i].parent.id]
-                domInWindowEntry[key].splice(i, 1)
-                i--
-              }
-            }
-          }
-        }
-      }, this)
-    }
+    // addAllTrackDOMs (noRefreshContent) {
+    //   this._refObj.initTracks().then(
+    //     () => this._addAllTrackDOMsTracksReady(noRefreshContent, this.ref))
+    // }
 
-    _setDivElemInWindow (domInWindowEntry, index) {
-      var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-      if (
-        !this.$$('#' + this._getElemId(domInWindowEntry.divId, 'Scroll'))
-      ) {
-        return false
-      }
-      domInWindowEntry.pinAbove.divElem = this.$$('#' +
-        this._getElemId(domInWindowEntry.divId, reverse ? 'PinBottom' : 'PinTop'))
-      domInWindowEntry.scrolling.divElem = this.$$('#' +
-        this._getElemId(domInWindowEntry.divId, 'Scroll'))
-      domInWindowEntry.pinBelow.divElem = this.$$('#' +
-        this._getElemId(domInWindowEntry.divId, reverse ? 'PinTop' : 'PinBottom'))
-      if (domInWindowEntry.pinInBetween) {
-        domInWindowEntry.pinInBetween.divElem = this.$$('#' +
-          this._getElemId(domInWindowEntry.divId, 'PinBetween'))
-      }
-      return true
-    }
+    // _removeInvisibleTrackDOMs () {
+    //   this._trackDOMsByWindow.forEach(function (domInWindowEntry, windowIndex) {
+    //     // notice that because tracks may get deleted, don't use forEach with splice
+    //     for (var key in domInWindowEntry) {
+    //       if (domInWindowEntry.hasOwnProperty(key) &&
+    //         Array.isArray(domInWindowEntry[key])
+    //       ) {
+    //         // filter out all tracks with visibility set as 0
+    //         // delete entries in domInWindowEntry.map first
+    //         for (var i = 0; i < domInWindowEntry[key].length; i++) {
+    //           if (domInWindowEntry[key][i].getTrackSetting('visibility') ===
+    //             give.TrackObject.StatusEnum.VIS_NONE) {
+    //             delete domInWindowEntry.map[domInWindowEntry[key][i].parent.id]
+    //             domInWindowEntry[key].splice(i, 1)
+    //             i--
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }, this)
+    // }
 
-    _callForeachWithElemFuncOnDomInWindowEntry (func, startFunc, endFunc, domInWindowEntry, index) {
-      var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-      for (var key in domInWindowEntry) {
-        if (domInWindowEntry.hasOwnProperty(key) &&
-          Array.isArray(domInWindowEntry[key]) &&
-          domInWindowEntry[key].divElem &&
-          domInWindowEntry[key].divElem.querySelector('svg')
-        ) {
-          if (startFunc && typeof startFunc === 'function') {
-            startFunc(domInWindowEntry[key].divElem)
-          }
-          var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-            : domInWindowEntry[key]
-          enumArray.forEach(func.bind(this,
-            domInWindowEntry[key].divElem), this)
-          if (endFunc && typeof endFunc === 'function') {
-            endFunc(domInWindowEntry[key].divElem)
-          }
-        }
-      }
-    }
+    // _setDivElemInWindow (domInWindowEntry, index) {
+    //   var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+    //   if (
+    //     !this.$$('#' + this._getElemId(domInWindowEntry.divId, 'Scroll'))
+    //   ) {
+    //     return false
+    //   }
+    //   domInWindowEntry.pinAbove.divElem = this.$$('#' +
+    //     this._getElemId(domInWindowEntry.divId, reverse ? 'PinBottom' : 'PinTop'))
+    //   domInWindowEntry.scrolling.divElem = this.$$('#' +
+    //     this._getElemId(domInWindowEntry.divId, 'Scroll'))
+    //   domInWindowEntry.pinBelow.divElem = this.$$('#' +
+    //     this._getElemId(domInWindowEntry.divId, reverse ? 'PinTop' : 'PinBottom'))
+    //   if (domInWindowEntry.pinInBetween) {
+    //     domInWindowEntry.pinInBetween.divElem = this.$$('#' +
+    //       this._getElemId(domInWindowEntry.divId, 'PinBetween'))
+    //   }
+    //   return true
+    // }
 
-    _callForeachFuncOnDomInWindowEntry (func, domInWindowEntry, index) {
-      var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-      for (var key in domInWindowEntry) {
-        if (domInWindowEntry.hasOwnProperty(key) &&
-          Array.isArray(domInWindowEntry[key])
-        ) {
-          var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-            : domInWindowEntry[key]
-          enumArray.forEach(func, this)
-        }
-      }
-    }
+    // _callForeachWithElemFuncOnDomInWindowEntry (func, startFunc, endFunc, domInWindowEntry, index) {
+    //   var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+    //   for (var key in domInWindowEntry) {
+    //     if (domInWindowEntry.hasOwnProperty(key) &&
+    //       Array.isArray(domInWindowEntry[key]) &&
+    //       domInWindowEntry[key].divElem &&
+    //       domInWindowEntry[key].divElem.querySelector('svg')
+    //     ) {
+    //       if (startFunc && typeof startFunc === 'function') {
+    //         startFunc(domInWindowEntry[key].divElem)
+    //       }
+    //       var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+    //         : domInWindowEntry[key]
+    //       enumArray.forEach(func.bind(this,
+    //         domInWindowEntry[key].divElem), this)
+    //       if (endFunc && typeof endFunc === 'function') {
+    //         endFunc(domInWindowEntry[key].divElem)
+    //       }
+    //     }
+    //   }
+    // }
 
-    _callEveryOnDomInWindowEntry (func, domInWindowEntry, index) {
-      // same thing as _callForeachFuncOnDomInWindowEntry, just replace forEach by every
-      var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-      for (var key in domInWindowEntry) {
-        if (domInWindowEntry.hasOwnProperty(key) &&
-          Array.isArray(domInWindowEntry[key])
-        ) {
-          var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-            : domInWindowEntry[key]
-          if (!enumArray.every(func, this)) {
-            return false
-          }
-        }
-      }
-      return true
-    }
+    // _callForeachFuncOnDomInWindowEntry (func, domInWindowEntry, index) {
+    //   var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+    //   for (var key in domInWindowEntry) {
+    //     if (domInWindowEntry.hasOwnProperty(key) &&
+    //       Array.isArray(domInWindowEntry[key])
+    //     ) {
+    //       var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+    //         : domInWindowEntry[key]
+    //       enumArray.forEach(func, this)
+    //     }
+    //   }
+    // }
 
-    _populateDomInWindow (domInWindowEntry, index) {
-      var _populateDomInComponent = function (component, trackDOM, trackDomIndex) {
-        Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
-        Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDOM.getTrackSvg())
-      }
-      this._callForeachWithElemFuncOnDomInWindowEntry(
-        _populateDomInComponent.bind(this), null, null,
-        domInWindowEntry, index)
-    }
+    // _callEveryOnDomInWindowEntry (func, domInWindowEntry, index) {
+    //   // same thing as _callForeachFuncOnDomInWindowEntry, just replace forEach by every
+    //   var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
+    //   for (var key in domInWindowEntry) {
+    //     if (domInWindowEntry.hasOwnProperty(key) &&
+    //       Array.isArray(domInWindowEntry[key])
+    //     ) {
+    //       var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
+    //         : domInWindowEntry[key]
+    //       if (!enumArray.every(func, this)) {
+    //         return false
+    //       }
+    //     }
+    //   }
+    //   return true
+    // }
 
-    /**
-     * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
-     *
-     * @param  {boolean} changeWindow - index of domInWindowEntry in the array
-     * @param  {[
-     *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-     *   scrolling: Array.<GIVe.TrackDomBehavior>,
-     *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-     *   map: Object,
-     *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-     * ]} domInWindowEntry - viewWindow Array
-     * @param  {number} index - index of domInWindowEntry in the array
-     */
-    _updateDomHeightInWindow (changeWindow, domInWindowEntry, index) {
-      var _prepareSvgHeight = function (svgWidth, divElem) {
-        divElem._currY = 0
-        divElem._svgWidth = svgWidth || divElem.clientWidth
-      }
-      var _setDomIndHeight = function (divElem, trackDOM, index) {
-        trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
-        divElem._currY += trackDOM.height() + this._trackGap * this._textSize
-      }.bind(this)
-      var _setSvgWidthHeight = function (divElem) {
-        if (divElem._currY > 0) {
-          divElem._currY -= this._trackGap * this._textSize
-        }
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('width', divElem._svgWidth)
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('height', divElem._currY)
-        Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('viewBox',
-          '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
-        delete divElem._currY
-        delete divElem._svgWidth
-      }.bind(this)
-      this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-        _prepareSvgHeight.bind(this, this._svgWidth),
-        _setSvgWidthHeight, domInWindowEntry, index)
-      this._svgWidth = this._svgWidth ||
-        domInWindowEntry.scrolling.divElem.clientWidth
-      if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
-        this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-      }
-      if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
-        // scrolling happened, needs to shrink pinned track width
-        return false
-      }
-      return true
-    }
+    // _populateDomInWindow (domInWindowEntry, index) {
+    //   var _populateDomInComponent = function (component, trackDOM, trackDomIndex) {
+    //     Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
+    //     Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDOM.getTrackSvg())
+    //   }
+    //   this._callForeachWithElemFuncOnDomInWindowEntry(
+    //     _populateDomInComponent.bind(this), null, null,
+    //     domInWindowEntry, index)
+    // }
 
-    populateDOM (noRefreshContent) {
-      // first clear old DOMs
-      this._clearDOM()
-      // then populate all new DOMS by window
-      this._trackDOMsByWindow.forEach(this._populateDomInWindow, this)
-      this.updateHeightLocation()
-      Polymer.dom.flush()
-      if (!noRefreshContent) {
-        // then update everything
-        this.refreshAll()
-      }
-    }
+    // /**
+    //  * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
+    //  *
+    //  * @param  {boolean} changeWindow - index of domInWindowEntry in the array
+    //  * @param  {[
+    //  *   pinAbove: Array.<GIVe.TrackDomBehavior>,
+    //  *   scrolling: Array.<GIVe.TrackDomBehavior>,
+    //  *   pinBelow: Array.<GIVe.TrackDomBehavior>,
+    //  *   map: Object,
+    //  *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
+    //  * ]} domInWindowEntry - viewWindow Array
+    //  * @param  {number} index - index of domInWindowEntry in the array
+    //  */
+    // _updateDomHeightInWindow (changeWindow, domInWindowEntry, index) {
+    //   var _prepareSvgHeight = function (svgWidth, divElem) {
+    //     divElem._currY = 0
+    //     divElem._svgWidth = svgWidth || divElem.clientWidth
+    //   }
+    //   var _setDomIndHeight = function (divElem, trackDOM, index) {
+    //     trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth, null, null, changeWindow ? null : false)
+    //     divElem._currY += trackDOM.height() + this._trackGap * this._textSize
+    //   }.bind(this)
+    //   var _setSvgWidthHeight = function (divElem) {
+    //     if (divElem._currY > 0) {
+    //       divElem._currY -= this._trackGap * this._textSize
+    //     }
+    //     Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('width', divElem._svgWidth)
+    //     Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('height', divElem._currY)
+    //     Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('viewBox',
+    //       '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
+    //     delete divElem._currY
+    //     delete divElem._svgWidth
+    //   }.bind(this)
+    //   this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
+    //     _prepareSvgHeight.bind(this, this._svgWidth),
+    //     _setSvgWidthHeight, domInWindowEntry, index)
+    //   this._svgWidth = this._svgWidth ||
+    //     domInWindowEntry.scrolling.divElem.clientWidth
+    //   if (this._svgWidth > domInWindowEntry.scrolling.divElem.clientWidth) {
+    //     this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
+    //   }
+    //   if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
+    //     // scrolling happened, needs to shrink pinned track width
+    //     return false
+    //   }
+    //   return true
+    // }
 
-    updateDOM (noRefreshContent) {
-      // update existing DOMs, first remove all tracks that should be hidden
-      // if noRefreshContent = true, do not refresh content (should be refreshed later)
-      if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
-        this._removeInvisibleTrackDOMs()
-      }
+    // populateDOM (noRefreshContent) {
+    //   // first clear old DOMs
+    //   this._clearDOM()
+    //   // then populate all new DOMS by window
+    //   this._trackDOMsByWindow.forEach(this._populateDomInWindow, this)
+    //   this.updateHeightLocation()
+    //   Polymer.dom.flush()
+    //   if (!noRefreshContent) {
+    //     // then update everything
+    //     this.refreshAll()
+    //   }
+    // }
 
-      // then add new Tracks (if not there already)
-      this.addAllTrackDOMs(noRefreshContent)
-    }
+    // updateDOM (noRefreshContent) {
+    //   // update existing DOMs, first remove all tracks that should be hidden
+    //   // if noRefreshContent = true, do not refresh content (should be refreshed later)
+    //   if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
+    //     this._removeInvisibleTrackDOMs()
+    //   }
 
-    _updateWindowHandler (e) {
-      // update the windows by events bubbled up from bottom tracks
-      try {
-        if (e.detail.newWindow instanceof give.ChromRegion ||
-          typeof e.detail.newWindow === 'string'
-        ) {
-          var windowIndex =
-            (!isNaN(parseInt(e.detail.windowIndex)) &&
-              parseInt(e.detail.windowIndex) >= 0)
-              ? parseInt(e.detail.windowIndex)
-              : 0
-          this.changeViewWindow(e.detail.newWindow, windowIndex,
-            !!(e.detail.tracks))
-          this.fire('update-coordinate', {
-            windowIndex: windowIndex,
-            newWindow: e.detail.newWindow
-          })
-        }
-      } catch (err) {
-        console.log(err.message)
-        console.log(err.stack)
-      }
-    }
+    //   // then add new Tracks (if not there already)
+    //   this.addAllTrackDOMs(noRefreshContent)
+    // }
 
-    updateWindow (e) {
-      this._updateWindowHandler(e)
-    }
+    // _updateWindowHandler (e) {
+    //   // update the windows by events bubbled up from bottom tracks
+    //   try {
+    //     if (e.detail.newWindow instanceof give.ChromRegion ||
+    //       typeof e.detail.newWindow === 'string'
+    //     ) {
+    //       var windowIndex =
+    //         (!isNaN(parseInt(e.detail.windowIndex)) &&
+    //           parseInt(e.detail.windowIndex) >= 0)
+    //           ? parseInt(e.detail.windowIndex)
+    //           : 0
+    //       this.changeViewWindow(e.detail.newWindow, windowIndex,
+    //         !!(e.detail.tracks))
+    //       this.fire('update-coordinate', {
+    //         windowIndex: windowIndex,
+    //         newWindow: e.detail.newWindow
+    //       })
+    //     }
+    //   } catch (err) {
+    //     console.log(err.message)
+    //     console.log(err.stack)
+    //   }
+    // }
 
-    _initTrackDOMContainers () {
-      if (this._trackDOMsByWindow.every(this._setDivElemInWindow, this)) {
-        this._initDOMCoorTracks()
-        this._domsReady = true
-        if (this._initialized) {
-          this.addAllTrackDOMs()
-        }
-      } else {
-        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-          this._initTrackDOMContainers.bind(this),
-          give.ChartArea.DOM_CHANGE_DEBOUNCE)
-      }
-    }
+    // updateWindow (e) {
+    //   this._updateWindowHandler(e)
+    // }
 
-    _domChangeHandler () {
-      if (!this._domsReady) {
-        this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
-          this._initTrackDOMContainers.bind(this),
-          give.ChartArea.DOM_CHANGE_DEBOUNCE)
-      }
-    }
+    // _initTrackDOMContainers () {
+    //   if (this._trackDOMsByWindow.every(this._setDivElemInWindow, this)) {
+    //     this._initDOMCoorTracks()
+    //     this._domsReady = true
+    //     if (this._initialized) {
+    //       this.addAllTrackDOMs()
+    //     }
+    //   } else {
+    //     this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
+    //       this._initTrackDOMContainers.bind(this),
+    //       give.ChartArea.DOM_CHANGE_DEBOUNCE)
+    //   }
+    // }
 
-    _getElemId (divId, suffix) {
-      return divId + '_' + suffix
-    }
+    // _domChangeHandler () {
+    //   if (!this._domsReady) {
+    //     this.debounce(give.ChartArea.DOM_CHANGE_JOBNAME,
+    //       this._initTrackDOMContainers.bind(this),
+    //       give.ChartArea.DOM_CHANGE_DEBOUNCE)
+    //   }
+    // }
 
-    _vWindowHasPinBetween (domInWindowEntry) {
-      return !!domInWindowEntry.pinInBetween
-    }
+    // _getElemId (divId, suffix) {
+    //   return divId + '_' + suffix
+    // }
 
-    _onIronResize (e, detail) {
-      if (this._domsReady && this._trackDOMsByWindow.every(
-        this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
-          return trackDOM.isReady
-        }), this)
-      ) {
-        give._verbConsole.info('_onIronResize()')
-        if (!this.resizeAsyncProcess) {
-          delete this._svgWidth
-          this.resizeAsyncProcess = this.async(
-            this.updateHeightLocation.bind(this, false),
-            this.resizeDebounceInt
-          )
-        }
-        // if (!this._debouncePromise) {
-        //   if (this.resizeDebounceInt) {
-        //     this._debouncePromise = new Promise((resolve, reject) => {
-        //       setTimeout(resolve, this.resizeDebounceInt)
-        //     })
-        //   } else {
-        //     this._debouncePromise = Promise.resolve()
-        //   }
-        //   this.resizePromise = this._debouncePromise
-        //     .then(() => {
-        //       let pendingWidth = (
-        //         this.querySelector('#chartHolding').clientWidth
-        //       )
-        //       let pendingVWindow = this.viewWindow.getExtension(
-        //         (pendingWidth - this.windowWidth) / this.windowWidth,
-        //         null, true, this._refObj
-        //       )
-        //       return this.updateTracks(
-        //         pendingVWindow, pendingWidth
-        //       )
-        //     })
-        // }
-        // return this.resizePromise
-      }
-    }
+    // _vWindowHasPinBetween (domInWindowEntry) {
+    //   return !!domInWindowEntry.pinInBetween
+    // }
+
+    // _onIronResize (e, detail) {
+    //   if (this._domsReady && this._trackDOMsByWindow.every(
+    //     this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
+    //       return trackDOM.isReady
+    //     }), this)
+    //   ) {
+    //     give._verbConsole.info('_onIronResize()')
+    //     if (!this.resizeAsyncProcess) {
+    //       delete this._svgWidth
+    //       this.resizeAsyncProcess = this.async(
+    //         this.updateHeightLocation.bind(this, false),
+    //         this.resizeDebounceInt
+    //       )
+    //     }
+    //     // if (!this._debouncePromise) {
+    //     //   if (this.resizeDebounceInt) {
+    //     //     this._debouncePromise = new Promise((resolve, reject) => {
+    //     //       setTimeout(resolve, this.resizeDebounceInt)
+    //     //     })
+    //     //   } else {
+    //     //     this._debouncePromise = Promise.resolve()
+    //     //   }
+    //     //   this.resizePromise = this._debouncePromise
+    //     //     .then(() => {
+    //     //       let pendingWidth = (
+    //     //         this.querySelector('#chartHolding').clientWidth
+    //     //       )
+    //     //       let pendingVWindow = this.viewWindow.getExtension(
+    //     //         (pendingWidth - this.windowWidth) / this.windowWidth,
+    //     //         null, true, this._refObj
+    //     //       )
+    //     //       return this.updateTracks(
+    //     //         pendingVWindow, pendingWidth
+    //     //       )
+    //     //     })
+    //     // }
+    //     // return this.resizePromise
+    //   }
+    // }
   }
 
   ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400

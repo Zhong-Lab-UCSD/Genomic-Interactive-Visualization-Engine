@@ -398,8 +398,10 @@ var GIVe = (function (give) {
 
     /**
      * initSvgReceiver - Add a gesture listener (rectangle) to the SVG element.
-     *   Notice that text holder and main holder have their listeners separately.
-     *   Also the actual listener is attached to svg elements, not the rectangles
+     *   Notice that text holder and main holder have their listeners
+     *   separately.
+     *   Also the actual listener is attached to svg elements, not the
+     *   rectangles
      *
      * @param  {DOMelement} svgToDraw The SVG element to attach listeners to
      */
@@ -1114,10 +1116,10 @@ var GIVe = (function (give) {
           // not the same region as submitted
           // which means the resolution is for the previous promise
           // throw a `give.PromiseCanceller` to cancel promise handling
-          throw new give.PromiseCanceller(true)
+          throw new give.PromiseCanceller()
         }
       } else {
-        throw new give.PromiseCanceller(true)
+        throw new give.PromiseCanceller()
       }
       // commit pending view windows
       this.viewWindow = this._pendingNewVWArr || this.viewWindow
@@ -1179,7 +1181,7 @@ var GIVe = (function (give) {
         return this._debouncePromise
           .then(() => this._checkDataAndUpdate(...args))
       }
-      throw new give.PromiseCanceller(true)
+      throw new give.PromiseCanceller()
     }
 
     /**
@@ -1228,7 +1230,7 @@ var GIVe = (function (give) {
       }
       // Otherwise it's the same data promise, use the old chained functions
       // after this._dataPromise instead of creating new chained functions
-      throw new give.PromiseCanceller(true)
+      throw new give.PromiseCanceller()
     }
 
     _updateContent (viewWindow, ...args) {
@@ -1245,7 +1247,7 @@ var GIVe = (function (give) {
 
         this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(
           e => {
-            if (e instanceof give.PromiseCanceller && e.isCancelled) {
+            if (e instanceof give.PromiseCanceller) {
               throw e
             }
             give._verbConsole.warn(e)
@@ -1257,7 +1259,7 @@ var GIVe = (function (give) {
           return this.viewWindow
         })
       } catch (e) {
-        if (!(e instanceof give.PromiseCanceller) || !e.isCancelled) {
+        if (!(e instanceof give.PromiseCanceller)) {
           throw e
         }
       }

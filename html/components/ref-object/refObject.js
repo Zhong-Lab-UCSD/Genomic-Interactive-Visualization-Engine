@@ -351,8 +351,8 @@ var GIVe = (function (give) {
     static findRefByDb (db) {
       if (typeof db === 'string' && !this.refArray) {
         // not ready yet, push to task scheduler
-        throw (new give.GiveError('refArray is not initialized yet! Please use ' +
-          'GIVe.RefObject.AllRefPromise.then() to wrap your function.'))
+        throw (new give.GiveError('refArray is not initialized yet! Please ' +
+          'use GIVe.RefObject.AllRefPromise.then() to wrap your function.'))
       } else {
         if (typeof db === 'string' &&
           this.refArray.dbMap.hasOwnProperty(db)) {

@@ -452,14 +452,14 @@ var GIVe = (function (give) {
     promiseArray = promiseArray || []
     let promisesChanged = false
     if (promiseArray.length <= 0) {
-      promiseArray = objArray.forEach(obj => {
-        promiseArray.push(promiseFunc(obj))
+      promiseArray = objArray.forEach((obj, index) => {
+        promiseArray.push(promiseFunc(obj, index))
       })
       promisesChanged = true
     } else {
       objArray.forEach((obj, index) => {
         try {
-          let newPromise = promiseFunc(obj)
+          let newPromise = promiseFunc(obj, index)
           if (newPromise !== promiseArray[index]) {
             // new promise
             promiseArray[index] = newPromise
@@ -480,9 +480,15 @@ var GIVe = (function (give) {
     return null
   }
 
-  class PromiseCanceller {
-    constructor (isCancelled) {
-      this.isCancelled = isCancelled
+  class PromiseCanceller extends Error {
+    constructor () {
+      super(...arguments)
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, PromiseCanceller)
+      }
+    }
+    toString () {
+      return super.toString() + '\n' + this.stack
     }
   }
 
