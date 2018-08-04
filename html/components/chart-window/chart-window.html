@@ -227,7 +227,6 @@ var GIVe = (function (give) {
 
       this._pendingVWindow = null
       this._viewWindow = null
-      this._pendingWidth = null
 
       this._svgSizes = {
         '_PinTop': 0,
@@ -351,7 +350,6 @@ var GIVe = (function (give) {
 
       this.windowWidth = this.querySelector('#chartHolding').clientWidth
 
-      this.addEventListener('track-ready', this._trackReadyHandler)
       this.addEventListener('update-window', this._updateWindowHandler)
 
       if (this.coordinate) {
@@ -684,10 +682,7 @@ var GIVe = (function (give) {
           '0 0 ' + width + ' ' + svgElem._currY || 0)
         delete svgElem._currY
       })
-      if (
-        width === this.querySelector('#chartHolding').clientWidth &&
-        this.querySelector('.scrollingParts').clientWidth < width
-      ) {
+      if (this.querySelector('.scrollingParts').clientWidth < width) {
         throw new ResetWidthError(
           this.querySelector('.scrollingParts').clientWidth)
       }
@@ -698,8 +693,9 @@ var GIVe = (function (give) {
      * @function updateTracks
      * @async
      * @param  {ChromRegionLiteral} newVWindow - Whether the view window needs
-     *    to be changed to the new window, if this is `false`, then the
-     *    function will return a resolved `Promise`.
+     *    to be changed to the new window, if this is falsey, then the
+     *    function will call itself on pending view window or the original
+     *    window.
      * @param  {number} [width] - If a new width is need to be specified
      * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves
      *    to the new window when new data was ready.
@@ -734,7 +730,8 @@ var GIVe = (function (give) {
       let newdrawingPromise = give.getAggregatedUpdatePromise(
         this._trackDomPromises,
         this._trackDoms.concat(this._hiddenTrackDoms),
-        trackDom => trackDom.update(newVWindow, width, null, null, this.index)
+        trackDom => trackDom.update(
+          this._pendingVWindow, width, null, false, this.index)
       )
 
       if (newdrawingPromise) {
@@ -751,6 +748,21 @@ var GIVe = (function (give) {
       return this.drawingPromise
     }
 
+    changeWidth (width) {
+      if (!this._initialized) {
+        return this.resetDom().then(() => this.changeWidth(width))
+      }
+      width = width || this.querySelector('#chartHolding').clientWidth
+      if (this._viewWindow) {
+        let pendingVWindow = this._viewWindow.getExtension(
+          (width - this.windowWidth) / this.windowWidth,
+          null, true, this._refObj
+        )
+        return this.updateTracks(pendingVWindow, width)
+      }
+      return Promise.resolve()
+    }
+
     _showTutorialIfNeeded () {
       if (this.firstRun && this.showTutorial &&
         this._coorDomSvg
@@ -764,7 +776,7 @@ var GIVe = (function (give) {
 
     _updateTrackLocation (newWidth) {
       let enumArray = this.reverseFlag
-        ? this.trackdoms.slice().reverse() : this.trackdoms
+        ? this.trackDoms.slice().reverse() : this.trackDoms
       enumArray.forEach(trackDom => {
         let svgElem = this.shadowRoot.querySelector(
           '#' + this._getSlotId(trackDom.parent, true)
@@ -866,7 +878,7 @@ var GIVe = (function (give) {
         this._updateCoordinates()
         throw err
       }
-      return Promise.resolve()
+      return this.drawingPromise || Promise.resolve(this._viewWindow)
     }
 
     _updateCoordinates (window) {
@@ -1017,6 +1029,7 @@ var GIVe = (function (give) {
         return this._addAllTrackDoms(contexts)
       })
     }
+
     /**
      * link hidden DOMs to the window
      * @param  {Array<TrackDom>} hiddenDoms - The hidden DOM to be linked
@@ -1125,39 +1138,6 @@ var GIVe = (function (give) {
 
       return linkedDoms.comcat(this._trackDoms.filter(trackDom =>
         trackDom.hasLinksInTargetView(contexts[this.index + 1])))
-    }
-
-    _updateWindowHandler (e) {
-      // update the windows by events bubbled up from bottom tracks
-      try {
-        let newVWindow = e.detail.newVWindow
-        if (newVWindow instanceof give.ChromRegion ||
-          typeof newVWindow === 'string'
-        ) {
-          if (!this._initialized) {
-            return this.resetDom(newVWindow)
-              .then(() => this.changeViewWindow(newVWindow))
-              .catch(err => {
-                give._verbConsole.warn(err)
-                throw err
-              })
-          } else {
-            if (e.detail.tracks) {
-              this.updateDom(newWindow)
-            }
-            this.coordinate =
-              (newVWindow instanceof give.ChromRegion
-                ? newVWindow.regionToString(false) : newVWindow)
-          }
-        }
-      } catch (err) {
-        give._verbConsole.warn(err)
-        throw err
-      }
-    }
-
-    updateWindow (e) {
-      return this._updateWindowHandler(e)
     }
   }
 

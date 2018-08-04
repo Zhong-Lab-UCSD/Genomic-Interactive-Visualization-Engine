@@ -350,6 +350,11 @@ var GIVe = (function (give) {
       }
     }
 
+    /**
+     * setSvgLocation - Set the location of main track SVG element
+     *
+     * @memberof TrackDom
+     */
     setSvgLocation () {
       this.trackSvg.setAttributeNS(null, 'x', this.x)
       this.trackSvg.setAttributeNS(null, 'y', this.y)

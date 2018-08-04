@@ -61,7 +61,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         overflow-x: hidden;
         overflow-y: auto;
       }
-      div#chartHolding {
+      div#windowHolding {
         padding: 0;
         width: 100%;
         @apply --layout-vertical;
@@ -108,7 +108,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
             group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
             text-margin="[[textMargin]]" track-gap="[[trackGap]]"
             text-size="[[textSize]]" first-run="{{_firstRun}}"
-            show-tutorial="[[!index]]">
+            show-tutorial="[[!index]]" on-update-window="_updateWindowHandler">
           </chart-window>
         </template>
       </div>
@@ -125,7 +125,7 @@ var GIVe = (function (give) {
     constructor () {
       super(...arguments)
       if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, ResetWidthError)
+        Error.captureStackTrace(this, WindowNotInitialized)
       }
     }
     toString () {
@@ -142,13 +142,14 @@ var GIVe = (function (give) {
   ) {
     constuctor () {
       super()
-      this.resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
+      this._resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
       this._windowUpdatePromises = []
       this._idEnforcedSet = new Set()
       this._chartWindows = []
       this._refArray = []
       this._coordinateArray = []
       this.updatePromise = null
+      this._resizeDebouncePromise = null
     }
 
     static get is () {
@@ -276,40 +277,10 @@ var GIVe = (function (give) {
       }
     }
 
-    static get observers () {
-      return [
-        '_windowChanged(_chartWindowItems.*)'
-      ]
-    }
-
     ready () {
-      // initialize this._viewWindows from this.coordinates
-      this.coordinates.forEach(function (coordinateStr, index) {
-        if (give.ChromRegion.isValidChromRegion(coordinateStr,
-          this._refObj) &&
-          (!this._viewWindows[index] ||
-            this._viewWindows[index].regionToString(false) !==
-            new give.ChromRegion(coordinateStr, this._refObj)
-              .regionToString(false)
-          )
-        ) {
-          this.splice('_viewWindows', index, 1,
-            new give.ChromRegion(coordinateStr, this._refObj))
-        } else {
-          this.splice('_viewWindows', index, 1, false)
-        }
-      }, this)
-
-      if (this.defaultTrackIdList.length > 0) {
-        this._needOverrideDefault = true
-      }
-      // initialize DOM array
-      this._initDOMArray()
-
-      this.addEventListener('track-ready', this._trackReadyHandler)
-      this.addEventListener('update-window', this._updateWindowHandler)
+      super.ready()
+      this._numOfSubsChanged(this.numOfSubs)
       this.addEventListener('iron-resize', this._onIronResize)
-      this.addEventListener('dom-change', this._domChangeHandler)
     }
 
     attached () {
@@ -317,6 +288,11 @@ var GIVe = (function (give) {
         // attach all trackDOMs
         this._checkVWindowsInit(true)
       })
+    }
+
+    get _childInitialized () {
+      return this._coordinateArray.every(coordinate => !!coordinate) &&
+        this._chartWindows.every(window => window.initialized)
     }
 
     _getValueArray (strVal, arrayLength) {
@@ -345,10 +321,15 @@ var GIVe = (function (give) {
     _errorHandler (err) {
       // some exception has happended during the conversion
       // throw an exception telling calling procedures
+      if (err instanceof give.PromiseCanceller) {
+        throw err
+      }
+      if (!this.passExceptions) {
+        // TODO: gracefully handle the exception
+      }
+      this._readiness = true
       if (this.passExceptions) {
         throw err
-      } else {
-        // TODO: gracefully handle the exception
       }
     }
 
@@ -368,22 +349,22 @@ var GIVe = (function (give) {
     //   return true
     // }
 
-    /**
-     * Merge properties together
-     * @todo Will be changed into `track-dom-behavior` or `basic-funcs`
-     *
-     * @param  {object} original - original object
-     * @param  {object} newProp - object with new properties
-     * @returns {object} object with the merged properties
-     */
-    _mergeProperty (original, newProp) {
-      for (var key in newProp) {
-        if (newProp.hasOwnProperty(key)) {
-          original[key] = newProp[key]
-        }
-      }
-      return original
-    }
+    // /**
+    //  * Merge properties together
+    //  * @todo Will be changed into `track-dom-behavior` or `basic-funcs`
+    //  *
+    //  * @param  {object} original - original object
+    //  * @param  {object} newProp - object with new properties
+    //  * @returns {object} object with the merged properties
+    //  */
+    // _mergeProperty (original, newProp) {
+    //   for (var key in newProp) {
+    //     if (newProp.hasOwnProperty(key)) {
+    //       original[key] = newProp[key]
+    //     }
+    //   }
+    //   return original
+    // }
 
     // _createTrackProp (viewWindowIndex, props) {
     //   props = props || {}
@@ -734,67 +715,90 @@ var GIVe = (function (give) {
       this._updatingRefs = false
     }
 
-    _updateWindowsDom () {
+    updateWindowsDom () {
       // Update the track DOMs within the chart-windows (because the
       // surrounding environment has changed, some of the tracks, especially
       // multi-window ones, may have its requirement conditions changed)
       let contexts = this._chartWindows.map(window => window.context)
       return Promise.all(
-        this._chartWindows.map(window => {
-          if (!window.initialized) {
-            return window.resetDom(contexts)
-          } else {
-            return window.updateDOM(contexts)
-          }
-        })
+        this._chartWindows.map(window =>
+          (window.initialized
+            ? window.updateDOM(contexts)
+            : window.resetDom(contexts))
+        )
       )
         // Then link the multi-window track DOMs through the chart-windows
         .then(() => this._chartWindows.reduce((hiddenDoms, window) =>
           window.linkDOMs(hiddenDoms, contexts, false), []))
         // Then update all the windows
-        .then(() => this._updateTracks())
+        .then(() => this.updateTracks())
     }
 
-    _windowWidthChangeHandler (windowUpdatePromise) {
-      return windowUpdatePromise.catch(err => {
-        if (err instanceof give.ChartWindow.ResetWidthError) {
-          return give.getAggregatedUpdatePromise(
-            this._windowUpdatePromises,
-            this._chartWindows,
-            (window, index) =>
-              window.updateTracks(this._coordinateArray[index], err.newWidth)
-          )
-        } else {
-          throw err
-        }
-      }).then(correctedWindows =>
-        this._updateCoordinatesAttr(
-          correctedWindows.map(window => window.regionToString(false))
+    /**
+     * _windowWidthChangeHandler - the function to handle the case
+     *    when one of the chart-window child throws a new width because of
+     *    the vertical scroll bar. After that all children have to adapt the
+     *    new width to ensure consistency.
+     * @param  {give.ChartWindow.ResetWidthError} err - The error object thrown
+     *    by child with its `newWidth` property set to signal to parent that a
+     *    width update is needed.
+     * @return {Promise<undefined>} A promise that resolves when all the
+     *    updating is completed. If the error is not
+     *    give.ChartWindow.ResetWidthError, give a rejected promise for
+     *    downstream code to catch.
+     * @memberof ChartArea
+     */
+    _windowWidthChangeHandler (err) {
+      if (err instanceof give.ChartWindow.ResetWidthError) {
+        return give.getAggregatedUpdatePromise(
+          this._windowUpdatePromises,
+          this._chartWindows,
+          (window, index) => window.updateTracks(false, err.newWidth)
         )
-      ).finally(() => (this._readiness = true))
+      }
+      return Promise.reject(err)
     }
 
-    _redrawWindows (redrawWindowMethod) {
-      if (!this._coordinateArray.every(coordinate => !!coordinate)) {
+    /**
+     * _redrawWindows - redraw one or all children within this ChartArea.
+     * @param  {function<ChartWindow, number>} redrawWindowMethod - The method
+     *    to be called upon ChartWindow(s) to redraw them.
+     * @param  {number|null} index - The index of the ChartWindow to be redrawn.
+     *    If omitted, call `redrawWindowMethod` upon all children.
+     * @return {Promise<any>} A promise that fulfills when redrawing is done.
+     * @memberof ChartArea
+     */
+    _redrawWindows (redrawWindowMethod, index) {
+      if (!this._childInitialized) {
         return Promise.reject(new WindowNotInitialized())
       }
       this._initialized = true
-      this._readiness = false
-      let newWindowPromise = give.getAggregatedUpdatePromise(
-        this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
-      )
+      let newWindowPromise
+      if (typeof index === 'number') {
+        newWindowPromise = redrawWindowMethod(this._chartWindows[index], index)
+      } else {
+        newWindowPromise = give.getAggregatedUpdatePromise(
+          this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
+        )
+      }
       if (newWindowPromise) {
-        this.updatePromise = this._windowWidthChangeHandler(newWindowPromise)
+        this._readiness = false
+        this.updatePromise = newWindowPromise
+          .catch(err => this._windowWidthChangeHandler(err))
+          .then(() => this._updateCoordinatesAttr(
+            this._chartWindows.map(window => window.coordinate)
+          ))
+          .catch(err => this._errorHandler(err))
       }
       return this.updatePromise
     }
 
-    _updateTracks () {
+    updateTracks () {
       return this._redrawWindows((window, index) =>
         window.updateTracks(this._coordinateArray[index]))
     }
 
-    _updateWindowCoordinates () {
+    updateWindowCoordinates () {
       return this._redrawWindows((window, index) =>
         window.changeCoordinate(this._coordinateArray[index]))
     }
@@ -823,8 +827,7 @@ var GIVe = (function (give) {
         })
         // 2. Reset all DOMs among windows (display and link),
         //    then update window contents.
-        .then(() => this._updateWindowsDom())
-        .catch(err => this._errorHandler(err))
+        .then(() => this.updateWindowsDom())
     }
 
     _refChanged (newValue, oldValue) {
@@ -832,16 +835,14 @@ var GIVe = (function (give) {
         this._initialized = false
         return Promise.resolve().then(() => this._syncRefCoordinates())
           .then(() => this._setRefsInWindow())
-          .then(() => this._updateWindowsDom())
-          .catch(err => this._errorHandler(err))
+          .then(() => this.updateWindowsDom())
       }
     }
 
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoordinates) {
         return Promise.resolve().then(() => this._syncRefCoordinates())
-          .then(() => this._updateWindowCoordinates())
-          .catch(err => this._errorHandler(err))
+          .then(() => this.updateWindowCoordinates())
       }
     }
 
@@ -1098,29 +1099,23 @@ var GIVe = (function (give) {
     //   this.addAllTrackDOMs(noRefreshContent)
     // }
 
-    // _updateWindowHandler (e) {
-    //   // update the windows by events bubbled up from bottom tracks
-    //   try {
-    //     if (e.detail.newWindow instanceof give.ChromRegion ||
-    //       typeof e.detail.newWindow === 'string'
-    //     ) {
-    //       var windowIndex =
-    //         (!isNaN(parseInt(e.detail.windowIndex)) &&
-    //           parseInt(e.detail.windowIndex) >= 0)
-    //           ? parseInt(e.detail.windowIndex)
-    //           : 0
-    //       this.changeViewWindow(e.detail.newWindow, windowIndex,
-    //         !!(e.detail.tracks))
-    //       this.fire('update-coordinate', {
-    //         windowIndex: windowIndex,
-    //         newWindow: e.detail.newWindow
-    //       })
-    //     }
-    //   } catch (err) {
-    //     console.log(err.message)
-    //     console.log(err.stack)
-    //   }
-    // }
+    _updateWindowHandler (e) {
+      // update the windows by events bubbled up from bottom tracks
+      if (e.detail.newWindow instanceof give.ChromRegion ||
+        typeof e.detail.newWindow === 'string'
+      ) {
+        if (e.detail.tracks) {
+          // needs to update Dom to match track visibility as well, so update
+          //    the entire `chart-area` instead of only the window
+          this.windowUpdatePromise = this.updateWindowsDom()
+        } else if (this._initialized) {
+          this.windowUpdatePromise = this._redrawWindows(
+            (window, index) => window.changeCoordinate(e.detail.newWindow),
+            e.currentTarget.index)
+        }
+      }
+      return this.windowUpdatePromise
+    }
 
     // updateWindow (e) {
     //   this._updateWindowHandler(e)
@@ -1156,45 +1151,57 @@ var GIVe = (function (give) {
     //   return !!domInWindowEntry.pinInBetween
     // }
 
-    // _onIronResize (e, detail) {
-    //   if (this._domsReady && this._trackDOMsByWindow.every(
-    //     this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
-    //       return trackDOM.isReady
-    //     }), this)
-    //   ) {
-    //     give._verbConsole.info('_onIronResize()')
-    //     if (!this.resizeAsyncProcess) {
-    //       delete this._svgWidth
-    //       this.resizeAsyncProcess = this.async(
-    //         this.updateHeightLocation.bind(this, false),
-    //         this.resizeDebounceInt
-    //       )
-    //     }
-    //     // if (!this._debouncePromise) {
-    //     //   if (this.resizeDebounceInt) {
-    //     //     this._debouncePromise = new Promise((resolve, reject) => {
-    //     //       setTimeout(resolve, this.resizeDebounceInt)
-    //     //     })
-    //     //   } else {
-    //     //     this._debouncePromise = Promise.resolve()
-    //     //   }
-    //     //   this.resizePromise = this._debouncePromise
-    //     //     .then(() => {
-    //     //       let pendingWidth = (
-    //     //         this.querySelector('#chartHolding').clientWidth
-    //     //       )
-    //     //       let pendingVWindow = this.viewWindow.getExtension(
-    //     //         (pendingWidth - this.windowWidth) / this.windowWidth,
-    //     //         null, true, this._refObj
-    //     //       )
-    //     //       return this.updateTracks(
-    //     //         pendingVWindow, pendingWidth
-    //     //       )
-    //     //     })
-    //     // }
-    //     // return this.resizePromise
-    //   }
-    // }
+    updateWindowWidth (width) {
+      return this._redrawWindows((window, index) => window.changeWidth(width))
+    }
+
+    _onIronResize (e) {
+      if (this._childInitialized) {
+        if (!this._resizeDebouncePromise) {
+          if (this._resizeDebounceInt) {
+            this._resizeDebouncePromise = new Promise((resolve, reject) => {
+              setTimeout(resolve, this._resizeDebounceInt)
+            })
+          } else {
+            this._resizeDebouncePromise = Promise.resolve()
+          }
+          return this._resizeDebouncePromise
+            .then(() => this.updateWindowWidth())
+        }
+        throw new give.PromiseCanceller()
+      }
+      // give._verbConsole.info('_onIronResize()')
+      // if (!this.resizeAsyncProcess) {
+      //   delete this._svgWidth
+      //   this.resizeAsyncProcess = this.async(
+      //     this.updateHeightLocation.bind(this, false),
+      //     this.resizeDebounceInt
+      //   )
+      // }
+      // if (!this._debouncePromise) {
+      //   if (this.resizeDebounceInt) {
+      //     this._debouncePromise = new Promise((resolve, reject) => {
+      //       setTimeout(resolve, this.resizeDebounceInt)
+      //     })
+      //   } else {
+      //     this._debouncePromise = Promise.resolve()
+      //   }
+      //   this.resizePromise = this._debouncePromise
+      //     .then(() => {
+      //       let pendingWidth = (
+      //         this.querySelector('#chartHolding').clientWidth
+      //       )
+      //       let pendingVWindow = this.viewWindow.getExtension(
+      //         (pendingWidth - this.windowWidth) / this.windowWidth,
+      //         null, true, this._refObj
+      //       )
+      //       return this.updateTracks(
+      //         pendingVWindow, pendingWidth
+      //       )
+      //     })
+      // }
+      // return this.resizePromise
+    }
   }
 
   ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400
