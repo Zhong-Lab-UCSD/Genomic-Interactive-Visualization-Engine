@@ -256,6 +256,11 @@ var GIVe = (function (give) {
           value: 100 // unit is px
         },
 
+        allowEmptyCoordinates: {
+          type: Boolean,
+          value: false
+        },
+
         /**
          * Flag to indicate whether the entire `chart-area` is ready
          * @type {boolean}
@@ -279,50 +284,38 @@ var GIVe = (function (give) {
 
     ready () {
       super.ready()
-      this._numOfSubsChanged(this.numOfSubs)
-      this.addEventListener('iron-resize', this._onIronResize)
+      this.addEventListener('iron-resize', e => this._onIronResize(e))
+      return give.RefObject.allRefPromise
+        .then(() => this._numOfSubsChanged(this.numOfSubs))
     }
 
     attached () {
-      this.async(function () {
-        // attach all trackDOMs
-        this._checkVWindowsInit(true)
-      })
+      return give.RefObject.allRefPromise
+        .then(() => this.updateDom())
+        .catch(err => this._errorHandler(err, true))
     }
 
-    get _childInitialized () {
-      return this._coordinateArray.every(coordinate => !!coordinate) &&
-        this._chartWindows.every(window => window.initialized)
+    get _childIsInitialized () {
+      return this._chartWindows.every(window => window.initialized)
     }
 
-    _getValueArray (strVal, arrayLength) {
-      arrayLength = arrayLength || this.numOfSubs
-      let arr = [strVal]
-      try {
-        let parsed = JSON.parse(strVal)
-        if (Array.isArray(parsed)) {
-          arr = parsed
-        }
-      } catch (ignore) { }
-      if (arr.length <= 0) {
-        arr[0] = null
-      }
-      // repeat arr until it is at least as long as `this.numOfSubs`
-      while (arr.length < arrayLength) {
-        arr = arr.concat(arr)
-      }
-      return arr.slice(0, arrayLength)
+    get _childWindowIsSet () {
+      return this._coordinateArray.every(coordinate => !!coordinate)
     }
 
     _calcCWId (index) {
       return '_chart-window-' + index
     }
 
-    _errorHandler (err) {
+    _errorHandler (err, catchWindowNotInitialized) {
       // some exception has happended during the conversion
       // throw an exception telling calling procedures
       if (err instanceof give.PromiseCanceller) {
         throw err
+      }
+      if (err instanceof WindowNotInitialized && catchWindowNotInitialized) {
+        give._verbConsole.info('Window not initialized')
+        return Promise.reject(give.PromiseCanceller())
       }
       if (!this.passExceptions) {
         // TODO: gracefully handle the exception
@@ -341,9 +334,24 @@ var GIVe = (function (give) {
 
     _syncRefCoordinates (numOfWindows) {
       numOfWindows = numOfWindows || this.numOfSubs
-      this._refArray = this._getValueArray(this.ref, numOfWindows)
-      this._coordinateArray =
-        this._getValueArray(this.coordinate, numOfWindows)
+      this._refArray = give.getValueArray(this.ref, numOfWindows)
+      let refArray = null
+      try {
+        refArray = this._refArray.map(
+          refName => give.RefObject.findRefByDb(refName)
+        )
+      } catch (ignore) { }
+      this._coordinateArray = give.getValueArray(this.coordinate,
+        numOfWindows,
+        (this.allowEmptyCoordinates && refArray)
+          ? refArray.map((refObj, index) => {
+            let defaultViewWindows = refObj.settings.defaultViewWindows
+            return defaultViewWindows
+              ? defaultViewWindows[index % defaultViewWindows.length]
+              : null
+          })
+          : null
+      )
     }
 
     _setRefsInWindow () {
@@ -387,7 +395,7 @@ var GIVe = (function (give) {
       this._updatingRefs = false
     }
 
-    updateWindowsDom () {
+    updateDom () {
       // Update the track DOMs within the chart-windows (because the
       // surrounding environment has changed, some of the tracks, especially
       // multi-window ones, may have its requirement conditions changed)
@@ -441,7 +449,7 @@ var GIVe = (function (give) {
      * @memberof ChartArea
      */
     _redrawWindows (redrawWindowMethod, index) {
-      if (!this._childInitialized) {
+      if (!this._childIsInitialized || !this._childWindowIsSet) {
         return Promise.reject(new WindowNotInitialized())
       }
       this._initialized = true
@@ -470,7 +478,7 @@ var GIVe = (function (give) {
         window.updateTracks(this._coordinateArray[index]))
     }
 
-    updateWindowCoordinates () {
+    updateCoordinates () {
       return this._redrawWindows((window, index) =>
         window.changeCoordinate(this._coordinateArray[index]))
     }
@@ -499,22 +507,31 @@ var GIVe = (function (give) {
         })
         // 2. Reset all DOMs among windows (display and link),
         //    then update window contents.
-        .then(() => this.updateWindowsDom())
+        .then(() => this.updateDom())
+        .catch(err => this._errorHandler(err, true))
     }
 
     _refChanged (newValue, oldValue) {
       if (!this._updatingRefs) {
         this._initialized = false
-        return Promise.resolve().then(() => this._syncRefCoordinates())
-          .then(() => this._setRefsInWindow())
-          .then(() => this.updateWindowsDom())
+        return Promise.resolve()
+          .then(() => {
+            this._syncRefCoordinates()
+            this._setRefsInWindow()
+            return this.updateDom()
+          })
+          .catch(err => this._errorHandler(err, true))
       }
     }
 
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoordinates) {
-        return Promise.resolve().then(() => this._syncRefCoordinates())
-          .then(() => this.updateWindowCoordinates())
+        return Promise.resolve()
+          .then(() => {
+            this._syncRefCoordinates()
+            return this.updateCoordinates()
+          })
+          .catch(err => this._errorHandler(err, true))
       }
     }
 
@@ -526,7 +543,7 @@ var GIVe = (function (give) {
         if (e.detail.tracks) {
           // needs to update Dom to match track visibility as well, so update
           //    the entire `chart-area` instead of only the window
-          this.windowUpdatePromise = this.updateWindowsDom()
+          this.windowUpdatePromise = this.updateDom()
         } else if (this._initialized) {
           this.windowUpdatePromise = this._redrawWindows(
             (window, index) => window.changeCoordinate(e.detail.newWindow),
@@ -534,6 +551,7 @@ var GIVe = (function (give) {
         }
       }
       return this.windowUpdatePromise
+        .catch(err => this._errorHandler(err, true))
     }
 
     updateWindowWidth (width) {
@@ -541,7 +559,7 @@ var GIVe = (function (give) {
     }
 
     _onIronResize (e) {
-      if (this._childInitialized) {
+      if (this._childIsInitialized) {
         if (!this._resizeDebouncePromise) {
           if (this._resizeDebounceInt) {
             this._resizeDebouncePromise = new Promise((resolve, reject) => {
@@ -551,7 +569,11 @@ var GIVe = (function (give) {
             this._resizeDebouncePromise = Promise.resolve()
           }
           return this._resizeDebouncePromise
-            .then(() => this.updateWindowWidth())
+            .then(() => {
+              this._resizeDebouncePromise = null
+              return this.updateWindowWidth()
+            })
+            .catch(err => this._errorHandler(err, true))
         }
         throw new give.PromiseCanceller()
       }

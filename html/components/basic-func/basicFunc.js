@@ -480,6 +480,32 @@ var GIVe = (function (give) {
     return null
   }
 
+  give.getValueArray = function (strVal, arrayLength, defaultArray) {
+    let arr = [strVal]
+    try {
+      let parsed = JSON.parse(strVal)
+      if (Array.isArray(parsed)) {
+        arr = parsed
+      }
+    } catch (ignore) { }
+    if (arr.length <= 0) {
+      arr[0] = null
+    }
+    // Repeat arr until it is at least as long as `arrayLength`
+    while (arr.length < arrayLength) {
+      arr = arr.concat(arr)
+    }
+    // If defaultArray is provided, use default values to replace falsey ones.
+    if (Array.isArray(defaultArray) && defaultArray.length > 0) {
+      for (let index = 0; index < arrayLength; index++) {
+        if (!arr[index]) {
+          arr[index] = defaultArray[index % defaultArray.length]
+        }
+      }
+    }
+    return arr.slice(0, arrayLength)
+  }
+
   class PromiseCanceller extends Error {
     constructor () {
       super(...arguments)

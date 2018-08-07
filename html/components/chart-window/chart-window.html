@@ -350,7 +350,7 @@ var GIVe = (function (give) {
 
       this.windowWidth = this.querySelector('#chartHolding').clientWidth
 
-      this.addEventListener('update-window', this._updateWindowHandler)
+      this.addEventListener('update-window', e => this._updateWindowHandler(e))
 
       if (this.coordinate) {
         this._coorChanged(this.coordinate)

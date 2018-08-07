@@ -78,7 +78,7 @@ var GIVe = (function (give) {
       _refChanged (newValue, oldValue) {
         if (!this._changingRef) {
           if (newValue) {
-            return give.RefObject.AllRefPromise
+            return give.RefObject.allRefPromise
               .then(() => this._setRefAfterReadyCheck(newValue))
               .catch(err => {
                 // call UI warning procedures in the future

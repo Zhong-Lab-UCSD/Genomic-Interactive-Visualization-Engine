@@ -14,7 +14,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/debounce.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/async.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
@@ -90,7 +92,7 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         margin-right: 1em;
       }
     </style>
-    <paper-input class="fullWidth" id="geneName" label="[[label]]"
+    <paper-input class="fullWidth" id="geneName" label="[[_dispLabel]]"
       value="{{inputValue}}" on-input="_partialInputHandler"
       on-focus="_textFocus" on-blur="_textUnFocus"
       no-label-float="[[noLabelFloat]]"
@@ -117,7 +119,9 @@ __Note:__ this function needs additional back-end support. Please see <https://g
           <template>
             <paper-item>
               <div class="geneNameClass">
-                <span>[[gene.contentBefore]]</span><strong>[[gene.contentBold]]</strong><span>[[gene.contentAfter]]</span>
+                <span>[[gene.contentBefore]]</span>
+                <strong>[[gene.contentBold]]</strong>
+                <span>[[gene.contentAfter]]</span>
               </div>
               <div class="geneDescClass">
                 [[gene.description]]
@@ -138,204 +142,186 @@ __Note:__ this function needs additional back-end support. Please see <https://g
 var GIVe = (function (give) {
   'use strict'
 
-  give.GeneCoorInput = Polymer({
-    is: 'gene-coor-input',
+  class GeneCoorInput extends give.RefEmbedMixin(Polymer.Element) {
+    static get is () {
+      return 'gene-coor-input'
+    }
 
-    behaviors: [
-      give.RefEmbeddedBehavior
-    ],
+    static get properties () {
+      return {
+        value: {
+          type: String,
+          value: '',
+          notify: true,
+          observer: '_valueObserver'
+        },
 
-    properties: {
+        alwaysFloatLabel: {
+          type: Boolean,
+          value: false
+        },
 
-      value: {
-        type: String,
-        value: '',
-        notify: true,
-        observer: '_valueObserver'
-      },
+        noLabelFloat: {
+          type: Boolean,
+          value: false
+        },
 
-      alwaysFloatLabel: {
-        type: Boolean,
-        value: false
-      },
+        geneNameUrl: {
+          type: String,
+          value: give.Host +
+            (give.ServerPath || '/') +
+            (give.GCI_PartialNameTarget || 'partialNames.php')
+        },
 
-      noLabelFloat: {
-        type: Boolean,
-        value: false
-      },
+        inputValue: {
+          type: String,
+          value: ''
+        },
 
-      geneNameUrl: {
-        type: String,
-        value: give.Host +
-          (give.ServerPath || '/') +
-          (give.GCI_PartialNameTarget || 'partialNames.php')
-      },
+        label: {
+          type: String,
+          value: 'Coordinate (or gene name)'
+        },
 
-      inputValue: {
-        type: String,
-        value: ''
-      },
+        _dispLabel: {
+          type: String,
+          value: ''
+        },
 
-      label: {
-        type: String,
-        value: 'Coordinate or gene name'
-      },
+        errorMessage: {
+          type: String,
+          value: 'Invalid chromosomal region!'
+        },
 
-      errorMessage: {
-        type: String,
-        value: 'Invalid chromosomal region!'
-      },
+        candidates: {
+          type: Array,
+          value () {
+            return []
+          }
+        },
 
-      candidates: {
-        type: Array,
-        value: function () {
-          return []
+        isCandidatesEmpty: {
+          type: Boolean,
+          value: true
+        },
+
+        _showMsgInList: {
+          type: Boolean,
+          value: false
+        },
+
+        coorSuffix: {
+          type: String,
+          value: ''
+        },
+
+        emptyCandidatesString: {
+          type: String,
+          value: '(No results)'
+        },
+
+        selectedCandidate: {
+          type: Object,
+          observer: '_partialSelectionChanged'
+        },
+
+        invalid: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Set this to false to disable partial gene name search features.
+         */
+        noGeneNameSearch: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Whether a partial gene name is allowed as the final value
+         */
+        allowPartialGeneName: {
+          type: Boolean,
+          value: false
+        },
+
+        required: {
+          type: Boolean,
+          value: false
+        },
+
+        _partialNameSupported: {
+          type: Boolean,
+          value: false,
+          observer: '_partialNameSupportChanged'
         }
-      },
-
-      isCandidatesEmpty: {
-        type: Boolean,
-        value: true
-      },
-
-      _showMsgInList: {
-        type: Boolean,
-        value: false
-      },
-
-      coorSuffix: {
-        type: String,
-        value: ''
-      },
-
-      emptyCandidatesString: {
-        type: String,
-        value: '(No results)'
-      },
-
-      selectedCandidate: {
-        type: Object,
-        observer: '_partialSelectionChanged'
-      },
-
-      mouseOutTimeOut: {
-        // this is the number of ms before hiding the menu
-        type: Number,
-        value: 1000
-      },
-
-      invalid: {
-        type: Boolean,
-        value: false
-      },
-
-      /**
-       * Set this to false to disable partial gene name search features.
-       */
-      noGeneNameSearch: {
-        type: Boolean,
-        value: false
-      },
-
-      /**
-       * Whether a partial gene name is allowed as the final value
-       */
-      allowPartialGeneName: {
-        type: Boolean,
-        value: false
-      },
-
-      required: {
-        type: Boolean,
-        value: false
-      },
-
-      _partialNameSupported: {
-        type: Boolean,
-        value: false
-      },
-
-      _ajaxDebounceDuration: {
-        type: Number,
-        value: 200
       }
-    },
+    }
 
-    listeners: {
-      'mouseover': '_mouseOverHandler',
-      'mouseout': '_mouseOutHandler'
-    },
+    ready () {
+      this._setTextFocusDebouncer = null
+      this._refocusDebouncer = null
+      this._ajaxDebouncer = null
+      this._mouseOutDebouncer = null
 
-    ready: function () {
-      this.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
-      this.MIN_JSON_QUERY_LENGTH = 1 // minimum length of query
-      this.GENE_LIST_PX_PER_LINE = 48 // height of paper-item
-      this.GENE_LIST_MAX_LINES = 7
-
-      this.SET_TEXT_FOCUS_JOB_NAME = '_GCI_SetFocus'
-      this.SET_TEXT_FOCUS_DEBOUNCE = 100
-
-      this.REFOCUS_JOB_NAME = '_GCI_ReFocus'
-      this.REFOCUS_DEBOUNCE = 50
+      this._ajaxDebounceInterval = this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
 
       this.querySent = ''
 
       this._decoupleInput = false
       // set this to true to decouple input values with actual values
 
-      this.MOUSEOUT_JOBNAME = 'MouseOutJob'
-      this.mouseOutTimeOut = 1000
-
       this.$.geneNameDropDown.positionTarget = this.$.geneName
       this.$.geneNameDropDown.focusTarget = this.$.geneName
 
-      this.AJAX_JOBNAME = '_GCI_AJAX'
-    },
+      this.addEventListener('mouseover', e => this._mouseOverHandler(e))
+      this.addEventListener('mouseout', e => this._mouseOutHandler(e))
+    }
 
-    attached: function () {
-      this._ajaxDebounceDuration = 200
-    },
+    attached () {
+      this._partialSelectionChanged(this._partialNameSupported)
+    }
 
-    _setRefObj: function (refObj) {
+    _partialNameSupportChanged (newValue, oldValue) {
+      this._dispLabel =
+        this.label.replace(' (or gene name)', newValue ? ' or gene name' : '')
+    }
+
+    _setRefObj (refObj) {
       this._refObj = refObj
-      this.partialNameSupported = false
+      this._partialNameSupported = false
       if (this._refObj && !this.noGeneNameSearch) {
         // Test whether reference support partial name filling.
         this.$.partialNameAjax.params = {
           'db': this._refObj.db
         }
         let request = this.$.partialNameAjax.generateRequest()
-        request.completes.then(function (req) {
-          if (req.response && req.response.supported) {
-            this._partialNameSupported = true
-          } else {
-            this._partialNameSupported = false
-          }
-        }.bind(this)).catch(function (rejectedObj) {
-          // TODO: change this part after upgrading to Polymer 2.0
-          // to pass the error messages if needed.
-          this._partialNameSupported = false
-        }.bind(this))
+        request.completes.then(req => (
+          this._partialNameSupported = (req.response && req.response.supported)
+        ))
+          .catch(rejectedObj => (this._partialNameSupported = false))
       }
-    },
+    }
 
-    _partialInputHandler: function () {
+    _partialInputHandler () {
       // $("#waiting").html($("#geneName").val());
       this._decoupleInput = false
       this.value = this.inputValue
-    },
+    }
 
-    _valueIsCoordinate: function () {
-      // use regex to test if this.value is a coordinate
+    _valueIsCoordinate () {
+      // First test if the value is chromosome name
       if (this._refObj && this._refObj.chromInfo &&
         this._refObj.chromInfo[this.value.toLowerCase()]
       ) {
         return true
       }
-      return /^chr\w+\s*(:|\s)/i.test(this.value)
-    },
+      // use regex to test if this.value is a coordinate
+      return /^chr\w+\s*(:|\s)/i.test(this.value.toLowerCase())
+    }
 
-    _valueObserver: function (newValue, oldValue) {
+    _valueObserver (newValue, oldValue) {
       if (!this._decoupleInput) {
         // value is coupled with input field
         this.coorSuffix = ''
@@ -348,9 +334,14 @@ var GIVe = (function (give) {
           ) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
-            this.debounce(this.AJAX_JOBNAME,
-              this._sendPartialQuery.bind(this),
-              this._ajaxDebounceDuration)
+            this._ajaxDebouncer = Polymer.debounce(
+              this._ajaxDebouncer,
+              Polymer.Async.timeOut.after(this._ajaxDebounceInterval),
+              () => {
+                this._ajaxDebouncer = null
+                this._sendPartialQuery()
+              }
+            )
           } else {
             this._toggleGList(false)
           }
@@ -358,30 +349,30 @@ var GIVe = (function (give) {
       } else {
         this._decoupleInput = false
       }
-    },
+    }
 
-    _setValueDecoupled: function (newValue) {
+    _setValueDecoupled (newValue) {
       this._decoupleInput = true
       this.value = newValue
-    },
+    }
 
-    _textFocus: function () {
+    _textFocus () {
       this._setTextFocusDebounced(true)
-    },
+    }
 
-    _textUnFocus: function () {
+    _textUnFocus () {
       this._setTextFocusDebounced(false)
-    },
+    }
 
-    _mouseOverHandler: function () {
+    _mouseOverHandler () {
       this._setMouseGList(true)
-    },
+    }
 
-    _mouseOutHandler: function () {
+    _mouseOutHandler () {
       this._setMouseGList(false)
-    },
+    }
 
-    _sendPartialQuery: function () {
+    _sendPartialQuery () {
       if (this.inputValue.length >= this.MIN_JSON_QUERY_LENGTH &&
         this.inputValue !== this.querySent
       ) {
@@ -393,16 +384,17 @@ var GIVe = (function (give) {
           'db': this._refObj.db
         }
         let request = this.$.partialNameAjax.generateRequest()
-        request.completes.then(this._updatePartialQuery.bind(this))
-          .catch(function (rejectedObj) {
-            // TODO: change this part after upgrading to Polymer 2.0
-            // to pass the error messages if needed.
+        return request.completes
+          .then(response => this._updatePartialQuery(response))
+          .catch(rejectedObj => {
             this._toggleGList(false)
-          }.bind(this))
+            give.fireSignal('warning', rejectedObj.message)
+          })
       }
-    },
+      return Promise.resolve()
+    }
 
-    _updatePartialQuery: function (req) {
+    _updatePartialQuery (req) {
       // $('#geneName').removeClass('searchFieldBusy');
       this.splice('candidates', 0, this.candidates.length)
       var data = req.response
@@ -426,11 +418,14 @@ var GIVe = (function (give) {
             }
             if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
               // gene has an alias that is actually matching
-              if (val.alias.toLowerCase().indexOf(this.querySent.toLowerCase()) === 0) {
+              if (val.alias.toLowerCase()
+                .indexOf(this.querySent.toLowerCase()) === 0
+              ) {
                 // has a matching alias
                 entry.contentBefore = entry.name + ' ('
                 entry.contentBold = val.alias.substr(0, this.querySent.length)
-                entry.contentAfter = val.alias.substr(this.querySent.length) + ')'
+                entry.contentAfter =
+                  val.alias.substr(this.querySent.length) + ')'
               } else {
                 // no matching alias (shouldn't happen)
                 entry.contentBefore = entry.name
@@ -444,15 +439,16 @@ var GIVe = (function (give) {
             this.push('candidates', entry)
           }
         }
-        this.isCandidatesEmpty = (!this.candidates || this.candidates.length <= 0)
+        this.isCandidatesEmpty =
+          (!this.candidates || this.candidates.length <= 0)
         this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty
         this._toggleGList(true)
       } else {
         this._toggleGList(false)
       }
-    },
+    }
 
-    _partialSelectionChanged: function (newValue, oldValue) {
+    _partialSelectionChanged (newValue, oldValue) {
       if (newValue && newValue.coor) {
         this.coorSuffix = '(' + newValue.coor + ')'
         this.inputValue = newValue.name
@@ -460,14 +456,14 @@ var GIVe = (function (give) {
         this._setValueDecoupled(newValue.coor)
         this._toggleGList(false)
       }
-    },
+    }
 
-    _toggleGList: function (toggle) {
+    _toggleGList (toggle) {
       if (toggle) {
         // turn on GList
         this.$.candidatesList.style.height = Math.min(this.candidates.length,
-          this.GENE_LIST_MAX_LINES) *
-          this.GENE_LIST_PX_PER_LINE + 'px'
+          this.constructor.GENE_LIST_MAX_LINES) *
+          this.constructor.GENE_LIST_PX_PER_LINE + 'px'
         this.$.geneNameDropDown.refit()
         this.$.geneNameDropDown.open()
         this.$.candidatesList.clearSelection()
@@ -475,35 +471,50 @@ var GIVe = (function (give) {
           this.$.candidatesList.updateViewportBoundaries()
         })
         this.$.candidatesList.notifyResize()
-        this._ajaxDebounceDuration = 50
+        this._ajaxDebounceInterval =
+          this.constructor.AJAX_DEBOUNCE_INTERVAL_ACTIVE
       } else {
-        this._ajaxDebounceDuration = 200
+        this._ajaxDebounceInterval =
+          this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
         if (this.$.geneNameDropDown.opened) {
           this.$.geneNameDropDown.close()
           if (!this._inFocus) {
             this.validate()
           } else {
-            this.debounce(this.REFOCUS_JOB_NAME,
-              this.$.geneName.focus.bind(this.$.geneName),
-              this.REFOCUS_DEBOUNCE
+            this._refocusDebouncer = Polymer.debounce(
+              this._refocusDebouncer,
+              Polymer.Async.timeOut.after(
+                this.constructor.REFOCUS_DEBOUNCE_INTERVAL
+              ),
+              () => {
+                this._refocusDebouncer = null
+                this.$.geneName.focus()
+              }
             )
           }
         }
       }
-    },
+    }
 
-    _setTextFocusDebounced: function (flag) {
-      if (this.isDebouncerActive(this.SET_TEXT_FOCUS_JOB_NAME)) {
-        this.cancelDebouncer(this.SET_TEXT_FOCUS_JOB_NAME)
+    _setTextFocusDebounced (flag) {
+      if (this._setTextFocusDebouncer) {
+        this._setTextFocusDebouncer.cancel()
       }
       if (flag !== this._inFocus) {
-        this.debounce(this.SET_TEXT_FOCUS_JOB_NAME,
-          this._setTextFocus.bind(this, flag),
-          flag ? 0 : this.SET_TEXT_FOCUS_DEBOUNCE)
+        this._setTextFocusDebouncer = Polymer.debounce(
+          this._setTextFocusDebouncer,
+          Polymer.Async.timeOut.after(
+            flag ? 0 : this.constructor.SET_TEXT_FOCUS_DEBOUNCE_INTERVAL
+          ),
+          () => {
+            this._setTextFocusDebouncer = null
+            this._setTextFocus(flag)
+          }
+        )
       }
-    },
+    }
 
-    _setTextFocus: function (flag) {
+    _setTextFocus (flag) {
       this._inFocus = flag
       this._checkGList()
       if (!flag && this._refObj && this._refObj.chromInfo &&
@@ -513,31 +524,38 @@ var GIVe = (function (give) {
         if (this._refObj.chromInfo.hasOwnProperty(chrom) &&
           this._refObj.chromInfo[chrom].name !== chrom) {
           // case is wrong, fix it
-          this.value = this.value.replace(chrom, this._refObj.chromInfo[chrom].name)
+          this.value = this.value.replace(chrom,
+            this._refObj.chromInfo[chrom].name)
         }
       }
       if (!flag && !this.$.geneNameDropDown.opened) {
         this.validate()
       }
-    },
+    }
 
-    _setMouseGList: function (flag) {
+    _setMouseGList (flag) {
       this._mouseInGList = flag
       this._checkGList()
-    },
+    }
 
-    _checkGList: function () {
+    _checkGList () {
       if (!this._inFocus && !this._mouseInGList) {
-        this.debounce(this.MOUSEOUT_JOBNAME, this._toggleGList.bind(this, false),
-          this.mouseOutTimeOut)
+        this._mouseOutDebouncer = Polymer.debounce(
+          this._mouseOutDebouncer,
+          Polymer.Async.timeOut.after(this.constructor.MOUSE_OUT_TIME_OUT),
+          () => {
+            this._mouseOutDebouncer = null
+            this._toggleGList(false)
+          }
+        )
       } else {
-        if (this.isDebouncerActive(this.MOUSEOUT_JOBNAME)) {
-          this.cancelDebouncer(this.MOUSEOUT_JOBNAME)
+        if (this._mouseOutDebouncer) {
+          this._mouseOutDebouncer.cancel()
         }
       }
-    },
+    }
 
-    validate: function () {
+    validate () {
       var errMsg
       this.invalid = false
       if (!this.value && this.required) {
@@ -571,9 +589,23 @@ var GIVe = (function (give) {
       } else {
         this.invalid = false
       }
+      return !this.invalid
     }
-  })
+  }
 
+  GeneCoorInput.GENE_LIST_PX_PER_LINE = 48
+  GeneCoorInput.GENE_LIST_MAX_LINES = 7
+
+  GeneCoorInput.MOUSE_OUT_TIME_OUT = 1000
+  GeneCoorInput.REFOCUS_DEBOUNCE_INTERVAL = 50
+  GeneCoorInput.SET_TEXT_FOCUS_DEBOUNCE_INTERVAL = 100
+  GeneCoorInput.AJAX_DEBOUNCE_INTERVAL_IDLE = 200
+  GeneCoorInput.AJAX_DEBOUNCE_INTERVAL_ACTIVE = 200
+
+  GeneCoorInput.MAX_CANDIDATES = 100 // max amount of candidates allowed to return
+  GeneCoorInput.MIN_JSON_QUERY_LENGTH = 1 // minimum length of query
+
+  give.GeneCoorInput = GeneCoorInput
   return give
 })(GIVe || {})
   </script>

@@ -58,7 +58,7 @@ var GIVe = (function (give) {
 
       this.reverseLookupTable = {}
       if (!this.settings.hasOwnProperty('defaultViewWindows')) {
-        this.settings.defaultViewWindows = give.RefObject.defaultViewWindows
+        this.settings.defaultViewWindows = this.constructor.defaultViewWindows
       }
       if (typeof this.settings.defaultViewWindows === 'string') {
         this.settings.defaultViewWindows = [this.settings.defaultViewWindows]
@@ -107,7 +107,7 @@ var GIVe = (function (give) {
 
     _initChromInfoFromServer (target) {
       return give.postAjax(
-        target || give.RefObject.initChromTarget,
+        target || this.constructor.initChromTarget,
         {db: this.db},
         'json', 'GET'
       ).then(data => this._initChromInfoFromData(data))
@@ -185,7 +185,7 @@ var GIVe = (function (give) {
       // callback is the callback function taking no argument (already bound)
       if (!this._trackPromise) {
         this._trackPromise = give.postAjax(
-          target || give.RefObject.initTrackTarget, {db: this.db},
+          target || this.constructor.initTrackTarget, {db: this.db},
           'json'
         ).then(data => {
           give._verbConsole.info('Tracks not initialized for ref ' +
@@ -219,7 +219,7 @@ var GIVe = (function (give) {
       group = group || {}
       var groupID = group.id || 'customTracks'
       if (!this.groups.hasOwnProperty(groupID)) {
-        this.groups[groupID] = give.RefObject.createCustomGroup(group)
+        this.groups[groupID] = this.constructor.createCustomGroup(group)
       }
       // remove existing track
       if (this.groups[groupID].hasTrack(track.tableName)) {
@@ -328,7 +328,7 @@ var GIVe = (function (give) {
         if (data.hasOwnProperty(refDb) &&
           (typeof filter !== 'function' || filter(data[refDb]))
         ) {
-          this.refArray.dbMap[refDb] = new give.RefObject(
+          this.refArray.dbMap[refDb] = new this(
             refDb, data[refDb].name,
             data[refDb].commonname,
             data[refDb].encode, data[refDb].dbname, data[refDb].chromInfo,
@@ -352,13 +352,13 @@ var GIVe = (function (give) {
       if (typeof db === 'string' && !this.refArray) {
         // not ready yet, push to task scheduler
         throw (new give.GiveError('refArray is not initialized yet! Please ' +
-          'use GIVe.RefObject.AllRefPromise.then() to wrap your function.'))
+          'use GIVe.RefObject.allRefPromise.then() to wrap your function.'))
       } else {
         if (typeof db === 'string' &&
           this.refArray.dbMap.hasOwnProperty(db)) {
           // look up reference in give.RefObject.refArray
-          return give.RefObject.refArray.dbMap[db]
-        } else if (db instanceof give.RefObject) {
+          return this.constructor.refArray.dbMap[db]
+        } else if (db instanceof this) {
           return db
         } else {
           throw (new give.GiveError('Invalid RefObject was given: ' + db))
@@ -383,7 +383,7 @@ var GIVe = (function (give) {
   RefObject.defaultViewWindows = give.Ref_DefaultViewWindows ||
     ['chr10:30000000-55000000', 'chr10:34900000-65000000']
 
-  RefObject.AllRefPromise = RefObject.initAllRefFromServer()
+  RefObject.allRefPromise = RefObject.initAllRefFromServer()
 
   give.RefObject = RefObject
 
