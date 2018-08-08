@@ -487,7 +487,7 @@ var GIVe = (function (give) {
      *    This parameter should be an `Object` with at least two properties:
      *    `{ start: <start coordinate>, end: <end coordinate>, ... }`,
      *    preferably a `GIVe.ChromRegion` object.
-     * @param {object|null} props - additional properties being passed onto
+     * @param {object} props - additional properties being passed onto
      *    nodes.
      * @param {Array<ChromRegionLiteral>} props.contList - the list of data
      *    entries that should not start in `chrRange` but are passed from the
@@ -502,7 +502,6 @@ var GIVe = (function (give) {
      *    See `give.GiveNonLeafNode.prototype._restructureSingleLayer` for details.
      */
     insert (data, chrRange, props) {
-      props = props || {}
       if (data && data.length === 1 && !chrRange) {
         chrRange = data[0]
       }
@@ -825,6 +824,33 @@ var GIVe = (function (give) {
           index++
         }
         return props._result
+      } else { // chrRange
+        throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      }
+    }
+
+    hasUncachedRange (chrRange, props) {
+      if (chrRange) {
+        var index = 0
+        while (index < this.childNum &&
+          this.keys[index + 1] <= chrRange.start
+        ) {
+          index++
+        }
+        while (index < this.childNum &&
+          this.keys[index] < chrRange.end
+        ) {
+          if (this.values[index]) {
+            // there is a child node here, descend
+            if (this.values[index].hasUncachedRange(chrRange, props)) {
+              return true
+            }
+          } else if (this.values[index] === null) {
+            return true
+          }
+          index++
+        }
+        return false
       } else { // chrRange
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       }

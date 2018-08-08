@@ -105,7 +105,7 @@ var GIVe = (function (give) {
      *    This parameter should be an `Object` with at least two properties:
      *    `{ start: <start coordinate>, end: <end coordinate>, ... }`,
      *    preferably a `GIVe.ChromRegion` object.
-     * @param {object|null} props - additional properties being
+     * @param {object} props - additional properties being
      *    passed onto nodes.
      * @param {Array<ChromRegionLiteral>} [props.contList] - the list of
      *    data entries that should not start in `chrRange` but are passed
@@ -148,7 +148,7 @@ var GIVe = (function (give) {
      *    removed.
      * @param {boolean|null} convertTo - what shall be used to replace
      *    the removed nodes, should be either `null` (default) or `false`.
-     * @param  {object|null} [props] - additional properties being
+     * @param  {object} [props] - additional properties being
      *    passed onto nodes.
      * @param {function|null} props.callback - the callback function to be
      *    used (with the data entry as its sole parameter) when deleting
@@ -206,7 +206,7 @@ var GIVe = (function (give) {
      *    `false` if `callback` returns `false`.
      * @param  {ChromRegionLiteral|GiveTreeNode} entry - the data entry
      *    `callback` is going to be called upon.
-     * @param  {object|null} props - additional properties being
+     * @param  {object} props - additional properties being
      *    passed onto nodes.
      * @param  {boolean} props.notFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
@@ -239,7 +239,7 @@ var GIVe = (function (give) {
      *    whether the region should be included in traverse.
      * @param  {boolean} breakOnFalse - whether the traverse should be
      *    stopped if `false` is returned from the callback function.
-     * @param  {object|null} props - additional properties being
+     * @param  {object} props - additional properties being
      *    passed onto nodes.
      * @param  {boolean} props.notFirstCall - whether this is not the first
      *    call of a series of `traverse` calls.
@@ -255,7 +255,7 @@ var GIVe = (function (give) {
      *    data loaded to allow buffered loading of data
      *
      * @param  {ChromRegionLiteral} chrRange - The range of query.
-     * @param  {object|null} props - additional properties being passed onto
+     * @param  {object} props - additional properties being passed onto
      *    nodes
      * @returns {Array<ChromRegionLiteral>} An ordered array of the regions
      *    that does not have the data at the current resolution requirement.
@@ -263,6 +263,20 @@ var GIVe = (function (give) {
      */
     getUncachedRange (chrRange, props) {
       throw new give.GiveError('GiveTreeNode.getUncachedRange not ' +
+        'implemented in `' + this.constructor.name + '`!')
+    }
+
+    /**
+     * hasUncachedRange - Quickly check if the node has any uncached range
+     *    within a specific range.
+     *
+     * @param  {ChromRegionLiteral} chrRange - The range of query.
+     * @param  {object} props - additional properties being passed onto
+     *    nodes
+     * @returns {boolean} `true` if the tree has uncached ranges.
+     */
+    hasUncachedRange (chrRange, props) {
+      throw new give.GiveError('GiveTreeNode.hasUncachedRange not ' +
         'implemented in `' + this.constructor.name + '`!')
     }
 

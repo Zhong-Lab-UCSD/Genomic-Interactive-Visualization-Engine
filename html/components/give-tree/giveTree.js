@@ -297,7 +297,7 @@ var GIVe = (function (give) {
      *    entry from being called with `callback`.
      * @param {boolean} breakOnFalse - whether the traversing should break if
      *    `false` has been returned from `callback`
-     * @param {object|null} props - additional properties being passed onto
+     * @param {object} props - additional properties being passed onto
      *    nodes
      * @returns {boolean} If the traverse breaks on `false`, returns `false`,
      *    otherwise `true`
@@ -331,6 +331,28 @@ var GIVe = (function (give) {
       } else {
         return []
       }
+    }
+
+    /**
+     * hasUncachedRange - quickly check if the tree has any uncached range
+     *    within a specific range.
+     * This is used for sectional loading.
+     * @memberof GiveTreeBase.prototype
+     *
+     * @param {ChromRegionLiteral} chrRange - the chromosomal range to query
+     * @param {object|null} props - additional properties being passed onto
+     *    nodes
+     * @returns {boolean} `true` if the tree has uncached ranges.
+     */
+    hasUncachedRange (chrRange, props) {
+      props = props || {}
+      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
+        chrRange = chrRange
+          ? this._root.truncateChrRange(chrRange, true, false)
+          : this.coveringRange
+        return this._root.hasUncachedRange(chrRange, props)
+      }
+      return false
     }
   }
 

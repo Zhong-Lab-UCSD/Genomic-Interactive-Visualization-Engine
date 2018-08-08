@@ -452,8 +452,8 @@ var GIVe = (function (give) {
       if (!newViewWindow) {
         // no new window, need to calculate
         if (!this.viewWindow) {
-          return Promise.reject(new give.GiveError('No original view ' +
-            'window, cannot calculate the new view window!'))
+          throw new give.GiveError('No original view ' +
+            'window, cannot calculate the new view window!')
         }
         newViewWindow = (newViewWindow === false)
           ? this.viewWindow
@@ -1242,32 +1242,33 @@ var GIVe = (function (give) {
       // viewWindow is the new viewWindow value of coordinates
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
-      try {
-        viewWindow = this._verifyViewWindow(viewWindow)
-        this._pendingNewVWArr = Array.isArray(viewWindow)
-          ? viewWindow.slice() : [viewWindow]
-        this._pendingNewVWArr.forEach(range => {
-          range.resolution = this.getResolution(range) || 1
-        })
+      viewWindow = this._verifyViewWindow(viewWindow)
+      this._pendingNewVWArr = Array.isArray(viewWindow)
+        ? viewWindow.slice() : [viewWindow]
+      this._pendingNewVWArr.forEach(range => {
+        range.resolution = this.getResolution(range) || 1
+      })
 
-        this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(
-          e => {
-            if (e instanceof give.PromiseCanceller) {
-              throw e
-            }
-            give._verbConsole.warn(e)
-            give.fireSignal('warning', { msg: e.message })
+      this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(
+        // catch all error that is *not* give.PromiseCanceller
+        e => {
+          if (e instanceof give.PromiseCanceller) {
+            throw e
           }
-        ).then(() => {
-          give.fireSignal('track-ready', { ID: this.parent.id })
-          this.readyPromise = null
-          return this.viewWindow
-        })
-      } catch (e) {
-        if (!(e instanceof give.PromiseCanceller)) {
-          throw e
+          give._verbConsole.warn(e)
+          give.fireSignal('warning', { msg: e.message })
+          return e
         }
-      }
+      ).then(e => {
+        // needs to implement this 'finally except when give.PromiseCanceller
+        //    is thrown' case.
+        give.fireSignal('track-ready', { ID: this.parent.id })
+        this.readyPromise = null
+        if (!e || e instanceof give.ChromRegion) {
+          return e
+        }
+        throw e
+      })
       return this.readyPromise
     }
 

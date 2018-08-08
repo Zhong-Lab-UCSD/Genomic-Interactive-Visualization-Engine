@@ -759,6 +759,54 @@ var GIVe = (function (give) {
     }
 
     /**
+     * hasUncachedRange - Quickly check if the node has any uncached range
+     *    within a specific range.
+     *
+     * @param  {GIVE.ChromRegion} chrRange - The range of query.
+     * @param  {number} chrRange.resolution - the resolution required for the
+     *    uncached range. 1 is finest. This is used in case of mixed
+     *    resolutions for different `chrRange`s, This will override
+     *    `props.resolution` if both exist.
+     * @param  {object} props - additional properties being passed onto
+     *    nodes
+     * @param  {number|null} props.resolution - resolution required for the
+     *    query, will be overridden by `chrRange.resolution` if both exist.
+     * @returns {boolean} `true` if the tree has uncached ranges.
+     */
+    hasUncachedRange (chrRange, props) {
+      // return the range list with range(s) without any data
+      // if no non-data ranges are found, return []
+
+      let resolution = chrRange.resolution || props.resolution || 1
+      if (chrRange) {
+        var currIndex = 0
+        while (currIndex < this.values.length &&
+          this.keys[currIndex + 1] <= chrRange.start
+        ) {
+          currIndex++
+        }
+        while (currIndex < this.values.length &&
+          this.keys[currIndex] < chrRange.end
+        ) {
+          if (this.values[currIndex] &&
+            !this.childResolutionEnough(resolution, currIndex)
+          ) {
+            // child has not enough resolution
+            if (this.values[currIndex].hasUncachedRange(chrRange, props)) {
+              return true
+            }
+          } else if (!this.childHasData(currIndex)) {
+            return true
+          }
+          currIndex++
+        }
+        return false
+      } else { // chrRange
+        throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
+      }
+    }
+
+    /**
      * isEmpty - return whether this node is empty
      * If there is no entry in both `this.startList` and `this.contList` then
      *    the node is considered empty.

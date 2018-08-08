@@ -210,7 +210,7 @@ var GIVe = (function (give) {
     _getTrackUncachedRange (mergedGUIRanges) {
       var totalUncachedRanges = []
       if (mergedGUIRanges && Array.isArray(mergedGUIRanges)) {
-        mergedGUIRanges.forEach(function (chrRange, index) {
+        mergedGUIRanges.forEach(chrRange => {
           if (this.getData(chrRange.chr, true).getUncachedRange) {
             var uncachedRanges = this.getData(chrRange.chr).getUncachedRange(
               chrRange, {
@@ -224,9 +224,21 @@ var GIVe = (function (give) {
               : chrRange.resolution
             totalUncachedRanges.push(chrRange)
           }
-        }, this)
+        })
       }
       return totalUncachedRanges
+    }
+
+    _trackHasUncachedRange (ranges) {
+      if (ranges && Array.isArray(ranges)) {
+        return ranges.some(chrRange => {
+          if (this.getData(chrRange.chr, true).hasUncachedRange) {
+            return this.getData(chrRange.chr).hasUncachedRange(chrRange)
+          }
+          return true
+        })
+      }
+      return false
     }
 
     /**
@@ -295,6 +307,12 @@ var GIVe = (function (give) {
       }
       give._verbConsole.info('fetchData()')
       give._verbConsole.info(ranges.map(range => range.regionToString()))
+
+      if (!this._trackHasUncachedRange(ranges)) {
+        let callerObj = {}
+        callerObj[callerID] = ranges
+        return Promise.resolve(callerObj)
+      }
 
       this._pendingRangesById[callerID] = ranges
 
