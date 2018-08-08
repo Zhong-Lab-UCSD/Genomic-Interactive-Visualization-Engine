@@ -407,6 +407,7 @@ var GIVe = (function (give) {
           this.$.mainTrackList.syncDomToTrack() || forceDomUpdate,
           this._calcCoordinateObjToJson(), true
         )
+          .catch(err => this._errorHandler(err))
       }
       return Promise.resolve()
     }
@@ -418,20 +419,8 @@ var GIVe = (function (give) {
       this._syncCoordinateJsonToObj()
     }
 
-    _updateCoordinateHandler (e) {
-      if (Array.isArray(e.detail.newWindow)) {
-        e.detail.newWindow.forEach(function (newCoor, index) {
-          this.splice('coordinates', index, 1, newCoor)
-        }, this)
-      } else if (e.detail.windowIndex >= 0 &&
-        e.detail.windowIndex < this.coordinates.length
-      ) {
-        this.splice('coordinates', e.detail.windowIndex, 1, e.detail.newWindow)
-      }
-    }
-
     _updateTrackDomHandler (e) {
-      return this.updateChartDomAndTrack()
+      return this.updateChartDomAndTrack(e.detail.forceDomUpdate)
     }
 
     _calcCoordinateObjToJson () {
