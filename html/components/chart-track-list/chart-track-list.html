@@ -78,7 +78,7 @@ var GIVe = (function (give) {
       }
     },
 
-    trackToDOM: function (scrollToSelected) {
+    syncTrackToDom: function (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
       if (this.group && this.group.every) {
@@ -101,7 +101,7 @@ var GIVe = (function (give) {
       }
     },
 
-    DOMToTrack: function () {
+    syncDomToTrack: function () {
       // this is used when submitting the results
       if (this.group && this.group.forEach) {
         this.group.forEach(function (track, index) {
@@ -124,7 +124,7 @@ var GIVe = (function (give) {
         this.group.every(function (track) {
           track.resetSetting(this.settingKey)
         }, this)
-        this.trackToDOM()
+        this.syncTrackToDom()
       }
     },
 
@@ -148,7 +148,7 @@ var GIVe = (function (give) {
 
     _selectedItemsChangedHandler: function (e) {
       if (this.instantChange) {
-        this.DOMToTrack()
+        this.syncDomToTrack()
       }
     }
   })

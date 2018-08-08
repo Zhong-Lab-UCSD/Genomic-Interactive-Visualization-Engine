@@ -122,7 +122,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         </template>
         <div class="layout horizontal">
           <paper-button class="colored" raised id="updateChartBtn"
-            on-tap="updateTracks">
+            on-tap="update">
             Update
           </paper-button>
           <paper-button raised id="cancelUpdateChartButton"
@@ -288,7 +288,7 @@ var GIVe = (function (give) {
 
         /**
          * Whether the track controller will reflect change immediately
-         * without calling this.DOMToTrack().
+         * without calling this.syncDomToTrack().
          * This is always false if hasControls === true
          * @type {boolean}
          */
@@ -310,7 +310,7 @@ var GIVe = (function (give) {
 
     // listeners: {
     //   'update-coordinate': '_updateCoordinateHandler',
-    //   'update-track-structure': '_updateTrackstructureHandler',
+    //   'update-track-dom': '_updateTrackDomHandler',
     //   'show-track-filter': '_showTrackFilterHandler',
     //   'filter-tracks': '_filterTracksHandler'
     // },
@@ -321,8 +321,8 @@ var GIVe = (function (give) {
 
     attached () {
       return Promise.resolve()
-        .then(() => this.updateChart())
-        .catch(err => this._errorHandler(err, true))
+        .then(() => this.update(true))
+        .catch(err => this._errorHandler(err))
     }
 
     /**
@@ -390,30 +390,32 @@ var GIVe = (function (give) {
       }
     }
 
-    updateTracks () {
+    update (forceDomUpdate) {
       // remove the invalid marks
       this._coordinateObjects.forEach((coordinateObj, index) => {
         coordinateObj.invalid = false
         // notify Polymer
         this.notifyPath(['_coordinateObjects', index, 'invalid'])
       })
-      return this.updateTrackStructure()
+      return this.updateChartDomAndTrack(forceDomUpdate)
     }
 
-    updateTrackStructure () {
+    updateChartDomAndTrack (forceDomUpdate) {
       if (this.$.mainTrackList) {
-        this.$.mainTrackList.DOMToTrack()
-        return this.$.mainChartArea.updateDom()
+        return this.$.mainChartArea.update(
+          null, null,
+          this.$.mainTrackList.syncDomToTrack() || forceDomUpdate,
+          this._calcCoordinateObjToJson(), true
+        )
       }
       return Promise.resolve()
     }
 
     _resetTracks () {
       if (this.$.mainTrackList) {
-        this.$.mainTrackList.trackToDOM()
-        var correctedVWindows = this.$.mainChartArea.getViewWindowStrings()
-        this.coordinates = correctedVWindows
+        this.$.mainTrackList.syncTrackToDom()
       }
+      this._syncCoordinateJsonToObj()
     }
 
     _updateCoordinateHandler (e) {
@@ -428,27 +430,48 @@ var GIVe = (function (give) {
       }
     }
 
-    _updateTrackStructureHandler (e) {
-      return this.updateTrackStructure()
+    _updateTrackDomHandler (e) {
+      return this.updateChartDomAndTrack()
+    }
+
+    _calcCoordinateObjToJson () {
+      return JSON.stringify(
+        this.coordinateObj.map(coordinateObj => coordinateObj.coor)
+      )
+    }
+
+    _syncCoordinateObjToJson () {
+      this._updatingCoordinates = true
+      this.coordinates = this._calcCoordinateObjToJson()
+      this._updatingCoordinates = false
+    }
+
+    _syncCoordinateJsonToObj () {
+      let coordinates = give.getValueArray(this.coordinates, this.numOfSubs)
+      if (this._coordinateObjects) {
+        this.splice('_coordinateObjects', 0)
+        coordinates.forEach(coordinate => {
+          this.push('_coordinateObjects', {
+            coor: coordinate,
+            invalid: false
+          })
+        })
+      }
     }
 
     _coordinateChanged (newValue, oldValue) {
       if (!this._updatingCoordinates) {
-        let coordinates = give.getValueArray(this.coordinates, this.numOfSubs)
-        if (this._coordinateObjects) {
-          this.splice('_coordinateObjects', 0)
-          coordinates.forEach(coordinate => {
-            this.push('_coordinateObjects', {
-              coor: coordinate,
-              invalid: false
-            })
-          })
-        }
+        return this._syncCoordinateJsonToObj()
       }
     }
 
     _errorHandler (err) {
-
+      // some exception has happended during the conversion
+      // throw an exception telling calling procedures
+      if (err instanceof give.PromiseCanceller) {
+        throw err
+      }
+      // TODO: gracefully handle the exception
     }
   }
 

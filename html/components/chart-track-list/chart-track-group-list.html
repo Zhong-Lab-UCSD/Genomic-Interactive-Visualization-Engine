@@ -114,7 +114,7 @@ var GIVe = (function (give) {
 
       /**
        * Whether the track controller will reflect change immediately
-       * without calling this.DOMToTrack().
+       * without calling this.syncDomToTrack().
        * This is always false if hasControls === true
        * @type {boolean}
        */
@@ -192,7 +192,7 @@ var GIVe = (function (give) {
         }
       }
       this.async(function () {
-        this.trackToDOM(true)
+        this.syncTrackToDom(true)
         this.setReady(true)
       })
     },
@@ -228,16 +228,16 @@ var GIVe = (function (give) {
       }
     },
 
-    trackToDOM: function (scrollToSelected) {
+    syncTrackToDom: function (scrollToSelected) {
       // this is used when resetting selection
       give.forEach(Polymer.dom(this.root).querySelectorAll('chart-track-list'),
-        elem => elem.trackToDOM(scrollToSelected), this)
+        elem => elem.syncTrackToDom(scrollToSelected), this)
     },
 
-    DOMToTrack: function () {
+    syncDomToTrack: function () {
       // this is used when submitting the results
       give.forEach(Polymer.dom(this.root).querySelectorAll('chart-track-list'),
-        elem => elem.DOMToTrack(), this)
+        elem => elem.syncDomToTrack(), this)
     },
 
     resetAllTracks: function () {
@@ -276,12 +276,12 @@ var GIVe = (function (give) {
     },
 
     submitChanges: function () {
-      this.DOMToTrack()
+      this.syncDomToTrack()
       this.backToSearch()
     },
 
     cancelChanges: function () {
-      this.trackToDOM()
+      this.syncTrackToDom()
       this.backToSearch()
     },
 

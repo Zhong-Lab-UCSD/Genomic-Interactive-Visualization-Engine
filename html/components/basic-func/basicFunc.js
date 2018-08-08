@@ -477,7 +477,7 @@ var GIVe = (function (give) {
     if (promisesChanged) {
       return Promise.all(promiseArray)
     }
-    return null
+    throw new give.PromiseCanceller()
   }
 
   give.getValueArray = function (strVal, arrayLength, defaultArray) {

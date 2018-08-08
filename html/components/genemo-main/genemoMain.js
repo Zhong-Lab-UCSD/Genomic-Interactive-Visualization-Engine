@@ -284,7 +284,7 @@ var GIVe = (function (give) {
   give.switchPage = function (selectedPageID) {
     if (selectedPageID === give.TRACK_LIST_PANEL_DOM_ID) {
       // needs to show track list, prepare track list then
-      trackListDom.trackToDOM()
+      trackListDom.syncTrackToDom()
     }
     if (searchTracksDom && searchTracksDom.select) {
       searchTracksDom.select(selectedPageID)

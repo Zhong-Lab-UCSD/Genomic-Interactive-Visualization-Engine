@@ -684,7 +684,8 @@ var GIVe = (function (give) {
       })
       if (this.querySelector('.scrollingParts').clientWidth < width) {
         throw new ResetWidthError(
-          this.querySelector('.scrollingParts').clientWidth)
+          this.querySelector('.scrollingParts').clientWidth
+        )
       }
       this.windowWidth = width
     }
@@ -727,23 +728,18 @@ var GIVe = (function (give) {
 
       // Update all tracks' width and height (with maybe new view window)
       // If no new promise is needed, do not chain stuff afterwards
-      let newdrawingPromise = give.getAggregatedUpdatePromise(
+      this.drawingPromise = give.getAggregatedUpdatePromise(
         this._trackDomPromises,
         this._trackDoms.concat(this._hiddenTrackDoms),
         trackDom => trackDom.update(
           this._pendingVWindow, width, null, false, this.index)
       )
-
-      if (newdrawingPromise) {
         // * Calculate whether a scroll bar will be needed
         //   (by calculating and setting the height of the svgHolder element)
         //   * If a scroll bar is needed, throw the width with scroll bar
         //     factored in. Process ends to wait for the next call from the
         //     parent element (`chart-area`).
-        this.drawingPromise = newdrawingPromise.then(
-          windows => this._trackReadyHandler(windows, width)
-        )
-      }
+        .then(windows => this._trackReadyHandler(windows, width))
 
       return this.drawingPromise
     }
@@ -859,7 +855,7 @@ var GIVe = (function (give) {
 
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoor) {
-        this.changeCoordinate(newValue)
+        return this.changeCoordinate(newValue)
       }
     }
 
@@ -870,6 +866,7 @@ var GIVe = (function (give) {
         if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
           return this.changeViewWindow(newWindow)
         }
+        throw new give.PromiseCanceller()
       } catch (err) {
         err.data = err.data || {}
         err.data.updatedCoor =
@@ -878,7 +875,6 @@ var GIVe = (function (give) {
         this._updateCoordinates()
         throw err
       }
-      return this.drawingPromise || Promise.resolve(this._viewWindow)
     }
 
     _updateCoordinates (window) {
@@ -981,7 +977,7 @@ var GIVe = (function (give) {
       if (result) {
         this._initialized = false
       }
-      // return this.refTracksPromise.then(refObj => {
+      // return this.refReadyPromise.then(refObj => {
       //   if (refObj.db !== this.ref) {
       //     // Only respond to this call if ref has not been changed
       //     throw new give.PromiseCanceller()
@@ -1011,10 +1007,10 @@ var GIVe = (function (give) {
      */
     resetDom (contexts) {
       contexts = contexts || []
-      let refTracksPromise = Promise.resolve()
+      let refReadyPromise = Promise.resolve()
       if (!this._initialized) {
         if (this.refObj) {
-          refTracksPromise = this.refObj.initTracks().then(() => {
+          refReadyPromise = this.refObj.initTracks().then(() => {
             this._initialized = true
           })
         } else {
@@ -1022,7 +1018,7 @@ var GIVe = (function (give) {
           throw new give.GiveError('Reference not initialized.')
         }
       }
-      return refTracksPromise.then(() => {
+      return refReadyPromise.then(() => {
         this._clearDOM()
         this._readiness = false
         this._initDOMCoorTrack()
@@ -1105,7 +1101,7 @@ var GIVe = (function (give) {
       }
 
       // then add new Tracks (if not there already)
-      this._addAllTrackDoms(contexts)
+      return this._addAllTrackDoms(contexts)
     }
 
     /**

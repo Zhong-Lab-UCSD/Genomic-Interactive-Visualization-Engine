@@ -285,6 +285,9 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       this.addEventListener('iron-resize', e => this._onIronResize(e))
+      this._updatingCoordinates = false
+      this._updatingRefs = false
+      this._updatingNumOfSubs = false
       return give.RefObject.allRefPromise
         .then(() => this._numOfSubsChanged(this.numOfSubs))
     }
@@ -308,14 +311,13 @@ var GIVe = (function (give) {
     }
 
     _errorHandler (err, catchWindowNotInitialized) {
-      // some exception has happended during the conversion
-      // throw an exception telling calling procedures
+      // throw give.PromiseCanceller to stop any current promise chain
       if (err instanceof give.PromiseCanceller) {
         throw err
       }
       if (err instanceof WindowNotInitialized && catchWindowNotInitialized) {
         give._verbConsole.info('Window not initialized')
-        return Promise.reject(give.PromiseCanceller())
+        throw new give.PromiseCanceller())
       }
       if (!this.passExceptions) {
         // TODO: gracefully handle the exception
@@ -332,18 +334,23 @@ var GIVe = (function (give) {
         [...this.$.windowsHolder.querySelectorAll('chart-window')]
     }
 
-    _syncRefCoordinates (numOfWindows) {
+    _syncRefsJsonToArray (numOfWindows, newRefValue) {
       numOfWindows = numOfWindows || this.numOfSubs
-      this._refArray = give.getValueArray(this.ref, numOfWindows)
+      newRefValue = newRefValue || this.ref
+      this._refArray = give.getValueArray(newRefValue, numOfWindows)
+    }
+
+    _syncCoordinatesJsonToArray (newCoorindateValue) {
+      newCoorindateValue = newCoorindateValue || this.coordinate
       let refArray = null
       try {
         refArray = this._refArray.map(
           refName => give.RefObject.findRefByDb(refName)
         )
       } catch (ignore) { }
-      this._coordinateArray = give.getValueArray(this.coordinate,
-        numOfWindows,
-        (this.allowEmptyCoordinates && refArray)
+      this._coordinateArray = give.getValueArray(newCoorindateValue,
+        this.numOfSubs,
+        (!this.allowEmptyCoordinates && refArray)
           ? refArray.map((refObj, index) => {
             let defaultViewWindows = refObj.settings.defaultViewWindows
             return defaultViewWindows
@@ -354,11 +361,20 @@ var GIVe = (function (give) {
       )
     }
 
+    getRefsReadyPromise () {
+      return Promise.all(
+        this._chartWindows.map(window => window.refTracksPromise)
+      )
+        .then(() => {
+          this._refArray = this._chartWindows.map(window => window.ref)
+          this._syncRefsArrayToJson()
+        })
+    }
+
     _setRefsInWindow () {
       this._chartWindows.forEach(
         (window, index) => (window.ref = this._refArray[index]))
-      this._refArray = this._chartWindows.map(window => window.ref)
-      this._updateRefsAttr()
+      return this.getRefsReadyPromise()
     }
 
     _expandChartWindows (newNumOfWindows) {
@@ -382,36 +398,24 @@ var GIVe = (function (give) {
       this._updateTrackWindowArray()
     }
 
-    _updateCoordinatesAttr (coordinateArray) {
+    _syncCoordinatesArrayToJson (coordinateArray) {
       this._coordinateArray = coordinateArray || this._coordinateArray
       this._updatingCoordinates = true
       this.coordinate = JSON.stringify(this._coordinateArray)
       this._updatingCoordinates = false
+      return coordinateArray
     }
 
-    _updateRefsAttr () {
+    _syncRefsArrayToJson () {
       this._updatingRefs = true
       this.ref = JSON.stringify(this._refArray)
       this._updatingRefs = false
     }
 
-    updateDom () {
-      // Update the track DOMs within the chart-windows (because the
-      // surrounding environment has changed, some of the tracks, especially
-      // multi-window ones, may have its requirement conditions changed)
-      let contexts = this._chartWindows.map(window => window.context)
-      return Promise.all(
-        this._chartWindows.map(window =>
-          (window.initialized
-            ? window.updateDOM(contexts)
-            : window.resetDom(contexts))
-        )
-      )
-        // Then link the multi-window track DOMs through the chart-windows
-        .then(() => this._chartWindows.reduce((hiddenDoms, window) =>
-          window.linkDOMs(hiddenDoms, contexts, false), []))
-        // Then update all the windows
-        .then(() => this.updateTracks())
+    _syncNumOfSubs (newNumOfSubs) {
+      this._updatingNumOfSubs = true
+      this.numOfSubs = newNumOfSubs
+      this._updatingNumOfSubs = false
     }
 
     /**
@@ -445,7 +449,9 @@ var GIVe = (function (give) {
      *    to be called upon ChartWindow(s) to redraw them.
      * @param  {number|null} index - The index of the ChartWindow to be redrawn.
      *    If omitted, call `redrawWindowMethod` upon all children.
-     * @return {Promise<any>} A promise that fulfills when redrawing is done.
+     * @return {Promise<Array<String>>} A promise that fulfills when redrawing
+     *    is done. The value of the promise when fulfilled will the the array
+     *    of corrected coordinates for all windows.
      * @memberof ChartArea
      */
     _redrawWindows (redrawWindowMethod, index) {
@@ -454,33 +460,113 @@ var GIVe = (function (give) {
       }
       this._initialized = true
       let newWindowPromise
-      if (typeof index === 'number') {
-        newWindowPromise = redrawWindowMethod(this._chartWindows[index], index)
-      } else {
-        newWindowPromise = give.getAggregatedUpdatePromise(
-          this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
-        )
-      }
-      if (newWindowPromise) {
+      try {
+        if (typeof index === 'number') {
+          newWindowPromise = redrawWindowMethod(
+            this._chartWindows[index], index
+          )
+        } else {
+          newWindowPromise = give.getAggregatedUpdatePromise(
+            this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
+          )
+        }
         this._readiness = false
         this.updatePromise = newWindowPromise
           .catch(err => this._windowWidthChangeHandler(err))
-          .then(() => this._updateCoordinatesAttr(
-            this._chartWindows.map(window => window.coordinate)
-          ))
+          .then(() => this._syncCoordinatesArrayToJson(this.chartCoordinates))
+          .then(correctedCoordinates => {
+            delete this.updatePromise
+            return correctedCoordinates
+          })
           .catch(err => this._errorHandler(err))
+        return this.updatePromise
+      } catch (err) {
+        if (err instanceof give.PromiseCanceller) {
+          throw err
+        }
+        this._errorHandler(err)
       }
-      return this.updatePromise
     }
 
-    updateTracks () {
-      return this._redrawWindows((window, index) =>
-        window.updateTracks(this._coordinateArray[index]))
+    update (newNumOfSubs, newRef, updateDom, newCoordinates, forceRefresh) {
+      if (newNumOfSubs && newNumOfSubs !== this.numOfSubs) {
+        return this.updateNumOfSubs(newNumOfSubs, newRef, newCoordinates)
+      } else if (newRef && newRef !== this.ref) {
+        return this.updateRef(newRef, newCoordinates)
+      } else if (updateDom) {
+        return this.updateDom(newCoordinates)
+      } else if (newCoordinates && newCoordinates !== this.coordinate) {
+        return this.updateCoordinates(newCoordinates)
+      } else if (forceRefresh) {
+        return this.updateTracks()
+      }
+      return Promise.resolve(this.chartCoordinates)
     }
 
-    updateCoordinates () {
+    updateNumOfSubs (newNumOfSubs, newRef, newCoordinates) {
+      this._initialized = false
+      if (newNumOfSubs && newNumOfSubs !== this.numOfSubs) {
+        this._syncNumOfSubs(newNumOfSubs)
+      }
+      return Promise.resolve()
+        // 1. First update the number of chart-windows
+        //    Although this part is all sync code, put it into the async
+        //    pipeline to streamline the exception catching process.
+        .then(() => this._syncRefsJsonToArray(newNumOfSubs, newRef))
+        .finally(() => {
+          if (newNumOfSubs > this._chartWindowItems.length) {
+            // refresh hidden dom list
+            this._expandChartWindows(newNumOfSubs)
+          } else {
+            // less window, remove the excessive ones
+            this._shrinkChartWindows(newNumOfSubs)
+          }
+        })
+        .then(() => this.getRefsReadyPromise())
+        // 2. Reset all DOMs among windows (display and link),
+        //    then update window contents.
+        .then(() => this.updateDom(newCoordinates))
+    }
+
+    updateRef (newRef, newCoordinates) {
+      this._initialized = false
+      return Promise.resolve()
+        .then(() => {
+          this._syncRefsJsonToArray(null, newRef)
+          return this._setRefsInWindow()
+        })
+        .then(() => this.updateDom(newCoordinates))
+    }
+
+    updateDom (newCoordinates) {
+      // Update the track DOMs within the chart-windows (because the
+      // surrounding environment has changed, some of the tracks, especially
+      // multi-window ones, may have its requirement conditions changed)
+      let contexts = this._chartWindows.map(window => window.context)
+      return Promise.all(
+        this._chartWindows.map(window =>
+          (window.initialized
+            ? window.updateDom(contexts)
+            : window.resetDom(contexts))
+        )
+      )
+        // Then link the multi-window track DOMs through the chart-windows
+        .then(() => this._chartWindows.reduce((hiddenDoms, window) =>
+          window.linkDOMs(hiddenDoms, contexts, false), []))
+        // Then update all the windows
+        .then(() => this.updateTracks(newCoordinates))
+    }
+
+    updateCoordinates (newCoordinates) {
+      this._syncCoordinatesJsonToArray(newCoordinates)
       return this._redrawWindows((window, index) =>
         window.changeCoordinate(this._coordinateArray[index]))
+    }
+
+    updateTracks (newCoordinates) {
+      this._syncCoordinatesJsonToArray(newCoordinates)
+      return this._redrawWindows((window, index) =>
+        window.updateTracks(this._coordinateArray[index]))
     }
 
     /**
@@ -490,48 +576,20 @@ var GIVe = (function (give) {
      * @param  {number} oldValue old `numOfSubs` value
      */
     _numOfSubsChanged (newValue, oldValue) {
-      this._initialized = false
-      return Promise.resolve()
-        // 1. First update the number of chart-windows
-        //    Although this part is all sync code, put it into the async
-        //    pipeline to streamline the exception catching process.
-        .then(() => this._syncRefCoordinates(newValue))
-        .finally(() => {
-          if (newValue > this.numOfSubs) {
-            // refresh hidden dom list
-            this._expandChartWindows(newValue)
-          } else {
-            // less window, remove the excessive ones
-            this._shrinkChartWindows(newValue)
-          }
-        })
-        // 2. Reset all DOMs among windows (display and link),
-        //    then update window contents.
-        .then(() => this.updateDom())
-        .catch(err => this._errorHandler(err, true))
+      if (!this._updatingNumOfSubs) {
+        return this.updateNumOfSubs(newValue)
+      }
     }
 
     _refChanged (newValue, oldValue) {
       if (!this._updatingRefs) {
-        this._initialized = false
-        return Promise.resolve()
-          .then(() => {
-            this._syncRefCoordinates()
-            this._setRefsInWindow()
-            return this.updateDom()
-          })
-          .catch(err => this._errorHandler(err, true))
+        return this.updateRef(newValue)
       }
     }
 
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoordinates) {
-        return Promise.resolve()
-          .then(() => {
-            this._syncRefCoordinates()
-            return this.updateCoordinates()
-          })
-          .catch(err => this._errorHandler(err, true))
+        return this.updateCoordinates(newValue)
       }
     }
 
@@ -540,18 +598,16 @@ var GIVe = (function (give) {
       if (e.detail.newWindow instanceof give.ChromRegion ||
         typeof e.detail.newWindow === 'string'
       ) {
-        if (e.detail.tracks) {
+        if (e.detail.tracks || !this._initialized) {
           // needs to update Dom to match track visibility as well, so update
           //    the entire `chart-area` instead of only the window
-          this.windowUpdatePromise = this.updateDom()
+          return this.updateDom()
         } else if (this._initialized) {
-          this.windowUpdatePromise = this._redrawWindows(
+          return this._redrawWindows(
             (window, index) => window.changeCoordinate(e.detail.newWindow),
             e.currentTarget.index)
         }
       }
-      return this.windowUpdatePromise
-        .catch(err => this._errorHandler(err, true))
     }
 
     updateWindowWidth (width) {
@@ -568,15 +624,18 @@ var GIVe = (function (give) {
           } else {
             this._resizeDebouncePromise = Promise.resolve()
           }
-          return this._resizeDebouncePromise
+          this._resizeDebouncePromise
             .then(() => {
               this._resizeDebouncePromise = null
               return this.updateWindowWidth()
             })
             .catch(err => this._errorHandler(err, true))
         }
-        throw new give.PromiseCanceller()
       }
+    }
+
+    get chartCoordinates () {
+      return this._chartWindows.map(window => window.coordinate)
     }
   }
 

@@ -48,7 +48,7 @@ var GIVe = (function (give) {
            * ready. This will be set as `true` if the promise gets resolved.
            * @type {Promise}
            */
-          refTracksPromise: {
+          refReadyPromise: {
             type: Object,
             value: null
           },
@@ -83,7 +83,7 @@ var GIVe = (function (give) {
               .catch(err => {
                 // call UI warning procedures in the future
                 give.fireSignal('warning', { msg: err.message })
-                throw err
+                this.refReadyPromise = Promise.reject(err)
               })
               .finally(() => {
                 this._changingRef = true
@@ -93,7 +93,7 @@ var GIVe = (function (give) {
           } else if (this.refObj) {
             let err = new give.GiveError('No ref value supplied!')
             give._verbConsole.warn(err)
-            throw err
+            this.refReadyPromise = Promise.reject(err)
           }
         }
       }
@@ -129,10 +129,12 @@ var GIVe = (function (give) {
           if (!this.needsChromInfo || refObj.chromInfo) {
             // reference has been changed, needs to switch
             this._refObj = refObj
-            this.refTracksPromise = refObj.initTracks()
+            this.refReadyPromise = refObj.initTracks()
           } else {
-            throw new give.GiveError('No ChromInfo available for ref "' +
+            this.refReadyPromise = Promise.reject(
+              new give.GiveError('No ChromInfo available for ref "' +
               refObj.db + '"!')
+            )
           }
           return true
         }
