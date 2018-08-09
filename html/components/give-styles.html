@@ -1,6 +1,6 @@
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
-<dom-module id="genemo-shared-styles">
+<dom-module id="give-shared-styles">
   <template>
     <style>
 
@@ -203,12 +203,12 @@
       margin: 0px;
     }
 
-    genemo-card.flexFillGenemoCard {
-      --genemo-card-material-mixin: {
+    genemo-card.flexFillCard {
+      --give-card-material-mixin: {
         @apply --layout-fit;
         @apply --layout-vertical;
       };
-      --genemo-card-fixed-content-mixin: {
+      --give-card-fixed-content-mixin: {
         @apply --layout-flex;
         position: relative;
       };
@@ -348,7 +348,7 @@
       text-transform: none;
     }
 
-    .genemoHeader {
+    .cardHeader {
       -webkit-flex: 0 0 40px;
       flex: 0 0 40px;
       background: #E0E0E0;

@@ -23,7 +23,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../give-styles.html">
 <link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-group-list.html">
@@ -71,7 +71,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 -->
 <dom-module id="chart-controller">
   <template>
-    <style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       :host {
         font-size: 12px;
         @apply --layout-fit;
@@ -130,15 +130,15 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             Cancel
           </paper-button>
         </div>
-        <genemo-card disable-folding class="flex flexFillGenemoCard">
-          <chart-track-group-list ref="[[ref]]" slot="genemoBody"
+        <give-card disable-folding class="flex flexFillCard">
+          <chart-track-group-list ref="[[ref]]" slot="cardBody"
             id="mainTrackList"
             group-id-list='[[groupIdList]]' setting-key="visibility"
             has-controls='[[hasControls]]' with-filter='[[withFilter]]'
             instant-change='[[instantChange]]'
             default-track-id-list='[[defaultTrackIdList]]'>
           </chart-track-group-list>
-        </genemo-card>
+        </give-card>
         <custom-track-controller ref="[[ref]]" id="mainCTController">
         </custom-track-controller>
       </div>
@@ -465,6 +465,7 @@ var GIVe = (function (give) {
   }
 
   give.ChartController = ChartController
+  window.customElements.define('chart-controller', give.ChartController)
 
   return give
 })(GIVe || {})

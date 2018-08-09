@@ -19,7 +19,7 @@
   <link rel="import" href="components/chrom-region-list/chrom-region-list.html">
   <link rel="import" href="components/genemo-card/genemo-card.html">
   <link rel="import" href="components/genemo-main/genemo-main.html">
-  <link rel="import" href="components/genemo-styles.html">
+  <link rel="import" href="components/give-styles.html">
   <link rel="import" href="bower_components/iron-icons/iron-icons.html">
   <link rel="import" href="bower_components/iron-pages/iron-pages.html">
   <link rel="import" href="bower_components/iron-icons/notification-icons.html">
@@ -33,8 +33,8 @@
   <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
 
   <link rel="import" href="bower_components/google-youtube/google-youtube.html">
-  <custom-style include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
-    <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+  <custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
     </style>
   </custom-style>
 </head>
@@ -47,7 +47,7 @@
       attr-for-selected='id' class="flex layout vertical center self-stretch">
       <div id="genemoSearchPanel" class="layout vertical">
         <genemo-card disable-folding>
-          <search-card-content slot="genemoBody" id='searchCard'></search-card-content>
+          <search-card-content slot="cardBody" id='searchCard'></search-card-content>
         </genemo-card>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
           <paper-button raised noink>
@@ -60,8 +60,8 @@
           Introduction Video
         </paper-button>
       </div>
-      <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillGenemoCard">
-        <chart-track-group-list slot="genemoBody" id="mainChartTrackList"
+      <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillCard">
+        <chart-track-group-list slot="cardBody" id="mainChartTrackList"
           group-id-list='["encode"]' setting-key="isGenemoSelected"
           has-controls with-filter>
         </chart-track-group-list>
@@ -97,8 +97,8 @@
         </paper-button>
       </paper-toolbar>
       <div class="flex layout horizontal">
-        <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillGenemoCard">
-          <chrom-region-list slot="genemoBody" id='mainRegionList'></chrom-region-list>
+        <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillCard">
+          <chrom-region-list slot="cardBody" id='mainRegionList'></chrom-region-list>
         </genemo-card>
         <div class="flex self-stretch relative">
           <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"

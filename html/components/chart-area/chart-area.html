@@ -22,7 +22,7 @@ limitations under the License.
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../give-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -41,7 +41,7 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
 -->
 <dom-module id="chart-area">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="give-shared-styles">
       :host {
         position: relative;
         overflow-x: hidden;
@@ -90,7 +90,6 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       }
 
     </style>
-    <style include="genemo-track-styles"></style>
     <template is="dom-if" if="[[!_readiness]]">
       <div id="loadingBlock">
         <paper-spinner id="loadingSpinner" alt="Loading card content"
@@ -140,7 +139,7 @@ var GIVe = (function (give) {
   class ChartArea extends Polymer.mixinBehaviors([
     Polymer.IronResizableBehavior], Polymer.Element
   ) {
-    constuctor () {
+    constructor () {
       super()
       this._resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
       this._windowUpdatePromises = []
@@ -642,6 +641,7 @@ var GIVe = (function (give) {
   ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400
 
   give.ChartArea = ChartArea
+  window.customElements.define('chart-area', give.ChartArea)
 
   return give
 })(GIVe || {})
