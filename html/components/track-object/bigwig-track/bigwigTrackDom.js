@@ -101,7 +101,7 @@ var GIVe = (function (give) {
       /**
        *  A simple calculation of where the top and bottom of where to draw the track is.
        */
-      this.drawingBoundary = {top: this.MARGIN, bottom: this.trackHeight - this.MARGIN}
+      this.drawingBoundary = {top: this.MARGIN, bottom: this.height - this.MARGIN}
 
       /**
        * to be explained
@@ -372,14 +372,14 @@ var GIVe = (function (give) {
       var zero = 0
       var value = 0
       var cutOff = 0
-      zero = this.windowMax / this.windowRange * this.trackHeight
-      value = (this.windowMax - strength) / this.windowRange * this.trackHeight
+      zero = this.windowMax / this.windowRange * this.height
+      value = (this.windowMax - strength) / this.windowRange * this.height
       if (this.windowMax < 0) {
         zero = 0
         cutOff += 1
       }
       if (this.windowMin > 0) {
-        zero = this.trackHeight
+        zero = this.height
         cutOff -= 1
       }
       if (strength > this.windowMax) {
@@ -387,7 +387,7 @@ var GIVe = (function (give) {
         cutOff += 1
       }
       if (strength < this.windowMin) {
-        value = this.trackHeight
+        value = this.height
         cutOff -= 1
       }
       if ((this.windowMin > 0 && strength > this.windowMax) || (this.windowMax < 0 && strength < this.windowMin)) {
@@ -412,7 +412,7 @@ var GIVe = (function (give) {
           y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
       }.bind(this)
       overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
-      overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.trackHeight - this.OVERFLOW_STROKE_WIDTH))
+      overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.height - this.OVERFLOW_STROKE_WIDTH))
     }
 
     /**

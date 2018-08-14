@@ -1,7 +1,7 @@
 /**
  * @license
  * Copyright 2017 GIVe Authors
- * *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -167,8 +167,8 @@ var GIVe = (function (give) {
         }
       }, this)
       // then draw a line connecting all the ticks
-      this.drawLine(0, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
-        this.windowWidth, labels === 'up' ? this.trackHeight - 0.5 : 0.5,
+      this.drawLine(0, labels === 'up' ? this.height - 0.5 : 0.5,
+        this.windowWidth, labels === 'up' ? this.height - 0.5 : 0.5,
         this.foreColor, svgToDraw)
 
       if (labels === 'up' || labels === 'down') {

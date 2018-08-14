@@ -872,8 +872,9 @@ var GIVe = (function (give) {
     }
   }
 
+  BedTrackDom.DYNAMIC_HEIGHT = true
+
   give.BedTrackDom = BedTrackDom
-  window.customElements.define('bed-track-dom', give.BedTrackDom)
 
   return give
 })(GIVe || {})

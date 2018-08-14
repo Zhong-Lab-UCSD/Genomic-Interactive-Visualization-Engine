@@ -355,7 +355,7 @@ var GIVe = (function (give) {
      *
      * @memberof TrackObjectBase.prototype
      * @param  {string} key - the key of the setting entry
-     * @param  {string} key - the key of the setting entry
+     * @param  {string} type - the type of the setting entry
      * @returns {object} The value of the setting entry
      */
     getSetting (key, type) {

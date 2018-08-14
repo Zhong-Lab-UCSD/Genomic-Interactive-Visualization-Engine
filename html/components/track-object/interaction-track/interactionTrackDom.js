@@ -1,68 +1,71 @@
-<!--
-@license
-Copyright 2017 GIVe Authors
-*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-### Overview
-
-`<bigwig-track-dom>` is the Web Component to display BigWig tracks. It's part
-of `GIVe.BigWigTrack` object and is used to visualize data from the
-`GIVe.BigWigTrack` object.
-
-### Visibility level
-
-### References
-*   [`GIVe.TrackObject`](../index.html) for details on tracks in
-general;
-*   [`GIVe.BigWigTrack`](./bed-track/index.html) for details on BED
-track implementation;
-*   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
-for Polymer Element guide, including lifecycles, properties, methods and others.
-
--->
-<link rel="import" href="../track-dom.html">
-<dom-module id="interaction-track-dom">
-  <template>
-  </template>
-  <script>
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * ### Overview
+ *
+ * `<bigwig-track-dom>` is the Web Component to display BigWig tracks. It's part
+ * of `GIVe.BigWigTrack` object and is used to visualize data from the
+ * `GIVe.BigWigTrack` object.
+ *
+ * ### Visibility level
+ *
+ * ### References
+ * *   [`GIVe.TrackObject`](../index.html) for details on tracks in
+ * general;
+ * *   [`GIVe.BigWigTrack`](./bed-track/index.html) for details on BED
+ * track implementation;
+ * *   [Polymer element registration](https://www.polymer-project.org/1.0/docs/devguide/registering-elements)
+ * for Polymer Element guide, including lifecycles, properties, methods and others.
+ *
+ */
 var GIVe = (function (give) {
   'use strict'
 
   class InteractionTrackDom extends give.TrackDom {
     constructor (track, properties) {
       super(...arguments)
-      this.MAX_FILL_OPACITY = 0.3
       properties = properties || {}
 
-      this.fullHeightRatio = properties.hasOwnProperty('lineHeight')
-        ? properties.lineHeight : this.fullHeightRatio
-      this.subTrackGap = properties.hasOwnProperty('subTrackGap')
-        ? properties.subTrackGap : this.subTrackGap
-      this.threshold = properties.hasOwnProperty('threshold')
-        ? properties.threshold : this.threshold
-      this.setHeight(properties.hasOwnProperty('height')
-        ? properties.height
-        : (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
-          (this.parent.windowSpan - 1)) * this.textSize)
-      this._setDynamicHeight(false)
+      this.maxFillOpacity = (
+        properties.maxFillOpacity ||
+        this.getTrackSetting('maxFillOpacity', 'float') ||
+        this.constructor.DEFAULT_MAX_FILL_OPACITY
+      )
+
+      this.subTrackGap = (
+        properties.subTrackGap ||
+        this.getTrackSetting('subTrackGap', 'float') ||
+        this.constructor.DEFAULT_SUB_TRACK_GAP
+      )
+
+      this.threshold = (
+        properties.threshold ||
+        this.getTrackSetting('threshold', 'float') ||
+        this.constructor.DEFAULT_THRESHOLD
+      )
 
       this.subSvgs = []
       this.bufferWindow = []
       this.quantiles = this.parent.getSetting('quantiles') ||
         this.parent.getSetting('thresholdPercentile')
+    }
 
-      this._pendingVWs = []
+    get DEFAULT_HEIGHT () {
+      return (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
+        (this.parent.windowSpan - 1)) * this.textSize
     }
 
     static get properties () {
@@ -98,10 +101,7 @@ var GIVe = (function (give) {
         },
 
         quantiles: {
-          type: Array,
-          value: function () {
-            return []
-          }
+          type: Array
         },
 
         gradient: {
@@ -121,20 +121,22 @@ var GIVe = (function (give) {
       }
     }
 
-    initSvgComponents () {
-      for (var i = 0; i < this.parent.windowSpan; i++) {
-        var newSubSvg = document.createElementNS(this.svgNS, 'svg')
-        newSubSvg.setAttribute('id', this.parent.cleanId +
-          '_subSvg' + i)
-        Polymer.dom(this.mainSvg.holder).appendChild(newSubSvg)
-        this.subSvgs.push(newSubSvg)
-        this._pendingVWs[i] = null
-      }
-      this.subSvgs.forEach(this.initSvgHolder, this)
+    _getSubSvgId (index) {
+      return this.parent.cleanId + '_subSvg' + index
     }
 
-    setSvgComponentsSizeLocation () {
-      this.subSvgs.forEach(function (subSvg, index) {
+    _initSvgComponents () {
+      for (var i = 0; i < this.parent.windowSpan; i++) {
+        var newSubSvg = document.createElementNS(this.svgNS, 'svg')
+        newSubSvg.setAttribute('id', this._getSubSvgId(i))
+        this.mainSvg.holder.appendChild(newSubSvg)
+        this.subSvgs.push(newSubSvg)
+      }
+      this.subSvgs.forEach(subSvg => this.initSvgHolder(subSvg))
+    }
+
+    _setSvgComponentsSize () {
+      this.subSvgs.forEach((subSvg, index) => {
         subSvg.setAttributeNS(null, 'x', 0)
         subSvg.setAttributeNS(null, 'y',
           (this.fullHeightRatio + this.subTrackGap) * index * this.textSize)
@@ -144,13 +146,14 @@ var GIVe = (function (give) {
           this.fullHeightRatio * this.textSize)
         subSvg.setAttribute('viewBox', '0 0 ' +
           this.windowWidth + ' ' + this.fullHeightRatio * this.textSize)
-      }, this)
+      })
     }
 
     changeViewWindowAfterResize (
       newWindowWidth, newViewWindow
     ) {
-      // this is only used to change the viewWindow of mainSvg (both narrow and wide mode)
+      // this is only used to change the viewWindow of mainSvg
+      // (both narrow and wide mode)
       var newVWindowArr = new Array(this.subSvgs.length)
       newVWindowArr = Array.isArray(newViewWindow)
         ? newViewWindow : newVWindowArr.fill(newViewWindow)
@@ -162,9 +165,9 @@ var GIVe = (function (give) {
               newVWindow = (newVWindow === false)
                 ? subSvg.viewWindow
                 : subSvg.viewWindow.getExtension(
-                    (newWindowWidth - this.windowWidth) / this.windowWidth,
-                    null, true, this.parent.ref
-                  )
+                  (newWindowWidth - this.windowWidth) / this.windowWidth,
+                  null, true, this.parent.ref
+                )
             }
             this.updateTrack(newVWindow, index)
           }, this
@@ -209,18 +212,15 @@ var GIVe = (function (give) {
 
     clear () {
       super.clear()
-      this.subSvgs.forEach(this.clearSvg, this)
-      this.subSvgs.forEach(
-        Polymer.dom(this.mainSvg.holder).appendChild,
-        Polymer.dom(this.mainSvg.holder)
-      )
+      this.subSvgs.forEach(subSvg => {
+        this.clearSvg(subSvg)
+        this.mainSvg.holder.appendChild(subSvg)
+      })
     }
 
-    updateTrack (viewWindow, index, threshold) {
+    updateTrack (viewWindow, index) {
       // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
       // index: if viewWindow is a single give.ChromRegion Object, index will be the index
-      this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
-
       try {
         // Steps:
         // Change view window by calling changeViewWindow()
@@ -246,9 +246,9 @@ var GIVe = (function (give) {
       } catch (e) {
         console.log(e.message)
         console.log(e.stack)
-//        if(this.oldViewWindowString) {
-//          this.set('viewWindowString', this.oldViewWindowString);
-//        }
+        //        if(this.oldViewWindowString) {
+        //          this.set('viewWindowString', this.oldViewWindowString);
+        //        }
       }
     }
 
@@ -270,9 +270,7 @@ var GIVe = (function (give) {
       }
     }
 
-    drawBoxTrack (
-      regions, linkMap, y, height, svgToDraw, index
-    ) {
+    drawBoxTrack (regions, linkMap, y, height, svgToDraw, index) {
       // regions is a chromBPTree of all connections
       // regions with the same ID is connected and needs to be colored accordingly
       // linkMap is an object with regionID as key and value as following:
@@ -410,7 +408,7 @@ var GIVe = (function (give) {
 
               svgNeighbors.forEach(function (svgChild, svgIndex) {
                 var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStartCoor(),
-                                  true, svgChild)
+                  true, svgChild)
                 if (x > this.windowWidth) {
                   partialOutside = true
                 }
@@ -421,7 +419,7 @@ var GIVe = (function (give) {
                 startPoints.push((x - this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
 
                 x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEndCoor(),
-                                true, svgChild)
+                  true, svgChild)
                 if (x < 0) {
                   partialOutside = true
                 }
@@ -433,19 +431,19 @@ var GIVe = (function (give) {
 
               var points = startPoints.concat(endPoints.reverse())
               if (!regionMap.hasOwnProperty(points)) {
-//                this.createRawPolygon(points, {id: regionID,
-//                  class: 'linkedRegion',
-//                  fill: this.colorSet[3],
-//                  stroke: this.colorSet[5],
-//                  'stroke-width': 3,
-//                  }, svgMain);
+                //                this.createRawPolygon(points, {id: regionID,
+                //                  class: 'linkedRegion',
+                //                  fill: this.colorSet[3],
+                //                  stroke: this.colorSet[5],
+                //                  'stroke-width': 3,
+                //                  }, svgMain);
                 if (this.quantiles) {
                   this.createRawPolygon(points, {id: regionID,
                     class: 'linkedRegion',
                     fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID][0].data.value))),
                     stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
                     'stroke-width': 2,
-                    'fill-opacity': this.valueToPercentile(linkMap[regionID][0].data.value) * this.MAX_FILL_OPACITY
+                    'fill-opacity': this.valueToPercentile(linkMap[regionID][0].data.value) * this.maxFillOpacity
                   }, svgMain)
                 } else {
                   this.createRawPolygon(points, {id: regionID,
@@ -525,10 +523,13 @@ var GIVe = (function (give) {
     }
   }
 
+  InteractionTrackDom.DEFAULT_MAX_FILL_OPACITY = 0.3
+  InteractionTrackDom.DEFAULT_SUB_TRACK_GAP = 6
+  InteractionTrackDom.DEFAULT_THRESHOLD = 0.1
+
+  InteractionTrackDom.DYNAMIC_HEIGHT = false
+
   give.InteractionTrackDom = InteractionTrackDom
-  window.customElements.define('interaction-track-dom', give.InteractionTrackDom)
 
   return give
 })(GIVe || {})
-  </script>
-</dom-module>

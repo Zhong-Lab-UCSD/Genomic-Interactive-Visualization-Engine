@@ -96,7 +96,7 @@ var GIVe = (function (give) {
        */
       this.textSize = (
         properties.textSize ||
-        this.getTrackSetting('textSize') ||
+        this.getTrackSetting('textSize', 'integer') ||
         this.constructor.TEXT_SIZE
       )
 
@@ -106,7 +106,7 @@ var GIVe = (function (give) {
        */
       this.fullHeightRatio = (
         properties.fullHeightRatio ||
-        this.getTrackSetting('fullHeightRatio') ||
+        this.getTrackSetting('fullHeightRatio', 'float') ||
         this.constructor.FULL_HEIGHT_RATIO
       )
 
@@ -117,7 +117,7 @@ var GIVe = (function (give) {
        */
       this.halfHeightRatio = (
         properties.halfHeightRatio ||
-        this.getTrackSetting('halfHeightRatio') ||
+        this.getTrackSetting('halfHeightRatio', 'float') ||
         this.constructor.HALF_HEIGHT_RATIO
       )
 
@@ -129,7 +129,7 @@ var GIVe = (function (give) {
        */
       this.lineGapRatio = (
         properties.lineGapRatio ||
-        this.getTrackSetting('lineGapRatio') ||
+        this.getTrackSetting('lineGapRatio', 'float') ||
         this.constructor.LINE_GAP_RATIO
       )
 
@@ -139,7 +139,7 @@ var GIVe = (function (give) {
        */
       this._drawDebounceInt = (
         properties._drawDebounceInt ||
-        this.getTrackSetting('_drawDebounceInt') ||
+        this.getTrackSetting('_drawDebounceInt', 'integer') ||
         this.constructor._DRAW_DEBOUNCE_INTERVAL
       )
 
@@ -150,7 +150,7 @@ var GIVe = (function (give) {
        */
       this._cacheDebounceInt = (
         properties._cacheDebounceInt ||
-        this.getTrackSetting('_cacheDebounceInt') ||
+        this.getTrackSetting('_cacheDebounceInt', 'integer') ||
         this.constructor._CACHE_DEBOUNCE_INTERVAL
       )
 
@@ -169,10 +169,10 @@ var GIVe = (function (give) {
        * This will be useful if `this.dynamicHeight === true`
        * @type {number}
        */
-      this.trackHeight = (
+      this.height = (
         properties.height ||
-        this.getTrackSetting('height') ||
-        this.constructor.DEFAULT_HEIGHT
+        this.getTrackSetting('height', 'integer') ||
+        this.DEFAULT_HEIGHT
       )
 
       /**
@@ -216,6 +216,10 @@ var GIVe = (function (give) {
       give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
 
+    get DEFAULT_HEIGHT () {
+      return this.constructor.DEFAULT_HEIGHT
+    }
+
     get parent () {
       return this._parent
     }
@@ -244,8 +248,8 @@ var GIVe = (function (give) {
       return null
     }
 
-    getTrackSetting (key) {
-      return this.parent.getSetting(key)
+    getTrackSetting (key, type) {
+      return this.parent.getSetting(key, type)
     }
 
     setTrackSetting (key, value) {
@@ -306,8 +310,8 @@ var GIVe = (function (give) {
         // this.fire('track-initialized', {ID: this.parent.id});
         this.initSvgHolder(this._mainSvg)
 
-        if (typeof this.initSvgComponents === 'function') {
-          this.initSvgComponents()
+        if (typeof this._initSvgComponents === 'function') {
+          this._initSvgComponents()
         }
 
         this.setSvgSizeLocation()
@@ -323,18 +327,18 @@ var GIVe = (function (give) {
     setSvgSize () {
       this.trackSvg.setAttributeNS(null, 'width', this.totalWidth)
       // notice that the heights are placeholder and will change
-      this.trackSvg.setAttributeNS(null, 'height', this.trackHeight)
+      this.trackSvg.setAttributeNS(null, 'height', this.height)
       this.trackSvg.setAttribute('viewBox', '0 0 ' +
-        this.totalWidth + ' ' + this.trackHeight)
+        this.totalWidth + ' ' + this.height)
       if (this._textSvg) {
         this._textSvg.setAttributeNS(null, 'x', 0)
         this._textSvg.setAttributeNS(null, 'y', 0)
         this._textSvg.setAttributeNS(null, 'width', this.textMargin)
 
         // notice that the heights are placeholder and will change
-        this._textSvg.setAttributeNS(null, 'height', this.trackHeight)
+        this._textSvg.setAttributeNS(null, 'height', this.height)
         this._textSvg.setAttribute('viewBox', '0 0 ' +
-          this.textMargin + ' ' + this.trackHeight)
+          this.textMargin + ' ' + this.height)
       }
       this._mainSvg.setAttributeNS(null, 'x',
         (this._narrowMode ? 0 : this.textMargin + this.TEXT_MARGIN_GAP))
@@ -342,11 +346,11 @@ var GIVe = (function (give) {
       this._mainSvg.setAttributeNS(null, 'width', this.windowWidth)
 
       // notice that the heights are placeholder and will change
-      this._mainSvg.setAttributeNS(null, 'height', this.trackHeight)
+      this._mainSvg.setAttributeNS(null, 'height', this.height)
       this._mainSvg.setAttribute('viewBox', '0 0 ' +
-        this.windowWidth + ' ' + this.trackHeight)
-      if (typeof this.setSvgComponentsSizeLocation === 'function') {
-        this.setSvgComponentsSizeLocation()
+        this.windowWidth + ' ' + this.height)
+      if (typeof this._setSvgComponentsSize === 'function') {
+        this._setSvgComponentsSize()
       }
     }
 
@@ -375,7 +379,7 @@ var GIVe = (function (give) {
      * @returns {number}  height value
      */
     get height () {
-      return this.trackHeight
+      return this._trackHeight
     }
 
     /**
@@ -470,7 +474,7 @@ var GIVe = (function (give) {
      *
      * @param  {number} newWidth - new width, in px
      * @param  {number} newTxtMargin - new text margin, in px
-     * @param  {ChromRegionLiteral} [newWindow] - new view window
+     * @param  {Array<ChromRegionLiteral>} [newWindow] - new view window
      *    coordinates. This is useful when view window has changed in one
      *    track and every other track needs to be brought to synchronization.
      *    If omitted, new view window will be recalculated based on new
@@ -538,7 +542,7 @@ var GIVe = (function (give) {
      */
     set height (newHeight) {
       if (newHeight > 0) {
-        this.trackHeight = newHeight
+        this._trackHeight = newHeight
       } else {
         throw new give.GiveError('Invalid height value: ' + newHeight)
       }
@@ -829,7 +833,6 @@ var GIVe = (function (give) {
       // this is used to test the length of the text
       var tmpText = this.drawText(0, this.Y_HIDDEN, text,
         textAnchor, params, svgToDraw)
-      Polymer.dom.flush()
       var result = tmpText.getBBox().width
       this.removeElement(tmpText, svgToDraw)
       return result
@@ -1077,12 +1080,12 @@ var GIVe = (function (give) {
       maxX = maxX || this.textMargin - this.textRightPadding
       return this.createWordWrappedText(
         label || this.getTrackSetting('shortLabel'),
-        'end', null, this._textSvg, maxX, this.trackHeight)
+        'end', null, this._textSvg, maxX, this.height)
     }
 
     drawShortLabelArr (labelArr, maxX) {
       maxX = maxX || this.textMargin - this.textRightPadding
-      this.drawWordWrappedText(maxX, this.trackHeight * 0.5, labelArr,
+      this.drawWordWrappedText(maxX, this.height * 0.5, labelArr,
         'end', 'both', null, this._textSvg, true)
     }
 
@@ -1404,7 +1407,6 @@ var GIVe = (function (give) {
         case 'end':
         // update window content
           e.target.classList.remove('grabbing')
-          Polymer.dom.flush()
           if (this.dragData) {
             give.fireSignal('update-window', {
               windowIndex: this.windowIndex,
@@ -1436,7 +1438,7 @@ var GIVe = (function (give) {
   TrackDom._CACHE_DEBOUNCE_INTERVAL = 200
 
   TrackDom.DEFAULT_HEIGHT = 100
-  TrackDom.DYNAMIC_HEIGHT = true
+  TrackDom.DYNAMIC_HEIGHT = false
   TrackDom.PIN = 'scroll'
 
   TrackDom.DEFAULT_VISIBILITY = give.TrackObject.StatusEnum.VIS_FULL

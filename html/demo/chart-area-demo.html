@@ -2,13 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>GIVe (Genomic Interaction Visualizer)</title>
+  <title>GIVE Demo</title>
   <script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="https://www.givengine.org/components/chart-area/chart-area.html">
 </head>
 <body>
-  <chart-area ref="mm10" coordinates='["chr17:35504032-35512777"]'
-    group-id-list='["genes", "singleCell", "customTracks"]'>
+  <chart-area ref='["hg19", "hg19"]' id="mainChartController" num-of-subs="2"
+    group-id-list='["genes", "encode", "interaction", "customTracks"]'
+    class="flex"
+    default-track-id-list='["knownGene", "wgEncodeEH001151_1", "wgEncodeEH002872", "wgEncodeEH001130", "GSM1250485_interaction"]' 
+    coordinates='["chr17:1-81195210", "chr17:45000000-55000000"]'
+    title-text='Epigenome and genome interaction (MCF-7)'>
   </chart-area>
 </body>
 </html>
