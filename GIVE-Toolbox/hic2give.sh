@@ -104,7 +104,14 @@ for ((i=0; i<${#chrlist[*]}; i++)); do
     for((j=i; j<${#chrlist[*]}; j++)); do
         schr=${chrlist[j]}
         echo "Extract interaction between: $fchr, $schr"
-        newlink=$($straw_file $norm $hic_file $fchr $schr BP $binsize | awk -v var1="$fchr" -v var2="$schr" -v var3="$binsize" -v var4="$linkcount" -v outfile="$output_file" 'BEGIN{FS="\t";OFS="\t"}{end1=$1+var3; end2=$2+var3; print 2*(var4+NR-1)+1,var1,$1,end1,var4+NR,$3,-1 >> outfile; print 2*(NR+var4),var2,$2,end2,var4+NR,$3,-1 >>outfile;}END{print NR}')
+        newlink=$($straw_file $norm $hic_file $fchr $schr BP $binsize |\
+            awk -v var1="$fchr" -v var2="$schr" -v var3="$binsize" -v var4="$linkcount" \
+            -v outfile="$output_file" \
+            'BEGIN{FS="\t";OFS="\t"}\
+            {end1=$1+var3; end2=$2+var3; \
+                print 2*(var4+NR-1)+1,var1,$1,end1,var4+NR,$3,-1 >> outfile;\
+                print 2*(NR+var4),var2,$2,end2,var4+NR,$3,-1 >>outfile;}\
+            END{print NR}')
         linkcount=$(($linkcount+$newlink))
         echo $linkcount
      done
