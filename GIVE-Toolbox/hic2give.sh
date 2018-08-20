@@ -39,11 +39,20 @@ fi
 
 genome=""
 posbyte=16
-while [ ! -z "$readbyte"  ]; do
+flag=true
+while [ "$flag" = true  ]; do
     readbyte=$(hexdump -n 1 -s $posbyte -e '1/1 "%c" "\n"' $hicfile)
     genome=$genome$readbyte
+    # echo $readbyte
+    # echo $readhex
+    if [ -z "$readbyte" ]; then
+        readhex=$(hexdump -n 1 -s $posbyte $hicfile | awk 'NR==1{print $2}')
+        if [ "$readhex" == "0000" ]; then
+            flag=false
+        fi
+    fi
     posbyte=$(($posbyte+1))
-    #echo $posbyte
+    # echo $posbyte
 done
 echo "=========================="
 echo "The genome version is: "$genome
@@ -53,9 +62,13 @@ posbyte=$(($posbyte+4))
 nattr=$(($readbyte*2))
 attri=1;
 while [ "$attri" -le "$nattr" ]; do
-    while [ ! -z "$readbyte"  ]; do
-        readbyte=$(hexdump -n 1 -s $posbyte -e '1/1 "%c" "\n"' $hicfile)
+    flag=true
+    while [ "$flag" = true  ]; do
+        readhex=$(hexdump -n 1 -s $posbyte $hicfile | awk 'NR==1{print $2}')
         posbyte=$(($posbyte+1))
+        if [ "$readhex" == "0000" ]; then
+            flag=false
+        fi
     done
     attri=$(($attri+1))
 done
