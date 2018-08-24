@@ -246,11 +246,10 @@ var GIVe = (function (give) {
       this.clear()
 
       this.changeVisibility(this.parent.visibility, false)
-      var numOfLines = 1
-      var data = this._getDataObject(this.mainSvg.viewWindow.chr)
+      let numOfLines = 1
+      let data = this._getDataObject(this.viewWindow.chr)
 
       this._RasInfo = null
-      var megaGenes = null
       if (data) {
         while (!(numOfLines = this._prepareLines(data)) &&
           this.activeVisibility > give.TrackObject.StatusEnum.VIS_NONE);
@@ -259,23 +258,22 @@ var GIVe = (function (give) {
         ) {
           // Raster is needed
           this._RasInfo = new give.RasInfo(
-            this.mainSvg.viewWindow.start,
-            this.mainSvg.viewWindow.end,
+            this.viewWindow.start,
+            this.viewWindow.end,
             this.windowWidth / this.RASTER_SIZE)
         }
         if (this.activeVisibility > give.TrackObject.StatusEnum.VIS_DENSE
         ) {
-          data.traverse(
-            this.mainSvg.viewWindow, this._drawSingleGene,
-            this, null, false
-          )
+          data.traverse(this.viewWindow,
+            entry => this._drawSingleGene(entry),
+            null, false)
         } else {
           // create a series of "megagenes" with all overlapping genes
           // then draw the "megagenes" instead
-          megaGenes = []
-          data.traverse(this.mainSvg.viewWindow,
-            this._aggregateTranscript.bind(this, megaGenes),
-            this, null, false)
+          let megaGenes = []
+          data.traverse(this.viewWindow,
+            entry => this._aggregateTranscript(megaGenes, entry),
+            null, false)
           megaGenes.forEach(this._drawSingleGene, this)
         }
       }
@@ -354,7 +352,7 @@ var GIVe = (function (give) {
         this.removeElement(newLabel)
       }
 
-      if (!lineEnds.some(function (lineEnd, index) {
+      if (!lineEnds.some((lineEnd, index) => {
         if (
           (lineEnd.end <= x0 && !(lineEnd.textAtLeft && textAtLeft)) ||
           this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
@@ -367,7 +365,7 @@ var GIVe = (function (give) {
           return true
         }
         return false
-      }, this)) {
+      })) {
         // no empty lines, create a new line
         if (this.parent.getSetting('adaptive', 'boolean') &&
           lineEnds.length >= this.ADAPTIVE_MAXLINES
@@ -404,16 +402,14 @@ var GIVe = (function (give) {
      * @returns {number}  number of lines this track will take.
      */
     _prepareLines (data) {
-      var lineEnds = [] // arrays of line end coordinates
-      if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE
-      ) {
+      let lineEnds = [] // arrays of line end coordinates
+      if (this.activeVisibility <= give.TrackObject.StatusEnum.VIS_DENSE) {
         return 1
       }
-      if (data.traverse(
-        this.mainSvg.viewWindow,
-        this._callTransFuncOnGene.bind(this,
-          this._allocateLineToTrans.bind(this, lineEnds)
-        ), this, null, true)
+      if (data.traverse(this.viewWindow,
+        entry => this._callTransFuncOnGene(
+          transcript => this._allocateLineToTrans(lineEnds, transcript)
+        ), null, true)
       ) {
         return lineEnds.length > 0 ? lineEnds.length : 1
       } else {
@@ -476,7 +472,7 @@ var GIVe = (function (give) {
      *    returns `false`.
      *
      * @param  {function} transcriptCallback - call back functions for
-     *    each transcript (taking only the transcript as )
+     *    each transcript (taking only the transcript as its parameter)
      * @param  {GeneObject} gene - the gene to be called upon.
      * @return {boolean} Whether the function call returns `true`
      */
@@ -490,7 +486,7 @@ var GIVe = (function (give) {
       } else {
         transcripts = [gene]
       }
-      return transcripts.every(transcriptCallback, this)
+      return transcripts.every(transcriptCallback)
     }
 
     /**
@@ -498,17 +494,15 @@ var GIVe = (function (give) {
      *
      * @param  {GeneObject} gene - the gene to be drawn.
      */
-    _drawSingleGene (gene, index, arr) {
-      this._callTransFuncOnGene(function (transcript) {
-        if (this.regionInWindow(transcript)) {
-          this._drawSingleTranscript(transcript,
-            Array.isArray(arr) ? index === arr.length - 1 : false,
-            null,
-            (this.honorItemRgb && gene.itemRGB !== undefined)
-              ? gene.itemRGB : null)
-        }
-        return true
-      }, gene)
+    _drawSingleGene (gene, index, geneArray) {
+      this._callTransFuncOnGene(
+        transcript => this._drawSingleTranscript(transcript,
+          Array.isArray(geneArray) ? index === geneArray.length - 1 : false,
+          null,
+          (this.honorItemRgb && gene.rgb !== undefined)
+            ? gene.rgb : null
+        ),
+        gene)
     }
 
     /**
@@ -534,6 +528,9 @@ var GIVe = (function (give) {
       transcript, lastTrans, yCoor, colorRGB, height, halfHeightRatio,
       lineHeight
     ) {
+      if (!this.regionInWindow(transcript)) {
+        return true
+      }
       height = height ||
         this.fullHeightRatio * this.textSize * this.GENE_HEIGHT
       halfHeightRatio = halfHeightRatio || this.halfHeightRatio
@@ -572,6 +569,7 @@ var GIVe = (function (give) {
       }
 
       this._drawOverflowTriangles(transcript, colorRGB, height, yCoor)
+      return true
     }
 
     /**
@@ -607,9 +605,9 @@ var GIVe = (function (give) {
        * @param  {ChromRegionLiteral} [coor] - chromosomal region object.
        *    Used to cut back GC.
        */
-      var _processSingleBlock = function (
+      var _processSingleBlock = (
         blockStart, blockEnd, thickStart, thickEnd, coor
-      ) {
+      ) => {
         coor = coor || new give.ChromRegion({chr: transcript.chr,
           start: blockStart,
           end: blockEnd,
@@ -624,7 +622,7 @@ var GIVe = (function (give) {
             coor.start = blockStart
             this.drawRectangle(coor, colorRGB,
               yCoor, height * halfHeightRatio,
-              this.mainSvg, colorRGB,
+              null, colorRGB,
               give.TrackDom.VALIGN_CENTER
             )
             blockStart = thickStart
@@ -647,9 +645,9 @@ var GIVe = (function (give) {
         coor.start = blockStart
         this.drawRectangle(coor, colorRGB,
           yCoor, height * (isThick ? 1 : halfHeightRatio),
-          this.mainSvg, colorRGB, give.TrackDom.VALIGN_CENTER
+          null, colorRGB, give.TrackDom.VALIGN_CENTER
         )
-      }.bind(this)
+      }
 
       let coor = new give.ChromRegion({chr: transcript.chr,
         start: transcript.start,
@@ -657,20 +655,20 @@ var GIVe = (function (give) {
         strand: transcript.strand})
       let blockStart, blockEnd
 
-      if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+      if (transcript.numOfBlocks) {
         // Have different blocks
-        blockEnd = transcript.start + transcript.getBlockStarts()[0]
+        blockEnd = transcript.start + transcript.blockStarts[0]
         // draw thick blocks and connecting lines
-        for (let i = 0; i < transcript.getNumOfBlocks(); i++) {
+        for (let i = 0; i < transcript.numOfBlocks; i++) {
           blockStart = transcript.start +
-            transcript.getBlockStarts()[i]
+            transcript.blockStarts[i]
           // first draw connecting lines (intron, if any)
           if (blockEnd < blockStart) {
             coor.end = blockStart
             coor.start = blockEnd
             this._drawSpanningLine(coor, colorRGB, yCoor, height)
           }
-          blockEnd = blockStart + transcript.getBlockSizes()[i]
+          blockEnd = blockStart + transcript.blockSizes[i]
           _processSingleBlock(blockStart, blockEnd,
             transcript.thickStart, transcript.thickEnd, coor
           )
@@ -732,9 +730,9 @@ var GIVe = (function (give) {
        * @param  {number} [thickEnd] - the end coordinate of thick
        *    portions, which may overlap with the block.
        */
-      var _processSingleBlock = function (
+      var _processSingleBlock = (
         blockStart, blockEnd, thickStart, thickEnd
-      ) {
+      ) => {
         var isThick = false
         if (blockStart < this._RasInfo.rasterStart) {
           blockStart = this._RasInfo.rasterStart
@@ -772,7 +770,7 @@ var GIVe = (function (give) {
           }
         }
         return blockStart
-      }.bind(this)
+      }
 
       var blockStart = transcript.start
       var rasterDrawIndex
@@ -789,12 +787,12 @@ var GIVe = (function (give) {
           }
         }
 
-        if (transcript.getNumOfBlocks && transcript.getNumOfBlocks()) {
+        if (transcript.numOfBlocks) {
           // Have different blocks
-          let blockEnd = blockStart + transcript.getBlockStarts()[0]
-          for (let i = 0; i < transcript.getNumOfBlocks(); i++) {
+          let blockEnd = blockStart + transcript.blockStarts[0]
+          for (let i = 0; i < transcript.numOfBlocks; i++) {
             blockStart = transcript.start +
-              transcript.getBlockStarts()[i]
+              transcript.blockStarts[i]
             // first draw connecting lines (intron, if any)
             if (blockEnd < blockStart) {
               // fill rasters in the gap with `give.RasInfo.RASTER_STATES.LINE`
@@ -809,7 +807,7 @@ var GIVe = (function (give) {
                 blockEnd = segEnd
               }
             }
-            blockEnd = blockStart + transcript.getBlockSizes()[i]
+            blockEnd = blockStart + transcript.blockSizes[i]
             _processSingleBlock(blockStart, blockEnd,
               transcript.thickStart, transcript.thickEnd
             )
@@ -845,7 +843,7 @@ var GIVe = (function (give) {
               } else {
                 this.drawRectangle(coor, colorRGB,
                   yCoor, (rasObj.flag === give.RasInfo.RASTER_STATES.THICK
-                    ? 1 : halfHeightRatio) * height, this.mainSvg,
+                    ? 1 : halfHeightRatio) * height, null,
                   null, give.TrackDom.VALIGN_CENTER
                 )
               }
@@ -859,10 +857,7 @@ var GIVe = (function (give) {
       height = height || 1
       y = y || 0
 
-      var svgToDraw = this.mainSvg
-      var windowToDraw = svgToDraw.viewWindow
-
-      if (windowToDraw.overlaps(region) > 0) {
+      if (this.regionInWindow(region) > 0) {
         var x0 = this.transformXCoordinate(region.startCoor, true)
         var x1 = this.transformXCoordinate(region.endCoor, true)
         this.drawLine(x0, y, x1, y, colorRGB)
@@ -872,7 +867,7 @@ var GIVe = (function (give) {
     }
   }
 
-  BedTrackDom.DYNAMIC_HEIGHT = true
+  BedTrackDom.DEFAULT_DYNAMIC_HEIGHT = true
 
   give.BedTrackDom = BedTrackDom
 

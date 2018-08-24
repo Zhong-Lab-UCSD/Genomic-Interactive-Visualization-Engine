@@ -160,7 +160,7 @@ var GIVe = (function (give) {
      *
      * @return {type}  returns the resolution.
      */
-    getResolution (newVWindow) {
+    _getResolution (newVWindow, index) {
       return Math.max(Math.floor(
         newVWindow.length / this.windowWidth /
         this.MIN_RESOLUTION_PER_PIXEL
@@ -172,19 +172,19 @@ var GIVe = (function (give) {
     ) {
       // start is the end of the last entry in dataPointArray
       // or chrRange.start
-      var start = chrRange.getStart()
-      var lastElem = dataPointArray[dataPointArray.length - 1]
-      if (lastElem && lastElem.getEnd()) {
+      let start = chrRange.start
+      let lastElem = dataPointArray[dataPointArray.length - 1]
+      if (lastElem && lastElem.end) {
         // lastElem is a ChromRegion object, may need to add some data
         if (lastElem.overlaps(dataEntry) > 0) {
           lastElem.data.value += dataEntry.data.value *
             lastElem.overlaps(dataEntry) / lastElem.length
         }
-        start = lastElem.getEnd()
+        start = lastElem.end
       }
       if (start < dataEntry.end) {
-        var span = Math.max(parseInt(chrRange.resolution) || 1, 1)
-        var chrSpan = new give.ChromRegion({
+        let span = Math.max(parseInt(chrRange.resolution) || 1, 1)
+        let chrSpan = new give.ChromRegion({
           chr: chrRange.chr,
           start: start,
           end: start + span
@@ -194,7 +194,7 @@ var GIVe = (function (give) {
         ) {
           // This will insert 0 in the gaps, split value in overlaps
           // and have full value afterwards
-          var newData = chrSpan.clone()
+          let newData = chrSpan.clone()
           newData.data = {
             value: dataEntry.data.value * newData.overlaps(dataEntry) /
               newData.length
@@ -209,13 +209,13 @@ var GIVe = (function (give) {
       var rawDataPoints = []
       // First populate the raw data points
       this.parent.getData(vwindow.chr).traverse(vwindow,
-        this._pushSingleRawPointEntry.bind(this, rawDataPoints, vwindow),
-        this, null, false)
+        entry => this._pushSingleRawPointEntry(rawDataPoints, vwindow, entry),
+        null, false)
       // Insert more zeroes to the end
       var lastEnd = rawDataPoints.length
         ? rawDataPoints[rawDataPoints.length - 1].end
-        : vwindow.getStart()
-      while (lastEnd < vwindow.getEnd()) {
+        : vwindow.start
+      while (lastEnd < vwindow.end) {
         rawDataPoints.push(new give.ChromRegion({
           chr: vwindow.chr,
           start: lastEnd,
@@ -228,14 +228,14 @@ var GIVe = (function (give) {
 
     _generateSmoothedPoints () {
       // Get the smoothing points
-      var vwindow = this.mainSvg.viewWindow
-      var slidingWindowSpan = this.getResolution(vwindow) *
+      var vwindow = this.viewWindow
+      var slidingWindowSpan = this._getResolution(vwindow) *
         this.slidingWindowWidth * this.MIN_RESOLUTION_PER_PIXEL
       var halfWindowIndexLength = Math.ceil(this.slidingWindowWidth *
         this.MIN_RESOLUTION_PER_PIXEL / 2)
       var extendedWindow = vwindow.getExtension(slidingWindowSpan)
         .clipRegion(this.parent.ref)
-      extendedWindow.resolution = this.getResolution(vwindow)
+      extendedWindow.resolution = this._getResolution(vwindow)
 
       // Get the raw points list first
       var rawDataPoints = this._generateRawPointsList(extendedWindow)
@@ -422,8 +422,8 @@ var GIVe = (function (give) {
      * @return {type}           description
      */
     addPoint (vwindowChr, dataEntry) {
-      // var x = dataEntry.getStart()
-      // var y = dataEntry.getEnd()
+      // var x = dataEntry.start
+      // var y = dataEntry.end
       // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
       //   ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
       // var vwindow = this.mainSvg.viewWindow
@@ -464,26 +464,26 @@ var GIVe = (function (give) {
         var p4 = this.parent.data[vwindow.chr].dataPoints[i + 3]
         var broken = false
         for (var j = i; j < i + 3; j++) {
-          if (this.parent.data[vwindow.chr].dataPoints[j].getEnd() !== this.parent.data[vwindow.chr].dataPoints[j + 1].getStart()) {
+          if (this.parent.data[vwindow.chr].dataPoints[j].end !== this.parent.data[vwindow.chr].dataPoints[j + 1].start) {
             broken = true// draw line down, might be drawn more than once
             this.drawDownLine(this.transformXCoordinate({
-              chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j].getStart())
+              chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j].start)
             }, false), this.transformYCoordinate(this.parent.data[vwindow.chr].dataPoints[j].data.value))
             this.drawDownLine(this.transformXCoordinate({
-              chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j + 1].getStart())
+              chr: windowToDraw.chr, coor: (this.parent.data[vwindow.chr].dataPoints[j + 1].start)
             }, false), this.transformYCoordinate(this.parent.data[vwindow.chr].dataPoints[j + 1].data.value))
           }
         }
         if (broken) {
           continue
         }
-        //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
+        //    p1.t2 = [(p1.start + 1 / 3 * (p2.start - p1.start)), (p1.value + 1 / 3 * (p2.value - p1.value))]
         // draw lines between points, split lines into thirds
-        p2.t1 = [(p1.getStart() + 2 / 3 * (p2.getStart() - p1.getStart())), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
-        p2.t2 = [(p2.getStart() + 1 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
-        p3.t1 = [(p2.getStart() + 2 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
-        p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
-        //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
+        p2.t1 = [(p1.start + 2 / 3 * (p2.start - p1.start)), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
+        p2.t2 = [(p2.start + 1 / 3 * (p3.start - p2.start)), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
+        p3.t1 = [(p2.start + 2 / 3 * (p3.start - p2.start)), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
+        p3.t2 = [(p3.start + 1 / 3 * (p4.start - p3.start)), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
+        //    p4.t1 = [(p3.start + 2 / 3 * (p4.start - p3.start)), (p4.value + 2 / 3 * (p4.value - p3.value))]
         p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
         p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
         var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
@@ -505,7 +505,7 @@ var GIVe = (function (give) {
       var mode = parseInt(give.getParameterByName('mode') || '2')
       if (mode == 2) {
         for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 2; i++) {
-          if (this.parent.data[vwindow.chr].dataPoints[i].getEnd() != this.parent.data[vwindow.chr].dataPoints[i + 1].getStart()) {
+          if (this.parent.data[vwindow.chr].dataPoints[i].end != this.parent.data[vwindow.chr].dataPoints[i + 1].start) {
             this.newDrawBCurve(curveStart, i + 1)
             curveStart = i + 1// will add in 0s to datapoints, need to break them if three in a row, also move to midpoinnt vs getStart
           }
@@ -533,13 +533,13 @@ var GIVe = (function (give) {
       var p3 = this.parent.data[vwindow.chr].dataPoints[i + 2]
       var p4 = this.parent.data[vwindow.chr].dataPoints[i + 3]
 
-        //    p1.t2 = [(p1.getStart() + 1 / 3 * (p2.getStart() - p1.getStart())), (p1.value + 1 / 3 * (p2.value - p1.value))]
+        //    p1.t2 = [(p1.start + 1 / 3 * (p2.start - p1.start)), (p1.value + 1 / 3 * (p2.value - p1.value))]
         // draw lines between points, split lines into thirds
-      p2.t1 = [(p1.getStart() + 2 / 3 * (p2.getStart() - p1.getStart())), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
-      p2.t2 = [(p2.getStart() + 1 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
-      p3.t1 = [(p2.getStart() + 2 / 3 * (p3.getStart() - p2.getStart())), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
-      p3.t2 = [(p3.getStart() + 1 / 3 * (p4.getStart() - p3.getStart())), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
-        //    p4.t1 = [(p3.getStart() + 2 / 3 * (p4.getStart() - p3.getStart())), (p4.value + 2 / 3 * (p4.value - p3.value))]
+      p2.t1 = [(p1.start + 2 / 3 * (p2.start - p1.start)), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
+      p2.t2 = [(p2.start + 1 / 3 * (p3.start - p2.start)), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
+      p3.t1 = [(p2.start + 2 / 3 * (p3.start - p2.start)), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
+      p3.t2 = [(p3.start + 1 / 3 * (p4.start - p3.start)), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
+        //    p4.t1 = [(p3.start + 2 / 3 * (p4.start - p3.start)), (p4.value + 2 / 3 * (p4.value - p3.value))]
       p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
       p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
       var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
@@ -635,8 +635,8 @@ var GIVe = (function (give) {
       var currPolygon = { points: [], overflows: {exceedMax: [], exceedMin: []} }
 
       for (var i = 0; i < dataPoints.length; i++) {
-        var start = dataPoints[i].getStart()
-        var end = dataPoints[i].getEnd()
+        var start = dataPoints[i].start
+        var end = dataPoints[i].end
         var yValue = dataPoints[i].data.value
 
         // first decide whether only one point will be pushed
@@ -703,8 +703,8 @@ var GIVe = (function (give) {
         currPolygon.points = []
       }
 
-      var start = dataEntry ? Math.max(dataEntry.getStart(), windowToDraw.getStart()) : windowToDraw.getEnd() + 1
-      var end = dataEntry ? Math.min(dataEntry.getEnd(), windowToDraw.getEnd()) : windowToDraw.getEnd() + 2
+      var start = dataEntry ? Math.max(dataEntry.start, windowToDraw.start) : windowToDraw.end + 1
+      var end = dataEntry ? Math.min(dataEntry.end, windowToDraw.end) : windowToDraw.end + 2
       if (start < end) {
         if (currPolygon.points.length > 0) {
         // old polygon is there

@@ -87,7 +87,7 @@ var GIVe = (function (give) {
        * the main index of the chart-window this track is in.
        * @type {number}
        */
-      this.windowIndex = properties.windowIndex || null
+      this.windowIndex = properties.windowIndex || 0
 
       /**
        * Text size of the track, will also affect line sizes.
@@ -180,14 +180,17 @@ var GIVe = (function (give) {
        *   contents).
        * @type {boolean}
        */
-      this.dynamicHeight = this.constructor.DYNAMIC_HEIGHT
-      if (properties.hasOwnProperty('dynamicHeight')) {
-        this.dynamicHeight = properties.dynamicHeight
-      }
+      this.dynamicHeight = (
+        (properties.hasOwnProperty('dynamicHeight')
+          ? properties.dynamicHeight
+          : (this.hasTrackSetting('dynamicHeight')
+            ? this.getTrackSetting('dynamicHeight', 'boolean')
+            : this.constructor.DEFAULT_DYNAMIC_HEIGHT
+          )
+        )
+      )
 
-      this.windowIndex = properties.windowIndex || 0
-
-      this.cacheRegionSpan = TrackDom.CacheRangeSpanProp
+      this.cacheRegionSpan = this.constructor.CacheRangeSpanProp
 
       this.windowWidth = properties.width -
         (properties.textMargin
@@ -228,6 +231,11 @@ var GIVe = (function (give) {
       return this._mainSvg ? this._mainSvg.viewWindow : null
     }
 
+    get viewWindowArray () {
+      return Array.isArray(this.viewWindow)
+        ? this.viewWindow : [this.viewWindow]
+    }
+
     set viewWindow (newViewWindow) {
       if (Array.isArray(newViewWindow)) {
         newViewWindow = newViewWindow[0]
@@ -246,6 +254,10 @@ var GIVe = (function (give) {
         )
       }
       return null
+    }
+
+    hasTrackSetting (key) {
+      return this.parent.hasSetting(key)
     }
 
     getTrackSetting (key, type) {
@@ -433,43 +445,44 @@ var GIVe = (function (give) {
       })
     }
 
-    /**
-     * _changeVWinAfterResize - Change window width and height
-     *   (__e.g.__ resizing browser window from an `iron-resized` event).
-     * Notice that this is a track-level solution: the first track(s) (very
-     *   likely to be coordinates) will generate a new `newViewWindow` value
-     *   while the rest of the tracks will follow such window
-     *
-     * @param  {number} newWindowWidth The new window width (in pixels)
-     * @param  {number} newViewWindow  The new view window coordinate.
-     *   (deprecated) If this value is `undefined` or `null`,
-     *   then a new one will be generated based on the current view window,
-     *   current width and new width.
-     * @param  {...object} args  Pass all the left arguments finally to
-     *   `this.drawData()`.
-     * @returns {Promise} Returns a `Promise` that will resolve to the
-     *    current `this.viewWindow` object.
-     */
-    _changeVWinAfterResize (newWindowWidth, newViewWindow, ...args) {
-      // this is only used to change the viewWindow of _mainSvg
-      // (both narrow and wide mode)
-      if (!newViewWindow) {
-        // no new window, need to calculate
-        if (!this.viewWindow) {
-          throw new give.GiveError('No original view ' +
-            'window, cannot calculate the new view window!')
-        }
-        newViewWindow = (newViewWindow === false)
-          ? this.viewWindow
-          : this.viewWindow.getExtension(
-            (newWindowWidth - this.windowWidth) / this.windowWidth,
-            null, true, this.parent.ref)
-      }
-      return this._updateContent(newViewWindow, ...args)
-    }
+    // /**
+    //  * _changeViewWindowAfterResize - Change window width and height
+    //  *   (__e.g.__ resizing browser window from an `iron-resized` event).
+    //  * Notice that this is a track-level solution: the first track(s) (very
+    //  *   likely to be coordinates) will generate a new `newViewWindow` value
+    //  *   while the rest of the tracks will follow such window
+    //  *
+    //  * @param  {number} newWindowWidth The new window width (in pixels)
+    //  * @param  {Array<ChromRegionLiteral>} newViewWindow  The new view window
+    //  *   coordinate.
+    //  *   (deprecated) If this value is `undefined` or `null`,
+    //  *   then a new one will be generated based on the current view window,
+    //  *   current width and new width.
+    //  * @param  {...object} args  Pass all the left arguments finally to
+    //  *   `this.drawData()`.
+    //  * @returns {Promise} Returns a `Promise` that will resolve to the
+    //  *    current `this.viewWindow` object.
+    //  */
+    // _changeViewWindowAfterResize (newWindowWidth, newViewWindow, ...args) {
+    //   // this is only used to change the viewWindow of _mainSvg
+    //   // (both narrow and wide mode)
+    //   if (!newViewWindow) {
+    //     // no new window, need to calculate
+    //     if (!this.viewWindow) {
+    //       throw new give.GiveError('No original view ' +
+    //         'window, cannot calculate the new view window!')
+    //     }
+    //     newViewWindow = (newViewWindow === false)
+    //       ? this.viewWindow
+    //       : this.viewWindow.getExtension(
+    //         (newWindowWidth - this.windowWidth) / this.windowWidth,
+    //         null, true, this.parent.ref)
+    //   }
+    //   return this._updateContent(newViewWindow, ...args)
+    // }
 
     /**
-     * setWidthParameters - set width-related parameters and switching
+     * _setWidthParameters - set width-related parameters and switching
      *    between narrow (to be implemented) or wide mode if needed.
      *
      * @param  {number} newWidth - new width, in px
@@ -477,9 +490,7 @@ var GIVe = (function (give) {
      * @param  {Array<ChromRegionLiteral>} [newWindow] - new view window
      *    coordinates. This is useful when view window has changed in one
      *    track and every other track needs to be brought to synchronization.
-     *    If omitted, new view window will be recalculated based on new
-     *    width (useful for the first track). If this is `false`, then
-     *    `viewwindow` shall not be changed at all.
+     *    If this is falsey, then `viewwindow` shall not be changed at all.
      * @param  {boolean} forceUpdate - force the content to update (for
      *    example, when track settings have changed).
      * @param  {boolean} [newNarrowMode] - reserved for future narrow mode
@@ -489,14 +500,16 @@ var GIVe = (function (give) {
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
-    setWidthParameters (
+    _setWidthParameters (
       newWidth, newTxtMargin, newWindow, forceUpdate,
-      newNarrowMode, ...args
+      newNarrowMode, index, ...args
     ) {
       newWidth = (typeof (newWidth) === 'number' && newWidth > 0)
         ? newWidth : this.totalWidth
       newTxtMargin = (typeof (newTxtMargin) === 'number' && newTxtMargin > 0)
         ? newTxtMargin : (this.textMargin ? this.textMargin : null)
+      newNarrowMode = (typeof (newNarrowMode) === 'boolean')
+        ? newNarrowMode : this._narrowMode
 
       forceUpdate = forceUpdate || false
       if (newTxtMargin && newTxtMargin !== this.textMargin) {
@@ -530,7 +543,7 @@ var GIVe = (function (give) {
           ((!this._narrowMode && newTxtMargin) ? newTxtMargin : 0)
         this._pendingTotalWidth = newWidth
         this._pendingWindowWidth = newWinWidth
-        return this._changeVWinAfterResize(newWinWidth, newWindow, ...args)
+        return this._updateContent(newWindow, index, ...args)
       }
       return Promise.resolve(this.viewWindow)
     }
@@ -632,14 +645,30 @@ var GIVe = (function (give) {
       )
     }
 
-    getResolution (vWindow) {
-      return null
+    _updateViewWindowResolution (viewWindow, vWinIndex) {
+      viewWindow = viewWindow || this.viewWindow
+      if (Array.isArray(viewWindow)) {
+        viewWindow.forEach((window, index) => {
+          window.resolution =
+            window.resolution || this._getResolution(window, index)
+        })
+      } else {
+        viewWindow.resolution =
+          viewWindow.resolution ||
+          this._getResolution(viewWindow, vWinIndex)
+      }
+      return viewWindow
     }
 
-    getCurrentViewWindowExt (extension) {
-      return [
-        this.viewWindow.getExtension(extension, null, true, this.parent.ref)
-      ]
+    _getResolution (vWindow, index) {
+      return 1
+    }
+
+    getViewWindowExtArray (extension, vWinArray) {
+      vWinArray = vWinArray || this.viewWindowArray
+      return vWinArray.map((window, index) =>
+        window.getExtension(extension, null, true, this.parent.ref)
+      )
     }
 
     // ****** common methods used by all tracks ******
@@ -747,20 +776,23 @@ var GIVe = (function (give) {
     /**
      * update - set width and viewwindow, and update the content if needed.
      *
-     * @param  {ChromRegionLiteral} newWindow - new view window
+     * @param  {Array<ChromRegionLiteral>} newWindow - new view window
      *    coordinates. This is useful when view window has changed in one
      *    track and every other track needs to be brought to synchronization.
      *    If this is `false`, then `viewwindow` shall not be changed at all.
      * @param  {number} newWidth - new width, in px
      * @param  {number} newTxtMargin - new text margin, in px
+     * @param  {number} index - the index for the viewWindow, used when
+     *    the track has multiple view windows.
      * @param  {...object} args  Pass all the left arguments finally to
      *   `this.drawData()`.
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
-    update (newWindow, width, newTxtWidth, forceUpdate, ...args) {
-      return this.setWidthParameters(
-        width, newTxtWidth, newWindow, forceUpdate, ...args
+    update (newWindow, width, newTxtWidth, forceUpdate, index, ...args) {
+      index = (typeof vWinIndex === 'number' ? index - this.windowIndex : 0)
+      return this._setWidthParameters(
+        width, newTxtWidth, newWindow, forceUpdate, null, index, ...args
       ).then(resolvedValue => {
         this.setSvgSize()
         return resolvedValue
@@ -869,7 +901,7 @@ var GIVe = (function (give) {
       y = y || 0
 
       svgToDraw = svgToDraw || this._mainSvg
-      var windowToDraw = svgToDraw.viewWindow
+      let windowToDraw = svgToDraw.viewWindow
 
       if (vertAlign === TrackDom.VALIGN_CENTER) {
         y -= height / 2
@@ -1161,21 +1193,42 @@ var GIVe = (function (give) {
           this._cacheDebouncer,
           Polymer.Async.timeOut.after(this._cacheDebounceInt),
           () => this.parent.fetchData(
-            this.getCurrentViewWindowExt(this.constructor.CacheRangeSpanProp),
+            this.getViewWindowExtArray(this.constructor.CacheRangeSpanProp),
             this.id)
         )
       }
     }
 
-    _checkDataAndUpdateDebounced (newVWindow, ...args) {
+    /**
+     * _checkDataAndUpdateDebounced - handle debouncing and grouping multiple
+     *    checks (if the track has multiple view windows)
+     *
+     * @param {ChromRegionLiteral} newVWindow - The new window to be checked
+     *    against
+     * @param {...object} args - additional arguments, for tracks with
+     *    multiple windows, the first object should be `index` of the window.
+     * @returns
+     * @memberof TrackDom
+     */
+    _checkDataAndUpdateDebounced (newVWindow, index, ...args) {
       // Steps:
       // * run this._checkDataAndUpdate (debounced) as callback
       //    * if this._checkDataAndUpdate has been debounced, reject the
       //      current promise
 
+      // First cancel cache loading debouncers if there is any.
       if (this._cacheDebouncer && this._cacheDebouncer.isActive()) {
         this._cacheDebouncer.cancel()
         this._cacheDebouncer = null
+      }
+
+      if (!Array.isArray(newVWindow)) {
+        if (!this._pendingNewVWArr) {
+          this._pendingNewVWArr = this.viewWindowArray.slice()
+        }
+        this._pendingNewVWArr[index] = newVWindow
+      } else {
+        this._pendingNewVWArr = newVWindow.slice()
       }
 
       if (!this._debouncePromise) {
@@ -1223,11 +1276,8 @@ var GIVe = (function (give) {
       //      `this.loadCache`, it will resolve to `this.viewWindow`
       //    * whenever _checkDataAndUpdate (debounced) is done, run loadCache
       this._debouncePromise = null
-      this._requestVWArr = this._pendingNewVWArr.map(
-        range => range.getExtension(
-          this.constructor.DefaultRangeSpanProp, null, true, this.parent.ref
-        )
-      )
+      this._requestVWArr = this.getViewWindowExtArray(
+        this.constructor.DefaultRangeSpanProp, this._pendingNewVWArr)
       let newDataPromise = this.parent.fetchData(this._requestVWArr, this.id)
       if (this._dataPromise !== newDataPromise) {
         this._dataPromise = newDataPromise
@@ -1241,37 +1291,34 @@ var GIVe = (function (give) {
       throw new give.PromiseCanceller()
     }
 
-    _updateContent (viewWindow, ...args) {
+    _updateContent (viewWindow, index, ...args) {
       // viewWindow is the new viewWindow value of coordinates
       // index is the index of viewWindow (for tracks with multiple viewWindows)
       // if both are omitted, just refresh the track
-      viewWindow = this._verifyViewWindow(viewWindow)
-      this._pendingNewVWArr = Array.isArray(viewWindow)
-        ? viewWindow.slice() : [viewWindow]
-      this._pendingNewVWArr.forEach(range => {
-        range.resolution = this.getResolution(range) || 1
-      })
+      viewWindow = this._verifyViewWindow(viewWindow, index)
+      this._updateViewWindowResolution(viewWindow, index)
 
-      this.readyPromise = this._checkDataAndUpdateDebounced(...args).catch(
-        // catch all error that is *not* give.PromiseCanceller
-        e => {
-          if (e instanceof give.PromiseCanceller) {
+      this.readyPromise =
+        this._checkDataAndUpdateDebounced(viewWindow, index, ...args)
+          .catch(e => {
+            // catch all error that is *not* give.PromiseCanceller
+            if (e instanceof give.PromiseCanceller) {
+              throw e
+            }
+            give._verbConsole.warn(e)
+            give.fireSignal('warning', { msg: e.message })
+            return e
+          })
+          .then(e => {
+            // needs to implement this 'finally except when
+            //    give.PromiseCanceller is thrown' case.
+            give.fireSignal('track-ready', { ID: this.parent.id })
+            this.readyPromise = null
+            if (!e || e instanceof give.ChromRegion) {
+              return e
+            }
             throw e
-          }
-          give._verbConsole.warn(e)
-          give.fireSignal('warning', { msg: e.message })
-          return e
-        }
-      ).then(e => {
-        // needs to implement this 'finally except when give.PromiseCanceller
-        //    is thrown' case.
-        give.fireSignal('track-ready', { ID: this.parent.id })
-        this.readyPromise = null
-        if (!e || e instanceof give.ChromRegion) {
-          return e
-        }
-        throw e
-      })
+          })
       return this.readyPromise
     }
 
@@ -1294,12 +1341,15 @@ var GIVe = (function (give) {
         ) : null
     }
 
-    _verifyViewWindow (viewWindow) {
+    _verifyViewWindow (viewWindow, vWinIndex) {
       viewWindow = viewWindow || this.viewWindow
       if (Array.isArray(viewWindow)) {
-        viewWindow = viewWindow.map(this._verifyViewWindowElem.bind(this))
+        viewWindow = viewWindow.map(
+          (window, index) => this._verifyViewWindowElem(window, index)
+        )
       } else {
-        viewWindow = this._verifyViewWindowElem(viewWindow)
+        viewWindow = this._verifyViewWindowElem(
+          viewWindow, vWinIndex - this.windowIndex)
       }
       return viewWindow
     }

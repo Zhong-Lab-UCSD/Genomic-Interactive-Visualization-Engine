@@ -269,7 +269,7 @@ var GIVe = (function (give) {
         : null
     }
 
-    getShortName () {
+    get shortName () {
       return give.shortenString(this.name,
         this.constructor._REGION_SHORTNAME_LIMIT,
         this.constructor._REGION_SHORTNAME_PREFIX_LENGTH,

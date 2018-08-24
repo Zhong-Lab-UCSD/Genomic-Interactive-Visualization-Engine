@@ -57,10 +57,10 @@ var GIVe = (function (give) {
         this.constructor.DEFAULT_THRESHOLD
       )
 
-      this.subSvgs = []
+      this._subSvgs = []
       this.bufferWindow = []
-      this.quantiles = this.parent.getSetting('quantiles') ||
-        this.parent.getSetting('thresholdPercentile')
+      this.quantiles = this.getTrackSetting('quantiles') ||
+        this.getTrackSetting('thresholdPercentile')
     }
 
     get DEFAULT_HEIGHT () {
@@ -121,6 +121,10 @@ var GIVe = (function (give) {
       }
     }
 
+    get viewWindow () {
+      return this._subSvgs.map(subSvg => subSvg.viewWindow)
+    }
+
     _getSubSvgId (index) {
       return this.parent.cleanId + '_subSvg' + index
     }
@@ -130,13 +134,13 @@ var GIVe = (function (give) {
         var newSubSvg = document.createElementNS(this.svgNS, 'svg')
         newSubSvg.setAttribute('id', this._getSubSvgId(i))
         this.mainSvg.holder.appendChild(newSubSvg)
-        this.subSvgs.push(newSubSvg)
+        this._subSvgs.push(newSubSvg)
       }
-      this.subSvgs.forEach(subSvg => this.initSvgHolder(subSvg))
+      this._subSvgs.forEach(subSvg => this.initSvgHolder(subSvg))
     }
 
     _setSvgComponentsSize () {
-      this.subSvgs.forEach((subSvg, index) => {
+      this._subSvgs.forEach((subSvg, index) => {
         subSvg.setAttributeNS(null, 'x', 0)
         subSvg.setAttributeNS(null, 'y',
           (this.fullHeightRatio + this.subTrackGap) * index * this.textSize)
@@ -149,43 +153,12 @@ var GIVe = (function (give) {
       })
     }
 
-    changeViewWindowAfterResize (
-      newWindowWidth, newViewWindow
-    ) {
-      // this is only used to change the viewWindow of mainSvg
-      // (both narrow and wide mode)
-      var newVWindowArr = new Array(this.subSvgs.length)
-      newVWindowArr = Array.isArray(newViewWindow)
-        ? newViewWindow : newVWindowArr.fill(newViewWindow)
-      try {
-        newVWindowArr.forEach(
-          function (newVWindow, index) {
-            var subSvg = this.subSvgs[index]
-            if (!newVWindow) {
-              newVWindow = (newVWindow === false)
-                ? subSvg.viewWindow
-                : subSvg.viewWindow.getExtension(
-                  (newWindowWidth - this.windowWidth) / this.windowWidth,
-                  null, true, this.parent.ref
-                )
-            }
-            this.updateTrack(newVWindow, index)
-          }, this
-        )
-      } catch (err) {
-      }
-    }
-
     // ****** customized methods below ******
 
     getCurrentViewWindowExt (extension) {
-      var result = []
-      this.subSvgs.forEach(function (subSvg) {
-        result.push(subSvg.viewWindow.getExtension(
-          extension, null, true, this.parent.ref
-        ))
-      }, this)
-      return result
+      return this._subSvgs.map(subSvg => subSvg.viewWindow.getExtension(
+        extension, null, true, this.parent.ref
+      ))
     }
 
     drawData () {
@@ -199,20 +172,20 @@ var GIVe = (function (give) {
 
       this.linkMap = {}
       // draw box track for each child svg
-      this.subSvgs.forEach(function (subSvg, index) {
+      this._subSvgs.forEach((subSvg, index) => {
         this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
           this.linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
           subSvg, index)
-      }, this)
+      })
 
       // draw interaction track for main svg
-      this.drawConnectionBetweenTracks(this.linkMap, this.subSvgs,
+      this.drawConnectionBetweenTracks(this.linkMap, this._subSvgs,
         this.svgMain)
     }
 
     clear () {
       super.clear()
-      this.subSvgs.forEach(subSvg => {
+      this._subSvgs.forEach(subSvg => {
         this.clearSvg(subSvg)
         this.mainSvg.holder.appendChild(subSvg)
       })
@@ -262,11 +235,11 @@ var GIVe = (function (give) {
         viewWindow.forEach(this.changeViewWindow, this)
       } else {
         if (typeof (viewWindow) === 'string') {
-          this.subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
+          this._subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
         } else {
-          this.subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
+          this._subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
         }
-        this._pendingVWs[index] = this.subSvgs[index].viewWindow
+        this._pendingVWs[index] = this._subSvgs[index].viewWindow
       }
     }
 
@@ -465,7 +438,7 @@ var GIVe = (function (give) {
 
     drawConnectionBetweenTracks (linkMap, svgChildren, svgMain) {
       svgMain = svgMain || this.mainSvg
-      svgChildren = svgChildren || this.subSvgs
+      svgChildren = svgChildren || this._subSvgs
       for (var i = 1; i < svgChildren.length; i++) {
         this._drawConnectionBetweenNeighboringTracks(linkMap,
           [svgChildren[i - 1], svgChildren[i]], svgMain)
@@ -493,7 +466,11 @@ var GIVe = (function (give) {
           return quantile < value
         })
         result = result / (this.quantiles.length - 1)
-        return considerThreshold ? (this.threshold < 100 ? (result - this.threshold / 100) / (1 - this.threshold / 100) : 0.5) : result
+        return considerThreshold
+          ? (this.threshold < 100
+            ? (result - this.threshold / 100) / (1 - this.threshold / 100)
+            : 0.5)
+          : result
       }
       // otherwise, throw exception
       throw (new give.GiveError('Quantile data missing!'))
@@ -513,13 +490,18 @@ var GIVe = (function (give) {
       leftColor = this.gradient[colorIndex - 1]
       rightColor = this.gradient[colorIndex]
       return this.getColorBetween(leftColor.color, rightColor.color,
-        (percentile - leftColor.percent) / (rightColor.percent - leftColor.percent))
+        (percentile - leftColor.percent) /
+        (rightColor.percent - leftColor.percent)
+      )
     }
 
     getColorBetween (lColor, rColor, weight) {
-      return (parseInt((rColor & 0xFF0000) * weight + (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000) +
-        (parseInt((rColor & 0x00FF00) * weight + (lColor & 0x00FF00) * (1 - weight)) & 0x00FF00) +
-        (parseInt((rColor & 0x0000FF) * weight + (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF)
+      return (parseInt((rColor & 0xFF0000) * weight +
+        (lColor & 0xFF0000) * (1 - weight)) & 0xFF0000
+      ) + (parseInt((rColor & 0x00FF00) * weight +
+        (lColor & 0x00FF00) * (1 - weight)) & 0x00FF00
+      ) + (parseInt((rColor & 0x0000FF) * weight +
+        (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF)
     }
   }
 
