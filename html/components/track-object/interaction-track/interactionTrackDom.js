@@ -191,39 +191,37 @@ var GIVe = (function (give) {
       })
     }
 
-    updateTrack (viewWindow, index) {
-      // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
-      // index: if viewWindow is a single give.ChromRegion Object, index will be the index
-      try {
-        // Steps:
-        // Change view window by calling changeViewWindow()
-        //    May clip viewwindow by ref
-        if (viewWindow) {
-          if (Array.isArray(viewWindow)) {
-            // then it must have enough elements
-            this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
-          } else {
-            this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
-          }
-        }
+    // updateTrack (viewWindow, index) {
+    //   // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
+    //   // index: if viewWindow is a single give.ChromRegion Object, index will be the index
+    //   try {
+    //     // Steps:
+    //     // Change view window by calling changeViewWindow()
+    //     //    May clip viewwindow by ref
+    //     if (viewWindow) {
+    //       if (Array.isArray(viewWindow)) {
+    //         // then it must have enough elements
+    //         this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
+    //       } else {
+    //         this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
+    //       }
+    //     }
 
-        if (this._pendingVWs.every(function (pendingVWindow) {
-          return pendingVWindow
-        }, this)) {
-          // Get data clipped by viewWindow by calling fetchData()
-          //    May also include data preparation
-          this.checkDataAndUpdateDebounced(this._pendingVWs)
-          // Update detailed content by calling drawData()
-          //    Will be debounced to prevent lagging
-        }
-      } catch (e) {
-        console.log(e.message)
-        console.log(e.stack)
-        //        if(this.oldViewWindowString) {
-        //          this.set('viewWindowString', this.oldViewWindowString);
-        //        }
-      }
-    }
+    //     if (this._pendingVWs.every(pendingVWindow => !!pendingVWindow)) {
+    //       // Get data clipped by viewWindow by calling fetchData()
+    //       //    May also include data preparation
+    //       this.checkDataAndUpdateDebounced(this._pendingVWs)
+    //       // Update detailed content by calling drawData()
+    //       //    Will be debounced to prevent lagging
+    //     }
+    //   } catch (e) {
+    //     console.log(e.message)
+    //     console.log(e.stack)
+    //     //        if(this.oldViewWindowString) {
+    //     //          this.set('viewWindowString', this.oldViewWindowString);
+    //     //        }
+    //   }
+    // }
 
     updateThreshold (threshold) {
       this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
