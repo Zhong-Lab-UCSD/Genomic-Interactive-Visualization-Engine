@@ -447,13 +447,30 @@ var GIVe = (function (give) {
   give._initDebug()
 
   give.getAggregatedUpdatePromise = function (
-    promiseArray, objArray, promiseFunc
+    promiseArray, objArray, promiseFunc,
+    paddedPromiseArray, thenFunc, catchFunc
   ) {
     promiseArray = promiseArray || []
+    let usePaddedPromise =
+      (typeof thenFunc === 'function' || typeof catchFunc === 'function')
+    if (usePaddedPromise) {
+      paddedPromiseArray = paddedPromiseArray || []
+    }
     let promisesChanged = false
     if (promiseArray.length <= 0) {
       promiseArray = objArray.forEach((obj, index) => {
-        promiseArray.push(promiseFunc(obj, index))
+        let originalPromise = promiseFunc(obj, index)
+        let paddedPromise = originalPromise
+        promiseArray.push(originalPromise)
+        if (typeof thenFunc === 'function') {
+          paddedPromise = paddedPromise.then(result => thenFunc(result))
+        }
+        if (typeof catchFunc === 'function') {
+          paddedPromise = paddedPromise.catch(err => catchFunc(err))
+        }
+        if (paddedPromise !== originalPromise) {
+          paddedPromiseArray.push(paddedPromise)
+        }
       })
       promisesChanged = true
     } else {
@@ -463,6 +480,17 @@ var GIVe = (function (give) {
           if (newPromise !== promiseArray[index]) {
             // new promise
             promiseArray[index] = newPromise
+            let paddedPromise = newPromise
+            promiseArray.push(originalPromise)
+            if (typeof thenFunc === 'function') {
+              paddedPromise = paddedPromise.then(result => thenFunc(result))
+            }
+            if (typeof catchFunc === 'function') {
+              paddedPromise = paddedPromise.catch(err => catchFunc(err))
+            }
+            if (paddedPromise !== newPromise) {
+              paddedPromiseArray[index] = paddedPromise
+            }
             promisesChanged = true
           }
         } catch (e) {
@@ -475,7 +503,7 @@ var GIVe = (function (give) {
       })
     }
     if (promisesChanged) {
-      return Promise.all(promiseArray)
+      return Promise.all(usePaddedPromise ? paddedPromiseArray : promiseArray)
     }
     throw new give.PromiseCanceller()
   }
