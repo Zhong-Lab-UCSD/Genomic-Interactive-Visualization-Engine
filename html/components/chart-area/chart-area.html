@@ -291,7 +291,7 @@ var GIVe = (function (give) {
       this._updatingRefs = false
       this._updatingNumOfSubs = false
       this._windowPromiseAggregator = new give.PromiseAggregator(
-        null, this.passExceptions? null : (err => this._windowErrHandler(err))
+        null, this.passExceptions ? null : err => this._windowErrHandler(err)
       )
       return give.RefObject.allRefPromise
         .then(() => this._numOfSubsChanged(this.numOfSubs))
@@ -333,7 +333,7 @@ var GIVe = (function (give) {
       }
       if (err instanceof WindowNotInitialized && catchWindowNotInitialized) {
         give._verbConsole.info('Window not initialized')
-        throw new give.PromiseCanceller())
+        throw new give.PromiseCanceller()
       }
       if (!this.passExceptions) {
         // TODO: gracefully handle the exception
