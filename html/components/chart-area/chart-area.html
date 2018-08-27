@@ -17,6 +17,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../basic-func/basic-func.html">
+<link rel="import" href="../promise-aggregator/promise-aggregator.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
@@ -142,7 +143,6 @@ var GIVe = (function (give) {
     constructor () {
       super()
       this._resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
-      this._windowUpdatePromises = []
       this._idEnforcedSet = new Set()
       this._chartWindows = []
       this._refArray = []
@@ -284,9 +284,15 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       this.addEventListener('iron-resize', e => this._onIronResize(e))
+      if (!this.passExceptions) {
+        this.addEventListener('warning', e => this._warningHandler(e))
+      }
       this._updatingCoordinates = false
       this._updatingRefs = false
       this._updatingNumOfSubs = false
+      this._windowPromiseAggregator = new give.PromiseAggregator(
+        null, this.passExceptions? null : (err => this._windowErrHandler(err))
+      )
       return give.RefObject.allRefPromise
         .then(() => this._numOfSubsChanged(this.numOfSubs))
     }
@@ -309,6 +315,17 @@ var GIVe = (function (give) {
       return '_chart-window-' + index
     }
 
+    _showErrorMessage (errObj, type) {
+
+    }
+
+    _windowErrHandler (err) {
+      if (err instanceof give.ChartWindow.ResetWidthError) {
+        throw err
+      }
+      this._showErrorMessage(err, 'error')
+    }
+
     _errorHandler (err, catchWindowNotInitialized) {
       // throw give.PromiseCanceller to stop any current promise chain
       if (err instanceof give.PromiseCanceller) {
@@ -320,11 +337,16 @@ var GIVe = (function (give) {
       }
       if (!this.passExceptions) {
         // TODO: gracefully handle the exception
+        this._showErrorMessage(err, 'error')
       }
       this._readiness = true
       if (this.passExceptions) {
         throw err
       }
+    }
+
+    _warningHandler (event) {
+      this._showErrorMessage(event.detail.errObj, 'warning')
     }
 
     _updateTrackWindowArray () {
@@ -433,8 +455,7 @@ var GIVe = (function (give) {
      */
     _windowWidthChangeHandler (err) {
       if (err instanceof give.ChartWindow.ResetWidthError) {
-        return give.getAggregatedUpdatePromise(
-          this._windowUpdatePromises,
+        return this._windowPromiseAggregator.aggregate(
           this._chartWindows,
           (window, index) => window.updateTracks(false, err.newWidth)
         )
@@ -465,8 +486,8 @@ var GIVe = (function (give) {
             this._chartWindows[index], index
           )
         } else {
-          newWindowPromise = give.getAggregatedUpdatePromise(
-            this._windowUpdatePromises, this._chartWindows, redrawWindowMethod
+          newWindowPromise = this._windowPromiseAggregator.aggregate(
+            this._chartWindows, redrawWindowMethod
           )
         }
         this._readiness = false

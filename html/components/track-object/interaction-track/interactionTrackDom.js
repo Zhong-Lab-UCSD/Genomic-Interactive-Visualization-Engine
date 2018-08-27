@@ -125,6 +125,15 @@ var GIVe = (function (give) {
       return this._subSvgs.map(subSvg => subSvg.viewWindow)
     }
 
+    set viewWindow (newViewWindows) {
+      if (!Array.isArray(newViewWindows)) {
+        throw new give.GiveError('newViewWindows for interaction not an array!')
+      }
+      this._subSvgs.forEach((subSvg, index) => {
+        subSvg.viewWindow = newViewWindows[index]
+      })
+    }
+
     _getSubSvgId (index) {
       return this.parent.cleanId + '_subSvg' + index
     }
@@ -170,16 +179,16 @@ var GIVe = (function (give) {
       // clear text Margin svg
       this.clear()
 
-      this.linkMap = {}
+      this._linkMap = {}
       // draw box track for each child svg
       this._subSvgs.forEach((subSvg, index) => {
         this.drawBoxTrack(this.parent.getData(subSvg.viewWindow.chr),
-          this.linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
+          this._linkMap, 0.5, this.textSize * this.fullHeightRatio - 1,
           subSvg, index)
       })
 
       // draw interaction track for main svg
-      this.drawConnectionBetweenTracks(this.linkMap, this._subSvgs,
+      this.drawConnectionBetweenTracks(this._linkMap, this._subSvgs,
         this.svgMain)
     }
 
@@ -191,54 +200,9 @@ var GIVe = (function (give) {
       })
     }
 
-    // updateTrack (viewWindow, index) {
-    //   // viewWindow: give.ChromRegion object or an array of give.ChromRegion objects
-    //   // index: if viewWindow is a single give.ChromRegion Object, index will be the index
-    //   try {
-    //     // Steps:
-    //     // Change view window by calling changeViewWindow()
-    //     //    May clip viewwindow by ref
-    //     if (viewWindow) {
-    //       if (Array.isArray(viewWindow)) {
-    //         // then it must have enough elements
-    //         this._pendingVWs = viewWindow.map(this._verifyViewWindow, this)
-    //       } else {
-    //         this._pendingVWs[index] = this._verifyViewWindow(viewWindow)
-    //       }
-    //     }
-
-    //     if (this._pendingVWs.every(pendingVWindow => !!pendingVWindow)) {
-    //       // Get data clipped by viewWindow by calling fetchData()
-    //       //    May also include data preparation
-    //       this.checkDataAndUpdateDebounced(this._pendingVWs)
-    //       // Update detailed content by calling drawData()
-    //       //    Will be debounced to prevent lagging
-    //     }
-    //   } catch (e) {
-    //     console.log(e.message)
-    //     console.log(e.stack)
-    //     //        if(this.oldViewWindowString) {
-    //     //          this.set('viewWindowString', this.oldViewWindowString);
-    //     //        }
-    //   }
-    // }
-
     updateThreshold (threshold) {
       this.threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this.threshold)
       this.checkDataAndUpdateDebounced()
-    }
-
-    changeViewWindow (viewWindow, index) {
-      if (Array.isArray(viewWindow)) {
-        viewWindow.forEach(this.changeViewWindow, this)
-      } else {
-        if (typeof (viewWindow) === 'string') {
-          this._subSvgs[index].viewWindow = new give.ChromRegion(viewWindow, this.parent.ref)
-        } else {
-          this._subSvgs[index].viewWindow = viewWindow.clipRegion(this.parent.ref).clone()
-        }
-        this._pendingVWs[index] = this._subSvgs[index].viewWindow
-      }
     }
 
     drawBoxTrack (regions, linkMap, y, height, svgToDraw, index) {
@@ -250,14 +214,14 @@ var GIVe = (function (give) {
 
       // may need to filter the regions first, either here or outside
 
-      var colorIndex = 0
+      let colorIndex = 0
       svgToDraw = svgToDraw || this.mainSvg
       height = height || this.borderHeight * this.textSize
       y = y || 0
 
-      var windowToDraw = svgToDraw.viewWindow
-      var traverseFunc = function (linkMap, region) {
-        var linkID = region.data.linkID
+      let windowToDraw = svgToDraw.viewWindow
+      let traverseFunc = region => {
+        let linkID = region.data.linkID
         if (!linkMap.hasOwnProperty(linkID)) {
         // color is already there
           colorIndex++
@@ -272,8 +236,8 @@ var GIVe = (function (give) {
           linkMap[linkID].push(region)
           linkMap[linkID].map[region.data.regionID] = region
         }
-      }.bind(this, linkMap)
-      var filterFunc = function (region) {
+      }
+      let filterFunc = region => {
         if (!this.isAboveThreshold(region.data.value) ||
           (typeof (region.data.dirFlag) === 'number' &&
             region.data.dirFlag !== index
@@ -282,32 +246,43 @@ var GIVe = (function (give) {
           return false
         }
         return true
-      }.bind(this)
+      }
 
       if (regions && regions instanceof give.GiveTree) {
         regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
       }
 
       // then draw the two horizontal lines
-      if (!this.regionInWindow(this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)) {
+      if (!this.parent.ref.chromInfo[windowToDraw.chr].cent ||
+        !this.regionInWindow(
+          this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)
+      ) {
         // no centromere, just draw two lines
         this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
-        this.drawLine(0, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
+        this.drawLine(0, y + height, this.windowWidth, y + height,
+          this.boxBorderColor, svgToDraw)
       } else {
         // has centromere, draw p part first
-        var pX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getStartCoor(), false, svgToDraw)
+        let pX = this.transformXCoordinate(
+          this.parent.ref.chromInfo[windowToDraw.chr].cent.startCoor,
+          false, svgToDraw)
         if (pX > 0 && pX < this.windowWidth) {
           this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
-          this.drawLine(0, y + height, pX, y + height, this.boxBorderColor, svgToDraw)
+          this.drawLine(0, y + height, pX, y + height, this.boxBorderColor,
+            svgToDraw)
         }
         // then centromere
-        var qX = this.transformXCoordinate(this.parent.ref.chromInfo[windowToDraw.chr].cent.getEndCoor(), false, svgToDraw)
+        let qX = this.transformXCoordinate(
+          this.parent.ref.chromInfo[windowToDraw.chr].cent.endCoor, false,
+          svgToDraw)
         this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
         this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
         // then q part
         if (qX > 0 && qX < this.windowWidth) {
-          this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
-          this.drawLine(qX, y + height, this.windowWidth, y + height, this.boxBorderColor, svgToDraw)
+          this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor,
+            svgToDraw)
+          this.drawLine(qX, y + height, this.windowWidth, y + height,
+            this.boxBorderColor, svgToDraw)
         }
       }
     }
@@ -337,88 +312,90 @@ var GIVe = (function (give) {
       // the colorMap should have been already populated
       // windowsToDraw should be 'viewWindow' property of svgChildren
 
-      var regionMap = {}
+      let regionMap = {}
 
-      for (var regionID in linkMap) {
+      for (let regionID in linkMap) {
         if (linkMap.hasOwnProperty(regionID)) {
           // region is here, draw the link (polygon)
 
           // if(linkMap[regionID][0].data.value < threshold)
           // now quantile is used instead of raw # of reads
-          if (!this.isAboveThreshold(linkMap[regionID][0].data.value)) {
+          let linkItem = linkMap[regionID]
+          if (!this.isAboveThreshold(linkItem[0].data.value)) {
             continue
           }
 
-          var perm = this._generatePerm(linkMap[regionID].length)
+          let perm = this._generatePerm(linkItem.length)
           if (!perm) {
             continue
           }
 
           perm.forEach(function (permIndex, index) {
             if (
-              permIndex.some(
-                function (currentPerm, svgIndex) {
-                  return this.regionInWindow(linkMap[regionID][currentPerm], svgNeighbors[svgIndex])
-                },
-                this
-              ) &&
-              permIndex.every(
-                function (currentPerm, svgIndex) {
-                  return (typeof (linkMap[regionID][currentPerm].data.dirFlag) !== 'number' ||
-                    linkMap[regionID][currentPerm].data.dirFlag === svgIndex) &&
-                    linkMap[regionID][currentPerm].chr === svgNeighbors[svgIndex].viewWindow.chr
-                },
-                this
-              )
+              permIndex.some((currentPerm, svgIndex) => this.regionInWindow(
+                linkItem[currentPerm], svgNeighbors[svgIndex]
+              )) &&
+              permIndex.every((currentPerm, svgIndex) => (
+                (typeof (linkItem[currentPerm].data.dirFlag) !== 'number' ||
+                  linkItem[currentPerm].data.dirFlag === svgIndex
+                ) &&
+                linkItem[currentPerm].chr ===
+                  svgNeighbors[svgIndex].viewWindow.chr
+              ))
             ) {
               // prepare the points
-              var startPoints = []
-              var endPoints = []
+              let startPoints = []
+              let endPoints = []
 
-              var partialOutside = false
+              let partialOutside = false
 
-              svgNeighbors.forEach(function (svgChild, svgIndex) {
-                var x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getStartCoor(),
-                  true, svgChild)
+              svgNeighbors.forEach((svgChild, svgIndex) => {
+                let x = this.transformXCoordinate(
+                  linkItem[permIndex[svgIndex]].startCoor, true, svgChild)
                 if (x > this.windowWidth) {
                   partialOutside = true
                 }
 
-                var y = (parseInt(svgChild.getAttributeNS(null, 'y')) || 0)
+                let y = (parseInt(svgChild.getAttributeNS(null, 'y')) || 0)
 
                 startPoints.push((x - this.bandBorder / 2) + ',' + y)
-                startPoints.push((x - this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
+                startPoints.push(
+                  (x - this.bandBorder / 2) + ',' +
+                  (y + svgChild.height.animVal.value)
+                )
 
-                x = this.transformXCoordinate(linkMap[regionID][permIndex[svgIndex]].getEndCoor(),
-                  true, svgChild)
+                x = this.transformXCoordinate(
+                  linkItem[permIndex[svgIndex]].endCoor,true, svgChild)
                 if (x < 0) {
                   partialOutside = true
                 }
 
                 x += (parseInt(svgChild.getAttributeNS(null, 'x')) || 0)
                 endPoints.push((x + this.bandBorder / 2) + ',' + y)
-                endPoints.push((x + this.bandBorder / 2) + ',' + (y + svgChild.height.animVal.value))
-              }, this)
+                endPoints.push(
+                  (x + this.bandBorder / 2) + ',' +
+                  (y + svgChild.height.animVal.value)
+                )
+              })
 
               var points = startPoints.concat(endPoints.reverse())
               if (!regionMap.hasOwnProperty(points)) {
-                //                this.createRawPolygon(points, {id: regionID,
-                //                  class: 'linkedRegion',
-                //                  fill: this.colorSet[3],
-                //                  stroke: this.colorSet[5],
-                //                  'stroke-width': 3,
-                //                  }, svgMain);
                 if (this.quantiles) {
                   this.createRawPolygon(points, {id: regionID,
                     class: 'linkedRegion',
-                    fill: this.rgbToHex(this.percentileToGradient(this.valueToPercentile(linkMap[regionID][0].data.value))),
-                    stroke: this.rgbToHex(this.colorSet[linkMap[regionID].color]),
+                    fill: this.rgbToHex(this.percentileToGradient(
+                      this.valueToPercentile(linkItem[0].data.value))),
+                    stroke: this.rgbToHex(this.colorSet[linkItem.color]),
                     'stroke-width': 2,
-                    'fill-opacity': this.valueToPercentile(linkMap[regionID][0].data.value) * this.maxFillOpacity
+                    'fill-opacity':
+                      this.valueToPercentile(linkItem[0].data.value) *
+                      this.maxFillOpacity
                   }, svgMain)
                 } else {
                   this.createRawPolygon(points, {id: regionID,
-                    class: 'linkedRegion ' + (partialOutside ? 'partialOutside' : 'fullyInside'),
+                    class:
+                      'linkedRegion ' +
+                      (partialOutside ? 'partialOutside' : 'fullyInside'),
                     fill: this.rgbToHex(this.colorSet[0]),
                     stroke: this.rgbToHex(this.colorSet[0])
                     // 'stroke-width': 0.5,

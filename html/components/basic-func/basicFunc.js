@@ -234,7 +234,7 @@ var GIVe = (function (give) {
             'encounter any problems, please use the info on \'About us\' ' +
             'page to contact us.'
           give._verbConsole.error(errorMsg)
-          give.fireSignal('warning', { msg: errorMsg })
+          give.fireSignal('warning', { errObj: { msg: errorMsg } })
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)

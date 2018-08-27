@@ -481,6 +481,27 @@ var GIVe = (function (give) {
     //   return this._updateContent(newViewWindow, ...args)
     // }
 
+    _checkViewWindowChanged (newWindow, index) {
+      if (Array.isArray(newWindow)) {
+        return this.viewWindowArray.some((window, wIndex) => {
+          return this._checkSingleViewWindowChanged(newWindow[wIndex], window)
+        })
+      }
+      if (Array.isArray(this.viewWindow)) {
+        return this._checkSingleViewWindowChanged(
+          newWindow, this.viewWindow[index])
+      }
+      return this._checkSingleViewWindowChanged(newWindow, this.viewWindow)
+    }
+
+    _checkSingleViewWindowChanged (newViewWindow, currentViewWindow) {
+      if (newViewWindow instanceof give.ChromRegion) {
+        return (!(currentViewWindow instanceof give.ChromRegion) ||
+          !!give.ChromRegion.compare(newViewWindow, this.viewWindow))
+      }
+      return false
+    }
+
     /**
      * _setWidthParameters - set width-related parameters and switching
      *    between narrow (to be implemented) or wide mode if needed.
@@ -532,10 +553,7 @@ var GIVe = (function (give) {
 
       if (forceUpdate || newWidth !== this.totalWidth ||
         newNarrowMode !== this._narrowMode ||
-        (newWindow instanceof give.ChromRegion && (
-          !(this.viewWindow instanceof give.ChromRegion) ||
-          give.ChromRegion.compare(newWindow, this.viewWindow)
-        ))
+        this._checkViewWindowChanged(newWindow, index)
       ) {
         // drawing width changed
         this._narrowMode = newNarrowMode

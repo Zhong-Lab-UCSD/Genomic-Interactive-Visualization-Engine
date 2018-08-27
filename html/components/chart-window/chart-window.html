@@ -218,13 +218,6 @@ var GIVe = (function (give) {
       this._addedTrackMap = new Map()
       this._hiddenTrackDomMap = new Map()
 
-      /**
-       * _trackDomPromises - an array holding all updating promises of tracks
-       *    within `this._trackDoms` __and `this._hiddenTrackDoms`__
-       * @type {Array<Promise>}
-       */
-      this._trackDomPromises = []
-
       this._pendingVWindow = null
       this._viewWindow = null
 
@@ -347,6 +340,10 @@ var GIVe = (function (give) {
       if (this.defaultTrackIdList.length > 0) {
         this._needOverrideDefault = true
       }
+
+      this._trackPromiseAggregator = new give.PromiseAggregator(
+        null, err => this._trackErrHandler(err)
+      )
 
       this.windowWidth = this.querySelector('#chartHolding').clientWidth
 
@@ -728,8 +725,7 @@ var GIVe = (function (give) {
 
       // Update all tracks' width and height (with maybe new view window)
       // If no new promise is needed, do not chain stuff afterwards
-      this.drawingPromise = give.getAggregatedUpdatePromise(
-        this._trackDomPromises,
+      this.drawingPromise = this._trackPromiseAggregator.aggregate(
         this._trackDoms.concat(this._hiddenTrackDoms),
         trackDom => trackDom.update(
           this._pendingVWindow, width, null, false, this.index)
@@ -792,7 +788,6 @@ var GIVe = (function (give) {
       // First check whether other resizing event fired before
       // this update (otherwise the display may not be up-to-date).
       let pendingVWindow = this._pendingVWindow || this._viewWindow
-      this._trackDomPromises.length = 0
       if (pendingVWindow && Array.isArray(windows) && windows.some(
         window => give.ChromRegion.compare(window, this._pendingVWindow)
       )) {
@@ -800,6 +795,7 @@ var GIVe = (function (give) {
       }
       // update `this._viewWindow` and clear `this.drawingPromise`
       // `windows` is the array returned by Promise.all()
+      this._trackPromiseAggregator.clear()
       delete this.drawingPromise
       this._viewWindow = pendingVWindow
       this._pendingVWindow = null
@@ -809,11 +805,19 @@ var GIVe = (function (give) {
         this._showTutorialIfNeeded()
       } catch (e) {
         give._verbConsole.warn(e)
-        give.fireSignal('warning', { msg: e.message }, null, this)
+        give.fireSignal('warning', { errObj: e }, null, this)
       } finally {
         this._readiness = true
       }
       return this._viewWindow
+    }
+
+    _trackErrHandler (err) {
+      if (err && err.critical) {
+        throw err
+      }
+      give.fireSignal('warning', { errObj: err })
+      return this._pendingVWindow || this._viewWindow
     }
 
     getVerifiedViewWindow (coordinate) {
