@@ -446,68 +446,6 @@ var GIVe = (function (give) {
 
   give._initDebug()
 
-  give.getAggregatedUpdatePromise = function (
-    promiseArray, objArray, promiseFunc,
-    paddedPromiseArray, thenFunc, catchFunc
-  ) {
-    promiseArray = promiseArray || []
-    let usePaddedPromise =
-      (typeof thenFunc === 'function' || typeof catchFunc === 'function')
-    if (usePaddedPromise) {
-      paddedPromiseArray = paddedPromiseArray || []
-    }
-    let promisesChanged = false
-    if (promiseArray.length <= 0) {
-      promiseArray = objArray.forEach((obj, index) => {
-        let originalPromise = promiseFunc(obj, index)
-        let paddedPromise = originalPromise
-        promiseArray.push(originalPromise)
-        if (typeof thenFunc === 'function') {
-          paddedPromise = paddedPromise.then(result => thenFunc(result))
-        }
-        if (typeof catchFunc === 'function') {
-          paddedPromise = paddedPromise.catch(err => catchFunc(err))
-        }
-        if (paddedPromise !== originalPromise) {
-          paddedPromiseArray.push(paddedPromise)
-        }
-      })
-      promisesChanged = true
-    } else {
-      objArray.forEach((obj, index) => {
-        try {
-          let newPromise = promiseFunc(obj, index)
-          if (newPromise !== promiseArray[index]) {
-            // new promise
-            promiseArray[index] = newPromise
-            let paddedPromise = newPromise
-            promiseArray.push(originalPromise)
-            if (typeof thenFunc === 'function') {
-              paddedPromise = paddedPromise.then(result => thenFunc(result))
-            }
-            if (typeof catchFunc === 'function') {
-              paddedPromise = paddedPromise.catch(err => catchFunc(err))
-            }
-            if (paddedPromise !== newPromise) {
-              paddedPromiseArray[index] = paddedPromise
-            }
-            promisesChanged = true
-          }
-        } catch (e) {
-          // skip promises that have been cancelled
-          // (which means the original should be kept)
-          if (!(e instanceof give.PromiseCanceller)) {
-            throw e
-          }
-        }
-      })
-    }
-    if (promisesChanged) {
-      return Promise.all(usePaddedPromise ? paddedPromiseArray : promiseArray)
-    }
-    throw new give.PromiseCanceller()
-  }
-
   give.getValueArray = function (strVal, arrayLength, defaultArray) {
     let arr = [strVal]
     try {
