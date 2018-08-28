@@ -111,7 +111,7 @@ var GIVe = (function (give) {
         delete Settings.settings
       }
 
-      this._Settings = Object.assign({}, Settings)
+      this._settings = Object.assign({}, Settings)
       this._defaultSettings = Settings
       this._initSettings()
 
@@ -184,10 +184,10 @@ var GIVe = (function (give) {
      */
     get cleanLowerTitle () {
       // generate this.title (previously done by UCSC Browser core)
-      return this.Title.replace(/[\s-]+/g, '').toLowerCase()
+      return this.title.replace(/[\s-]+/g, '').toLowerCase()
     }
 
-    get tableName () {
+    get tableNames () {
       // this is used to shield "super" tracks in the future
       return this.getSetting('track')
     }
@@ -366,7 +366,7 @@ var GIVe = (function (give) {
       // }
       // delete this._settings[key];
       if (key.toLowerCase() === 'title') {
-        return this.getTitle()
+        return this.title
       }
       switch (type) {
         case 'integer':

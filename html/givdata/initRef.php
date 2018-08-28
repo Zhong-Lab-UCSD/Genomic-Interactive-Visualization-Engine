@@ -19,7 +19,7 @@ if(isset($req['db'])) {
         $dbEntry['chromInfo'] = getChromInfo($dbName);
         $result[$dbName] = $dbEntry;
       } catch (Exception $e) {
-
+        error_log($e);
       }
     }
   }

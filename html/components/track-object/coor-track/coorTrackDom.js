@@ -27,11 +27,7 @@ var GIVe = (function (give) {
 
       properties = properties || {}
 
-      this._setDynamicHeight(false)
-      this._setTrackMainDOMClass('coordinates')
-
-      this._setTrackHeight(properties.height || this.tickLength +
-        (this.lineGapRatio * this.LINEGAP_RATIO + 1) * this.textSize)
+      this.trackMainDOMClass = 'coordinates'
 
       if (properties.hasOwnProperty('colorIndex')) {
         this.foreColor = this.colorSet[properties.colorIndex]
@@ -68,6 +64,22 @@ var GIVe = (function (give) {
       this.foreColor = properties.hasOwnProperty('foreColor')
         ? properties.foreColor
         : this.constructor._DEFAULT_FORE_COLOR
+
+      /**
+       * The actual height of the track in pixels.
+       * This will be useful if `this.dynamicHeight === true`
+       * @type {number}
+       */
+      this.height = (
+        properties.height ||
+        this.getTrackSetting('height', 'integer') ||
+        this.DEFAULT_HEIGHT
+      )
+    }
+
+    get DEFAULT_HEIGHT () {
+      return this.tickLength +
+        (this.lineGapRatio * this.LINEGAP_RATIO + 1) * this.textSize
     }
 
     // ****** customized methods below ******

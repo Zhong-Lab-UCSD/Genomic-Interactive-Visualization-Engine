@@ -227,8 +227,10 @@ var GIVe = (function (give) {
         '_PinBottom': 0,
         '_PinBetween': 0
       }
+    }
 
-      this._updatingCoor = false
+    static get is () {
+      return 'chart-window'
     }
 
     static get properties () {
@@ -335,6 +337,7 @@ var GIVe = (function (give) {
     }
 
     ready () {
+      this._updatingCoor = true
       super.ready()
       // initialize this._viewWindows from this.coordinates
       if (this.defaultTrackIdList.length > 0) {
@@ -345,20 +348,18 @@ var GIVe = (function (give) {
         null, err => this._trackErrHandler(err)
       )
 
-      this.windowWidth = this.querySelector('#chartHolding').clientWidth
-
       this.addEventListener('update-window', e => this._updateWindowHandler(e))
-
-      if (this.coordinate) {
-        this._coorChanged(this.coordinate)
-      }
     }
 
-    // attached () {
-    //   if (!this._initialized) {
-    //     Promise.resolve().then(() => this._initDomAfterVWinRefReady())
-    //   }
-    // }
+    attached () {
+      this.windowWidth = this.$.chartHolding.clientWidth
+      if (this.coordinate) {
+        this.changeCoordinate(this.coordinate)
+      }
+      // if (!this._initialized) {
+      //   Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+      // }
+    }
 
     get reverseFlag () {
       return this.index > 0 && this.index === this.totalWindows - 1
@@ -997,9 +998,9 @@ var GIVe = (function (give) {
 
     _initDOMCoorTrack () {
       if (this.refObj) {
-        let coorTrack = give.TrackObject.createTrack(
-          'coor_' + this.refObj.db,
-          null, this.refObj, 'coordinate'
+        let coorTrack = give.TrackObject.createCoorTrack(
+          this.refObj,
+          'coor_' + this.refObj.db
         )
         this._coorDomSvg = this._addVisibleTrack(coorTrack).TrackSvg
       }

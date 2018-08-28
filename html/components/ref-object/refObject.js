@@ -79,7 +79,7 @@ var GIVe = (function (give) {
       }
     }
 
-    _initChromInfoFromData (data) {
+    _initChromInfoFromData (chromInfo) {
       try {
         this.chromInfo = {}
         for (var chrom in chromInfo) {
@@ -129,12 +129,12 @@ var GIVe = (function (give) {
         this.tracks.addTrack(newTrack)
 
         // reverse lookup table related, might be rewritten if table structure is changed later
-        if (Array.isArray(newTrack.getTableNames())) {
-          newTrack.getTableNames().forEach(function (tableName) {
+        if (Array.isArray(newTrack.tableNames)) {
+          newTrack.tableNames.forEach(function (tableName) {
             this.reverseLookupTable[tableName] = newTrack
           }, this)
         } else {
-          this.reverseLookupTable[newTrack.getTableNames()] = newTrack
+          this.reverseLookupTable[newTrack.tableNames] = newTrack
         }
         // end reverse lookup related
 
@@ -246,12 +246,12 @@ var GIVe = (function (give) {
         var cellType = track.getSetting('cellType')
         var labName = track.getSetting('labName')
         var tissueType = metaEntries.findMeta(this.commonName, cellType, 'tissue')
-        if (track.getCleanLowerTitle()) {
-          if (!this.metaFilter.expMap.hasOwnProperty(track.getCleanLowerTitle())) {
-            this.metaFilter.expMap[track.getCleanLowerTitle()] = []
-            this.metaFilter.expMap[track.getCleanLowerTitle()].name = track.getTitle()
+        if (track.cleanLowerTitle) {
+          if (!this.metaFilter.expMap.hasOwnProperty(track.cleanLowerTitle)) {
+            this.metaFilter.expMap[track.cleanLowerTitle] = []
+            this.metaFilter.expMap[track.cleanLowerTitle].name = track.title
           }
-          this.metaFilter.expMap[track.getCleanLowerTitle()].push(track.id)
+          this.metaFilter.expMap[track.cleanLowerTitle].push(track.id)
         }
         if (cellType) {
           if (!this.metaFilter.cellLineMap.hasOwnProperty(cellType)) {
@@ -301,7 +301,7 @@ var GIVe = (function (give) {
     getTrackTableNameList (filter) {
       var result = []
       this.getFilteredTrackList(filter).forEach(function (track) {
-        result = result.concat(track.getTableNames())
+        result = result.concat(track.tableNames)
       }, this)
       return result
     }
@@ -357,7 +357,7 @@ var GIVe = (function (give) {
         if (typeof db === 'string' &&
           this.refArray.dbMap.hasOwnProperty(db)) {
           // look up reference in give.RefObject.refArray
-          return this.constructor.refArray.dbMap[db]
+          return this.refArray.dbMap[db]
         } else if (db instanceof this) {
           return db
         } else {
@@ -368,7 +368,11 @@ var GIVe = (function (give) {
   }
 
   RefObject.refFilter = give.Ref_RefFilter ||
-    (ref => (ref.settings.isGIVeEnabled || ref.settings.isGIVEEnabled))
+    (ref => (
+      ref.settings.isGIVeEnabled ||
+      ref.settings.isGIVEEnabled ||
+      ref.settings.browserActive
+    ))
 
   RefObject.initAllTarget = give.Host +
     (give.ServerPath || '/') +

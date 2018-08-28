@@ -17,6 +17,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../basic-func/basic-func.html">
+<link rel="import" href="../chart-window/chart-window.html">
 <link rel="import" href="../promise-aggregator/promise-aggregator.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
@@ -142,7 +143,7 @@ var GIVe = (function (give) {
   ) {
     constructor () {
       super()
-      this._resizeDebounceInt = this.constuctor.DEFAULT_RESIZE_DEBOUNCE
+      this._resizeDebounceInt = this.constructor.DEFAULT_RESIZE_DEBOUNCE
       this._idEnforcedSet = new Set()
       this._chartWindows = []
       this._refArray = []
@@ -177,14 +178,12 @@ var GIVe = (function (give) {
         coordinate: {
           type: String,
           notify: true,
-          value: '',
           observer: '_coorChanged'
         },
 
         ref: {
           type: String,
           notify: true,
-          value: '',
           observer: '_refChanged'
         },
 
@@ -282,25 +281,22 @@ var GIVe = (function (give) {
     }
 
     ready () {
+      this._updatingCoordinates = true
+      this._updatingRefs = true
+      this._updatingNumOfSubs = true
       super.ready()
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
         this.addEventListener('warning', e => this._warningHandler(e))
       }
-      this._updatingCoordinates = false
-      this._updatingRefs = false
-      this._updatingNumOfSubs = false
       this._windowPromiseAggregator = new give.PromiseAggregator(
         null, this.passExceptions ? null : err => this._windowErrHandler(err)
       )
-      return give.RefObject.allRefPromise
-        .then(() => this._numOfSubsChanged(this.numOfSubs))
     }
 
     attached () {
       return give.RefObject.allRefPromise
-        .then(() => this.updateDom())
-        .catch(err => this._errorHandler(err, true))
+        .then(() => this.updateNumOfSubs(this.numOfSubs))
     }
 
     get _childIsInitialized () {
@@ -352,7 +348,7 @@ var GIVe = (function (give) {
     _updateTrackWindowArray () {
       this.$.windowsHolder.render()
       this._chartWindows =
-        [...this.$.windowsHolder.querySelectorAll('chart-window')]
+        [...this.$.windowHolding.querySelectorAll('chart-window')]
     }
 
     _syncRefsJsonToArray (numOfWindows, newRefValue) {
@@ -525,6 +521,8 @@ var GIVe = (function (give) {
 
     updateNumOfSubs (newNumOfSubs, newRef, newCoordinates) {
       this._initialized = false
+      this._updatingRefs = true
+      this._updatingCoordinates = true
       if (newNumOfSubs && newNumOfSubs !== this.numOfSubs) {
         this._syncNumOfSubs(newNumOfSubs)
       }
@@ -533,6 +531,7 @@ var GIVe = (function (give) {
         //    Although this part is all sync code, put it into the async
         //    pipeline to streamline the exception catching process.
         .then(() => this._syncRefsJsonToArray(newNumOfSubs, newRef))
+        .then(() => this._syncCoordinatesJsonToArray(newCoordinates))
         .finally(() => {
           if (newNumOfSubs > this._chartWindowItems.length) {
             // refresh hidden dom list

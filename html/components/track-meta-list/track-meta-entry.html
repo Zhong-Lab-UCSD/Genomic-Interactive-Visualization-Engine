@@ -340,11 +340,11 @@ limitations under the License.
             this._groupID = ''
             this._groupLabel = ''
             this._trackCount = 0
-            this._trackID = newValue.getTableNames()
+            this._trackID = newValue.tableNames
             this._trackType = newValue.typeTrunk
             this._shortLabel = newValue.getSetting('shortLabel', 'string')
             this._longLabel = newValue.getSetting('longLabel', 'string')
-            this._dataType = newValue.getTitle() || this._shortLabel
+            this._dataType = newValue.title || this._shortLabel
             this._cellType = newValue.getSetting('cellType', 'string')
             this._labName = newValue.getSetting('labName', 'string')
           } else {

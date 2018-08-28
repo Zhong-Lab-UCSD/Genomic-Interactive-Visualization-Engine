@@ -58,6 +58,15 @@ var GIVe = (function (give) {
       this.y = properties.y || 0
 
       /**
+       * The underlying track object for metadata, settings,
+       * actual data and communication with the server
+       * @type {GIVE.TrackObject}
+       */
+      this._parent = track
+      // this._setTrackType(track.typeTrunk)
+      this.id = this.parent.typeTrunk + '_' + this.constructor._trackCounter++
+
+      /**
        * Right padding size of text labels, in px.
        * @type {number}
        */
@@ -67,15 +76,6 @@ var GIVe = (function (give) {
           ? this.getTrackSetting('textRightPadding', 'float')
           : this.constructor.DEFAULT_RIGHT_PADDING
         )
-
-      /**
-       * The underlying track object for metadata, settings,
-       * actual data and communication with the server
-       * @type {GIVE.TrackObject}
-       */
-      this._parent = track
-      // this._setTrackType(track.typeTrunk)
-      this.id = this.parent.typeTrunk + '_' + this.constructor._trackCounter++
 
       /**
        * The CSS class for the main SVG element
@@ -169,11 +169,13 @@ var GIVe = (function (give) {
        * This will be useful if `this.dynamicHeight === true`
        * @type {number}
        */
-      this.height = (
-        properties.height ||
-        this.getTrackSetting('height', 'integer') ||
-        this.DEFAULT_HEIGHT
-      )
+      try {
+        this.height = (
+          properties.height ||
+          this.getTrackSetting('height', 'integer') ||
+          this.DEFAULT_HEIGHT
+        )
+      } catch (ignore) {}
 
       /**
        * Flag to indicate whether this track has a dynamic height (from its

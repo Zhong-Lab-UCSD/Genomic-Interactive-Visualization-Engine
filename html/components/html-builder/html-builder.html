@@ -254,7 +254,7 @@ var GIVe = (function (give) {
         result = ''
         trackArray.every(function (track, index) {
           result += (index > 0 ? ', ' : '') +
-            (track.getTitle() || track.getSetting('shortLabel', 'string'))
+            (track.title || track.getSetting('shortLabel', 'string'))
           if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
             result = null
             return false
