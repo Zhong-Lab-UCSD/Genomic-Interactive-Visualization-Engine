@@ -265,6 +265,10 @@ var GIVe = (function (give) {
       return this.startList.every(callFunc)
     }
 
+    hasUncachedRange (chrRange, props) {
+      return false
+    }
+
     getUncachedRange (chrRange, props) {
       return props._result || []
     }

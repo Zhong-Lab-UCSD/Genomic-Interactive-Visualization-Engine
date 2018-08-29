@@ -175,8 +175,11 @@ var GIVe = (function (give) {
   give.RasInfo = RasInfo
 
   class BedTrackDom extends give.TrackDom {
-    constructor (track, prop) {
-      super(...arguments)
+    _initProperties (properties) {
+      super._initProperties(properties)
+
+      this.Y_HIDDEN = -30 // value to hide stuff in svg (to calculate size)
+
       /**
        * @property {number} GENE_MARGIN
        * margin size between genes when gene name is shown. Unit in px.
@@ -223,10 +226,10 @@ var GIVe = (function (give) {
        * whether this track honors itemRGB values provided by BED data.
        */
       this.honorItemRgb = false
-      if (prop.hasOwnProperty('honorItemRgb')) {
-        this.honorItemRgb = prop.honorItemRgb
-      } else if (track.getSetting('honorItemRGB')) {
-        this.honorItemRgb = track.getSetting('honorItemRGB', 'boolean')
+      if (properties.hasOwnProperty('honorItemRgb')) {
+        this.honorItemRgb = properties.honorItemRgb
+      } else if (this.parent.getSetting('honorItemRGB')) {
+        this.honorItemRgb = this.parent.getSetting('honorItemRGB', 'boolean')
       }
 
       this._RasInfo = null
@@ -278,8 +281,8 @@ var GIVe = (function (give) {
         }
       }
 
-      // resize the heights
-      this.updateSize(null, this._calcHeight(numOfLines))
+      // resize the height
+      this.height = this._calcHeight(numOfLines)
     }
 
     /**
@@ -341,7 +344,7 @@ var GIVe = (function (give) {
         give.TrackObject.StatusEnum.VIS_NOTEXT &&
         transcript.getGeneName(true)
       ) {
-        var newLabel = this.drawText(x0 - this.TEXT_MARGIN_GAP,
+        var newLabel = this.drawText(x0 - this.textRightPadding,
           this.Y_HIDDEN, transcript.getGeneName(true), 'end')
         // move text to textMargin if out of bounds
         x0 = newLabel.getBBox().x
@@ -553,7 +556,7 @@ var GIVe = (function (give) {
         // draw text
         var newLabel = this.drawText(
           this.transformXCoordinate(transcript.startCoor, true) -
-            this.TEXT_MARGIN_GAP,
+            this.textRightPadding,
           yCoor, transcript.getGeneName(true), 'end',
           {style: 'fill: ' + this.rgbToHex(colorRGB)}
         )
@@ -561,7 +564,7 @@ var GIVe = (function (give) {
         // move text to textMargin if out of bounds
         if (this.textMargin && newLabel.getBBox().x < 0) {
           newLabel.setAttributeNS(null, 'x', this.textMargin)
-          this.addElement(newLabel, this.textSvg)
+          this.addElement(newLabel, this._textSvg)
         }
       } else {
         this._drawSingleTranscriptBodyRaster(transcript, lastTrans, yCoor,

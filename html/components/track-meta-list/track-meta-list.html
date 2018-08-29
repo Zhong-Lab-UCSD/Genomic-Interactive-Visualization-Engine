@@ -197,7 +197,7 @@ var GIVe = (function (give) {
       let newArray = []
       for (var key in this._refObj.getGroups()) {
         if (this._refObj.getGroups().hasOwnProperty(key) &&
-          this._refObj.getGroups()[key].getLength() > 0
+          this._refObj.getGroups()[key].length > 0
         ) {
           var groupEntry = {
             isGroup: true,

@@ -35,9 +35,8 @@ var GIVe = (function (give) {
   'use strict'
 
   class InteractionTrackDom extends give.TrackDom {
-    constructor (track, properties) {
-      super(...arguments)
-      properties = properties || {}
+    _initProperties (properties) {
+      super._initProperties(properties)
 
       this.maxFillOpacity = (
         properties.maxFillOpacity ||

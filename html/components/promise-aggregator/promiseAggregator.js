@@ -52,12 +52,13 @@ var GIVe = (function (give) {
       if (!this._usePaddedPromises) {
         return null
       }
-      if (typeof thenFunc === 'function') {
+      if (typeof this._thenFunc === 'function') {
         promise = promise.then(result => this._thenFunc(result))
       }
-      if (typeof catchFunc === 'function') {
+      if (typeof this._catchFunc === 'function') {
         promise = promise.catch(err => this._catchFunc(err))
       }
+      return promise
     }
 
     aggregate (objArray, promiseFunc) {

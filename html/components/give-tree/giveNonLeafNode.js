@@ -90,7 +90,7 @@ var GIVe = (function (give) {
       this.tree = props.tree
       if (
         Array.isArray(props.keys) && Array.isArray(props.values) &&
-        props.childNum === props.keys.length - 1
+        props.values.length === props.keys.length - 1
       ) {
         // TODO: Sanity check for `this.keys`?
         this.keys = props.keys
@@ -189,7 +189,7 @@ var GIVe = (function (give) {
      * @returns {number}  The number of children
      */
     get childNum () {
-      return this.childNum
+      return this.values.length
     }
 
     /**

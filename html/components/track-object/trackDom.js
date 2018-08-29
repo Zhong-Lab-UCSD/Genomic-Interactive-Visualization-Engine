@@ -25,6 +25,50 @@ var GIVe = (function (give) {
    */
   class TrackDom {
     constructor (track, properties) {
+      /**
+       * The underlying track object for metadata, settings,
+       * actual data and communication with the server
+       * @type {GIVE.TrackObject}
+       */
+      this._parent = track
+      this.svgNS = 'http://www.w3.org/2000/svg'
+      this.id = this.parent.typeTrunk + '_' + this.constructor._trackCounter++
+      this._narrowMode = false
+
+      properties = properties || {}
+      this._initProperties(properties)
+
+      this._cacheDebouncer = null
+
+      /**
+       * Promise resolved when the entire `chart-window` is ready
+       * @type {Promise<give.ChromRegion>}
+       */
+      this.readyPromise = null
+      this._dataPromise = null
+      this._debouncePromise = null
+
+      this._pendingNewVWArr = null
+      this._requestVWArr = null
+
+      /**
+       * The actual height of the track in pixels.
+       * This will be useful if `this.dynamicHeight === true`
+       * @type {number}
+       */
+      this.height = (
+        properties.height ||
+        this.getTrackSetting('height', 'integer') ||
+        this.DEFAULT_HEIGHT
+      )
+
+      give._verbConsole.info(this.id + ' created. Calling trackImpl().')
+    }
+
+    _initProperties (properties) {
+      this.x = properties.x || 0
+      this.y = properties.y || 0
+
       this.ARROW_HEIGHT_PROP = 0.5 // percentage of arrow (to height of gene)
       this.ARROW_MAX_HEIGHT_PROP = 0.9 // max percentage of arrow
       this.ARROW_MIN_HEIGHT = 4 // minimum height required for arrow
@@ -34,37 +78,8 @@ var GIVe = (function (give) {
 
       this.MIN_TOTAL_WIDTH = 100
 
-      this.Y_HIDDEN = -30 // value to hide stuff in svg (to calculate size)
-
       this.MAX_SPACE_PER_BASE = 1.5
       // maximum space for every base (unit in textSize, cannot zoom further)
-
-      this.svgNS = 'http://www.w3.org/2000/svg'
-
-      // the following names are used in debouncing
-      this.updateJobName = 'UPDATE'
-      this.cacheUpdateJobName = 'UPDATECACHE'
-
-      this._narrowMode = false
-
-      // request URL is the target to get data from
-      // width is the width given for the track (including text margin),
-      // units in px
-      // type is reserved
-
-      properties = properties || {}
-
-      this.x = properties.x || 0
-      this.y = properties.y || 0
-
-      /**
-       * The underlying track object for metadata, settings,
-       * actual data and communication with the server
-       * @type {GIVE.TrackObject}
-       */
-      this._parent = track
-      // this._setTrackType(track.typeTrunk)
-      this.id = this.parent.typeTrunk + '_' + this.constructor._trackCounter++
 
       /**
        * Right padding size of text labels, in px.
@@ -165,19 +180,6 @@ var GIVe = (function (give) {
       )
 
       /**
-       * The actual height of the track in pixels.
-       * This will be useful if `this.dynamicHeight === true`
-       * @type {number}
-       */
-      try {
-        this.height = (
-          properties.height ||
-          this.getTrackSetting('height', 'integer') ||
-          this.DEFAULT_HEIGHT
-        )
-      } catch (ignore) {}
-
-      /**
        * Flag to indicate whether this track has a dynamic height (from its
        *   contents).
        * @type {boolean}
@@ -196,7 +198,7 @@ var GIVe = (function (give) {
 
       this.windowWidth = properties.width -
         (properties.textMargin
-          ? properties.textMargin + this.TEXT_MARGIN_GAP : 0)
+          ? properties.textMargin + this.textRightPadding : 0)
       this.totalWidth = properties.width
 
       this.pin = (
@@ -204,21 +206,6 @@ var GIVe = (function (give) {
         this.getTrackSetting('pin') ||
         this.constructor.PIN
       )
-
-      this._cacheDebouncer = null
-
-      /**
-       * Promise resolved when the entire `chart-window` is ready
-       * @type {Promise<give.ChromRegion>}
-       */
-      this.readyPromise = null
-      this._dataPromise = null
-      this._debouncePromise = null
-
-      this._pendingNewVWArr = null
-      this._requestVWArr = null
-
-      give._verbConsole.info(this.id + ' created. Calling trackImpl().')
     }
 
     get DEFAULT_HEIGHT () {
@@ -286,7 +273,7 @@ var GIVe = (function (give) {
      * @memberof TrackDom
      */
     hasLinksInTargetView (context) {
-      return context.ref === this.parent.ref &&
+      return context && context.ref === this.parent.ref &&
         context.index <= this.windowIndex + this.parent.windowSpan - 1
     }
 
@@ -355,7 +342,7 @@ var GIVe = (function (give) {
           this.textMargin + ' ' + this.height)
       }
       this._mainSvg.setAttributeNS(null, 'x',
-        (this._narrowMode ? 0 : this.textMargin + this.TEXT_MARGIN_GAP))
+        (this._narrowMode ? 0 : this.textMargin + this.textRightPadding))
       this._mainSvg.setAttributeNS(null, 'y', 0)
       this._mainSvg.setAttributeNS(null, 'width', this.windowWidth)
 
@@ -441,9 +428,9 @@ var GIVe = (function (give) {
           {fill: 'none', class: 'pointerHandler'}, svgToDraw)
         svgToDraw.appendChild(svgToDraw.gestureReceiver)
       }
-      Polymer.RenderStatus.afterNextRender(() => {
-        svgToDraw.addEventListener('track', 'dragHandler')
-        svgToDraw.addEventListener('wheel', 'wheelHandler')
+      Polymer.RenderStatus.afterNextRender(this, () => {
+        svgToDraw.addEventListener('track', e => this.dragHandler(e, e.detail))
+        svgToDraw.addEventListener('wheel', e => this.wheelHandler(e, e.detail))
       })
     }
 

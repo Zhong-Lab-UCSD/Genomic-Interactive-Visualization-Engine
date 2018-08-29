@@ -404,6 +404,10 @@ var GIVe = (function (give) {
       return this._id
     }
 
+    get groupID () {
+      return this._groupID
+    }
+
     /**
      * getReadableID - Get a human readable ID of the track,
      *   `_` will be replaced by ` `
@@ -580,7 +584,8 @@ var GIVe = (function (give) {
      */
     static createCoorTrack (ref, id) {
       return this.createTrack(id || 'coor_' + ref.db,
-        { type: 'coordinate', priority: 0, noData: true }, ref)
+        { type: 'coordinate', priority: 0, noData: true, visibility: 'full' },
+        ref)
     }
 
     /**

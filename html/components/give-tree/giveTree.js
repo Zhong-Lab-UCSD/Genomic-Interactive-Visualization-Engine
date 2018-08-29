@@ -59,7 +59,7 @@ var GIVe = (function (give) {
         props.lifeSpan = props.lifeSpan || this.constructor.DEFAULT_LIFE_SPAN
         this._currGen = 0
         this.lifeSpan = props.lifeSpan
-        this._root = new give.WitheringMixin(NonLeafNodeCtor)(props)
+        this._root = new (give.WitheringMixin(NonLeafNodeCtor))(props)
         this._witheringPromise = null
       } else {
         this._currGen = null
@@ -222,7 +222,7 @@ var GIVe = (function (give) {
         this._witheringPromise = this._witheringPromise || Promise.resolve()
           .then(() => {
             this._root.wither()
-            this._root = this._root.restructure()
+            this._root = this._root._restructure()
             this._witheringPromise = null
           })
       }

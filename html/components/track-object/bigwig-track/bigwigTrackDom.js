@@ -34,8 +34,8 @@ var GIVe = (function (give) {
   'use strict'
 
   class BigWigTrackDom extends give.TrackDom {
-    constructor (track, props) {
-      super(...arguments)
+    _initProperties (props) {
+      super._initProperties(props)
       this.MARGIN = 2
       this.FORECOLOR_INDEX = 0 // the color index for fore color
       this.TEXT_COLOR_RGB = 0 // the color index for text
@@ -60,14 +60,14 @@ var GIVe = (function (give) {
        * The upper bound for the track display. Any values above this will be displayed as a overflow line.
        */
       this.windowMax = (
-        track.getSetting('windowMax', 'float') ||
+        this.parent.getSetting('windowMax', 'float') ||
         BigWigTrackDom._DEFAULT_MAX
       )
 
       /**
        * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
        */
-      this.windowMin = track.getSetting('windowMin', 'float') ||
+      this.windowMin = this.parent.getSetting('windowMin', 'float') ||
         BigWigTrackDom._DEFAULT_MIN
 
       if (!(this.windowMax > this.windowMin)) {
@@ -76,22 +76,15 @@ var GIVe = (function (give) {
           this.windowMax + '; windowMin = ' + this.windowMin
         )
         give.fireSignal('warning',
-          { msg: 'Window Range Error: windowMax = ' +
-          this.windowMax + '; windowMin = ' + this.windowMin })
+          {
+            msg: 'Window Range Error: windowMax = ' +
+              this.windowMax + '; windowMin = ' + this.windowMin
+          })
         this.windowMax = BigWigTrackDom._DEFAULT_MAX
         this.windowMin = BigWigTrackDom._DEFAULT_MIN
       }
 
-      /**
-       * The height of the track, presumably in pixels. This is not the same as the window bounds, which are instead the bounds for the actual data values. If the difference between the windowMax and the windowMin is 20, and the track height is 80, then four pixels would represent one 'unit'.
-       */
-      try {
-        this.setHeight(track.getSetting('height', 'integer'))
-      } catch (e) {
-        this.setHeight(BigWigTrackDom._DEFAULT_HEIGHT)
-      }
-
-      this.labelMarginRight = this.MARGIN + this.TEXT_MARGIN_GAP
+      this.labelMarginRight = this.MARGIN + this.textRightPadding
 
       /**
        * to be explained
@@ -101,7 +94,7 @@ var GIVe = (function (give) {
       /**
        *  A simple calculation of where the top and bottom of where to draw the track is.
        */
-      this.drawingBoundary = {top: this.MARGIN, bottom: this.height - this.MARGIN}
+      this.drawingBoundary = { top: this.MARGIN, bottom: this.height - this.MARGIN }
 
       /**
        * to be explained
@@ -114,8 +107,8 @@ var GIVe = (function (give) {
       this.autoScale = this.constructor._DEFAULT_AUTOSCALE
       if (props.hasOwnProperty('autoScale')) {
         this.autoScale = props.autoScale
-      } else if (track.hasSetting('autoScale')) {
-        this.autoScale = track.getSetting('autoScale', 'boolean')
+      } else if (this.parent.hasSetting('autoScale')) {
+        this.autoScale = this.parent.getSetting('autoScale', 'boolean')
       }
 
       /**
@@ -124,25 +117,25 @@ var GIVe = (function (give) {
       this.includeZero = this.constructor._DEFAULT_INCLUDE_ZERO
       if (props.hasOwnProperty('includeZero')) {
         this.includeZero = props.includeZero
-      } else if (track.hasSetting('includeZero')) {
-        this.includeZero = track.getSetting('includeZero', 'boolean')
+      } else if (this.parent.hasSetting('includeZero')) {
+        this.includeZero = this.parent.getSetting('includeZero', 'boolean')
       }
 
       this.upperPercentile = (
         props.upperPercentile ||
-        track.getSetting('upperPercentile', 'float') ||
+        this.parent.getSetting('upperPercentile', 'float') ||
         this.constructor._DEFAULT_UPPER_PERCENTILE
       )
 
       this.lowerPercentile = (
         props.lowerPercentile ||
-        track.getSetting('lowerPercentile', 'float') ||
+        this.parent.getSetting('lowerPercentile', 'float') ||
         this.constructor._DEFAULT_LOWER_PERCENTILE
       )
 
       this.numOfDigits = (
         props.numOfDigits ||
-        track.getSetting('numOfDigits', 'integer') ||
+        this.parent.getSetting('numOfDigits', 'integer') ||
         this.constructor._DEFAULT_NUM_OF_DIGITS
       )
 
@@ -770,33 +763,33 @@ var GIVe = (function (give) {
      *  track.
      */
     drawScale () {
-      if (this.textSvg) {
+      if (this._textSvg) {
       // first draw the lines
         this.drawLine(
           this.textMargin - this.MARGIN, this.drawingBoundary.top,
           this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-          this.TEXT_COLOR_RGB, this.textSvg)
+          this.TEXT_COLOR_RGB, this._textSvg)
         this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
           this.drawingBoundary.top,
           this.textMargin - this.MARGIN, this.drawingBoundary.top,
-          this.TEXT_COLOR_RGB, this.textSvg)
+          this.TEXT_COLOR_RGB, this._textSvg)
         this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
           this.drawingBoundary.bottom,
           this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-          this.TEXT_COLOR_RGB, this.textSvg)
+          this.TEXT_COLOR_RGB, this._textSvg)
         // then the text
         this.drawText(this.textMargin - this.MARGIN -
-          this.scaleTickLength - this.TEXT_MARGIN_GAP,
+          this.scaleTickLength - this.textRightPadding,
           this.drawingBoundary.top + this.textSize * 0.4,
           give._maxDecimalDigits(this.windowMax,
             this.numOfDigits).toString(),
-          'end', null, this.textSvg)
+          'end', null, this._textSvg)
         this.drawText(this.textMargin - this.MARGIN -
-          this.scaleTickLength - this.TEXT_MARGIN_GAP,
+          this.scaleTickLength - this.textRightPadding,
           this.drawingBoundary.bottom - this.textSize * 0.4,
           give._maxDecimalDigits(this.windowMin,
             this.numOfDigits).toString(),
-          'end', null, this.textSvg)
+          'end', null, this._textSvg)
       }
     }
 

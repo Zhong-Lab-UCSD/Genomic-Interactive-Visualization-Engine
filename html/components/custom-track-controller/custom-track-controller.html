@@ -214,8 +214,8 @@
           }
           track.settings.shortLabel = this.trackShortLabel.length > 0
             ? this.trackShortLabel
-            : 'Custom track #' + (this.customGroup.getLength() + 1)
-          track.tableName = 'custom' + this.customGroup.getLength()
+            : 'Custom track #' + (this.customGroup.length + 1)
+          track.tableName = 'custom' + this.customGroup.length
           this.ref.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
           this.$.mainDialog.close()
         }

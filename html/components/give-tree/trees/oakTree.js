@@ -63,7 +63,6 @@ var GIVe = (function (give) {
       } else {
         this.branchingFactor = props.branchingFactor
       }
-      this.neighboringLinks = true
     }
 
     _traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
@@ -77,6 +76,8 @@ var GIVe = (function (give) {
   }
 
   OakTree._DEFAULT_B_FACTOR = 50 // this value may need to be tweaked
+  OakTree.neighboringLinks = true
+
   give.OakTree = OakTree
 
   return give

@@ -217,7 +217,7 @@ var GIVe = (function (give) {
     _callFuncOnDataEntry (
       callback, filter, returnFalse, entry, props, ...args
     ) {
-      if (typeof filter === 'function' || !filter(entry, props, ...args)) {
+      if (typeof filter !== 'function' || !filter(entry, props, ...args)) {
         return true
       }
       return callback(entry, props, ...args) || !returnFalse

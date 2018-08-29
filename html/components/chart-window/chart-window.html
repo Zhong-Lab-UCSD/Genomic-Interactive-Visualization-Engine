@@ -53,15 +53,25 @@ limitations under the License.
         overflow-x: hidden;
         overflow-y: auto;
       }
+      div#chartHolder {
+        @apply --layout-vertical;
+        @apply --layout-flex;
+      }
+      div#chartHolder > div {
+        font-size: 0;
+      }
+      div#chartHolder > div > * {
+        font-size: 12px;
+      }
     </style>
     <style include="give-track-styles"></style>
-    <div id="chartHolding">
+    <div id="chartHolder">
       <div class="pinnedParts">
         <svg class="svgHolder" version="1.1" baseProfile="full"
           xmlns="http://www.w3.org/2000/svg" id="_PinTop">
         </svg>
       </div>
-      <div class="scrollingParts">
+      <div class="scrollingParts" id="scrollingContainer">
         <svg class="svgHolder" version="1.1" baseProfile="full"
           xmlns="http://www.w3.org/2000/svg" id="_Scroll">
         </svg>
@@ -352,7 +362,7 @@ var GIVe = (function (give) {
     }
 
     attached () {
-      this.windowWidth = this.$.chartHolding.clientWidth
+      this.windowWidth = this.$.chartHolder.clientWidth
       if (this.coordinate) {
         this.changeCoordinate(this.coordinate)
       }
@@ -396,7 +406,8 @@ var GIVe = (function (give) {
     _createTrackProp (props) {
       props = props || {}
       props.windowIndex = this.index
-      props.width = this.$.chartHolding.clientWidth
+      props.reverseFlag = this.reverseFlag
+      props.width = this.$.chartHolder.clientWidth
       props.textMargin = this.textMargin
       return props
     }
@@ -427,11 +438,11 @@ var GIVe = (function (give) {
 
     _pinValueFromSlotId (slotId) {
       switch (slotId.toLowerCase()) {
-        case '_PinTop':
+        case '_pintop':
           return this.reverseFlag ? 'bottom' : 'top'
-        case '_PinBottom':
+        case '_pinbottom':
           return this.reverseFlag ? 'top' : 'bottom'
-        case '_PinBetween':
+        case '_pinbetween':
           return 'inbetween'
         default:
           return 'scroll'
@@ -669,7 +680,7 @@ var GIVe = (function (give) {
 
     updateSvgHeightLocation (width) {
       // update width and throw width if needed
-      width = width || this.querySelector('#chartHolding').clientWidth
+      width = width || this.$.chartHolder.clientWidth
 
       let svgList = [...this.shadowRoot.querySelectorAll('.svgHolder')]
 
@@ -680,9 +691,9 @@ var GIVe = (function (give) {
           '0 0 ' + width + ' ' + svgElem._currY || 0)
         delete svgElem._currY
       })
-      if (this.querySelector('.scrollingParts').clientWidth < width) {
+      if (this.$.scrollingContainer.clientWidth < width) {
         throw new ResetWidthError(
-          this.querySelector('.scrollingParts').clientWidth
+          this.$.scrollingContainer.clientWidth
         )
       }
       this.windowWidth = width
@@ -722,7 +733,7 @@ var GIVe = (function (give) {
       this._pendingVWindow = newVWindow || this._pendingVWindow || false
       this._updateCoordinates()
 
-      width = width || this.querySelector('#chartHolding').clientWidth
+      width = width || this.$.chartHolder.clientWidth
 
       // Update all tracks' width and height (with maybe new view window)
       // If no new promise is needed, do not chain stuff afterwards
@@ -745,7 +756,7 @@ var GIVe = (function (give) {
       if (!this._initialized) {
         return this.resetDom().then(() => this.changeWidth(width))
       }
-      width = width || this.querySelector('#chartHolding').clientWidth
+      width = width || this.$.chartHolder.clientWidth
       if (this._viewWindow) {
         let pendingVWindow = this._viewWindow.getExtension(
           (width - this.windowWidth) / this.windowWidth,
@@ -769,7 +780,7 @@ var GIVe = (function (give) {
 
     _updateTrackLocation (newWidth) {
       let enumArray = this.reverseFlag
-        ? this.trackDoms.slice().reverse() : this.trackDoms
+        ? this._trackDoms.slice().reverse() : this._trackDoms
       enumArray.forEach(trackDom => {
         let svgElem = this.shadowRoot.querySelector(
           '#' + this._getSlotId(trackDom.parent, true)
@@ -914,8 +925,8 @@ var GIVe = (function (give) {
       let exceptions = []
       this.defaultTrackIdList.forEach(id => {
         try {
-          let track = this.refObj.tracks.hasTrack(id)
-          if (track) {
+          if (this.refObj.tracks.hasTrack(id)) {
+            let track = this.refObj.tracks.get(id)
             track.setSetting('visibility', true)
             return this._addVisibleTrack(track, contexts)
           } else {
@@ -1137,7 +1148,7 @@ var GIVe = (function (give) {
       }
       let linkedDoms = this._linkHiddenDoms(hiddenDoms, contexts) || []
 
-      return linkedDoms.comcat(this._trackDoms.filter(trackDom =>
+      return linkedDoms.concat(this._trackDoms.filter(trackDom =>
         trackDom.hasLinksInTargetView(contexts[this.index + 1])))
     }
   }

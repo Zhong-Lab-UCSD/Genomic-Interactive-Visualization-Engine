@@ -18,14 +18,14 @@ var GIVe = (function (give) {
   'use strict'
 
   class CoorTrackDom extends give.TrackDom {
-    constructor (track, properties) {
-      super(...arguments)
+    _initProperties (properties) {
+      super._initProperties(properties)
       this.MIN_TICK_GAP = 100
       this.MIN_TICK_TEXT_MARGIN = 50
       this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50
-      this.LINEGAP_RATIO = 2.4 // this is the actual gap used to display between ticks and numbers
-
-      properties = properties || {}
+      // this is the actual gap used to display between ticks and numbers
+      // unit is number of line gaps
+      this.TICK_NUMBER_GAP_RATIO = 2.4
 
       this.trackMainDOMClass = 'coordinates'
 
@@ -55,7 +55,8 @@ var GIVe = (function (give) {
 
       this.labelLocation = properties.hasOwnProperty('labelLocation')
         ? properties.labelLocation
-        : (this.pin === 'top' ? 'up' : 'down')
+        : this._getLabelLocation(this.parent.getSetting('pin'),
+          !!properties.reverseFlag)
 
       this.scrollPercentage = properties.hasOwnProperty('scrollPercentage')
         ? properties.scrollPercentage
@@ -64,22 +65,15 @@ var GIVe = (function (give) {
       this.foreColor = properties.hasOwnProperty('foreColor')
         ? properties.foreColor
         : this.constructor._DEFAULT_FORE_COLOR
+    }
 
-      /**
-       * The actual height of the track in pixels.
-       * This will be useful if `this.dynamicHeight === true`
-       * @type {number}
-       */
-      this.height = (
-        properties.height ||
-        this.getTrackSetting('height', 'integer') ||
-        this.DEFAULT_HEIGHT
-      )
+    _getLabelLocation (pinValue, reverseFlag) {
+      return ((pinValue === 'top') !== reverseFlag) ? 'up' : 'down'
     }
 
     get DEFAULT_HEIGHT () {
       return this.tickLength +
-        (this.lineGapRatio * this.LINEGAP_RATIO + 1) * this.textSize
+        (this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO + 1) * this.textSize
     }
 
     // ****** customized methods below ******
@@ -101,7 +95,7 @@ var GIVe = (function (give) {
     // will get the span between ticks for viewWindow
     // should be an array of [1,2,5] * 10^x
     // the results will contain two sets of ticks
-      viewWindow = viewWindow || this.mainSvg.viewWindow
+      viewWindow = viewWindow || this.viewWindow
       maxNumOfTicks = maxNumOfTicks ||
         Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
       var span = viewWindow.length / maxNumOfTicks
@@ -149,7 +143,7 @@ var GIVe = (function (give) {
       //    'up' means the labels will be put on top of the ticks
       //    'down' means the labels will be put below the ticks
 
-      svgToDraw = this.mainSvg || svgToDraw
+      svgToDraw = this._mainSvg || svgToDraw
 
       var windowToDraw = svgToDraw.viewWindow
       labels = labels || this.labelLocation
@@ -161,7 +155,8 @@ var GIVe = (function (give) {
         var tickX = this.transformXCoordinate(value, false, svgToDraw)
         var tickY = 0.5
         if (labels === 'up') {
-          tickY += this.textSize * (1 + this.lineGapRatio * this.LINEGAP_RATIO) +
+          tickY += this.textSize *
+            (1 + this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO) +
             (!value.major ? this.tickLength * (1 - this.minorLength) : 0) -
             0.5
         }
@@ -186,11 +181,11 @@ var GIVe = (function (give) {
       if (labels === 'up' || labels === 'down') {
         this.drawText(this.textMargin ? this.textMargin : 0,
           (labels === 'up' ? 0.5
-            : this.lineGapRatio * this.LINEGAP_RATIO * this.textSize +
+            : this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO * this.textSize +
               this.tickLength
           ) + 0.5 * this.textSize,
           windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
-          this.textMargin ? this.textSvg : this.mainSvg)
+          this.textMargin ? this._textSvg : this._mainSvg)
       }
     }
 
@@ -198,7 +193,7 @@ var GIVe = (function (give) {
       var diff = e.deltaY / 100 * this.scrollPercentage
       give.fireSignal('update-window', {
         windowIndex: this.windowIndex,
-        newWindow: this._mainSvg.viewWindow
+        newWindow: this.viewWindow
           .getExtension(
             diff, this.revTransXCoordinate(e.pageX -
               e.target.getBoundingClientRect().left).coor,
@@ -207,10 +202,6 @@ var GIVe = (function (give) {
               (this.MAX_SPACE_PER_BASE * this.textSize))
           ).regionToString(false)
       }, null, e.target)
-    // this.setViewWindowsString(this.mainSvg.viewWindow.getExtension(
-    //  diff, this.revTransXCoordinate(e.x).coor, true, this.parent.ref).regionToString(false));
-    // svgTarget.needsUpdate = true;
-    // this.updateChart(50);
     }
   }
 

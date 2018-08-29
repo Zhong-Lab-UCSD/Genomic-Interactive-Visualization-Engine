@@ -217,7 +217,7 @@ var GIVe = (function (give) {
       var overlapped = false
       var firstOverlapIndex = newRegionList.length
       newRegionList = newRegionList.filter(function (region, index) {
-        if (region.overlaps(listItem) >= Math.max(region.getLength(), listItem.getLength()) / 2) {
+        if (region.overlaps(listItem) >= Math.max(region.length, listItem.length) / 2) {
           listItem = region.assimilate(listItem)
           if (!overlapped) {
             overlapped = true
