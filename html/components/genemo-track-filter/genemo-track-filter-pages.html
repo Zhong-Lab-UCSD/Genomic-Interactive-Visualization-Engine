@@ -157,44 +157,44 @@ var GIVe = (function (give) {
       this.splice('labList', 0, this.labList.length)
     },
 
-    _loadRef: function (ref) {
+    _loadRef: function (refObj) {
       // If user changes references too fast, it might happen that the
-      // ref called by this function is not the one this element
+      // refObj called by this function is not the one this element
       // is changed into right now
-      if (this._refObj && ref && this._refObj.db === ref.db) {
+      if (this._refObj && refObj && this._refObj.db === refObj.db) {
         var key
 
-        if (ref.metaFilter.expMap) {
-          for (key in ref.metaFilter.expMap) {
-            if (ref.metaFilter.expMap.hasOwnProperty(key)) {
-              this.push('expList', { name: ref.metaFilter.expMap[key].name, ids: ref.metaFilter.expMap[key] })
+        if (refObj.metaFilter.expMap) {
+          for (key in refObj.metaFilter.expMap) {
+            if (refObj.metaFilter.expMap.hasOwnProperty(key)) {
+              this.push('expList', { name: refObj.metaFilter.expMap[key].name, ids: refObj.metaFilter.expMap[key] })
             }
           }
           this.listOfLists.push(this.expList)
         }
 
-        if (ref.metaFilter.tissueMap) {
-          for (key in ref.metaFilter.tissueMap) {
-            if (ref.metaFilter.tissueMap.hasOwnProperty(key)) {
-              this.push('tissueList', { name: key, ids: ref.metaFilter.tissueMap[key] })
+        if (refObj.metaFilter.tissueMap) {
+          for (key in refObj.metaFilter.tissueMap) {
+            if (refObj.metaFilter.tissueMap.hasOwnProperty(key)) {
+              this.push('tissueList', { name: key, ids: refObj.metaFilter.tissueMap[key] })
             }
           }
           this.listOfLists.push(this.tissueList)
         }
 
-        if (ref.metaFilter.cellLineMap) {
-          for (key in ref.metaFilter.cellLineMap) {
-            if (ref.metaFilter.cellLineMap.hasOwnProperty(key)) {
-              this.push('cellTypeList', { name: key, ids: ref.metaFilter.cellLineMap[key] })
+        if (refObj.metaFilter.cellLineMap) {
+          for (key in refObj.metaFilter.cellLineMap) {
+            if (refObj.metaFilter.cellLineMap.hasOwnProperty(key)) {
+              this.push('cellTypeList', { name: key, ids: refObj.metaFilter.cellLineMap[key] })
             }
           }
           this.listOfLists.push(this.cellTypeList)
         }
 
-        if (ref.metaFilter.labMap) {
-          for (key in ref.metaFilter.labMap) {
-            if (ref.metaFilter.labMap.hasOwnProperty(key)) {
-              this.push('labList', { name: key, ids: ref.metaFilter.labMap[key] })
+        if (refObj.metaFilter.labMap) {
+          for (key in refObj.metaFilter.labMap) {
+            if (refObj.metaFilter.labMap.hasOwnProperty(key)) {
+              this.push('labList', { name: key, ids: refObj.metaFilter.labMap[key] })
             }
           }
           this.listOfLists.push(this.labList)

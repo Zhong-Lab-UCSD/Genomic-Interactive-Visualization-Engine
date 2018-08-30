@@ -3,11 +3,11 @@ var GIVe = (function (give) {
   'use strict'
 
   class GeneObject extends give.AggregatedTranscript {
-    constructor (mainParams, ref, additionalParams) {
+    constructor (mainParams, refObj, additionalParams) {
       super(...arguments)
       this.transcripts = []
       this.transcripts.push(
-        new give.TranscriptObject(mainParams, ref, additionalParams))
+        new give.TranscriptObject(mainParams, refObj, additionalParams))
       this.name = this.geneSymbol
     }
 

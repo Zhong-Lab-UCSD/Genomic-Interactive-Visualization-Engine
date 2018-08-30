@@ -401,7 +401,7 @@ var GIVe = (function (give) {
     // purple
 
       var drawOverflowRect = function (y, region) {
-        this.drawRectangle(region, this.rgbToHex(this.colorSet[this.OVERFLOW_COLOR_INDEX]),
+        this.drawRectangle(region, this.rgbToHex(this.constructor.colorSet[this.OVERFLOW_COLOR_INDEX]),
           y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
       }.bind(this)
       overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
@@ -606,8 +606,8 @@ var GIVe = (function (give) {
       var svgToDraw = this.mainSvg
       this.createRawPolygon(polygon.points, {
         class: 'wiggleShapes',
-        fill: this.rgbToHex(this.colorSet[0]),
-        stroke: this.rgbToHex(this.colorSet[0])
+        fill: this.rgbToHex(this.constructor.colorSet[0]),
+        stroke: this.rgbToHex(this.constructor.colorSet[0])
       }, svgToDraw)
       this.drawOverflowLines(polygon.overflows)
       polygon.points = []
@@ -707,8 +707,8 @@ var GIVe = (function (give) {
             this.transformXCoordinate({chr: windowToDraw.chr, coor: currPolygon.lastX}, false) +
             ',' + this.transformYCoordinate(0))
             this.createRawPolygon(currPolygon.points, {class: 'wiggleShapes',
-              fill: this.rgbToHex(this.colorSet[0]),
-              stroke: this.rgbToHex(this.colorSet[0])
+              fill: this.rgbToHex(this.constructor.colorSet[0]),
+              stroke: this.rgbToHex(this.constructor.colorSet[0])
             }, svgToDraw)
             this.drawOverflowLines(currPolygon.overflows)
             currPolygon.points = []

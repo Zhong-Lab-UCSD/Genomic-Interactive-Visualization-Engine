@@ -141,7 +141,7 @@ var GIVe = (function (give) {
       for (var i = 0; i < this.parent.windowSpan; i++) {
         var newSubSvg = document.createElementNS(this.svgNS, 'svg')
         newSubSvg.setAttribute('id', this._getSubSvgId(i))
-        this.mainSvg.holder.appendChild(newSubSvg)
+        this._mainSvg.holder.appendChild(newSubSvg)
         this._subSvgs.push(newSubSvg)
       }
       this._subSvgs.forEach(subSvg => this.initSvgHolder(subSvg))
@@ -162,12 +162,6 @@ var GIVe = (function (give) {
     }
 
     // ****** customized methods below ******
-
-    getCurrentViewWindowExt (extension) {
-      return this._subSvgs.map(subSvg => subSvg.viewWindow.getExtension(
-        extension, null, true, this.parent.ref
-      ))
-    }
 
     drawData () {
       // this is to draw everything from this.data to the svg
@@ -195,7 +189,7 @@ var GIVe = (function (give) {
       super.clear()
       this._subSvgs.forEach(subSvg => {
         this.clearSvg(subSvg)
-        this.mainSvg.holder.appendChild(subSvg)
+        this._mainSvg.holder.appendChild(subSvg)
       })
     }
 
@@ -214,7 +208,7 @@ var GIVe = (function (give) {
       // may need to filter the regions first, either here or outside
 
       let colorIndex = 0
-      svgToDraw = svgToDraw || this.mainSvg
+      svgToDraw = svgToDraw || this._mainSvg
       height = height || this.borderHeight * this.textSize
       y = y || 0
 
@@ -224,7 +218,7 @@ var GIVe = (function (give) {
         if (!linkMap.hasOwnProperty(linkID)) {
         // color is already there
           colorIndex++
-          if (colorIndex >= this.colorSet.length) {
+          if (colorIndex >= this.constructor.colorSet.length) {
             colorIndex = 0
           }
           linkMap[linkID] = []
@@ -252,9 +246,9 @@ var GIVe = (function (give) {
       }
 
       // then draw the two horizontal lines
-      if (!this.parent.ref.chromInfo[windowToDraw.chr].cent ||
+      if (!this.parent.refObj.chromInfo[windowToDraw.chr].cent ||
         !this.regionInWindow(
-          this.parent.ref.chromInfo[windowToDraw.chr].cent, svgToDraw)
+          this.parent.refObj.chromInfo[windowToDraw.chr].cent, svgToDraw)
       ) {
         // no centromere, just draw two lines
         this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
@@ -263,7 +257,7 @@ var GIVe = (function (give) {
       } else {
         // has centromere, draw p part first
         let pX = this.transformXCoordinate(
-          this.parent.ref.chromInfo[windowToDraw.chr].cent.startCoor,
+          this.parent.refObj.chromInfo[windowToDraw.chr].cent.startCoor,
           false, svgToDraw)
         if (pX > 0 && pX < this.windowWidth) {
           this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
@@ -272,7 +266,7 @@ var GIVe = (function (give) {
         }
         // then centromere
         let qX = this.transformXCoordinate(
-          this.parent.ref.chromInfo[windowToDraw.chr].cent.endCoor, false,
+          this.parent.refObj.chromInfo[windowToDraw.chr].cent.endCoor, false,
           svgToDraw)
         this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
         this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
@@ -384,7 +378,7 @@ var GIVe = (function (give) {
                     class: 'linkedRegion',
                     fill: this.rgbToHex(this.percentileToGradient(
                       this.valueToPercentile(linkItem[0].data.value))),
-                    stroke: this.rgbToHex(this.colorSet[linkItem.color]),
+                    stroke: this.rgbToHex(this.constructor.colorSet[linkItem.color]),
                     'stroke-width': 2,
                     'fill-opacity':
                       this.valueToPercentile(linkItem[0].data.value) *
@@ -395,8 +389,8 @@ var GIVe = (function (give) {
                     class:
                       'linkedRegion ' +
                       (partialOutside ? 'partialOutside' : 'fullyInside'),
-                    fill: this.rgbToHex(this.colorSet[0]),
-                    stroke: this.rgbToHex(this.colorSet[0])
+                    fill: this.rgbToHex(this.constructor.colorSet[0]),
+                    stroke: this.rgbToHex(this.constructor.colorSet[0])
                     // 'stroke-width': 0.5,
                     // 'fill-opacity': partialOutside? 0.01: 0.2,
                     // 'stroke-opacity': 1,
@@ -411,7 +405,7 @@ var GIVe = (function (give) {
     }
 
     drawConnectionBetweenTracks (linkMap, svgChildren, svgMain) {
-      svgMain = svgMain || this.mainSvg
+      svgMain = svgMain || this._mainSvg
       svgChildren = svgChildren || this._subSvgs
       for (var i = 1; i < svgChildren.length; i++) {
         this._drawConnectionBetweenNeighboringTracks(linkMap,

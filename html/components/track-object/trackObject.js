@@ -84,7 +84,7 @@ var GIVe = (function (give) {
    * @property {string} groupID - ID of corresponding track group
    * @property {object} Settings - Settings of the track, in a dictionary format
    * @property {object} defaultSettings - defaultSettings upon initialization
-   * @property {RefObjectLiteral} ref - Genome reference object of the track
+   * @property {RefObjectLiteral} _refObj - Genome reference object of the track
    * @property {TrackDataObjectBase} _dataObj - The data object,
    *   should be an instance of `give.TrackDataObject` or its derived class
    *
@@ -96,11 +96,11 @@ var GIVe = (function (give) {
    *   Note that if `Settings` has a property named `settings`,
    *   it will be merged with `this._settings`, while properties in
    *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
+   * @param {RefObjectLiteral} refObj - the reference the track is using
    * @param {string} groupID - The group ID of the new track object
    */
   class TrackObject {
-    constructor (ID, Settings, ref, groupID) {
+    constructor (ID, Settings, refObj, groupID) {
       this._id = ID
       this._groupID = groupID || ''
       Settings = Settings || {}
@@ -115,15 +115,19 @@ var GIVe = (function (give) {
       this._defaultSettings = Settings
       this._initSettings()
 
-      this._ref = ref
+      this._refObj = refObj
       this._dataObj = (typeof this.constructor._DataObjCtor === 'function')
         ? new this.constructor._DataObjCtor(this)
         : null
       this._effPriority = null
     }
 
+    get refObj () {
+      return this._refObj
+    }
+
     get ref () {
-      return this._ref
+      return this._refObj ? this._refObj.db : null
     }
 
     get windowSpan () {
@@ -151,6 +155,9 @@ var GIVe = (function (give) {
       if (this.getSetting('visibility')) {
         this.visibility = this.getSetting('visibility')
       } // otherwise leave it to DOM
+      if (this.windowSpan > 1 && !this.hasSetting('pin')) {
+        this.setSetting('pin', 'inbetween')
+      }
     }
 
     /**
@@ -476,7 +483,7 @@ var GIVe = (function (give) {
       }
       let priorities = []
       try {
-        priorities.push(this.ref.groups[this.groupID].priority)
+        priorities.push(this.refObj.groups[this.groupID].priority)
       } catch (e) {
         priorities.push(Number.MAX_SAFE_INTEGER)
       }
@@ -577,15 +584,15 @@ var GIVe = (function (give) {
      * createCoorTrack - Create a coordinate track for given reference
      *
      * @static
-     * @param  {RefObjectLiteral} ref Reference for the coordinate track
+     * @param  {RefObjectLiteral} refObj Reference for the coordinate track
      * @param  {string} id  ID of the coordinate track
-     *   If no ID is specified, `'coor_' + ref.db` will be used as ID
+     *   If no ID is specified, `'coor_' + refObj.db` will be used as ID
      * @returns {TrackObjectBase}     The resulting track object
      */
-    static createCoorTrack (ref, id) {
-      return this.createTrack(id || 'coor_' + ref.db,
+    static createCoorTrack (refObj, id) {
+      return this.createTrack(id || 'coor_' + refObj.db,
         { type: 'coordinate', priority: 0, noData: true, visibility: 'full' },
-        ref)
+        refObj)
     }
 
     /**
@@ -593,23 +600,23 @@ var GIVe = (function (give) {
      *
      * @param  {string} ID       ID of the track, see constructor
      * @param  {object} Settings Settings to be passed, see constructor
-     * @param  {RefObjectLiteral} ref      Reference, see constructor
+     * @param  {RefObjectLiteral} refObj      Reference, see constructor
      * @param  {string} type     The type of the track
      * @param  {string} groupID     The group ID of the track
      * @returns {TrackObjectBase}          returned TrackObject
      */
-    static createTrack (ID, Settings, ref, type, groupID) {
+    static createTrack (ID, Settings, refObj, type, groupID) {
       try {
         type = type || Settings.type || Settings.settings.type
         type = type.split(/\s+/, 2)[0].toLowerCase()
       } catch (ignore) { }
       if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
-        return new this.typeMap[type](ID, Settings, ref, groupID)
+        return new this.typeMap[type](ID, Settings, refObj, groupID)
       } else {
         give._verbConsole.warn('Type \'' + type + '\' is not a valid type! ')
         give.fireSignal('warning',
           { msg: 'Type \'' + type + '\' is not a valid type! ' })
-        return new this.typeMap._default(ID, Settings, ref, groupID)
+        return new this.typeMap._default(ID, Settings, refObj, groupID)
       }
     }
 

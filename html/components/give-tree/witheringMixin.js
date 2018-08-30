@@ -125,11 +125,13 @@ var GIVe = (function (give) {
       if (!this.tree || !this.tree.lifeSpan) {
         return false
       }
-      return this.tree._currGen >= this._lastUpdateGen
-        ? this.tree._currGen - this._lastUpdateGen > this.tree.lifeSpan
-        : this.tree._currGen +
-          (this.tree.constructor.MAX_GENERATION - this._lastUpdateGen) >
-          this.tree.lifeSpan
+      return !(this.firstChild && this.firstChild._shouldWither === false) && (
+        this.tree._currGen >= this._lastUpdateGen
+          ? this.tree._currGen - this._lastUpdateGen > this.tree.lifeSpan
+          : this.tree._currGen +
+            (this.tree.constructor.MAX_GENERATION - this._lastUpdateGen) >
+            this.tree.lifeSpan
+      )
     }
 
     rejuvenate () {

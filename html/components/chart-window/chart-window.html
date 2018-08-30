@@ -688,7 +688,7 @@ var GIVe = (function (give) {
         svgElem.setAttribute('width', width)
         svgElem.setAttribute('height', svgElem._currY || 0)
         svgElem.setAttribute('viewBox',
-          '0 0 ' + width + ' ' + svgElem._currY || 0)
+          '0 0 ' + width + ' ' + (svgElem._currY || 0))
         delete svgElem._currY
       })
       if (this.$.scrollingContainer.clientWidth < width) {
@@ -726,7 +726,7 @@ var GIVe = (function (give) {
       give._verbConsole.info(
         'updateTracks(' + width + ', ' + newVWindow + ')')
 
-      if (!(newVWindow instanceof give.ChromRegion)) {
+      if (typeof newVWindow === 'string') {
         newVWindow = this.getVerifiedViewWindow(newVWindow)
       }
       // prepare element widths and heights
@@ -786,7 +786,7 @@ var GIVe = (function (give) {
           '#' + this._getSlotId(trackDom.parent, true)
         )
         if (svgElem.hasOwnProperty('_currY')) {
-          svgElem._currY += this._trackGap * this._textSize
+          svgElem._currY += this.trackGap * this.textSize
         } else {
           svgElem._currY = 0
         }

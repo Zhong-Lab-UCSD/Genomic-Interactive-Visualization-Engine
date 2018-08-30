@@ -109,7 +109,7 @@ var GIVe = (function (give) {
    * @returns {ChromRegionLiteral} a `give.ChromRegion` object.
    */
   // give.NewTrackData.prototype._chromEntryFromResponse = function (entry) {
-  //   return new give.ChromRegion(entry.regionString, this.parent.ref,
+  //   return new give.ChromRegion(entry.regionString, this.parent.refObj,
   //     { data: ((this._SummaryCtor && this._SummaryCtor.testRespEntry(entry))
   //       ? this._SummaryCtor.createFromResp(entry, this)
   //       : this._dataFromResponse(entry))

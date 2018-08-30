@@ -39,26 +39,26 @@ var GIVe = (function (give) {
      *   Either use a string like 'chr1:12345-56789'
      *   or an object with chr, start, end, and strand or other essential
      *   props
-     * @param {give.RefObject} [ref] - Reference genome of the region,
+     * @param {give.RefObject} [refObj] - Reference genome of the region,
      *   used for clipping the region, use `null` to omit
      * @param {object} [additionalParams] - Additional parameters needed
      * @param {boolean} [zeroBased] - Whether this chrom region's coordinate
      *   is zero based.
      * @memberof ChromRegion
      */
-    constructor (mainParams, ref, additionalParams, zeroBased) {
-      // usage: new ChromRegionObject(mainParam, ref, additionalParam)
+    constructor (mainParams, refObj, additionalParams, zeroBased) {
+      // usage: new ChromRegionObject(mainParam, refObj, additionalParam)
       //    mainParam:
       //      either use a string like 'chr1:12345-56789'
       //      or an object with chr, start, end, and strand or other essential
       //      props
-      //    ref:
+      //    refObj:
       //      used for clipping the region, null if no-clipping needed
       //    additionalParam:
       //      some other parameters that may slip into the object
       try {
         if (typeof mainParams === 'string') {
-          this._regionFromString(mainParams, zeroBased, ref)
+          this._regionFromString(mainParams, zeroBased, refObj)
         } else if (typeof mainParams === 'object') {
           this._regionFromObject(mainParams)
         } else {
@@ -69,7 +69,7 @@ var GIVe = (function (give) {
           throw new give.GiveError(
             'ChromRegion start and/or end number invalid!')
         }
-        this.clipRegion(ref)
+        this.clipRegion(refObj)
         var key
         if (typeof mainParams === 'object') {
           for (key in mainParams) {
@@ -103,20 +103,20 @@ var GIVe = (function (give) {
       }
     }
 
-    clipRegion (ref, minLength) {
+    clipRegion (refObj, minLength) {
       if (this._start < this.constructor.CHROM_BASE) {
         this._start = this.constructor.CHROM_BASE
       }
-      if (ref && ref.chromInfo) {
-        if (ref.chromInfo[this.chr.toLowerCase()]) {
-          this.chr = ref.chromInfo[this.chr.toLowerCase()].chrRegion.chr
-          if (ref.chromInfo[this.chr].chrRegion._end < this._end) {
-            this._end = ref.chromInfo[this.chr].chrRegion._end
+      if (refObj && refObj.chromInfo) {
+        if (refObj.chromInfo[this.chr.toLowerCase()]) {
+          this.chr = refObj.chromInfo[this.chr.toLowerCase()].chrRegion.chr
+          if (refObj.chromInfo[this.chr].chrRegion._end < this._end) {
+            this._end = refObj.chromInfo[this.chr].chrRegion._end
           }
-        } else if (!ref.chromInfo[this.chr]) {
+        } else if (!refObj.chromInfo[this.chr]) {
           // this is not a valid chromosome
           throw (new give.GiveError(
-            this.chr + ' is not a valid chromosome for ' + ref.db + '!'))
+            this.chr + ' is not a valid chromosome for ' + refObj.db + '!'))
         }
       }
       if (this._start > this._end) {
@@ -170,12 +170,14 @@ var GIVe = (function (give) {
       this._end = newEnd
     }
 
-    _regionFromString (regionString, zeroBased, ref) {
-      if (ref && ref.chromInfo && ref.chromInfo[regionString.toLowerCase()]) {
-        this.chr = ref.chromInfo[regionString.toLowerCase()].chrRegion.chr
+    _regionFromString (regionString, zeroBased, refObj) {
+      if (refObj && refObj.chromInfo &&
+        refObj.chromInfo[regionString.toLowerCase()]
+      ) {
+        this.chr = refObj.chromInfo[regionString.toLowerCase()].chrRegion.chr
         this._start =
-          ref.chromInfo[regionString.toLowerCase()].chrRegion._start
-        this._end = ref.chromInfo[regionString.toLowerCase()].chrRegion._end
+          refObj.chromInfo[regionString.toLowerCase()].chrRegion._start
+        this._end = refObj.chromInfo[regionString.toLowerCase()].chrRegion._end
         this.strand = null
       } else {
         var cleanedChrString = regionString.replace(/,/g, '')
@@ -327,7 +329,7 @@ var GIVe = (function (give) {
       return this
     }
 
-    move (distance, isProportion, ref) {
+    move (distance, isProportion, refObj) {
       // isProportion means whether move by proportion
       // may clip distance to what we have
       if (isProportion) {
@@ -336,9 +338,9 @@ var GIVe = (function (give) {
       distance = parseInt(distance + 0.5)
       if (distance + this._start < this.constructor.CHROM_BASE) {
         distance = this.constructor.CHROM_BASE - this._start
-      } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-        ref.chromInfo[this.chr].chrRegion._end < this._end + distance) {
-        distance = ref.chromInfo[this.chr].chrRegion._end - this._end
+      } else if (refObj && refObj.chromInfo && refObj.chromInfo[this.chr] &&
+        refObj.chromInfo[this.chr].chrRegion._end < this._end + distance) {
+        distance = refObj.chromInfo[this.chr].chrRegion._end - this._end
       }
       this._start = this._start + distance
       this._end = this._end + distance
@@ -349,11 +351,11 @@ var GIVe = (function (give) {
       return new this.constructor(this)
     }
 
-    getShift (distance, isProportion, ref) {
-      return this.clone().move(distance, isProportion, ref)
+    getShift (distance, isProportion, refObj) {
+      return this.clone().move(distance, isProportion, refObj)
     }
 
-    extend (sizediff, center, isProportion, ref, minimumSize) {
+    extend (sizediff, center, isProportion, refObj, minimumSize) {
       // isProportion means whether extend by proportion
       minimumSize = minimumSize || 1
       if (!sizediff) {
@@ -373,9 +375,9 @@ var GIVe = (function (give) {
       if (newsize < minimumSize) {
         newsize = minimumSize
         sizediff = newsize - this.length
-      } else if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-        ref.chromInfo[this.chr].chrRegion.length < newsize) {
-        newsize = ref.chromInfo[this.chr].chrRegion.length
+      } else if (refObj && refObj.chromInfo && refObj.chromInfo[this.chr] &&
+        refObj.chromInfo[this.chr].chrRegion.length < newsize) {
+        newsize = refObj.chromInfo[this.chr].chrRegion.length
       }
       if (center > this._start) {
         // extend left
@@ -388,34 +390,34 @@ var GIVe = (function (give) {
       } else {
         this._end = this._end + sizediff
       }
-      if (ref && ref.chromInfo && ref.chromInfo[this.chr] &&
-        ref.chromInfo[this.chr].chrRegion._end < this._end) {
-        this._end = ref.chromInfo[this.chr].chrRegion._end
+      if (refObj && refObj.chromInfo && refObj.chromInfo[this.chr] &&
+        refObj.chromInfo[this.chr].chrRegion._end < this._end) {
+        this._end = refObj.chromInfo[this.chr].chrRegion._end
         this._start = this._end - newsize
       }
       return this
     }
 
-    getExtension (sizediff, center, isProportion, ref, minimumSize) {
+    getExtension (sizediff, center, isProportion, refObj, minimumSize) {
       return this.clone().extend(
-        sizediff, center, isProportion, ref, minimumSize)
+        sizediff, center, isProportion, refObj, minimumSize)
     }
 
-    static clipCoordinate (coor, ref) {
+    static clipCoordinate (coor, refObj) {
       // this is to clip single coordinate
       if (coor.coor < this.CHROM_BASE) {
         coor.coor = this.CHROM_BASE
-      } else if (ref && ref.chromInfo && ref.chromInfo[coor.chr] &&
-        ref.chromInfo[coor.chr].chrRegion._end < coor.coor) {
-        coor.coor = ref.chromInfo[coor.chr].chrRegion._end
+      } else if (refObj && refObj.chromInfo && refObj.chromInfo[coor.chr] &&
+        refObj.chromInfo[coor.chr].chrRegion._end < coor.coor) {
+        coor.coor = refObj.chromInfo[coor.chr].chrRegion._end
       }
       return coor
     }
 
-    static isValidChromRegion (chrStr, ref) {
+    static isValidChromRegion (chrStr, refObj) {
       try {
         var tempChrRegion = new this(chrStr)
-        tempChrRegion.clipRegion(ref)
+        tempChrRegion.clipRegion(refObj)
       } catch (e) {
         give._verbConsole.info(e)
         return false

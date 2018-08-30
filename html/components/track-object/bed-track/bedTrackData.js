@@ -62,7 +62,7 @@ var GIVe = (function (give) {
       let resChromEntryFunc = (geneArray, geneNameMap, resChromEntry) => {
         let newGene = new give.GeneObject(
           new give.TranscriptObject(resChromEntry.geneBed,
-            this.parent.ref,
+            this.parent.refObj,
             resChromEntry.attr
           )
         )

@@ -252,7 +252,7 @@ var GIVe = (function (give) {
       // provide data to mainAjax
       // for most of the tracks, this is only trackID and window
       let query = {
-        db: this.parent.ref.db,
+        db: this.parent.ref,
         type: this.parent.typeTrunk,
         window: regions.map(region => region.regionToString(false))
       }
@@ -458,7 +458,7 @@ var GIVe = (function (give) {
      */
     _createNewDataStructure (chrom) {
       return new this.constructor._DataStructure(
-        this.parent.ref.chromInfo[chrom].chrRegion,
+        this.parent.refObj.chromInfo[chrom].chrRegion,
         {
           SummaryCtor: this.constructor._SummaryCtor
         }
@@ -592,7 +592,7 @@ var GIVe = (function (give) {
           this.getData(region.chr, true).insert(
             response[region.regionToString()].map(
               entry => this.constructor._chromEntryFromResponse(
-                entry, this.parent.ref
+                entry, this.parent.refObj
               ), this
             ), region)
         }

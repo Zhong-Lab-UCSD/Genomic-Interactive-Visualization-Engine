@@ -3,23 +3,22 @@ var GIVe = (function (give) {
   'use strict'
 
   class RefObject {
-    constructor (DB, Name, CommonName, IsEncode, Ref, chromInfo, settings) {
+    constructor (DB, Name, CommonName, IsEncode, chromInfo, settings) {
       // notice that chromInfo is the JSON encoded object
       //    for chromosome information from chromInfo.php
 
       // this is for navigation thing
       this.isCollapsed = false
-      // whether this ref is collapsed in the browser
+      // whether this refObj is collapsed in the browser
       this.isActive = true
-      // if user has not selected this ref to display, then it will become false;
-      // this is also used for navigation only
+      // if user has not selected this refObj to display, then it will become
+      // false; this is also used for navigation only
 
       this.db = DB
       this.name = Name
       this.commonName = CommonName
       this.isEncode = ((typeof IsEncode === 'boolean') ? IsEncode
         : ((typeof IsEncode === 'string') ? IsEncode !== '0' : !!IsEncode))
-      this.ref = Ref
       this.settings = {} // object for all settings
 
       this.metaFilter = {
@@ -28,7 +27,7 @@ var GIVe = (function (give) {
         labMap: {},
         tissueMap: {}
       }
-      // read Object for ref chrom info (if there)
+      // read Object for refObj chrom info (if there)
       this._chromInfoPromise =
         this.initChromInfo(chromInfo, settings.initChromTarget)
 
@@ -121,14 +120,15 @@ var GIVe = (function (give) {
         this.reverseLookupTable = {}
       }
       var loadTrackFromRemoteData = function (groupID, track) {
-        var newTrack = give.TrackObject.createTrack(track.tableName, track, this,
-          null, groupID)
+        var newTrack = give.TrackObject.createTrack(track.tableName, track,
+          this, null, groupID)
         if (requestUrl && !newTrack.requestUrl) {
           newTrack.requestUrl = requestUrl
         }
         this.tracks.addTrack(newTrack)
 
-        // reverse lookup table related, might be rewritten if table structure is changed later
+        // reverse lookup table related, might be rewritten if table structure
+        // is changed later
         if (Array.isArray(newTrack.tableNames)) {
           newTrack.tableNames.forEach(function (tableName) {
             this.reverseLookupTable[tableName] = newTrack
@@ -142,7 +142,8 @@ var GIVe = (function (give) {
       }
       for (let groupID in groupInfo) {
         if (groupInfo.hasOwnProperty(groupID)) {
-          this.groups[groupID] = new give.TrackGroup(groupID, groupInfo[groupID])
+          this.groups[groupID] = new give.TrackGroup(
+            groupID, groupInfo[groupID])
           groupInfo[groupID].tracks.forEach(
             loadTrackFromRemoteData.bind(this, groupID), this
           )
@@ -312,8 +313,8 @@ var GIVe = (function (give) {
     }
 
     static initAllRef (data, filter) {
-      // initialize all ref from db
-      // return an array of ref
+      // initialize all refObj from db
+      // return an array of refObj
       // callback is the callback function taking refArray as argument
       if (filter === undefined) {
         filter = this.refFilter
@@ -331,7 +332,7 @@ var GIVe = (function (give) {
           this.refArray.dbMap[refDb] = new this(
             refDb, data[refDb].name,
             data[refDb].commonname,
-            data[refDb].encode, data[refDb].dbname, data[refDb].chromInfo,
+            data[refDb].encode, data[refDb].chromInfo,
             data[refDb].settings)
           this.refArray.push(this.refArray.dbMap[refDb])
         }
@@ -368,10 +369,10 @@ var GIVe = (function (give) {
   }
 
   RefObject.refFilter = give.Ref_RefFilter ||
-    (ref => (
-      ref.settings.isGIVeEnabled ||
-      ref.settings.isGIVEEnabled ||
-      ref.settings.browserActive
+    (refObj => (
+      refObj.settings.isGIVeEnabled ||
+      refObj.settings.isGIVEEnabled ||
+      refObj.settings.browserActive
     ))
 
   RefObject.initAllTarget = give.Host +

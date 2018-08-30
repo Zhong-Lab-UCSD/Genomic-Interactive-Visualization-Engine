@@ -2,7 +2,7 @@ var GIVe = (function (give) {
   'use strict'
 
   class TranscriptObject extends give.ChromRegion {
-    constructor (mainParams, ref, additionalParams) {
+    constructor (mainParams, refObj, additionalParams) {
       super(...arguments)
       // check whether thickStart and thickEnd are valid
       this.geneSymbol = this.geneSymbol || this.name

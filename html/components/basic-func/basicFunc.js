@@ -473,10 +473,17 @@ var GIVe = (function (give) {
   }
 
   class PromiseCanceller extends Error {
-    constructor () {
+    constructor (originalPromise) {
       super(...arguments)
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, PromiseCanceller)
+      }
+      if (
+        (typeof originalPromise === 'object' ||
+          typeof originalPromise === 'function'
+        ) && typeof originalPromise.then === 'function'
+      ) {
+        this.originalPromise = originalPromise
       }
     }
     toString () {

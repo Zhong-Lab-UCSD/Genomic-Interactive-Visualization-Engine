@@ -61,7 +61,7 @@ var GIVe = (function (give) {
       //    however, if it's defined, then it will be the window index (for now)
       let resToRegion = resEntry => new give.ChromRegion(
         resEntry.regionString,
-        this.ref, {
+        this.parent.refObj, {
           data: {
             linkID: parseInt(resEntry.linkID),
             regionID: parseInt(resEntry.ID),

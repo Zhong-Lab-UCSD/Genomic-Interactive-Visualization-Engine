@@ -178,8 +178,6 @@ var GIVe = (function (give) {
     _initProperties (properties) {
       super._initProperties(properties)
 
-      this.Y_HIDDEN = -30 // value to hide stuff in svg (to calculate size)
-
       /**
        * @property {number} GENE_MARGIN
        * margin size between genes when gene name is shown. Unit in px.
@@ -411,7 +409,8 @@ var GIVe = (function (give) {
       }
       if (data.traverse(this.viewWindow,
         entry => this._callTransFuncOnGene(
-          transcript => this._allocateLineToTrans(lineEnds, transcript)
+          transcript => this._allocateLineToTrans(lineEnds, transcript),
+          entry
         ), null, true)
       ) {
         return lineEnds.length > 0 ? lineEnds.length : 1
@@ -540,7 +539,7 @@ var GIVe = (function (give) {
       lineHeight = lineHeight ||
         (this.fullHeightRatio + this.lineGapRatio) * this.textSize
       if (typeof (colorRGB) !== 'number') {
-        colorRGB = this.colorSet[this.FORECOLOR_INDEX]
+        colorRGB = this.constructor.colorSet[this.FORECOLOR_INDEX]
       }
 
       if (typeof (yCoor) !== 'number' || isNaN(yCoor)) {

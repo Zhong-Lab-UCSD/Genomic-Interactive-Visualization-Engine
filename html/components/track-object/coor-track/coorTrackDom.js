@@ -30,7 +30,7 @@ var GIVe = (function (give) {
       this.trackMainDOMClass = 'coordinates'
 
       if (properties.hasOwnProperty('colorIndex')) {
-        this.foreColor = this.colorSet[properties.colorIndex]
+        this.foreColor = this.constructor.colorSet[properties.colorIndex]
       } else if (properties.hasOwnProperty('color')) {
         this.foreColor = parseInt(properties.color)
       }

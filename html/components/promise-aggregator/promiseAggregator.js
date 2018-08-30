@@ -65,7 +65,18 @@ var GIVe = (function (give) {
       let promisesChanged = false
       if (this._originalPromises.length <= 0) {
         objArray.forEach((obj, index) => {
-          let originalPromise = promiseFunc(obj, index)
+          let originalPromise
+          try {
+            originalPromise = promiseFunc(obj, index)
+          } catch (e) {
+            if (e instanceof give.PromiseCanceller) {
+              if (e.originalPromise) {
+                originalPromise = e.originalPromise
+              }
+            } else {
+              throw e
+            }
+          }
           this._originalPromises.push(originalPromise)
           if (this._usePaddedPromises) {
             this._paddedPromises.push(this._getPaddedPromise(originalPromise))
@@ -87,7 +98,16 @@ var GIVe = (function (give) {
           } catch (e) {
             // skip promises that have been cancelled
             // (which means the original should be kept)
-            if (!(e instanceof give.PromiseCanceller)) {
+            if (e instanceof give.PromiseCanceller) {
+              if (!this._originalPromises[index] && e.originalPromise) {
+                this._originalPromises[index] = e.originalPromise
+                if (this._usePaddedPromises) {
+                  this._paddedPromises[index] =
+                    this._getPaddedPromise(e.originalPromise)
+                }
+                promisesChanged = true
+              }
+            } else {
               throw e
             }
           }
@@ -98,7 +118,7 @@ var GIVe = (function (give) {
           ? this._paddedPromises : this._originalPromises)
         return this.aggreatedPromise
       }
-      throw new give.PromiseCanceller()
+      throw new give.PromiseCanceller(this.aggreatedPromise)
     }
   }
 

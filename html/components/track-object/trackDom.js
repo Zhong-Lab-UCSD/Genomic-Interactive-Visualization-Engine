@@ -69,6 +69,8 @@ var GIVe = (function (give) {
       this.x = properties.x || 0
       this.y = properties.y || 0
 
+      this.Y_HIDDEN = -30 // value to hide stuff in svg (to calculate size)
+
       this.ARROW_HEIGHT_PROP = 0.5 // percentage of arrow (to height of gene)
       this.ARROW_MAX_HEIGHT_PROP = 0.9 // max percentage of arrow
       this.ARROW_MIN_HEIGHT = 4 // minimum height required for arrow
@@ -233,16 +235,6 @@ var GIVe = (function (give) {
         throw new give.GiveError(this.id + '._mainSvg is not initialized yet!')
       }
       this._mainSvg.viewWindow = newViewWindow
-    }
-
-    get linkedIndices () {
-      if (this.parent.windowSpan > 1) {
-        return Array.from(
-          new Array(this.parent.windowSpan - 1),
-          (val, index) => (this.windowIndex + index + 1)
-        )
-      }
-      return null
     }
 
     hasTrackSetting (key) {
@@ -465,7 +457,7 @@ var GIVe = (function (give) {
     //       ? this.viewWindow
     //       : this.viewWindow.getExtension(
     //         (newWindowWidth - this.windowWidth) / this.windowWidth,
-    //         null, true, this.parent.ref)
+    //         null, true, this.parent.refObj)
     //   }
     //   return this._updateContent(newViewWindow, ...args)
     // }
@@ -674,7 +666,7 @@ var GIVe = (function (give) {
     getViewWindowExtArray (extension, vWinArray) {
       vWinArray = vWinArray || this.viewWindowArray
       return vWinArray.map((window, index) =>
-        window.getExtension(extension, null, true, this.parent.ref)
+        window.getExtension(extension, null, true, this.parent.refObj)
       )
     }
 
@@ -729,7 +721,7 @@ var GIVe = (function (give) {
         svgToDraw.viewWindow || svgToDraw.parentNode.viewWindow
       return give.ChromRegion.clipCoordinate({chr: windowToDraw.chr,
         coor: parseInt(x / this.windowWidth * windowToDraw.length +
-          windowToDraw.start + 0.5)}, this.parent.ref)
+          windowToDraw.start + 0.5)}, this.parent.refObj)
     }
 
     // ** Simple SVG Drawing **
@@ -789,15 +781,16 @@ var GIVe = (function (give) {
      *    If this is `false`, then `viewwindow` shall not be changed at all.
      * @param  {number} newWidth - new width, in px
      * @param  {number} newTxtMargin - new text margin, in px
-     * @param  {number} index - the index for the viewWindow, used when
+     * @param  {number} vWinIndex - the index for the viewWindow, used when
      *    the track has multiple view windows.
      * @param  {...object} args  Pass all the left arguments finally to
      *   `this.drawData()`.
      * @returns {Promise} Returns a `Promise` that will resolve to the
      *    current `this.viewWindow` object.
      */
-    update (newWindow, width, newTxtWidth, forceUpdate, index, ...args) {
-      index = (typeof vWinIndex === 'number' ? index - this.windowIndex : 0)
+    update (newWindow, width, newTxtWidth, forceUpdate, vWinIndex, ...args) {
+      let index = (typeof vWinIndex === 'number'
+        ? vWinIndex - this.windowIndex : 0)
       return this._setWidthParameters(
         width, newTxtWidth, newWindow, forceUpdate, null, index, ...args
       ).then(resolvedValue => {
@@ -917,8 +910,8 @@ var GIVe = (function (give) {
       }
 
       if (windowToDraw.overlaps(region) > 0) {
-        var x0 = this.transformXCoordinate(region.getStartCoor(), true)
-        var x1 = this.transformXCoordinate(region.getEndCoor(), true)
+        var x0 = this.transformXCoordinate(region.startCoor, true)
+        var x1 = this.transformXCoordinate(region.endCoor, true)
         var newRegion = this.createRawRectangle(x0, y, x1, y + height, {
           fill: colorRGB,
           stroke: (typeof strokeColorRGB === 'number')
@@ -1163,10 +1156,10 @@ var GIVe = (function (give) {
           // not the same region as submitted
           // which means the resolution is for the previous promise
           // throw a `give.PromiseCanceller` to cancel promise handling
-          throw new give.PromiseCanceller()
+          throw new give.PromiseCanceller(this.readyPromise)
         }
       } else {
-        throw new give.PromiseCanceller()
+        throw new give.PromiseCanceller(this.readyPromise)
       }
       // commit pending view windows
       this.viewWindow = this._pendingNewVWArr || this.viewWindow
@@ -1249,7 +1242,7 @@ var GIVe = (function (give) {
         return this._debouncePromise
           .then(() => this._checkDataAndUpdate(...args))
       }
-      throw new give.PromiseCanceller()
+      throw new give.PromiseCanceller(this.readyPromise)
     }
 
     /**
@@ -1295,7 +1288,7 @@ var GIVe = (function (give) {
       }
       // Otherwise it's the same data promise, use the old chained functions
       // after this._dataPromise instead of creating new chained functions
-      throw new give.PromiseCanceller()
+      throw new give.PromiseCanceller(this.readyPromise)
     }
 
     _updateContent (viewWindow, index, ...args) {
@@ -1363,9 +1356,9 @@ var GIVe = (function (give) {
 
     _verifyViewWindowElem (viewWindowElem, index) {
       if (typeof viewWindowElem === 'string') {
-        return new give.ChromRegion(viewWindowElem, this.parent.ref)
+        return new give.ChromRegion(viewWindowElem, this.parent.refObj)
       } else if (viewWindowElem instanceof give.ChromRegion) {
-        return viewWindowElem.clipRegion(this.parent.ref).clone()
+        return viewWindowElem.clipRegion(this.parent.refObj).clone()
       } else {
         throw new give.GiveError(
           'Invalid viewWindow element: ' + viewWindowElem + '!'
@@ -1454,10 +1447,10 @@ var GIVe = (function (give) {
               windowIndex: this.windowIndex,
               newWindow: this.dragData.oldWindow.getShift(
                 detail.dx * this.dragData.ratio, true,
-                this.parent.ref).regionToString(false)
+                this.parent.refObj).regionToString(false)
             }, null, e.target)
             // this.setViewWindowString(this.dragData.oldWindow.getShift(
-            //   detail.dx * this.dragData.ratio, true, this.parent.ref)
+            //   detail.dx * this.dragData.ratio, true, this.parent.refObj)
             //   .regionToString(false));
           }
           break
@@ -1469,7 +1462,7 @@ var GIVe = (function (give) {
               windowIndex: this.windowIndex,
               newWindow: this.dragData.oldWindow.getShift(
                 detail.dx * this.dragData.ratio, true,
-                this.parent.ref).regionToString(false)
+                this.parent.refObj).regionToString(false)
             }, null, e.target)
           }
           delete (this.dragData)
