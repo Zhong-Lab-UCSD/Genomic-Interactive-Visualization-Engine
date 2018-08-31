@@ -154,28 +154,19 @@ var GIVe = (function (give) {
        * Interval for update drawing, needs to be a small value for coordinates
        * @type {number}
        */
-      this._drawDebounceInt = (
-        properties._drawDebounceInt ||
-        this.getTrackSetting('_drawDebounceInt', 'integer') ||
-        this.constructor._DRAW_DEBOUNCE_INTERVAL
-      )
+      this._drawDebounceInt = this._initPropertyItem(
+        '_drawDebounceInt', properties, '_drawDebounceInt', 'integer')
 
       /**
        * Interval for getting data into cache. This is longer than draw
        * debouncing
        * @type {number}
        */
-      this._cacheDebounceInt = (
-        properties._cacheDebounceInt ||
-        this.getTrackSetting('_cacheDebounceInt', 'integer') ||
-        this.constructor._CACHE_DEBOUNCE_INTERVAL
-      )
+      this._cacheDebounceInt = this._initPropertyItem(
+        '_cacheDebounceInt', properties, '_cacheDebounceInt', 'integer')
 
-      this.activeVisibility = (
-        properties.visibility ||
-        this.getTrackSetting('visibility') ||
-        this.constructor.DEFAULT_VISIBILITY
-      )
+      this.activeVisibility = this._initPropertyItem(
+        'visibility', properties, 'visibility')
 
       this.textMargin = (
         properties.textMargin || 0
@@ -186,15 +177,8 @@ var GIVe = (function (give) {
        *   contents).
        * @type {boolean}
        */
-      this.dynamicHeight = (
-        (properties.hasOwnProperty('dynamicHeight')
-          ? properties.dynamicHeight
-          : (this.hasTrackSetting('dynamicHeight')
-            ? this.getTrackSetting('dynamicHeight', 'boolean')
-            : this.constructor.DEFAULT_DYNAMIC_HEIGHT
-          )
-        )
-      )
+      this.dynamicHeight = this._initPropertyItem(
+        'dynamicHeight', properties, 'dynamicHeight', 'boolean')
 
       this.cacheRegionSpan = this.constructor.CacheRangeSpanProp
 
@@ -203,11 +187,16 @@ var GIVe = (function (give) {
           ? properties.textMargin + this.textRightPadding : 0)
       this.totalWidth = properties.width
 
-      this.pin = (
-        properties.pin ||
-        this.getTrackSetting('pin') ||
-        this.constructor.PIN
-      )
+      this.pin = this._initPropertyItem('pin', properties, 'pin')
+    }
+
+    _initPropertyItem (key, propertiesObj, trackSettingKey, type) {
+      return propertiesObj.hasOwnProperty(key)
+        ? propertiesObj[key]
+        : ((trackSettingKey && this.hasTrackSetting(trackSettingKey))
+          ? this.getTrackSetting(trackSettingKey, type)
+          : this.constructor.defaultProperties[key]
+        )
     }
 
     get DEFAULT_HEIGHT () {
@@ -1476,6 +1465,10 @@ var GIVe = (function (give) {
   }
 
   TrackDom._trackCounter = 0
+
+  TrackDom.defaultProperties = {
+    textSize: 12
+  }
 
   TrackDom.TEXT_SIZE = 12
   TrackDom.FULL_HEIGHT_RATIO = 1

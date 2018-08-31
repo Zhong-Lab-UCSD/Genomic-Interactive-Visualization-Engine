@@ -56,6 +56,21 @@ var GIVe = (function (give) {
         this.constructor.DEFAULT_THRESHOLD
       )
 
+      this.borderHeight = (
+        properties.hasOwnProperty('borderHeight') 
+          ? properties.borderHeight
+          : (this.hasTrackSetting('borderHeight')
+            ? this.getTrackSetting('borderHeight', 'float')
+            : this.constructor.DEFAULT_BORDER_HEIGHT
+          )
+      )
+
+      this.borderColorIndex = (
+        properties.borderHeight ||
+        this.getTrackSetting('borderHeight', 'float') ||
+        this.constructor.DEFAULT_BORDER_HEIGHT
+      )
+
       this._subSvgs = []
       this.bufferWindow = []
       this.quantiles = this.getTrackSetting('quantiles') ||
@@ -94,13 +109,9 @@ var GIVe = (function (give) {
           value: 0.1
         },
 
-        boxBorderColor: {
+        borderColorIndex: {
           type: Number,
           value: 0
-        },
-
-        quantiles: {
-          type: Array
         },
 
         gradient: {
@@ -242,7 +253,7 @@ var GIVe = (function (give) {
       }
 
       if (regions && regions instanceof give.GiveTree) {
-        regions.traverse(windowToDraw, traverseFunc, this, filterFunc, false)
+        regions.traverse(windowToDraw, traverseFunc, filterFunc, false)
       }
 
       // then draw the two horizontal lines
@@ -251,31 +262,31 @@ var GIVe = (function (give) {
           this.parent.refObj.chromInfo[windowToDraw.chr].cent, svgToDraw)
       ) {
         // no centromere, just draw two lines
-        this.drawLine(0, y, this.windowWidth, y, this.boxBorderColor, svgToDraw)
+        this.drawLine(0, y, this.windowWidth, y, this.borderColorIndex, svgToDraw)
         this.drawLine(0, y + height, this.windowWidth, y + height,
-          this.boxBorderColor, svgToDraw)
+          this.borderColorIndex, svgToDraw)
       } else {
         // has centromere, draw p part first
         let pX = this.transformXCoordinate(
           this.parent.refObj.chromInfo[windowToDraw.chr].cent.startCoor,
           false, svgToDraw)
         if (pX > 0 && pX < this.windowWidth) {
-          this.drawLine(0, y, pX, y, this.boxBorderColor, svgToDraw)
-          this.drawLine(0, y + height, pX, y + height, this.boxBorderColor,
+          this.drawLine(0, y, pX, y, this.borderColorIndex, svgToDraw)
+          this.drawLine(0, y + height, pX, y + height, this.borderColorIndex,
             svgToDraw)
         }
         // then centromere
         let qX = this.transformXCoordinate(
           this.parent.refObj.chromInfo[windowToDraw.chr].cent.endCoor, false,
           svgToDraw)
-        this.drawLine(pX, y + height, qX, y, this.boxBorderColor, svgToDraw)
-        this.drawLine(pX, y, qX, y + height, this.boxBorderColor, svgToDraw)
+        this.drawLine(pX, y + height, qX, y, this.borderColorIndex, svgToDraw)
+        this.drawLine(pX, y, qX, y + height, this.borderColorIndex, svgToDraw)
         // then q part
         if (qX > 0 && qX < this.windowWidth) {
-          this.drawLine(qX, y, this.windowWidth, y, this.boxBorderColor,
+          this.drawLine(qX, y, this.windowWidth, y, this.borderColorIndex,
             svgToDraw)
           this.drawLine(qX, y + height, this.windowWidth, y + height,
-            this.boxBorderColor, svgToDraw)
+            this.borderColorIndex, svgToDraw)
         }
       }
     }
