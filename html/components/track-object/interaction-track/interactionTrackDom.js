@@ -35,100 +35,43 @@ var GIVe = (function (give) {
   'use strict'
 
   class InteractionTrackDom extends give.TrackDom {
+    constructor (track, properties) {
+      super(...arguments)
+      this.gradient = [{ percent: 0, color: 0x3F51B5 },
+        { percent: 0.33, color: 0x4CAF50 },
+        { percent: 0.67, color: 0xCDDC39 },
+        { percent: 1, color: 0xF44336 }] // Gradient (indigo-green-lime-red)
+    }
     _initProperties (properties) {
       super._initProperties(properties)
 
-      this.maxFillOpacity = (
-        properties.maxFillOpacity ||
-        this.getTrackSetting('maxFillOpacity', 'float') ||
-        this.constructor.DEFAULT_MAX_FILL_OPACITY
-      )
+      this.maxFillOpacity = this._initPropertyItem(
+        'maxFillOpacity', properties, 'maxFillOpacity', 'float')
 
-      this.subTrackGap = (
-        properties.subTrackGap ||
-        this.getTrackSetting('subTrackGap', 'float') ||
-        this.constructor.DEFAULT_SUB_TRACK_GAP
-      )
+      this.subTrackGap = this._initPropertyItem(
+        'subTrackGap', properties, 'subTrackGap', 'float')
 
-      this.threshold = (
-        properties.threshold ||
-        this.getTrackSetting('threshold', 'float') ||
-        this.constructor.DEFAULT_THRESHOLD
-      )
+      this.threshold = this._initPropertyItem(
+        'threshold', properties, 'threshold', 'float')
 
-      this.borderHeight = (
-        properties.hasOwnProperty('borderHeight') 
-          ? properties.borderHeight
-          : (this.hasTrackSetting('borderHeight')
-            ? this.getTrackSetting('borderHeight', 'float')
-            : this.constructor.DEFAULT_BORDER_HEIGHT
-          )
-      )
+      this.borderHeight = this._initPropertyItem(
+        'borderHeight', properties, 'borderHeight', 'float')
 
-      this.borderColorIndex = (
-        properties.borderHeight ||
-        this.getTrackSetting('borderHeight', 'float') ||
-        this.constructor.DEFAULT_BORDER_HEIGHT
-      )
+      this.borderColorIndex = this._initPropertyItem(
+        'borderColorIndex', properties, 'borderColorIndex', 'float')
 
-      this._subSvgs = []
-      this.bufferWindow = []
+      this.bandBorder = this._initPropertyItem(
+        'bandBorder', properties, 'bandBorder', 'float')
+
       this.quantiles = this.getTrackSetting('quantiles') ||
         this.getTrackSetting('thresholdPercentile')
+
+      this._subSvgs = []
     }
 
     get DEFAULT_HEIGHT () {
       return (this.fullHeightRatio + (this.fullHeightRatio + this.subTrackGap) *
         (this.parent.windowSpan - 1)) * this.textSize
-    }
-
-    static get properties () {
-      return {
-        // note that this track will have childSvgs to match all the different coordinates
-        // each childSvg will have one viewWindow property
-        // but there will be only one textSvg object
-        // also, height will be calculated
-
-        borderHeight: { // this is the height for chromosomal box (lines and centromeres)
-          type: Number,
-          value: 1 // em
-        },
-
-        subTrackGap: {
-          type: Number,
-          value: 6 // em
-        },
-
-        // data structure for interaction tracks:
-        // data has one key (chrom), all other keys will be deleted upon changing chromosome (for now)
-        // data[chrom] is an array of ChrRegionToShow (for now)
-        // if two ChrRegionToShows are linked together, they will have same linkID
-
-        threshold: {
-          type: Number,
-          value: 0.1
-        },
-
-        borderColorIndex: {
-          type: Number,
-          value: 0
-        },
-
-        gradient: {
-          type: Array,
-          value: function () {
-            return [{percent: 0, color: 0x3F51B5},
-              {percent: 0.33, color: 0x4CAF50},
-              {percent: 0.67, color: 0xCDDC39},
-              {percent: 1, color: 0xF44336}] // Gradient (indigo-green-lime-red)
-          }
-        },
-
-        bandBorder: {
-          type: Number,
-          value: 1.0
-        }
-      }
     }
 
     get viewWindow () {
@@ -369,7 +312,7 @@ var GIVe = (function (give) {
                 )
 
                 x = this.transformXCoordinate(
-                  linkItem[permIndex[svgIndex]].endCoor,true, svgChild)
+                  linkItem[permIndex[svgIndex]].endCoor, true, svgChild)
                 if (x < 0) {
                   partialOutside = true
                 }
@@ -382,7 +325,7 @@ var GIVe = (function (give) {
                 )
               })
 
-              var points = startPoints.concat(endPoints.reverse())
+              let points = startPoints.concat(endPoints.reverse())
               if (!regionMap.hasOwnProperty(points)) {
                 if (this.quantiles) {
                   this.createRawPolygon(points, {id: regionID,
@@ -482,13 +425,18 @@ var GIVe = (function (give) {
       ) + (parseInt((rColor & 0x0000FF) * weight +
         (lColor & 0x0000FF) * (1 - weight)) & 0x0000FF)
     }
+
+    static get defaultProperties () {
+      return Object.assign(super.defaultProperties || {}, {
+        maxFillOpacity: 0.3,
+        subTrackGap: 6,
+        threshold: 0.1,
+        borderHeight: 1,
+        borderColorIndex: 0,
+        bandBorder: 1.0
+      })
+    }
   }
-
-  InteractionTrackDom.DEFAULT_MAX_FILL_OPACITY = 0.3
-  InteractionTrackDom.DEFAULT_SUB_TRACK_GAP = 6
-  InteractionTrackDom.DEFAULT_THRESHOLD = 0.1
-
-  InteractionTrackDom.DYNAMIC_HEIGHT = false
 
   give.InteractionTrackDom = InteractionTrackDom
 

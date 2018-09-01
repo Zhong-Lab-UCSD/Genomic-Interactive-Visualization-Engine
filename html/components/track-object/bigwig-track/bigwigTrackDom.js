@@ -34,41 +34,17 @@ var GIVe = (function (give) {
   'use strict'
 
   class BigWigTrackDom extends give.TrackDom {
-    _initProperties (props) {
-      super._initProperties(props)
-      this.MARGIN = 2
-      this.FORECOLOR_INDEX = 0 // the color index for fore color
-      this.TEXT_COLOR_RGB = 0 // the color index for text
-      this.OVERFLOW_COLOR_INDEX = 7 // the color index for overflow (red)
-
+    constructor (track, props) {
+      super(...arguments)
       /**
-       * the width of the line that is used for the overflow
+       *  A simple calculation of where the top and bottom of where to draw the track is.
        */
-      this.OVERFLOW_STROKE_WIDTH = 4
+      this.drawingBoundary = {
+        top: this.margin,
+        bottom: this.height - this.margin
+      }
 
-      /**
-       * to be explained
-       */
-      this.SCALE_TEXT_SIZE = 9
-
-      /**
-       *     to be explained
-       */
-      this.MIN_RESOLUTION_PER_PIXEL = 1
-
-      /**
-       * The upper bound for the track display. Any values above this will be displayed as a overflow line.
-       */
-      this.windowMax = (
-        this.parent.getSetting('windowMax', 'float') ||
-        BigWigTrackDom._DEFAULT_MAX
-      )
-
-      /**
-       * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
-       */
-      this.windowMin = this.parent.getSetting('windowMin', 'float') ||
-        BigWigTrackDom._DEFAULT_MIN
+      this.labelMarginRight = this.margin + this.textRightPadding
 
       if (!(this.windowMax > this.windowMin)) {
         give._verbConsole.warn(
@@ -80,72 +56,81 @@ var GIVe = (function (give) {
             msg: 'Window Range Error: windowMax = ' +
               this.windowMax + '; windowMin = ' + this.windowMin
           })
-        this.windowMax = BigWigTrackDom._DEFAULT_MAX
-        this.windowMin = BigWigTrackDom._DEFAULT_MIN
+        this.windowMax = this.constructor.defaultProperties.windowMax
+        this.windowMin = this.constructor.defaultProperties.windowMin
       }
 
-      this.labelMarginRight = this.MARGIN + this.textRightPadding
-
-      /**
-       * to be explained
-       */
-      this.scaleTickLength = 5
-
-      /**
-       *  A simple calculation of where the top and bottom of where to draw the track is.
-       */
-      this.drawingBoundary = { top: this.MARGIN, bottom: this.height - this.MARGIN }
-
-      /**
-       * to be explained
-       */
-      this.windowRange = 0
-
-      /**
-       * Whether or not to automatically scale the window bounds according to the data displayed.
-       */
-      this.autoScale = this.constructor._DEFAULT_AUTOSCALE
-      if (props.hasOwnProperty('autoScale')) {
-        this.autoScale = props.autoScale
-      } else if (this.parent.hasSetting('autoScale')) {
-        this.autoScale = this.parent.getSetting('autoScale', 'boolean')
-      }
-
-      /**
-       * Whether or not to automatically scale the window bounds according to the data displayed.
-       */
-      this.includeZero = this.constructor._DEFAULT_INCLUDE_ZERO
-      if (props.hasOwnProperty('includeZero')) {
-        this.includeZero = props.includeZero
-      } else if (this.parent.hasSetting('includeZero')) {
-        this.includeZero = this.parent.getSetting('includeZero', 'boolean')
-      }
-
-      this.upperPercentile = (
-        props.upperPercentile ||
-        this.parent.getSetting('upperPercentile', 'float') ||
-        this.constructor._DEFAULT_UPPER_PERCENTILE
-      )
-
-      this.lowerPercentile = (
-        props.lowerPercentile ||
-        this.parent.getSetting('lowerPercentile', 'float') ||
-        this.constructor._DEFAULT_LOWER_PERCENTILE
-      )
-
-      this.numOfDigits = (
-        props.numOfDigits ||
-        this.parent.getSetting('numOfDigits', 'integer') ||
-        this.constructor._DEFAULT_NUM_OF_DIGITS
-      )
-
-      /**
-       * The amount of points used around one point; an average value of the points is displayed rather than the actual value at any given point.
-       */
-      this.averagePointAmount = 10
-      // this.dataPoints=[]
-      this.slidingWindowWidth = 5 // sliding window size (single side)
       this.dataPoints = []
+    }
+
+    _initProperties (props) {
+      super._initProperties(props)
+      this.margin = this._initPropertyItem(
+        'margin', props, 'margin', 'float')
+      this.textColorIndex = this._initPropertyItem(
+        'textColorIndex', props, 'textColorIndex', 'integer') // the color index for text
+      this.overflowColorIndex = this._initPropertyItem(
+        'overflowColorIndex', props, 'overflowColorIndex', 'integer') // the color index for overflow (red)
+
+      /**
+       * the width of the line that is used for the overflow
+       */
+      this.overflowStrokeWidth = this._initPropertyItem(
+        'overflowStrokeWidth', props, 'overflowStrokeWidth', 'integer')
+
+      /**
+       * to be explained
+       */
+      this.scaleTextSize = this._initPropertyItem(
+        'scaleTextSize', props, 'scaleTextSize', 'integer')
+
+      /**
+       *     to be explained
+       */
+      this.minResolutionPerPixel = this._initPropertyItem(
+        'minResolutionPerPixel', props, 'minResolutionPerPixel', 'integer')
+
+      /**
+       * The upper bound for the track display. Any values above this will be displayed as a overflow line.
+       */
+      this.windowMax = this._initPropertyItem(
+        'windowMax', props, 'windowMax', 'float')
+
+      /**
+       * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
+       */
+      this.windowMin = this._initPropertyItem(
+        'windowMin', props, 'windowMin', 'float')
+
+      /**
+       * to be explained
+       */
+      this.scaleTickLength = this._initPropertyItem(
+        'scaleTickLength', props, 'scaleTickLength', 'float')
+
+      /**
+       * Whether or not to automatically scale the window bounds according to the data displayed.
+       */
+      this.autoScale = this._initPropertyItem(
+        'autoScale', props, 'autoScale', 'boolean')
+
+      /**
+       * Whether or not to automatically scale the window bounds according to the data displayed.
+       */
+      this.includeZero = this._initPropertyItem(
+        'includeZero', props, 'includeZero', 'boolean')
+
+      this.upperPercentile = this._initPropertyItem(
+        'upperPercentile', props, 'upperPercentile', 'float')
+
+      this.lowerPercentile = this._initPropertyItem(
+        'lowerPercentile', props, 'lowerPercentile', 'float')
+
+      this.numOfDigits = this._initPropertyItem(
+        'numOfDigits', props, 'numOfDigits', 'integer')
+
+      this.slidingWindowHalfWidth = this._initPropertyItem(
+        'slidingWindowHalfWidth', props, 'slidingWindowHalfWidth', 'integer')
     }
 
     /**
@@ -156,8 +141,12 @@ var GIVe = (function (give) {
     _getResolution (newVWindow, index) {
       return Math.max(Math.floor(
         newVWindow.length / this.windowWidth /
-        this.MIN_RESOLUTION_PER_PIXEL
+        this.minResolutionPerPixel
       ), 1)
+    }
+
+    get windowRange () {
+      return this.windowMax - this.windowMin
     }
 
     _pushSingleRawPointEntry (
@@ -223,9 +212,9 @@ var GIVe = (function (give) {
       // Get the smoothing points
       var vwindow = this.viewWindow
       var slidingWindowSpan = this._getResolution(vwindow) *
-        this.slidingWindowWidth * this.MIN_RESOLUTION_PER_PIXEL
-      var halfWindowIndexLength = Math.ceil(this.slidingWindowWidth *
-        this.MIN_RESOLUTION_PER_PIXEL / 2)
+        this.slidingWindowHalfWidth * this.minResolutionPerPixel
+      var halfWindowIndexLength = Math.ceil(this.slidingWindowHalfWidth *
+        this.minResolutionPerPixel / 2)
       var extendedWindow = vwindow.getExtension(slidingWindowSpan)
         .clipRegion(this.parent.ref)
       extendedWindow.resolution = this._getResolution(vwindow)
@@ -233,7 +222,7 @@ var GIVe = (function (give) {
       // Get the raw points list first
       var rawDataPoints = this._generateRawPointsList(extendedWindow)
 
-      // Then smooth out with this.slidingWindowWidth
+      // Then smooth out with this.slidingWindowHalfWidth
       // Needs to check if the borders do not have enough points
 
       // Prepare for the sliding sumData
@@ -284,7 +273,7 @@ var GIVe = (function (give) {
       var mode = parseInt(give.getParameterByName('mode') || 0)
       // draw the given point with height determined by signal strength
       this.clear()
-      var vwindow = this.mainSvg.viewWindow
+      var vwindow = this._mainSvg.viewWindow
       if (this.parent.getData(vwindow.chr)) {
         this.dataPoints = this._generateSmoothedPoints()
         if (this.autoScale) {
@@ -311,10 +300,12 @@ var GIVe = (function (give) {
      * @return {type}        returns the y coordinate
      */
     transformYCoordinate (signal, flags) {
-    // transform Y coordinate from signal with this.windowMin and this.windowMax
-    // notice that if the value exceeds either boundary,
-    // it will return the Y value at the boundary, but will mark flags.EXCEED_MAX or flags.EXCEED_MIN as true
-    // (flags needs to be an object from the caller to receive such values)
+      // transform Y coordinate from signal with this.windowMin and
+      //   this.windowMax
+      // notice that if the value exceeds either boundary,
+      // it will return the Y value at the boundary, but will mark
+      //   flags.EXCEED_MAX or flags.EXCEED_MIN as true
+      // (flags needs to be an object from the caller to receive such values)
       flags = flags || {}
       delete flags.EXCEED_MIN
       delete flags.EXCEED_MAX // clear flags first
@@ -326,86 +317,26 @@ var GIVe = (function (give) {
         return this.drawingBoundary.bottom
       }
       return (signal - this.windowMax) / (this.windowMin - this.windowMax) *
-      (this.drawingBoundary.bottom - this.drawingBoundary.top) + this.drawingBoundary.top
+        (this.drawingBoundary.bottom - this.drawingBoundary.top) +
+        this.drawingBoundary.top
     }
 
     /**
-     * anonymous function - scales a line to be drawn based on window ranges, assuming autoscale is being used.
-     *
-     * @param  {type} strength description
-     * @param  {type} extremes description
-     * @return {type}          description
-     */
-    scaleLine (strength, extremes) {
-      var zero, value
-      if (extremes[0] < 0 && extremes[1] > 0) { // if range is from - to +
-        zero = ((0 - extremes[0]) / extremes[3] * this.height)
-        value = ((value - extremes[0]) / extremes[3] * this.height)
-      } else { // if range is only + or only -
-        if (extremes[0] > 0 && extremes[1] > 0) { // if range is only +
-          zero = 0
-          value = (value / extremes[1] * this.height)
-        } else if (extremes[0] > 0 && extremes[1] > 0) { // if range is only -
-          zero = this.height
-          value = this.height - (value / extremes[1] * this.height)
-        } else {
-        // there is something wrong
-        }
-      }
-      return [this.height - zero, this.height - value]
-    }
-
-    /**
-     * anonymous function - scales a line to be drawn based on the custom window range.
-     *
-     * @param  {type} strength description
-     * @return {type}          description
-     */
-    scaleLineCustom (strength) {
-      var zero = 0
-      var value = 0
-      var cutOff = 0
-      zero = this.windowMax / this.windowRange * this.height
-      value = (this.windowMax - strength) / this.windowRange * this.height
-      if (this.windowMax < 0) {
-        zero = 0
-        cutOff += 1
-      }
-      if (this.windowMin > 0) {
-        zero = this.height
-        cutOff -= 1
-      }
-      if (strength > this.windowMax) {
-        value = 0
-        cutOff += 1
-      }
-      if (strength < this.windowMin) {
-        value = this.height
-        cutOff -= 1
-      }
-      if ((this.windowMin > 0 && strength > this.windowMax) || (this.windowMax < 0 && strength < this.windowMin)) {
-        cutOff += 3
-      }
-      return [zero, value, cutOff]
-    }
-
-    /**
-     * anonymous function - Draws the horizontal thick, diferent colored lines where the values go further than the window ranges.
+     * Draws the horizontal thick, different colored lines where the values go
+     *    further than the window ranges.
      *
      * @param  {type} overflows the list of overflow areas
      * @return {type}           description
      */
     drawOverflowLines (overflows) {
-    // overflows is an object containing overflowing ChrRegions
-    // { 'exceedMax': Array(), 'exceedMin': Array() }
-    // purple
-
-      var drawOverflowRect = function (y, region) {
-        this.drawRectangle(region, this.rgbToHex(this.constructor.colorSet[this.OVERFLOW_COLOR_INDEX]),
-          y, this.OVERFLOW_STROKE_WIDTH, this.mainSvg)
-      }.bind(this)
-      overflows.exceedMax.forEach(drawOverflowRect.bind(null, 0))
-      overflows.exceedMin.forEach(drawOverflowRect.bind(null, this.height - this.OVERFLOW_STROKE_WIDTH))
+      let drawOverflowRectFunc = (y, region) => {
+        this.drawRectangle(region,
+          this.constructor.colorSet[this.overflowColorIndex],
+          y, this.overflowStrokeWidth, this._mainSvg)
+      }
+      overflows.exceedMax.forEach(region => drawOverflowRectFunc(0, region))
+      overflows.exceedMin.forEach(region => drawOverflowRectFunc(
+        this.height - this.overflowStrokeWidth, region))
     }
 
     /**
@@ -419,14 +350,14 @@ var GIVe = (function (give) {
       // var y = dataEntry.end
       // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
       //   ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
-      // var vwindow = this.mainSvg.viewWindow
+      // var vwindow = this._mainSvg.viewWindow
       this.parent.data[vwindowChr].dataPoints.push(dataEntry)
     }
     // another function called draw splines? which converts the four bezier  points to scale on the svg and draws them as a curve?
     // use svg function
 
     drawBCurve (bPoints) {
-      var svgToDraw = this.mainSvg
+      var svgToDraw = this._mainSvg
       var BCurve = document.createElementNS(this.svgNS, 'path')
       BCurve.setAttribute('d', 'M' + bPoints[0][0] + ' ' + bPoints[0][1] + ' C ' + bPoints[1][0] + ' ' + bPoints[1][1] + ' ' + bPoints[2][0] + ' ' + bPoints[2][1] + ' ' + bPoints[3][0] + ' ' + bPoints[3][1])// use c for the rest
       BCurve.setAttribute('stroke', 'black')
@@ -434,7 +365,7 @@ var GIVe = (function (give) {
       this.addElement(BCurve, svgToDraw)
     }
     drawDownLine (x, y) {
-      var svgToDraw = this.mainSvg
+      var svgToDraw = this._mainSvg
       var DownLine = document.createElementNS(this.svgNS, 'line')
       DownLine.setAttribute('x1', x)
       DownLine.setAttribute('x2', x)
@@ -448,8 +379,8 @@ var GIVe = (function (give) {
       // calculate the midpoints of each connected trimidpoint pair, store as p2.m, p3.m
       // calculate input the points as bezier: p2.m, p2.t2, p3.t1, p3.m, with the middle two as control points.
       // this should take points and bspline it?    ToDo: create separate functions for regular average and bspline, to switch between them easily.
-      var vwindow = this.mainSvg.viewWindow
-      var windowToDraw = this.mainSvg.viewWindow
+      var vwindow = this._mainSvg.viewWindow
+      var windowToDraw = this._mainSvg.viewWindow
       for (var i = 0; i < this.parent.data[vwindow.chr].dataPoints.length - 4; i++) { // calculate thirdpoints and put them in arrays
         var p1 = this.parent.data[vwindow.chr].dataPoints[i]
         var p2 = this.parent.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
@@ -491,8 +422,8 @@ var GIVe = (function (give) {
       // drawSpline(points)
     }
     newBCurve () { // this one fills it too. note that some zooms have less than four points to workwith.
-      var vwindow = this.mainSvg.viewWindow
-      var svgToDraw = this.mainSvg
+      var vwindow = this._mainSvg.viewWindow
+      var svgToDraw = this._mainSvg
       var curveStart = 0
       var zeroCounter = 0 // if its is equal to 3 then consider new polygon
       var mode = parseInt(give.getParameterByName('mode') || '2')
@@ -518,21 +449,21 @@ var GIVe = (function (give) {
       }
     }
     calculateSvgCurvePoints (i) {
-      var vwindow = this.mainSvg.viewWindow
-      var svgToDraw = this.mainSvg
-      var windowToDraw = this.mainSvg.viewWindow
+      var vwindow = this._mainSvg.viewWindow
+      var svgToDraw = this._mainSvg
+      var windowToDraw = this._mainSvg.viewWindow
       var p1 = this.parent.data[vwindow.chr].dataPoints[i]
       var p2 = this.parent.data[vwindow.chr].dataPoints[i + 1]// reassign for easier coding
       var p3 = this.parent.data[vwindow.chr].dataPoints[i + 2]
       var p4 = this.parent.data[vwindow.chr].dataPoints[i + 3]
 
-        //    p1.t2 = [(p1.start + 1 / 3 * (p2.start - p1.start)), (p1.value + 1 / 3 * (p2.value - p1.value))]
-        // draw lines between points, split lines into thirds
+      //    p1.t2 = [(p1.start + 1 / 3 * (p2.start - p1.start)), (p1.value + 1 / 3 * (p2.value - p1.value))]
+      // draw lines between points, split lines into thirds
       p2.t1 = [(p1.start + 2 / 3 * (p2.start - p1.start)), (p1.data.value + 2 / 3 * (p2.data.value - p1.data.value))]
       p2.t2 = [(p2.start + 1 / 3 * (p3.start - p2.start)), (p2.data.value + 1 / 3 * (p3.data.value - p2.data.value))]
       p3.t1 = [(p2.start + 2 / 3 * (p3.start - p2.start)), (p2.data.value + 2 / 3 * (p3.data.value - p2.data.value))]
       p3.t2 = [(p3.start + 1 / 3 * (p4.start - p3.start)), (p3.data.value + 1 / 3 * (p4.data.value - p3.data.value))]
-        //    p4.t1 = [(p3.start + 2 / 3 * (p4.start - p3.start)), (p4.value + 2 / 3 * (p4.value - p3.value))]
+      //    p4.t1 = [(p3.start + 2 / 3 * (p4.start - p3.start)), (p4.value + 2 / 3 * (p4.value - p3.value))]
       p2.midPoint = [(p2.t1[0] + p2.t2[0]) / 2, (p2.t1[1] + p2.t2[1]) / 2]
       p3.midPoint = [(p3.t1[0] + p3.t2[0]) / 2, (p3.t1[1] + p3.t2[1]) / 2]
       var bPoints = [p2.midPoint, p2.t2, p3.t1, p3.midPoint]
@@ -544,45 +475,45 @@ var GIVe = (function (give) {
       return adjustedBPoints
     }
     newDrawBCurve (start, end) {
-      var vwindow = this.mainSvg.viewWindow
-      var svgToDraw = this.mainSvg
-      var windowToDraw = this.mainSvg.viewWindow
+      var vwindow = this._mainSvg.viewWindow
+      var svgToDraw = this._mainSvg
+      var windowToDraw = this._mainSvg.viewWindow
       var BCurve = document.createElementNS(this.svgNS, 'path')
       var d = 'M'
       BCurve.setAttribute('stroke', 'black')
       BCurve.setAttribute('fill', 'blue')
-        // BCurve.setAttribute("d","M")
+      // BCurve.setAttribute("d","M")
       var SvgPoints = this.calculateSvgCurvePoints(start)
-        // Start with 0
+      // Start with 0
       d = d + SvgPoints[0][0] + ' ' + this.transformYCoordinate(0) + ' C ' + SvgPoints[1][0] + ' ' + SvgPoints[1][1] + ' ' + SvgPoints[2][0] + ' ' + SvgPoints[2][1] + ' ' + SvgPoints[3][0] + ' ' + SvgPoints[3][1]
       for (var i = start + 1; i < end - 3; i++) { // sytnax: M10 10 C 10 10 10 10 10 10 C 10 10 10 10 10 10 ...
         SvgPoints = this.calculateSvgCurvePoints(i)
         d = d + ' C ' + SvgPoints[1][0] + ' ' + SvgPoints[1][1] + ' ' + SvgPoints[2][0] + ' ' + SvgPoints[2][1] + ' ' + SvgPoints[3][0] + ' ' + SvgPoints[3][1]
       }
       SvgPoints = this.calculateSvgCurvePoints(end - 3)
-        // end with 0
+      // end with 0
       d = d + ' C ' + SvgPoints[1][0] + ' ' + SvgPoints[1][1] + ' ' + SvgPoints[2][0] + ' ' + SvgPoints[2][1] + ' ' + SvgPoints[3][0] + ' ' + this.transformYCoordinate(0)
       BCurve.setAttribute('d', d)
       this.addElement(BCurve, svgToDraw)
     }
 
     /**
-     * anonymous function - Takes a specified amount of points (by averagePointAmount) around the point and assigns the average y value of all those points to the middle point's display.
+     * anonymous function - Takes a specified amount of points (by slidingWindowHalfWidth) around the point and assigns the average y value of all those points to the middle point's display.
      * An even amount of points will mean taking an extra point to the left in the average.
      *
      * @return {type}  description
      */
     averagePoints () {
-      var splitAmount = Math.ceil((this.averagePointAmount - 1) / 2)
-      var vwindow = this.mainSvg.viewWindow
+      var splitAmount = Math.ceil((this.slidingWindowHalfWidth - 1) / 2)
+      var vwindow = this._mainSvg.viewWindow
       this.parent.data[vwindow.chr].averageDataPoints = []
       for (var i = splitAmount; i < this.parent.data[vwindow.chr].dataPoints.length - splitAmount - 1; i++) {
         var temp = this.parent.data[vwindow.chr].dataPoints[i]
         var sum = 0
-        for (var j = 0; j < this.averagePointAmount; j++) {
+        for (var j = 0; j < this.slidingWindowHalfWidth; j++) {
           sum += this.parent.data[vwindow.chr].dataPoints[i - splitAmount + j].data.value
         }
-        temp.data.value = parseInt(sum / this.averagePointAmount + 0.5)
+        temp.data.value = parseInt(sum / this.slidingWindowHalfWidth + 0.5)
         this.parent.data[vwindow.chr].averageDataPoints.push(temp)
       }
     }
@@ -603,11 +534,11 @@ var GIVe = (function (give) {
     }
 
     _endPolygon (polygon) {
-      var svgToDraw = this.mainSvg
+      var svgToDraw = this._mainSvg
       this.createRawPolygon(polygon.points, {
         class: 'wiggleShapes',
-        fill: this.rgbToHex(this.constructor.colorSet[0]),
-        stroke: this.rgbToHex(this.constructor.colorSet[0])
+        fill: this.constructor.colorSet[this.forecolorIndex],
+        stroke: this.constructor.colorSet[this.forecolorIndex]
       }, svgToDraw)
       this.drawOverflowLines(polygon.overflows)
       polygon.points = []
@@ -622,10 +553,10 @@ var GIVe = (function (give) {
      * @return {type}             description
      */
     drawPeak (dataPoints) {
-      var svgToDraw = this.mainSvg
-      var windowToDraw = svgToDraw.viewWindow
+      let svgToDraw = this._mainSvg
+      let windowToDraw = svgToDraw.viewWindow
 
-      var currPolygon = { points: [], overflows: {exceedMax: [], exceedMin: []} }
+      let currPolygon = { points: [], overflows: {exceedMax: [], exceedMin: []} }
 
       for (var i = 0; i < dataPoints.length; i++) {
         var start = dataPoints[i].start
@@ -655,12 +586,12 @@ var GIVe = (function (give) {
           }
           // process overflows
           if (flags.EXCEED_MIN) {
-            var lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
+            let lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
             if (!lastExceed || !lastExceed.concat(dataPoints[i])) {
               currPolygon.overflows.exceedMin.push(dataPoints[i].clone())
             }
           } else if (flags.EXCEED_MAX) {
-            lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
+            let lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
             if (!lastExceed || !lastExceed.concat(dataPoints[i])) {
               currPolygon.overflows.exceedMax.push(dataPoints[i].clone())
             }
@@ -687,7 +618,7 @@ var GIVe = (function (give) {
     }
 
     _drawPeakFromBedGraph (currPolygon, dataEntry) {
-      var svgToDraw = this.mainSvg
+      var svgToDraw = this._mainSvg
       var windowToDraw = svgToDraw.viewWindow
       var flags = {}
 
@@ -704,7 +635,7 @@ var GIVe = (function (give) {
           if (currPolygon.lastX < start) {
           // it's a separate polygon
             currPolygon.points.push(
-            this.transformXCoordinate({chr: windowToDraw.chr, coor: currPolygon.lastX}, false) +
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: currPolygon.lastX}, false) +
             ',' + this.transformYCoordinate(0))
             this.createRawPolygon(currPolygon.points, {class: 'wiggleShapes',
               fill: this.rgbToHex(this.constructor.colorSet[0]),
@@ -720,23 +651,23 @@ var GIVe = (function (give) {
           if (currPolygon.points.length <= 0) {
           // start a new polygon, push the (x, 0) point of this segment
             currPolygon.points.push(
-            this.transformXCoordinate({chr: windowToDraw.chr, coor: start}, false) +
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: start}, false) +
             ',' + this.transformYCoordinate(0))
             currPolygon.overflows = {exceedMax: [], exceedMin: []}
           }
-        // then push the top two points
+          // then push the top two points
           if (/* this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
             this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1 */true) {
             // both are within one pixel
             currPolygon.points.push(
-            this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false) +
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: (start + end) / 2}, false) +
             ',' + this.transformYCoordinate(yvalue, flags))
           } else {
             currPolygon.points.push(
-            this.transformXCoordinate({chr: windowToDraw.chr, coor: start}, false) +
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: start}, false) +
             ',' + this.transformYCoordinate(yvalue, flags))
             currPolygon.points.push(
-            this.transformXCoordinate({chr: windowToDraw.chr, coor: end}, false) +
+              this.transformXCoordinate({chr: windowToDraw.chr, coor: end}, false) +
             ',' + this.transformYCoordinate(yvalue, flags))
           }
           currPolygon.lastX = end
@@ -764,32 +695,32 @@ var GIVe = (function (give) {
      */
     drawScale () {
       if (this._textSvg) {
-      // first draw the lines
+        // first draw the lines
         this.drawLine(
-          this.textMargin - this.MARGIN, this.drawingBoundary.top,
-          this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-          this.TEXT_COLOR_RGB, this._textSvg)
-        this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
+          this.textMargin - this.margin, this.drawingBoundary.top,
+          this.textMargin - this.margin, this.drawingBoundary.bottom,
+          this.textColorIndex, this._textSvg)
+        this.drawLine(this.textMargin - this.margin - this.scaleTickLength,
           this.drawingBoundary.top,
-          this.textMargin - this.MARGIN, this.drawingBoundary.top,
-          this.TEXT_COLOR_RGB, this._textSvg)
-        this.drawLine(this.textMargin - this.MARGIN - this.scaleTickLength,
+          this.textMargin - this.margin, this.drawingBoundary.top,
+          this.textColorIndex, this._textSvg)
+        this.drawLine(this.textMargin - this.margin - this.scaleTickLength,
           this.drawingBoundary.bottom,
-          this.textMargin - this.MARGIN, this.drawingBoundary.bottom,
-          this.TEXT_COLOR_RGB, this._textSvg)
+          this.textMargin - this.margin, this.drawingBoundary.bottom,
+          this.textColorIndex, this._textSvg)
         // then the text
-        this.drawText(this.textMargin - this.MARGIN -
+        this.drawText(this.textMargin - this.margin -
           this.scaleTickLength - this.textRightPadding,
-          this.drawingBoundary.top + this.textSize * 0.4,
-          give._maxDecimalDigits(this.windowMax,
-            this.numOfDigits).toString(),
-          'end', null, this._textSvg)
-        this.drawText(this.textMargin - this.MARGIN -
+        this.drawingBoundary.top + this.textSize * 0.4,
+        give._maxDecimalDigits(this.windowMax,
+          this.numOfDigits).toString(),
+        'end', null, this._textSvg)
+        this.drawText(this.textMargin - this.margin -
           this.scaleTickLength - this.textRightPadding,
-          this.drawingBoundary.bottom - this.textSize * 0.4,
-          give._maxDecimalDigits(this.windowMin,
-            this.numOfDigits).toString(),
-          'end', null, this._textSvg)
+        this.drawingBoundary.bottom - this.textSize * 0.4,
+        give._maxDecimalDigits(this.windowMin,
+          this.numOfDigits).toString(),
+        'end', null, this._textSvg)
       }
     }
 
@@ -804,7 +735,6 @@ var GIVe = (function (give) {
       if (max > min) {
         this.windowMin = min
         this.windowMax = max
-        this.windowRange = max - min
         this.autoScale = false
       } else {} // there is an error
     }
@@ -817,18 +747,29 @@ var GIVe = (function (give) {
     autoWindow () {
       this.autoScale = true
     }
+
+    static get defaultProperties () {
+      return Object.assign(super.defaultProperties || {}, {
+        margin: 2,
+        textColorIndex: 0, // the color index for text
+        overflowColorIndex: 8, // the color index for overflow (red)
+        overflowStrokeWidth: 4,
+        scaleTextSize: 9,
+        minResolutionPerPixel: 1,
+        windowMax: 20,
+        windowMin: 0,
+        autoScale: false,
+        includeZero: true,
+        upperPercentile: 0.1,
+        lowerPercentile: 0.1,
+        numOfDigits: 2,
+        scaleTickLength: 5,
+        slidingWindowHalfWidth: 5
+      })
+    }
   }
 
   BigWigTrackDom._DEFAULT_HEIGHT = 80
-  BigWigTrackDom._DEFAULT_MAX = 20
-  BigWigTrackDom._DEFAULT_MIN = 0
-
-  BigWigTrackDom._DEFAULT_AUTOSCALE = false
-  BigWigTrackDom._DEFAULT_INCLUDE_ZERO = true
-
-  BigWigTrackDom._DEFAULT_UPPER_PERCENTILE = 0.1
-  BigWigTrackDom._DEFAULT_LOWER_PERCENTILE = 0.1
-  BigWigTrackDom._DEFAULT_NUM_OF_DIGITS = 2
 
   give.BigWigTrackDom = BigWigTrackDom
 

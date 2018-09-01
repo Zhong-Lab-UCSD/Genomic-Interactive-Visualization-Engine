@@ -179,28 +179,32 @@ var GIVe = (function (give) {
       super._initProperties(properties)
 
       /**
-       * @property {number} GENE_MARGIN
+       * @property {number} geneMargin
        * margin size between genes when gene name is shown. Unit in px.
        */
-      this.GENE_MARGIN = 10
+      this.geneMargin = this._initPropertyItem(
+        'geneMargin', properties, 'geneMargin', 'integer')
 
       /**
-       * @property {number} GENE_HEIGHT
+       * @property {number} geneHeightRatio
        * height of gene entries. Proportion to `this.textSize`.
        */
-      this.GENE_HEIGHT = 0.8
+      this.geneHeightRatio = this._initPropertyItem(
+        'geneHeightRatio', properties, 'geneHeightRatio', 'float')
 
       /**
-       * @property {number} GENE_NOTEXT_MARGIN
+       * @property {number} geneNoTextMargin
        * margin size between genes when no text is shown. Unit in px.
        */
-      this.GENE_NOTEXT_MARGIN = 2
+      this.geneNoTextMargin = this._initPropertyItem(
+        'geneNoTextMargin', properties, 'geneNoTextMargin', 'integer')
 
       /**
-       * @property {number} ADAPTIVE_MAXLINES
+       * @property {number} adaptiveMaxLines
        * limit to downgrade visibility
        */
-      this.ADAPTIVE_MAXLINES = 12
+      this.adaptiveMaxLines = this._initPropertyItem(
+        'adaptiveMaxLines', properties, 'adaptiveMaxLines', 'integer')
 
       /**
        * @property {number} TRIANGLE_FILL
@@ -209,10 +213,11 @@ var GIVe = (function (give) {
       this.TRIANGLE_FILL = 0xFFFFFF
 
       /**
-       * @property {number} FORECOLOR_INDEX
+       * @property {number} forecolorIndex
        * the color index for fore color
        */
-      this.FORECOLOR_INDEX = 0
+      this.forecolorIndex = this._initPropertyItem(
+        'forecolorIndex', properties, 'forecolorIndex', 'integer')
 
       /**
        * @property {number} RASTER_SIZE
@@ -223,12 +228,8 @@ var GIVe = (function (give) {
       /**
        * whether this track honors itemRGB values provided by BED data.
        */
-      this.honorItemRgb = false
-      if (properties.hasOwnProperty('honorItemRgb')) {
-        this.honorItemRgb = properties.honorItemRgb
-      } else if (this.parent.getSetting('honorItemRGB')) {
-        this.honorItemRgb = this.parent.getSetting('honorItemRGB', 'boolean')
-      }
+      this.honorItemRgb = this._initPropertyItem(
+        'honorItemRgb', properties, 'honorItemRgb', 'boolean')
 
       this._RasInfo = null
     }
@@ -362,14 +363,14 @@ var GIVe = (function (give) {
           transcript.lineY = index
           lineEnd.end = x1 + (this.activeVisibility >
             give.TrackObject.StatusEnum.VIS_NOTEXT
-            ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN)
+            ? this.geneMargin : this.geneNoTextMargin)
           return true
         }
         return false
       })) {
         // no empty lines, create a new line
         if (this.parent.getSetting('adaptive', 'boolean') &&
-          lineEnds.length >= this.ADAPTIVE_MAXLINES
+          lineEnds.length >= this.adaptiveMaxLines
         ) {
           // maximum number of lines exceeded
           // reduce visibility level by 1
@@ -380,7 +381,7 @@ var GIVe = (function (give) {
         lineEnds.push({
           end: x1 + (this.activeVisibility >
             give.TrackObject.StatusEnum.VIS_NOTEXT
-            ? this.GENE_MARGIN : this.GENE_NOTEXT_MARGIN),
+            ? this.geneMargin : this.geneNoTextMargin),
           textAtLeft: textAtLeft
         })
       }
@@ -534,12 +535,12 @@ var GIVe = (function (give) {
         return true
       }
       height = height ||
-        this.fullHeightRatio * this.textSize * this.GENE_HEIGHT
+        this.fullHeightRatio * this.textSize * this.geneHeightRatio
       halfHeightRatio = halfHeightRatio || this.halfHeightRatio
       lineHeight = lineHeight ||
         (this.fullHeightRatio + this.lineGapRatio) * this.textSize
       if (typeof (colorRGB) !== 'number') {
-        colorRGB = this.constructor.colorSet[this.FORECOLOR_INDEX]
+        colorRGB = this.constructor.colorSet[this.forecolorIndex]
       }
 
       if (typeof (yCoor) !== 'number' || isNaN(yCoor)) {
@@ -867,9 +868,19 @@ var GIVe = (function (give) {
           region.getStrand(), colorRGB)
       }
     }
-  }
 
-  BedTrackDom.DEFAULT_DYNAMIC_HEIGHT = true
+    static get defaultProperties () {
+      return Object.assign(super.defaultProperties || {}, {
+        geneMargin: 10,
+        geneNoTextMargin: 2,
+        geneHeightRatio: 0.8,
+        forecolorIndex: 1,
+        adaptiveMaxLines: 12,
+        dynamicHeight: true,
+        honorItemRgb: false
+      })
+    }
+  }
 
   give.BedTrackDom = BedTrackDom
 

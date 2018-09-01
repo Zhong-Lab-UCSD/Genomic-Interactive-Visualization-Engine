@@ -87,12 +87,8 @@ var GIVe = (function (give) {
        * Right padding size of text labels, in px.
        * @type {number}
        */
-      this.textRightPadding = properties.hasOwnProperty('textRightPadding')
-        ? properties.textRightPadding
-        : (this.hasTrackSetting('textRightPadding')
-          ? this.getTrackSetting('textRightPadding', 'float')
-          : this.constructor.DEFAULT_RIGHT_PADDING
-        )
+      this.textRightPadding = this._initPropertyItem(
+        'textRightPadding', properties, 'textRightPadding', 'float')
 
       /**
        * The CSS class for the main SVG element
@@ -111,32 +107,23 @@ var GIVe = (function (give) {
        * This serves as the standard for the other properties.
        * @type {number}
        */
-      this.textSize = (
-        properties.textSize ||
-        this.getTrackSetting('textSize', 'integer') ||
-        this.constructor.TEXT_SIZE
-      )
+      this.textSize = this._initPropertyItem(
+        'textSize', properties, 'textSize', 'integer')
 
       /**
        * Proportion of full line height (multiplies of `this.textSize`).
        * @type {number}
        */
-      this.fullHeightRatio = (
-        properties.fullHeightRatio ||
-        this.getTrackSetting('fullHeightRatio', 'float') ||
-        this.constructor.FULL_HEIGHT_RATIO
-      )
+      this.fullHeightRatio = this._initPropertyItem(
+        'fullHeightRatio', properties, 'fullHeightRatio', 'float')
 
       /**
        * Proportion of half height (for bed files, for example). Multiplies
        * of `this.textSize`.
        * @type {number}
        */
-      this.halfHeightRatio = (
-        properties.halfHeightRatio ||
-        this.getTrackSetting('halfHeightRatio', 'float') ||
-        this.constructor.HALF_HEIGHT_RATIO
-      )
+      this.halfHeightRatio = this._initPropertyItem(
+        'halfHeightRatio', properties, 'halfHeightRatio', 'float')
 
       /**
        * This is the size of the gap between lines (in a BED file, for
@@ -144,11 +131,8 @@ var GIVe = (function (give) {
        * Multiplies of `this.textSize`
        * @type {number}
        */
-      this.lineGapRatio = (
-        properties.lineGapRatio ||
-        this.getTrackSetting('lineGapRatio', 'float') ||
-        this.constructor.LINE_GAP_RATIO
-      )
+      this.lineGapRatio = this._initPropertyItem(
+        'lineGapRatio', properties, 'lineGapRatio', 'float')
 
       /**
        * Interval for update drawing, needs to be a small value for coordinates
@@ -168,9 +152,7 @@ var GIVe = (function (give) {
       this.activeVisibility = this._initPropertyItem(
         'visibility', properties, 'visibility')
 
-      this.textMargin = (
-        properties.textMargin || 0
-      )
+      this.textMargin = (properties.textMargin || 0)
 
       /**
        * Flag to indicate whether this track has a dynamic height (from its
@@ -180,14 +162,15 @@ var GIVe = (function (give) {
       this.dynamicHeight = this._initPropertyItem(
         'dynamicHeight', properties, 'dynamicHeight', 'boolean')
 
-      this.cacheRegionSpan = this.constructor.CacheRangeSpanProp
-
       this.windowWidth = properties.width -
         (properties.textMargin
           ? properties.textMargin + this.textRightPadding : 0)
       this.totalWidth = properties.width
 
       this.pin = this._initPropertyItem('pin', properties, 'pin')
+
+      this.forecolorIndex = this._initPropertyItem(
+        'forecolorIndex', properties, 'forecolorIndex', 'integer')
     }
 
     _initPropertyItem (key, propertiesObj, trackSettingKey, type) {
@@ -1462,29 +1445,27 @@ var GIVe = (function (give) {
     wheelHandler (e, detail) {
       // do nothing here, will do stuff in coor-track
     }
+
+    static get defaultProperties () {
+      return Object.assign(super.defaultProperties || {}, {
+        textSize: 12,
+        fullHeightRatio: 1.0,
+        halfHeightRatio: 0.6,
+        lineGapRatio: 0.1,
+        textRightPadding: 8,
+        _drawDebounceInt: 0,
+        _cacheDebounceInt: 200,
+        visibility: give.TrackObject.StatusEnum.VIS_FULL,
+        pin: 'scroll',
+        dynamicHeight: false,
+        forecolorIndex: 0
+      })
+    }
   }
 
   TrackDom._trackCounter = 0
 
-  TrackDom.defaultProperties = {
-    textSize: 12
-  }
-
-  TrackDom.TEXT_SIZE = 12
-  TrackDom.FULL_HEIGHT_RATIO = 1
-  TrackDom.HALF_HEIGHT_RATIO = 0.6
-  TrackDom.LINE_GAP_RATIO = 0.1
-
-  TrackDom.DEFAULT_RIGHT_PADDING = 8
-
-  TrackDom._DRAW_DEBOUNCE_INTERVAL = 0
-  TrackDom._CACHE_DEBOUNCE_INTERVAL = 200
-
   TrackDom.DEFAULT_HEIGHT = 100
-  TrackDom.DYNAMIC_HEIGHT = false
-  TrackDom.PIN = 'scroll'
-
-  TrackDom.DEFAULT_VISIBILITY = give.TrackObject.StatusEnum.VIS_FULL
   // this is the type of visibility values that are allowed in a particular
   //   track
   TrackDom.allowedVis = [
@@ -1497,6 +1478,7 @@ var GIVe = (function (give) {
   ]
 
   TrackDom.colorSet = [
+    0x000000,
     0x3F51B5, 0x2196F3, 0x009688,
     0x4CAF50, 0xCDDC39, 0xFFC107,
     0x795548, 0xF44336, 0x9C27B0

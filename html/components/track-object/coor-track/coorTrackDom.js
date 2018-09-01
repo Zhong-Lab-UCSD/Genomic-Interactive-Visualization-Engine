@@ -20,51 +20,51 @@ var GIVe = (function (give) {
   class CoorTrackDom extends give.TrackDom {
     _initProperties (properties) {
       super._initProperties(properties)
-      this.MIN_TICK_GAP = 100
-      this.MIN_TICK_TEXT_MARGIN = 50
-      this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG = 50
-      // this is the actual gap used to display between ticks and numbers
-      // unit is number of line gaps
-      this.TICK_NUMBER_GAP_RATIO = 2.4
 
       this.trackMainDOMClass = 'coordinates'
 
-      if (properties.hasOwnProperty('colorIndex')) {
-        this.foreColor = this.constructor.colorSet[properties.colorIndex]
-      } else if (properties.hasOwnProperty('color')) {
-        this.foreColor = parseInt(properties.color)
-      }
+      this.minTickGap = this._initPropertyItem(
+        'minTickGap', properties, 'minTickGap', 'integer')
+      this.minTickTextMargin = this._initPropertyItem(
+        this.textMargin ? 'minTickTextMarginWithTextSvg' : 'minTickTextMargin',
+        properties,
+        this.textMargin ? 'minTickTextMarginWithTextSvg' : 'minTickTextMargin',
+        'integer')
+      // this is the actual gap used to display between ticks and numbers
+      // unit is number of line gaps
+      this.tickNumberGapRatio = this._initPropertyItem(
+        'tickNumberGapRatio', properties, 'tickNumberGapRatio', 'float')
 
-      if (this.textMargin) {
-        this.MIN_TICK_TEXT_MARGIN = this.MIN_TICK_TEXT_MARGIN_W_TEXTSVG
-      }
+      this.tickLength = this._initPropertyItem(
+        'tickLength', properties, 'tickLength', 'integer')
 
-      this._drawDebounceInt = 0
+      this.minorMajorRatio = this._initPropertyItem(
+        'minorMajorRatio', properties, 'minorMajorRatio', 'float')
 
-      this.tickLength = properties.hasOwnProperty('tickLength')
-        ? properties.tickLength
-        : this.constructor._DEFAULT_TICK_LENGTH
-
-      this.minorMajorRatio = properties.hasOwnProperty('minorMajorRatio')
-        ? properties.minorMajorRatio
-        : this.constructor._DEFAULT_MINOR_MAJOR_RATIO
-
-      this.minorLength = properties.hasOwnProperty('minorLength')
-        ? properties.minorLength
-        : this.constructor._DEFAULT_MINOR_LENGTH
+      this.minorLength = this._initPropertyItem(
+        'minorLength', properties, 'minorLength', 'float')
 
       this.labelLocation = properties.hasOwnProperty('labelLocation')
         ? properties.labelLocation
         : this._getLabelLocation(this.parent.getSetting('pin'),
           !!properties.reverseFlag)
 
-      this.scrollPercentage = properties.hasOwnProperty('scrollPercentage')
-        ? properties.scrollPercentage
-        : this.constructor._DEFAULT_SCROLL_PERCENTAGE
+      this.scrollPercentage = this._initPropertyItem(
+        'scrollPercentage', properties, 'scrollPercentage', 'float')
+    }
 
-      this.foreColor = properties.hasOwnProperty('foreColor')
-        ? properties.foreColor
-        : this.constructor._DEFAULT_FORE_COLOR
+    static get defaultProperties () {
+      return Object.assign(super.defaultProperties || {}, {
+        tickLength: 9,
+        minorMajorRatio: 0.2,
+        tickNumberGapRatio: 2.4,
+        minorLength: 0.75,
+        scrollPercentage: 0.3,
+        minTickGap: 100,
+        minTickTextMargin: 50,
+        minTickTextMarginWithTextSvg: 50,
+        pin: 'top'
+      })
     }
 
     _getLabelLocation (pinValue, reverseFlag) {
@@ -73,7 +73,7 @@ var GIVe = (function (give) {
 
     get DEFAULT_HEIGHT () {
       return this.tickLength +
-        (this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO + 1) * this.textSize
+        (this.lineGapRatio * this.tickNumberGapRatio + 1) * this.textSize
     }
 
     // ****** customized methods below ******
@@ -97,7 +97,7 @@ var GIVe = (function (give) {
     // the results will contain two sets of ticks
       viewWindow = viewWindow || this.viewWindow
       maxNumOfTicks = maxNumOfTicks ||
-        Math.max(this.windowWidth / this.MIN_TICK_GAP, 1) + 1
+        Math.max(this.windowWidth / this.minTickGap, 1) + 1
       var span = viewWindow.length / maxNumOfTicks
       var minorSpan
       if (Math.ceil(span) > 0) {
@@ -156,16 +156,16 @@ var GIVe = (function (give) {
         var tickY = 0.5
         if (labels === 'up') {
           tickY += this.textSize *
-            (1 + this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO) +
+            (1 + this.lineGapRatio * this.tickNumberGapRatio) +
             (!value.major ? this.tickLength * (1 - this.minorLength) : 0) -
             0.5
         }
         this.drawLine(tickX, tickY, tickX,
           tickY + this.tickLength * (!value.major ? this.minorLength : 1),
-          this.foreColor, svgToDraw)
+          this.forecolorIndex, svgToDraw)
 
-        if (value.major && tickX > this.MIN_TICK_TEXT_MARGIN &&
-          tickX < this.windowWidth - this.MIN_TICK_TEXT_MARGIN &&
+        if (value.major && tickX > this.minTickTextMargin &&
+          tickX < this.windowWidth - this.minTickTextMargin &&
           (labels === 'up' || labels === 'down')) {
           // add text label for the tick
           this.drawText(tickX, (labels === 'up'
@@ -176,12 +176,12 @@ var GIVe = (function (give) {
       // then draw a line connecting all the ticks
       this.drawLine(0, labels === 'up' ? this.height - 0.5 : 0.5,
         this.windowWidth, labels === 'up' ? this.height - 0.5 : 0.5,
-        this.foreColor, svgToDraw)
+        this.constructor.colorSet[this.forecolorIndex], svgToDraw)
 
       if (labels === 'up' || labels === 'down') {
         this.drawText(this.textMargin ? this.textMargin : 0,
           (labels === 'up' ? 0.5
-            : this.lineGapRatio * this.TICK_NUMBER_GAP_RATIO * this.textSize +
+            : this.lineGapRatio * this.tickNumberGapRatio * this.textSize +
               this.tickLength
           ) + 0.5 * this.textSize,
           windowToDraw.chr, this.textMargin ? 'end' : 'start', null,
@@ -204,16 +204,6 @@ var GIVe = (function (give) {
       }, null, e.target)
     }
   }
-
-  CoorTrackDom._DEFAULT_TICK_LENGTH = 9
-  CoorTrackDom._DEFAULT_MINOR_MAJOR_RATIO = 0.2
-  CoorTrackDom._DEFAULT_MINOR_LENGTH = 0.75
-
-  CoorTrackDom._DEFAULT_SCROLL_PERCENTAGE = 0.3
-  CoorTrackDom._DEFAULT_FORE_COLOR = 0x000000
-
-  CoorTrackDom.PIN = 'top'
-  CoorTrackDom.DYNAMIC_HEIGHT = false
 
   give.CoorTrackDom = CoorTrackDom
 
