@@ -536,7 +536,7 @@ var GIVe = (function (give) {
     }
 
     /**
-     * _restructureSingleLayer - The function to be called after
+     * _restructure - The function to be called after
      *    adding/removing data to the node.
      *    This is used in implementations that involve post-insertion
      *    processes of the tree (for example, rebalancing in B+ tree
@@ -557,7 +557,7 @@ var GIVe = (function (give) {
      *      merged with its sibling(s) or becoming an empty node, for
      *      example), return `false`. Return `this` in all other cases.
      */
-    _restructureSingleLayer () {
+    _restructure () {
       // for non-auto-balancing trees, return false if this node has no data
       //    any more
       if (this.values[0] && this.values[0].isEmpty) {

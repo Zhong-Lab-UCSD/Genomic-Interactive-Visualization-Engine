@@ -51,9 +51,12 @@ var GIVe = (function (give) {
     constructor (chrRange, props) {
       // start and length is for the corresponding region
       // note that `OakTree` should be populated with `OakNode`s
-      props = props || {}
-      props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
       super(chrRange, props.NonLeafNodeCtor || give.OakNode, props)
+    }
+
+    _initProperties (chrRange, NonLeafNodeCtor, props) {
+      props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
+      super._initProperties(...arguments)
       if (
         !Number.isInteger(props.branchingFactor) || props.branchingFactor <= 2
       ) {

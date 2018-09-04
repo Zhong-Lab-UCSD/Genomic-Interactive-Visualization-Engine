@@ -1542,7 +1542,7 @@ var GIVe = (function (give) {
 
   TrackDom._trackCounter = 0
 
-  TrackDom.DEFAULT_HEIGHT = 100
+  TrackDom.DEFAULT_HEIGHT = 80
   // this is the type of visibility values that are allowed in a particular
   //   track
   TrackDom.allowedVis = [

@@ -227,7 +227,7 @@ var GIVe = (function (give) {
      */
     updateSummary (chromEntry) {
       if (typeof this.tree._SummaryCtor === 'function') {
-        var summary
+        let summary
         if (chromEntry) {
           summary = this.tree._SummaryCtor.extract(chromEntry)
         }
@@ -240,7 +240,7 @@ var GIVe = (function (give) {
             give._verbConsole.info(summary + ' is not a correct summary ' +
               'type. Will be regenerated from tree data.')
           }
-          var newSummary = new this.tree._SummaryCtor(this)
+          let newSummary = new this.tree._SummaryCtor(this)
           if (this.values.every((nodeEntry, index) => {
             if (nodeEntry === false) {
               // Child is zero, just return true
@@ -271,7 +271,7 @@ var GIVe = (function (give) {
     /**
      * getSummaryData - get the summary data of `this`
      *
-     * @returns {SummaryCtor|null}  the summary data, or `null`
+     * @returns {_SummaryCtor|null}  the summary data, or `null`
      */
     get summary () {
       return this._summary
@@ -345,7 +345,7 @@ var GIVe = (function (give) {
       }
 
       if (chrRange) {
-        var resolution = chrRange.resolution || props.resolution || 1
+        let resolution = chrRange.resolution || props.resolution || 1
         // clip chrRegion first (should never happen)
         chrRange = this.truncateChrRange(chrRange, true, true)
         // First, if this 'insertion' is just updating the summary data of
@@ -390,9 +390,9 @@ var GIVe = (function (give) {
       //    range just to keep the loaded status correct.
 
       // Find the range of child that rangeStart is in
-      var currIndex = 0
-      var childRes = this.getChildResolution()
-      var childRange = chrRange.clone()
+      let currIndex = 0
+      let childRes = this.getChildResolution()
+      let childRange = chrRange.clone()
 
       // Steps:
       // 1. Find the range where the first child node should be inserted.
@@ -409,13 +409,15 @@ var GIVe = (function (give) {
       while (chrRange.start < chrRange.end) {
         // 1. Find the range where the first child node should be inserted.
         //    This should be the node where `chrRange.start` falls in.
-        childRange.end = Math.min(this.end,
-          this.constructor.fitResolution(chrRange.end, childRes, Math.ceil),
-          childRange.start + childRes
-        )
-        childRange.start = this.constructor.fitResolution(
+        let newRangeStart = this.constructor.fitResolution(
           chrRange.start, childRes, Math.floor
         )
+        let newRangeEnd = Math.min(this.end,
+          this.constructor.fitResolution(chrRange.end, childRes, Math.ceil),
+          newRangeStart + childRes
+        )
+        childRange.end = newRangeEnd
+        childRange.start = newRangeStart
 
         while (this.keys[currIndex + 1] <= childRange.start) {
           currIndex++
@@ -443,7 +445,7 @@ var GIVe = (function (give) {
         //    Note that if `props.contList` has stuff, this should be considered
         //    as CONTAIN data, so it should still goes all the way down to
         //    `give.DataNode`
-        var fixChildFlag = false
+        let fixChildFlag = false
 
         if ((data[0] && data[0].start < childRange.end) ||
           (Array.isArray(props.contList) &&
@@ -486,9 +488,9 @@ var GIVe = (function (give) {
       // This function is exactly the same as `GIVE.OakNode._addLeafRecords`
 
       // Find the range of child that rangeStart is in
-      var currIndex = 0
+      let currIndex = 0
       props.dataIndex = 0
-      var prevDataIndex
+      let prevDataIndex
       props.contList = props.contList || []
       if (!(give.GiveTreeNode.prototype.isPrototypeOf(
         props.LeafNodeCtor.prototype
@@ -644,7 +646,7 @@ var GIVe = (function (give) {
      */
     traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
       if (chrRange) {
-        var resolution = chrRange.resolution || props.resolution || 1
+        let resolution = chrRange.resolution || props.resolution || 1
         // Rejuvenate `this`
         if (this.start < chrRange.end && this.end > chrRange.start) {
           // Resolution support: check if the resolution is already enough in
@@ -709,7 +711,7 @@ var GIVe = (function (give) {
       }
 
       if (chrRange) {
-        var currIndex = 0
+        let currIndex = 0
         while (currIndex < this.values.length &&
           this.keys[currIndex + 1] <= chrRange.start
         ) {
@@ -779,7 +781,7 @@ var GIVe = (function (give) {
 
       let resolution = chrRange.resolution || props.resolution || 1
       if (chrRange) {
-        var currIndex = 0
+        let currIndex = 0
         while (currIndex < this.values.length &&
           this.keys[currIndex + 1] <= chrRange.start
         ) {

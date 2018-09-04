@@ -41,14 +41,14 @@ var GIVe = (function (give) {
      * @param {object} props - properties that will be passed to the
      *    individual implementations
      * @param {number} props.lifeSpan - Whether this tree shall wither.
-     *    if `props
+     *    To disable withering, set `props.lifeSpan` to 0 or a negative value.
      * @param {function} props.LeafNodeCtor - if omitted, the constructor of
      *    `this.root` will be used
      * @memberof GiveTree
      */
     constructor (chrRange, NonLeafNodeCtor, props) {
-      this.chr = chrRange.chr
       props = props || {}
+      this._initProperties(chrRange, NonLeafNodeCtor, props)
       props.start = chrRange.start
       props.end = chrRange.end
       props.tree = this
@@ -65,6 +65,10 @@ var GIVe = (function (give) {
         this._currGen = null
         this._root = new NonLeafNodeCtor(props)
       }
+    }
+
+    _initProperties (chrRange, NonLeafNodeCtor, props) {
+      this.chr = chrRange.chr
       this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
     }
 

@@ -892,8 +892,10 @@ var GIVe = (function (give) {
       if (err && err.critical) {
         throw err
       }
-      give._verbConsole.warn(err)
-      give.fireSignal('warning', { errObj: err })
+      if (!(err instanceof give.PromiseCanceler)) {
+        give._verbConsole.warn(err)
+        give.fireSignal('warning', { errObj: err })
+      }
       return this._pendingVWindow || this._viewWindow
     }
 

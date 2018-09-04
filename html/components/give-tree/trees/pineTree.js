@@ -29,7 +29,7 @@ var GIVe = (function (give) {
    *    leaf nodes of the pine tree.
    *    For example, if `this.tree.leafScalingFactor === 100`, each leaf node
    *    (`give.DataNode`) shall cover 100bp.
-   * @property {function} SummaryCtor - The constructor for a data
+   * @property {function} _SummaryCtor - The constructor for a data
    *    summary object.
    * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes. Should be `GIVE.PineNode` all the time. Can be overridden but not
@@ -47,7 +47,7 @@ var GIVe = (function (give) {
    *    implementations
    * @param {number} props.scalingFactor - for `this.scalingFactor`
    * @param {number} props.leafScalingFactor - for `this.leafScalingFactor`
-   * @param {function} props.SummaryCtor - for `this.SummaryCtor`
+   * @param {function} props._SummaryCtor - for `this._SummaryCtor`
    * @param {number} props.lifeSpan - for `this.lifeSpan`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.
@@ -56,9 +56,13 @@ var GIVe = (function (give) {
    */
   class PineTree extends give.GiveTree {
     constructor (chrRange, props) {
-      props = props || {}
       props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
       super(chrRange, props.NonLeafNodeCtor || give.PineNode, props)
+    }
+
+    _initProperties (chrRange, NonLeafNodeCtor, props) {
+      props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
+      super._initProperties(...arguments)
       // Scaling factor
       if (!Number.isInteger(props.scalingFactor) || props.scalingFactor <= 2) {
         give._verbConsole.info('Default scaling factor is chosen instead of ' +
@@ -79,8 +83,8 @@ var GIVe = (function (give) {
         this.leafScalingFactor = props.leafScalingFactor
       }
 
-      if (typeof props.SummaryCtor === 'function') {
-        this.SummaryCtor = props.SummaryCtor
+      if (typeof props._SummaryCtor === 'function') {
+        this._SummaryCtor = props._SummaryCtor
       }
     }
 

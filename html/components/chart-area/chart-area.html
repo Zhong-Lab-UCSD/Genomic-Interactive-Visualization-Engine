@@ -334,8 +334,10 @@ var GIVe = (function (give) {
       if (err instanceof give.ChartWindow.ResetWidthError) {
         throw err
       }
-      give._verbConsole.warn(err)
-      this._showErrorMessage(err, 'error')
+      if (!(err instanceof give.PromiseCanceler)) {
+        give._verbConsole.warn(err)
+        this._showErrorMessage(err, 'error')
+      }
     }
 
     _errorHandler (err, catchWindowNotInitialized) {

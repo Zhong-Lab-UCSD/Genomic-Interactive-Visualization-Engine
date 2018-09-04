@@ -188,13 +188,13 @@ var GIVe = (function (give) {
     }
 
     _generateRawPointsList (vwindow) {
-      var rawDataPoints = []
+      let rawDataPoints = []
       // First populate the raw data points
       this.parent.getData(vwindow.chr).traverse(vwindow,
         entry => this._pushSingleRawPointEntry(rawDataPoints, vwindow, entry),
         null, false)
       // Insert more zeroes to the end
-      var lastEnd = rawDataPoints.length
+      let lastEnd = rawDataPoints.length
         ? rawDataPoints[rawDataPoints.length - 1].end
         : vwindow.start
       while (lastEnd < vwindow.end) {
@@ -210,28 +210,28 @@ var GIVe = (function (give) {
 
     _generateSmoothedPoints () {
       // Get the smoothing points
-      var vwindow = this.viewWindow
-      var slidingWindowSpan = this._getResolution(vwindow) *
+      let vwindow = this.viewWindow
+      let slidingWindowSpan = this._getResolution(vwindow) *
         this.slidingWindowHalfWidth * this.minResolutionPerPixel
-      var halfWindowIndexLength = Math.ceil(this.slidingWindowHalfWidth *
+      let halfWindowIndexLength = Math.ceil(this.slidingWindowHalfWidth *
         this.minResolutionPerPixel / 2)
-      var extendedWindow = vwindow.getExtension(slidingWindowSpan)
+      let extendedWindow = vwindow.getExtension(slidingWindowSpan)
         .clipRegion(this.parent.ref)
       extendedWindow.resolution = this._getResolution(vwindow)
 
       // Get the raw points list first
-      var rawDataPoints = this._generateRawPointsList(extendedWindow)
+      let rawDataPoints = this._generateRawPointsList(extendedWindow)
 
       // Then smooth out with this.slidingWindowHalfWidth
       // Needs to check if the borders do not have enough points
 
       // Prepare for the sliding sumData
-      var smoothedPointsList = []
+      let smoothedPointsList = []
 
-      for (var currIndex = 0; currIndex < rawDataPoints.length; currIndex++) {
-        var slidingSum = 0
-        var windowElemCount = 0
-        for (var i = -halfWindowIndexLength; i <= halfWindowIndexLength; i++) {
+      for (let currIndex = 0; currIndex < rawDataPoints.length; currIndex++) {
+        let slidingSum = 0
+        let windowElemCount = 0
+        for (let i = -halfWindowIndexLength; i <= halfWindowIndexLength; i++) {
           if (rawDataPoints[currIndex + i]) {
             slidingSum += rawDataPoints[currIndex + i].data.value
             windowElemCount++
@@ -250,7 +250,7 @@ var GIVe = (function (give) {
       this.windowMax = this.includeZero ? 0 : Number.NEGATIVE_INFINITY
       this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
       try {
-        var extremities = give._findPercentile(this.dataPoints.map(
+        let extremities = give._findPercentile(this.dataPoints.map(
           function (dataEntry) {
             return dataEntry.data.value
           }, this), this.upperPercentile, this.lowerPercentile)
@@ -270,10 +270,10 @@ var GIVe = (function (give) {
 
     drawData () {
       // default drawing mode is 0 (sliding window smoothing)
-      var mode = parseInt(give.getParameterByName('mode') || 0)
+      let mode = parseInt(give.getParameterByName('mode') || 0)
       // draw the given point with height determined by signal strength
       this.clear()
-      var vwindow = this._mainSvg.viewWindow
+      let vwindow = this._mainSvg.viewWindow
       if (this.parent.getData(vwindow.chr)) {
         this.dataPoints = this._generateSmoothedPoints()
         if (this.autoScale) {
@@ -348,7 +348,7 @@ var GIVe = (function (give) {
     addPoint (vwindowChr, dataEntry) {
       // var x = dataEntry.start
       // var y = dataEntry.end
-      // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
+      // var z = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl._SummaryCtor
       //   ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
       // var vwindow = this._mainSvg.viewWindow
       this.parent.data[vwindowChr].dataPoints.push(dataEntry)
@@ -558,13 +558,13 @@ var GIVe = (function (give) {
 
       let currPolygon = { points: [], overflows: {exceedMax: [], exceedMin: []} }
 
-      for (var i = 0; i < dataPoints.length; i++) {
-        var start = dataPoints[i].start
-        var end = dataPoints[i].end
-        var yValue = dataPoints[i].data.value
+      for (let i = 0; i < dataPoints.length; i++) {
+        let start = dataPoints[i].start
+        let end = dataPoints[i].end
+        let yValue = dataPoints[i].data.value
 
         // first decide whether only one point will be pushed
-        var middlePointOnly = (this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
+        let middlePointOnly = (this.transformXCoordinate({chr: windowToDraw.chr, coor: end}) -
           this.transformXCoordinate({chr: windowToDraw.chr, coor: start}) < 1)
 
         if (yValue !== 0) {
@@ -574,7 +574,7 @@ var GIVe = (function (give) {
             this._pushCoorToPolygon(currPolygon, windowToDraw,
               (middlePointOnly ? (start + end) / 2 : start), 0)
           }
-          var flags = {}
+          let flags = {}
           if (middlePointOnly) {
             this._pushCoorToPolygon(currPolygon, windowToDraw,
               (start + end) / 2, yValue, flags)
@@ -618,17 +618,17 @@ var GIVe = (function (give) {
     }
 
     _drawPeakFromBedGraph (currPolygon, dataEntry) {
-      var svgToDraw = this._mainSvg
-      var windowToDraw = svgToDraw.viewWindow
-      var flags = {}
+      let svgToDraw = this._mainSvg
+      let windowToDraw = svgToDraw.viewWindow
+      let flags = {}
 
       currPolygon = currPolygon || {}
       if (!currPolygon.hasOwnProperty('points')) {
         currPolygon.points = []
       }
 
-      var start = dataEntry ? Math.max(dataEntry.start, windowToDraw.start) : windowToDraw.end + 1
-      var end = dataEntry ? Math.min(dataEntry.end, windowToDraw.end) : windowToDraw.end + 2
+      let start = dataEntry ? Math.max(dataEntry.start, windowToDraw.start) : windowToDraw.end + 1
+      let end = dataEntry ? Math.min(dataEntry.end, windowToDraw.end) : windowToDraw.end + 2
       if (start < end) {
         if (currPolygon.points.length > 0) {
         // old polygon is there
@@ -646,7 +646,7 @@ var GIVe = (function (give) {
           }
         }
         if (dataEntry && dataEntry.chr === windowToDraw.chr) {
-          var yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl.SummaryCtor
+          let yvalue = dataEntry.data instanceof give.TrackObjectImpl._BigWigImpl._SummaryCtor
             ? dataEntry.data.sumData / dataEntry.length : dataEntry.data.value
           if (currPolygon.points.length <= 0) {
           // start a new polygon, push the (x, 0) point of this segment
@@ -675,7 +675,7 @@ var GIVe = (function (give) {
       }
       // process overflows
       if (flags.EXCEED_MIN) {
-        var lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
+        let lastExceed = currPolygon.overflows.exceedMin[currPolygon.overflows.exceedMin.length - 1]
         if (!lastExceed || !lastExceed.concat(dataEntry)) {
           currPolygon.overflows.exceedMin.push(dataEntry.clone())
         }
@@ -758,13 +758,14 @@ var GIVe = (function (give) {
         minResolutionPerPixel: 1,
         windowMax: 20,
         windowMin: 0,
-        autoScale: false,
+        autoScale: true,
         includeZero: true,
         upperPercentile: 0.1,
         lowerPercentile: 0.1,
         numOfDigits: 2,
         scaleTickLength: 5,
-        slidingWindowHalfWidth: 5
+        slidingWindowHalfWidth: 5,
+        forecolorIndex: 1
       })
     }
   }

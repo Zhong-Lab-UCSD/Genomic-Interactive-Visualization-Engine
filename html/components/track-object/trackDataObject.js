@@ -479,7 +479,7 @@ var GIVe = (function (give) {
       return new this.constructor._DataStructure(
         this.parent.refObj.chromInfo[chrom].chrRegion,
         {
-          SummaryCtor: this.constructor._SummaryCtor
+          _SummaryCtor: this.constructor._SummaryCtor
         }
       )
     }

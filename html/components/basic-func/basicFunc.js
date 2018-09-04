@@ -481,10 +481,11 @@ var GIVe = (function (give) {
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, PromiseCanceler)
       }
-      if (
+      if (originalPromise &&
         (typeof originalPromise === 'object' ||
           typeof originalPromise === 'function'
-        ) && typeof originalPromise.then === 'function'
+        ) &&
+        typeof originalPromise.then === 'function'
       ) {
         this.originalPromise = originalPromise
       }
