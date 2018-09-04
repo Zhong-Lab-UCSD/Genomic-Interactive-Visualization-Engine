@@ -680,7 +680,7 @@ var GIVe = (function (give) {
           currPolygon.overflows.exceedMin.push(dataEntry.clone())
         }
       } else if (flags.EXCEED_MAX) {
-        lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
+        let lastExceed = currPolygon.overflows.exceedMax[currPolygon.overflows.exceedMax.length - 1]
         if (!lastExceed || !lastExceed.concat(dataEntry)) {
           currPolygon.overflows.exceedMax.push(dataEntry.clone())
         }
