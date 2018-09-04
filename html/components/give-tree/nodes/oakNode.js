@@ -296,7 +296,9 @@ var GIVe = (function (give) {
           let sibPrev = (i < (this.childNum - 1)) ? i : i - 1
           if (this.values[i].childNum < this.tree.branchingFactor / 2) {
             if (this.childNum <= 1) {
-              if (!intermediate || this.values[i].childNum <= 1) {
+              if ((!intermediate || this.values[i].childNum <= 1) &&
+                !this.isRoot
+              ) {
                 // If this call is an intermediate adjustment, throw error
                 //    only when `this` has one grandchild (therefore
                 //    adjustment is not possible).

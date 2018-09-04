@@ -98,7 +98,7 @@ var GIVe = (function (give) {
         this._mainSvg.holder.appendChild(newSubSvg)
         this._subSvgs.push(newSubSvg)
       }
-      this._subSvgs.forEach(subSvg => this.initSvgHolder(subSvg))
+      this._subSvgs.forEach(subSvg => this._initSvgHolder(subSvg))
     }
 
     _setSvgComponentsSize () {
@@ -330,9 +330,9 @@ var GIVe = (function (give) {
                 if (this.quantiles) {
                   this.createRawPolygon(points, {id: regionID,
                     class: 'linkedRegion',
-                    fill: this.rgbToHex(this.percentileToGradient(
+                    fill: this.constructor.rgbToHex(this.percentileToGradient(
                       this.valueToPercentile(linkItem[0].data.value))),
-                    stroke: this.rgbToHex(this.constructor.colorSet[linkItem.color]),
+                    stroke: this.constructor.rgbToHex(this.constructor.colorSet[linkItem.color]),
                     'stroke-width': 2,
                     'fill-opacity':
                       this.valueToPercentile(linkItem[0].data.value) *
@@ -343,8 +343,8 @@ var GIVe = (function (give) {
                     class:
                       'linkedRegion ' +
                       (partialOutside ? 'partialOutside' : 'fullyInside'),
-                    fill: this.rgbToHex(this.constructor.colorSet[0]),
-                    stroke: this.rgbToHex(this.constructor.colorSet[0])
+                    fill: this.constructor.rgbToHex(this.constructor.colorSet[0]),
+                    stroke: this.constructor.rgbToHex(this.constructor.colorSet[0])
                     // 'stroke-width': 0.5,
                     // 'fill-opacity': partialOutside? 0.01: 0.2,
                     // 'stroke-opacity': 1,

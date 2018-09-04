@@ -287,8 +287,13 @@ var GIVe = (function (give) {
           resolve(responses)
         } else {
           let err = new give.GiveError('Connection error (' + this.status +
-            ')' + this.response ? ': ' + this.response : '')
+            ')' +
+            (this.response
+              ? ': ' + (typeof this.response === 'object'
+                ? this.response.message || '' : this.response)
+              : ''))
           err.status = this.status
+          err.response = this.response
           reject(err)
         }
       }
@@ -313,11 +318,11 @@ var GIVe = (function (give) {
   give.fireCoreSignal = function (signame, sigdata) {
     // fire iron-signals
     give.fireSignal('iron-signal', {name: signame, data: sigdata},
-      {bubbles: true, cancelable: true}, document.body)
+      {bubbles: true, cancelable: true, composed: true}, document.body)
   }
 
   give.fireSignal = function (evName, sigDetail, sigParams, elem) {
-    var newEvent
+    let newEvent
     if (navigator.appName === 'Microsoft Internet Explorer' ||
         !!(navigator.userAgent.match(/Trident/) ||
            navigator.userAgent.match(/rv 11/))) {
@@ -328,7 +333,7 @@ var GIVe = (function (give) {
         sigDetail || null)
     } else {
       if (sigDetail) {
-        sigParams = sigParams || {}
+        sigParams = sigParams || give.DEFAULT_EVENT_PARAMS
         sigParams.detail = sigDetail
       }
       newEvent = new window.CustomEvent(evName, sigParams)
@@ -444,8 +449,6 @@ var GIVe = (function (give) {
     }
   }
 
-  give._initDebug()
-
   give.getValueArray = function (strVal, arrayLength, defaultArray) {
     let arr = [strVal]
     try {
@@ -472,11 +475,11 @@ var GIVe = (function (give) {
     return arr.slice(0, arrayLength)
   }
 
-  class PromiseCanceller extends Error {
+  class PromiseCanceler extends Error {
     constructor (originalPromise) {
       super(...arguments)
       if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, PromiseCanceller)
+        Error.captureStackTrace(this, PromiseCanceler)
       }
       if (
         (typeof originalPromise === 'object' ||
@@ -491,11 +494,35 @@ var GIVe = (function (give) {
     }
   }
 
-  give.PromiseCanceller = PromiseCanceller
+  give.PromiseCanceler = PromiseCanceler
+
+  give.DEFAULT_EVENT_PARAMS = {
+    bubbles: true,
+    cancelable: true,
+    composed: true
+  }
+
+  give._initDebug()
 
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
-    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, { flag: 'web-component-ready' })
+  })
+
+  window.addEventListener('error', err => {
+    if (err instanceof give.PromiseCanceler) {
+    }
+  })
+
+  /* ********** Chrome only **********
+   * The purpose of this part is to __prevent__ chrome from breaking and/or
+   * logging GIVe.PromiseCanceler
+   */ 
+  window.addEventListener('unhandledrejection', err => {
+    if (err && err.reason instanceof give.PromiseCanceler) {
+      err.preventDefault()
+      err.stopPropagation()
+    }
   })
 
   return give

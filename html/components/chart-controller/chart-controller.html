@@ -456,7 +456,7 @@ var GIVe = (function (give) {
     _errorHandler (err) {
       // some exception has happended during the conversion
       // throw an exception telling calling procedures
-      if (err instanceof give.PromiseCanceller) {
+      if (err instanceof give.PromiseCanceler) {
         throw err
       }
       // TODO: gracefully handle the exception

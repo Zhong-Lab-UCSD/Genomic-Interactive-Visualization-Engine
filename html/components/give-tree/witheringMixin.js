@@ -115,10 +115,14 @@ var GIVe = (function (give) {
       }
       // For children, mark all children that needs to be withered
       // then call `this.delete` on all children marked.
-      this.values.filter(value => (
-        value && (typeof value.wither === 'function') && value.wither()
-      )).forEach(value => this.remove(value, true))
-      return this.isEmpty
+      for (let index = 0; index < this.childNum; index++) {
+        let child = this.values[index]
+        if (child && typeof child.wither === 'function' && child.wither()) {
+          this.remove(child, true, null)
+          index--
+        }
+      }
+      return this.childNum <= 1 && this.values[0] === null
     }
 
     get _shouldWither () {

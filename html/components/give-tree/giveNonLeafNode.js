@@ -524,7 +524,7 @@ var GIVe = (function (give) {
           this._addNonLeafRecords(data, chrRange, props)
           // Note: keys may change after adding leaf records
           this.keys = this.values.map(node => node.start)
-            .push(this.lastChild.end)
+          this.keys.push(this.lastChild.end)
         } else {
           // case 1
           this._addLeafRecords(data, chrRange, props)
@@ -866,7 +866,7 @@ var GIVe = (function (give) {
     get isEmpty () {
       return this.childNum <= 0 || (this.childNum === 1 &&
         (this.values[0] === false ||
-          (this.values[0] && this.values[0].isEmpty)))
+          !!(this.values[0] && this.values[0].isEmpty)))
     }
   }
 

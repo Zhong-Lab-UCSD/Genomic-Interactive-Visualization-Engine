@@ -558,7 +558,7 @@ var GIVe = (function (give) {
           this.transformXCoordinate(transcript.startCoor, true) -
             this.textRightPadding,
           yCoor, transcript.getGeneName(true), 'end',
-          {style: 'fill: ' + this.rgbToHex(colorRGB)}
+          {style: 'fill: ' + this.constructor.rgbToHex(colorRGB)}
         )
 
         // move text to textMargin if out of bounds

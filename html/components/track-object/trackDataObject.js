@@ -408,28 +408,47 @@ var GIVe = (function (give) {
       // use dataHandler(e, detail) as return handler
       // callback is in case update is needed
       // remoteQuery is already prepared or can be provided by regions
+      let promise = null
       if (this.getTrackSetting('isCustom')) {
-        let customProm
         if (this.getTrackSetting('localFile')) {
           // if track has its own getLocalData function, then get local data
           // instead of getting remote data
-          customProm = this._readLocalFile(this.getTrackSetting('localFile'))
+          promise = this._readLocalFile(this.getTrackSetting('localFile'))
           // afterwards it's this.dataHandler()'s job.
         } else {
           // a custom track with a remote URL
-          customProm = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
+          promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
         }
-        return customProm.then(response => this._responseHandler(
+        promise = promise.then(response => this._responseHandler(
           this._fileHandler.bind(this), response
         ))
       } else if (this.getTrackSetting('requestUrl')) {
-        return give.postAjax(this.getTrackSetting('requestUrl'),
+        promise = give.postAjax(this.getTrackSetting('requestUrl'),
           this._prepareRemoteQuery(regions), 'json'
         ).then(response => this._responseHandler(
           this._dataHandler.bind(this), response
         ))
       }
-      return Promise.resolve(this._committedRangesById)
+      promise = promise
+        ? promise.catch(err => this._dataErrorHandler(err))
+        : Promise.resolve(this._committedRangesById)
+      return promise.finally(() => this._clearCommittedInfo())
+    }
+
+    _dataErrorHandler (err) {
+      if (err && typeof err === 'object') {
+        err.callerIdRegions = this._committedRangesById
+      }
+      throw err
+    }
+
+    _clearCommittedInfo () {
+      if (this._ongoingFetchPromise === this._fetchPromise) {
+        this._fetchPromise = null
+      }
+      this._ongoingFetchPromise = null
+      this._committedRegions.length = 0
+      this._committedRangesById = null
     }
 
     /**
@@ -491,14 +510,7 @@ var GIVe = (function (give) {
      */
     _responseHandler (dataHandler, response) {
       dataHandler(response, this._committedRegions)
-      if (this._ongoingFetchPromise === this._fetchPromise) {
-        this._fetchPromise = null
-      }
-      this._ongoingFetchPromise = null
-      this._committedRegions.length = 0
-      let committedRangesById = this._committedRangesById
-      this._committedRangesById = null
-      return committedRangesById
+      return this._committedRangesById
     }
 
     /**

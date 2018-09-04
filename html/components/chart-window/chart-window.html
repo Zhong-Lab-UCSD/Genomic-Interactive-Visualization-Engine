@@ -22,7 +22,8 @@ limitations under the License.
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../give-styles.html">
-<link rel="import" href="./give-track-styles.html">
+<link rel="import" href="../chart-area/give-track-styles.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-window">
   <template>
@@ -79,11 +80,6 @@ limitations under the License.
       <div class="pinnedParts">
         <svg class="svgHolder" version="1.1" baseProfile="full"
           xmlns="http://www.w3.org/2000/svg" id="_PinBottom">
-        </svg>
-      </div>
-      <div class="pinnedParts">
-        <svg class="svgHolder" version="1.1" baseProfile="full"
-          xmlns="http://www.w3.org/2000/svg" id="_PinBetween">
         </svg>
       </div>
     </div>
@@ -220,7 +216,9 @@ var GIVe = (function (give) {
    * @polymer
    * @appliesMixin give.RefEmbedMixin
    */
-  class ChartWindow extends give.RefEmbedMixin(Polymer.Element) {
+  class ChartWindow extends
+    give.RefEmbedMixin(Polymer.GestureEventListeners(Polymer.Element))
+  {
     constructor () {
       super()
       this._trackDoms = []
@@ -358,7 +356,9 @@ var GIVe = (function (give) {
         null, err => this._trackErrHandler(err)
       )
 
-      this.addEventListener('update-window', e => this._updateWindowHandler(e))
+      this._svgList = [...this.shadowRoot.querySelectorAll('.svgHolder')]
+
+      this.syncInBetweenSlot()
     }
 
     attached () {
@@ -369,6 +369,7 @@ var GIVe = (function (give) {
       // if (!this._initialized) {
       //   Promise.resolve().then(() => this._initDomAfterVWinRefReady())
       // }
+
     }
 
     get reverseFlag () {
@@ -384,6 +385,43 @@ var GIVe = (function (give) {
         ref: this.ref,
         index: this.index
       }
+    }
+
+    get hasInBetween () {
+      return this.index < this.totalWindows - 1
+    }
+
+    get hasScroll () {
+      return this.$.scrollingContainer.clientHeight <
+        this.$.scrollingContainer.scrollHeight 
+    }
+
+    syncInBetweenSlot () {
+      let inBetweenIndex = this._svgList.indexOf(this._pinBetweenSlot)
+      if (this.hasInBetween) {
+        if (!this._pinBetweenSlot) {
+          this._pinBetweenSlot = document.createElementNS(
+            this.constructor.svgNS, 'svg'
+          )
+        }
+        if (inBetweenIndex < 0) {
+          this._svgList.push(this._pinBetweenSlot)
+        }
+      } else {
+        if (inBetweenIndex >= 0) {
+          this._svgList.splice(inBetweenIndex, 1)
+        }
+        if (this._pinBetweenSlot) {
+          while (this._pinBetweenSlot.firstChild) {
+            this._pinBetweenSlot.removeChild(this._pinBetweenSlot.firstChild)
+          }
+          this._svgSizes._PinBetween = 0
+        }
+      }
+    }
+
+    get pinBetweenSlot () {
+      return this.hasInBetween ? this._pinBetweenSlot : null
     }
 
     /**
@@ -457,6 +495,14 @@ var GIVe = (function (give) {
       )
     }
 
+    _findSlotSvgElement (slotId) {
+      if (slotId !== '_PinBetween') {
+        return this.shadowRoot.querySelector('#' + slotId)
+      } else {
+        return this.pinBetweenSlot
+      }
+    }
+
     _addTrackDomSvg (trackDom, honorEffPriority) {
       if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
         let slotId = this._getSlotId(trackDom.parent, honorEffPriority)
@@ -467,8 +513,7 @@ var GIVe = (function (give) {
                 this._svgSizes[slotId])
           }
           // Add DOM element
-          this.shadowRoot.querySelector('#' + slotId)
-            .appendChild(trackDom.trackSvg)
+          this._findSlotSvgElement(slotId).appendChild(trackDom.trackSvg)
           // Find the correct location of the new DOM
           let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
           if (this._trackDoms[domPos] &&
@@ -490,6 +535,16 @@ var GIVe = (function (give) {
 
           this._addedTrackMap.set(trackDom.parent.id, trackDom)
           this._svgSizes[slotId]++
+
+          // attach event listeners (if any)
+          if (trackDom.mainGestureReceiver && trackDom.dragHandler) {
+            Polymer.Gestures.addListener(trackDom.mainGestureReceiver,
+              'track', e => trackDom.dragHandler(e, e.detail)
+            )
+            trackDom.mainGestureReceiver.addEventListener(
+              'wheel', e => trackDom.wheelHandler(e, e.detail)
+            )
+          }
           return slotId
         }
       }
@@ -527,7 +582,7 @@ var GIVe = (function (give) {
         if (this._addedTrackMap.has(track.id)) {
           let trackDom = this._addedTrackMap.get(track.id)
           // This track is visible, remove the <svg> element from its slot
-          this.shadowRoot.querySelector(
+          this._findSlotSvgElement(
             '#' + this._slotIdFromPinValue(track.effPriority.pinValue)
           ).removeChild(trackDom.trackSvg)
           // Then remove the DOM itself
@@ -603,8 +658,7 @@ var GIVe = (function (give) {
 
     _clearDOM () {
       // clear out all the svgs
-      var svgList = [...this.shadowRoot.querySelectorAll('.svgHolder')]
-      svgList.forEach(svgElem => {
+      this._svgList.forEach(svgElem => {
         while (svgElem.firstChild) {
           svgElem.removeChild(svgElem.firstChild)
         }
@@ -682,9 +736,7 @@ var GIVe = (function (give) {
       // update width and throw width if needed
       width = width || this.$.chartHolder.clientWidth
 
-      let svgList = [...this.shadowRoot.querySelectorAll('.svgHolder')]
-
-      svgList.forEach(svgElem => {
+      this._svgList.forEach(svgElem => {
         svgElem.setAttribute('width', width)
         svgElem.setAttribute('height', svgElem._currY || 0)
         svgElem.setAttribute('viewBox',
@@ -782,8 +834,8 @@ var GIVe = (function (give) {
       let enumArray = this.reverseFlag
         ? this._trackDoms.slice().reverse() : this._trackDoms
       enumArray.forEach(trackDom => {
-        let svgElem = this.shadowRoot.querySelector(
-          '#' + this._getSlotId(trackDom.parent, true)
+        let svgElem = this._findSlotSvgElement(
+          this._getSlotId(trackDom.parent, true)
         )
         if (svgElem.hasOwnProperty('_currY')) {
           svgElem._currY += this.trackGap * this.textSize
@@ -796,14 +848,26 @@ var GIVe = (function (give) {
       this.updateSvgHeightLocation(newWidth)
     }
 
+    _verifyTrackUpdateWindow (trackWindow, trackIndex, pendingVWindow) {
+      if (this._trackDoms.length <= trackIndex) {
+        return true
+      }
+      if (Array.isArray(trackWindow)) {
+        trackWindow =
+          trackWindow[this.index - this._trackDoms[trackIndex].windowIndex]
+      }
+      return !give.ChromRegion.compare(trackWindow, pendingVWindow)
+    }
+
     _trackReadyHandler (windows, newWidth) {
       // First check whether other resizing event fired before
       // this update (otherwise the display may not be up-to-date).
       let pendingVWindow = this._pendingVWindow || this._viewWindow
       if (pendingVWindow && Array.isArray(windows) && windows.some(
-        window => give.ChromRegion.compare(window, this._pendingVWindow)
+        (window, index) =>
+          !this._verifyTrackUpdateWindow(window, index, pendingVWindow)
       )) {
-        throw new give.PromiseCanceller()
+        throw new give.PromiseCanceler()
       }
       // update `this._viewWindow` and clear `this.drawingPromise`
       // `windows` is the array returned by Promise.all()
@@ -828,6 +892,7 @@ var GIVe = (function (give) {
       if (err && err.critical) {
         throw err
       }
+      give._verbConsole.warn(err)
       give.fireSignal('warning', { errObj: err })
       return this._pendingVWindow || this._viewWindow
     }
@@ -882,7 +947,7 @@ var GIVe = (function (give) {
         if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
           return this.changeViewWindow(newWindow)
         }
-        throw new give.PromiseCanceller()
+        throw new give.PromiseCanceler()
       } catch (err) {
         err.data = err.data || {}
         err.data.updatedCoor =
@@ -996,7 +1061,7 @@ var GIVe = (function (give) {
       // return this.refReadyPromise.then(refObj => {
       //   if (refObj.db !== this.ref) {
       //     // Only respond to this call if ref has not been changed
-      //     throw new give.PromiseCanceller()
+      //     throw new give.PromiseCanceler()
       //   }
       //   give.fireSignal('ref-changed', {
       //     ref: refObj.db,
@@ -1154,6 +1219,7 @@ var GIVe = (function (give) {
   }
 
   ChartWindow.ResetWidthError = ResetWidthError
+  ChartWindow.svgNS = 'http://www.w3.org/2000/svg'
 
   give.ChartWindow = ChartWindow
   window.customElements.define('chart-window', give.ChartWindow)

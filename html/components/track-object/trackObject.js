@@ -60,7 +60,7 @@ var GIVe = (function (give) {
         return !this.isValidEffPrior(effPrior1)
           ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
       }
-      return effPrior1._pinValue === effPrior2._pinValue
+      return effPrior1._pinValue !== effPrior2._pinValue
         ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
           this.pinValueMap[effPrior2._pinValue])
         : Math.sign(effPrior1._pos - effPrior2._pos)

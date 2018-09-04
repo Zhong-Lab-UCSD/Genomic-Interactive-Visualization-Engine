@@ -45,6 +45,12 @@ var GIVe = (function (give) {
        * @type {Promise<give.ChromRegion>}
        */
       this.readyPromise = null
+      /**
+       * A set of indices where the latest promise correspond to
+       * @type {Set}
+       */
+      this._readyPromiseWindowIndices = new Set()
+
       this._dataPromise = null
       this._debouncePromise = null
 
@@ -260,7 +266,7 @@ var GIVe = (function (give) {
         // if textMargin is specified, create a svg element for text labels
 
         if (this.textMargin && !this._narrowMode) {
-          this.initTextSvgAndHolder()
+          this._initTextSvgAndHolder()
         }
 
         // create dom elements (svg)
@@ -273,7 +279,8 @@ var GIVe = (function (give) {
 
         // this._setInitialized(true);
         // this.fire('track-initialized', {ID: this.parent.id});
-        this.initSvgHolder(this._mainSvg)
+        this._initSvgHolder(this._mainSvg)
+        this._updateSvgReceiver(this._mainSvg)
 
         if (typeof this._initSvgComponents === 'function') {
           this._initSvgComponents()
@@ -348,30 +355,30 @@ var GIVe = (function (give) {
     }
 
     /**
-     * initTextSvgAndHolder - Initialize the text SVG element and its content
+     * _initTextSvgAndHolder - Initialize the text SVG element and its content
      *   holder.
      */
-    initTextSvgAndHolder () {
+    _initTextSvgAndHolder () {
       this._textSvg = document.createElementNS(this.svgNS, 'svg')
       this._textSvg.setAttribute('id', this.parent.cleanId + '_textSvg')
       this._trackSvg.appendChild(this._textSvg)
-      this.initSvgHolder(this._textSvg)
+      this._initSvgHolder(this._textSvg)
     }
 
     /**
-     * initSvgHolder - Initialize the content holder for an SVG element.
+     * _initSvgHolder - Initialize the content holder for an SVG element.
      *
      * @param {DOMelement} svgElem - the SVG element to put the content
      *    holder in.
      */
-    initSvgHolder (svgElem) {
+    _initSvgHolder (svgElem) {
       // notice that `svgElem` should be there
       svgElem.holder = document.createElementNS(this.svgNS, 'g')
       svgElem.appendChild(svgElem.holder)
     }
 
     /**
-     * initSvgReceiver - Add a gesture listener (rectangle) to the SVG element.
+     * _updateSvgReceiver - Add a gesture listener (rectangle) to the SVG element.
      *   Notice that text holder and main holder have their listeners
      *   separately.
      *   Also the actual listener is attached to svg elements, not the
@@ -379,7 +386,7 @@ var GIVe = (function (give) {
      *
      * @param  {DOMelement} svgToDraw The SVG element to attach listeners to
      */
-    initSvgReceiver (svgToDraw) {
+    _updateSvgReceiver (svgToDraw) {
       if (!svgToDraw) {
         give._verbConsole.warn('SvgToDraw is empty!')
         return
@@ -391,11 +398,17 @@ var GIVe = (function (give) {
           svgToDraw.getAttributeNS(null, 'height'),
           {fill: 'none', class: 'pointerHandler'}, svgToDraw)
         svgToDraw.appendChild(svgToDraw.gestureReceiver)
+      } else {
+        // update the size of the existing rectangle
+        this.constructor.updateRawRectangle(svgToDraw.gestureReceiver,
+          0, 0,
+          svgToDraw.getAttributeNS(null, 'width'),
+          svgToDraw.getAttributeNS(null, 'height'))
       }
-      Polymer.RenderStatus.afterNextRender(this, () => {
-        svgToDraw.addEventListener('track', e => this.dragHandler(e, e.detail))
-        svgToDraw.addEventListener('wheel', e => this.wheelHandler(e, e.detail))
-      })
+    }
+
+    get mainGestureReceiver () {
+      return this._mainSvg ? this._mainSvg.gestureReceiver : null
     }
 
     // /**
@@ -491,7 +504,7 @@ var GIVe = (function (give) {
         if (newTxtMargin > 0) {
           this.textMargin = newTxtMargin
           if (!this._textSvg) {
-            this.initTextSvgAndHolder()
+            this._initTextSvgAndHolder()
           }
         } else {
           // delete _textSvg
@@ -724,7 +737,7 @@ var GIVe = (function (give) {
         } catch (err) {
           give._verbConsole.info(err)
         }
-        this.initSvgHolder(svgElem)
+        this._initSvgHolder(svgElem)
       } else {
         while (svgElem.firstChild) {
           svgElem.removeChild(svgElem.firstChild)
@@ -781,30 +794,36 @@ var GIVe = (function (give) {
       newLine.setAttributeNS(null, 'y1', y1)
       newLine.setAttributeNS(null, 'y2', y2)
       if (colorRGB || colorRGB === 0) {
-        newLine.setAttributeNS(null, 'stroke', this.rgbToHex(colorRGB))
+        newLine.setAttributeNS(null, 'stroke',
+          this.constructor.rgbToHex(colorRGB))
       }
       this.addElement(newLine, svgToDraw)
       return newLine
     }
 
     createRawRectangle (x1, y1, x2, y2, params, svgToDraw) {
-      var xmin = Math.min(x1, x2)
-      var ymin = Math.min(y1, y2)
-      var newRegion = document.createElementNS(this.svgNS, 'rect')
-      newRegion.setAttributeNS(null, 'x', xmin)
-      newRegion.setAttributeNS(null, 'y', ymin)
-      newRegion.setAttributeNS(null, 'width', Math.abs(x2 - x1))
-      newRegion.setAttributeNS(null, 'height', Math.abs(y2 - y1))
-      this.setElementParams(newRegion, params)
+      let newRegion = document.createElementNS(this.svgNS, 'rect')
+      this.constructor.updateRawRectangle(newRegion, x1, y1, x2, y2, params)
       this.addElement(newRegion, svgToDraw)
       return newRegion
+    }
+
+    static updateRawRectangle (rectangle, x1, y1, x2, y2, params) {
+      let xmin = Math.min(x1, x2)
+      let ymin = Math.min(y1, y2)
+      rectangle.setAttributeNS(null, 'x', xmin)
+      rectangle.setAttributeNS(null, 'y', ymin)
+      rectangle.setAttributeNS(null, 'width', Math.abs(x2 - x1))
+      rectangle.setAttributeNS(null, 'height', Math.abs(y2 - y1))
+      this.setElementParams(rectangle, params)
+      return rectangle
     }
 
     createRawPolygon (coordinates, params, svgToDraw) {
       // coordinates is an array of string "x,y"
       var newPolygon = document.createElementNS(this.svgNS, 'polygon')
       newPolygon.setAttributeNS(null, 'points', coordinates.join(' '))
-      this.setElementParams(newPolygon, params)
+      this.constructor.setElementParams(newPolygon, params)
       this.addElement(newPolygon, svgToDraw)
       return newPolygon
     }
@@ -822,7 +841,7 @@ var GIVe = (function (give) {
       }
       // End MSIE & Edge only hack
 
-      this.setElementParams(newLabel, params)
+      this.constructor.setElementParams(newLabel, params)
       newLabel.appendChild(document.createTextNode(text))
       return newLabel
     }
@@ -842,7 +861,7 @@ var GIVe = (function (give) {
       return result
     }
 
-    setElementParams (elem, params) {
+    static setElementParams (elem, params) {
       for (var key in params) {
         if (
           params.hasOwnProperty(key) &&
@@ -1080,14 +1099,24 @@ var GIVe = (function (give) {
       }
     }
 
-    createShortLabelArr (label, maxX) {
+    drawShortLabel () {
+      let shortLabelArr
+      if (this._textSvg) {
+        shortLabelArr = this._createShortLabelArr()
+        if (shortLabelArr) {
+          this._drawShortLabelArr(shortLabelArr)
+        }
+      }
+    }
+
+    _createShortLabelArr (label, maxX) {
       maxX = maxX || this.textMargin - this.textRightPadding
       return this.createWordWrappedText(
         label || this.getTrackSetting('shortLabel'),
         'end', null, this._textSvg, maxX, this.height)
     }
 
-    drawShortLabelArr (labelArr, maxX) {
+    _drawShortLabelArr (labelArr, maxX) {
       maxX = maxX || this.textMargin - this.textRightPadding
       this.drawWordWrappedText(maxX, this.height * 0.5, labelArr,
         'end', 'both', null, this._textSvg, true)
@@ -1114,25 +1143,39 @@ var GIVe = (function (give) {
       }
     }
 
-    // ** Track event handling and functions **
-
-    drawDataWrapper (callerIdRegions, ...args) {
-      // fire track-ready event to its container
-      // (to calculate size and do other stuff)
+    _verifyCallerIdRegions (callerIdRegions) {
       if (callerIdRegions && callerIdRegions.hasOwnProperty(this.id)) {
         let regions = callerIdRegions[this.id]
         if (!Array.isArray(regions)) {
           regions = [regions]
         }
-        if (!this._checkReqVWindows(regions)) {
-          // not the same region as submitted
-          // which means the resolution is for the previous promise
-          // throw a `give.PromiseCanceller` to cancel promise handling
-          throw new give.PromiseCanceller(this.readyPromise)
-        }
+        return this._checkReqVWindows(regions)
       } else {
-        throw new give.PromiseCanceller(this.readyPromise)
+        return false
       }
+    }
+
+    _dataErrorHandler (err, index) {
+      if (err instanceof give.PromiseCanceler) {
+        throw err
+      }
+      if (err &&
+        (!this._verifyCallerIdRegions(err.callerIdRegions) &&
+          this._readyPromiseWindowIndices.has(index)
+        )
+      ) {
+        // not the same region, and there is a newer promise in the same
+        //    window
+        throw new give.PromiseCanceler(this.readyPromise)
+      }
+      this._commitPendingChanges()
+      // TODO: do something (such as drawing in this._mainSvg) to indicate
+      //    error
+      this.drawShortLabel()
+      throw err
+    }
+
+    _commitPendingChanges () {
       // commit pending view windows
       this.viewWindow = this._pendingNewVWArr || this.viewWindow
       this._pendingNewVWArr = null
@@ -1145,16 +1188,22 @@ var GIVe = (function (give) {
         this.setSvgSize()
       }
       this._dataPromise = null
-      var shortLabelArr
-      if (this._textSvg) {
-        shortLabelArr = this.createShortLabelArr()
+    }
+
+    // ** Track event handling and functions **
+
+    drawDataWrapper (callerIdRegions, index, ...args) {
+      // fire track-ready event to its container
+      // (to calculate size and do other stuff)
+      if (!this._verifyCallerIdRegions(callerIdRegions)) {
+        // the promise being resolved is stale
+        throw new give.PromiseCanceler(this.readyPromise)
       }
+      this._commitPendingChanges()
       this.drawData(...args)
-      if (this._textSvg && shortLabelArr) {
-        this.drawShortLabelArr(shortLabelArr)
-      }
+      this.drawShortLabel()
       // draw a rectangle over the coordinate track to handle mouse events
-      this.initSvgReceiver(this._mainSvg)
+      this._updateSvgReceiver(this._mainSvg)
       return this.viewWindow
     }
 
@@ -1212,9 +1261,9 @@ var GIVe = (function (give) {
           this._debouncePromise = Promise.resolve()
         }
         return this._debouncePromise
-          .then(() => this._checkDataAndUpdate(...args))
+          .then(() => this._checkDataAndUpdate(index, ...args))
       }
-      throw new give.PromiseCanceller(this.readyPromise)
+      throw new give.PromiseCanceler(this.readyPromise)
     }
 
     /**
@@ -1227,11 +1276,11 @@ var GIVe = (function (give) {
      *    so it will happen after the Promise is resolved.)
      *    If a new function call can be answered with an on-going Promise
      *    (presumably chained by other Promises in calling code), a
-     *    rejected Promise (with a give.PromiseCanceller) will be returned
+     *    rejected Promise (with a give.PromiseCanceler) will be returned
      *    indicating no further chaining is needed.
      * @memberof TrackDom
      */
-    _checkDataAndUpdate (...args) {
+    _checkDataAndUpdate (index, ...args) {
       // The procedures for checking data and update is shown below:
       // * Call this.parent.fetchData to get the up-to-date data promise.
       //    * If the returned promise is the same as the existing one, this
@@ -1239,7 +1288,7 @@ var GIVe = (function (give) {
       //      the existing data promise (`this._dataPromise`), therefore,
       //      previously chained promises after `this._dataPromise` can
       //      still be used and no new promise shall be needed.
-      //      Reject the current promise with `give.PromiseCanceller`.
+      //      Reject the current promise with `give.PromiseCanceler`.
       //    * If the returned promise is different (or is new), then a new
       //      promise chain is needed.
       //      The stale promise chain will be cancelled in
@@ -1253,14 +1302,17 @@ var GIVe = (function (give) {
       let newDataPromise = this.parent.fetchData(this._requestVWArr, this.id)
       if (this._dataPromise !== newDataPromise) {
         this._dataPromise = newDataPromise
-        return newDataPromise.then(
-          callerIdRegions => this.drawDataWrapper(callerIdRegions, ...args)
-        ).then(() => this.loadCache())
+        return newDataPromise
+          .catch(err => this._dataErrorHandler(err, index))
+          .then(callerIdRegions =>
+            this.drawDataWrapper(callerIdRegions, index, ...args)
+          )
+          .then(() => this.loadCache())
           .then(() => this.viewWindow)
       }
       // Otherwise it's the same data promise, use the old chained functions
       // after this._dataPromise instead of creating new chained functions
-      throw new give.PromiseCanceller(this.readyPromise)
+      throw new give.PromiseCanceler(this.readyPromise)
     }
 
     _updateContent (viewWindow, index, ...args) {
@@ -1270,27 +1322,52 @@ var GIVe = (function (give) {
       viewWindow = this._verifyViewWindow(viewWindow, index)
       this._updateViewWindowResolution(viewWindow, index)
 
-      this.readyPromise =
-        this._checkDataAndUpdateDebounced(viewWindow, index, ...args)
-          .catch(e => {
-            // catch all error that is *not* give.PromiseCanceller
-            if (e instanceof give.PromiseCanceller) {
-              throw e
-            }
-            give._verbConsole.warn(e)
-            give.fireSignal('warning', { msg: e.message })
-            return e
-          })
-          .then(e => {
-            // needs to implement this 'finally except when
-            //    give.PromiseCanceller is thrown' case.
-            give.fireSignal('track-ready', { ID: this.parent.id })
-            this.readyPromise = null
-            if (!e || e instanceof give.ChromRegion) {
+      try {
+        this.readyPromise =
+          this._checkDataAndUpdateDebounced(viewWindow, index, ...args)
+            .catch(e => {
+              // catch all error that is *not* give.PromiseCanceler
+              if (e instanceof give.PromiseCanceler) {
+                throw e
+              }
+              give._verbConsole.warn(e)
+              give.fireSignal('warning', { msg: e.message })
               return e
-            }
-            throw e
-          })
+            })
+            .then(e => {
+              // needs to implement this 'finally except when
+              //    give.PromiseCanceler is thrown' case.
+              give.fireSignal('track-ready', { ID: this.parent.id })
+              this.readyPromise = null
+              this._readyPromiseWindowIndices.clear()
+              if (e && e instanceof Error) {
+                throw e
+              }
+              return e
+            })
+            .catch(e => {
+              if (e instanceof give.PromiseCanceler &&
+                !this._readyPromiseWindowIndices.has(index)
+              ) {
+                // It's possible for a track to have a stale promise in a
+                //    different view window (the second window requested got a
+                //    new promise, making the previous window's promise
+                //    stale.). However, such stale promises should not affect
+                //    the downstream procedures for the first window since the
+                //    content will be updated anyway.
+                return this.viewWindow
+              }
+              throw e
+            })
+        this._readyPromiseWindowIndices.clear()
+      } catch (err) {
+        if (!(err instanceof give.PromiseCanceler) ||
+          this._readyPromiseWindowIndices.has(index)
+        ) {
+          throw err
+        }
+      }
+      this._readyPromiseWindowIndices.add(index)
       return this.readyPromise
     }
 
@@ -1338,7 +1415,7 @@ var GIVe = (function (give) {
       }
     }
 
-    rgbToHex (colorRGB) {
+    static rgbToHex (colorRGB) {
       return '#' + ((1 << 24) + colorRGB).toString(16).slice(1)
     }
 

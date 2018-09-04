@@ -25,6 +25,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../give-styles.html">
+<link rel="import" href="./give-track-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -90,8 +91,8 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       .uninitialized {
         font-size: 16px;
       }
-
     </style>
+    <style include="give-track-styles"></style>
     <template is="dom-if" if="[[!_readiness]]">
       <div id="loadingBlock">
         <paper-spinner id="loadingSpinner" alt="Loading card content"
@@ -102,15 +103,20 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
       <div id="windowHolding" hidden$="[[!_initialized]]">
         <template id="windowsHolder" is="dom-repeat"
           items="[[_chartWindowItems]]" index-as="index">
-          <chart-window id="[[_calcCWId(index)]]"
+          <chart-window id="[[_calcChartWindowId(index)]]"
             coordinate="{{item.coordinate}}" index="[[index]]"
             total-windows="[[numOfSubs]]"
             default-track-id-list="[[item.defaultTrackIdList]]"
             group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
             text-margin="[[textMargin]]" track-gap="[[trackGap]]"
             text-size="[[textSize]]" first-run="{{_firstRun}}"
-            show-tutorial="[[!index]]" on-update-window="_updateWindowHandler">
+            show-tutorial="[[!index]]">
           </chart-window>
+          <template is="dom-if" if="[[_calcChartWindowHasInBetween(index)]]">
+            <div class="pinBetweenHolder"
+              id="[[_calcChartWindowInBetweenId(index)]]">
+            </div>
+          </template>
         </template>
       </div>
       <div class="uninitialized" hidden$="[[_initialized]]">
@@ -307,8 +313,17 @@ var GIVe = (function (give) {
       return this._coordinateArray.every(coordinate => !!coordinate)
     }
 
-    _calcCWId (index) {
-      return '_chart-window-' + index
+    _calcChartWindowId (index) {
+      return (this.id || '') + this.constructor.CHART_WINDOW_ID_PREFIX + index
+    }
+
+    _calcChartWindowHasInBetween (index) {
+      return index < this.numOfSubs - 1
+    }
+
+    _calcChartWindowInBetweenId (index) {
+      return (this.id || '') + this.constructor.CHART_IN_BETWEEN_ID_PREFIX +
+        index
     }
 
     _showErrorMessage (errObj, type) {
@@ -319,17 +334,18 @@ var GIVe = (function (give) {
       if (err instanceof give.ChartWindow.ResetWidthError) {
         throw err
       }
+      give._verbConsole.warn(err)
       this._showErrorMessage(err, 'error')
     }
 
     _errorHandler (err, catchWindowNotInitialized) {
-      // throw give.PromiseCanceller to stop any current promise chain
-      if (err instanceof give.PromiseCanceller) {
+      // throw give.PromiseCanceler to stop any current promise chain
+      if (err instanceof give.PromiseCanceler) {
         throw err
       }
       if (err instanceof WindowNotInitialized && catchWindowNotInitialized) {
         give._verbConsole.info('Window not initialized')
-        throw new give.PromiseCanceller()
+        throw new give.PromiseCanceler()
       }
       if (!this.passExceptions) {
         // TODO: gracefully handle the exception
@@ -339,6 +355,7 @@ var GIVe = (function (give) {
       if (this.passExceptions) {
         throw err
       }
+      return this._coordinateArray
     }
 
     _warningHandler (event) {
@@ -349,6 +366,14 @@ var GIVe = (function (give) {
       this.$.windowsHolder.render()
       this._chartWindows =
         [...this.$.windowHolding.querySelectorAll('chart-window')]
+      // fill in-between windows
+      this._chartWindows.forEach((window, index) => {
+        if (window.hasInBetween) {
+          this.shadowRoot.querySelector(
+            '#' + this._calcChartWindowInBetweenId(index)
+          ).appendChild(window.pinBetweenSlot)
+        }
+      })
     }
 
     _syncRefsJsonToArray (numOfWindows, newRefValue) {
@@ -395,6 +420,7 @@ var GIVe = (function (give) {
     }
 
     _expandChartWindows (newNumOfWindows) {
+      let oldNumOfWindows = this._chartWindows.length
       for (let index = this._chartWindowItems.length;
         index < newNumOfWindows;
         index++
@@ -408,6 +434,15 @@ var GIVe = (function (give) {
         this.push('_chartWindowItems', newWindowItem)
       }
       this._updateTrackWindowArray()
+      for (let index = oldNumOfWindows;
+        index < this._chartWindows.length;
+        index++
+      ) {
+        this._chartWindows[index].addEventListener(
+          'update-window',
+          e => this._updateWindowHandler(e.detail, e.currentTarget.index)
+        )
+      }
     }
 
     _shrinkChartWindows (newNumOfWindows) {
@@ -456,7 +491,7 @@ var GIVe = (function (give) {
           (window, index) => window.updateTracks(false, err.newWidth)
         )
       }
-      return Promise.reject(err)
+      throw err
     }
 
     /**
@@ -488,19 +523,39 @@ var GIVe = (function (give) {
         }
         this._readiness = false
         this.updatePromise = newWindowPromise
+          .then(correctedCoordinates => {
+            let windowWidth = null
+            let otherWidth
+            if (this._chartWindows.every(window => {
+              if (windowWidth === null) {
+                windowWidth = window.windowWidth
+              }
+              otherWidth = window.windowWidth
+              return windowWidth === otherWidth
+            })) {
+              return correctedCoordinates
+            } else {
+              throw new give.ChartWindow.ResetWidthError(
+                this._chartWindows.some(window => window.hasScroll)
+                  ? Math.min(windowWidth, otherWidth)
+                  : Math.max(windowWidth, otherWidth)
+              )
+            }
+          })
           .catch(err => this._windowWidthChangeHandler(err))
           .then(() => this._syncCoordinatesArrayToJson(this.chartCoordinates))
           .then(correctedCoordinates => {
             delete this.updatePromise
+            this._readiness = true
             return correctedCoordinates
           })
           .catch(err => this._errorHandler(err))
         return this.updatePromise
       } catch (err) {
-        if (err instanceof give.PromiseCanceller) {
-          throw err
-        }
-        this._errorHandler(err)
+        try {
+          this._syncCoordinatesArrayToJson(this.chartCoordinates)
+        } catch (ignore) { }
+        return this._errorHandler(err)
       }
     }
 
@@ -612,19 +667,21 @@ var GIVe = (function (give) {
       }
     }
 
-    _updateWindowHandler (e) {
+    _updateWindowHandler (detail, index) {
       // update the windows by events bubbled up from bottom tracks
-      if (e.detail.newWindow instanceof give.ChromRegion ||
-        typeof e.detail.newWindow === 'string'
+      if (detail.newWindow instanceof give.ChromRegion ||
+        typeof detail.newWindow === 'string'
       ) {
-        if (e.detail.tracks || !this._initialized) {
+        if (detail.tracks || !this._initialized) {
           // needs to update Dom to match track visibility as well, so update
           //    the entire `chart-area` instead of only the window
           return this.updateDom()
         } else if (this._initialized) {
-          return this._redrawWindows(
-            (window, index) => window.changeCoordinate(e.detail.newWindow),
-            e.currentTarget.index)
+          return Promise.resolve()
+            .then(res => this._redrawWindows(
+              (window, index) => window.changeCoordinate(detail.newWindow),
+              index)
+            )
         }
       }
     }
@@ -659,6 +716,8 @@ var GIVe = (function (give) {
   }
 
   ChartArea.DEFAULT_RESIZE_DEBOUNCE = 400
+  ChartArea.CHART_WINDOW_ID_PREFIX = '_chart-window-'
+  ChartArea.CHART_IN_BETWEEN_ID_PREFIX = '_chart-in-between-'
 
   give.ChartArea = ChartArea
   window.customElements.define('chart-area', give.ChartArea)

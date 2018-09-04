@@ -65,15 +65,14 @@ var GIVe = (function (give) {
       let promisesChanged = false
       if (this._originalPromises.length <= 0) {
         objArray.forEach((obj, index) => {
-          let originalPromise
+          let originalPromise = null
           try {
             originalPromise = promiseFunc(obj, index)
           } catch (e) {
-            if (e instanceof give.PromiseCanceller) {
-              if (e.originalPromise) {
-                originalPromise = e.originalPromise
-              }
+            if (e instanceof give.PromiseCanceler && e.originalPromise) {
+              originalPromise = e.originalPromise
             } else {
+              // cancel the entire aggregated promise
               throw e
             }
           }
@@ -91,14 +90,15 @@ var GIVe = (function (give) {
               // new promise
               this._originalPromises[index] = newPromise
               if (this._usePaddedPromises) {
-                this._paddedPromises.push(this._getPaddedPromise(newPromise))
+                this._paddedPromises[index] =
+                  this._getPaddedPromise(newPromise)
               }
               promisesChanged = true
             }
           } catch (e) {
             // skip promises that have been cancelled
             // (which means the original should be kept)
-            if (e instanceof give.PromiseCanceller) {
+            if (e instanceof give.PromiseCanceler) {
               if (!this._originalPromises[index] && e.originalPromise) {
                 this._originalPromises[index] = e.originalPromise
                 if (this._usePaddedPromises) {
@@ -114,11 +114,11 @@ var GIVe = (function (give) {
         })
       }
       if (promisesChanged) {
-        this.aggreatedPromise = Promise.all(this._usePaddedPromises
+        this.aggregatedPromise = Promise.all(this._usePaddedPromises
           ? this._paddedPromises : this._originalPromises)
-        return this.aggreatedPromise
+        return this.aggregatedPromise
       }
-      throw new give.PromiseCanceller(this.aggreatedPromise)
+      throw new give.PromiseCanceler(this.aggregatedPromise)
     }
   }
 

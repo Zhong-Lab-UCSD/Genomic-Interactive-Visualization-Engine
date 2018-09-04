@@ -638,8 +638,8 @@ var GIVe = (function (give) {
               this.transformXCoordinate({chr: windowToDraw.chr, coor: currPolygon.lastX}, false) +
             ',' + this.transformYCoordinate(0))
             this.createRawPolygon(currPolygon.points, {class: 'wiggleShapes',
-              fill: this.rgbToHex(this.constructor.colorSet[0]),
-              stroke: this.rgbToHex(this.constructor.colorSet[0])
+              fill: this.constructor.rgbToHex(this.constructor.colorSet[0]),
+              stroke: this.constructor.rgbToHex(this.constructor.colorSet[0])
             }, svgToDraw)
             this.drawOverflowLines(currPolygon.overflows)
             currPolygon.points = []
