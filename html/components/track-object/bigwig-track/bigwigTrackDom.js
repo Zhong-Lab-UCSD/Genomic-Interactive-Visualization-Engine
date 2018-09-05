@@ -65,79 +65,128 @@ var GIVe = (function (give) {
 
     _initProperties (props) {
       super._initProperties(props)
+      /**
+       * The overall margin for displaying, in px.
+       * @type {number}
+       */
       this.margin = this._initPropertyItem(
         'margin', props, 'margin', 'float')
-      this.textColorIndex = this._initPropertyItem(
-        'textColorIndex', props, 'textColorIndex', 'integer') // the color index for text
-      this.overflowColorIndex = this._initPropertyItem(
-        'overflowColorIndex', props, 'overflowColorIndex', 'integer') // the color index for overflow (red)
 
       /**
-       * the width of the line that is used for the overflow
+       * The color index for the text, should be an integer
+       * @type {number}
+       */
+      this.textColorIndex = this._initPropertyItem(
+        'textColorIndex', props, 'textColorIndex', 'integer')
+
+      /**
+       * The color index for overflow (orange), should be an integer
+       * @type {number}
+       */
+      this.overflowColorIndex = this._initPropertyItem(
+        'overflowColorIndex', props, 'overflowColorIndex', 'integer')
+
+      /**
+       * The width of the line that is used for the overflow
+       * @type {number}
        */
       this.overflowStrokeWidth = this._initPropertyItem(
         'overflowStrokeWidth', props, 'overflowStrokeWidth', 'integer')
 
       /**
-       * to be explained
+       * The size of the text used in axis labels
+       * @type {number}
        */
       this.scaleTextSize = this._initPropertyItem(
         'scaleTextSize', props, 'scaleTextSize', 'integer')
 
       /**
-       *     to be explained
+       * Minimum resolution required per pixel, used to determine how fine
+       * the data should be retrieved
+       * @type {number}
        */
       this.minResolutionPerPixel = this._initPropertyItem(
         'minResolutionPerPixel', props, 'minResolutionPerPixel', 'integer')
 
       /**
-       * The upper bound for the track display. Any values above this will be displayed as a overflow line.
+       * The upper bound for the track display. Any values above this will be
+       * displayed as a overflow line.
+       * @type {number}
        */
       this.windowMax = this._initPropertyItem(
         'windowMax', props, 'windowMax', 'float')
 
       /**
-       * The lower bound for the track display. One might think that this is obviously zero, but in some cases there are actually negative intensity values at a point.
+       * The lower bound for the track display. One might think that this is
+       * obviously zero, but in some cases there are actually negative intensity
+       * values at a point.
+       * @type {number}
        */
       this.windowMin = this._initPropertyItem(
         'windowMin', props, 'windowMin', 'float')
 
       /**
-       * to be explained
+       * The length of ticks in axes.
+       * @type {number}
        */
       this.scaleTickLength = this._initPropertyItem(
         'scaleTickLength', props, 'scaleTickLength', 'float')
 
       /**
-       * Whether or not to automatically scale the window bounds according to the data displayed.
+       * Whether or not to automatically scale the window bounds according to
+       * the data displayed.
        */
       this.autoScale = this._initPropertyItem(
         'autoScale', props, 'autoScale', 'boolean')
 
       /**
-       * Whether or not to automatically scale the window bounds according to the data displayed.
+       * Whether or not to include zero when doing auto scaling.
+       * @type {boolean}
        */
       this.includeZero = this._initPropertyItem(
         'includeZero', props, 'includeZero', 'boolean')
 
-      this.upperPercentile = this._initPropertyItem(
-        'upperPercentile', props, 'upperPercentile', 'float')
+      /**
+       * When auto scaling, the upper bound will be chosen at this proportion of
+       * data. Everything above this proportion will be put above the upper
+       * display boundary.
+       *
+       * This takes a float value between 0 and 1, where 0 means no data will be
+       * put out of the boundary.
+       * @type {number}
+       */
+      this.upperProportion = this._initPropertyItem(
+        'upperProportion', props, 'upperProportion', 'float')
 
-      this.lowerPercentile = this._initPropertyItem(
-        'lowerPercentile', props, 'lowerPercentile', 'float')
+      /**
+       * When auto scaling, the lower bound will be chosen at this proportion of
+       * data. Everything below this proportion will be put below the lower
+       * display boundary.
+       *
+       * This takes a float value between 0 and 1, where 0 means no data will be
+       * put out of the boundary.
+       * @type {number}
+       */
+      this.lowerProportion = this._initPropertyItem(
+        'lowerProportion', props, 'lowerProportion', 'float')
 
+      /**
+       * Number of digits to show on axes labels, should be an integer
+       * @type {number}
+       */
       this.numOfDigits = this._initPropertyItem(
         'numOfDigits', props, 'numOfDigits', 'integer')
 
+      /**
+       * Half width of sliding window, in pixel. Should be an integer.
+       *
+       * For example, to use a 5-pixel sliding window, set this value to 2.
+       * @type {number}
+       */
       this.slidingWindowHalfWidth = this._initPropertyItem(
         'slidingWindowHalfWidth', props, 'slidingWindowHalfWidth', 'integer')
     }
 
-    /**
-     * anonymous function - description
-     *
-     * @return {type}  returns the resolution.
-     */
     _getResolution (newVWindow, index) {
       return Math.max(Math.floor(
         newVWindow.length / this.windowWidth /
@@ -250,10 +299,10 @@ var GIVe = (function (give) {
       this.windowMax = this.includeZero ? 0 : Number.NEGATIVE_INFINITY
       this.windowMin = this.includeZero ? 0 : Number.POSITIVE_INFINITY
       try {
-        let extremities = give._findPercentile(this.dataPoints.map(
+        let extremities = give._findQuantile(this.dataPoints.map(
           function (dataEntry) {
             return dataEntry.data.value
-          }, this), this.upperPercentile, this.lowerPercentile)
+          }, this), this.upperProportion, this.lowerProportion)
         if (this.windowMax < extremities.upper) {
           this.windowMax = extremities.upper
         }
@@ -760,8 +809,8 @@ var GIVe = (function (give) {
         windowMin: 0,
         autoScale: true,
         includeZero: true,
-        upperPercentile: 0.1,
-        lowerPercentile: 0.1,
+        upperProportion: 0.1,
+        lowerProportion: 0.1,
         numOfDigits: 2,
         scaleTickLength: 5,
         slidingWindowHalfWidth: 5,

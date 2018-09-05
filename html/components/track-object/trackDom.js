@@ -644,6 +644,14 @@ var GIVe = (function (give) {
       return viewWindow
     }
 
+    /**
+     * _getResolution - Get the required resolution for the given view window.
+     *
+     * @param {ChromRegionLiteral} vWindow - the window used to calculate
+     * @param {number} index - the index of the window (for tracks with multiple
+     *    windows)
+     * @return {number}  returns the resolution.
+     */
     _getResolution (vWindow, index) {
       return 1
     }

@@ -365,15 +365,12 @@ var GIVe = (function (give) {
     return currIndex
   }
 
-  give._findPercentile = function (dataArr, upperPercentile, lowerPercentile) {
-    function numberComp (a, b) {
-      return a - b
-    }
-    lowerPercentile = lowerPercentile || upperPercentile
-    var sortedArr = dataArr.sort(numberComp)
+  give._findQuantile = function (dataArr, upperProportion, lowerProportion) {
+    lowerProportion = lowerProportion || upperProportion
+    var sortedArr = dataArr.sort((a, b) => (a - b))
     return {
-      upper: sortedArr[parseInt(sortedArr.length * (1 - upperPercentile))],
-      lower: sortedArr[parseInt(sortedArr.length * lowerPercentile)]
+      upper: sortedArr[parseInt(sortedArr.length * (1 - upperProportion))],
+      lower: sortedArr[parseInt(sortedArr.length * lowerProportion)]
     }
   }
 
