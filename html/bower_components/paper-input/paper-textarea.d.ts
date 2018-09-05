@@ -33,6 +33,7 @@
  * style this element.
  */
 interface PaperTextareaElement extends Polymer.Element, Polymer.PaperInputBehavior, Polymer.IronFormElementBehavior {
+  value: string|null|undefined;
   _ariaDescribedBy: string|null|undefined;
   _ariaLabelledBy: string|null|undefined;
   readonly _focusableElement: any;
@@ -40,13 +41,13 @@ interface PaperTextareaElement extends Polymer.Element, Polymer.PaperInputBehavi
   /**
    * The initial number of rows.
    */
-  rows: number|null|undefined;
+  rows: number;
 
   /**
    * The maximum number of rows this element can grow to until it
    * scrolls. 0 means no maximum.
    */
-  maxRows: number|null|undefined;
+  maxRows: number;
   selectionStart: number;
   selectionEnd: number;
   _ariaLabelledByChanged(ariaLabelledBy: any): void;

@@ -35,11 +35,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
-
       suite('a11y', function() {
         var collapse;
 
-        setup(function () {
+        setup(function() {
           // Force focus on body at every test.
           document.body.focus();
           collapse = fixture('trivialCollapse');
@@ -50,7 +49,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.equal(collapse.getAttribute('aria-hidden'), 'true');
           // aria-expanded should only be set on the button that
           // controls the collapsable area, not on the area itself.
-          // See https://www.w3.org/WAI/GL/wiki/Using_aria-expanded_to_indicate_the_state_of_a_collapsible_element#Description
+          // See
+          // https://www.w3.org/WAI/GL/wiki/Using_aria-expanded_to_indicate_the_state_of_a_collapsible_element#Description
           assert.isFalse(collapse.hasAttribute('aria-expanded'));
         });
 
@@ -66,9 +66,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         a11ySuite('trivialCollapse');
-
       });
-
     </script>
 
   </body>

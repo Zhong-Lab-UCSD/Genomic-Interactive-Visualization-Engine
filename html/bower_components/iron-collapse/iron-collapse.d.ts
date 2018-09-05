@@ -93,8 +93,8 @@ interface IronCollapseElement extends Polymer.Element, Polymer.IronResizableBeha
   updateSize(size: string, animated?: boolean): void;
 
   /**
-   * enableTransition() is deprecated, but left over so it doesn't break existing code.
-   * Please use `noAnimation` property instead.
+   * enableTransition() is deprecated, but left over so it doesn't break
+   * existing code. Please use `noAnimation` property instead.
    */
   enableTransition(enabled: any): void;
   _updateTransition(enabled: any): void;

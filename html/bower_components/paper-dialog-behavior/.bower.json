@@ -1,5 +1,6 @@
 {
   "name": "paper-dialog-behavior",
+  "version": "2.2.2",
   "description": "Implements a behavior used for material design dialogs",
   "authors": "The Polymer Authors",
   "keywords": [
@@ -64,12 +65,11 @@
   "resolutions": {
     "webcomponentsjs": "^1.0.0"
   },
-  "version": "2.2.1",
-  "_release": "2.2.1",
+  "_release": "2.2.2",
   "_resolution": {
     "type": "version",
-    "tag": "v2.2.1",
-    "commit": "22ee06715661bf7b46c1143091920d6513e8e9f7"
+    "tag": "v2.2.2",
+    "commit": "d6d5b68bdcad2896356bf8fa9022d3e985f363e4"
   },
   "_source": "https://github.com/PolymerElements/paper-dialog-behavior.git",
   "_target": "1 - 2",

@@ -53,8 +53,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       setup(function() {
         menuButton = fixture('TrivialMenuButton');
-        trigger = Polymer.dom(menuButton).querySelector('[slot="dropdown-trigger"]');
-        content = Polymer.dom(menuButton).querySelector('[slot="dropdown-content"]');
+        trigger =
+            Polymer.dom(menuButton).querySelector('[slot="dropdown-trigger"]');
+        content =
+            Polymer.dom(menuButton).querySelector('[slot="dropdown-content"]');
       });
 
       test('opens when trigger is clicked', function(done) {
@@ -113,10 +115,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           });
 
-          content.dispatchEvent(new CustomEvent('iron-activate', {
-            bubbles: true,
-            cancelable: true
-          }));
+          content.dispatchEvent(
+              new CustomEvent('iron-activate', {bubbles: true, cancelable: true}));
         });
 
         MockInteractions.tap(trigger);
@@ -135,7 +135,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         menuButton.restoreFocusOnClose = true;
         expect(menuButton.$.dropdown.restoreFocusOnClose).to.be.equal(true);
       });
-
     });
 
     suite('when there are two buttons', function() {
@@ -148,8 +147,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var buttons = fixture('TwoMenuButtons');
         menuButton = buttons[0];
         otherButton = buttons[1];
-        trigger = Polymer.dom(menuButton).querySelector('[slot="dropdown-trigger"]');
-        otherTrigger = Polymer.dom(otherButton).querySelector('[slot="dropdown-trigger"]');
+        trigger =
+            Polymer.dom(menuButton).querySelector('[slot="dropdown-trigger"]');
+        otherTrigger =
+            Polymer.dom(otherButton).querySelector('[slot="dropdown-trigger"]');
       });
 
       test('closes current and opens other', function(done) {

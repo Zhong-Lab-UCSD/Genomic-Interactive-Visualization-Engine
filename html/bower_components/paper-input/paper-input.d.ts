@@ -67,10 +67,11 @@
  * `--paper-input-container-ms-clear` | Mixin applied to the Internet Explorer reveal button (the eyeball) | {}
  */
 interface PaperInputElement extends Polymer.Element, Polymer.PaperInputBehavior, Polymer.IronFormElementBehavior {
+  value: string|null|undefined;
 
   /**
-   * Returns a reference to the focusable element. Overridden from PaperInputBehavior
-   * to correctly focus the native input.
+   * Returns a reference to the focusable element. Overridden from
+   * PaperInputBehavior to correctly focus the native input.
    */
   readonly _focusableElement: HTMLElement;
   beforeRegister(): void;

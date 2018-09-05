@@ -1,5 +1,6 @@
 {
   "name": "paper-dialog-behavior",
+  "version": "2.2.2",
   "description": "Implements a behavior used for material design dialogs",
   "authors": "The Polymer Authors",
   "keywords": [
@@ -63,6 +64,5 @@
   },
   "resolutions": {
     "webcomponentsjs": "^1.0.0"
-  },
-  "version": "2.2.1"
+  }
 }

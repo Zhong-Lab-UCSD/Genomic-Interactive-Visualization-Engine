@@ -16,8 +16,8 @@
 interface PaperInputContainerElement extends Polymer.Element {
 
   /**
-   * Set to true to disable the floating label. The label disappears when the input value is
-   * not null.
+   * Set to true to disable the floating label. The label disappears when the
+   * input value is not null.
    */
   noLabelFloat: boolean|null|undefined;
 
@@ -37,8 +37,9 @@ interface PaperInputContainerElement extends Polymer.Element {
   autoValidate: boolean|null|undefined;
 
   /**
-   * True if the input is invalid. This property is set automatically when the input value
-   * changes if auto-validating, or when the `iron-input-validate` event is heard from a child.
+   * True if the input is invalid. This property is set automatically when the
+   * input value changes if auto-validating, or when the `iron-input-validate`
+   * event is heard from a child.
    */
   invalid: boolean|null|undefined;
 

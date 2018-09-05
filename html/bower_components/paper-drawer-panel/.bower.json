@@ -1,6 +1,6 @@
 {
   "name": "paper-drawer-panel",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "A responsive drawer panel",
   "authors": [
     "The Polymer Authors"
@@ -58,11 +58,11 @@
   "resolutions": {
     "webcomponentsjs": "^1.0.0"
   },
-  "_release": "2.1.1",
+  "_release": "2.1.2",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.1",
-    "commit": "a04eb340d38e7395cc68dc32684935fa1298906b"
+    "tag": "v2.1.2",
+    "commit": "d398d7abec85550e381063fa0eb81d09323eb705"
   },
   "_source": "https://github.com/PolymerElements/paper-drawer-panel.git",
   "_target": "^2.0.0",

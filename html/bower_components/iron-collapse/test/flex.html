@@ -39,10 +39,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
-
       suite('flex', function() {
-
-      	var container;
+        var container;
         var collapse;
         var collapseHeight;
 
@@ -133,14 +131,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         test('change size with updateSize', function(done) {
           collapse.addEventListener('transitionend', function() {
             // size should be kept after transition
-            assert.equal(collapse.style.maxHeight, "123px");
+            assert.equal(collapse.style.maxHeight, '123px');
             done();
           });
-          collapse.updateSize("123px", true);
+          collapse.updateSize('123px', true);
         });
-
       });
-
     </script>
 
   </body>

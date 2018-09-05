@@ -103,16 +103,18 @@ interface IronInputElement extends Polymer.Element, Polymer.IronValidatableBehav
   readonly value: string|null|undefined;
 
   /**
-   * Regex-like list of characters allowed as input; all characters not in the list
-   * will be rejected. The recommended format should be a list of allowed characters,
-   * for example, `[a-zA-Z0-9.+-!;:]`.
+   * Regex-like list of characters allowed as input; all characters not in the
+   * list will be rejected. The recommended format should be a list of allowed
+   * characters, for example, `[a-zA-Z0-9.+-!;:]`.
    *
-   * This pattern represents the allowed characters for the field; as the user inputs text,
-   * each individual character will be checked against the pattern (rather than checking
-   * the entire value as a whole). If a character is not a match, it will be rejected.
+   * This pattern represents the allowed characters for the field; as the user
+   * inputs text, each individual character will be checked against the
+   * pattern (rather than checking the entire value as a whole). If a
+   * character is not a match, it will be rejected.
    *
-   * Pasted input will have each character checked individually; if any character
-   * doesn't match `allowedPattern`, the entire pasted string will be rejected.
+   * Pasted input will have each character checked individually; if any
+   * character doesn't match `allowedPattern`, the entire pasted string will
+   * be rejected.
    *
    * Note: if you were using `iron-input` in 1.0, you were also required to
    * set `prevent-invalid-input`. This is no longer needed as of Polymer 2.0,
@@ -138,8 +140,8 @@ interface IronInputElement extends Polymer.Element, Polymer.IronValidatableBehav
   readonly _patternRegExp: any;
 
   /**
-   * Returns true if `value` is valid. The validator provided in `validator` will be used first,
-   * then any constraints.
+   * Returns true if `value` is valid. The validator provided in `validator`
+   * will be used first, then any constraints.
    *
    * @returns True if the value is valid.
    */

@@ -93,7 +93,7 @@ interface IronDropdownElement extends Polymer.Element, Polymer.IronControlState,
 
   /**
    * The element that is contained by the dropdown, if any.
-   *          
+   *        
    */
   readonly containedElement: any;
   ready(): void;

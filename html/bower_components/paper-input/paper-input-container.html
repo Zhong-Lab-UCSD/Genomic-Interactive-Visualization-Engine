@@ -390,74 +390,49 @@ This element is `display:block` by default, but you can set the `inline` attribu
 
     properties: {
       /**
-       * Set to true to disable the floating label. The label disappears when the input value is
-       * not null.
+       * Set to true to disable the floating label. The label disappears when the
+       * input value is not null.
        */
-      noLabelFloat: {
-        type: Boolean,
-        value: false
-      },
+      noLabelFloat: {type: Boolean, value: false},
 
       /**
        * Set to true to always float the floating label.
        */
-      alwaysFloatLabel: {
-        type: Boolean,
-        value: false
-      },
+      alwaysFloatLabel: {type: Boolean, value: false},
 
       /**
        * The attribute to listen for value changes on.
        */
-      attrForValue: {
-        type: String,
-        value: 'bind-value'
-      },
+      attrForValue: {type: String, value: 'bind-value'},
 
       /**
        * Set to true to auto-validate the input value when it changes.
        */
-      autoValidate: {
-        type: Boolean,
-        value: false
-      },
+      autoValidate: {type: Boolean, value: false},
 
       /**
-       * True if the input is invalid. This property is set automatically when the input value
-       * changes if auto-validating, or when the `iron-input-validate` event is heard from a child.
+       * True if the input is invalid. This property is set automatically when the
+       * input value changes if auto-validating, or when the `iron-input-validate`
+       * event is heard from a child.
        */
-      invalid: {
-        observer: '_invalidChanged',
-        type: Boolean,
-        value: false
-      },
+      invalid: {observer: '_invalidChanged', type: Boolean, value: false},
 
       /**
        * True if the input has focus.
        */
-      focused: {
-        readOnly: true,
-        type: Boolean,
-        value: false,
-        notify: true
-      },
+      focused: {readOnly: true, type: Boolean, value: false, notify: true},
 
       _addons: {
         type: Array
-        // do not set a default value here intentionally - it will be initialized lazily when a
-        // distributed child is attached, which may occur before configuration for this element
-        // in polyfill.
+        // do not set a default value here intentionally - it will be initialized
+        // lazily when a distributed child is attached, which may occur before
+        // configuration for this element in polyfill.
       },
 
-      _inputHasContent: {
-        type: Boolean,
-        value: false
-      },
+      _inputHasContent: {type: Boolean, value: false},
 
-      _inputSelector: {
-        type: String,
-        value: 'input,iron-input,textarea,.paper-input-input'
-      },
+      _inputSelector:
+          {type: String, value: 'input,iron-input,textarea,.paper-input-input'},
 
       _boundOnFocus: {
         type: Function,
@@ -506,15 +481,17 @@ This element is `display:block` by default, but you can set the `inline` attribu
     },
 
     get _inputElementValue() {
-      return this._inputElement[this._propertyForValue] || this._inputElement.value;
+      return this._inputElement[this._propertyForValue] ||
+          this._inputElement.value;
     },
 
     ready: function() {
       // Paper-input treats a value of undefined differently at startup than
-      // the rest of the time (specifically: it does not validate it at startup, but
-      // it does after that. We need to track whether the first time we encounter
-      // the value is basically this first time, so that we can validate it
-      // correctly the rest of the time. See https://github.com/PolymerElements/paper-input/issues/605
+      // the rest of the time (specifically: it does not validate it at startup,
+      // but it does after that. We need to track whether the first time we
+      // encounter the value is basically this first time, so that we can validate
+      // it correctly the rest of the time. See
+      // https://github.com/PolymerElements/paper-input/issues/605
       this.__isFirstValueUpdate = true;
       if (!this._addons) {
         this._addons = [];
@@ -525,7 +502,8 @@ This element is `display:block` by default, but you can set the `inline` attribu
 
     attached: function() {
       if (this.attrForValue) {
-        this._inputElement.addEventListener(this._valueChangedEvent, this._boundValueChanged);
+        this._inputElement.addEventListener(
+            this._valueChangedEvent, this._boundValueChanged);
       } else {
         this.addEventListener('input', this._onInput);
       }
@@ -573,12 +551,12 @@ This element is `display:block` by default, but you can set the `inline` attribu
       var input = event.target;
 
       // Paper-input treats a value of undefined differently at startup than
-      // the rest of the time (specifically: it does not validate it at startup, but
-      // it does after that. If this is in fact the bootup case, ignore validation,
-      // just this once.
+      // the rest of the time (specifically: it does not validate it at startup,
+      // but it does after that. If this is in fact the bootup case, ignore
+      // validation, just this once.
       if (this.__isFirstValueUpdate) {
         this.__isFirstValueUpdate = false;
-        if (input.value === undefined) {
+        if (input.value === undefined || input.value === '') {
           return;
         }
       }
@@ -591,17 +569,15 @@ This element is `display:block` by default, but you can set the `inline` attribu
       var value = this._inputElementValue;
 
       // type="number" hack needed because this.value is empty until it's valid
-      if (value || value === 0 || (inputElement.type === 'number' && !inputElement.checkValidity())) {
+      if (value || value === 0 ||
+          (inputElement.type === 'number' && !inputElement.checkValidity())) {
         this._inputHasContent = true;
       } else {
         this._inputHasContent = false;
       }
 
-      this.updateAddons({
-        inputElement: inputElement,
-        value: value,
-        invalid: this.invalid
-      });
+      this.updateAddons(
+          {inputElement: inputElement, value: value, invalid: this.invalid});
     },
 
     /** @private */
@@ -644,7 +620,8 @@ This element is `display:block` by default, but you can set the `inline` attribu
     },
 
     /** @private */
-    _computeInputContentClass: function(noLabelFloat, alwaysFloatLabel, focused, invalid, _inputHasContent) {
+    _computeInputContentClass: function(
+        noLabelFloat, alwaysFloatLabel, focused, invalid, _inputHasContent) {
       var cls = 'input-content';
       if (!noLabelFloat) {
         var label = this.querySelector('label');
@@ -658,7 +635,7 @@ This element is `display:block` by default, but you can set the `inline` attribu
           if (invalid) {
             cls += ' is-invalid';
           } else if (focused) {
-            cls += " label-is-highlighted";
+            cls += ' label-is-highlighted';
           }
         } else {
           // When the label is not floating, it should overlap the input element.

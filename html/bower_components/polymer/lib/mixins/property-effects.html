@@ -43,7 +43,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     READ_ONLY: '__readOnly'
   };
 
-  /** @const {string} */
+  /** @const {RegExp} */
   const capitalAttributeRegex = /[A-Z]/;
 
   /**
@@ -356,7 +356,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       toPath = Polymer.Path.translate(fromProp, toPath, fromPath);
       value = detail && detail.value;
     } else {
-      value = event.target[fromProp];
+      value = event.currentTarget[fromProp];
     }
     value = negate ? !value : value;
     if (!inst[TYPES.READ_ONLY] || !inst[TYPES.READ_ONLY][toPath]) {
@@ -1122,6 +1122,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      * @implements {Polymer_PropertyAccessors}
      * @implements {Polymer_TemplateStamp}
      * @unrestricted
+     * @private
      */
     const propertyEffectsBase = Polymer.TemplateStamp(Polymer.PropertyAccessors(superClass));
 
@@ -2628,6 +2629,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
        *   `{{prop}}`, `{{object.prop}}`, `{{!prop}}` or `{{!object.prop}}`
        * - Inline computed method (supports negation):
        *   `[[compute(a, 'literal', b)]]`, `[[!compute(a, 'literal', b)]]`
+       *
+       * The default implementation uses a regular expression for best
+       * performance. However, the regular expression uses a white-list of
+       * allowed characters in a data-binding, which causes problems for
+       * data-bindings that do use characters not in this white-list.
+       *
+       * Instead of updating the white-list with all allowed characters,
+       * there is a StrictBindingParser (see lib/mixins/strict-binding-parser)
+       * that uses a state machine instead. This state machine is able to handle
+       * all characters. However, it is slightly less performant, therefore we
+       * extracted it into a separate optional mixin.
        *
        * @param {string} text Text to parse from attribute or textContent
        * @param {Object} templateInfo Current template metadata

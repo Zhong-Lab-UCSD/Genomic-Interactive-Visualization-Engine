@@ -45,19 +45,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
-
       suite('nested', function() {
-
         var outerCollapse;
         var innerCollapse;
 
-        setup(function () {
+        setup(function() {
           outerCollapse = fixture('test');
         });
 
         suite('vertical', function() {
-
-          setup(function () {
+          setup(function() {
             innerCollapse = outerCollapse.querySelector('#inner-collapse-vertical');
           });
 
@@ -76,30 +73,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             assert.equal(innerCollapse.style.transitionDuration, '0s');
           });
 
-          test('open inner collapse then open outer collapse reveals inner collapse with expanded height', function() {
-            innerCollapse.opened = true;
-            outerCollapse.opened = true;
+          test(
+              'open inner collapse then open outer collapse reveals inner collapse with expanded height',
+              function() {
+                innerCollapse.opened = true;
+                outerCollapse.opened = true;
 
-            assert.equal(innerCollapse.getBoundingClientRect().height, 100);
-          });
+                assert.equal(innerCollapse.getBoundingClientRect().height, 100);
+              });
 
-          test('notifyResize triggered only on element\'s animations', function(done) {
-            var spy = sinon.spy(outerCollapse, 'notifyResize');
+          test(
+              'notifyResize triggered only on element\'s animations', function(done) {
+                var spy = sinon.spy(outerCollapse, 'notifyResize');
 
-            outerCollapse.opened = true;
-            innerCollapse.opened = true;
+                outerCollapse.opened = true;
+                innerCollapse.opened = true;
 
-            setTimeout(function() {
-              assert.equal(spy.callCount, 1, 'notifyResize called once');
-              done();
-            }, 400);
-          });
-
+                setTimeout(function() {
+                  assert.equal(spy.callCount, 1, 'notifyResize called once');
+                  done();
+                }, 400);
+              });
         });
 
         suite('horizontal', function() {
-
-          setup(function () {
+          setup(function() {
             innerCollapse = outerCollapse.querySelector('#inner-collapse-horizontal');
           });
 
@@ -114,13 +112,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             assert.equal(innerCollapse.style.transitionDuration, '0s');
           });
 
-          test('open inner collapse then open outer collapse reveals inner collapse with expanded width', function() {
-            innerCollapse.opened = true;
-            outerCollapse.opened = true;
+          test(
+              'open inner collapse then open outer collapse reveals inner collapse with expanded width',
+              function() {
+                innerCollapse.opened = true;
+                outerCollapse.opened = true;
 
-            assert.equal(innerCollapse.getBoundingClientRect().width, 100);
-          });
-
+                assert.equal(innerCollapse.getBoundingClientRect().width, 100);
+              });
         });
       });
     </script>

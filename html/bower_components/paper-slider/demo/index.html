@@ -120,8 +120,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       var grade = document.querySelector('#grade');
       grade.addEventListener('value-change', function() {
-        var label = (grade.value < grade.secondaryProgress) ? "Fail" : "Pass" ;
-        document.querySelector('#gradeLabel').textContent = grade.value + " (" + label + ")";
+        var label = (grade.value < grade.secondaryProgress) ? 'Fail' : 'Pass';
+        document.querySelector('#gradeLabel').textContent =
+            grade.value + ' (' + label + ')';
       });
     });
   </script>

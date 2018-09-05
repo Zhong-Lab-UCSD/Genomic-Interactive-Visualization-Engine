@@ -12,75 +12,64 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-overlay-behavior/iron-overlay-behavior.html">
 
 <script>
-(function() {
-'use strict';
+  (function() {
+  'use strict';
 
-/**
-Use `Polymer.PaperDialogBehavior` and `paper-dialog-shared-styles.html` to implement a Material Design
-dialog.
+  /**
+  Use `Polymer.PaperDialogBehavior` and `paper-dialog-shared-styles.html` to
+  implement a Material Design dialog.
 
-For example, if `<paper-dialog-impl>` implements this behavior:
+  For example, if `<paper-dialog-impl>` implements this behavior:
 
-    <paper-dialog-impl>
-        <h2>Header</h2>
-        <div>Dialog body</div>
-        <div class="buttons">
-            <paper-button dialog-dismiss>Cancel</paper-button>
-            <paper-button dialog-confirm>Accept</paper-button>
-        </div>
-    </paper-dialog-impl>
+      <paper-dialog-impl>
+          <h2>Header</h2>
+          <div>Dialog body</div>
+          <div class="buttons">
+              <paper-button dialog-dismiss>Cancel</paper-button>
+              <paper-button dialog-confirm>Accept</paper-button>
+          </div>
+      </paper-dialog-impl>
 
-`paper-dialog-shared-styles.html` provide styles for a header, content area, and an action area for buttons.
-Use the `<h2>` tag for the header and the `buttons` class for the action area. You can use the
-`paper-dialog-scrollable` element (in its own repository) if you need a scrolling content area.
+  `paper-dialog-shared-styles.html` provide styles for a header, content area, and
+  an action area for buttons. Use the `<h2>` tag for the header and the `buttons`
+  class for the action area. You can use the `paper-dialog-scrollable` element (in
+  its own repository) if you need a scrolling content area.
 
-Use the `dialog-dismiss` and `dialog-confirm` attributes on interactive controls to close the
-dialog. If the user dismisses the dialog with `dialog-confirm`, the `closingReason` will update
-to include `confirmed: true`.
+  Use the `dialog-dismiss` and `dialog-confirm` attributes on interactive controls
+  to close the dialog. If the user dismisses the dialog with `dialog-confirm`, the
+  `closingReason` will update to include `confirmed: true`.
 
-### Accessibility
+  ### Accessibility
 
-This element has `role="dialog"` by default. Depending on the context, it may be more appropriate
-to override this attribute with `role="alertdialog"`.
+  This element has `role="dialog"` by default. Depending on the context, it may be
+  more appropriate to override this attribute with `role="alertdialog"`.
 
-If `modal` is set, the element will prevent the focus from exiting the element.
-It will also ensure that focus remains in the dialog.
+  If `modal` is set, the element will prevent the focus from exiting the element.
+  It will also ensure that focus remains in the dialog.
 
-@hero hero.svg
-@demo demo/index.html
-@polymerBehavior Polymer.PaperDialogBehavior
-*/
+  @hero hero.svg
+  @demo demo/index.html
+  @polymerBehavior Polymer.PaperDialogBehavior
+  */
   Polymer.PaperDialogBehaviorImpl = {
 
-    hostAttributes: {
-      'role': 'dialog',
-      'tabindex': '-1'
-    },
+    hostAttributes: {'role': 'dialog', 'tabindex': '-1'},
 
     properties: {
 
       /**
-       * If `modal` is true, this implies `no-cancel-on-outside-click`, `no-cancel-on-esc-key` and `with-backdrop`.
+       * If `modal` is true, this implies `no-cancel-on-outside-click`,
+       * `no-cancel-on-esc-key` and `with-backdrop`.
        */
-      modal: {
-        type: Boolean,
-        value: false
-      },
+      modal: {type: Boolean, value: false},
 
-      __readied: {
-        type: Boolean,
-        value: false
-      }
+      __readied: {type: Boolean, value: false}
 
     },
 
-    observers: [
-      '_modalChanged(modal, __readied)'
-    ],
+    observers: ['_modalChanged(modal, __readied)'],
 
-    listeners: {
-      'tap': '_onDialogClick'
-    },
+    listeners: {'tap': '_onDialogClick'},
 
     /**
      * @return {void}
@@ -110,10 +99,10 @@ It will also ensure that focus remains in the dialog.
         this.withBackdrop = true;
       } else {
         // If the value was changed to false, let it false.
-        this.noCancelOnOutsideClick = this.noCancelOnOutsideClick &&
-          this.__prevNoCancelOnOutsideClick;
-        this.noCancelOnEscKey = this.noCancelOnEscKey &&
-          this.__prevNoCancelOnEscKey;
+        this.noCancelOnOutsideClick =
+            this.noCancelOnOutsideClick && this.__prevNoCancelOnOutsideClick;
+        this.noCancelOnEscKey =
+            this.noCancelOnEscKey && this.__prevNoCancelOnEscKey;
         this.withBackdrop = this.withBackdrop && this.__prevWithBackdrop;
       }
     },
@@ -133,8 +122,11 @@ It will also ensure that focus remains in the dialog.
       var path = Polymer.dom(event).path;
       for (var i = 0, l = path.indexOf(this); i < l; i++) {
         var target = path[i];
-        if (target.hasAttribute && (target.hasAttribute('dialog-dismiss') || target.hasAttribute('dialog-confirm'))) {
-          this._updateClosingReasonConfirmed(target.hasAttribute('dialog-confirm'));
+        if (target.hasAttribute &&
+            (target.hasAttribute('dialog-dismiss') ||
+             target.hasAttribute('dialog-confirm'))) {
+          this._updateClosingReasonConfirmed(
+              target.hasAttribute('dialog-confirm'));
           this.close();
           event.stopPropagation();
           break;
@@ -145,7 +137,7 @@ It will also ensure that focus remains in the dialog.
   };
 
   /** @polymerBehavior */
-  Polymer.PaperDialogBehavior = [Polymer.IronOverlayBehavior, Polymer.PaperDialogBehaviorImpl];
-
-})();
+  Polymer.PaperDialogBehavior =
+      [Polymer.IronOverlayBehavior, Polymer.PaperDialogBehaviorImpl];
+  })();
 </script>

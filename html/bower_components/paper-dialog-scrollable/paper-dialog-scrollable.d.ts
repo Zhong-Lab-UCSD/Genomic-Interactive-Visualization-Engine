@@ -66,7 +66,8 @@
 interface PaperDialogScrollableElement extends Polymer.Element {
 
   /**
-   * The dialog element that implements `Polymer.PaperDialogBehavior` containing this element.
+   * The dialog element that implements `Polymer.PaperDialogBehavior`
+   * containing this element.
    */
   dialogElement: Node|null;
 

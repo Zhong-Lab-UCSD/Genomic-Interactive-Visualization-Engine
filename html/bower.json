@@ -44,7 +44,7 @@
     "paper-tabs": "PolymerElements/paper-tabs#^2.0.0",
     "paper-tooltip": "PolymerElements/paper-tooltip#^2.0.0",
     "polymer": "Polymer/polymer#^2.0.0",
-    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^2.0.0",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^2.1.0",
     "paper-slider": "PolymerElements/paper-slider#^2.0.0",
     "paper-drawer-panel": "PolymerElements/paper-drawer-panel#^2.0.0",
     "paper-scroll-header-panel": "PolymerElements/paper-scroll-header-panel#^2.0.0",

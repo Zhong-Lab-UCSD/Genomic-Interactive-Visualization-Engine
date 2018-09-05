@@ -1,6 +1,6 @@
 {
   "name": "iron-form-element-behavior",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "license": "http://polymer.github.io/LICENSE.txt",
   "private": true,
   "main": "iron-form-element-behavior.html",
@@ -47,11 +47,11 @@
     "webcomponentsjs": "^1.0.0"
   },
   "homepage": "https://github.com/PolymerElements/iron-form-element-behavior",
-  "_release": "2.1.2",
+  "_release": "2.1.3",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.2",
-    "commit": "601b8337c2728c8421c2a018c016d9ca97e0f385"
+    "tag": "v2.1.3",
+    "commit": "5583d5a614527d457af858e1b0a3422ba0270364"
   },
   "_source": "https://github.com/PolymerElements/iron-form-element-behavior.git",
   "_target": "1 - 2",

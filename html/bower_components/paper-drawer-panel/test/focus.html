@@ -82,14 +82,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ensureDocumentHasFocus();
       });
 
-      test('should not focus content in drawer if the drawer is closed', function(done) {
-        Polymer.Base.async(function() {
-          expect(Polymer.dom(document).activeElement).to.not.be.equal(innerLink);
-          done();
-        }, 1);
-        MockInteractions.focus(innerLink);
-      });
-
+      test(
+          'should not focus content in drawer if the drawer is closed',
+          function(done) {
+            Polymer.Base.async(function() {
+              expect(Polymer.dom(document).activeElement)
+                  .to.not.be.equal(innerLink);
+              done();
+            }, 1);
+            MockInteractions.focus(innerLink);
+          });
     });
 
     suite('nested drawers', function() {
@@ -123,10 +125,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }, 100);
         });
       });
-
     });
-
-
   </script>
 </body>
 </html>

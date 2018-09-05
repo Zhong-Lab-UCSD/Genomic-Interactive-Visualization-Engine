@@ -40,9 +40,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </test-fixture>
 
     <script>
-
       suite('basic', function() {
-
         var collapse;
         var collapseHeight;
 
@@ -84,17 +82,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
         });
 
-        test('transitioning updated only during transitions between open/close states', function() {
-          var spy = sinon.spy();
-          collapse.addEventListener('transitioning-changed', spy);
-          collapse.noAnimation = true;
-          assert.equal(spy.callCount, 0, 'transitioning not affected by noAnimation');
-          collapse.horizontal = true;
-          assert.equal(spy.callCount, 0, 'transitioning not affected by horizontal');
-          collapse.opened = false;
-          assert.equal(spy.callCount, 2, 'transitioning changed twice');
-          assert.equal(collapse.transitioning, false, 'transitioning is false');
-        });
+        test(
+            'transitioning updated only during transitions between open/close states',
+            function() {
+              var spy = sinon.spy();
+              collapse.addEventListener('transitioning-changed', spy);
+              collapse.noAnimation = true;
+              assert.equal(
+                  spy.callCount, 0, 'transitioning not affected by noAnimation');
+              collapse.horizontal = true;
+              assert.equal(
+                  spy.callCount, 0, 'transitioning not affected by horizontal');
+              collapse.opened = false;
+              assert.equal(spy.callCount, 2, 'transitioning changed twice');
+              assert.equal(collapse.transitioning, false, 'transitioning is false');
+            });
 
         test('noAnimation disables animations', function() {
           collapse.noAnimation = true;
@@ -162,16 +164,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         test('change size with updateSize', function(done) {
           collapse.addEventListener('transitionend', function() {
             // size should be kept after transition
-            assert.equal(collapse.style.maxHeight, "123px");
+            assert.equal(collapse.style.maxHeight, '123px');
             done();
           });
-          collapse.updateSize("123px", true);
+          collapse.updateSize('123px', true);
         });
-
       });
 
       suite('empty', function() {
-
         var collapse;
 
         setup(function() {
@@ -179,16 +179,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         test('empty&opened shows dynamically loaded content', function(done) {
-          flush(function () {
+          flush(function() {
             collapse.toggle();
             collapse.toggle();
             assert.equal(collapse.style.maxHeight, '');
             done();
           });
         });
-
       });
-
     </script>
 
   </body>

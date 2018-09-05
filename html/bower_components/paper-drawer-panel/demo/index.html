@@ -76,20 +76,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script>
       (function(win) {
 
-        'use strict';
+      'use strict';
 
-        var DRAWER_ATTR = 'right-drawer';
+      var DRAWER_ATTR = 'right-drawer';
 
-        var pdp = document.getElementById('paperDrawerPanel');
+      var pdp = document.getElementById('paperDrawerPanel');
 
-        win.flipDrawer = function() {
-          pdp.rightDrawer = !pdp.rightDrawer;
-        }
+      win.flipDrawer = function() {
+        pdp.rightDrawer = !pdp.rightDrawer;
+      };
 
-        win.toogleDrawer = function() {
-          pdp.togglePanel();
-        };
-
+      win.toogleDrawer = function() {
+        pdp.togglePanel();
+      };
       }(this));
     </script>
 

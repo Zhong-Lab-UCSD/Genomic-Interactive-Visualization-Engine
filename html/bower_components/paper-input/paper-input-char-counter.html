@@ -58,16 +58,9 @@ Custom property | Description | Default
   Polymer({
     is: 'paper-input-char-counter',
 
-    behaviors: [
-      Polymer.PaperInputAddonBehavior
-    ],
+    behaviors: [Polymer.PaperInputAddonBehavior],
 
-    properties: {
-      _charCounterStr: {
-        type: String,
-        value: '0'
-      }
-    },
+    properties: {_charCounterStr: {type: String, value: '0'}},
 
     /**
      * This overrides the update function in PaperInputAddonBehavior.

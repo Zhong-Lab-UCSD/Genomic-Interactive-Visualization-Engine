@@ -46,7 +46,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script>
     suite('positioning', function() {
-
       test('drawer is positioned correctly', function(done) {
         var f, drawer, main;
         f = fixture('left-drawer');
@@ -58,9 +57,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           expect(drawerStyle.left).to.be.equal('0px');
           try {
             expect(drawerStyle.right).to.be.equal('auto');
-          } catch(e) {
+          } catch (e) {
             // Firefox
-            expect(drawerStyle.right).to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
+            expect(drawerStyle.right)
+                .to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
           }
           done();
         });
@@ -78,14 +78,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           try {
             expect(drawerStyle.left).to.be.equal('auto');
-          } catch(e) {
+          } catch (e) {
             // Firefox
-            expect(drawerStyle.left).to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
+            expect(drawerStyle.left)
+                .to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
           }
           done();
         });
       });
-
     });
   </script>
 </body>

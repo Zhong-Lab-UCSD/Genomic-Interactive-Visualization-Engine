@@ -15,13 +15,14 @@
 declare namespace Polymer {
 
   /**
-   * Use `Polymer.PaperInputBehavior` to implement inputs with `<paper-input-container>`. This
-   * behavior is implemented by `<paper-input>`. It exposes a number of properties from
-   * `<paper-input-container>` and `<input is="iron-input">` and they should be bound in your
-   * template.
+   * Use `Polymer.PaperInputBehavior` to implement inputs with
+   * `<paper-input-container>`. This behavior is implemented by `<paper-input>`.
+   * It exposes a number of properties from
+   * `<paper-input-container>` and `<input is="iron-input">` and they should be
+   * bound in your template.
    *
-   * The input element can be accessed by the `inputElement` property if you need to access
-   * properties or methods that are not exposed.
+   * The input element can be accessed by the `inputElement` property if you need
+   * to access properties or methods that are not exposed.
    */
   interface PaperInputBehavior extends Polymer.IronControlState, Polymer.IronA11yKeysBehavior {
 
@@ -47,15 +48,15 @@ declare namespace Polymer {
      * the `<iron-input>`'s `bindValue`
      * property, or the value property of your input that is `notify:true`.
      */
-    value: string|null|undefined;
+    value: any;
 
     /**
-     * Returns true if the value is invalid. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to both the
+     * Returns true if the value is invalid. If you're using PaperInputBehavior
+     * to implement your own paper-input-like element, bind this to both the
      * `<paper-input-container>`'s and the input's `invalid` property.
      *
-     * If `autoValidate` is true, the `invalid` attribute is managed automatically,
-     * which can clobber attempts to manage it manually.
+     * If `autoValidate` is true, the `invalid` attribute is managed
+     * automatically, which can clobber attempts to manage it manually.
      */
     invalid: boolean|null|undefined;
 
@@ -69,31 +70,34 @@ declare namespace Polymer {
 
     /**
      * The type of the input. The supported types are the
-     * [native input's types](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Form_<input>_types).
-     * If you're using PaperInputBehavior to implement your own paper-input-like element,
-     * bind this to the (Polymer 1) `<input is="iron-input">`'s or (Polymer 2)
+     * [native input's
+     * types](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Form_<input>_types).
+     * If you're using PaperInputBehavior to implement your own paper-input-like
+     * element, bind this to the (Polymer 1) `<input is="iron-input">`'s or
+     * (Polymer 2)
      * `<iron-input>`'s `type` property.
      */
     type: string|null|undefined;
 
     /**
-     * The datalist of the input (if any). This should match the id of an existing `<datalist>`.
-     * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `list` property.
+     * The datalist of the input (if any). This should match the id of an
+     * existing `<datalist>`. If you're using PaperInputBehavior to implement
+     * your own paper-input-like element, bind this to the `<input
+     * is="iron-input">`'s `list` property.
      */
     list: string|null|undefined;
 
     /**
-     * A pattern to validate the `input` with. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to
-     * the `<input is="iron-input">`'s `pattern` property.
+     * A pattern to validate the `input` with. If you're using
+     * PaperInputBehavior to implement your own paper-input-like element, bind
+     * this to the `<input is="iron-input">`'s `pattern` property.
      */
     pattern: string|null|undefined;
 
     /**
-     * Set to true to mark the input as required. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to
-     * the `<input is="iron-input">`'s `required` property.
+     * Set to true to mark the input as required. If you're using
+     * PaperInputBehavior to implement your own paper-input-like element, bind
+     * this to the `<input is="iron-input">`'s `required` property.
      */
     required: boolean|null|undefined;
 
@@ -110,23 +114,23 @@ declare namespace Polymer {
     charCounter: boolean|null|undefined;
 
     /**
-     * Set to true to disable the floating label. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to
-     * the `<paper-input-container>`'s `noLabelFloat` property.
+     * Set to true to disable the floating label. If you're using
+     * PaperInputBehavior to implement your own paper-input-like element, bind
+     * this to the `<paper-input-container>`'s `noLabelFloat` property.
      */
     noLabelFloat: boolean|null|undefined;
 
     /**
-     * Set to true to always float the label. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to
-     * the `<paper-input-container>`'s `alwaysFloatLabel` property.
+     * Set to true to always float the label. If you're using PaperInputBehavior
+     * to implement your own paper-input-like element, bind this to the
+     * `<paper-input-container>`'s `alwaysFloatLabel` property.
      */
     alwaysFloatLabel: boolean|null|undefined;
 
     /**
-     * Set to true to auto-validate the input value. If you're using PaperInputBehavior to
-     * implement your own paper-input-like element, bind this to
-     * the `<paper-input-container>`'s `autoValidate` property.
+     * Set to true to auto-validate the input value. If you're using
+     * PaperInputBehavior to implement your own paper-input-like element, bind
+     * this to the `<paper-input-container>`'s `autoValidate` property.
      */
     autoValidate: boolean|null|undefined;
 
@@ -139,33 +143,38 @@ declare namespace Polymer {
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `autocomplete` property.
+     * element, bind this to the `<input is="iron-input">`'s `autocomplete`
+     * property.
      */
     autocomplete: string|null|undefined;
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `autofocus` property.
+     * element, bind this to the `<input is="iron-input">`'s `autofocus`
+     * property.
      */
     autofocus: boolean|null|undefined;
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `inputmode` property.
+     * element, bind this to the `<input is="iron-input">`'s `inputmode`
+     * property.
      */
     inputmode: string|null|undefined;
 
     /**
      * The minimum length of the input value.
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `minlength` property.
+     * element, bind this to the `<input is="iron-input">`'s `minlength`
+     * property.
      */
     minlength: number|null|undefined;
 
     /**
      * The maximum length of the input value.
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `maxlength` property.
+     * element, bind this to the `<input is="iron-input">`'s `maxlength`
+     * property.
      */
     maxlength: number|null|undefined;
 
@@ -198,13 +207,15 @@ declare namespace Polymer {
     name: string|null|undefined;
 
     /**
-     * A placeholder string in addition to the label. If this is set, the label will always float.
+     * A placeholder string in addition to the label. If this is set, the label
+     * will always float.
      */
     placeholder: string|null|undefined;
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `readonly` property.
+     * element, bind this to the `<input is="iron-input">`'s `readonly`
+     * property.
      */
     readonly: boolean|null|undefined;
 
@@ -216,20 +227,22 @@ declare namespace Polymer {
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `autocapitalize` property.
+     * element, bind this to the `<input is="iron-input">`'s `autocapitalize`
+     * property.
      */
     autocapitalize: string|null|undefined;
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `autocorrect` property.
+     * element, bind this to the `<input is="iron-input">`'s `autocorrect`
+     * property.
      */
     autocorrect: string|null|undefined;
 
     /**
      * If you're using PaperInputBehavior to implement your own paper-input-like
-     * element, bind this to the `<input is="iron-input">`'s `autosave` property,
-     * used with type=search.
+     * element, bind this to the `<input is="iron-input">`'s `autosave`
+     * property, used with type=search.
      */
     autosave: string|null|undefined;
 

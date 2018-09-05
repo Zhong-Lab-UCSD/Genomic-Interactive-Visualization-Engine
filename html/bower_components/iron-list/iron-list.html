@@ -1091,9 +1091,17 @@ will only render 20.
       } else if (change.path === 'items.splices') {
         this._adjustVirtualIndex(change.value.indexSplices);
         this._virtualCount = this.items ? this.items.length : 0;
-        // Only blur activeElement if it is a descendant of the list (#505, #507).
-        var activeElement = this._getActiveElement();
-        if (this.contains(activeElement)) activeElement.blur();
+        // Only blur if at least one item is added or removed.
+        var itemAddedOrRemoved = change.value.indexSplices.some(function(splice) {
+          return splice.addedCount > 0 || splice.removed.length > 0;
+        });
+        if (itemAddedOrRemoved) {
+          // Only blur activeElement if it is a descendant of the list (#505, #507).
+          var activeElement = this._getActiveElement();
+          if (this.contains(activeElement)) {
+            activeElement.blur();
+          }
+        }
         // Render only if the affected index is rendered.
         var affectedIndexRendered = change.value.indexSplices.some(function(splice) {
           return splice.index + splice.addedCount >= this._virtualStart &&
@@ -1794,7 +1802,7 @@ will only render 20.
       // Assign models to the focused index.
       this._assignModels();
       // Get the new physical index for the focused index.
-      var fpidx = this._focusedPhysicalIndex;
+      var fpidx = this._focusedPhysicalIndex = this._getPhysicalIndex(this._focusedVirtualIndex);
 
       var onScreenItem = this._physicalItems[fpidx];
       if (!onScreenItem) {
@@ -1854,13 +1862,16 @@ will only render 20.
     _keydownHandler: function(e) {
       switch (e.keyCode) {
         case /* ARROW_DOWN */ 40:
-          e.preventDefault();
+          if (this._focusedVirtualIndex < this._virtualCount - 1)
+            e.preventDefault();
           this._focusPhysicalItem(this._focusedVirtualIndex + (this.grid ? this._itemsPerRow : 1));
           break;
         case /* ARROW_RIGHT */ 39:
           if (this.grid) this._focusPhysicalItem(this._focusedVirtualIndex + (this._isRTL ? -1 : 1));
           break;
         case /* ARROW_UP */ 38:
+          if (this._focusedVirtualIndex > 0)
+            e.preventDefault();
           this._focusPhysicalItem(this._focusedVirtualIndex - (this.grid ? this._itemsPerRow : 1));
           break;
         case /* ARROW_LEFT */ 37:
@@ -1868,7 +1879,7 @@ will only render 20.
           break;
         case /* ENTER */ 13:
           this._focusPhysicalItem(this._focusedVirtualIndex);
-          this._selectionHandler(e);
+          if (this.selectionEnabled) this._selectionHandler(e);
           break;
       }
     },

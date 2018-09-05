@@ -111,8 +111,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         flush(function() {
           assert.equal(slider.value, slider.step);
-            slider.step = 1;
-            done();
+          slider.step = 1;
+          done();
         });
       });
 
@@ -125,8 +125,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         flush(function() {
           assert.equal(slider.value, 6);
-            slider.step = 1;
-            done();
+          slider.step = 1;
+          done();
         });
       });
 
@@ -172,8 +172,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         flush(function() {
           assert.equal(slider.value, slider.max);
-            slider.step = 1;
-            done();
+          slider.step = 1;
+          done();
         });
       });
 
@@ -218,7 +218,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         var cursor = MockInteractions.topLeftOfNode(slider.$.sliderBar);
-        cursor.x += slider.$.sliderBar.getBoundingClientRect().width * targetValue/100;
+        cursor.x +=
+            slider.$.sliderBar.getBoundingClientRect().width * targetValue / 100;
 
         slider.min = 0;
         slider.max = 100;
@@ -290,7 +291,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       });
     });
-
   </script>
 
 </body>

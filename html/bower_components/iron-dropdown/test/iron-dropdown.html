@@ -19,8 +19,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script src="../../web-component-tester/browser.js"></script>
   <script src="../../iron-test-helpers/mock-interactions.js"></script>
 
+  <script>
+    // Don't load the web animations polyfill if we're using neon-animations
+    // 1.x, which loads it itself.
+    // TODO(bicknellr): Remove when updating to 3.x, bower.json may be removed.
+    (function() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '../../neon-animation/bower.json', false);
+    xhr.send();
+
+    const bowerJson = JSON.parse(xhr.responseText);
+    if (typeof bowerJson.version !== 'string' ||
+        parseInt(bowerJson.version.split('.')[0], 10) !== 1) {
+      document.write(
+          '<script src="../../web-animations-js/web-animations-next-lite.min.js"></scr' +
+          'ipt>');
+    }
+    })();
+  </script>
+
   <link rel="import" href="../iron-dropdown.html">
-  <link rel="import" href="../../neon-animation/web-animations.html">
   <link rel="import" href="../../neon-animation/animations/fade-in-animation.html">
 
 </head>
@@ -156,9 +174,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var contentRect = element.getBoundingClientRect();
       var computedStyle = window.getComputedStyle(element);
 
-      return computedStyle.display !== 'none' &&
-        contentRect.width > 0 &&
-        contentRect.height > 0;
+      return computedStyle.display !== 'none' && contentRect.width > 0 &&
+          contentRect.height > 0;
     }
 
     function runAfterOpen(overlay, callback) {
@@ -168,11 +185,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     function fireWheel(node, deltaX, deltaY) {
       // IE 11 doesn't support WheelEvent, use CustomEvent.
-      var event = new CustomEvent('wheel', {
-        cancelable: true,
-        bubbles: true,
-        composed: true
-      });
+      var event = new CustomEvent(
+          'wheel', {cancelable: true, bubbles: true, composed: true});
       event.deltaX = deltaX;
       event.deltaY = deltaY;
       node.dispatchEvent(event);
@@ -182,10 +196,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     function dispatchScroll(target, scrollLeft, scrollTop) {
       target.scrollLeft = scrollLeft;
       target.scrollTop = scrollTop;
-      target.dispatchEvent(new CustomEvent('scroll', {
-        bubbles: true,
-        composed: true
-      }));
+      target.dispatchEvent(
+          new CustomEvent('scroll', {bubbles: true, composed: true}));
     }
 
     suite('<iron-dropdown>', function() {
@@ -195,7 +207,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       suite('basic', function() {
         setup(function() {
           dropdown = fixture('TrivialDropdown');
-          content = Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
+          content =
+              Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
         });
 
         test('effectively hides the dropdown content', function() {
@@ -223,7 +236,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         suite('when content is focusable', function() {
           setup(function() {
             dropdown = fixture('FocusableContentDropdown');
-            content = Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
+            content =
+                Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
           });
           test('focuses the content when opened', function(done) {
             runAfterOpen(dropdown, function() {
@@ -233,7 +247,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           test('focuses a configured focus target', function(done) {
-            var focusableChild = Polymer.dom(content).querySelector('div[tabindex]');
+            var focusableChild =
+                Polymer.dom(content).querySelector('div[tabindex]');
             dropdown.focusTarget = focusableChild;
 
             runAfterOpen(dropdown, function() {
@@ -253,89 +268,85 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         suite('correct animationConfig setup', function() {
           test('as objects', function() {
-            dropdown.openAnimationConfig = {
-              name: 'open-animation'
-            };
-            dropdown.closeAnimationConfig = {
-              name: 'close-animation'
-            };
+            dropdown.openAnimationConfig = {name: 'open-animation'};
+            dropdown.closeAnimationConfig = {name: 'close-animation'};
 
             dropdown.opened = true;
 
-            assert.deepEqual(dropdown.openAnimationConfig, {
-              name: 'open-animation',
-              node: content
-            }, 'open animation ok');
+            assert.deepEqual(
+                dropdown.openAnimationConfig,
+                {name: 'open-animation', node: content},
+                'open animation ok');
 
-            assert.deepEqual(dropdown.closeAnimationConfig, {
-              name: 'close-animation',
-              node: content
-            }, 'close animation ok');
+            assert.deepEqual(
+                dropdown.closeAnimationConfig,
+                {name: 'close-animation', node: content},
+                'close animation ok');
 
-            assert.deepEqual(dropdown.animationConfig, {
-              open: dropdown.openAnimationConfig,
-              close: dropdown.closeAnimationConfig
-            }, 'animationConfig ok');
+            assert.deepEqual(
+                dropdown.animationConfig,
+                {
+                  open: dropdown.openAnimationConfig,
+                  close: dropdown.closeAnimationConfig
+                },
+                'animationConfig ok');
           });
 
           test('as arrays', function() {
-            dropdown.openAnimationConfig = [{
-              name: 'open-animation-1'
-            }, {
-              name: 'open-animation-2'
-            }];
-            dropdown.closeAnimationConfig = [{
-              name: 'close-animation-1'
-            }, {
-              name: 'close-animation-2'
-            }];
+            dropdown.openAnimationConfig =
+                [{name: 'open-animation-1'}, {name: 'open-animation-2'}];
+            dropdown.closeAnimationConfig =
+                [{name: 'close-animation-1'}, {name: 'close-animation-2'}];
 
             dropdown.opened = true;
 
-            assert.deepEqual(dropdown.openAnimationConfig, [{
-              name: 'open-animation-1',
-              node: content
-            }, {
-              name: 'open-animation-2',
-              node: content
-            }], 'open animation ok');
+            assert.deepEqual(
+                dropdown.openAnimationConfig,
+                [
+                  {name: 'open-animation-1', node: content},
+                  {name: 'open-animation-2', node: content}
+                ],
+                'open animation ok');
 
-            assert.deepEqual(dropdown.closeAnimationConfig, [{
-              name: 'close-animation-1',
-              node: content
-            }, {
-              name: 'close-animation-2',
-              node: content
-            }], 'close animation ok');
+            assert.deepEqual(
+                dropdown.closeAnimationConfig,
+                [
+                  {name: 'close-animation-1', node: content},
+                  {name: 'close-animation-2', node: content}
+                ],
+                'close animation ok');
 
-            assert.deepEqual(dropdown.animationConfig, {
-              open: dropdown.openAnimationConfig,
-              close: dropdown.closeAnimationConfig
-            }, 'animationConfig ok');
+            assert.deepEqual(
+                dropdown.animationConfig,
+                {
+                  open: dropdown.openAnimationConfig,
+                  close: dropdown.closeAnimationConfig
+                },
+                'animationConfig ok');
           });
 
           test('no pointer events during animation', function(done) {
-            dropdown.openAnimationConfig = [{
-              name: 'fade-in-animation',
-              timing: {
-                duration: 300
-              }
-            }];
+            dropdown.openAnimationConfig =
+                [{name: 'fade-in-animation', timing: {duration: 300}}];
             dropdown.open();
             setTimeout(function() {
-              assert.equal(getComputedStyle(content).pointerEvents, 'none', 'content is interactive');
+              assert.equal(
+                  getComputedStyle(content).pointerEvents,
+                  'none',
+                  'content is interactive');
+              dropdown.addEventListener('iron-overlay-opened', function() {
+                assert.notEqual(
+                    getComputedStyle(content).pointerEvents,
+                    'none',
+                    'content is not interactive');
+                done();
+              });
             }, 150);
-            dropdown.addEventListener('iron-overlay-opened', function() {
-              assert.notEqual(getComputedStyle(content).pointerEvents, 'none', 'content is not interactive');
-              done();
-            });
           });
         });
-
       });
 
       suite('locking scroll', function() {
-
         var bigDiv, scrollTarget;
         suiteSetup(function() {
           bigDiv = document.createElement('div');
@@ -368,14 +379,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           var openCount = 0;
           runAfterOpen(dropdown, function() {
             expect(Polymer.IronDropdownScrollManager._lockingElements.length)
-              .to.be.equal(1);
-            expect(Polymer.IronDropdownScrollManager.elementIsScrollLocked(document.body))
-              .to.be.equal(true);
-            expect(fireWheel(document.body, 0, 10).defaultPrevented).to.be.equal(true);
+                .to.be.equal(1);
+            expect(Polymer.IronDropdownScrollManager.elementIsScrollLocked(
+                       document.body))
+                .to.be.equal(true);
+            expect(fireWheel(document.body, 0, 10).defaultPrevented)
+                .to.be.equal(true);
 
             if (openCount === 0) {
-              // This triggers a second `pushScrollLock` with the same element, however
-              // that should not add the element to the `_lockingElements` stack twice
+              // This triggers a second `pushScrollLock` with the same element,
+              // however that should not add the element to the `_lockingElements`
+              // stack twice
               dropdown.close();
               dropdown.open();
             } else {
@@ -403,20 +417,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           });
         });
-
       });
 
       suite('non locking scroll', function() {
-
         setup(function() {
           dropdown = fixture('NonLockingDropdown');
         });
 
         test('can be disabled with `allowOutsideScroll`', function(done) {
           runAfterOpen(dropdown, function() {
-            expect(Polymer.IronDropdownScrollManager.elementIsScrollLocked(document.body))
-              .to.be.equal(false);
-            expect(fireWheel(document.body, 0, 10).defaultPrevented).to.be.equal(false);
+            expect(Polymer.IronDropdownScrollManager.elementIsScrollLocked(
+                       document.body))
+                .to.be.equal(false);
+            expect(fireWheel(document.body, 0, 10).defaultPrevented)
+                .to.be.equal(false);
             done();
           });
         });
@@ -489,7 +503,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // verticalAlign is top, so a positive offset moves down.
             assert.equal(dropdownRect.top + 10, offsetDropdownRect.top, 'top ok');
             // horizontalAlign is left, so a positive offset moves to the right.
-            assert.equal(dropdownRect.left + 10, offsetDropdownRect.left, 'left ok');
+            assert.equal(
+                dropdownRect.left + 10, offsetDropdownRect.left, 'left ok');
             done();
           });
         });
@@ -505,7 +520,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // verticalAlign is top, so a negative offset moves up.
             assert.equal(dropdownRect.top - 10, offsetDropdownRect.top, 'top ok');
             // horizontalAlign is left, so a negative offset moves to the left.
-            assert.equal(dropdownRect.left - 10, offsetDropdownRect.left, 'left ok');
+            assert.equal(
+                dropdownRect.left - 10, offsetDropdownRect.left, 'left ok');
             done();
           });
         });
@@ -528,9 +544,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             dropdown.refit();
             offsetDropdownRect = dropdown.getBoundingClientRect();
             // verticalAlign is bottom, so a positive offset moves up.
-            assert.equal(dropdownRect.bottom - 10, offsetDropdownRect.bottom, 'bottom ok');
+            assert.equal(
+                dropdownRect.bottom - 10, offsetDropdownRect.bottom, 'bottom ok');
             // horizontalAlign is right, so a positive offset moves to the left.
-            assert.equal(dropdownRect.right - 10, offsetDropdownRect.right, 'right ok');
+            assert.equal(
+                dropdownRect.right - 10, offsetDropdownRect.right, 'right ok');
             done();
           });
         });
@@ -544,9 +562,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             dropdown.refit();
             offsetDropdownRect = dropdown.getBoundingClientRect();
             // verticalAlign is bottom, so a negative offset moves down.
-            assert.equal(dropdownRect.bottom + 10, offsetDropdownRect.bottom, 'bottom ok');
+            assert.equal(
+                dropdownRect.bottom + 10, offsetDropdownRect.bottom, 'bottom ok');
             // horizontalAlign is right, so a positive offset moves to the right.
-            assert.equal(dropdownRect.right + 10, offsetDropdownRect.right, 'right ok');
+            assert.equal(
+                dropdownRect.right + 10, offsetDropdownRect.right, 'right ok');
             done();
           });
         });
@@ -587,7 +607,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       suite('sizing target', function() {
         setup(function() {
           dropdown = fixture('sizingTarget');
-          content = Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
+          content =
+              Polymer.dom(dropdown).querySelector('[slot="dropdown-content"]');
         });
 
         test('sizingTarget is the content element by default', function(done) {

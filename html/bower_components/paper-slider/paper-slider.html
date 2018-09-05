@@ -169,7 +169,8 @@ Custom property | Description | Default
 
       .slider-markers {
         position: absolute;
-        top: calc(14px + var(--paper-slider-height,2px)/2);
+        /* slider-knob is 30px + the slider-height so that the markers should start at a offset of 15px*/
+        top: 15px;
         height: var(--calculated-paper-slider-height);
         left: 0;
         right: -1px;
@@ -398,26 +399,21 @@ Custom property | Description | Default
       ],
 
       properties: {
+
+        value: {type: Number, value: 0},
+
         /**
          * If true, the slider thumb snaps to tick marks evenly spaced based
          * on the `step` property value.
          */
-        snaps: {
-          type: Boolean,
-          value: false,
-          notify: true
-        },
+        snaps: {type: Boolean, value: false, notify: true},
 
         /**
          * If true, a pin with numeric value label is shown when the slider thumb
          * is pressed. Use for settings for which users need to know the exact
          * value of the setting.
          */
-        pin: {
-          type: Boolean,
-          value: false,
-          notify: true
-        },
+        pin: {type: Boolean, value: false, notify: true},
 
         /**
          * The number that represents the current secondary progress.
@@ -432,70 +428,42 @@ Custom property | Description | Default
         /**
          * If true, an input is shown and user can use it to set the slider value.
          */
-        editable: {
-          type: Boolean,
-          value: false
-        },
+        editable: {type: Boolean, value: false},
 
         /**
          * The immediate value of the slider.  This value is updated while the user
          * is dragging the slider.
          */
-        immediateValue: {
-          type: Number,
-          value: 0,
-          readOnly: true,
-          notify: true
-        },
+        immediateValue: {type: Number, value: 0, readOnly: true, notify: true},
 
         /**
          * The maximum number of markers
          */
-        maxMarkers: {
-          type: Number,
-          value: 0,
-          notify: true
-        },
+        maxMarkers: {type: Number, value: 0, notify: true},
 
         /**
          * If true, the knob is expanded
          */
-        expand: {
-          type: Boolean,
-          value: false,
-          readOnly: true
-        },
+        expand: {type: Boolean, value: false, readOnly: true},
 
         /**
          * If true, a touchmove on the slider bar doesn't drag the slider thunb.
          * Tapping on the slider bar still updates the slider's position
          */
-        ignoreBarTouch: {
-          type: Boolean,
-          value: false
-        },
+        ignoreBarTouch: {type: Boolean, value: false},
 
         /**
          * True when the user is dragging the slider.
          */
-        dragging: {
-          type: Boolean,
-          value: false,
-          readOnly: true,
-          notify: true
-        },
+        dragging: {type: Boolean, value: false, readOnly: true, notify: true},
 
-        transiting: {
-          type: Boolean,
-          value: false,
-          readOnly: true
-        },
+        transiting: {type: Boolean, value: false, readOnly: true},
 
         markers: {
           type: Array,
           readOnly: true,
           value: function() {
-              return [];
+            return [];
           }
         },
       },
@@ -507,10 +475,7 @@ Custom property | Description | Default
         '_updateMarkers(maxMarkers, min, max, snaps)'
       ],
 
-      hostAttributes: {
-        role: 'slider',
-        tabindex: 0
-      },
+      hostAttributes: {role: 'slider', tabindex: 0},
 
       keyBindings: {
         'left': '_leftKey',
@@ -520,11 +485,11 @@ Custom property | Description | Default
       },
 
       ready: function() {
-        if(this.ignoreBarTouch) {
+        if (this.ignoreBarTouch) {
           Polymer.Gestures.setTouchAction(this.$.sliderBar, 'auto');
         }
       },
-      
+
       /**
        * Increases value by `step` but not above `max`.
        * @method increment
@@ -610,7 +575,7 @@ Custom property | Description | Default
         this._x = this.ratio * this._w / 100;
         this._startx = this._x;
         this._knobstartx = this._startx;
-        this._minx = - this._startx;
+        this._minx = -this._startx;
         this._maxx = this._w - this._startx;
         this.$.sliderKnob.classList.add('dragging');
         this._setDragging(true);
@@ -622,15 +587,17 @@ Custom property | Description | Default
         }
 
         var direction = this._isRTL ? -1 : 1;
-        var dx = Math.min(
-            this._maxx, Math.max(this._minx, event.detail.dx * direction));
+        var dx =
+            Math.min(this._maxx, Math.max(this._minx, event.detail.dx * direction));
         this._x = this._startx + dx;
 
-        var immediateValue = this._calcStep(this._calcKnobPosition(this._x / this._w * 100));
+        var immediateValue =
+            this._calcStep(this._calcKnobPosition(this._x / this._w * 100));
         this._setImmediateValue(immediateValue);
 
         // update knob's position
-        var translateX = ((this._calcRatio(this.immediateValue) * this._w) - this._knobstartx);
+        var translateX =
+            ((this._calcRatio(this.immediateValue) * this._w) - this._knobstartx);
         this.translate3d(translateX + 'px', 0, 0, this.$.sliderKnob);
       },
 
@@ -721,10 +688,11 @@ Custom property | Description | Default
       },
 
       _mergeClasses: function(classes) {
-        return Object.keys(classes).filter(
-          function(className) {
-            return classes[className];
-          }).join(' ');
+        return Object.keys(classes)
+            .filter(function(className) {
+              return classes[className];
+            })
+            .join(' ');
       },
 
       _getClassNames: function() {
@@ -741,7 +709,9 @@ Custom property | Description | Default
       },
 
       _allowBarEvent: function(event) {
-        return (!this.ignoreBarTouch || (event.detail.sourceEvent instanceof MouseEvent))
+        return (
+            !this.ignoreBarTouch ||
+            (event.detail.sourceEvent instanceof MouseEvent))
       },
 
       get _isRTL() {
@@ -806,7 +776,8 @@ Custom property | Description | Default
 
       // Hide the ripple when user is not interacting with keyboard.
       // This behavior is different from other ripple-y controls, but is
-      // according to spec: https://www.google.com/design/spec/components/sliders.html
+      // according to spec:
+      // https://www.google.com/design/spec/components/sliders.html
       _focusedChanged: function(receivedFocusFromKeyboard) {
         if (receivedFocusFromKeyboard) {
           this.ensureRipple();

@@ -180,11 +180,12 @@ interface PaperDrawerPanelElement extends Polymer.Element, Polymer.IronResizable
   selected: string|null;
 
   /**
-   * The CSS selector for the element that should receive focus when the drawer is open.
-   * By default, when the drawer opens, it focuses the first tabbable element. That is,
-   * the first element that can receive focus.
+   * The CSS selector for the element that should receive focus when the
+   * drawer is open. By default, when the drawer opens, it focuses the first
+   * tabbable element. That is, the first element that can receive focus.
    *
-   * To disable this behavior, you can set `drawerFocusSelector` to `null` or an empty string.
+   * To disable this behavior, you can set `drawerFocusSelector` to `null` or
+   * an empty string.
    */
   drawerFocusSelector: string|null|undefined;
 

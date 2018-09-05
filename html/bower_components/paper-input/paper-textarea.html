@@ -111,11 +111,16 @@ style this element.
         type: String,
       },
 
+      value: {
+        // Required for the correct TypeScript type-generation
+        type: String,
+      },
+
       /**
        * The initial number of rows.
        *
        * @attribute rows
-       * @type number
+       * @type {number}
        * @default 1
        */
       rows: {
@@ -128,7 +133,7 @@ style this element.
        * scrolls. 0 means no maximum.
        *
        * @attribute maxRows
-       * @type number
+       * @type {number}
        * @default 0
        */
       maxRows: {

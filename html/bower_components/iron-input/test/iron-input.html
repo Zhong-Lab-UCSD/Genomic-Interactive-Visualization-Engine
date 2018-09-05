@@ -122,7 +122,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script>
     function fireNativeInputEvent(input) {
-      var ev = new Event('input', { bubbles: true, cancelable: true, composed: true });
+      var ev =
+          new Event('input', {bubbles: true, cancelable: true, composed: true});
       input.dispatchEvent(ev);
     }
 
@@ -140,15 +141,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           // Updating bind-value updates the input's value.
           ironInput.bindValue = 'foobar';
-          assert.equal(input.value, ironInput.bindValue, 'input value equals to iron-input bindValue');
+          assert.equal(
+              input.value,
+              ironInput.bindValue,
+              'input value equals to iron-input bindValue');
 
           // Updating the input's value updates bind-value;
           input.value = 'foo';
           fireNativeInputEvent(input);
-          assert.equal(input.value, ironInput.bindValue, 'input value equals to iron-input bindValue');
+          assert.equal(
+              input.value,
+              ironInput.bindValue,
+              'input value equals to iron-input bindValue');
           done();
         }, 1);
-
       });
 
       test('setting bindValue sets value', function(done) {
@@ -158,7 +164,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         Polymer.Base.async(function() {
           var input = ironInput.querySelector('input');
           ironInput.bindValue = 'foobar';
-          assert.equal(input.value, ironInput.bindValue, 'input value equals to iron-input bindValue');
+          assert.equal(
+              input.value,
+              ironInput.bindValue,
+              'input value equals to iron-input bindValue');
           done();
         }, 1);
       });
@@ -171,7 +180,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           var input = ironInput.querySelector('input');
 
           ironInput.addEventListener('bind-value-changed', function(value) {
-            assert.equal(input.value, ironInput.bindValue, 'input value equals to iron-input bindValue');
+            assert.equal(
+                input.value,
+                ironInput.bindValue,
+                'input value equals to iron-input bindValue');
             done();
           });
 
@@ -186,7 +198,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // Mutation observer is async, so wait one tick.
         Polymer.Base.async(function() {
           var input = ironInput.querySelector('input');
-          assert.equal(ironInput.bindValue, input.value, 'input value equals to iron-input bindValue');
+          assert.equal(
+              ironInput.bindValue,
+              input.value,
+              'input value equals to iron-input bindValue');
           done();
         }, 1);
       });
@@ -299,35 +314,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 1);
       });
 
-      test('prevent invalid input works automatically when allowed pattern is set', function(done) {
-        var ironInput = fixture('automatically-prevent-invalid-input-if-allowed-pattern');
+      test(
+          'prevent invalid input works automatically when allowed pattern is set',
+          function(done) {
+            var ironInput =
+                fixture('automatically-prevent-invalid-input-if-allowed-pattern');
 
-        // Mutation observer is async, so wait one tick.
-        Polymer.Base.async(function() {
-          var input = ironInput.querySelector('input');
+            // Mutation observer is async, so wait one tick.
+            Polymer.Base.async(function() {
+              var input = ironInput.querySelector('input');
 
-          input.value = '123';
-          fireNativeInputEvent(input);
-          assert.equal(ironInput.bindValue, '123');
+              input.value = '123';
+              fireNativeInputEvent(input);
+              assert.equal(ironInput.bindValue, '123');
 
-          input.value = '123foo';
-          fireNativeInputEvent(input);
-          assert.equal(ironInput.bindValue, '123');
+              input.value = '123foo';
+              fireNativeInputEvent(input);
+              assert.equal(ironInput.bindValue, '123');
 
-          ironInput.allowedPattern = '';
-          input.value = '#123foo BAR!';
-          fireNativeInputEvent(input);
-          assert.equal(ironInput.bindValue, '#123foo BAR!');
+              ironInput.allowedPattern = '';
+              input.value = '#123foo BAR!';
+              fireNativeInputEvent(input);
+              assert.equal(ironInput.bindValue, '#123foo BAR!');
 
-          ironInput.allowedPattern = '[a-zA-Z]';
-          input.value = 'foo';
-          fireNativeInputEvent(input);
-          input.value = 'bar123';
-          fireNativeInputEvent(input);
-          assert.equal(ironInput.bindValue, 'foo');
-          done();
-        }, 1);
-      });
+              ironInput.allowedPattern = '[a-zA-Z]';
+              input.value = 'foo';
+              fireNativeInputEvent(input);
+              input.value = 'bar123';
+              fireNativeInputEvent(input);
+              assert.equal(ironInput.bindValue, 'foo');
+              done();
+            }, 1);
+          });
 
       test('disabled input doesn\'t throw on Firefox', function() {
         var el = fixture('disabled');
@@ -350,7 +368,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           var input = ironInput.querySelector('input');
 
           ironInput.addEventListener('iron-announce', function(event) {
-            assert.equal(event.detail.text, 'Invalid string of characters not entered.');
+            assert.equal(
+                event.detail.text, 'Invalid string of characters not entered.');
           });
           input.value = 'foo';
           fireNativeInputEvent(input);
@@ -367,10 +386,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         // Simulate key press event.
-        var event = new CustomEvent('keypress', {
-          bubbles: true,
-          cancelable: true
-        });
+        var event = new CustomEvent('keypress', {bubbles: true, cancelable: true});
         event.charCode = 97 /* a */;
         input.dispatchEvent(event);
       });

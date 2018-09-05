@@ -87,14 +87,11 @@ Custom property | Description | Default
 </dom-module>
 
 <script>
-
   Polymer({
 
     is: 'iron-collapse',
 
-    behaviors: [
-      Polymer.IronResizableBehavior
-    ],
+    behaviors: [Polymer.IronResizableBehavior],
 
     properties: {
 
@@ -103,23 +100,15 @@ Custom property | Description | Default
        *
        * @attribute horizontal
        */
-      horizontal: {
-        type: Boolean,
-        value: false,
-        observer: '_horizontalChanged'
-      },
+      horizontal: {type: Boolean, value: false, observer: '_horizontalChanged'},
 
       /**
        * Set opened to true to show the collapse element and to false to hide it.
        *
        * @attribute opened
        */
-      opened: {
-        type: Boolean,
-        value: false,
-        notify: true,
-        observer: '_openedChanged'
-      },
+      opened:
+          {type: Boolean, value: false, notify: true, observer: '_openedChanged'},
 
       /**
        * When true, the element is transitioning its opened state. When false,
@@ -127,29 +116,20 @@ Custom property | Description | Default
        *
        * @attribute transitioning
        */
-      transitioning: {
-        type: Boolean,
-        notify: true,
-        readOnly: true
-      },
+      transitioning: {type: Boolean, notify: true, readOnly: true},
 
       /**
        * Set noAnimation to true to disable animations.
        *
        * @attribute noAnimation
        */
-      noAnimation: {
-        type: Boolean
-      },
+      noAnimation: {type: Boolean},
 
       /**
        * Stores the desired size of the collapse body.
        * @private
        */
-      _desiredSize: {
-        type: String,
-        value: ''
-      }
+      _desiredSize: {type: String, value: ''}
     },
 
     get dimension() {
@@ -177,9 +157,7 @@ Custom property | Description | Default
       'aria-hidden': 'true',
     },
 
-    listeners: {
-      transitionend: '_onTransitionEnd'
-    },
+    listeners: {transitionend: '_onTransitionEnd'},
 
     /**
      * Toggle the opened state.
@@ -207,8 +185,8 @@ Custom property | Description | Default
       // Consider 'auto' as '', to take full size.
       size = size === 'auto' ? '' : size;
 
-      var willAnimate = animated && !this.noAnimation &&
-                        this.isAttached && this._desiredSize !== size;
+      var willAnimate = animated && !this.noAnimation && this.isAttached &&
+          this._desiredSize !== size;
 
       this._desiredSize = size;
 
@@ -218,7 +196,8 @@ Custom property | Description | Default
         // Animation will start at the current size.
         var startSize = this._calcSize();
         // For `auto` we must calculate what is the final size for the animation.
-        // After the transition is done, _transitionEnd will set the size back to `auto`.
+        // After the transition is done, _transitionEnd will set the size back to
+        // `auto`.
         if (size === '') {
           this.style[this._dimensionMax] = '';
           size = this._calcSize();
@@ -242,14 +221,15 @@ Custom property | Description | Default
     },
 
     /**
-     * enableTransition() is deprecated, but left over so it doesn't break existing code.
-     * Please use `noAnimation` property instead.
+     * enableTransition() is deprecated, but left over so it doesn't break
+     * existing code. Please use `noAnimation` property instead.
      *
      * @method enableTransition
      * @deprecated since version 1.0.4
      */
     enableTransition: function(enabled) {
-      Polymer.Base._warn('`enableTransition()` is deprecated, use `noAnimation` instead.');
+      Polymer.Base._warn(
+          '`enableTransition()` is deprecated, use `noAnimation` instead.');
       this.noAnimation = !enabled;
     },
 
@@ -259,7 +239,8 @@ Custom property | Description | Default
 
     _horizontalChanged: function() {
       this.style.transitionProperty = this._dimensionMaxCss;
-      var otherDimension = this._dimensionMax === 'maxWidth' ? 'maxHeight' : 'maxWidth';
+      var otherDimension =
+          this._dimensionMax === 'maxWidth' ? 'maxHeight' : 'maxWidth';
       this.style[otherDimension] = '';
       this.updateSize(this.opened ? 'auto' : '0px', false);
     },
@@ -298,5 +279,4 @@ Custom property | Description | Default
     }
 
   });
-
 </script>

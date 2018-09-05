@@ -61,19 +61,13 @@ Custom property | Description | Default
   Polymer({
     is: 'paper-input-error',
 
-    behaviors: [
-      Polymer.PaperInputAddonBehavior
-    ],
+    behaviors: [Polymer.PaperInputAddonBehavior],
 
     properties: {
       /**
        * True if the error is showing.
        */
-      invalid: {
-        readOnly: true,
-        reflectToAttribute: true,
-        type: Boolean
-      }
+      invalid: {readOnly: true, reflectToAttribute: true, type: Boolean}
     },
 
     /**
