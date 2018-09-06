@@ -99,7 +99,7 @@ var GIVe = (function (give) {
       } catch (err) {
         this.chromInfo = null
         give._verbConsole.warn(err)
-        give.fireSignal('warning', { msg: err.message })
+        give.fireSignal('give-warning', { msg: err.message })
       }
       return this.chromInfo
     }

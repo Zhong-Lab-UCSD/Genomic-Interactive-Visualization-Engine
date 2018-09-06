@@ -82,7 +82,7 @@ var GIVe = (function (give) {
               .then(() => this._setRefAfterReadyCheck(newValue))
               .catch(err => {
                 // call UI warning procedures in the future
-                give.fireSignal('warning', { msg: err.message })
+                give.fireSignal('give-warning', { msg: err.message })
                 this.refReadyPromise = Promise.reject(err)
               })
               .finally(() => {

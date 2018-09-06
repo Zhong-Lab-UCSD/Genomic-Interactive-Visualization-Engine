@@ -24,6 +24,7 @@ limitations under the License.
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../chart-area/give-track-styles.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-window">
   <template>
@@ -361,15 +362,19 @@ var GIVe = (function (give) {
       this.syncInBetweenSlot()
     }
 
-    attached () {
-      this.windowWidth = this.$.chartHolder.clientWidth
-      if (this.coordinate) {
-        this.changeCoordinate(this.coordinate)
+    connectedCallback () {
+      if (typeof super.connectedCallback === 'function') {
+        super.connectedCallback()
       }
-      // if (!this._initialized) {
-      //   Promise.resolve().then(() => this._initDomAfterVWinRefReady())
-      // }
-
+      Polymer.RenderStatus.beforeNextRender(this, () => {
+        this.windowWidth = this.$.chartHolder.clientWidth
+        // if (this.coordinate) {
+        //   this.changeCoordinate(this.coordinate)
+        // }
+        // if (!this._initialized) {
+        //   Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+        // }
+      })
     }
 
     get reverseFlag () {
@@ -881,7 +886,7 @@ var GIVe = (function (give) {
         this._showTutorialIfNeeded()
       } catch (e) {
         give._verbConsole.warn(e)
-        give.fireSignal('warning', { errObj: e }, null, this)
+        give.fireSignal('give-warning', { errObj: e }, null, this)
       } finally {
         this._readiness = true
       }
@@ -894,7 +899,7 @@ var GIVe = (function (give) {
       }
       if (!(err instanceof give.PromiseCanceler)) {
         give._verbConsole.warn(err)
-        give.fireSignal('warning', { errObj: err })
+        give.fireSignal('give-warning', { errObj: err })
       }
       return this._pendingVWindow || this._viewWindow
     }
@@ -1012,7 +1017,7 @@ var GIVe = (function (give) {
           'Exception occured when adding tracks:'
         )
         give._verbConsole.warn(message)
-        give.fireSignal('warning', { msg: message }, null, this)
+        give.fireSignal('give-warning', { msg: message }, null, this)
         throw new give.GiveError(message)
       }
     }
@@ -1050,7 +1055,7 @@ var GIVe = (function (give) {
           'Exception occured when adding tracks:'
         )
         give._verbConsole.warn(message)
-        give.fireSignal('warning', { msg: message }, null, this)
+        give.fireSignal('give-warning', { msg: message }, null, this)
         throw new give.GiveError(message)
       }
     }

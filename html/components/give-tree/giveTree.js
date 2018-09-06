@@ -177,7 +177,7 @@ var GIVe = (function (give) {
           'Exception occured during insertion:'
         )
         give._verbConsole.warn(message)
-        give.fireSignal('warning', { msg: message }, null, this)
+        give.fireSignal('give-warning', { msg: message }, null, this)
         throw new give.GiveError(message)
       }
     }
@@ -271,7 +271,7 @@ var GIVe = (function (give) {
             breakOnFalse, props, ...args)
         } catch (err) {
           give._verbConsole.warn(err)
-          give.fireSignal('warning', { msg: err.toString() }, null, this)
+          give.fireSignal('give-warning', { msg: err.toString() }, null, this)
           throw err
           // return false
         } finally {

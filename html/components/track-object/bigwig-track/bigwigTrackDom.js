@@ -51,7 +51,7 @@ var GIVe = (function (give) {
           'Window Range Error: windowMax = ' +
           this.windowMax + '; windowMin = ' + this.windowMin
         )
-        give.fireSignal('warning',
+        give.fireSignal('give-warning',
           {
             msg: 'Window Range Error: windowMax = ' +
               this.windowMax + '; windowMin = ' + this.windowMin

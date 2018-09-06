@@ -283,7 +283,7 @@ var GIVe = (function (give) {
           default:
             give._verbConsole.warn('Invalid visibility value encountered: ' +
               '"' + vis + '". Used "hide" instead.')
-            give.fireSignal('warning',
+            give.fireSignal('give-warning',
               { msg: 'Invalid visibility value encountered: ' +
                 '"' + vis + '". Use "hide" instead.' })
             // esline-disable-line no-fallthrough
@@ -614,7 +614,7 @@ var GIVe = (function (give) {
         return new this.typeMap[type](ID, Settings, refObj, groupID)
       } else {
         give._verbConsole.warn('Type \'' + type + '\' is not a valid type! ')
-        give.fireSignal('warning',
+        give.fireSignal('give-warning',
           { msg: 'Type \'' + type + '\' is not a valid type! ' })
         return new this.typeMap._default(ID, Settings, refObj, groupID)
       }
