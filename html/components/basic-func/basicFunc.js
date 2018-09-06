@@ -234,7 +234,7 @@ var GIVe = (function (give) {
             'encounter any problems, please use the info on \'About us\' ' +
             'page to contact us.'
           give._verbConsole.error(errorMsg)
-          give.fireSignal('warning', { errObj: { msg: errorMsg } })
+          give.fireSignal('give-warning', { errObj: { msg: errorMsg } })
           responses = JSON.parse(responses)
         }
         responseFunc.call(thisVar, responses, xhr.status)
@@ -281,7 +281,7 @@ var GIVe = (function (give) {
               'you encounter any problems, please use the info on ' +
               '\'About us\' page to contact us.'
             give._verbConsole.error(errorMsg)
-            give.fireSignal('warning', { msg: errorMsg })
+            give.fireSignal('give-warning', { msg: errorMsg })
             responses = JSON.parse(responses)
           }
           resolve(responses)
@@ -298,8 +298,8 @@ var GIVe = (function (give) {
         }
       }
       xhr.onerror = () => {
-        let err = new give.GiveError('Connection error (' + this.status + ')' +
-          this.response ? ': ' + this.response : '')
+        let err = new give.GiveError('Connection error (' + this.status +
+          ')' + (this.response ? ': ' + this.response : ''))
         err.status = this.status
         reject(err)
       }
@@ -333,7 +333,7 @@ var GIVe = (function (give) {
         sigDetail || null)
     } else {
       if (sigDetail) {
-        sigParams = sigParams || give.DEFAULT_EVENT_PARAMS
+        sigParams = sigParams || Object.assign({}, give.DEFAULT_EVENT_PARAMS)
         sigParams.detail = sigDetail
       }
       newEvent = new window.CustomEvent(evName, sigParams)
@@ -345,7 +345,8 @@ var GIVe = (function (give) {
     prefixLength = prefixLength || 0
     suffixLength = suffixLength || 0
     if (str && str.length > limit) {
-      return str.substr(0, prefixLength) + '...' + str.substr(str.length - suffixLength)
+      return str.substr(0, prefixLength) + '...' +
+        str.substr(str.length - suffixLength)
     } else {
       return str
     }
@@ -388,7 +389,7 @@ var GIVe = (function (give) {
       return document.execCommand('copy')
     } catch (e) {
       give._verbConsole.warn(e)
-      give.fireSignal('warning', { msg: 'Cannot copy code to clipboard.' })
+      give.fireSignal('give-warning', { msg: 'Cannot copy code to clipboard.' })
       return false
     } finally {
       document.body.removeChild(textArea)
@@ -494,6 +495,14 @@ var GIVe = (function (give) {
 
   give.PromiseCanceler = PromiseCanceler
 
+  give.warningHandler = event => {
+    let message = 'Warning happened.'
+    try {
+      message += ' ' + event.detail.errObj.message
+    } catch (ignore) { }
+    return window.alert(message)
+  }
+
   give.DEFAULT_EVENT_PARAMS = {
     bubbles: true,
     cancelable: true,
@@ -502,6 +511,12 @@ var GIVe = (function (give) {
 
   give._initDebug()
 
+  window.addEventListener('give-warning', event => {
+    return (give.warningHandler && typeof give.warningHandler === 'function')
+      ? give.warningHandler(event)
+      : null
+  })
+
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, { flag: 'web-component-ready' })
@@ -509,6 +524,7 @@ var GIVe = (function (give) {
 
   window.addEventListener('error', err => {
     if (err instanceof give.PromiseCanceler) {
+      // ignore give.PromiseCanceler
     }
   })
 

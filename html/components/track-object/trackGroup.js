@@ -144,7 +144,7 @@ var GIVe = (function (give) {
           // give.TrackObject object
           give._verbConsole.warn('Track ' + track +
             ' is not a give.TrackObject Object.')
-          give.fireSignal('warning', {
+          give.fireSignal('give-warning', {
             msg: 'Track ' + track +
               ' is not a give.TrackObject Object.'
           })

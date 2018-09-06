@@ -1339,13 +1339,15 @@ var GIVe = (function (give) {
                 throw e
               }
               give._verbConsole.warn(e)
-              give.fireSignal('warning', { msg: e.message }, null, this)
+              give.fireSignal('give-warning', { errObj: e }, null,
+                this.trackSvg)
               return e
             })
             .then(e => {
               // needs to implement this 'finally except when
               //    give.PromiseCanceler is thrown' case.
-              give.fireSignal('track-ready', { ID: this.parent.id })
+              give.fireSignal('track-ready', { ID: this.parent.id }, null,
+                this.trackSvg)
               this.readyPromise = null
               this._readyPromiseWindowIndices.clear()
               if (e && e instanceof Error) {

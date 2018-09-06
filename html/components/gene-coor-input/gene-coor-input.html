@@ -388,7 +388,7 @@ var GIVe = (function (give) {
           .then(response => this._updatePartialQuery(response))
           .catch(rejectedObj => {
             this._toggleGList(false)
-            give.fireSignal('warning', rejectedObj.message)
+            give.fireSignal('give-warning', rejectedObj.message)
           })
       }
       return Promise.resolve()
