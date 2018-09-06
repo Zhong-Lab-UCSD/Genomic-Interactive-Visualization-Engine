@@ -221,7 +221,7 @@ var GIVe = (function (give) {
      * @memberof DataNode.prototype
      *
      * @param  {ChromRegionLiteral} chrRange - the chromosomal range
-     *    totraverse.
+     *    to traverse.
      * @param  {function} callback - the callback function, takes a
      *    `GIVE.ChromRegion` object as its sole parameter and returns
      *    something that can be evaluated as a boolean value to determine

@@ -807,7 +807,8 @@ var GIVe = (function (give) {
      *
      * @static
      * @param  {ChromRegionLiteral} chrRegion - The region this summary is for.
-     * @param  {object} respEntry - the response entry object converted from JSON
+     * @param  {object} respEntry - the response entry object converted from
+     *    JSON
      * @returns {SummaryCtorBase} the properly constructed summary object.
      */
     static createFromResp (chrRegion, respEntry) {
@@ -819,7 +820,8 @@ var GIVe = (function (give) {
      *
      * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to be
      *    attached to.
-     * @returns {ChromRegionLiteral} the chromosomal region with summary attached.
+     * @returns {ChromRegionLiteral} the chromosomal region with summary
+     *    attached.
      */
     attach (chrRegion) {
       chrRegion.data = this
@@ -830,8 +832,8 @@ var GIVe = (function (give) {
      * extract - extract the summary data from a chromosomal region.
      * This is the reverse operation of `SummaryCtorBase.attach`.
      *
-     * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to extract
-     *    summary data from.
+     * @param  {ChromRegionLiteral} chrRegion - the chromosomal region to
+     *    extract summary data from.
      * @returns {SummaryCtorBase} extracted summary data.
      */
     static extract (chrRegion) {

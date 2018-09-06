@@ -227,20 +227,21 @@ var GIVe = (function (give) {
      */
     updateSummary (chromEntry) {
       if (typeof this.tree._SummaryCtor === 'function') {
-        let summary
+        let newSummary
         if (chromEntry) {
-          summary = this.tree._SummaryCtor.extract(chromEntry)
+          newSummary = this.tree._SummaryCtor.extract(chromEntry)
         }
-        if (summary instanceof this.tree._SummaryCtor) {
+        if (newSummary instanceof this.tree._SummaryCtor) {
           // summary provided, just replace
-          this._summary = summary
+          this._summary = newSummary
+          this._summaryChromRegion = chromEntry
         } else if (!this.summary) {
-          if (summary) {
-            // summary is something with wrong type
-            give._verbConsole.info(summary + ' is not a correct summary ' +
+          if (newSummary) {
+            // newSummary is something with wrong type
+            give._verbConsole.info(newSummary + ' is not a correct summary ' +
               'type. Will be regenerated from tree data.')
           }
-          let newSummary = new this.tree._SummaryCtor(this)
+          newSummary = new this.tree._SummaryCtor()
           if (this.values.every((nodeEntry, index) => {
             if (nodeEntry === false) {
               // Child is zero, just return true
@@ -260,8 +261,16 @@ var GIVe = (function (give) {
             return true
           })) {
             this._summary = newSummary
+            this._summaryChromRegion = this.summary.attach(
+              new give.ChromRegion({
+                chr: this.tree.chr,
+                start: this.start,
+                end: this.end
+              })
+            )
           } else {
             this._summary = this._summary || null
+            delete this._summaryChromRegion
           }
         }
       }
@@ -284,14 +293,8 @@ var GIVe = (function (give) {
      * @param {string} chr - chromosome for the `ChromRegion` object
      * @returns {ChromRegionLiteral|null}  the `ChromRegion` object, or `null`
      */
-    getSummaryChromRegion (chr) {
-      return this.summary
-        ? this.summary.attach(new give.ChromRegion({
-          chr: chr || this.tree.chr,
-          start: this.start,
-          end: this.end
-        }, null))
-        : null
+    get summaryChromRegion () {
+      return this._summaryChromRegion || null
     }
 
     /**
@@ -651,11 +654,11 @@ var GIVe = (function (give) {
         if (this.start < chrRange.end && this.end > chrRange.start) {
           // Resolution support: check if the resolution is already enough in
           // this node. If so, call `this._callFuncOnDataEntry` on
-          // `this.getSummaryChromRegion()`
+          // `this.summaryChromRegion`
           if (this.resolutionEnough(resolution) && this.hasData) {
             // Resolution enough
             return this._callFuncOnDataEntry(callback, filter, breakOnFalse,
-              this.getSummaryChromRegion(), props, ...args
+              this.summaryChromRegion, props, ...args
             )
           } else {
             // call `GIVE.GiveNonLeafNode.prototype.traverse`

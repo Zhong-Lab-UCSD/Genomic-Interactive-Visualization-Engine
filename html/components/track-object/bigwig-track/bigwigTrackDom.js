@@ -55,7 +55,7 @@ var GIVe = (function (give) {
           {
             msg: 'Window Range Error: windowMax = ' +
               this.windowMax + '; windowMin = ' + this.windowMin
-          })
+          }, null, this)
         this.windowMax = this.constructor.defaultProperties.windowMax
         this.windowMin = this.constructor.defaultProperties.windowMin
       }

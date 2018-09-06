@@ -1339,7 +1339,7 @@ var GIVe = (function (give) {
                 throw e
               }
               give._verbConsole.warn(e)
-              give.fireSignal('warning', { msg: e.message })
+              give.fireSignal('warning', { msg: e.message }, null, this)
               return e
             })
             .then(e => {
