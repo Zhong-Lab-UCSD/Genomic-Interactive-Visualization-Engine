@@ -60,7 +60,8 @@
     "iron-scroll-threshold": "PolymerElements/iron-scroll-threshold#^2.0.0",
     "webcomponentsjs": "^1.0.0",
     "iron-localstorage": "PolymerElements/iron-localstorage#^2.0.0",
-    "paper-toggle-button": "PolymerElements/paper-toggle-button#^2.0.0"
+    "paper-toggle-button": "PolymerElements/paper-toggle-button#^2.0.0",
+    "app-layout": "PolymerElements/app-layout#^2.1.1"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^2.0.0",
