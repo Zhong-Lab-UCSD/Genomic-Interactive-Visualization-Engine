@@ -32,6 +32,7 @@
       --secondary-text-opacity-light: 0.70;
       --disabled-text-opacity-light: 0.50;
       --divider-opacity--light: 0.12;
+      --default-font-size: 12px;
     }
 
     paper-button {
@@ -102,11 +103,11 @@
         padding: 0.3em 0;
       };
       --paper-input-container-input: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
       };
       --paper-input-container-label: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
       };
     }
@@ -117,20 +118,20 @@
         padding-bottom: 0.3em;
       };
       --paper-input-container: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
         padding: 0.3em 0;
       };
       --paper-input-container-input: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
       };
       --paper-input-container-label: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
       };
       --paper-input-container-suffix: {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         line-height: 1.5em;
       };
     }
@@ -379,7 +380,7 @@
     }
 
     .collapseDb {
-      font-size: 12px;
+      font-size: var(--base-font-size, var(--default-font-size));
     }
 
     .collapseContent {

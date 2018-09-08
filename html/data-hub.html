@@ -10,10 +10,14 @@
       <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       body {
         font-family: 'Roboto';
-        font-size: 14px;
+        --base-font-size: 14px;
+        font-size: var(--base-font-size);
       }
-      track-manager div {
-        font-size: 16px;
+      track-manager > div {
+        font-size: 1.15em;
+      }
+      track-manager > div > * {
+        font-size: 1em;
       }
       div.managerIntro {
         overflow: auto;

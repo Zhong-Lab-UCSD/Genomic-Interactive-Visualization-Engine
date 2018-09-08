@@ -14,9 +14,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../ref-object/ref-object.html">
 <link rel="import" href="../give-styles.html">
@@ -26,54 +27,64 @@ limitations under the License.
     <style include="give-shared-styles">
     </style>
     <paper-dropdown-menu id="refDropdown" label="[[label]]">
-      <paper-menu class="dropdown-content" id="refMenu" attr-for-selected="value" selected="{{ref}}">
+      <paper-listbox slot="dropdown-content" id="refMenu" attr-for-selected="value" selected="{{ref}}">
         <template is="dom-repeat" items="[[refArray]]">
           <paper-item value="[[item.db]]"><span>[[item.db]]</span> (<span>[[item.commonName]]</span>)</paper-item>
         </template>
-      </paper-menu>
+      </paper-listbox>
     </paper-dropdown-menu>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.RefSelector = Polymer({
-        is: 'ref-selector',
+  class RefSelector extends Polymer.Element {
+    static get is () {
+      return 'ref-selector'
+    }
 
-        properties: {
-          ref: {
-            type: String,
-            value: null,
-            notify: true
-          },
+    static get properties () {
+      return {
+        ref: {
+          type: String,
+          value: null,
+          notify: true
+        },
 
-          refArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          label: {
-            type: String,
-            value: 'Reference genome'
+        refArray: {
+          type: Array,
+          value: function () {
+            return []
           }
         },
 
-        ready: function () {
-          give.RefObject.callOnRefReady(this._populateRefs.bind(this))
-        },
-
-        _populateRefs: function () {
-          give.RefObject.refArray.forEach(this._addSingleRef, this)
-        },
-
-        _addSingleRef: function (refObj) {
-          this.push('refArray', refObj)
+        label: {
+          type: String,
+          value: 'Reference genome'
         }
-      })
+      }
+    }
 
-      return give
-    })(GIVe || {})
+    ready () {
+      super.ready()
+      give.RefObject.allRefPromise.then(refArray =>
+        this._populateRefs(refArray))
+    }
+
+    _populateRefs (refArray) {
+      (refArray || give.RefObject.refArray)
+        .forEach(refObj => this._addSingleRef(refObj))
+    }
+
+    _addSingleRef (refObj) {
+      this.push('refArray', refObj)
+    }
+  }
+
+  give.RefSelector = RefSelector
+  window.customElements.define('ref-selector', give.RefSelector)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

@@ -495,6 +495,16 @@ var GIVe = (function (give) {
 
   give.PromiseCanceler = PromiseCanceler
 
+  class TimeoutPromiseObj {
+    constructor (milliseconds, resolvedValue) {
+      this._promise = new Promise((resolve, reject) => {
+        this._timeoutID = setTimeout(() => resolve(resolvedValue), milliseconds)
+      })
+    }
+  }
+
+  give.TimeoutPromise = TimeoutPromise
+
   give.warningHandler = event => {
     let message = 'Warning happened.'
     try {

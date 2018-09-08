@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
 <link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../chart-window/chart-window.html">
@@ -40,7 +41,7 @@ data.
 
 Although `<chart-area>` does not contain the navigational control elements as in `<chart-controller>`, users may still navigate by dragging and mouse-wheeling on the coordinates to move around.
 
-Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details on references used.
+Please refer to [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for details on references used.
 
 -->
 <dom-module id="chart-area">
@@ -306,7 +307,7 @@ var GIVe = (function (give) {
       if (typeof super.connectedCallback === 'function') {
         super.connectedCallback()
       }
-      Polymer.RenderStatus.afterNextRender(this, () => 
+      Polymer.RenderStatus.afterNextRender(this, () =>
         give.RefObject.allRefPromise
           .then(() => this.updateNumOfSubs(this.numOfSubs))
       )

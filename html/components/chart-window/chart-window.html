@@ -63,7 +63,7 @@ limitations under the License.
         font-size: 0;
       }
       div#chartHolder > div > * {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
       }
     </style>
     <style include="give-track-styles"></style>
@@ -218,8 +218,7 @@ var GIVe = (function (give) {
    * @appliesMixin give.RefEmbedMixin
    */
   class ChartWindow extends
-    give.RefEmbedMixin(Polymer.GestureEventListeners(Polymer.Element))
-  {
+    give.RefEmbedMixin(Polymer.GestureEventListeners(Polymer.Element)) {
     constructor () {
       super()
       this._trackDoms = []
@@ -398,7 +397,7 @@ var GIVe = (function (give) {
 
     get hasScroll () {
       return this.$.scrollingContainer.clientHeight <
-        this.$.scrollingContainer.scrollHeight 
+        this.$.scrollingContainer.scrollHeight
     }
 
     syncInBetweenSlot () {

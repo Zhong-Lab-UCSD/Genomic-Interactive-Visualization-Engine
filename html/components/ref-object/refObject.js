@@ -119,8 +119,8 @@ var GIVe = (function (give) {
         this.groups = {}
         this.reverseLookupTable = {}
       }
-      var loadTrackFromRemoteData = function (groupID, track) {
-        var newTrack = give.TrackObject.createTrack(track.tableName, track,
+      let loadTrackFromRemoteData = (groupID, track) => {
+        let newTrack = give.TrackObject.createTrack(track.tableName, track,
           this, null, groupID)
         if (requestUrl && !newTrack.requestUrl) {
           newTrack.requestUrl = requestUrl
@@ -130,9 +130,9 @@ var GIVe = (function (give) {
         // reverse lookup table related, might be rewritten if table structure
         // is changed later
         if (Array.isArray(newTrack.tableNames)) {
-          newTrack.tableNames.forEach(function (tableName) {
+          newTrack.tableNames.forEach(tableName => (
             this.reverseLookupTable[tableName] = newTrack
-          }, this)
+          ))
         } else {
           this.reverseLookupTable[newTrack.tableNames] = newTrack
         }
@@ -145,7 +145,7 @@ var GIVe = (function (give) {
           this.groups[groupID] = new give.TrackGroup(
             groupID, groupInfo[groupID])
           groupInfo[groupID].tracks.forEach(
-            loadTrackFromRemoteData.bind(this, groupID), this
+            track => loadTrackFromRemoteData(groupID, track)
           )
         }
       }
@@ -210,7 +210,9 @@ var GIVe = (function (give) {
         }
         return this._MetaPromise
       } else {
-        return Promise.reject(new give.GiveError('No main meta data entries available!'))
+        return Promise.reject(
+          new give.GiveError('No main meta data entries available!')
+        )
       }
     }
 
@@ -218,7 +220,7 @@ var GIVe = (function (give) {
       // if group ID is not specified, use "customTracks" as ID;
       // replace tracks with the same groupID and track.tableName
       group = group || {}
-      var groupID = group.id || 'customTracks'
+      let groupID = group.id || 'customTracks'
       if (!this.groups.hasOwnProperty(groupID)) {
         this.groups[groupID] = this.constructor.createCustomGroup(group)
       }
@@ -227,7 +229,7 @@ var GIVe = (function (give) {
         this.groups[groupID].removeTrack(track.tableName)
         this.tracks.removeTrack(track.tableName)
       }
-      var newTrack = new give.TrackObject(track.tableName, track, this, groupID)
+      let newTrack = new give.TrackObject(track.tableName, track, this, groupID)
       newTrack.groupID = groupID
       if (!newTrack.remoteUrl) {
         newTrack.remoteUrl = give.TrackObject.fetchCustomTarget
@@ -246,7 +248,9 @@ var GIVe = (function (give) {
       this.tracks.forEach(function (track) {
         var cellType = track.getSetting('cellType')
         var labName = track.getSetting('labName')
-        var tissueType = metaEntries.findMeta(this.commonName, cellType, 'tissue')
+        var tissueType = metaEntries.findMeta(
+          this.commonName, cellType, 'tissue'
+        )
         if (track.cleanLowerTitle) {
           if (!this.metaFilter.expMap.hasOwnProperty(track.cleanLowerTitle)) {
             this.metaFilter.expMap[track.cleanLowerTitle] = []
@@ -300,11 +304,10 @@ var GIVe = (function (give) {
     }
 
     getTrackTableNameList (filter) {
-      var result = []
-      this.getFilteredTrackList(filter).forEach(function (track) {
-        result = result.concat(track.tableNames)
-      }, this)
-      return result
+      return this.getFilteredTrackList(filter).reduce(
+        (list, track) => list.concat(track.tableNames),
+        []
+      )
     }
 
     static initAllRefFromServer (target, filter) {
@@ -325,7 +328,7 @@ var GIVe = (function (give) {
       this.refArray.currRef = this.refArray.currRef || function () {
         return this[this.selected] || this.dbMap[this.selected] || null
       }
-      for (var refDb in data) {
+      for (let refDb in data) {
         if (data.hasOwnProperty(refDb) &&
           (typeof filter !== 'function' || filter(data[refDb]))
         ) {
@@ -343,7 +346,7 @@ var GIVe = (function (give) {
 
     static createCustomGroup (group) {
       group = group || {}
-      var groupID = group.id || 'customTracks'
+      let groupID = group.id || 'customTracks'
       group.label = group.label || 'Custom Tracks'
       group.priority = group.priority || give.TrackGroup.CUSTOM_GROUP_PRIORITY
       return new give.TrackGroup(groupID, group)

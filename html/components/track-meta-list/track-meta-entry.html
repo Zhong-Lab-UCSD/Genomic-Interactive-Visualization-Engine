@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
@@ -39,7 +39,7 @@ limitations under the License.
         padding: 1em 0.5em;
         word-break: break-word;
       }
-      paper-material > div.group-overlay {
+      paper-material div.group-overlay {
         @apply --layout-fit;
         @apply --layout-horizontal;
         @apply --meta-entry-group-overlay-mixin;
@@ -76,15 +76,15 @@ limitations under the License.
       paper-material[selected] div.status {
         background: var(--accent-color);
       }
-      paper-material > div.group-overlay div.groupInfo {
+      paper-material div.group-overlay div.groupInfo {
         @apply --layout-flex;
         padding: 1em 1em 1em 0.5em;
       }
-      paper-material > div.group-overlay span.groupTrackCount {
+      paper-material div.group-overlay span.groupTrackCount {
         float: right;
         font-style: italic;
       }
-      paper-material > div.group-overlay span.groupID {
+      paper-material div.group-overlay span.groupID {
         font-weight: 500;
       }
       paper-material > div.table-cell {
@@ -148,73 +148,88 @@ limitations under the License.
     <paper-material elevation="1" selected$="[[selected]]"
       group-selected$="[[groupSelected]]"
       allow-selection$="[[allowSelection]]">
-      <div class="group-overlay" hidden$="[[!isGroup]]">
-        <div class="status">
-          <div>
-            <iron-icon icon="block"
-              hidden$="[[!_showUnavailable(_isHeader, selected, groupSelected)]]">
-            </iron-icon>
-            <paper-tooltip position="right" fit-to-visible-bounds>
-              Unselected group will not be available in the embedded browser.
-              <br />
-              Click on the group or any of its member track(s) to select this
-              group.
-            </paper-tooltip>
+      <template is="dom-if" if="[[isGroup]]">
+        <div class="group-overlay">
+          <div class="status">
+            <template is="dom-if"
+              if="[[_showUnavailable(_isHeader, selected, groupSelected)]]">
+              <div>
+                <iron-icon icon="block">
+                </iron-icon>
+                <paper-tooltip position="right" fit-to-visible-bounds>
+                  Unselected group will not be available in the embedded
+                  browser.<br />
+                  Click on the group or any of its member track(s) to select
+                  this group.
+                </paper-tooltip>
+              </div>
+            </template>
+            <template is="dom-if"
+              if="[[_showAvailable(_isHeader, selected, groupSelected)]]">
+              <div>
+                <iron-icon icon="check-circle">
+                </iron-icon>
+                <paper-tooltip position="right">
+                  This group will be available in the embedded browser.
+                </paper-tooltip>
+              </div>
+            </template>
+            <template is="dom-if" if="[[trackSelectLock]]">
+              <div>
+                <iron-icon icon="lock-outline">
+                </iron-icon>
+                <paper-tooltip position="right">
+                  This group has track(s) selected to be shown by default.<br />
+                  Unselect all tracks within this group before unselecting
+                  this group.
+                </paper-tooltip>
+              </div>
+            </template>
           </div>
-          <div>
-            <iron-icon icon="check-circle"
-              hidden$="[[!_showAvailable(_isHeader, selected, groupSelected)]]">
-            </iron-icon>
-            <paper-tooltip position="right">
-              This group will be available in the embedded browser.
-            </paper-tooltip>
-          </div>
-          <div>
-            <iron-icon icon="lock-outline" hidden$="[[!trackSelectLock]]">
-            </iron-icon>
-            <paper-tooltip position="right">
-              This group has track(s) selected to be shown by default.<br />
-              Unselect all tracks within this group before unselecting this
-              group.
-            </paper-tooltip>
+          <div class="groupInfo">
+            [[_groupLabel]]
+            (Group ID: <span class="groupID">[[_groupID]]</span>)
+            <span class="groupTrackCount">
+              [[_trackCount]] [[_trackCountSuffix]]
+            </span>
           </div>
         </div>
-        <div class="groupInfo">
-          [[_groupLabel]] (Group ID: <span class="groupID">[[_groupID]]</span>)
-          <span class="groupTrackCount">
-            [[_trackCount]] [[_trackCountSuffix]]
-          </span>
-        </div>
-      </div>
+      </template>
       <div class="table-cell status">
-        <div hidden$="[[isGroup]]">
-          <div>
-            <iron-icon icon="block"
-              hidden$="[[!_showUnavailable(_isHeader, selected, groupSelected)]]">
-            </iron-icon>
-            <paper-tooltip position="right">
-              The group of this track is not selected. <br />
-              Therefore, this track will not be available in the embedded
-              browser.
-            </paper-tooltip>
-          </div>
-          <div>
-            <iron-icon icon="check-circle"
-              hidden$="[[!_showAvailable(_isHeader, selected, groupSelected)]]">
-            </iron-icon>
-            <paper-tooltip position="right">
-              This track will be available in the embedded browser.
-            </paper-tooltip>
-          </div>
-          <div>
-            <iron-icon icon="visibility"
-              hidden$="[[!_showDefault(_isHeader, selected, groupSelected)]]">
-            </iron-icon>
-            <paper-tooltip position="right">
-              This track will be shown by default in the embedded browser.
-            </paper-tooltip>
-          </div>
-        </div>
+        <template is="dom-if" if="[[!isGroup]]">
+          <template is="dom-if"
+            if="[[_showUnavailable(_isHeader, selected, groupSelected)]]">
+            <div>
+              <iron-icon icon="block">
+              </iron-icon>
+              <paper-tooltip position="right">
+                The group of this track is not selected. <br />
+                Therefore, this track will not be available in the embedded
+                browser.
+              </paper-tooltip>
+            </div>
+          </template>
+          <template is="dom-if"
+            if="[[_showAvailable(_isHeader, selected, groupSelected)]]">
+            <div>
+              <iron-icon icon="check-circle">
+              </iron-icon>
+              <paper-tooltip position="right">
+                This track will be available in the embedded browser.
+              </paper-tooltip>
+            </div>
+          </template>
+          <template is="dom-if"
+            if="[[_showDefault(_isHeader, selected, groupSelected)]]">
+            <div>
+              <iron-icon icon="visibility">
+              </iron-icon>
+              <paper-tooltip position="right">
+                This track will be shown by default in the embedded browser.
+              </paper-tooltip>
+            </div>
+          </template>
+        </template>
       </div>
       <div class="table-cell trackID">[[_trackID]]</div>
       <div class="table-cell trackType">[[_trackType]]</div>
@@ -227,151 +242,158 @@ limitations under the License.
     </paper-material>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.TrackMetaEntry = Polymer({
-        is: 'track-meta-entry',
+  class TrackMetaEntry extends Polymer.Element {
+    static get is () {
+      return 'track-meta-entry'
+    }
 
-        properties: {
-          dataObj: {
-            type: Object,
-            value: function () {
-              return {}
-            },
-            observer: '_dataObjChanged'
+    static get properties () {
+      return {
+        dataObj: {
+          type: Object,
+          value () {
+            return {}
           },
-
-          _groupLabel: {
-            type: String,
-            value: ''
-          },
-
-          _groupID: {
-            type: String,
-            value: ''
-          },
-
-          _trackCount: {
-            type: Number,
-            value: 0
-          },
-
-          _trackCountSuffix: {
-            type: String,
-            computed: '_getTrackCountSuffix(_trackCount)'
-          },
-
-          _trackID: {
-            type: String
-          },
-
-          _trackType: {
-            type: String
-          },
-
-          _shortLabel: {
-            type: String
-          },
-
-          _longLabel: {
-            type: String
-          },
-
-          _dataType: {
-            type: String
-          },
-
-          _cellType: {
-            type: String
-          },
-
-          _labName: {
-            type: String
-          },
-
-          selected: {
-            type: Boolean,
-            value: false,
-            notify: true
-          },
-
-          groupSelected: {
-            type: Boolean,
-            value: false
-          },
-
-          allowSelection: {
-            type: Boolean,
-            value: false
-          },
-
-          isGroup: {
-            type: Boolean,
-            value: false
-          },
-
-          trackSelectLock: {
-            type: Boolean,
-            value: false
-          },
-
-          _isHeader: {
-            type: Boolean,
-            value: false
-          }
+          observer: '_dataObjChanged'
         },
 
-        _showUnavailable: function (_isHeader, selected, groupSelected) {
-          return !_isHeader && !selected && !groupSelected
+        _groupLabel: {
+          type: String,
+          value: ''
         },
 
-        _showAvailable: function (_isHeader, selected, groupSelected) {
-          return !_isHeader && (selected || groupSelected)
+        _groupID: {
+          type: String,
+          value: ''
         },
 
-        _showDefault: function (_isHeader, selected, groupSelected) {
-          return !_isHeader && selected && groupSelected
+        _trackCount: {
+          type: Number,
+          value: 0
         },
 
-        _dataObjChanged: function (newValue, oldValue) {
-          this._isHeader = false
-          if (newValue instanceof give.TrackObject) {
-            this._groupID = ''
-            this._groupLabel = ''
-            this._trackCount = 0
-            this._trackID = newValue.tableNames
-            this._trackType = newValue.typeTrunk
-            this._shortLabel = newValue.getSetting('shortLabel', 'string')
-            this._longLabel = newValue.getSetting('longLabel', 'string')
-            this._dataType = newValue.title || this._shortLabel
-            this._cellType = newValue.getSetting('cellType', 'string')
-            this._labName = newValue.getSetting('labName', 'string')
-          } else {
-            this._trackID = 'Track ID'
-            this._trackType = 'Type'
-            this._shortLabel = 'Short label'
-            this._longLabel = 'Description'
-            this._dataType = 'Data type'
-            this._cellType = 'Cell type'
-            this._labName = 'Lab name'
-            if (newValue instanceof give.TrackGroup) {
-              this._groupID = newValue.id
-              this._groupLabel = newValue.label ||
-                'Group: ' + newValue.id
-              this._trackCount = newValue.length
-            } else {
-              this._isHeader = true
-            }
-          }
+        _trackCountSuffix: {
+          type: String,
+          computed: '_getTrackCountSuffix(_trackCount)'
         },
 
-        _getTrackCountSuffix: function (trackCount) {
-          return 'track' + (trackCount > 1 ? 's' : '')
+        _trackID: {
+          type: String
+        },
+
+        _trackType: {
+          type: String
+        },
+
+        _shortLabel: {
+          type: String
+        },
+
+        _longLabel: {
+          type: String
+        },
+
+        _dataType: {
+          type: String
+        },
+
+        _cellType: {
+          type: String
+        },
+
+        _labName: {
+          type: String
+        },
+
+        selected: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+
+        groupSelected: {
+          type: Boolean,
+          value: false
+        },
+
+        allowSelection: {
+          type: Boolean,
+          value: false
+        },
+
+        isGroup: {
+          type: Boolean,
+          value: false
+        },
+
+        trackSelectLock: {
+          type: Boolean,
+          value: false
+        },
+
+        _isHeader: {
+          type: Boolean,
+          value: false
         }
-      })
+      }
+    }
 
-      return give
-    })(GIVe || {})
+    _showUnavailable (_isHeader, selected, groupSelected) {
+      return !_isHeader && !selected && !groupSelected
+    }
+
+    _showAvailable (_isHeader, selected, groupSelected) {
+      return !_isHeader && (selected || groupSelected)
+    }
+
+    _showDefault (_isHeader, selected, groupSelected) {
+      return !_isHeader && selected && groupSelected
+    }
+
+    _dataObjChanged (newValue, oldValue) {
+      this._isHeader = false
+      if (newValue instanceof give.TrackObject) {
+        this._groupID = ''
+        this._groupLabel = ''
+        this._trackCount = 0
+        this._trackID = newValue.tableNames
+        this._trackType = newValue.typeTrunk
+        this._shortLabel = newValue.getSetting('shortLabel', 'string')
+        this._longLabel = newValue.getSetting('longLabel', 'string')
+        this._dataType = newValue.title || this._shortLabel
+        this._cellType = newValue.getSetting('cellType', 'string')
+        this._labName = newValue.getSetting('labName', 'string')
+      } else {
+        this._trackID = 'Track ID'
+        this._trackType = 'Type'
+        this._shortLabel = 'Short label'
+        this._longLabel = 'Description'
+        this._dataType = 'Data type'
+        this._cellType = 'Cell type'
+        this._labName = 'Lab name'
+        if (newValue instanceof give.TrackGroup) {
+          this._groupID = newValue.id
+          this._groupLabel = newValue.label ||
+            'Group: ' + newValue.id
+          this._trackCount = newValue.length
+        } else {
+          this._isHeader = true
+        }
+      }
+    }
+
+    _getTrackCountSuffix (trackCount) {
+      return 'track' + (trackCount > 1 ? 's' : '')
+    }
+  }
+
+  give.TrackMetaEntry = TrackMetaEntry
+  window.customElements.define('track-meta-entry', give.TrackMetaEntry)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

@@ -19,14 +19,14 @@ limitations under the License.
 <link rel="import" href="../track-meta-list/track-meta-list.html">
 <link rel="import" href="../html-builder/html-builder.html">
 <link rel="import" href="../give-styles.html">
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/app-layout/app-layout.html">
 <dom-module id="track-manager">
   <template>
     <style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
@@ -35,21 +35,26 @@ limitations under the License.
         overflow-x: auto;
         @apply --layout-vertical;
       }
-      paper-toolbar {
-        --paper-toolbar-background: var(--primary-background-color);
-        --paper-toolbar-color: var(--primary-text-color);
+      app-toolbar {
+        background-color: var(--primary-background-color);
+        color: var(--primary-text-color);
+        --app-toolbar-font-size: var(--base-font-size);
       }
-      paper-toolbar > div#htmlGeneratorButtons {
+      app-toolbar > *[main-title] {
+        font-size: 1.4em;
+        margin: 0 1em;
+      }
+      app-toolbar > div#htmlGeneratorButtons {
         padding: 0 0.5em;
       }
-      paper-toolbar div paper-button {
+      app-toolbar div paper-button {
         margin: 0 0.1em;
         background: var(--card-background-color);
       }
-      paper-toolbar div paper-button[toggles] {
+      app-toolbar div paper-button[toggles] {
         transition: background-color 0.3s;
       }
-      paper-toolbar div paper-button[toggles][active] {
+      app-toolbar div paper-button[toggles][active] {
         background-color: rgba(0, 0, 0, 0.2);
       }
       paper-button#clearFilterBtn {
@@ -67,10 +72,14 @@ limitations under the License.
       paper-button.placeHoldingBtn[visible] {
         visibility: visible;
       }
+      ref-selector {
+        --base-font-size: 12px;
+        margin: 0 0.5em 0.5em 0.5em;
+      }
     </style>
-    <paper-toolbar>
+    <app-toolbar>
       <slot id="logo" name="logo"></slot>
-      <span class="title">[[titleText]]</span>
+      <span main-title>[[titleText]]</span>
       <ref-selector ref="{{currentRef}}"></ref-selector>
       <div id="filterButtons">
         <paper-button id="filterBtn" raised toggles active="{{_filterDialogOn}}"
@@ -94,7 +103,7 @@ limitations under the License.
           Generate
         </paper-button>
       </div>
-    </paper-toolbar>
+    </app-toolbar>
     <div class="layout vertical flex"
       hidden$="[[_calcIntroHidden(currentRef)]]">
       <slot id="introDiv" name="managerIntro"></slot>
@@ -124,98 +133,105 @@ limitations under the License.
 var GIVe = (function (give) {
   'use strict'
 
-  give.TrackManager = Polymer({
-    is: 'track-manager',
+  class TrackManager extends Polymer.Element {
+    static get is () {
+      return 'track-manager'
+    }
 
-    properties: {
-      currentRef: {
-        type: String,
-        value: '',
-        observer: '_refChanged'
-      },
+    static get properties () {
+      return {
+        currentRef: {
+          type: String,
+          value: '',
+          observer: '_refChanged'
+        },
 
-      generatorMode: {
-        type: Boolean,
-        value: false
-      },
+        generatorMode: {
+          type: Boolean,
+          value: false
+        },
 
-      numOfGroupsSelected: {
-        type: Array,
-        value: function () {
-          return []
+        numOfGroupsSelected: {
+          type: Array,
+          value () {
+            return []
+          }
+        },
+
+        titleText: {
+          type: String,
+          value: 'Data Hub'
+        },
+
+        _filterHasValue: {
+          type: Boolean
+        },
+
+        _filterDialogOn: {
+          type: Boolean
+        },
+
+        _filterActive: {
+          type: Boolean,
+          computed: '_calcFilterActive(_trackFilter)'
+        },
+
+        _trackFilter: {
+          type: Object,
+          value: null
+        },
+
+        filterText: {
+          type: String,
+          value: 'Filter'
         }
-      },
-
-      titleText: {
-        type: String,
-        value: 'Data Hub'
-      },
-
-      _filterHasValue: {
-        type: Boolean
-      },
-
-      _filterDialogOn: {
-        type: Boolean
-      },
-
-      _filterActive: {
-        type: Boolean,
-        computed: '_calcFilterActive(_trackFilter)'
-      },
-
-      _trackFilter: {
-        type: Object,
-        value: null
-      },
-
-      filterText: {
-        type: String,
-        value: 'Filter'
       }
-    },
+    }
 
-    generateHtml: function () {
+    generateHtml () {
       this.$.mainHtmlBuilder.createDialog(null,
         this.$.mainMetaList.selectedGroups,
         this.$.mainMetaList.selectedTracks
       )
-    },
+    }
 
-    _refChanged: function (newRef, oldRef) {
+    _refChanged (newRef, oldRef) {
       this.clearFilter()
-    },
+    }
 
-    _calcIntroHidden: function (currentRef) {
+    _calcIntroHidden (currentRef) {
       return !!currentRef
-    },
+    }
 
-    _calcFilterActive: function (_trackFilter) {
+    _calcFilterActive (_trackFilter) {
       return !!_trackFilter
-    },
+    }
 
-    _filterClosed: function (e, detail) {
+    _filterClosed (e, detail) {
       if (this.$.filterDialog.closingReason.confirmed) {
         this._trackFilter = this.$.mainTrackFilter.createFilter()
-        this.filterText = 'Filter: ' + this.$.mainTrackFilter.getFilterDesc()
+        this.filterText = 'Filter: ' + this.$.mainTrackFilter.filterDesc
         this.$.filterDialog.closingReason.confirmed = false
       }
       this._filterDialogOn = this.$.filterDialog.opened
-    },
+    }
 
-    toggleFilter: function () {
+    toggleFilter () {
       this.$.filterDialog.toggle()
       this._filterDialogOn = this.$.filterDialog.opened
-    },
+    }
 
-    clearFilter: function (e) {
-      if (e) {
+    clearFilter (e) {
+      if (e && e.stopPropagation) {
         e.stopPropagation()
       }
       this._trackFilter = null
       this.filterText = 'Filter'
     }
-  })
+  }
+
+  give.TrackManager = TrackManager
+  window.customElements.define('track-manager', give.TrackManager)
 
   return give
 })(GIVe || {})

@@ -23,7 +23,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-icons/give-icons.html">
 <link rel="import" href="../give-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -53,14 +53,14 @@ __Note:__ this function needs additional back-end support. Please see <https://g
   <template>
     <style include="give-shared-styles">
       :host {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         overflow: visible;
       }
       paper-input {
         margin-bottom: 0.6em;
       }
       paper-input div[suffix] {
-        font-size: 11px;
+        font-size: 0.9em;
         color: var(--secondary-text-color);
       }
       paper-input div[suffix] iron-icon {
@@ -77,12 +77,10 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         min-height: 20px;
       }
       iron-list {
-        font-size: 12px;
         width: 500px;
       }
       paper-item {
         cursor: pointer;
-        font-size: 12px;
         overflow-x: hidden;
       }
       paper-item > * {
@@ -143,6 +141,16 @@ var GIVe = (function (give) {
   'use strict'
 
   class GeneCoorInput extends give.RefEmbedMixin(Polymer.Element) {
+    constructor () {
+      super(...arguments)
+      this._setTextFocusDebouncer = null
+      this._refocusDebouncer = null
+      this._ajaxDebouncer = null
+      this._mouseOutDebouncer = null
+
+      this._ajaxDebounceInterval = this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
+    }
+
     static get is () {
       return 'gene-coor-input'
     }
@@ -259,15 +267,13 @@ var GIVe = (function (give) {
       }
     }
 
-    ready () {
-      this._setTextFocusDebouncer = null
-      this._refocusDebouncer = null
-      this._ajaxDebouncer = null
-      this._mouseOutDebouncer = null
-
-      this._ajaxDebounceInterval = this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
-
+    connectedCallback () {
+      if (typeof super.connectedCallback === 'function') {
+        super.connectedCallback()
+      }
       this.querySent = ''
+      this._ajaxDebouncePromise = null
+      this._refocusDebouncePromise = null
 
       this._decoupleInput = false
       // set this to true to decouple input values with actual values
@@ -277,9 +283,6 @@ var GIVe = (function (give) {
 
       this.addEventListener('mouseover', e => this._mouseOverHandler(e))
       this.addEventListener('mouseout', e => this._mouseOutHandler(e))
-    }
-
-    attached () {
       this._partialSelectionChanged(this._partialNameSupported)
     }
 
@@ -289,18 +292,20 @@ var GIVe = (function (give) {
     }
 
     _setRefObj (refObj) {
-      this._refObj = refObj
-      this._partialNameSupported = false
-      if (this._refObj && !this.noGeneNameSearch) {
-        // Test whether reference support partial name filling.
-        this.$.partialNameAjax.params = {
-          'db': this._refObj.db
+      if (super._setRefObj(refObj)) {
+        this._partialNameSupported = false
+        if (this._refObj && !this.noGeneNameSearch) {
+          // Test whether reference support partial name filling.
+          this.$.partialNameAjax.params = {
+            'db': this._refObj.db
+          }
+          let request = this.$.partialNameAjax.generateRequest()
+          request.completes.then(req => (
+            this._partialNameSupported =
+              (req.response && req.response.supported)
+          ))
+            .catch(rejectedObj => (this._partialNameSupported = false))
         }
-        let request = this.$.partialNameAjax.generateRequest()
-        request.completes.then(req => (
-          this._partialNameSupported = (req.response && req.response.supported)
-        ))
-          .catch(rejectedObj => (this._partialNameSupported = false))
       }
     }
 
@@ -334,14 +339,20 @@ var GIVe = (function (give) {
           ) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
-            this._ajaxDebouncer = Polymer.debounce(
-              this._ajaxDebouncer,
-              Polymer.Async.timeOut.after(this._ajaxDebounceInterval),
-              () => {
-                this._ajaxDebouncer = null
-                this._sendPartialQuery()
+            if (!this._ajaxDebouncePromise) {
+              if (this._ajaxDebounceInterval) {
+                this._ajaxDebouncePromise = new Promise((resolve, reject) => {
+                  setTimeout(resolve, this._ajaxDebounceInterval)
+                })
+              } else {
+                this._ajaxDebouncePromise = Promise.resolve()
               }
-            )
+              this._ajaxDebouncePromise
+                .then(() => {
+                  this._ajaxDebouncePromise = null
+                  this._sendPartialQuery()
+                })
+            }
           } else {
             this._toggleGList(false)
           }
@@ -481,16 +492,23 @@ var GIVe = (function (give) {
           if (!this._inFocus) {
             this.validate()
           } else {
-            this._refocusDebouncer = Polymer.debounce(
-              this._refocusDebouncer,
-              Polymer.Async.timeOut.after(
-                this.constructor.REFOCUS_DEBOUNCE_INTERVAL
-              ),
-              () => {
-                this._refocusDebouncer = null
-                this.$.geneName.focus()
+            if (!this._refocusDebouncePromise) {
+              if (this.constructor.REFOCUS_DEBOUNCE_INTERVAL) {
+                this._refocusDebouncePromise = new Promise(
+                  (resolve, reject) => {
+                    setTimeout(resolve,
+                      this.constructor.REFOCUS_DEBOUNCE_INTERVAL)
+                  }
+                )
+              } else {
+                this._refocusDebouncePromise = Promise.resolve()
               }
-            )
+              this._refocusDebouncePromise
+                .then(() => {
+                  this._refocusDebouncePromise = null
+                  this.$.geneName.focus()
+                })
+            }
           }
         }
       }
@@ -501,6 +519,23 @@ var GIVe = (function (give) {
         this._setTextFocusDebouncer.cancel()
       }
       if (flag !== this._inFocus) {
+        if (!this._setTextFocusDebouncePromise) {
+          if (this.constructor.REFOCUS_DEBOUNCE_INTERVAL) {
+            this._refocusDebouncePromise = new Promise(
+              (resolve, reject) => {
+                setTimeout(resolve,
+                  this.constructor.REFOCUS_DEBOUNCE_INTERVAL)
+              }
+            )
+          } else {
+            this._refocusDebouncePromise = Promise.resolve()
+          }
+          this._refocusDebouncePromise
+            .then(() => {
+              this._refocusDebouncePromise = null
+              this.$.geneName.focus()
+            })
+        }
         this._setTextFocusDebouncer = Polymer.debounce(
           this._setTextFocusDebouncer,
           Polymer.Async.timeOut.after(
@@ -544,8 +579,10 @@ var GIVe = (function (give) {
           this._mouseOutDebouncer,
           Polymer.Async.timeOut.after(this.constructor.MOUSE_OUT_TIME_OUT),
           () => {
-            this._mouseOutDebouncer = null
-            this._toggleGList(false)
+            if (!this._inFocus && !this._mouseInGList) {
+              this._mouseOutDebouncer = null
+              this._toggleGList(false)
+            }
           }
         )
       } else {
@@ -606,6 +643,8 @@ var GIVe = (function (give) {
   GeneCoorInput.MIN_JSON_QUERY_LENGTH = 1 // minimum length of query
 
   give.GeneCoorInput = GeneCoorInput
+  window.customElements.define('gene-coor-input', give.GeneCoorInput)
+
   return give
 })(GIVe || {})
   </script>

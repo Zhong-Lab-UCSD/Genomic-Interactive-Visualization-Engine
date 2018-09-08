@@ -3,7 +3,7 @@
 <link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 <link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../meta-entries/meta-entries.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-styles.html">
 
 <dom-module id="genemo-track-filter-pages">
@@ -83,7 +83,7 @@ var GIVe = (function (give) {
     is: 'genemo-track-filter-pages',
 
     behaviors: [
-      give.RefEmbeddedBehavior
+      give.RefEmbedMixin
     ],
 
     properties: {

@@ -6,7 +6,7 @@
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
 <link rel="import" href="../ref-object/ref-object.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link rel="import" href="../genemo-track-filter/genemo-track-filter.html">
@@ -70,7 +70,7 @@ var GIVe = (function (give) {
 
     behaviors: [
       give.GenemoTabCardContentBehavior,
-      give.RefEmbeddedBehavior
+      give.RefEmbedMixin
     ],
 
     properties: {
