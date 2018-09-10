@@ -148,7 +148,8 @@ var GIVe = (function (give) {
       this._ajaxDebouncer = null
       this._mouseOutDebouncer = null
 
-      this._ajaxDebounceInterval = this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
+      this._ajaxDebounceInterval =
+        this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
     }
 
     static get is () {
@@ -188,7 +189,8 @@ var GIVe = (function (give) {
 
         label: {
           type: String,
-          value: 'Coordinate (or gene name)'
+          value: 'Coordinate (or gene name)',
+          observer: '_labelChanged'
         },
 
         _dispLabel: {
@@ -272,8 +274,6 @@ var GIVe = (function (give) {
         super.connectedCallback()
       }
       this.querySent = ''
-      this._ajaxDebouncePromise = null
-      this._refocusDebouncePromise = null
 
       this._decoupleInput = false
       // set this to true to decouple input values with actual values
@@ -284,6 +284,11 @@ var GIVe = (function (give) {
       this.addEventListener('mouseover', e => this._mouseOverHandler(e))
       this.addEventListener('mouseout', e => this._mouseOutHandler(e))
       this._partialSelectionChanged(this._partialNameSupported)
+    }
+
+    _labelChanged (newValue, oldValue) {
+      this._dispLabel = newValue.replace(' (or gene name)',
+        this._partialNameSupported ? ' or gene name' : '')
     }
 
     _partialNameSupportChanged (newValue, oldValue) {
@@ -339,20 +344,14 @@ var GIVe = (function (give) {
           ) {
             // length is enough for ajax and also not already updated
             // start the timer to prepare for ajax
-            if (!this._ajaxDebouncePromise) {
-              if (this._ajaxDebounceInterval) {
-                this._ajaxDebouncePromise = new Promise((resolve, reject) => {
-                  setTimeout(resolve, this._ajaxDebounceInterval)
-                })
-              } else {
-                this._ajaxDebouncePromise = Promise.resolve()
+            this._ajaxDebouncer = Polymer.Debouncer.debounce(
+              this._ajaxDebouncer,
+              Polymer.Async.timeOut.after(this._ajaxDebounceInterval),
+              () => {
+                this._ajaxDebouncer = null
+                this._sendPartialQuery()
               }
-              this._ajaxDebouncePromise
-                .then(() => {
-                  this._ajaxDebouncePromise = null
-                  this._sendPartialQuery()
-                })
-            }
+            )
           } else {
             this._toggleGList(false)
           }
@@ -492,23 +491,15 @@ var GIVe = (function (give) {
           if (!this._inFocus) {
             this.validate()
           } else {
-            if (!this._refocusDebouncePromise) {
-              if (this.constructor.REFOCUS_DEBOUNCE_INTERVAL) {
-                this._refocusDebouncePromise = new Promise(
-                  (resolve, reject) => {
-                    setTimeout(resolve,
-                      this.constructor.REFOCUS_DEBOUNCE_INTERVAL)
-                  }
-                )
-              } else {
-                this._refocusDebouncePromise = Promise.resolve()
+            this._refocusDebouncer = Polymer.Debouncer.debounce(
+              this._refocusDebouncer,
+              Polymer.Async.timeOut.after(
+                this.constructor.REFOCUS_DEBOUNCE_INTERVAL
+              ),
+              () => {
+                this.$.geneName.focus()
               }
-              this._refocusDebouncePromise
-                .then(() => {
-                  this._refocusDebouncePromise = null
-                  this.$.geneName.focus()
-                })
-            }
+            )
           }
         }
       }
@@ -517,26 +508,10 @@ var GIVe = (function (give) {
     _setTextFocusDebounced (flag) {
       if (this._setTextFocusDebouncer) {
         this._setTextFocusDebouncer.cancel()
+        this._setTextFocusDebouncer = null
       }
       if (flag !== this._inFocus) {
-        if (!this._setTextFocusDebouncePromise) {
-          if (this.constructor.REFOCUS_DEBOUNCE_INTERVAL) {
-            this._refocusDebouncePromise = new Promise(
-              (resolve, reject) => {
-                setTimeout(resolve,
-                  this.constructor.REFOCUS_DEBOUNCE_INTERVAL)
-              }
-            )
-          } else {
-            this._refocusDebouncePromise = Promise.resolve()
-          }
-          this._refocusDebouncePromise
-            .then(() => {
-              this._refocusDebouncePromise = null
-              this.$.geneName.focus()
-            })
-        }
-        this._setTextFocusDebouncer = Polymer.debounce(
+        this._setTextFocusDebouncer = Polymer.Debouncer.debounce(
           this._setTextFocusDebouncer,
           Polymer.Async.timeOut.after(
             flag ? 0 : this.constructor.SET_TEXT_FOCUS_DEBOUNCE_INTERVAL
@@ -575,7 +550,7 @@ var GIVe = (function (give) {
 
     _checkGList () {
       if (!this._inFocus && !this._mouseInGList) {
-        this._mouseOutDebouncer = Polymer.debounce(
+        this._mouseOutDebouncer = Polymer.Debouncer.debounce(
           this._mouseOutDebouncer,
           Polymer.Async.timeOut.after(this.constructor.MOUSE_OUT_TIME_OUT),
           () => {
@@ -588,6 +563,7 @@ var GIVe = (function (give) {
       } else {
         if (this._mouseOutDebouncer) {
           this._mouseOutDebouncer.cancel()
+          this._mouseOutDebouncer = null
         }
       }
     }

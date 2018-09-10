@@ -42,10 +42,13 @@ limitations under the License.
         --base-font-size: 12px;
       }
       div.controllers > * {
-        margin: 0 0 0.3em 0;
+        margin: 0.15em 0;
       }
-      div.controllerGroup > * {
-        margin: 0 1em 0 0;
+      div.controllerGroup > :not(:first-child) {
+        margin-left: 0.5em;
+      }
+      div.controllerGroup > :not(:last-child) {
+        margin-right: 0.5em;
       }
       div.controllerGroup > div > div {
         display: inline-block;
@@ -68,8 +71,10 @@ limitations under the License.
       paper-input#titleInput {
         @apply --layout-flex;
       }
-      gene-coor-input {
+      div.controllerGroup > gene-coor-input {
         width: 18em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
       }
       paper-dialog div.buttons paper-button {
         margin: unset;
@@ -99,8 +104,9 @@ limitations under the License.
           </div>
         </div>
         <div class="controllerGroup controllerInputs layout horizontal end">
-          <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
-            <paper-listbox class="dropdown-content" id="refMenu"
+          <paper-dropdown-menu id="refDropdown"
+            label="Web Component to be used:">
+            <paper-listbox slot="dropdown-content" id="refMenu"
               attr-for-selected="value" selected="{{selectedElement}}">
               <paper-item value="chart-controller">
                 &lt;chart-controller&gt;
@@ -117,7 +123,7 @@ limitations under the License.
         </div>
         <div class="controllerGroup controllerInputs layout horizontal start">
           <paper-dropdown-menu id="displayModeDropdown" label="Display mode:">
-            <paper-listbox class="dropdown-content" id="dispModeMenu"
+            <paper-listbox slot="dropdown-content" id="dispModeMenu"
               attr-for-selected="value" selected="{{_numOfSubs}}">
               <paper-item value="1">
                 Single Window
