@@ -137,10 +137,13 @@ limitations under the License.
             label="[[_computeLabelForCoorOne(_numOfSubs)]]"
             value="{{_defaultCoor1}}">
           </gene-coor-input>
-          <gene-coor-input ref="[[ref]]"
-            label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
-            hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
-          </gene-coor-input>
+          <template is="dom-if" if="[[_multiWindow(_numOfSubs)]]">
+            <gene-coor-input ref="[[ref]]"
+              label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
+              hidden$="[[!_multiWindow(_numOfSubs)]]"
+              value="{{_defaultCoor2}}">
+            </gene-coor-input>
+          </template>
         </div>
         <paper-button raised on-tap="updateCode" class="self-start">
           <iron-icon icon="refresh"></iron-icon>
@@ -341,11 +344,14 @@ var GIVe = (function (give) {
           '/components/' + this.selectedElement + '/' +
           this.selectedElement + '.html">\n'
 
-        let refArray = [this._refObj.db]
+        let refArray = []
+        for (let i = 0; i < this._numOfSubs; i++) {
+          refArray.push(this._refObj.db)
+        }
         this.htmlCode += '<' + this.selectedElement + ' ref=\'["' +
           refArray.join('", "') + '"]\''
 
-        this.htmlCode += '" num-of-subs="' +
+        this.htmlCode += ' num-of-subs="' +
           this._numOfSubs + '"'
         this.htmlCode += '\n  group-id-list=\'["' +
           this.dispGroupArray.map(function (group) {

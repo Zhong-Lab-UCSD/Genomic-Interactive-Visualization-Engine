@@ -16,7 +16,7 @@ if($_REQUEST['db']) {
   }
   // check whether settings is json
   while($itor = $tracks->fetch_assoc()) {
-    json_decode($itor['settings']);
+    json_decode($itor['settings'], true);
     if(json_last_error() !== JSON_ERROR_NONE) {
       // is not json, convert
       echo $itor['settings'];

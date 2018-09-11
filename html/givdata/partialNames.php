@@ -18,42 +18,42 @@
       }
       $refInfo = $refInfo[$ref];
       $settings =& $refInfo['settings'];
-      if (!empty($settings->geneCoorTable)) {
+      if (!empty($settings['geneCoorTable'])) {
         // verify if the table is there
         $mysqli = connectCPB($ref);
-        $settings->geneSymbolColumn = $mysqli->real_escape_string(
-          empty($settings->geneSymbolColumn)
-            ? 'name' : $settings->geneSymbolColumn
+        $settings['geneSymbolColumn'] = $mysqli->real_escape_string(
+          empty($settings['geneSymbolColumn'])
+            ? 'name' : $settings['geneSymbolColumn']
         );
         $geneCoorTable = $mysqli->real_escape_string(
-          trim($settings->geneCoorTable));
+          trim($settings['geneCoorTable']));
         if (!($mysqli->query("SHOW COLUMNS FROM `" . $geneCoorTable .
-          "` WHERE `Field` = '" . $settings->geneSymbolColumn . "'")->num_rows)
+          "` WHERE `Field` = '" . $settings['geneSymbolColumn'] . "'")->num_rows)
         ) {
           // No 'geneSymbol' column for `geneCoorTable`
           // test for linked tables
           $res = $mysqli->query("SELECT * FROM `trackDb` WHERE" .
             " `tableName` = '" . $geneCoorTable . "'");
           if ($itor = $res->fetch_assoc()) {
-            $trSettings = json_decode($itor['settings']);
-            if (!$trSettings->defaultLinkedTables ||
-              !$trSettings->defaultLinkedKeys ||
+            $trSettings = json_decode($itor['settings'], true);
+            if (empty($trSettings['defaultLinkedTables']) ||
+              empty($trSettings['defaultLinkedKeys']) ||
               !($mysqli->query("SHOW COLUMNS FROM `" .
                 $mysqli->real_escape_string(
-                  $trSettings->defaultLinkedTables
+                  $trSettings['defaultLinkedTables']
                 ) . "` WHERE `Field` = '" .
-                $settings->geneSymbolColumn . "'")->num_rows
+                $settings['geneSymbolColumn'] . "'")->num_rows
               )
             ) {
               // Either there is no linked table, or the column is not in the
               // linked table.
               throw new Exception("Reference db format incorrect: " .
-                "no column named '" . $settings->geneSymbolColumn .
+                "no column named '" . $settings['geneSymbolColumn'] .
                 "' was found in table `" . $geneCoorTable .
                 "` or linked table(s).", NO_GENE_SYMBOL_COLUMN);
             } else {
-              $settings->linkedCoorTable = $trSettings->defaultLinkedTables;
-              $settings->linkedCoorKeys = $trSettings->defaultLinkedKeys;
+              $settings['linkedCoorTable'] = $trSettings['defaultLinkedTables'];
+              $settings['linkedCoorKeys'] = $trSettings['defaultLinkedKeys'];
             }
           } else {
             throw new Exception("Reference db format incorrect: " .
@@ -76,41 +76,41 @@
               "no start and/or end column specified in '" . $geneCoorTable .
               "'.", TABLE_FORMAT_ERROR);
           }
-          $settings->startCol = 'txStart';
-          $settings->endCol = 'txEnd';
+          $settings['startCol'] = 'txStart';
+          $settings['endCol'] = 'txEnd';
         } else {
-          $settings->startCol = 'chromStart';
-          $settings->endCol = 'chromEnd';
+          $settings['startCol'] = 'chromStart';
+          $settings['endCol'] = 'chromEnd';
         }
         // Test the other two tables
-        if (isset($settings->geneDescTable)) {
+        if (isset($settings['geneDescTable'])) {
           // verify if the table is there
-          $settings->descSymbolColumn = $mysqli->real_escape_string(
-            empty($settings->descSymbolColumn)
-              ? 'Symbol' : $settings->descSymbolColumn
+          $settings['descSymbolColumn'] = $mysqli->real_escape_string(
+            empty($settings['descSymbolColumn'])
+              ? 'Symbol' : $settings['descSymbolColumn']
           );
           if (!($mysqli->query("SHOW COLUMNS FROM `" .
-            $mysqli->real_escape_string(trim($settings->geneDescTable)) .
-            "` WHERE `Field` = '" . $settings->descSymbolColumn .
+            $mysqli->real_escape_string(trim($settings['geneDescTable'])) .
+            "` WHERE `Field` = '" . $settings['descSymbolColumn'] .
             "'")->num_rows)
           ) {
-            unset($settings->geneDescTable);
-            unset($settings->descSymbolColumn);
+            unset($settings['geneDescTable']);
+            unset($settings['descSymbolColumn']);
           }
         }
-        if (isset($settings->aliasTable)) {
+        if (isset($settings['aliasTable'])) {
           // verify if the table is there
-          $settings->aliasSymbolColumn = $mysqli->real_escape_string(
-            empty($settings->aliasSymbolColumn)
-              ? 'Symbol' : $settings->aliasSymbolColumn
+          $settings['aliasSymbolColumn'] = $mysqli->real_escape_string(
+            empty($settings['aliasSymbolColumn'])
+              ? 'Symbol' : $settings['aliasSymbolColumn']
           );
           if (!($mysqli->query("SHOW COLUMNS FROM `" .
-            $mysqli->real_escape_string(trim($settings->aliasTable)) .
-            "` WHERE `Field` = '" . $settings->aliasSymbolColumn .
+            $mysqli->real_escape_string(trim($settings['aliasTable'])) .
+            "` WHERE `Field` = '" . $settings['aliasSymbolColumn'] .
             "'")->num_rows)
           ) {
-            unset($settings->aliasTable);
-            unset($settings->aliasSymbolColumn);
+            unset($settings['aliasTable']);
+            unset($settings['aliasSymbolColumn']);
           }
         }
       } else {
@@ -146,67 +146,62 @@
       // Construct SQL components separately
       // Build query strings based on $refInfo
       // coordinate field
-      $selectExpr = "CONCAT(`geneFilter`.`chrom`, ':', " .
-        "MIN(`geneFilter`.`" . $settings->startCol . "`), '-', " .
-        "MAX(`geneFilter`.`" . $settings->endCol . "`)) AS `coor`, `" .
-        ((!empty($settings->linkedCoorTable)) ?
-        $settings->linkedCoorTable : "geneFilter") . "`.`" .
-        $settings->geneSymbolColumn . "` AS `name`";
-
-      $tableReference = "(SELECT * FROM `" . $settings->geneCoorTable .
-        "` WHERE `chrom` NOT LIKE '%\_%') AS `geneFilter`";
-      if ($settings->linkedCoorTable) {
+      $selectExpr = "CONCAT(`geneTable`.`chrom`, ':', " .
+        "MIN(`geneTable`.`" . $settings['startCol'] . "`), '-', " .
+        "MAX(`geneTable`.`" . $settings['endCol'] . "`)) AS `coor`, `" .
+        ((!empty($settings['linkedCoorTable'])) ?
+        $settings['linkedCoorTable'] : "geneTable") . "`.`" .
+        $settings['geneSymbolColumn'] . "` AS `name`";
+      $tableReference = $settings['geneCoorTable'] .
+        " AS `geneTable`";
+      if (!empty($settings['linkedCoorTable'])) {
         $tableReference = "(" . $tableReference . " LEFT JOIN `" .
-          $settings->linkedCoorTable . "` ON `geneFilter`.`name` = `" .
-          $settings->linkedCoorTable . "`.`" .
-          $settings->linkedCoorKeys . "`)";
+          $settings['linkedCoorTable'] . "` ON `geneTable`.`name` = `" .
+          $settings['linkedCoorTable'] . "`.`" .
+          $settings['linkedCoorKeys'] . "`)";
       }
-
-      $whereCondition = "`" . ((!empty($settings->linkedCoorTable)) ?
-        $settings->linkedCoorTable : "geneFilter") . "`.`" .
-        $settings->geneSymbolColumn . "` LIKE ?";
-
+      $chromFilter = "`geneTable`.`chrom` NOT LIKE '%\\_%'";
+      $whereCondition = "`" . ((!empty($settings['linkedCoorTable'])) ?
+        $settings['linkedCoorTable'] : "geneTable") . "`.`" .
+        $settings['geneSymbolColumn'] . "` LIKE ?";
       $groupByExpr = "`" .
-        ((!empty($settings->linkedCoorTable)) ? $settings->linkedCoorTable :
-        "geneFilter") .  "`.`" . $settings->geneSymbolColumn . "`";
-
+        ((!empty($settings['linkedCoorTable'])) ? $settings['linkedCoorTable'] :
+        "geneTable") .  "`.`" . $settings['geneSymbolColumn'] . "`";
       $orderByExpr = "`name` = '" . $mysqli->real_escape_string($partialName) .
         "', `name`";
-
       // gene description field
-      if (!empty($settings->geneDescTable)) {
-        $selectExpr .= ", `" . $settings->geneDescTable .
+      if (!empty($settings['geneDescTable'])) {
+        $selectExpr .= ", `" . $settings['geneDescTable'] .
           "`.`description` AS `description`";
-        $tableReference .= " INNER JOIN `" . $settings->geneDescTable .
-          "` ON `" . ((!empty($settings->linkedCoorTable)) ?
-          $settings->linkedCoorTable : "geneFilter") . "`.`" .
-          $settings->geneSymbolColumn . "` = `" .
-          $settings->geneDescTable . "`.`" .
-          $settings->descSymbolColumn . "` ";
+        $tableReference .= " INNER JOIN `" . $settings['geneDescTable'] .
+          "` ON `" . ((!empty($settings['linkedCoorTable'])) ?
+          $settings['linkedCoorTable'] : "geneTable") . "`.`" .
+          $settings['geneSymbolColumn'] . "` = `" .
+          $settings['geneDescTable'] . "`.`" .
+          $settings['descSymbolColumn'] . "` ";
       }
-
       // alias field
-      if ($settings->aliasTable) {
-        $selectExpr .= ", `" . $settings->aliasTable . "`.`alias` AS `alias`";
-        $tableReference .= " INNER JOIN `" . $settings->aliasTable . "` ON `" .
-          ((!empty($settings->linkedCoorTable)) ?
-          $settings->linkedCoorTable : "geneFilter") . "`.`" .
-          $settings->geneSymbolColumn . "` = `" .
-          $settings->aliasTable . "`.`" .
-          $settings->aliasSymbolColumn . "`";
-        $whereCondition = "`" . $settings->aliasTable . "`.`alias` LIKE ?";
+      if ($settings['aliasTable']) {
+        $selectExpr .= ", `" . $settings['aliasTable'] . "`.`alias` AS `alias`";
+        $tableReference .= " INNER JOIN `" . $settings['aliasTable'] . "` ON `" .
+          ((!empty($settings['linkedCoorTable'])) ?
+          $settings['linkedCoorTable'] : "geneTable") . "`.`" .
+          $settings['geneSymbolColumn'] . "` = `" .
+          $settings['aliasTable'] . "`.`" .
+          $settings['aliasSymbolColumn'] . "`";
+        $whereCondition = "`" . $settings['aliasTable'] . "`.`alias` LIKE ?";
         $orderByExpr = "`name` = '" .
           $mysqli->real_escape_string($partialName) .
           "' DESC, `alias` = '" . $mysqli->real_escape_string($partialName) .
-          "' DESC, `" . $settings->aliasTable . "`.`isSymbol` DESC, `name`";
+          "' DESC, `" . $settings['aliasTable'] . "`.`isSymbol` DESC, `name`";
       }
-
       // error_log("SELECT " . $selectExpr .
-      //   " FROM " . $tableReference . " WHERE " . $whereCondition .
-      //   " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
-      // );
+      //   " FROM " . $tableReference .
+      //   " WHERE " . $whereCondition . " AND " . $chromFilter .
+      //   " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr);
       $queryStmt = $mysqli->prepare("SELECT " . $selectExpr .
-        " FROM " . $tableReference . " WHERE " . $whereCondition .
+        " FROM " . $tableReference .
+        " WHERE " . $whereCondition . " AND " . $chromFilter .
         " GROUP BY " . $groupByExpr . " ORDER BY " . $orderByExpr
       );
       $partialNameToBind = $partialName . '%';
@@ -215,7 +210,7 @@
       $generesult = $queryStmt->get_result();
       while($row = $generesult->fetch_assoc()) {
         if (strtolower(trim($row["name"])) === strtolower(trim($partialName)) ||
-          $settings->aliasTable &&
+          $settings['aliasTable'] &&
           strtolower(trim($row["alias"])) === strtolower(trim($partialName))
         ) {
           $result[$row["name"]] = $row;
@@ -248,7 +243,6 @@
     }
   }
 
-
   /**
    * Formal processing procedures here.
    */
@@ -268,7 +262,6 @@
   if ($db && $refInfo = testRefPartialName($db)) {
     // First read reference information from `ref` table to see if partial
     // gene name feature is supported in the reference
-
     if ($partialName && strlen($partialName) >= MIN_JSON_QUERY_LENGTH) {
       $result['input'] = $req['name'];
       $result['list'] =

@@ -137,7 +137,7 @@ function getTracks($db, $grp = NULL) {
     while($itor = $tracks->fetch_assoc()) {
       // needs to redo settings part
       // settings should be a json object
-      $itor['settings'] = json_decode($itor['settings']);
+      $itor['settings'] = json_decode($itor['settings'], true);
       if(array_key_exists($itor['grp'], $result)) {
         $result[$itor['grp']]['tracks'] []= $itor;
       } else {
@@ -203,7 +203,7 @@ function getRefInfoFromArray($spcDbNameList = NULL) {
       $ref = $mysqli->query($sqlstmt);
     }
     while($spcitor = $ref->fetch_assoc()) {
-      $spcitor['settings'] = json_decode($spcitor['settings']);
+      $spcitor['settings'] = json_decode($spcitor['settings'], true);
       $spcinfo[$spcitor['dbname']] = $spcitor;
     }
     return $spcinfo;

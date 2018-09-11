@@ -59,11 +59,11 @@ __Note:__ this function needs additional back-end support. Please see <https://g
       paper-input {
         margin-bottom: 0.6em;
       }
-      paper-input div[suffix] {
+      paper-input div[slot="suffix"] {
         font-size: 0.9em;
         color: var(--secondary-text-color);
       }
-      paper-input div[suffix] iron-icon {
+      paper-input div[slot="suffix"] iron-icon {
         width: 1.8em;
         height: 1.8em;
         margin: -0.4em 0;
@@ -90,27 +90,28 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         margin-right: 1em;
       }
     </style>
-    <paper-input class="fullWidth" id="geneName" label="[[_dispLabel]]"
+    <paper-input class="fullWidth" id="geneName"
+      label="[[_calcDispLabel(label, _partialNameSupported)]]"
       value="{{inputValue}}" on-input="_partialInputHandler"
       on-focus="_textFocus" on-blur="_textUnFocus"
       no-label-float="[[noLabelFloat]]"
       always-float-label="[[alwaysFloatLabel]]"
       error-message="[[errorMessage]]"
       invalid="[[invalid]]">
-      <div suffix>
+      <div slot="suffix">
         [[coorSuffix]]
         <template is="dom-if" if="[[!noGeneNameSearch]]" restamp="true">
-          <span hidden$="[[_partialNameSupported]]">
+          <template is="dom-if" if="[[!_partialNameSupported]]">
             <iron-icon icon="give-iconset:search-unavailable"></iron-icon>
-          </span>
-          <span hidden$="[[!_partialNameSupported]]">
+          </template>
+          <template is="dom-if" if="[[_partialNameSupported]]">
             <iron-icon icon="search"></iron-icon>
-          </span>
+          </template>
         </template>
       </div>
     </paper-input>
     <iron-dropdown id="geneNameDropDown" no-overlap>
-      <div class="dropdown-content">
+      <div slot="dropdown-content">
         <iron-list class="autoText"
           items="[[candidates]]" as="gene" selection-enabled id="candidatesList"
           selected-item="{{selectedCandidate}}" hidden$="[[isCandidatesEmpty]]">
@@ -127,9 +128,11 @@ __Note:__ this function needs additional back-end support. Please see <https://g
             </paper-item>
           </template>
         </iron-list>
-        <div class="emptyMsg" hidden$="[[!_showMsgInList]]">
-          <em>[[emptyCandidatesString]]</em>
-        </div>
+        <template is="dom-if" if="[[_showMsgInList]]">
+          <div class="emptyMsg">
+            <em>[[emptyCandidatesString]]</em>
+          </div>
+        </template>
       </div>
     </iron-dropdown>
     <iron-ajax id="partialNameAjax" url="[[geneNameUrl]]"
@@ -189,13 +192,7 @@ var GIVe = (function (give) {
 
         label: {
           type: String,
-          value: 'Coordinate (or gene name)',
-          observer: '_labelChanged'
-        },
-
-        _dispLabel: {
-          type: String,
-          value: ''
+          value: 'Coordinate (or gene name)'
         },
 
         errorMessage: {
@@ -263,8 +260,7 @@ var GIVe = (function (give) {
 
         _partialNameSupported: {
           type: Boolean,
-          value: false,
-          observer: '_partialNameSupportChanged'
+          value: false
         }
       }
     }
@@ -286,14 +282,9 @@ var GIVe = (function (give) {
       this._partialSelectionChanged(this._partialNameSupported)
     }
 
-    _labelChanged (newValue, oldValue) {
-      this._dispLabel = newValue.replace(' (or gene name)',
-        this._partialNameSupported ? ' or gene name' : '')
-    }
-
-    _partialNameSupportChanged (newValue, oldValue) {
-      this._dispLabel =
-        this.label.replace(' (or gene name)', newValue ? ' or gene name' : '')
+    _calcDispLabel (label, partialNameSupported) {
+      return label.replace(' (or gene name)',
+        partialNameSupported ? ' or gene name' : '')
     }
 
     _setRefObj (refObj) {
@@ -339,7 +330,7 @@ var GIVe = (function (give) {
         if (!this.noGeneNameSearch &&
           this._partialNameSupported && newValue !== this.querySent
         ) {
-          if (newValue.length >= this.MIN_JSON_QUERY_LENGTH &&
+          if (newValue.length >= this.constructor.MIN_JSON_QUERY_LENGTH &&
             !this._valueIsCoordinate()
           ) {
             // length is enough for ajax and also not already updated
@@ -383,14 +374,14 @@ var GIVe = (function (give) {
     }
 
     _sendPartialQuery () {
-      if (this.inputValue.length >= this.MIN_JSON_QUERY_LENGTH &&
+      if (this.inputValue.length >= this.constructor.MIN_JSON_QUERY_LENGTH &&
         this.inputValue !== this.querySent
       ) {
         // send Ajax
         this.querySent = this.inputValue
         this.$.partialNameAjax.params = {
           'name': this.querySent,
-          'maxCandidates': this.MAX_CANDIDATES,
+          'maxCandidates': this.constructor.MAX_CANDIDATES,
           'db': this._refObj.db
         }
         let request = this.$.partialNameAjax.generateRequest()
@@ -477,9 +468,9 @@ var GIVe = (function (give) {
         this.$.geneNameDropDown.refit()
         this.$.geneNameDropDown.open()
         this.$.candidatesList.clearSelection()
-        this.async(function () {
+        Promise.resolve().then(() =>
           this.$.candidatesList.updateViewportBoundaries()
-        })
+        )
         this.$.candidatesList.notifyResize()
         this._ajaxDebounceInterval =
           this.constructor.AJAX_DEBOUNCE_INTERVAL_ACTIVE
