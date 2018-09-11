@@ -62,6 +62,7 @@ __Note:__ this function needs additional back-end support. Please see <https://g
       paper-input div[slot="suffix"] {
         font-size: 0.9em;
         color: var(--secondary-text-color);
+        white-space: nowrap;
       }
       paper-input div[slot="suffix"] iron-icon {
         width: 1.8em;
@@ -69,7 +70,7 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         margin: -0.4em 0;
       }
       iron-dropdown {
-        background: var(--primary-background-color);
+        background: var(--gene-coor-input-dropdown-background, var(--primary-background-color));
       }
       iron-dropdown div div.emptyMsg {
         display: block;
@@ -90,14 +91,14 @@ __Note:__ this function needs additional back-end support. Please see <https://g
         margin-right: 1em;
       }
     </style>
-    <paper-input class="fullWidth" id="geneName"
+    <paper-input class="fullWidth" id="geneName" spellcheck="false"
       label="[[_calcDispLabel(label, _partialNameSupported)]]"
       value="{{inputValue}}" on-input="_partialInputHandler"
       on-focus="_textFocus" on-blur="_textUnFocus"
       no-label-float="[[noLabelFloat]]"
       always-float-label="[[alwaysFloatLabel]]"
       error-message="[[errorMessage]]"
-      invalid="[[invalid]]">
+      invalid="[[invalid]]" tabindex="0">
       <div slot="suffix">
         [[coorSuffix]]
         <template is="dom-if" if="[[!noGeneNameSearch]]" restamp="true">
@@ -112,15 +113,13 @@ __Note:__ this function needs additional back-end support. Please see <https://g
     </paper-input>
     <iron-dropdown id="geneNameDropDown" no-overlap>
       <div slot="dropdown-content">
-        <iron-list class="autoText"
-          items="[[candidates]]" as="gene" selection-enabled id="candidatesList"
+        <iron-list items="[[candidates]]" as="gene"
+          selection-enabled id="candidatesList"
           selected-item="{{selectedCandidate}}" hidden$="[[isCandidatesEmpty]]">
           <template>
             <paper-item>
               <div class="geneNameClass">
-                <span>[[gene.contentBefore]]</span>
-                <strong>[[gene.contentBold]]</strong>
-                <span>[[gene.contentAfter]]</span>
+                <span>[[gene.contentBefore]]</span><strong>[[gene.contentBold]]</strong><span>[[gene.contentAfter]]</span>
               </div>
               <div class="geneDescClass">
                 [[gene.description]]
@@ -344,6 +343,7 @@ var GIVe = (function (give) {
               }
             )
           } else {
+            this.querySent = ''
             this._toggleGList(false)
           }
         }
@@ -417,25 +417,25 @@ var GIVe = (function (give) {
               contentBold: '',
               contentAfter: ''
             }
-            if (key.toLowerCase().indexOf(this.querySent.toLowerCase()) !== 0) {
+            if (key.toLowerCase().indexOf(this.inputValue.toLowerCase()) !== 0) {
               // gene has an alias that is actually matching
               if (val.alias.toLowerCase()
-                .indexOf(this.querySent.toLowerCase()) === 0
+                .indexOf(this.inputValue.toLowerCase()) === 0
               ) {
                 // has a matching alias
                 entry.contentBefore = entry.name + ' ('
-                entry.contentBold = val.alias.substr(0, this.querySent.length)
+                entry.contentBold = val.alias.substr(0, this.inputValue.length)
                 entry.contentAfter =
-                  val.alias.substr(this.querySent.length) + ')'
+                  val.alias.substr(this.inputValue.length) + ')'
               } else {
                 // no matching alias (shouldn't happen)
                 entry.contentBefore = entry.name
-                console.log(this.querySent)
+                console.log(this.inputValue)
                 console.log(entry)
               }
             } else {
-              entry.contentBold = key.substr(0, this.querySent.length)
-              entry.contentAfter = key.substr(this.querySent.length)
+              entry.contentBold = key.substr(0, this.inputValue.length)
+              entry.contentAfter = key.substr(this.inputValue.length)
             }
             this.push('candidates', entry)
           }
@@ -465,12 +465,13 @@ var GIVe = (function (give) {
         this.$.candidatesList.style.height = Math.min(this.candidates.length,
           this.constructor.GENE_LIST_MAX_LINES) *
           this.constructor.GENE_LIST_PX_PER_LINE + 'px'
-        this.$.geneNameDropDown.refit()
-        this.$.geneNameDropDown.open()
         this.$.candidatesList.clearSelection()
-        Promise.resolve().then(() =>
+        Promise.resolve().then(() => {
           this.$.candidatesList.updateViewportBoundaries()
-        )
+          this.$.geneNameDropDown.refit()
+          this.$.geneNameDropDown.open()
+          give._verbConsole.info(this.$.geneName.focused)
+        })
         this.$.candidatesList.notifyResize()
         this._ajaxDebounceInterval =
           this.constructor.AJAX_DEBOUNCE_INTERVAL_ACTIVE

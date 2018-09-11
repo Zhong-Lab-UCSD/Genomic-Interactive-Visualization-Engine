@@ -44,10 +44,12 @@ limitations under the License.
       div.controllers > * {
         margin: 0.15em 0;
       }
-      div.controllerGroup > :not(:first-child) {
-        margin-left: 0.5em;
+      div.controllerGroup {
+        margin-left: -0.5em;
+        margin-right: -0.5em;
       }
-      div.controllerGroup > :not(:last-child) {
+      div.controllerGroup > * {
+        margin-left: 0.5em;
         margin-right: 0.5em;
       }
       div.controllerGroup > div > div {
@@ -75,6 +77,7 @@ limitations under the License.
         width: 18em;
         margin-top: 0.5em;
         margin-bottom: 0.5em;
+        --gene-coor-input-dropdown-background: var(--card-background-color);
       }
       paper-dialog div.buttons paper-button {
         margin: unset;
@@ -118,7 +121,7 @@ limitations under the License.
           </paper-dropdown-menu>
           <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
             label="Title for the Chart Controller" value="{{customTitle}}"
-            id="titleInput">
+            id="titleInput" tabindex="1">
           </paper-input>
         </div>
         <div class="controllerGroup controllerInputs layout horizontal start">
