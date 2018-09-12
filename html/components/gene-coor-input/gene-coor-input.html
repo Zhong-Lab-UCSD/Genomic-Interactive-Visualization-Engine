@@ -149,6 +149,9 @@ var GIVe = (function (give) {
       this._refocusDebouncer = null
       this._ajaxDebouncer = null
       this._mouseOutDebouncer = null
+      this._showGeneListDebouncer = null
+
+      this._listReadyToShow = false
 
       this._ajaxDebounceInterval =
         this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
@@ -339,27 +342,33 @@ var GIVe = (function (give) {
         // value is coupled with input field
         this.coorSuffix = ''
         this.inputValue = newValue
-        if (!this.noGeneNameSearch &&
-          this._partialNameSupported && newValue !== this.querySent
-        ) {
-          if (newValue.length >= this.constructor.MIN_JSON_QUERY_LENGTH &&
-            !this._valueIsCoordinate()
-          ) {
-            // length is enough for ajax and also not already updated
-            // start the timer to prepare for ajax
-            this._ajaxDebouncer = Polymer.Debouncer.debounce(
-              this._ajaxDebouncer,
-              Polymer.Async.timeOut.after(this._ajaxDebounceInterval),
-              () => {
-                this._ajaxDebouncer = null
-                this._sendPartialQuery()
-              }
-            )
-          } else {
+        if (!this.noGeneNameSearch && this._partialNameSupported) {
+          if (newValue !== this.querySent) {
+            this._listReadyToShow = false
+            if (this._showGeneListDebouncer) {
+              this._showGeneListDebouncer.cancel()
+              this._showGeneListDebouncer = null
+            }
             this.querySent = ''
-            this._toggleGList(false)
+            if (newValue.length >= this.constructor.MIN_JSON_QUERY_LENGTH &&
+              !this._valueIsCoordinate()
+            ) {
+              // length is enough for ajax and also not already updated
+              // start the timer to prepare for ajax
+              this._ajaxDebouncer = Polymer.Debouncer.debounce(
+                this._ajaxDebouncer,
+                Polymer.Async.timeOut.after(this._ajaxDebounceInterval),
+                () => {
+                  this._ajaxDebouncer = null
+                  this._sendPartialQuery()
+                }
+              )
+            } else {
+              this.querySent = ''
+              this._toggleGList(false)
+            }
           }
-        }
+        } 
       } else {
         this._decoupleInput = false
       }
@@ -411,18 +420,18 @@ var GIVe = (function (give) {
     _updatePartialQuery (req) {
       // $('#geneName').removeClass('searchFieldBusy');
       this.splice('candidates', 0, this.candidates.length)
-      var data = req.response
+      let data = req.response
       if (data && data.input === this.inputValue) {
         this.emptyCandidatesString = '(No results)'
         this._showMsgInList = false
-        for (var key in data.list) {
+        for (let key in data.list) {
           if (key === '(max_exceeded)' && data.list[key]) {
             // max number of candidates has been reached
             this.emptyCandidatesString = '(Type more for candidates)'
             this._showMsgInList = true
           } else if (data.list.hasOwnProperty(key)) {
-            var val = data.list[key]
-            var entry = {
+            let val = data.list[key]
+            let entry = {
               name: key,
               coor: val.coor,
               description: val.description,
@@ -430,14 +439,17 @@ var GIVe = (function (give) {
               contentBold: '',
               contentAfter: ''
             }
-            if (key.toLowerCase().indexOf(this.inputValue.toLowerCase()) !== 0) {
+            if (key.toLowerCase().indexOf(
+              this.inputValue.toLowerCase()
+            ) !== 0) {
               // gene has an alias that is actually matching
               if (val.alias.toLowerCase()
                 .indexOf(this.inputValue.toLowerCase()) === 0
               ) {
                 // has a matching alias
                 entry.contentBefore = entry.name + ' ('
-                entry.contentBold = val.alias.substr(0, this.inputValue.length)
+                entry.contentBold =
+                  val.alias.substr(0, this.inputValue.length)
                 entry.contentAfter =
                   val.alias.substr(this.inputValue.length) + ')'
               } else {
@@ -455,7 +467,8 @@ var GIVe = (function (give) {
         }
         this.isCandidatesEmpty =
           (!this.candidates || this.candidates.length <= 0)
-        this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty
+        this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty 
+        this._listReadyToShow = true
         this._toggleGList(true)
       } else {
         this._toggleGList(false)
@@ -467,6 +480,7 @@ var GIVe = (function (give) {
         this.coorSuffix = '(' + newValue.coor + ')'
         this.inputValue = newValue.name
         this.querySent = newValue.name
+        this._listReadyToShow = false
         this._setValueDecoupled(newValue.coor)
         this._toggleGList(false)
       }
@@ -555,12 +569,16 @@ var GIVe = (function (give) {
 
     _checkGList () {
       if (!this._inFocus && !this._mouseInGList) {
+        if (this._showGeneListDebouncer) {
+          this._showGeneListDebouncer.cancel()
+          this._showGeneListDebouncer = null
+        }
         this._mouseOutDebouncer = Polymer.Debouncer.debounce(
           this._mouseOutDebouncer,
           Polymer.Async.timeOut.after(this.constructor.MOUSE_OUT_TIME_OUT),
           () => {
+            this._mouseOutDebouncer = null
             if (!this._inFocus && !this._mouseInGList) {
-              this._mouseOutDebouncer = null
               this._toggleGList(false)
             }
           }
@@ -569,6 +587,21 @@ var GIVe = (function (give) {
         if (this._mouseOutDebouncer) {
           this._mouseOutDebouncer.cancel()
           this._mouseOutDebouncer = null
+        }
+        if (this._inFocus && this._listReadyToShow) {
+          this._showGeneListDebouncer = Polymer.Debouncer.debounce(
+            this._showGeneListDebouncer,
+            Polymer.Async.timeOut.after(
+              this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
+            ),
+            () => {
+              this._showGeneListDebouncer = null
+              if (this._inFocus && this._listReadyToShow) {
+                this._toggleGList(true)
+                this._setTextFocus()
+              }
+            }
+          )
         }
       }
     }
