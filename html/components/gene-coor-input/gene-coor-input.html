@@ -98,7 +98,7 @@ __Note:__ this function needs additional back-end support. Please see <https://g
       no-label-float="[[noLabelFloat]]"
       always-float-label="[[alwaysFloatLabel]]"
       error-message="[[errorMessage]]"
-      invalid="[[invalid]]" tabindex="0">
+      invalid="[[invalid]]">
       <div slot="suffix">
         [[coorSuffix]]
         <template is="dom-if" if="[[!noGeneNameSearch]]" restamp="true">
@@ -145,7 +145,7 @@ var GIVe = (function (give) {
   class GeneCoorInput extends give.RefEmbedMixin(Polymer.Element) {
     constructor () {
       super(...arguments)
-      this._setTextFocusDebouncer = null
+      this._textFocusHandlerDebouncer = null
       this._refocusDebouncer = null
       this._ajaxDebouncer = null
       this._mouseOutDebouncer = null
@@ -274,11 +274,24 @@ var GIVe = (function (give) {
       // set this to true to decouple input values with actual values
 
       this.$.geneNameDropDown.positionTarget = this.$.geneName
-      this.$.geneNameDropDown.focusTarget = this.$.geneName
+      // the following was disabled due to `paper-input` issue #673
+      // this.$.geneNameDropDown.focusTarget = this.$.geneName
 
       this.addEventListener('mouseover', e => this._mouseOverHandler(e))
       this.addEventListener('mouseout', e => this._mouseOutHandler(e))
       this._partialSelectionChanged(this._partialNameSupported)
+    }
+
+    /**
+     * _setTextFocus - set the focus onto the main `paper-input` field
+     * This function is to circumvent `paper-input` issue #673 as described
+     * at: https://github.com/PolymerElements/paper-input/issues/673
+     * Can be removed once the issue is resolved.
+     */
+    _setTextFocus () {
+      if (!this.$.geneName.focused) {
+        this.$.geneName.focus()
+      }
     }
 
     _calcDispLabel (label, partialNameSupported) {
@@ -358,11 +371,11 @@ var GIVe = (function (give) {
     }
 
     _textFocus () {
-      this._setTextFocusDebounced(true)
+      this._textFocusHandlerDebounced(true)
     }
 
     _textUnFocus () {
-      this._setTextFocusDebounced(false)
+      this._textFocusHandlerDebounced(false)
     }
 
     _mouseOverHandler () {
@@ -470,7 +483,7 @@ var GIVe = (function (give) {
           this.$.candidatesList.updateViewportBoundaries()
           this.$.geneNameDropDown.refit()
           this.$.geneNameDropDown.open()
-          give._verbConsole.info(this.$.geneName.focused)
+          this._setTextFocus()
         })
         this.$.candidatesList.notifyResize()
         this._ajaxDebounceInterval =
@@ -489,7 +502,7 @@ var GIVe = (function (give) {
                 this.constructor.REFOCUS_DEBOUNCE_INTERVAL
               ),
               () => {
-                this.$.geneName.focus()
+                this._setTextFocus()
               }
             )
           }
@@ -497,26 +510,26 @@ var GIVe = (function (give) {
       }
     }
 
-    _setTextFocusDebounced (flag) {
-      if (this._setTextFocusDebouncer) {
-        this._setTextFocusDebouncer.cancel()
-        this._setTextFocusDebouncer = null
+    _textFocusHandlerDebounced (flag) {
+      if (this._textFocusHandlerDebouncer) {
+        this._textFocusHandlerDebouncer.cancel()
+        this._textFocusHandlerDebouncer = null
       }
       if (flag !== this._inFocus) {
-        this._setTextFocusDebouncer = Polymer.Debouncer.debounce(
-          this._setTextFocusDebouncer,
+        this._textFocusHandlerDebouncer = Polymer.Debouncer.debounce(
+          this._textFocusHandlerDebouncer,
           Polymer.Async.timeOut.after(
             flag ? 0 : this.constructor.SET_TEXT_FOCUS_DEBOUNCE_INTERVAL
           ),
           () => {
-            this._setTextFocusDebouncer = null
-            this._setTextFocus(flag)
+            this._textFocusHandlerDebouncer = null
+            this._textFocusHandler(flag)
           }
         )
       }
     }
 
-    _setTextFocus (flag) {
+    _textFocusHandler (flag) {
       this._inFocus = flag
       this._checkGList()
       if (!flag && this._refObj && this._refObj.chromInfo &&

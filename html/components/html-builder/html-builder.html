@@ -121,7 +121,7 @@ limitations under the License.
           </paper-dropdown-menu>
           <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
             label="Title for the Chart Controller" value="{{customTitle}}"
-            id="titleInput" tabindex="1">
+            id="titleInput">
           </paper-input>
         </div>
         <div class="controllerGroup controllerInputs layout horizontal start">
@@ -341,7 +341,7 @@ var GIVe = (function (give) {
           window.location.hostname +
           (window.location.port ? ':' + window.location.port : '')
         this.htmlCode = '<script src="' + baseURL +
-          '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
+          '/bower_components/webcomponentsjs/webcomponents-loader.js">' +
           '<\/script>\n' +
           '<link rel="import" href="' + baseURL +
           '/components/' + this.selectedElement + '/' +
