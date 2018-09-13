@@ -10,17 +10,18 @@
 
 -->
 
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="../give-styles.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<dom-module id="give-card" attributes="isOpened collapseGroup">
+<dom-module id="give-card">
   <template>
     <style include="give-shared-styles">
     :host {
@@ -31,9 +32,6 @@
       text-align: left;
       position: relative;
       @apply --give-card-mixin;
-    /*  border: #757575 solid 1px;
-      border: rgba(0, 0, 0, .54) solid 1px;
-    */
     }
 
     /************************** Polymer and Material Design components below *********************/
@@ -119,7 +117,7 @@ var GIVe = (function (give) {
           value: ''
         },
 
-        collapseHeaderEl: {
+        collapseHeaderElement: {
           type: Object,
           value: null
         },
@@ -134,7 +132,7 @@ var GIVe = (function (give) {
           value: 'expand-more'
         },
 
-        domReady: {     // flag indicating whether local DOM is ready
+        domReady: { // flag indicating whether local DOM is ready
           type: Boolean,
           value: false,
           readOnly: true
@@ -153,17 +151,8 @@ var GIVe = (function (give) {
         }
       }
     }
-  }
 
-  give.GiveCard = GiveCard
-
-  give.GenemoCard = Polymer({
-    listeners: {
-      'content-dom-ready': 'contentDOMReady',
-      'content-ready': 'contentReady'
-    },
-
-    attached: function () {
+    attached () {
       this.async(function () {
         // observe the children being added here
         this._setDomReady(true)
@@ -171,42 +160,42 @@ var GIVe = (function (give) {
         this.contentDOMReady({detail: {flag: true}}) &&
           this.contentReady({detail: {flag: true}})
       })
-    },
+    }
 
-    _disableFoldingObserver: function (newValue, oldValue) {
+    _disableFoldingObserver (newValue, oldValue) {
       if (newValue) {
         Polymer.dom(this.$.cardFixedContent).appendChild(this.$.cardbody)
       } else {
         Polymer.dom(this.$.mainCollapse).appendChild(this.$.cardbody)
       }
-    },
+    }
 
-    toggleCollapseHeader: function (flag) {
+    toggleCollapseHeader (flag) {
       // the top node with cardBody should have a member function getCollapse()
-      // then use the returned DOM to replace collapseHeaderEl
-      // if nothing, then collapseHeaderEl is simply GenemoHead
+      // then use the returned DOM to replace collapseHeaderElement
+      // if nothing, then collapseHeaderElement is simply GenemoHead
       // flag is the target status
 
-      if (flag && this.collapseHeaderEl) {
+      if (flag && this.collapseHeaderElement) {
         // there is old collapseHeader, needs to be removed
-        Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl)
+        Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderElement)
         Polymer.dom(this.$.cardHeadContent).classList.remove('hidden')
       } else if (!flag) {
         var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes()
         if (contentNode) {
           contentNode = contentNode[0]
           if (contentNode.getCollapse) {
-            this.collapseHeaderEl = contentNode.getCollapse()
-            if (this.collapseHeaderEl) {
-              Polymer.dom(this.$.cardHeadContent).classList.add('hidden')
-              Polymer.dom(this.$.cardHeader).appendChild(this.collapseHeaderEl)
+            this.collapseHeaderElement = contentNode.collapseElement
+            if (this.collapseHeaderElement) {
+              this.$.cardHeadContent.classList.add('hidden')
+              this.$.cardHeader.appendChild(this.collapseHeaderElement)
             }
           }
         }
       }
-    },
+    }
 
-    isOpenedChanged: function (newValue, oldValue) {
+    isOpenedChanged (newValue, oldValue) {
       this.enableSignal = false
       if (newValue) {
         // un-collapse, send signal for all collapse groups
@@ -215,21 +204,21 @@ var GIVe = (function (give) {
       this.expandIcon = newValue ? 'expand-less' : 'expand-more'
       this.toggleCollapseHeader(newValue)
       this.enableSignal = true
-    },
+    }
 
-    collapseSignal: function (e, detail) {
+    collapseSignal (e, detail) {
       if (this.enableSignal && this.collapseGroup === detail.group &&
         this.isOpened !== detail.flag) {
         this.isOpened = detail.flag
       }
-    },
+    }
 
-    toggleCollapse: function () {
+    toggleCollapse () {
       // hide cardBody and convert GenemoHead to GenemoCollapse (if any)
       this.isOpened = !this.isOpened
-    },
+    }
 
-    populateDOM: function () {
+    populateDOM () {
       // if the content has a .getExpandedHeader member,
       //  it will be used to generate the node to replace the node
       //  given in .GenemoHead
@@ -252,9 +241,9 @@ var GIVe = (function (give) {
           }
         }
       }
-    },
+    }
 
-    contentDOMReady: function (e) {
+    contentDOMReady (e) {
       if (this.domReady && e.detail.flag) {
         // this will only happen if this.domReady !== true
         if (Polymer.dom(this.$.cardbody).getDistributedNodes().every(function (node, index) {
@@ -268,9 +257,9 @@ var GIVe = (function (give) {
         }
       }
       return e.detail.flag
-    },
+    }
 
-    setCardReady: function (readiness) {
+    setCardReady (readiness) {
       if (readiness) {
         // if card is not ready, use paper-spinner and add "notReady" class to cardContent
         this.$.loadingSpinner.active = false
@@ -281,9 +270,9 @@ var GIVe = (function (give) {
         this.$.loadingSpinner.active = true
       }
       this._setReadyFlag(readiness)
-    },
+    }
 
-    contentReady: function (e) {
+    contentReady (e) {
       if (this.readyFlag !== e.detail.flag) {
         if (e.detail.flag) {
           // set Ready = true, this will only happen if this.domReady !== true
@@ -300,18 +289,19 @@ var GIVe = (function (give) {
         }
       }
       return this.readyFlag
-    },
+    }
 
-    setAllReadiness: function (readiness) {
+    setAllReadiness (readiness) {
       // set both DOM and content flags
       this.contentDOMReady({detail: {flag: readiness}})
       this.contentReady({detail: {flag: readiness}})
     }
+  }
 
-  })
+  give.GiveCard = GiveCard
+  window.customElements.define('give-card', give.GiveCard)
 
   return give
 })(GIVe || {})
-
   </script>
 </dom-module>

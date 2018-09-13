@@ -45,15 +45,15 @@ limitations under the License.
       div.controllers > * {
         margin: 0.15em 0;
       }
-      div.controllerGroup {
+      div.controllers > div.controllerGroup {
         margin-left: -0.5em;
         margin-right: -0.5em;
       }
-      div.controllerGroup > * {
+      div.controllers > div.controllerGroup > * {
         margin-left: 0.5em;
         margin-right: 0.5em;
       }
-      div.controllerGroup > div > div {
+      div.controllers > div.controllerGroup > div > div {
         display: inline-block;
       }
       div.anno {
@@ -260,12 +260,12 @@ var GIVe = (function (give) {
           type: Boolean,
           value: true
         },
-        
+
         _showClipboardState: {
           type: Boolean,
           value: false
         },
-        
+
         _showStatusMessage: {
           type: Boolean,
           value: false
@@ -553,11 +553,11 @@ var GIVe = (function (give) {
   HtmlBuilder.MAX_DESC_LENGTH = 100
 
   HtmlBuilder.STATUS_NEED_UPDATE =
-    "Settings changed. Please update code first."
+    'Settings changed. Please update code first.'
   HtmlBuilder.STATUS_CLIPBOARD_SUCCESSFUL =
-    "Code successfully copied to clipboard."
+    'Code successfully copied to clipboard.'
   HtmlBuilder.STATUS_CLIPBOARD_FAILED =
-    "Cannot access clipboard. You'll need to copy code manually."
+    'Cannot access clipboard. You\'ll need to copy code manually.'
 
   give.HtmlBuilder = HtmlBuilder
   window.customElements.define('html-builder', give.HtmlBuilder)

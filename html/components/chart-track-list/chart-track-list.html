@@ -4,13 +4,14 @@
   otherwise the iron-list will not work
 -->
 
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../track-control/track-mini-control.html">
 <link rel="import" href="../give-styles.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
@@ -27,7 +28,7 @@
         padding: 1em;
       }
       paper-material > div.header {
-        color: #3F51B5;
+        color: var(--default-primary-color);
         margin-bottom: 0.5em;
       }
       iron-list {
@@ -54,37 +55,41 @@
 var GIVe = (function (give) {
   'use strict'
 
-  give.ChartTrackList = Polymer({
-    is: 'chart-track-list',
+  class ChartTrackList extends Polymer.Element {
+    static get is () {
+      return 'chart-track-list'
+    }
 
-    properties: {
-      textSize: {
-        type: Number,
-        value: 12    // unit is px
-      },
+    static get properties () {
+      return {
+        textSize: {
+          type: Number,
+          value: 12 // unit is px
+        },
 
-      settingKey: {
-        type: String,
-        value: give.GENEMO_SELECTED_KEY
-      },
+        settingKey: {
+          type: String,
+          value: give.GENEMO_SELECTED_KEY
+        },
 
-      group: {
-        type: Object
-      },
+        group: {
+          type: Object
+        },
 
-      instantChange: {
-        type: Boolean,
-        value: false
+        instantChange: {
+          type: Boolean,
+          value: false
+        }
       }
-    },
+    }
 
-    syncTrackToDom: function (scrollToSelected) {
+    syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
       if (this.group && this.group.every) {
         this.$.groupList.clearSelection()
-        var firstSelected = null
-        this.group.every(function (track, index) {
+        let firstSelected = null
+        this.group.every((track, index) => {
           if (track.getSetting(this.settingKey)) {
             if (firstSelected === null) {
               firstSelected = index
@@ -93,20 +98,20 @@ var GIVe = (function (give) {
             return this.$.groupList.multiSelection
           }
           return true
-        }, this)
+        })
         if (scrollToSelected && firstSelected !== null) {
           // scroll to first selected item
           this.$.groupList.scrollToIndex(firstSelected)
         }
       }
-    },
+    }
 
-    syncDomToTrack: function () {
+    syncDomToTrack () {
       // this is used when submitting the results
       if (this.group && this.group.forEach) {
-        this.group.forEach(function (track, index) {
+        this.group.forEach((track, index) =>
           track.setSetting(this.settingKey, false)
-        }, this)
+        )
         if (this.$.groupList.selectedItems) {
           if (Array.isArray(this.$.groupList.selectedItems)) {
             this.$.groupList.selectedItems.forEach(function (track) {
@@ -117,41 +122,44 @@ var GIVe = (function (give) {
           }
         }
       }
-    },
+    }
 
-    resetAllTracks: function () {
+    resetAllTracks () {
       if (this.group && this.group.every) {
-        this.group.every(function (track) {
-          track.resetSetting(this.settingKey)
-        }, this)
+        this.group.forEach(track => track.resetSetting(this.settingKey))
         this.syncTrackToDom()
       }
-    },
+    }
 
-    applyFilter: function (map, flags) {
-      this.group.forEach(function (track, index) {
+    applyFilter (map, flags) {
+      this.group.forEach((track, index) => {
         if (flags.hasOwnProperty('matched') && map.hasOwnProperty(track.id)) {
           if (flags.matched) {
             this.$.groupList.selectIndex(index)
           } else {
             this.$.groupList.deselectIndex(index)
           }
-        } else if (flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(track.id)) {
+        } else if (
+          flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(track.id)
+        ) {
           if (flags.unmatched) {
             this.$.groupList.selectIndex(index)
           } else {
             this.$.groupList.deselectIndex(index)
           }
         }
-      }, this)
-    },
+      })
+    }
 
-    _selectedItemsChangedHandler: function (e) {
+    _selectedItemsChangedHandler (e) {
       if (this.instantChange) {
         this.syncDomToTrack()
       }
     }
-  })
+  }
+
+  give.ChartTrackList = ChartTrackList
+  window.customElements.define('chart-track-list', give.ChartTrackList)
 
   return give
 })(GIVe || {})
