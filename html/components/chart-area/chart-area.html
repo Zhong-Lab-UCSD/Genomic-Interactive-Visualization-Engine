@@ -56,9 +56,6 @@ Please refer to [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for detail
         margin: 0;
         @apply --layout-fit;
       }
-      #trackDOMHolder {
-        display: none;
-      }
       paper-material {
         @apply --layout-fit;
         @apply --layout-vertical;
@@ -71,24 +68,6 @@ Please refer to [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for detail
         width: 100%;
         @apply --layout-vertical;
         @apply --layout-flex;
-      }
-      #loadingBlock {
-        display: block;
-        pointer-events: none;
-        @apply --layout-fit;
-        z-index: 1;
-        opacity: 0.8;
-        background: var(--card-background-color);
-      }
-      paper-spinner {
-        position: absolute;
-        top: 50%;
-        margin-top: -12px;
-        left: 50%;
-        margin-left: -12px;
-        height: 24px;
-        width: 24px;
-        opacity: 1;
       }
       .uninitialized {
         font-size: 16px;
@@ -304,9 +283,7 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
-      if (typeof super.connectedCallback === 'function') {
-        super.connectedCallback()
-      }
+      super.connectedCallback()
       Polymer.RenderStatus.afterNextRender(this, () => {
         this.updatePromise = give.RefObject.allRefPromise
           .then(() => this.updateNumOfSubs(this.numOfSubs))

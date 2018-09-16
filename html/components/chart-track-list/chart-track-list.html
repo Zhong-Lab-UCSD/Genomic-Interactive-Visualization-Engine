@@ -7,6 +7,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-classes.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../track-control/track-mini-control.html">
@@ -17,76 +18,135 @@
   <template>
     <style include="give-shared-styles iron-flex">
       :host {
-        padding: 0;
-        @apply --layout-flex;
+        padding: 1em;
         @apply --layout-vertical;
         position: relative;
       }
-      paper-material {
-        @apply --layout-fit;
-        @apply --layout-vertical;
-        padding: 1em;
-      }
-      paper-material > div.header {
-        color: var(--default-primary-color);
-        margin-bottom: 0.5em;
-      }
       iron-list {
-        @apply --layout-flex;
         --iron-list-items-container: {
            @apply --chart-track-list-items-mixin;
         };
       }
     </style>
-    <paper-material elevation="1">
-      <div class="header">[[group.label]]</div>
-      <iron-list id="groupList" items="[[group.array]]" as="track"
-        selection-enabled multi-selection$="[[!group.singleChoice]]"
-        on-selected-items-changed="_selectedItemsChangedHandler">
-        <template>
-          <track-mini-control track="[[track]]" group="[[group]]"
-            selected="[[selected]]">
-          </track-mini-control>
-        </template>
-      </iron-list>
-    </paper-material>
+    <template is="dom-if" if="[[_listEmpty(group)]]">
+      <div><em>(No tracks)</em></div>
+    </template>
+    <iron-list id="groupList" items="[[group]]" as="track"
+      selection-enabled multi-selection$="[[!singleChoice]]"
+      on-selected-items-changed="_selectedItemsChangedHandler"
+      selected="{{selected}}">
+      <template>
+        <track-mini-control track="[[track]]" group="[[group]]"
+          selected="[[selected]]"
+          single-choice="[[_computeSingleChoice(singleChoice)]]">
+        </track-mini-control>
+      </template>
+    </iron-list>
   </template>
   <script>
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackList extends Polymer.Element {
+  class ChartTrackList extends give.GiveCardContentMixin(Polymer.Element) {
     static get is () {
       return 'chart-track-list'
     }
 
     static get properties () {
       return {
-        textSize: {
-          type: Number,
-          value: 12 // unit is px
-        },
-
         settingKey: {
           type: String,
           value: give.GENEMO_SELECTED_KEY
         },
 
         group: {
-          type: Object
+          type: Array,
+          value: function () {
+            return []
+          },
+          observer: '_groupChanged'
         },
 
         instantChange: {
           type: Boolean,
           value: false
+        },
+
+        isSelected: {
+          type: Boolean,
+          value: false
+        },
+
+        allowTrackReordering: {
+          type: Boolean,
+          value: false
+        },
+
+        selected: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+
+        label: {
+          type: String,
+          value: ''
+        },
+
+        singleChoice: {
+          type: String,
+          value: null
+        },
+
+        groupIcon: {
+          type: String,
+          value: null
         }
       }
+    }
+
+    ready () {
+      super.ready()
+      this._setIcon(this.groupIcon || null)
+      this._setIconAlt(this.label || 'Track group')
+      this._setHeaderText(this.label || 'Track group')
+      if (this.isSelected) {
+        this.shadowRoot.style.height =
+          this.group.length * give.TrackMiniControl.heightProportion +
+          'em'
+        this.$.groupList.classList.add('fit')
+        this._syncGroupToSelection()
+        this.selected = this.group.slice()
+      } else {
+        this.$.groupList.classList.add('flex')
+      }
+    }
+
+    _syncGroupToSelection () {
+      this._updatingSelectedItems = true
+      this.selected = this.group.slice()
+      this._updatingSelectedItems = false
+    }
+
+    _syncSelectionToGroup () {
+      this._updatingSelectedItems = true
+      this.group = this.selected.slice()
+      this._updatingSelectedItems = false
+    }
+
+    _computeSingleChoice (singleChoice) {
+      return singleChoice && singleChoice !== '0'
+    }
+
+    _listEmpty (array) {
+      return array && array.length > 0
     }
 
     syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
-      if (this.group && this.group.every) {
+      if (this.group) {
         this.$.groupList.clearSelection()
         let firstSelected = null
         this.group.every((track, index) => {
@@ -108,7 +168,7 @@ var GIVe = (function (give) {
 
     syncDomToTrack () {
       // this is used when submitting the results
-      if (this.group && this.group.forEach) {
+      if (this.group) {
         this.group.forEach((track, index) =>
           track.setSetting(this.settingKey, false)
         )
@@ -125,7 +185,7 @@ var GIVe = (function (give) {
     }
 
     resetAllTracks () {
-      if (this.group && this.group.every) {
+      if (this.group) {
         this.group.forEach(track => track.resetSetting(this.settingKey))
         this.syncTrackToDom()
       }
@@ -152,8 +212,21 @@ var GIVe = (function (give) {
     }
 
     _selectedItemsChangedHandler (e) {
-      if (this.instantChange) {
-        this.syncDomToTrack()
+      if (!this._updatingSelectedItems) {
+        if (this.instantChange) {
+          this.syncDomToTrack()
+        }
+        if (this.isSelected) {
+          // remove the item that is not selected, then refresh the list
+          this._syncSelectionToGroup()
+        }
+        give.fireSignal('selected-item-changed', e.detail, null, this)
+      }
+    }
+
+    _groupChanged (newValue, oldValue) {
+      if (this.isSelected && !this._updatingSelectedItems) {
+        this._syncGroupToSelection()
       }
     }
   }

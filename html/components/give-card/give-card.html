@@ -11,6 +11,7 @@
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
@@ -37,33 +38,9 @@
     /************************** Polymer and Material Design components below *********************/
 
     /************************** Polymer and Material Design size and others below *********************/
-    #cardHeadHolder {
+    #hiddenCardHeaderHolder {
       display: none;
     }
-
-    #loadingBlock.notReady {
-      display: block;
-      @apply --layout-fit;
-      z-index: 1;
-      opacity: 0.8;
-      background: var(--card-background-color);
-    }
-
-    #loadingBlock {
-      display: none;
-    }
-
-    paper-spinner {
-      position: absolute;
-      top: 50%;
-      margin-top: -12px;
-      left: 50%;
-      margin-left: -12px;
-      height: 24px;
-      width: 24px;
-      opacity: 1;
-    }
-
     paper-material {
       background: var(--card-background-color);
       @apply --give-card-material-mixin;
@@ -75,23 +52,34 @@
 
   </style>
     <paper-material elevation="1">
-      <div id="loadingBlock" class="notReady">
-        <paper-spinner id="loadingSpinner" alt="Loading card content" active>
-        </paper-spinner>
-      </div>
+      <template is="dom-if" if="[[!_readiness]]">
+        <div id="loadingBlock">
+          <paper-spinner id="loadingSpinner" alt="Loading card content"
+            active$="[[!_readiness]]">
+          </paper-spinner>
+        </div>
+      </template>
       <div id="cardHeader" class="clearFix cardHeader vertCenterContainer">
-        <paper-icon-button icon="[[expandIcon]]" class="leftFloat" id="expandButton"
-          on-click="toggleCollapse" hidden$="[[disableFolding]]"></paper-icon-button>
-        <div id="cardHeadContent" class="vertCenterElement"></div>
-        <div id="cardHeadHolder">
-          <slot id="cardhead" name="genemoHead"></slot>
+        <template is="dom-if" if="[[!disableFolding]]" restamp="true">
+          <paper-icon-button icon="[[expandIcon]]" class="leftFloat"
+            id="expandButton" on-click="toggleCollapse">
+          </paper-icon-button>
+        </template>
+        <template is="dom-if" if="[[_showOriginalHeader]]">
+          <div id="cardHeaderContainer" class="vertCenterElement"></div>
+        </template>
+        <div id="hiddenCardHeaderHolder">
+          <slot id="cardHeaderSlot" name="header"></slot>
         </div>
       </div>
-      <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow
-        hidden$="[[disableFolding]]">
-        <slot id="cardbody" name="cardBody"></slot>
-      </iron-collapse>
-      <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
+      <template is="dom-if" if="[[!disableFolding]]" restamp="true">
+        <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
+          <slot id="cardBodySlot" name="body"></slot>
+        </iron-collapse>
+      </template>
+      <template is="dom-if" if="[[disableFolding]]" restamp="true">
+        <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
+      </template>
     </paper-material>
   </template>
   <script>
@@ -108,23 +96,7 @@ var GIVe = (function (give) {
         isOpened: {
           type: Boolean,
           value: true,
-          reflectToAttribute: true,
-          observer: 'isOpenedChanged'
-        },
-
-        collapseGroup: {
-          type: String,
-          value: ''
-        },
-
-        collapseHeaderElement: {
-          type: Object,
-          value: null
-        },
-
-        enableSignal: {
-          type: Boolean,
-          value: true
+          observer: '_isOpenedChanged'
         },
 
         expandIcon: {
@@ -138,79 +110,91 @@ var GIVe = (function (give) {
           readOnly: true
         },
 
-        readyFlag: {
-          type: Boolean,
-          value: false,
-          readOnly: true
-        },
-
         disableFolding: {
           type: Boolean,
           value: false,
           observer: '_disableFoldingObserver'
+        },
+
+        _readiness: {
+          type: Boolean,
+          value: false
+        },
+
+        _showOriginalHeader: {
+          type: Boolean,
+          value: true
         }
       }
     }
 
-    attached () {
-      this.async(function () {
-        // observe the children being added here
-        this._setDomReady(true)
-        // if folding is disabled, move contents out of iron-collapse
-        this.contentDOMReady({detail: {flag: true}}) &&
-          this.contentReady({detail: {flag: true}})
+    ready () {
+      super.ready()
+      this._collapsedHeaderElement = null
+      this._boundContentReadyHandler = this._contentReadyHandler.bind(this)
+      this._boundSlotChangeHandler = this._slotChangeHandler.bind(this)
+      this.$.cardBodySlot.addEventListener(
+        'slotchange', this._boundSlotChangeHandler
+      )
+      this.$.cardHeaderSlot.addEventListener(
+        'slotchange', this._boundSlotChangeHandler
+      )
+      this.addEventListener(
+        'content-ready', this._boundContentReadyHandler
+      )
+    }
+
+    connectedCallback () {
+      super.connectedCallback()
+      Polymer.RenderStatus.beforeNextRender(this, () => {
+        this.populateDOM()
+        this._setContentReady(true)
       })
+    }
+
+    _slotChangeHandler (event) {
+      this.populateDOM()
+      this._setContentReady(true)
     }
 
     _disableFoldingObserver (newValue, oldValue) {
       if (newValue) {
-        Polymer.dom(this.$.cardFixedContent).appendChild(this.$.cardbody)
+        this.$.cardFixedContent.appendChild(this.$.cardbody)
       } else {
-        Polymer.dom(this.$.mainCollapse).appendChild(this.$.cardbody)
+        this.$.mainCollapse.appendChild(this.$.cardbody)
       }
     }
 
-    toggleCollapseHeader (flag) {
+    _toggleCollapseHeader (flag) {
       // the top node with cardBody should have a member function getCollapse()
-      // then use the returned DOM to replace collapseHeaderElement
-      // if nothing, then collapseHeaderElement is simply GenemoHead
+      // then use the returned DOM to replace _collapsedHeaderElement
+      // if nothing, then _collapsedHeaderElement is simply GenemoHead
       // flag is the target status
 
-      if (flag && this.collapseHeaderElement) {
+      if (flag && this._collapsedHeaderElement) {
         // there is old collapseHeader, needs to be removed
-        Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderElement)
-        Polymer.dom(this.$.cardHeadContent).classList.remove('hidden')
+        this.$.cardHeader.removeChild(this._collapsedHeaderElement)
       } else if (!flag) {
-        var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes()
+        let contentNode = this.$.cardBodySlot.assignedNodes({ flatten: true })
         if (contentNode) {
           contentNode = contentNode[0]
-          if (contentNode.getCollapse) {
-            this.collapseHeaderElement = contentNode.collapseElement
-            if (this.collapseHeaderElement) {
-              this.$.cardHeadContent.classList.add('hidden')
-              this.$.cardHeader.appendChild(this.collapseHeaderElement)
-            }
+          this._collapsedHeaderElement = contentNode.collapsedElement
+          if (this._collapsedHeaderElement) {
+            this.$.cardHeader.appendChild(this._collapsedHeaderElement)
           }
         }
       }
+      this._showOriginalHeader = flag && this._collapsedHeaderElement
     }
 
-    isOpenedChanged (newValue, oldValue) {
-      this.enableSignal = false
+    _isOpenedChanged (newValue, oldValue) {
       if (newValue) {
-        // un-collapse, send signal for all collapse groups
-        this.fire('iron-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}})
+        // expand card panel, send signal to parent
+        // (so that parent may collapse the siblings of `this`)
+        give.fireSignal('card-expanded', null, null, this)
       }
       this.expandIcon = newValue ? 'expand-less' : 'expand-more'
-      this.toggleCollapseHeader(newValue)
-      this.enableSignal = true
-    }
-
-    collapseSignal (e, detail) {
-      if (this.enableSignal && this.collapseGroup === detail.group &&
-        this.isOpened !== detail.flag) {
-        this.isOpened = detail.flag
-      }
+      this._toggleCollapseHeader(newValue)
     }
 
     toggleCollapse () {
@@ -218,83 +202,69 @@ var GIVe = (function (give) {
       this.isOpened = !this.isOpened
     }
 
+    collapse () {
+      if (!this.disableFolding) {
+        this.isOpened = false
+      }
+    }
+
+    expand () {
+      this.isOpened = true
+    }
+
     populateDOM () {
       // if the content has a .getExpandedHeader member,
       //  it will be used to generate the node to replace the node
       //  given in .GenemoHead
-      var contentNode = Polymer.dom(this.$.cardbody).getDistributedNodes()
-      var oldHead = Polymer.dom(this.$.cardHeadContent)
-      var newHead
-      while (oldHead.firstChild) {
-        oldHead.removeChild(oldHead.firstChild)
+      let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
+      let headerContainer = this.$.cardHeaderContainer
+      let newHead
+      while (headerContainer.firstChild) {
+        headerContainer.removeChild(headerContainer.firstChild)
       }
-      if (contentNode && contentNode[0] && contentNode[0].getExpandedHeader) {
-        newHead = contentNode[0].getExpandedHeader()
-        oldHead.appendChild(newHead)
-        Polymer.dom(newHead).classList.add('headerText')
+      if (contentNodes && contentNodes[0]) {
+        newHead = contentNodes[0].expandedHeaderElement
+      }
+      if (newHead) {
+        headerContainer.appendChild(newHead)
+        newHead.classList.add('headerText')
+        this.$.hiddenCardHeaderHolder.appendChild(this.$.cardHeaderSlot)
       } else {
         // populate header with #cardhead
-        newHead = Polymer.dom(this.$.cardhead).getDistributedNodes()
-        if (newHead) {
-          for (var i = 0; i < newHead.length; i++) {
-            oldHead.appendChild(newHead[i])
-          }
-        }
+        headerContainer.appendChild(this.$.cardHeaderSlot)
+        // newHead = this.$.cardHeaderSlot.assignedNodes({ flatten: true })
+        // if (newHead) {
+        //   newHead.forEach(node => headerContainer.appendChild(node))
+        // }
       }
     }
 
-    contentDOMReady (e) {
-      if (this.domReady && e.detail.flag) {
-        // this will only happen if this.domReady !== true
-        if (Polymer.dom(this.$.cardbody).getDistributedNodes().every(function (node, index) {
-          return !node.isDOMReady || node.isDOMReady()
-        }, this)) {
-          this.populateDOM()
-        } else if (e.preventDefault) {
-          // stop event from bubbling if status not the same as the one in the event
+    _setContentReady (flag) {
+      if (this._readiness !== flag) {
+        if (flag) {
+          // check if all assigned nodes have their readiness set to `true`
+          if (this.$.cardBodySlot.assignedNodes({ flatten: true })
+            .every(node => node.readiness)
+          ) {
+            this._readiness = true
+          }
+        } else {
+          this._readiness = false
+        }
+      }
+      return this._readiness
+    }
+
+    _contentReadyHandler (e) {
+      try {
+        this._setContentReady(e.detail.flag)
+        if (e.preventDefault) {
           e.stopPropagation()
           e.preventDefault()
         }
+      } catch (error) {
+        give.fireSignal('warning', { errObj: error }, null, this)
       }
-      return e.detail.flag
-    }
-
-    setCardReady (readiness) {
-      if (readiness) {
-        // if card is not ready, use paper-spinner and add "notReady" class to cardContent
-        this.$.loadingSpinner.active = false
-        this.$.loadingBlock.classList.remove('notReady')
-      } else {
-        // otherwise, deactivate paper-spinner and remove "notReady" class
-        this.$.loadingBlock.classList.add('notReady')
-        this.$.loadingSpinner.active = true
-      }
-      this._setReadyFlag(readiness)
-    }
-
-    contentReady (e) {
-      if (this.readyFlag !== e.detail.flag) {
-        if (e.detail.flag) {
-          // set Ready = true, this will only happen if this.domReady !== true
-          if (Polymer.dom(this.$.cardbody).getDistributedNodes().every(function (node, index) {
-            return !node.isReady || node.isReady()
-          }, this)) {
-            this.setCardReady(true)
-          } else if (e.preventDefault) {
-            // stop event from bubbling if status not the same as the one in the event
-            e.preventDefault()
-          }
-        } else {
-          this.setCardReady(false)
-        }
-      }
-      return this.readyFlag
-    }
-
-    setAllReadiness (readiness) {
-      // set both DOM and content flags
-      this.contentDOMReady({detail: {flag: readiness}})
-      this.contentReady({detail: {flag: readiness}})
     }
   }
 

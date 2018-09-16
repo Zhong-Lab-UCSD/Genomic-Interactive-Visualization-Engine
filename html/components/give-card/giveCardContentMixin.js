@@ -3,13 +3,13 @@ var GIVe = (function (give) {
 
   give.GiveCardContentMixin = Polymer.dedupingMixin(base =>
     class extends base {
+      constructor () {
+        super(...arguments)
+        this._collapsedInfoObject = null
+      }
+
       static get properties () {
         return {
-          collapseObject: {
-            type: Object,
-            value: null
-          },
-
           icon: {
             type: String,
             value: '',
@@ -28,9 +28,10 @@ var GIVe = (function (give) {
             readOnly: true
           },
 
-          _contentReady: {
+          _readiness: {
             type: Boolean,
-            value: false
+            value: false,
+            observer: '_readinessChanged'
           },
 
           _domReady: {
@@ -40,46 +41,37 @@ var GIVe = (function (give) {
         }
       }
 
-      get isReady () {
+      get readiness () {
         // default behavior is that whenever it's loaded, the contents are ready.
-        return this._contentReady
+        return this._readiness
       }
 
-      setReady (readiness) {
-        // set this.ready as ready and fire 'content-ready' event
-        this._setContentReady(readiness)
-        this.fire('content-ready', { flag: this.contentReady }, { cancelable: true })
+      connectedCallback () {
+        super.connectedCallback()
+        Polymer.RenderStatus.beforeNextRender(
+          this, () => this._callbackBeforeRender()
+        )
       }
 
-      isDOMReady () {
-        return this.domReady // default behavior is that whenever it's loaded, the contents are ready.
+      _callbackBeforeRender () {
+        this._readiness = this._checkReadiness()
       }
 
-      setDOMReady (readiness) {
-        // set this.domReady as ready and fire 'content-dom-ready' event
-        this._setDomReady(readiness)
-        this.fire('content-dom-ready', { flag: this.domReady }, { cancelable: true })
-      }
-
-      checkReadiness () {
-        if (this.domReady) {
-          this.fire('content-dom-ready', { flag: this.domReady }, { cancelable: true })
-          if (this.contentReady) {
-            this.fire('content-ready', { flag: this.contentReady }, { cancelable: true })
-          }
-        }
+      _readinessChanged (newValue, oldValue) {
+        give.fireSignal('content-ready', { flag: newValue }, null, this)
       }
 
       get expandedHeaderElement () {
         let element = document.createElement('div')
         let iconElement = this.iconElement
-        iconElement.classList.add('smallInline')
-
+        if (iconElement) {
+          iconElement.classList.add('smallInline')
+          element.appendChild(iconElement)
+        }
         let textSpan = document.createElement('span')
         textSpan.textContent = this.headerText
 
         element.classList.add('headerText')
-        element.appendChild(iconElement)
         element.appendChild(textSpan)
 
         if (this.otherElem) {
@@ -89,16 +81,16 @@ var GIVe = (function (give) {
         return element
       }
 
-      updateCurrentInfo (props) {
-        if (Object.keys(props).length > 0) {
-          this.collapseObject = props
+      updateCollapsedInfoObject (newObject) {
+        if (Object.keys(newObject).length > 0) {
+          this._collapsedInfoObject = newObject
         } else {
-          this.collapseObject = null
+          this._collapsedInfoObject = null
         }
       }
 
-      get collapseElement () {
-        if (this.collapseObject) {
+      get collapsedElement () {
+        if (this._collapsedInfoObject) {
           // prepare for shrinking and return the shrunk element
           let element = document.createElement('div')
           // add shrunk icon, ref, input file and display file
@@ -118,10 +110,10 @@ var GIVe = (function (give) {
 
           let resContent = document.createElement('div')
           resContent.classList.add('collapseContent')
-          for (let key in this.collapseObject) {
-            if (this.collapseObject.hasOwnProperty(key)) {
+          for (let key in this._collapsedInfoObject) {
+            if (this._collapsedInfoObject.hasOwnProperty(key)) {
               resContent.appendChild(
-                this.createResElement(key, this.collapseObject[key]))
+                this._createResElement(key, this._collapsedInfoObject[key]))
             }
           }
           element.appendChild(resContent)
@@ -131,13 +123,16 @@ var GIVe = (function (give) {
       }
 
       get iconElement () {
-        let iconElem = document.createElement('iron-icon')
-        iconElem.setAttribute('icon', this.icon)
-        iconElem.setAttribute('alt', this.iconAlt)
-        return iconElem
+        if (this.icon) {
+          let iconElem = document.createElement('iron-icon')
+          iconElem.setAttribute('icon', this.icon)
+          iconElem.setAttribute('alt', this.iconAlt)
+          return iconElem
+        }
+        return null
       }
 
-      createResElement (anno, text, beforeNode, afterNode) {
+      _createResElement (anno, text, beforeNode, afterNode) {
         let element = document.createElement('div')
         element.classList.add('clearFix')
         element.classList.add('fullWidth')
@@ -162,13 +157,6 @@ var GIVe = (function (give) {
         }
 
         return element
-      }
-
-      connectedCallback () {
-        if (typeof super.connectedCallback === 'function') {
-          super.connectedCallback()
-        }
-        this.checkReadiness()
       }
     }
   )

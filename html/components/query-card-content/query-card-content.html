@@ -560,7 +560,7 @@
 				}
 			}
 
-			this.updateCurrentInfo({ Query: this.InputGeneName, Ref: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
+			this.updateCollapsedInfoObject({ Query: this.InputGeneName, Ref: this.selectedRefs.join? this.selectedRefs.join(', '): this.selectedRefs });
 			this.fire("iron-signal", {name: 'disable', data: {group: 'query-search', flag: true}});
 
 			this.fire("submit-genequery", {postdata: postdata});

@@ -21,12 +21,12 @@
       padding: 0.1em 0;
     }
     </style>
-    <template is="dom-if" if="[[_groupSingleChoice(group)]]" restamp="true">
+    <template is="dom-if" if="[[singleChoice]]" restamp="true">
       <paper-radio-button id="choiceElem" name="[[track.id]]" checked="{{selected}}">
         [[_getTrackShortLabel(track)]]
       </paper-radio-button>
     </template>
-    <template is="dom-if" if="[[!_groupSingleChoice(group)]]" restamp="true">
+    <template is="dom-if" if="[[!singleChoice]]" restamp="true">
       <paper-checkbox id="choiceElem" name="[[track.id]]" checked="{{selected}}">
         [[_getTrackShortLabel(track)]]
       </paper-checkbox>
@@ -52,18 +52,15 @@ var GIVe = (function (give) {
           type: Object
         },
 
-        group: {
-          type: Object
-        },
-
         selected: {
           type: Boolean
+        },
+
+        singleChoice: {
+          type: Boolean,
+          value: false
         }
       }
-    }
-
-    _groupSingleChoice (group) {
-      return group && group.singleChoice && group.singleChoice !== '0'
     }
 
     _getTrackShortLabel (track) {
@@ -72,11 +69,17 @@ var GIVe = (function (give) {
         this.constructor.TRACK_LABEL_PREFIX,
         this.constructor.TRACK_LABEL_SUFFIX)
     }
+
+    static get heightProportion () {
+      return this.constructor.DEFAULT_HEIGHT_PROPORTION
+    }
   }
 
   TrackMiniControl.TRACK_LABEL_LIMIT = 25
   TrackMiniControl.TRACK_LABEL_PREFIX = 21
   TrackMiniControl.TRACK_LABEL_SUFFIX = 3
+
+  TrackMiniControl.DEFAULT_HEIGHT_PROPORTION = 1.1
 
   give.TrackMiniControl = TrackMiniControl
   window.customElements.define('track-mini-control', give.TrackMiniControl)

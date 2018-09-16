@@ -268,9 +268,7 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
-      if (typeof super.connectedCallback === 'function') {
-        super.connectedCallback()
-      }
+      super.connectedCallback()
       this.querySent = ''
 
       this._decoupleInput = false

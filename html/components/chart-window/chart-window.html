@@ -362,10 +362,8 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
-      if (typeof super.connectedCallback === 'function') {
-        super.connectedCallback()
-      }
-      Polymer.RenderStatus.beforeNextRender(this, () => {
+      super.connectedCallback()
+      Polymer.RenderStatus.afterNextRender(this, () => {
         this.windowWidth = this.$.chartHolder.clientWidth
         // if (this.coordinate) {
         //   this.changeCoordinate(this.coordinate)
@@ -813,7 +811,7 @@ var GIVe = (function (give) {
         return this.resetDom().then(() => this.changeWidth(width))
       }
       width = width || this.$.chartHolder.clientWidth
-      if (this._viewWindow) {
+      if (this._viewWindow && this.windowWidth && width !== this.windowWidth) {
         let pendingVWindow = this._viewWindow.getExtension(
           (width - this.windowWidth) / this.windowWidth,
           null, true, this._refObj

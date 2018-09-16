@@ -323,17 +323,17 @@ var GIVe = (function (give) {
 
   give.fireSignal = function (evName, sigDetail, sigParams, elem) {
     let newEvent
+    sigParams = sigParams || Object.assign({}, give.DEFAULT_EVENT_PARAMS)
     if (navigator.appName === 'Microsoft Internet Explorer' ||
         !!(navigator.userAgent.match(/Trident/) ||
            navigator.userAgent.match(/rv 11/))) {
       newEvent = document.createEvent('CustomEvent')
       newEvent.initCustomEvent(evName,
-        sigParams && sigParams.bubbles,
-        sigParams && sigParams.cancelable,
+        (typeof sigParams === 'object') && sigParams.bubbles,
+        (typeof sigParams === 'object') && sigParams.cancelable,
         sigDetail || null)
     } else {
       if (sigDetail) {
-        sigParams = sigParams || Object.assign({}, give.DEFAULT_EVENT_PARAMS)
         sigParams.detail = sigDetail
       }
       newEvent = new window.CustomEvent(evName, sigParams)

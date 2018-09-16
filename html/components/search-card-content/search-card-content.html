@@ -274,7 +274,7 @@
           if (sessionObj.searchRange) {
             collapseObj.range = sessionObj.searchRange
           }
-          this.updateCurrentInfo(collapseObj)
+          this.updateCollapsedInfoObject(collapseObj)
         },
 
         fileSelectionHandler: function () {
@@ -344,7 +344,7 @@
           }
 
           this.isDisabled = true
-          this.updateCurrentInfo(collapseObj)
+          this.updateCollapsedInfoObject(collapseObj)
 
           this.ref.map[this.currentRef].callOnTracksReady(this.fire.bind(this, 'submit-form', {sessionDataObj: {
             hasEmail: this.UserEmail.length > 0,

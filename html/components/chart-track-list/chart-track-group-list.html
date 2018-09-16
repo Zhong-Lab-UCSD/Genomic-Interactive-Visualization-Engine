@@ -2,6 +2,7 @@
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="chart-track-list.html">
@@ -23,18 +24,35 @@
     chart-track-list {
       @apply --chart-track-list-items-mixin;
     }
+    chart-track-list.selectedTracks {
+      max-height: 30%;
+    }
     .cardActions {
       padding: 0;
       margin-bottom: -0.5em;
     }
     </style>
+    <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
+      <give-card disable-folding>
+        <chart-track-list group="[[selectedTracks]]" class="selectedTracks"
+          group-icon="av:playlist-add-check"
+          label="Selected tracks"
+          setting-key="[[settingKey]]" is-selected
+          allow-track-reordering="[[allowTrackReordering]]">
+        </chart-track-list>
+      </give-card>
+    </template>
     <template is="dom-repeat" id="trackGroupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
-      <chart-track-list text-size="[[textSize]]" group="[[group]]"
-        setting-key="[[settingKey]]" class="flex"
-        instant-change="[[instantChange]]">
-      </chart-track-list>
+      <give-card class="flex">
+        <chart-track-list group="[[group.array]]"
+          group-icon="[[group.icon]]"
+          label="[[group.label]]" single-choice="[[group.singleChoice]]"
+          setting-key="[[settingKey]]" class="flex"
+          instant-change="[[instantChange]]">
+        </chart-track-list>
+      </give-card>
     </template>
     <div class="cardActions">
       <template is="dom-if" if="[[withFilter]]" restamp="true">
@@ -65,19 +83,13 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackGroupList extends
-    give.GiveCardContentMixin(give.RefEmbedMixin(Polymer.Element)) {
+  class ChartTrackGroupList extends give.RefEmbedMixin(Polymer.Element) {
     static get is () {
       return 'chart-track-group-list'
     }
 
     static get properties () {
       return {
-        textSize: {
-          type: Number,
-          value: 12 // unit is px
-        },
-
         settingKey: {
           type: String,
           value: give.GENEMO_SELECTED_KEY
@@ -100,6 +112,16 @@ var GIVe = (function (give) {
           value: function () {
             return []
           }
+        },
+
+        showSelectedTracks: {
+          type: Boolean,
+          value: false
+        },
+
+        allowTrackReordering: {
+          type: Boolean,
+          value: false
         },
 
         /**
@@ -129,19 +151,19 @@ var GIVe = (function (give) {
         hasControls: {
           type: Boolean,
           value: false
+        },
+
+        selectedTracks: {
+          type: Array,
+          value: function () {
+            return []
+          }
         }
       }
     }
 
     ready () {
       super.ready()
-      // this._setIcon('view-list')
-      // this._setIconAlt('Track list')
-      // this._setHeaderText('Track list')
-
-      // this.setDOMReady(true)
-      // this.setReady(false)
-
       if (this.defaultTrackIdList.length > 0) {
         this._needOverrideDefault = true
       }
@@ -190,8 +212,8 @@ var GIVe = (function (give) {
         }
       }
       Promise.resolve().then(() => {
-        this.syncTrackToDom(true)
-        // this.setReady(true)
+        this.syncTrackToDom(!this.isSelected)
+        this._readiness = true
       })
     }
 
@@ -200,7 +222,7 @@ var GIVe = (function (give) {
     }
 
     updateAllGroupDOM () {
-      // this.setReady(false)
+      this._readiness = false
       this._refreshRef()
     }
 
@@ -220,33 +242,33 @@ var GIVe = (function (give) {
     _setRefObj (refObj) {
       // TODO: may need to add something to remove the override array
       if (super._setRefObj(refObj)) {
-        // this.setReady(false)
+        this._readiness = false
         this._refreshRef()
       }
     }
 
     syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection
-      give.forEach(this.shadowRoot.querySelectorAll('chart-track-list'),
+      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
         elem => elem.syncTrackToDom(scrollToSelected))
     }
 
     syncDomToTrack () {
       // this is used when submitting the results
-      give.forEach(this.shadowRoot.querySelectorAll('chart-track-list'),
+      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
         elem => elem.syncDomToTrack())
     }
 
     resetAllTracks () {
-      give.forEach(this.shadowRoot.querySelectorAll('chart-track-list'),
+      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
         elem => elem.resetAllTracks())
 
       // override default values if needed
       this._overrideTrackDefaultSettings()
     }
 
-    backToSearch () {
-      this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
+    _signalClose () {
+      give.fireSignal('list-close', null, null, this)
     }
 
     /**
@@ -274,17 +296,17 @@ var GIVe = (function (give) {
 
     submitChanges () {
       this.syncDomToTrack()
-      this.backToSearch()
+      this._signalClose()
     }
 
     cancelChanges () {
       this.syncTrackToDom()
-      this.backToSearch()
+      this._signalClose()
     }
 
     applyFilter (map, flags) {
-      let domList = this.shadowRoot.querySelectorAll('chart-track-list')
-      give.forEach(domList, elem => elem.applyFilter(map, flags))
+      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
+        elem => elem.applyFilter(map, flags))
     }
   }
 

@@ -196,16 +196,16 @@
       width: 240px;
     }
 
-    genemo-card#trackSelectionPanel {
+    give-card#trackSelectionPanel {
       width: 500px;
     }
 
-    genemo-card#resultPanel {
+    give-card#resultPanel {
       width: 300px;
       margin: 0px;
     }
 
-    genemo-card.flexFillCard {
+    give-card.flexFillCard {
       --give-card-material-mixin: {
         @apply --layout-fit;
         @apply --layout-vertical;
@@ -261,7 +261,7 @@
       color: #3F51B5;
     }
 
-    .genemo-card-title {
+    .give-card-title {
       display: inline-block;
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
       font-weight: 700;
@@ -388,6 +388,24 @@
       word-break: break-all;
     }
 
+    div#loadingBlock {
+      display: block;
+      pointer-events: none;
+      @apply --layout-fit;
+      z-index: 100;
+      opacity: 0.8;
+      background: var(--card-background-color);
+    }
+    div#loadingBlock paper-spinner {
+      position: absolute;
+      top: 50%;
+      margin-top: -12px;
+      left: 50%;
+      margin-left: -12px;
+      height: 24px;
+      width: 24px;
+      opacity: 1;
+    }
     </style>
   </template>
 </dom-module>
