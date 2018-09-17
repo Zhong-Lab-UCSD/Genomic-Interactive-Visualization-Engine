@@ -18,64 +18,6 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class EffPrior {
-    constructor (pinValue, pos) {
-      // raise error if pinValue is not correct
-      this.pinValue = pinValue
-      this.pos = pos
-    }
-
-    set pinValue (newPinValue) {
-      if (typeof this.constructor.pinValueMap[newPinValue] !== 'number') {
-        throw new give.GiveError('Invalid pinValue: ' + newPinValue)
-      }
-      this._pinValue = newPinValue
-    }
-
-    get pinValue () {
-      return this._pinValue
-    }
-
-    set pos (newPos) {
-      if (!Number.isInteger(newPos) || newPos < 0) {
-        throw new give.GiveError('Invalid new position number: ' + newPos)
-      }
-      this._pos = newPos
-    }
-
-    get pos () {
-      return this._pos
-    }
-
-    static isValidEffPrior (effPrior) {
-      return effPrior instanceof EffPrior &&
-        typeof this.pinValueMap[effPrior._pinValue] === 'number'
-    }
-
-    static compare (effPrior1, effPrior2) {
-      // first handle null values (null is larger than any valid value)
-      if (!this.isValidEffPrior(effPrior1) ||
-        !this.isValidEffPrior(effPrior2)
-      ) {
-        return !this.isValidEffPrior(effPrior1)
-          ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
-      }
-      return effPrior1._pinValue !== effPrior2._pinValue
-        ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
-          this.pinValueMap[effPrior2._pinValue])
-        : Math.sign(effPrior1._pos - effPrior2._pos)
-    }
-  }
-
-  EffPrior.pinValueMap = {
-    'top': -1,
-    'scroll': 0,
-    'bottom': 1,
-    'inbetween': 2
-  }
-
-  give.EffPrior = EffPrior
-
   /**
    * Object representing a track,
    * contains its data component and visualization component.
@@ -478,7 +420,7 @@ var GIVe = (function (give) {
      * @returns {number}  The priority value
      */
     get priorities () {
-      if (this.effPriority instanceof EffPrior) {
+      if (this.effPriority instanceof EffectivePriority) {
         return this.effPriority
       }
       let priorities = []
@@ -653,9 +595,9 @@ var GIVe = (function (give) {
     static comparePriorities (track1, track2) {
       let prior1 = track1.priorities
       let prior2 = track2.priorities
-      if (prior1 instanceof EffPrior || prior2 instanceof EffPrior
+      if (prior1 instanceof EffectivePriority || prior2 instanceof EffectivePriority
       ) {
-        return EffPrior.compare(prior1, prior2)
+        return EffectivePriority.compare(prior1, prior2)
       }
       for (let i = 0; i < prior1.length; i++) {
         if (prior1[i] !== prior2[i]) {

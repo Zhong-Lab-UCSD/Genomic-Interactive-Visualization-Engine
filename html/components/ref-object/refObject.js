@@ -2,6 +2,74 @@
 var GIVe = (function (give) {
   'use strict'
 
+  class EffectivePriority {
+    constructor (pinValue, priorityMap, pos) {
+      // raise error if pinValue is not correct
+      this.pinValue = pinValue
+      if (priorityMap)
+      this.pos = pos
+    }
+
+    set pinValue (newPinValue) {
+      if (typeof this.constructor.pinValueMap[newPinValue] !== 'number') {
+        throw new give.GiveError('Invalid pinValue: ' + newPinValue)
+      }
+      this._pinValue = newPinValue
+    }
+
+    get pinValue () {
+      return this._pinValue
+    }
+
+    set pos (newPos) {
+      if (!Number.isInteger(newPos) || newPos < 0) {
+        throw new give.GiveError('Invalid new position number: ' + newPos)
+      }
+      this._pos = newPos
+    }
+
+    get pos () {
+      return this._pos
+    }
+
+    static isValidEffPrior (effPrior) {
+      return effPrior instanceof EffectivePriority &&
+        typeof this.pinValueMap[effPrior._pinValue] === 'number'
+    }
+
+    static compare (effPrior1, effPrior2) {
+      // first handle null values (null is larger than any valid value)
+      if (!this.isValidEffPrior(effPrior1) ||
+        !this.isValidEffPrior(effPrior2)
+      ) {
+        return !this.isValidEffPrior(effPrior1)
+          ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
+      }
+      return effPrior1._pinValue !== effPrior2._pinValue
+        ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
+          this.pinValueMap[effPrior2._pinValue])
+        : Math.sign(effPrior1._pos - effPrior2._pos)
+    }
+
+    static createNewPriorityCountList () {
+      return {
+        'top': 0,
+        'scroll': 0,
+        'bottom': 0,
+        'inbetween': 0
+      }
+    }
+  }
+
+  EffectivePriority.pinValueMap = {
+    'top': -1,
+    'scroll': 0,
+    'bottom': 1,
+    'inbetween': 2
+  }
+
+  give.EffectivePriority = EffectivePriority
+
   class RefObject {
     constructor (DB, Name, CommonName, IsEncode, chromInfo, settings) {
       // notice that chromInfo is the JSON encoded object
@@ -64,6 +132,8 @@ var GIVe = (function (give) {
       }
 
       this._trackPromise = null
+
+      this.priorityCountList = EffectivePriority.createNewPriorityCountList()
     }
 
     get cleanId () {

@@ -491,7 +491,7 @@ var GIVe = (function (give) {
 
     _findEffPriorIndex (effPriority) {
       return give.locationOf(effPriority, this._trackDoms, null, null,
-        (effPriority, dom2) => give.EffPrior.compare(
+        (effPriority, dom2) => give.EffectivePriority.compare(
           effPriority, dom2.parent.effPriority
         ), true
       )
@@ -511,7 +511,7 @@ var GIVe = (function (give) {
         if (slotId) {
           if (!trackDom.parent.effPriority) {
             trackDom.parent.effPriority =
-              new give.EffPrior(this._pinValueFromSlotId(slotId),
+              new give.EffectivePriority(this._pinValueFromSlotId(slotId),
                 this._svgSizes[slotId])
           }
           // Add DOM element
@@ -519,7 +519,7 @@ var GIVe = (function (give) {
           // Find the correct location of the new DOM
           let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
           if (this._trackDoms[domPos] &&
-            !give.EffPrior.compare(this._trackDoms[domPos].parent.effPriority,
+            !give.EffectivePriority.compare(this._trackDoms[domPos].parent.effPriority,
               trackDom.parent.effPriority)
           ) {
             // Update all effPriority values for DOMs after the new DOM
@@ -681,7 +681,7 @@ var GIVe = (function (give) {
      *
      * @param  {TrackDom} trackDom       The `trackDom` for which `effPriority`
      *    needs to be changed.
-     * @param  {give.EffPrior} newEffPriority The new `effPriority` value.
+     * @param  {give.EffectivePriority} newEffPriority The new `effPriority` value.
      *    Notice that the `pos` value is the new position of the `trackDom`
      *    as if its just being inserted. Therefore, it __should not consider
      *    the position of `trackDom` itself__ if the new location is after
@@ -690,7 +690,7 @@ var GIVe = (function (give) {
     _changeTrackEffPrior (trackDom, newEffPriority) {
       if (trackDom && newEffPriority) {
         let oldEffPriority = trackDom.parent.effPriority
-        if (give.EffPrior.compare(oldEffPriority, newEffPriority)) {
+        if (give.EffectivePriority.compare(oldEffPriority, newEffPriority)) {
           // determine if the pin value has changed
           let oldIndex = this._trackDoms.indexOf(trackDom)
           let newIndex = this._findEffPriorIndex(newEffPriority)
