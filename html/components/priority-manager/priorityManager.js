@@ -56,8 +56,17 @@ var GIVe = (function (give) {
    * @class PriorityManager
    */
   class PriorityManager {
-    constructor (slotNames) {
+    constructor (
+      slotNames, settingString, includeCoordinates, getSlotSettingFunc
+    ) {
       this._slots = {}
+      this.settingString = settingString ||
+        this.constructor.DEFAULT_SETTING_STRING
+      this.includeCoordinates = (typeof includeCoordinates === 'boolean'
+        ? includeCoordinates : this.constructor.DEFAULT_INCLUDE_COORDINATES)
+      this._getSlotSettingFunc = (typeof getSlotSettingFunc === 'function'
+        ? getSlotSettingFunc
+        : track => this.constructor._defaultGetSlotFunc(track))
       this.idToEffectivePriorityDict = new Map()
       this.hasSlots = true
       if (Array.isArray(slotNames)) {
@@ -66,6 +75,7 @@ var GIVe = (function (give) {
         ) {
           slotNames = ['_default']
           this.hasSlots = false
+          this._getSlotSettingFunc = track => null
         }
       } else {
         slotNames = this.constructor.DEFAULT_SLOT_NAMES
@@ -96,7 +106,8 @@ var GIVe = (function (give) {
     }
 
     _getInternalSlotName (trackId) {
-      return this._verifySlotName(this.getEffectivePriority(trackId).slotName)
+      return this._verifySlotName(
+        this._getEffectivePriorityFromId(trackId).slotName)
     }
 
     _syncEffectivePriority (slotName, start, end) {
@@ -105,7 +116,7 @@ var GIVe = (function (give) {
       end = (Number.isInteger(end)
         ? end : this._slots[slotName].contents.length)
       for (let index = start; index < end; index++) {
-        this.getEffectivePriority(
+        this._getEffectivePriorityFromId(
           this._slots[slotName].contents[index]
         ).position = index
       }
@@ -116,7 +127,7 @@ var GIVe = (function (give) {
       if (Number.isInteger(newPosition) && newPosition >= 0 &&
         newPosition < this._slots[slotName].contents.length
       ) {
-        let oldPosition = this.getEffectivePriority(trackId).position
+        let oldPosition = this._getEffectivePriorityFromId(trackId).position
         if (newPosition !== oldPosition) {
           this._slots[slotName].contents.splice(oldPosition, 1)
           this._slots[slotName].contents.splice(newPosition, 0, trackId)
@@ -155,9 +166,10 @@ var GIVe = (function (give) {
       this._syncEffectivePriority(slotName, position)
     }
 
-    addTrackId (trackId, slotName, position) {
-      if (this.idToEffectivePriorityDict.has(trackId)) {
-        throw new give.GiveError('Track ID already exists: ' + trackId)
+    addTrack (track, slotName, position) {
+      slotName = slotName || this._getSlotSettingFunc(track)
+      if (this.idToEffectivePriorityDict.has(track.id)) {
+        throw new give.GiveError('Track ID already exists: ' + track.id)
       }
       slotName = this._verifySlotName(slotName)
       if (!Number.isInteger(position) || position < 0 ||
@@ -174,23 +186,23 @@ var GIVe = (function (give) {
         }
         position = this._slots[slotName].contents.length
       }
-      this._insertTrackIdIntoSlot(trackId, slotName, position, true)
+      this._insertTrackIdIntoSlot(track.id, slotName, position, true)
     }
 
-    removeTrackId (trackId) {
-      let slotName = this._getInternalSlotName(trackId)
+    removeTrack (track) {
+      let slotName = this._getInternalSlotName(track.id)
       if (!slotName) {
-        throw new give.GiveError('Track ID does not exist: ' + trackId)
+        throw new give.GiveError('Track ID does not exist: ' + track.id)
       }
-      this._removeTrackIdFromSlot(trackId, slotName, true)
+      this._removeTrackIdFromSlot(track.id, slotName, true)
     }
 
-    moveTrackId (trackId, newSlotName, newPosition) {
-      if (!this.getEffectivePriority(trackId)) {
-        throw new give.GiveError('Track ID does not exist: ' + trackId)
+    moveTrack (track, newSlotName, newPosition) {
+      if (!this._getEffectivePriorityFromId(track.id)) {
+        throw new give.GiveError('Track ID does not exist: ' + track.id)
       }
       newSlotName = this._verifySlotName(newSlotName)
-      let oldSlotName = this._getInternalSlotName(trackId)
+      let oldSlotName = this._getInternalSlotName(track.id)
       if (!Number.isInteger(newPosition) || newPosition < 0 ||
         newPosition > this._slots[newSlotName].contents.length
       ) {
@@ -206,14 +218,18 @@ var GIVe = (function (give) {
         newPosition = this._slots[newSlotName].contents.length
       }
       if (oldSlotName === newSlotName) {
-        return this._moveTrackIdSameSlot(trackId, newPosition)
+        return this._moveTrackIdSameSlot(track.id, newPosition)
       } else {
-        this._removeTrackIdFromSlot(trackId, oldSlotName, false)
-        this._insertTrackIdIntoSlot(trackId, newSlotName, newPosition, false)
+        this._removeTrackIdFromSlot(track.id, oldSlotName, false)
+        this._insertTrackIdIntoSlot(track.id, newSlotName, newPosition, false)
       }
     }
 
-    getEffectivePriority (trackId) {
+    getEffectivePriority (track) {
+      return this.idToEffectivePriorityDict.get(track.id)
+    }
+
+    _getEffectivePriorityFromId (trackId) {
       return this.idToEffectivePriorityDict.get(trackId)
     }
 
@@ -252,6 +268,10 @@ var GIVe = (function (give) {
     hasTrackId (trackId) {
       return this.idToEffectivePriorityDict.has(trackId)
     }
+
+    static _defaultGetSlotFunc (track) {
+      return track.getSetting('pin') || this.DEFAULT_SLOT_NAME
+    }
   }
 
   PriorityManager.DEFAULT_SLOT_NAMES = [
@@ -260,6 +280,10 @@ var GIVe = (function (give) {
     'bottom',
     'inbetween'
   ]
+  PriorityManager.DEFAULT_SLOT_NAME = 'scroll'
+
+  PriorityManager.DEFAULT_SETTING_STRING = 'visibility'
+  PriorityManager.DEFAULT_INCLUDE_COORDINATES = true
 
   give.PriorityManager = PriorityManager
 

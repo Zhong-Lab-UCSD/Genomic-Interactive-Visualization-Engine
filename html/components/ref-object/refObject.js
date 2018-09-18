@@ -80,13 +80,6 @@ var GIVe = (function (give) {
       }
 
       this._trackPromise = null
-      this._defaultListApplied = false
-      this._defaultList = null
-
-      this._groupIdListApplied = false
-      this._groupIdList = null
-
-      this._priorityManager = new give.PriorityManager()
       this.coordinateTrackId = []
     }
 
@@ -216,6 +209,7 @@ var GIVe = (function (give) {
           give._verbConsole.info('Tracks not initialized for ref ' +
             this.name + '.')
           this.fillTracks(data, false, give.TrackObject.fetchDataTarget)
+        }).then(() => {
           if (!this.coordinateTrackId.length) {
             let coordinateTrack = this.createCoordinateTrack()
             this.tracks.addTrack(coordinateTrack)
@@ -244,7 +238,7 @@ var GIVe = (function (give) {
       this.coordinateTrackId.forEach(trackId => {
         let track = this.tracks.get(trackId)
         track.setSetting(settingString, true)
-        this._priorityManager.addTrackId(trackId, this.getSlotName(track))
+        this._priorityManager.addTrack(track)
       })
     }
 
@@ -265,48 +259,71 @@ var GIVe = (function (give) {
       }
     }
 
-    getSlotName (track) {
-      if (this._priorityManager.hasTrackId(track.id)) {
-        return this.getTrackEffectivePriority(track).slotName
-      } else {
-        return track.getSetting('pin') || this.constructor.DEFAULT_SLOT_NAME
+    _initPriorityManager (priorityManager) {
+      // clear previous track priority values and overwrite with new ones
+      priorityManager.clear()
+      // set all tracks to non-visible (or whatever settingString specifies)
+      this.tracks.forEach(
+        track => track.setSetting(priorityManager.settingString, false)
+      )
+      // re-enabling coordinate tracks if priorityManager needs to
+      if (priorityManager.includeCoordinates) {
+        this.initCoordinateTracks(priorityManager.settingString)
       }
-    }
-
-    getSlotPosition (track) {
-      if (this._priorityManager.hasTrackId(track.id)) {
-        return this.getTrackEffectivePriority(track).position
-      } else {
-        throw new give.GiveError('Track does not have an effective priority: ' +
-          track.id)
-      }
-    }
-
-    applyDefaultIdList (settingString, idList) {
-      settingString = settingString || this.constructor.DEFAULT_SETTING_STRING
-      this.promisedTracks.then(tracks => {
-        if (!this._defaultListApplied && Array.isArray(idList)) {
-          this._defaultListApplied = true
-          // clear previous track priority values and overwrite with new ones
-          this._priorityManager.clear()
-          // set all tracks to non-visible (or whatever settingString specifies)
-          tracks.forEach(track => track.setSetting(settingString, false))
-          // set tracks matching the list to visible
-          // (or whatever settingString specifies)
-          this.initCoordinateTracks(settingString)
-          idList.forEach(id => {
-            if (tracks.hasTrack(id)) {
-              let track = tracks.get(id)
-              track.setSetting(settingString, true)
-              this._priorityManager.addTrackId(id, this.getSlotName(track))
-            }
-          })
+      this.tracks.forEach(track => {
+        if (track.getSetting(priorityManager.settingString)) {
+          priorityManager.addTrack(track)
         }
       })
     }
 
-    getTrackEffectivePriority (track) {
-      return this._priorityManager.getEffectivePriority(track.id)
+    _applyDefaultIdList (idList, priorityManager) {
+      if (Array.isArray(idList) &&
+        (priorityManager instanceof give.PriorityManager)
+      ) {
+        this._defaultListApplied = true
+        // clear previous track priority values and overwrite with new ones
+        priorityManager.clear()
+        // set all tracks to non-visible (or whatever settingString specifies)
+        this.tracks.forEach(
+          track => track.setSetting(priorityManager.settingString, false)
+        )
+        // re-enabling coordinate tracks if priorityManager needs to
+        if (priorityManager.includeCoordinates) {
+          this.initCoordinateTracks(priorityManager.settingString)
+        }
+        // set tracks matching the list to visible
+        // (or whatever settingString specifies)
+        idList.forEach(id => {
+          if (tracks.hasTrack(id)) {
+            let track = this.tracks.get(id)
+            track.setSetting(priorityManager.settingString, true)
+            priorityManager.addTrackId(id, this.getSlotName(track))
+          }
+        })
+      }
+    }
+
+    _applyGroupIdList (idList, priorityManager) {
+      // This is done in a sort-of reversed way: groups that are NOT SELECTED
+      // will have their tracks toggled to hidden
+      if (Array.isArray(idList) &&
+        (priorityManager instanceof give.PriorityManager)
+      ) {
+        // set tracks matching the list to visible
+        // (or whatever settingString specifies)
+        this.groups.forEach(group => {
+          if (idList.indexOf(group.id) < 0) {
+            // group not there
+            group.forEach(track => {
+              track.setSetting(priorityManager.settingString, false)
+              if (priorityManager.hasTrackId(track.id)) {
+                priorityManager.removeTrackId(track.id)
+              }
+            })
+          }
+        })
+      }
     }
 
     addCustomTrack (track, group, callback) {
