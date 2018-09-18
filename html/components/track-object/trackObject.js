@@ -21,7 +21,6 @@ var GIVe = (function (give) {
   /**
    * Object representing a track,
    * contains its data component and visualization component.
-   * @typedef {object} TrackObjectBase
    * @property {string} id - ID of track object
    * @property {string} groupID - ID of corresponding track group
    * @property {object} Settings - Settings of the track, in a dictionary format
@@ -420,7 +419,7 @@ var GIVe = (function (give) {
      * @returns {number}  The priority value
      */
     get priorities () {
-      if (this.effPriority instanceof EffectivePriority) {
+      if (this.effPriority instanceof give.EffectivePriority) {
         return this.effPriority
       }
       let priorities = []
@@ -595,9 +594,10 @@ var GIVe = (function (give) {
     static comparePriorities (track1, track2) {
       let prior1 = track1.priorities
       let prior2 = track2.priorities
-      if (prior1 instanceof EffectivePriority || prior2 instanceof EffectivePriority
+      if (prior1 instanceof give.EffectivePriority ||
+        prior2 instanceof give.EffectivePriority
       ) {
-        return EffectivePriority.compare(prior1, prior2)
+        return give.EffectivePriority.compare(prior1, prior2)
       }
       for (let i = 0; i < prior1.length; i++) {
         if (prior1[i] !== prior2[i]) {

@@ -1,74 +1,22 @@
-// JavaScript Document
+/**
+ * @license
+ * Copyright 2017 GIVe Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var GIVe = (function (give) {
   'use strict'
-
-  class EffectivePriority {
-    constructor (pinValue, priorityMap, pos) {
-      // raise error if pinValue is not correct
-      this.pinValue = pinValue
-      if (priorityMap)
-      this.pos = pos
-    }
-
-    set pinValue (newPinValue) {
-      if (typeof this.constructor.pinValueMap[newPinValue] !== 'number') {
-        throw new give.GiveError('Invalid pinValue: ' + newPinValue)
-      }
-      this._pinValue = newPinValue
-    }
-
-    get pinValue () {
-      return this._pinValue
-    }
-
-    set pos (newPos) {
-      if (!Number.isInteger(newPos) || newPos < 0) {
-        throw new give.GiveError('Invalid new position number: ' + newPos)
-      }
-      this._pos = newPos
-    }
-
-    get pos () {
-      return this._pos
-    }
-
-    static isValidEffPrior (effPrior) {
-      return effPrior instanceof EffectivePriority &&
-        typeof this.pinValueMap[effPrior._pinValue] === 'number'
-    }
-
-    static compare (effPrior1, effPrior2) {
-      // first handle null values (null is larger than any valid value)
-      if (!this.isValidEffPrior(effPrior1) ||
-        !this.isValidEffPrior(effPrior2)
-      ) {
-        return !this.isValidEffPrior(effPrior1)
-          ? (!this.isValidEffPrior(effPrior2) ? 0 : 1) : -1
-      }
-      return effPrior1._pinValue !== effPrior2._pinValue
-        ? Math.sign(this.pinValueMap[effPrior1._pinValue] -
-          this.pinValueMap[effPrior2._pinValue])
-        : Math.sign(effPrior1._pos - effPrior2._pos)
-    }
-
-    static createNewPriorityCountList () {
-      return {
-        'top': 0,
-        'scroll': 0,
-        'bottom': 0,
-        'inbetween': 0
-      }
-    }
-  }
-
-  EffectivePriority.pinValueMap = {
-    'top': -1,
-    'scroll': 0,
-    'bottom': 1,
-    'inbetween': 2
-  }
-
-  give.EffectivePriority = EffectivePriority
 
   class RefObject {
     constructor (DB, Name, CommonName, IsEncode, chromInfo, settings) {
@@ -116,7 +64,7 @@ var GIVe = (function (give) {
       // this.orderedtracksEncode = new Array();
 
       if (settings) {
-        for (var key in settings) {
+        for (let key in settings) {
           if (settings.hasOwnProperty(key) && !this.hasOwnProperty(key)) {
             this.settings[key] = settings[key]
           }
@@ -132,8 +80,14 @@ var GIVe = (function (give) {
       }
 
       this._trackPromise = null
+      this._defaultListApplied = false
+      this._defaultList = null
 
-      this.priorityCountList = EffectivePriority.createNewPriorityCountList()
+      this._groupIdListApplied = false
+      this._groupIdList = null
+
+      this._priorityManager = new give.PriorityManager()
+      this.coordinateTrackId = []
     }
 
     get cleanId () {
@@ -151,7 +105,7 @@ var GIVe = (function (give) {
     _initChromInfoFromData (chromInfo) {
       try {
         this.chromInfo = {}
-        for (var chrom in chromInfo) {
+        for (let chrom in chromInfo) {
           if (chromInfo.hasOwnProperty(chrom)) {
             this.chromInfo[chrom] = {}
             this.chromInfo[chrom].name = chrom
@@ -262,11 +216,36 @@ var GIVe = (function (give) {
           give._verbConsole.info('Tracks not initialized for ref ' +
             this.name + '.')
           this.fillTracks(data, false, give.TrackObject.fetchDataTarget)
+          if (!this.coordinateTrackId.length) {
+            let coordinateTrack = this.createCoordinateTrack()
+            this.tracks.addTrack(coordinateTrack)
+            this.coordinateTrackId = [coordinateTrack.id]
+          }
           return this
         })
         this.initMetaFilter()
       }
       return this._trackPromise
+    }
+
+    createCoordinateTrack (slotName) {
+      slotName = slotName || this.constructor.DEFAULT_COORDINATE_SLOT_NAME
+      return give.TrackObject.createTrack('coor_' + this.db + '_' + slotName, {
+        type: 'coordinate',
+        priority: 0,
+        noData: true,
+        visibility: 'full',
+        pin: slotName
+      }, this)
+    }
+
+    initCoordinateTracks (settingString) {
+      settingString = settingString || this.constructor.DEFAULT_SETTING_STRING
+      this.coordinateTrackId.forEach(trackId => {
+        let track = this.tracks.get(trackId)
+        track.setSetting(settingString, true)
+        this._priorityManager.addTrackId(trackId, this.getSlotName(track))
+      })
     }
 
     initMetaFilter () {
@@ -284,6 +263,50 @@ var GIVe = (function (give) {
           new give.GiveError('No main meta data entries available!')
         )
       }
+    }
+
+    getSlotName (track) {
+      if (this._priorityManager.hasTrackId(track.id)) {
+        return this.getTrackEffectivePriority(track).slotName
+      } else {
+        return track.getSetting('pin') || this.constructor.DEFAULT_SLOT_NAME
+      }
+    }
+
+    getSlotPosition (track) {
+      if (this._priorityManager.hasTrackId(track.id)) {
+        return this.getTrackEffectivePriority(track).position
+      } else {
+        throw new give.GiveError('Track does not have an effective priority: ' +
+          track.id)
+      }
+    }
+
+    applyDefaultIdList (settingString, idList) {
+      settingString = settingString || this.constructor.DEFAULT_SETTING_STRING
+      this.promisedTracks.then(tracks => {
+        if (!this._defaultListApplied && Array.isArray(idList)) {
+          this._defaultListApplied = true
+          // clear previous track priority values and overwrite with new ones
+          this._priorityManager.clear()
+          // set all tracks to non-visible (or whatever settingString specifies)
+          tracks.forEach(track => track.setSetting(settingString, false))
+          // set tracks matching the list to visible
+          // (or whatever settingString specifies)
+          this.initCoordinateTracks(settingString)
+          idList.forEach(id => {
+            if (tracks.hasTrack(id)) {
+              let track = tracks.get(id)
+              track.setSetting(settingString, true)
+              this._priorityManager.addTrackId(id, this.getSlotName(track))
+            }
+          })
+        }
+      })
+    }
+
+    getTrackEffectivePriority (track) {
+      return this._priorityManager.getEffectivePriority(track.id)
     }
 
     addCustomTrack (track, group, callback) {
@@ -315,40 +338,42 @@ var GIVe = (function (give) {
     fillMetaFilter (metaEntries) {
       // metaEntry as give.MetaDataEntries
       metaEntries = metaEntries || give.mainMetaDataEntries
-      this.tracks.forEach(function (track) {
-        var cellType = track.getSetting('cellType')
-        var labName = track.getSetting('labName')
-        var tissueType = metaEntries.findMeta(
-          this.commonName, cellType, 'tissue'
-        )
-        if (track.cleanLowerTitle) {
-          if (!this.metaFilter.expMap.hasOwnProperty(track.cleanLowerTitle)) {
-            this.metaFilter.expMap[track.cleanLowerTitle] = []
-            this.metaFilter.expMap[track.cleanLowerTitle].name = track.title
+      this.tracks.forEach(track => {
+        if (!(track instanceof give.CoorTrack)) {
+          let cellType = track.getSetting('cellType')
+          let labName = track.getSetting('labName')
+          let tissueType = metaEntries.findMeta(
+            this.commonName, cellType, 'tissue'
+          )
+          if (track.cleanLowerTitle) {
+            if (!this.metaFilter.expMap.hasOwnProperty(track.cleanLowerTitle)) {
+              this.metaFilter.expMap[track.cleanLowerTitle] = []
+              this.metaFilter.expMap[track.cleanLowerTitle].name = track.title
+            }
+            this.metaFilter.expMap[track.cleanLowerTitle].push(track.id)
           }
-          this.metaFilter.expMap[track.cleanLowerTitle].push(track.id)
-        }
-        if (cellType) {
-          if (!this.metaFilter.cellLineMap.hasOwnProperty(cellType)) {
-            this.metaFilter.cellLineMap[cellType] = []
+          if (cellType) {
+            if (!this.metaFilter.cellLineMap.hasOwnProperty(cellType)) {
+              this.metaFilter.cellLineMap[cellType] = []
+            }
+            this.metaFilter.cellLineMap[cellType].push(track.id)
           }
-          this.metaFilter.cellLineMap[cellType].push(track.id)
-        }
-        if (labName) {
-          if (!this.metaFilter.labMap[labName]) {
-            this.metaFilter.labMap[labName] = []
+          if (labName) {
+            if (!this.metaFilter.labMap[labName]) {
+              this.metaFilter.labMap[labName] = []
+            }
+            this.metaFilter.labMap[labName].push(track.id)
           }
-          this.metaFilter.labMap[labName].push(track.id)
-        }
-        if (tissueType) {
-          if (!this.metaFilter.tissueMap[tissueType]) {
-            this.metaFilter.tissueMap[tissueType] = []
+          if (tissueType) {
+            if (!this.metaFilter.tissueMap[tissueType]) {
+              this.metaFilter.tissueMap[tissueType] = []
+            }
+            this.metaFilter.tissueMap[tissueType].push(track.id)
+          } else {
+            give._verbConsole.info(cellType + ' does not have a tissue type.')
           }
-          this.metaFilter.tissueMap[tissueType].push(track.id)
-        } else {
-          give._verbConsole.info(cellType + ' does not have a tissue type.')
         }
-      }, this)
+      })
       this.metaFilterInitialized = true
       return this
     }
@@ -447,6 +472,9 @@ var GIVe = (function (give) {
       refObj.settings.isGIVEEnabled ||
       refObj.settings.browserActive
     ))
+  RefObject.DEFAULT_SETTING_STRING = 'visibility'
+  RefObject.DEFAULT_SLOT_NAME = 'scroll'
+  RefObject.DEFAULT_COORDINATE_SLOT_NAME = 'scroll'
 
   RefObject.initAllTarget = give.Host +
     (give.ServerPath || '/') +
