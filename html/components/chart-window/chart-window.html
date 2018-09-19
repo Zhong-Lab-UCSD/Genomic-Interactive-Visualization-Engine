@@ -277,36 +277,6 @@ var GIVe = (function (give) {
           observer: '_coorChanged'
         },
 
-        /**
-         * The track groups included in the embedded browser. Group IDs are
-         * specified in the data source. The data source on our server currently
-         * provides these track groups:
-         * *  `'genes'`: gene annotation tracks, for all available references
-         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and
-         *    `hg19` only
-         * *  `'interaction'`: genomic interaction data sets, including those
-         * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-         * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-         * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-         * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-         * for `mm10` only
-         * @type {Array<string>}
-         */
-        groupIdList: {
-          // this is the array of allowed group IDs in the list
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        defaultTrackIdList: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
         _initialized: {
           type: Boolean,
           value: false
@@ -340,6 +310,10 @@ var GIVe = (function (give) {
         showTutorial: {
           type: Boolean,
           value: false
+        },
+
+        priorityManager: {
+          type: Object
         }
       }
     }
@@ -452,19 +426,19 @@ var GIVe = (function (give) {
       return props
     }
 
-    _getSlotId (track, honorEffPriority) {
+    _getSvgSlotId (track, honorEffPriority) {
       if (honorEffPriority && track.effPriority) {
-        return this._slotIdFromPinValue(
-          track.effPriority.pinValue
+        return this._svgSlotIdFromSlotName(
+          track.effPriority.slotName
         )
       } else {
-        return this._slotIdFromPinValue(track.getSetting('pin'))
+        return this._svgSlotIdFromSlotName(track.getSetting('pin'))
       }
     }
 
-    _slotIdFromPinValue (pinValue) {
-      pinValue = pinValue || ''
-      switch (pinValue.toLowerCase()) {
+    _svgSlotIdFromSlotName (slotName) {
+      slotName = slotName || ''
+      switch (slotName.toLowerCase()) {
         case 'top':
           return this.reverseFlag ? '_PinBottom' : '_PinTop'
         case 'bottom':
@@ -476,8 +450,8 @@ var GIVe = (function (give) {
       }
     }
 
-    _pinValueFromSlotId (slotId) {
-      switch (slotId.toLowerCase()) {
+    _slotNameFromSvgSlotId (svgSlotId) {
+      switch (svgSlotId.toLowerCase()) {
         case '_pintop':
           return this.reverseFlag ? 'bottom' : 'top'
         case '_pinbottom':
@@ -491,15 +465,19 @@ var GIVe = (function (give) {
 
     _findEffPriorIndex (effPriority) {
       return give.locationOf(effPriority, this._trackDoms, null, null,
-        (effPriority, dom2) => give.EffectivePriority.compare(
-          effPriority, dom2.parent.effPriority
+        (effPriority, dom2) => this.priorityManager.compareEffectivePriority(
+          effPriority, this._getDomEffectivePriority(dom2)
         ), true
       )
     }
 
-    _findSlotSvgElement (slotId) {
-      if (slotId !== '_PinBetween') {
-        return this.shadowRoot.querySelector('#' + slotId)
+    _getDomEffectivePriority (trackDom) {
+      return this.priorityManager.getEffectivePriority(trackDom.parent)
+    }
+
+    _findSlotSvgElement (svgSlotId) {
+      if (svgSlotId !== '_PinBetween') {
+        return this.shadowRoot.querySelector('#' + svgSlotId)
       } else {
         return this.pinBetweenSlot
       }
@@ -507,15 +485,15 @@ var GIVe = (function (give) {
 
     _addTrackDomSvg (trackDom, honorEffPriority) {
       if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
-        let slotId = this._getSlotId(trackDom.parent, honorEffPriority)
-        if (slotId) {
+        let svgSlotId = this._getSvgSlotId(trackDom.parent, honorEffPriority)
+        if (svgSlotId) {
           if (!trackDom.parent.effPriority) {
             trackDom.parent.effPriority =
-              new give.EffectivePriority(this._pinValueFromSlotId(slotId),
-                this._svgSizes[slotId])
+              new give.EffectivePriority(this._slotNameFromSvgSlotId(svgSlotId),
+                this._svgSizes[svgSlotId])
           }
           // Add DOM element
-          this._findSlotSvgElement(slotId).appendChild(trackDom.trackSvg)
+          this._findSlotSvgElement(svgSlotId).appendChild(trackDom.trackSvg)
           // Find the correct location of the new DOM
           let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
           if (this._trackDoms[domPos] &&
@@ -525,8 +503,8 @@ var GIVe = (function (give) {
             // Update all effPriority values for DOMs after the new DOM
             for (let i = domPos;
               i < this._trackDoms.length &&
-              this._trackDoms[i].parent.effPriority.pinValue ===
-              trackDom.parent.effPriority.pinValue;
+              this._trackDoms[i].parent.effPriority.slotName ===
+              trackDom.parent.effPriority.slotName;
               i++
             ) {
               this._trackDoms[i].parent.effPriority.pos += 1
@@ -536,7 +514,7 @@ var GIVe = (function (give) {
           this._trackDoms.splice(domPos, 0, trackDom)
 
           this._addedTrackMap.set(trackDom.parent.id, trackDom)
-          this._svgSizes[slotId]++
+          this._svgSizes[svgSlotId]++
 
           // attach event listeners (if any)
           if (trackDom.mainGestureReceiver && trackDom.dragHandler) {
@@ -547,7 +525,7 @@ var GIVe = (function (give) {
               'wheel', e => trackDom.wheelHandler(e, e.detail)
             )
           }
-          return slotId
+          return svgSlotId
         }
       }
       return null
@@ -585,7 +563,7 @@ var GIVe = (function (give) {
           let trackDom = this._addedTrackMap.get(track.id)
           // This track is visible, remove the <svg> element from its slot
           this._findSlotSvgElement(
-            '#' + this._slotIdFromPinValue(track.effPriority.pinValue)
+            '#' + this._svgSlotIdFromSlotName(track.effPriority.slotName)
           ).removeChild(trackDom.trackSvg)
           // Then remove the DOM itself
           this._trackDoms = this._trackDoms.filter(dom => {
@@ -601,16 +579,16 @@ var GIVe = (function (give) {
 
       if (visibleTracksChanged) {
         // Update all effPriority values affected
-        for (let slotId in this._svgSizes) {
-          if (this._svgSizes.hasOwnProperty(slotId)) {
-            this._svgSizes[slotId] = 0
+        for (let svgSlotId in this._svgSizes) {
+          if (this._svgSizes.hasOwnProperty(svgSlotId)) {
+            this._svgSizes[svgSlotId] = 0
           }
         }
         this._trackDoms.forEach(trackDom => {
-          let slotId = this._pinValueFromSlotId(
-            trackDom.parent.effPriority.pinValue)
-          trackDom.parent.effPriority.pos = this._svgSizes[slotId].length
-          this._svgSizes[slotId]++
+          let svgSlotId = this._slotNameFromSvgSlotId(
+            trackDom.parent.effPriority.slotName)
+          trackDom.parent.effPriority.pos = this._svgSizes[svgSlotId].length
+          this._svgSizes[svgSlotId]++
         })
       }
     }
@@ -666,9 +644,9 @@ var GIVe = (function (give) {
         }
       }, this)
       // reset slot sizes
-      for (let slotId in this._svgSizes) {
-        if (this._svgSizes.hasOwnProperty(slotId)) {
-          this._svgSizes[slotId] = 0
+      for (let svgSlotId in this._svgSizes) {
+        if (this._svgSizes.hasOwnProperty(svgSlotId)) {
+          this._svgSizes[svgSlotId] = 0
         }
       }
       // clear `this._trackDoms`
@@ -694,7 +672,7 @@ var GIVe = (function (give) {
           // determine if the pin value has changed
           let oldIndex = this._trackDoms.indexOf(trackDom)
           let newIndex = this._findEffPriorIndex(newEffPriority)
-          if (oldEffPriority.pinValue === newEffPriority.pinValue) {
+          if (oldEffPriority.slotName === newEffPriority.slotName) {
             // same pin value, just change the tracks in between
             let step = Math.sign(newIndex - oldIndex)
             for (let i = oldIndex + step;
@@ -708,8 +686,8 @@ var GIVe = (function (give) {
             // -1 for all tracks with the old pin value and pos > oldPos
             for (let i = oldIndex + 1;
               i < this._trackDoms.length &&
-                this._trackDoms[i].parent.effPriority.pinValue ===
-                  oldEffPriority.pinValue;
+                this._trackDoms[i].parent.effPriority.slotName ===
+                  oldEffPriority.slotName;
               i++
             ) {
               this._trackDoms[i].parent.effPriority.pos -= 1
@@ -717,8 +695,8 @@ var GIVe = (function (give) {
             // +1 for all tracks with the new pin value and pos >= newPos
             for (let i = newIndex;
               i < this._trackDoms.length &&
-                this._trackDoms[i].parent.effPriority.pinValue ===
-                  newEffPriority.pinValue;
+                this._trackDoms[i].parent.effPriority.slotName ===
+                  newEffPriority.slotName;
               i++
             ) {
               this._trackDoms[i].parent.effPriority.pos += 1
@@ -837,7 +815,7 @@ var GIVe = (function (give) {
         ? this._trackDoms.slice().reverse() : this._trackDoms
       enumArray.forEach(trackDom => {
         let svgElem = this._findSlotSvgElement(
-          this._getSlotId(trackDom.parent, true)
+          this._getSvgSlotId(trackDom.parent, true)
         )
         if (svgElem.hasOwnProperty('_currY')) {
           svgElem._currY += this.trackGap * this.textSize

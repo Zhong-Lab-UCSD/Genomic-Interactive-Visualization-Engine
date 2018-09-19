@@ -50,6 +50,7 @@ var GIVe = (function (give) {
       this.groups = {} // this is used to get all the groups
       this.tracksUpdated = false // regardless of whether user has selected
       this.tracks = new give.TrackGroup()
+      this.coordinateTracks = new give.TrackGroup()
 
       // this.initTracksFromServer()
       // initialize whenever tracks are needed
@@ -80,7 +81,6 @@ var GIVe = (function (give) {
       }
 
       this._trackPromise = null
-      this.coordinateTrackId = []
     }
 
     get cleanId () {
@@ -212,8 +212,7 @@ var GIVe = (function (give) {
         }).then(() => {
           if (!this.coordinateTrackId.length) {
             let coordinateTrack = this.createCoordinateTrack()
-            this.tracks.addTrack(coordinateTrack)
-            this.coordinateTrackId = [coordinateTrack.id]
+            this.coordinateTracks.addTrack(coordinateTrack)
           }
           return this
         })
@@ -235,8 +234,7 @@ var GIVe = (function (give) {
 
     initCoordinateTracks (settingString) {
       settingString = settingString || this.constructor.DEFAULT_SETTING_STRING
-      this.coordinateTrackId.forEach(trackId => {
-        let track = this.tracks.get(trackId)
+      this.coordinateTracks.forEach(track => {
         track.setSetting(settingString, true)
         this._priorityManager.addTrack(track)
       })
@@ -259,8 +257,22 @@ var GIVe = (function (give) {
       }
     }
 
-    _initPriorityManager (priorityManager) {
+    initPriorityManager (priorityManager, defaultIdList, groupIdList) {
       // clear previous track priority values and overwrite with new ones
+      if (priorityManager instanceof give.PriorityManager) {
+        if (Array.isArray(defaultIdList)) {
+          return this._applyDefaultIdList(defaultIdList, priorityManager)
+        } else {
+          this._applyDefaultIdList(priorityManager)
+          if (Array.isArray(groupIdList)) {
+            return this._applyGroupIdList(priorityManager, groupIdList)
+          }
+        }
+      }
+      return null
+    }
+
+    _applyDefaultSettings (priorityManager) {
       priorityManager.clear()
       // set all tracks to non-visible (or whatever settingString specifies)
       this.tracks.forEach(
@@ -275,55 +287,51 @@ var GIVe = (function (give) {
           priorityManager.addTrack(track)
         }
       })
+      return priorityManager
     }
 
-    _applyDefaultIdList (idList, priorityManager) {
-      if (Array.isArray(idList) &&
-        (priorityManager instanceof give.PriorityManager)
-      ) {
-        this._defaultListApplied = true
-        // clear previous track priority values and overwrite with new ones
-        priorityManager.clear()
-        // set all tracks to non-visible (or whatever settingString specifies)
-        this.tracks.forEach(
-          track => track.setSetting(priorityManager.settingString, false)
-        )
-        // re-enabling coordinate tracks if priorityManager needs to
-        if (priorityManager.includeCoordinates) {
-          this.initCoordinateTracks(priorityManager.settingString)
-        }
-        // set tracks matching the list to visible
-        // (or whatever settingString specifies)
-        idList.forEach(id => {
-          if (tracks.hasTrack(id)) {
-            let track = this.tracks.get(id)
-            track.setSetting(priorityManager.settingString, true)
-            priorityManager.addTrackId(id, this.getSlotName(track))
-          }
-        })
+    _applyDefaultIdList (priorityManager, idList) {
+      this._defaultListApplied = true
+      // clear previous track priority values and overwrite with new ones
+      priorityManager.clear()
+      // set all tracks to non-visible (or whatever settingString specifies)
+      this.tracks.forEach(
+        track => track.setSetting(priorityManager.settingString, false)
+      )
+      // re-enabling coordinate tracks if priorityManager needs to
+      if (priorityManager.includeCoordinates) {
+        this.initCoordinateTracks(priorityManager.settingString)
       }
+      // set tracks matching the list to visible
+      // (or whatever settingString specifies)
+      idList.forEach(id => {
+        if (this.tracks.hasTrack(id)) {
+          let track = this.tracks.get(id)
+          track.setSetting(priorityManager.settingString, true)
+          priorityManager.addTrack(track)
+        }
+      })
+      return priorityManager
     }
 
-    _applyGroupIdList (idList, priorityManager) {
+    _applyGroupIdList (priorityManager, idList) {
       // This is done in a sort-of reversed way: groups that are NOT SELECTED
       // will have their tracks toggled to hidden
-      if (Array.isArray(idList) &&
-        (priorityManager instanceof give.PriorityManager)
-      ) {
-        // set tracks matching the list to visible
-        // (or whatever settingString specifies)
-        this.groups.forEach(group => {
-          if (idList.indexOf(group.id) < 0) {
-            // group not there
-            group.forEach(track => {
-              track.setSetting(priorityManager.settingString, false)
-              if (priorityManager.hasTrackId(track.id)) {
-                priorityManager.removeTrackId(track.id)
-              }
-            })
-          }
-        })
-      }
+
+      // set tracks matching the list to visible
+      // (or whatever settingString specifies)
+      this.groups.forEach(group => {
+        if (idList.indexOf(group.id) < 0) {
+          // group not there
+          group.forEach(track => {
+            track.setSetting(priorityManager.settingString, false)
+            if (priorityManager.hasTrack(track)) {
+              priorityManager.removeTrack(track)
+            }
+          })
+        }
+      })
+      return priorityManager
     }
 
     addCustomTrack (track, group, callback) {

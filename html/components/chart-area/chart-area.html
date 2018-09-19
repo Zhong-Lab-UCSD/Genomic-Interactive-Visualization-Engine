@@ -129,7 +129,7 @@ var GIVe = (function (give) {
     Polymer.IronResizableBehavior], Polymer.Element
   ) {
     constructor () {
-      super()
+      super(...arguments)
       this._resizeDebounceInt = this.constructor.DEFAULT_RESIZE_DEBOUNCE
       this._idEnforcedSet = new Set()
       this._chartWindows = []
@@ -263,6 +263,13 @@ var GIVe = (function (give) {
         _firstRun: {
           type: Boolean,
           value: true
+        },
+
+        priorityManagers: {
+          type: Object,
+          value: function () {
+            return {}
+          }
         }
       }
     }
@@ -398,6 +405,19 @@ var GIVe = (function (give) {
         .then(() => {
           this._refArray = this._chartWindows.map(window => window.ref)
           this._syncRefsArrayToJson()
+          this._refArray.forEach(ref => {
+            if (!this.priorityManagers.hasOwnProperty(ref)) {
+              this.priorityManagers[ref] = new give.PriorityManager()
+              give.RefObject.findRefByDb(ref).initPriorityManager(
+                this.priorityManagers[ref],
+                this.defaultTrackIdList,
+                this.groupIdList
+              )
+            }
+          })
+          this._chartWindows.forEach(window => (
+            window.priorityManager = this.priorityManagers[window.ref]
+          ))
         })
     }
 
@@ -415,9 +435,7 @@ var GIVe = (function (give) {
       ) {
         let newWindowItem = {
           ref: this._refArray[index],
-          coordinate: this._coordinateArray[index],
-          defaultTrackIdList: this.defaultTrackIdList,
-          groupIdList: this.groupIdList
+          coordinate: this._coordinateArray[index]
         }
         this.push('_chartWindowItems', newWindowItem)
       }

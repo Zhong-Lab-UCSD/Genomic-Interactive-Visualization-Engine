@@ -269,6 +269,10 @@ var GIVe = (function (give) {
       return this.idToEffectivePriorityDict.has(trackId)
     }
 
+    hasTrack (track) {
+      return this.idToEffectivePriorityDict.has(track.id)
+    }
+
     static _defaultGetSlotFunc (track) {
       return track.getSetting('pin') || this.DEFAULT_SLOT_NAME
     }
