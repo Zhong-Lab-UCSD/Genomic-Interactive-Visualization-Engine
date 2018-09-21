@@ -144,33 +144,25 @@ var GIVe = (function (give) {
      *    leaf nodes if they are not the same as the non-leaf nodes.
      */
     insert (data, chrRanges, props) {
-      if (!props || !props.doNotWither) {
-        this._advanceGen()
-      }
       let exceptions = []
-      if (Array.isArray(chrRanges)) {
-        chrRanges.forEach((range, index) => {
-          try {
-            this._insertSingleRange(data, range,
-              Array.isArray(props) ? props[index] : props)
-          } catch (err) {
-            err.message = '[insert] ' + err.message
-            exceptions.push(err)
-            return null
-          }
-        })
-      } else {
+      if (!Array.isArray(chrRanges)) {
+        chrRanges = [chrRanges]
+      }
+      let uncachedRanges = chrRanges.reduce(
+        (uncachedRanges, range) =>
+          uncachedRanges.concat(this.getUncachedRange(range)),
+        []
+      )
+      uncachedRanges.forEach((range, index) => {
         try {
-          this._insertSingleRange(data, chrRanges, props)
+          this._insertSingleRange(data, range,
+            Array.isArray(props) ? props[index] : props)
         } catch (err) {
           err.message = '[insert] ' + err.message
           exceptions.push(err)
           return null
         }
-      }
-      if (!props || !props.doNotWither) {
-        this._wither()
-      }
+      })
       if (exceptions.length > 0) {
         let message = exceptions.reduce(
           (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),

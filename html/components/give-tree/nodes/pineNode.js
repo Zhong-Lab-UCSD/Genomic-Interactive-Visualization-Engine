@@ -360,6 +360,11 @@ var GIVe = (function (give) {
         //    (for trees that support summary and resolutions)
         if (this.resolutionEnough(resolution) && data[0]) {
           // check whether the data summary matches the node boundary
+          // because data retrieval may be out of sync, redundant data will need
+          //    to be discarded
+          while (data.length && this.start > data[0].start) {
+            data.splice(0, 1)
+          }
           if (this.start !== data[0].start || this.end !== data[0].end) {
             throw new give.GiveError('Summary range does not match! ' +
               '`this`: ' + this.start + ' - ' + this.end + '; data: ' +
@@ -481,7 +486,7 @@ var GIVe = (function (give) {
           }
         }
 
-        chrRange.start = childRange.end
+        chrRange.start = Math.min(childRange.end, chrRange.end)
         currIndex++
       } // end while(rangeStart < rangeEnd);
     }
@@ -567,10 +572,10 @@ var GIVe = (function (give) {
         }
 
         // Shrink `chrRange` to unprocessed range
-        chrRange.setStart((
+        chrRange.start = (
           props.dataIndex < data.length &&
           data[props.dataIndex].start < chrRange.end
-        ) ? data[props.dataIndex].start : chrRange.end, true)
+        ) ? data[props.dataIndex].start : chrRange.end
       }
 
       // Process `props.contList` for one last time

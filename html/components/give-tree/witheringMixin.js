@@ -75,15 +75,6 @@ var GIVe = (function (give) {
         )
     }
 
-    insert () {
-      let result
-      if (typeof super.insert === 'function') {
-        result = super.insert(...arguments)
-      }
-      this.rejuvenate()
-      return result
-    }
-
     /**
      * wither - Let nodes and/or their children that are too old wither
      *    Note that this withering only removes nodes, it does not do any
@@ -148,6 +139,17 @@ var GIVe = (function (give) {
       let result
       if (typeof super.traverse === 'function') {
         result = super.traverse(...arguments)
+      }
+      if (!props || !props.doNotWither) {
+        this.rejuvenate()
+      }
+      return result
+    }
+
+    getUncachedRange (chrRange, props, ...args) {
+      let result
+      if (typeof super.getUncachedRange === 'function') {
+        result = super.getUncachedRange(...arguments)
       }
       if (!props || !props.doNotWither) {
         this.rejuvenate()

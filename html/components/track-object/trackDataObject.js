@@ -25,8 +25,6 @@ var GIVe = (function (give) {
    * @property {number} getDataDebounceInt - Debouncing interval
    * @property {object} _pendingRangesById - Regions requested by GUI elements
    *   that have not been merged yet
-   * @property {Array<ChromRegionLiteral>} _committedRegions - Regions submitted
-   *   to requests (remote or local)
    * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
    *
@@ -47,7 +45,6 @@ var GIVe = (function (give) {
         TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
       this._debouncePromise = null
       this._pendingRangesById = {}
-      this._committedRegions = []
 
       this._fetchPromise = null
       this._ongoingFetchPromise = null
@@ -192,7 +189,8 @@ var GIVe = (function (give) {
         }
       }
 
-      give._verbConsole.info(mergedGUIRanges)
+      give._verbConsole.info(this.parent.id + ': merged: [' +
+        mergedGUIRanges.map(range => range.regionToString()).join(', ') + ']')
 
       return mergedGUIRanges
     }
@@ -274,10 +272,11 @@ var GIVe = (function (give) {
      *   for most of the tracks, this is only window (does not need to stringify)
      *
      * @memberof TrackDataObjectBase.prototype
+     * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
      * @returns {Array<ChromRegionLiteral>} The array of query regions
      */
-    _prepareCustomQuery () {
-      return this._committedRegions
+    _prepareCustomQuery (regions) {
+      return regions
     }
 
     /**
@@ -305,8 +304,10 @@ var GIVe = (function (give) {
       if (!Array.isArray(ranges)) {
         ranges = [ranges]
       }
-      give._verbConsole.info('fetchData()')
-      give._verbConsole.info(ranges.map(range => range.regionToString()))
+      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
+        '): fetchData([' +
+        ranges.map(range => range.regionToString()).join(', ') + '], ' +
+        callerID + ')')
 
       if (!this._trackHasUncachedRange(ranges)) {
         let callerObj = {}
@@ -360,8 +361,7 @@ var GIVe = (function (give) {
     /**
      * _collapseQueryAndRetrieve - Merge all unmerged query in
      *   `this._pendingRangesById`, filter out the cached
-     *   portion, store the results in `this._committedRegions`,
-     *   then proceed with data retrieval
+     *   portion, then proceed with data retrieval
      * @memberof TrackDataObjectBase.prototype
      * @async
      * @returns {Promise} returns a promise that resolves to an object
@@ -376,14 +376,19 @@ var GIVe = (function (give) {
       }
 
       this._debouncePromise = null
-      this._committedRegions = this._getTrackUncachedRange(
+      let committedRegions = this._getTrackUncachedRange(
         this._mergeGUIRegionsByResolution(this._pendingRangesById)
       )
+      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
+        '): committed([' +
+        committedRegions.map(range => range.regionToString()).join(', ') +
+        '])')
+
       this._committedRangesById = this._pendingRangesById
       this._pendingRangesById = {}
-      if (this._committedRegions && this._committedRegions.length > 0) {
+      if (committedRegions && committedRegions.length > 0) {
         this._ongoingFetchPromise = this._fetchPromise
-        return this._retrieveData(this._committedRegions)
+        return this._retrieveData(committedRegions)
       }
       return Promise.resolve(this._committedRangesById)
     }
@@ -420,13 +425,13 @@ var GIVe = (function (give) {
           promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
         }
         promise = promise.then(response => this._responseHandler(
-          this._fileHandler.bind(this), response
+          this._fileHandler.bind(this), response, regions
         ))
       } else if (this.getTrackSetting('requestUrl')) {
         promise = give.postAjax(this.getTrackSetting('requestUrl'),
           this._prepareRemoteQuery(regions), 'json'
         ).then(response => this._responseHandler(
-          this._dataHandler.bind(this), response
+          this._dataHandler.bind(this), response, regions
         ))
       }
       promise = promise
@@ -443,11 +448,12 @@ var GIVe = (function (give) {
     }
 
     _clearCommittedInfo () {
+      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
+        '): clearCommittedInfo()')
       if (this._ongoingFetchPromise === this._fetchPromise) {
         this._fetchPromise = null
       }
       this._ongoingFetchPromise = null
-      this._committedRegions.length = 0
       this._committedRangesById = null
     }
 
@@ -508,8 +514,14 @@ var GIVe = (function (give) {
      * @returns {object} returns `this._committedRangesById` (and remove the
      *   property from `this`).
      */
-    _responseHandler (dataHandler, response) {
-      dataHandler(response, this._committedRegions)
+    _responseHandler (dataHandler, response, committedRegions) {
+      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
+        '): dataHandler(), regions = [' +
+        committedRegions.map(range => range.regionToString()).join(', ') +
+        ']')
+      give._verbConsole.info(response)
+
+      dataHandler(response, committedRegions)
       return this._committedRangesById
     }
 

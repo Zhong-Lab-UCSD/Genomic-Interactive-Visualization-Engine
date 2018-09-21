@@ -108,7 +108,8 @@ var GIVe = (function (give) {
         this.keys = [props.start, props.end]
         this.values = [null]
       }
-      this.reverseDepth = (Number.isInteger(props.reverseDepth) && props.reverseDepth > 0)
+      this.reverseDepth = (
+        Number.isInteger(props.reverseDepth) && props.reverseDepth > 0)
         ? props.reverseDepth : 0
       if (this.tree.neighboringLinks) {
         this.next = props.nextNode
@@ -691,7 +692,7 @@ var GIVe = (function (give) {
      *    traversing.)
      */
     _mergeChild (index, mergeNext, crossBorder) {
-      var mergedFront = false
+      let mergedFront = false
       if (index > 0 ||
         (this.tree.neighboringLinks && crossBorder && this.childNum > 1)
       ) {
