@@ -444,6 +444,17 @@ var GIVe = (function (give) {
         warn: window.console.warn.bind(window.console)
       }
       give.GiveError = Error
+
+      /* ********** Chrome only **********
+       * The purpose of this part is to __prevent__ chrome from breaking and/or
+       * logging GIVe.PromiseCanceler
+       */
+      window.addEventListener('unhandledrejection', err => {
+        if (err && err.reason instanceof give.PromiseCanceler) {
+          err.preventDefault()
+          err.stopPropagation()
+        }
+      })
     }
   }
 
@@ -525,17 +536,6 @@ var GIVe = (function (give) {
   window.addEventListener('error', err => {
     if (err instanceof give.PromiseCanceler) {
       // ignore give.PromiseCanceler
-    }
-  })
-
-  /* ********** Chrome only **********
-   * The purpose of this part is to __prevent__ chrome from breaking and/or
-   * logging GIVe.PromiseCanceler
-   */ 
-  window.addEventListener('unhandledrejection', err => {
-    if (err && err.reason instanceof give.PromiseCanceler) {
-      err.preventDefault()
-      err.stopPropagation()
     }
   })
 

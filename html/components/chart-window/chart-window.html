@@ -228,13 +228,6 @@ var GIVe = (function (give) {
 
       this._pendingVWindow = null
       this._viewWindow = null
-
-      this._svgSizes = {
-        '_PinTop': 0,
-        '_Scroll': 0,
-        '_PinBottom': 0,
-        '_PinBetween': 0
-      }
     }
 
     static get is () {
@@ -322,10 +315,6 @@ var GIVe = (function (give) {
       this._updatingCoor = true
       super.ready()
       // initialize this._viewWindows from this.coordinates
-      if (this.defaultTrackIdList.length > 0) {
-        this._needOverrideDefault = true
-      }
-
       this._trackPromiseAggregator = new give.PromiseAggregator(
         null, err => this._trackErrHandler(err)
       )
@@ -391,7 +380,6 @@ var GIVe = (function (give) {
           while (this._pinBetweenSlot.firstChild) {
             this._pinBetweenSlot.removeChild(this._pinBetweenSlot.firstChild)
           }
-          this._svgSizes._PinBetween = 0
         }
       }
     }
@@ -426,14 +414,10 @@ var GIVe = (function (give) {
       return props
     }
 
-    _getSvgSlotId (track, honorEffPriority) {
-      if (honorEffPriority && track.effPriority) {
-        return this._svgSlotIdFromSlotName(
-          track.effPriority.slotName
-        )
-      } else {
-        return this._svgSlotIdFromSlotName(track.getSetting('pin'))
-      }
+    _getSvgSlotId (trackDom) {
+      return this._svgSlotIdFromSlotName(
+        this._getDomEffectivePriority(trackDom).slotName
+      )
     }
 
     _svgSlotIdFromSlotName (slotName) {
@@ -445,6 +429,7 @@ var GIVe = (function (give) {
           return this.reverseFlag ? '_PinTop' : '_PinBottom'
         case 'inbetween':
           return '_PinBetween'
+        case 'scroll':
         default:
           return '_Scroll'
       }
@@ -458,6 +443,7 @@ var GIVe = (function (give) {
           return this.reverseFlag ? 'top' : 'bottom'
         case '_pinbetween':
           return 'inbetween'
+        case '_scroll':
         default:
           return 'scroll'
       }
@@ -483,60 +469,29 @@ var GIVe = (function (give) {
       }
     }
 
-    _addTrackDomSvg (trackDom, honorEffPriority) {
-      if (trackDom && !this._addedTrackMap.has(trackDom.parent.id)) {
-        let svgSlotId = this._getSvgSlotId(trackDom.parent, honorEffPriority)
-        if (svgSlotId) {
-          if (!trackDom.parent.effPriority) {
-            trackDom.parent.effPriority =
-              new give.EffectivePriority(this._slotNameFromSvgSlotId(svgSlotId),
-                this._svgSizes[svgSlotId])
-          }
-          // Add DOM element
-          this._findSlotSvgElement(svgSlotId).appendChild(trackDom.trackSvg)
-          // Find the correct location of the new DOM
-          let domPos = this._findEffPriorIndex(trackDom.parent.effPriority)
-          if (this._trackDoms[domPos] &&
-            !give.EffectivePriority.compare(this._trackDoms[domPos].parent.effPriority,
-              trackDom.parent.effPriority)
-          ) {
-            // Update all effPriority values for DOMs after the new DOM
-            for (let i = domPos;
-              i < this._trackDoms.length &&
-              this._trackDoms[i].parent.effPriority.slotName ===
-              trackDom.parent.effPriority.slotName;
-              i++
-            ) {
-              this._trackDoms[i].parent.effPriority.pos += 1
-            }
-          }
-          // Insert the new DOM into its correct location
-          this._trackDoms.splice(domPos, 0, trackDom)
-
-          this._addedTrackMap.set(trackDom.parent.id, trackDom)
-          this._svgSizes[svgSlotId]++
-
-          // attach event listeners (if any)
-          if (trackDom.mainGestureReceiver && trackDom.dragHandler) {
-            Polymer.Gestures.addListener(trackDom.mainGestureReceiver,
-              'track', e => trackDom.dragHandler(e, e.detail)
-            )
-            trackDom.mainGestureReceiver.addEventListener(
-              'wheel', e => trackDom.wheelHandler(e, e.detail)
-            )
-          }
-          return svgSlotId
-        }
+    _addTrackDomSvg (trackDom) {
+      let svgSlotId = this._getSvgSlotId(trackDom)
+      // Add DOM element
+      this._findSlotSvgElement(svgSlotId).appendChild(trackDom.trackSvg)
+      // attach event listeners (if any)
+      if (trackDom.mainGestureReceiver && trackDom.dragHandler) {
+        Polymer.Gestures.addListener(trackDom.mainGestureReceiver,
+          'track', e => trackDom.dragHandler(e, e.detail)
+        )
+        trackDom.mainGestureReceiver.addEventListener(
+          'wheel', e => trackDom.wheelHandler(e, e.detail)
+        )
       }
-      return null
+      return svgSlotId
     }
 
-    _addVisibleTrack (track, contexts, props, honorEffPriority) {
-      if (!this._addedTrackMap.has(track.id) &&
-        track.checkViewReq(contexts, this.index)
-      ) {
+    _addVisibleTrack (track, contexts, props) {
+      if (track.checkViewReq(contexts, this.index)) {
         let newTrackDom = track.createDomObj(this._createTrackProp(props))
-        this._addTrackDomSvg(newTrackDom, honorEffPriority)
+        this._addTrackDomSvg(newTrackDom)
+        if (!this._coorDomSvg && newTrackDom instanceof give.CoorTrackDom) {
+          this._coorDomSvg = newTrackDom.trackSvg
+        }
         return newTrackDom
       }
       return null
@@ -553,46 +508,6 @@ var GIVe = (function (give) {
       return null
     }
 
-    _removeTrack (tracks) {
-      if (!Array.isArray) {
-        tracks = [tracks]
-      }
-      let visibleTracksChanged = false
-      tracks.forEach(track => {
-        if (this._addedTrackMap.has(track.id)) {
-          let trackDom = this._addedTrackMap.get(track.id)
-          // This track is visible, remove the <svg> element from its slot
-          this._findSlotSvgElement(
-            '#' + this._svgSlotIdFromSlotName(track.effPriority.slotName)
-          ).removeChild(trackDom.trackSvg)
-          // Then remove the DOM itself
-          this._trackDoms = this._trackDoms.filter(dom => {
-            return dom.id !== trackDom.id
-          })
-          // set flag to update effPriority values
-          visibleTracksChanged = true
-          this._addedTrackMap.delete(track.id)
-        } else {
-          give._verbConsole.warn('Track ID "' + track.id + '" does not exist!')
-        }
-      })
-
-      if (visibleTracksChanged) {
-        // Update all effPriority values affected
-        for (let svgSlotId in this._svgSizes) {
-          if (this._svgSizes.hasOwnProperty(svgSlotId)) {
-            this._svgSizes[svgSlotId] = 0
-          }
-        }
-        this._trackDoms.forEach(trackDom => {
-          let svgSlotId = this._slotNameFromSvgSlotId(
-            trackDom.parent.effPriority.slotName)
-          trackDom.parent.effPriority.pos = this._svgSizes[svgSlotId].length
-          this._svgSizes[svgSlotId]++
-        })
-      }
-    }
-
     _removeHiddenTrackDom (trackDomId) {
       if (trackDomId && this._hiddenTrackDomMap.has(trackDomId)) {
         this._hiddenTrackDoms.splice(
@@ -603,39 +518,14 @@ var GIVe = (function (give) {
       }
     }
 
-    /**
-     * _trackEffPriorUpdated - this is used when the `effPriority` values
-     *    __has been updated for all `track`s__ in the parent element, and the
-     *    DOM array order needs to be restored.
-     *
-     * @param  {TrackObjectBase} track - the track whose `effPriority` has
-     *    changed
-     */
-    _trackEffPriorUpdated (track, oldIndex, newIndex) {
-      if (track && this._addedTrackMap.has(track.id)) {
-        throw new give.GiveError('Track does not exist for track "' +
-          track && track.id + '"!')
-      }
-      if (this._addedTrackMap.get(track.id).visible) {
-        let trackDom = this._addedTrackMap.get(track.id).trackDom
-        let oldIndex = this._trackDoms.indexOf(trackDom)
-        if (oldIndex >= 0) {
-          this._moveTrackDom(oldIndex,
-            this._findEffPriorIndex(trackDom.parent.effPriority))
-        } else {
-          throw new give.GiveError('TrackDOM does not exist for track "' +
-            track.id + '"!')
-        }
-      }
+    _moveTrackDom (trackDom, newIndex, oldIndex) {
+      // TODO: send signal to parent DOM element indicating the change
     }
 
-    _moveTrackDom (oldIndex, newIndex) {
-      let trackDom = this._trackDoms[oldIndex]
-      this._trackDoms.splice(oldIndex, 1)
-      this._trackDoms.splice(
-        this._findEffPriorIndex(trackDom.parent.effPriority), 0, trackDom)
+    _removeTrackDom (trackDom) {
+      // TODO: send signal to parent DOM element indicating the change
     }
-
+    
     _clearDOM () {
       // clear out all the svgs
       this._svgList.forEach(svgElem => {
@@ -643,73 +533,8 @@ var GIVe = (function (give) {
           svgElem.removeChild(svgElem.firstChild)
         }
       }, this)
-      // reset slot sizes
-      for (let svgSlotId in this._svgSizes) {
-        if (this._svgSizes.hasOwnProperty(svgSlotId)) {
-          this._svgSizes[svgSlotId] = 0
-        }
-      }
       // clear `this._trackDoms`
       this._trackDoms.length = 0
-    }
-
-    /**
-     * _changeTrackEffPrior - change the `effPriority` value of the `track`
-     *    given the `trackDom`
-     *
-     * @param  {TrackDom} trackDom       The `trackDom` for which `effPriority`
-     *    needs to be changed.
-     * @param  {give.EffectivePriority} newEffPriority The new `effPriority` value.
-     *    Notice that the `pos` value is the new position of the `trackDom`
-     *    as if its just being inserted. Therefore, it __should not consider
-     *    the position of `trackDom` itself__ if the new location is after
-     *    the original one.
-     */
-    _changeTrackEffPrior (trackDom, newEffPriority) {
-      if (trackDom && newEffPriority) {
-        let oldEffPriority = trackDom.parent.effPriority
-        if (give.EffectivePriority.compare(oldEffPriority, newEffPriority)) {
-          // determine if the pin value has changed
-          let oldIndex = this._trackDoms.indexOf(trackDom)
-          let newIndex = this._findEffPriorIndex(newEffPriority)
-          if (oldEffPriority.slotName === newEffPriority.slotName) {
-            // same pin value, just change the tracks in between
-            let step = Math.sign(newIndex - oldIndex)
-            for (let i = oldIndex + step;
-              i * step <= newIndex * step;
-              i += step
-            ) {
-              this._trackDoms[i].parent.effPriority.pos -= step
-            }
-          } else {
-            // pin value is different, separate into two steps
-            // -1 for all tracks with the old pin value and pos > oldPos
-            for (let i = oldIndex + 1;
-              i < this._trackDoms.length &&
-                this._trackDoms[i].parent.effPriority.slotName ===
-                  oldEffPriority.slotName;
-              i++
-            ) {
-              this._trackDoms[i].parent.effPriority.pos -= 1
-            }
-            // +1 for all tracks with the new pin value and pos >= newPos
-            for (let i = newIndex;
-              i < this._trackDoms.length &&
-                this._trackDoms[i].parent.effPriority.slotName ===
-                  newEffPriority.slotName;
-              i++
-            ) {
-              this._trackDoms[i].parent.effPriority.pos += 1
-            }
-          }
-          trackDom.parent.effPriority = newEffPriority
-          this._moveTrackDom(oldIndex, newIndex)
-        } else {
-          give._verbConsole.warn('Effective priority not changed.')
-        }
-      } else {
-        throw new give.GiveError('No TrackDOM or effPriority provided!')
-      }
     }
 
     updateSvgHeightLocation (width) {
@@ -803,8 +628,7 @@ var GIVe = (function (give) {
       if (this.firstRun && this.showTutorial &&
         this._coorDomSvg
       ) {
-        this.$.coorTrackTutorial.domTargetId =
-          this._coorDomSvg.id
+        this._coorDomSvgId = this._coorDomSvg.id
         this.$.coorTrackTutorial.showTutorial()
       }
       this.firstRun = false
@@ -815,7 +639,7 @@ var GIVe = (function (give) {
         ? this._trackDoms.slice().reverse() : this._trackDoms
       enumArray.forEach(trackDom => {
         let svgElem = this._findSlotSvgElement(
-          this._getSvgSlotId(trackDom.parent, true)
+          this._getSvgSlotId(trackDom, true)
         )
         if (svgElem.hasOwnProperty('_currY')) {
           svgElem._currY += this.trackGap * this.textSize
@@ -960,81 +784,6 @@ var GIVe = (function (give) {
       }, this)
     }
 
-    /**
-     * _addTracksFromDefaultList - Add tracks based on
-     *    `this.defaultTrackIdList` instead of the default values in
-     *    the database
-     */
-    _addTracksFromDefaultList (contexts) {
-      this.refObj.tracks.forEach(
-        track => track.setSetting('visibility', false)
-      )
-      let exceptions = []
-      this.defaultTrackIdList.forEach(id => {
-        try {
-          if (this.refObj.tracks.hasTrack(id)) {
-            let track = this.refObj.tracks.get(id)
-            track.setSetting('visibility', true)
-            return this._addVisibleTrack(track, contexts)
-          } else {
-            give._verbConsole.info('Track ID `' + id +
-              '` does not exist in ref ' + this.refObj.id)
-          }
-        } catch (err) {
-          err.message = '[Adding Track `' + id + '`] ' + err.message
-          exceptions.push(err)
-          return null
-        }
-      })
-      if (exceptions.length > 0) {
-        let message = exceptions.reduce(
-          (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
-          'Exception occured when adding tracks:'
-        )
-        give._verbConsole.warn(message)
-        give.fireSignal('give-warning', { msg: message }, null, this)
-        throw new give.GiveError(message)
-      }
-    }
-
-    /**
-     * _addTracksFromVisibility - Add tracks based on the default
-     *    `visibility` values in the database (via `track.isVisible`).
-     *    Note that `this.groupIdList` will determine the track groups that
-     *    will be shown here.
-     */
-    _addTracksFromVisibility (contexts) {
-      let exceptions = []
-      let showTrack = track => {
-        try {
-          return track.isVisible
-            ? this._addVisibleTrack(track, contexts) : null
-        } catch (err) {
-          err.message = '[Adding Track `' + track.id + '`] ' + err.message
-          exceptions.push(err)
-          return null
-        }
-      }
-      if (this.groupIdList && this.groupIdList.length > 0) {
-        this.groupIdList.forEach(groupID => {
-          if (this.refObj.groups.hasOwnProperty(groupID)) {
-            this.refObj.groups[groupID].forEach(showTrack)
-          }
-        })
-      } else {
-        this.refObj.tracks.forEach(showTrack)
-      }
-      if (exceptions.length > 0) {
-        let message = exceptions.reduce(
-          (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
-          'Exception occured when adding tracks:'
-        )
-        give._verbConsole.warn(message)
-        give.fireSignal('give-warning', { msg: message }, null, this)
-        throw new give.GiveError(message)
-      }
-    }
-
     _setRefObj (refObj) {
       let result = super._setRefObj(refObj)
       if (result) {
@@ -1084,8 +833,7 @@ var GIVe = (function (give) {
       return refReadyPromise.then(() => {
         this._clearDOM()
         this._readiness = false
-        this._initDOMCoorTrack()
-        return this._addAllTrackDoms(contexts)
+        return this._updateAllTrackDoms(contexts)
       })
     }
 
@@ -1120,22 +868,34 @@ var GIVe = (function (give) {
       }
     }
 
-    _addAllTrackDoms (contexts) {
-      if (this._needOverrideDefault) {
-        // use this.defaultTrackIdList to directly fill in the DOM array
-        // without sorting by priority (use the defaultTrackIdList order)
-        try {
-          this._addTracksFromDefaultList(contexts)
-        } finally {
-          delete this._needOverrideDefault
+    _updateAllTrackDoms (contexts) {
+      let newTrackDoms = []
+      let newAddedTrackMap = new Map()
+      this.priorityManager.trackIdList.forEach(trackId => {
+        let newTrackDom
+        if (this._addedTrackMap.has(trackId)) {
+          newTrackDom = this._addedTrackMap.get(trackId).trackDom
+        } else {
+          newTrackDom = this._addVisibleTrack(
+            this.refObj.tracks.get(trackId), contexts
+          )
         }
-      } else {
-        // no default tracks supplied, use groupIdList filter and
-        // visibility settings
-        // sort by priorities defined in database (this should be done
-        //    in `this.refObj` already)
-        this._addTracksFromVisibility(contexts)
-      }
+        if (newTrackDom) {
+          newTrackDoms.push(newTrackDom)
+          newAddedTrackMap.set(trackId, {
+            trackDom: newTrackDom,
+            slotId: this._addTrackDomSvg(newTrackDom)
+          })
+        }
+      })
+      this._addedTrackMap.forEach((trackId, slotAndDom) => {
+        if (!newAddedTrackMap.has(trackId)) {
+          this._findSlotSvgElement(slotAndDom.slotId)
+            .removeChild(slotAndDom.trackDom.trackSvg)
+        }
+      })
+      this._trackDoms = newTrackDoms
+      this._addedTrackMap = newAddedTrackMap
     }
 
     _removeInvisibleTrackDoms (contexts) {
@@ -1157,14 +917,9 @@ var GIVe = (function (give) {
      *    to check if multi-window tracks should be displayed.
      */
     updateDom (contexts) {
-      // update existing DOMs, first remove all tracks that should be hidden
+      // update existing DOMs
       contexts = contexts || []
-      if (this._trackDoms && this._trackDoms.length > 0) {
-        this._removeInvisibleTrackDoms(contexts)
-      }
-
-      // then add new Tracks (if not there already)
-      return this._addAllTrackDoms(contexts)
+      return this._updateAllTrackDoms(contexts)
     }
 
     /**

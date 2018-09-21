@@ -210,9 +210,10 @@ var GIVe = (function (give) {
             this.name + '.')
           this.fillTracks(data, false, give.TrackObject.fetchDataTarget)
         }).then(() => {
-          if (!this.coordinateTrackId.length) {
+          if (!this.coordinateTracks.length) {
             let coordinateTrack = this.createCoordinateTrack()
             this.coordinateTracks.addTrack(coordinateTrack)
+            this.tracks.addTrack(coordinateTrack)
           }
           return this
         })
@@ -232,11 +233,12 @@ var GIVe = (function (give) {
       }, this)
     }
 
-    initCoordinateTracks (settingString) {
-      settingString = settingString || this.constructor.DEFAULT_SETTING_STRING
+    initCoordinateTracks (priorityManager) {
       this.coordinateTracks.forEach(track => {
-        track.setSetting(settingString, true)
-        this._priorityManager.addTrack(track)
+        try {
+          track.setSetting(priorityManager.settingString, true)
+          priorityManager.addTrack(track, null, null, true)
+        } catch (ignore) { }
       })
     }
 
@@ -261,7 +263,7 @@ var GIVe = (function (give) {
       // clear previous track priority values and overwrite with new ones
       if (priorityManager instanceof give.PriorityManager) {
         if (Array.isArray(defaultIdList)) {
-          return this._applyDefaultIdList(defaultIdList, priorityManager)
+          return this._applyDefaultIdList(priorityManager, defaultIdList)
         } else {
           this._applyDefaultIdList(priorityManager)
           if (Array.isArray(groupIdList)) {
@@ -280,7 +282,7 @@ var GIVe = (function (give) {
       )
       // re-enabling coordinate tracks if priorityManager needs to
       if (priorityManager.includeCoordinates) {
-        this.initCoordinateTracks(priorityManager.settingString)
+        this.initCoordinateTracks(priorityManager)
       }
       this.tracks.forEach(track => {
         if (track.getSetting(priorityManager.settingString)) {
@@ -300,7 +302,7 @@ var GIVe = (function (give) {
       )
       // re-enabling coordinate tracks if priorityManager needs to
       if (priorityManager.includeCoordinates) {
-        this.initCoordinateTracks(priorityManager.settingString)
+        this.initCoordinateTracks(priorityManager)
       }
       // set tracks matching the list to visible
       // (or whatever settingString specifies)
@@ -499,7 +501,7 @@ var GIVe = (function (give) {
     ))
   RefObject.DEFAULT_SETTING_STRING = 'visibility'
   RefObject.DEFAULT_SLOT_NAME = 'scroll'
-  RefObject.DEFAULT_COORDINATE_SLOT_NAME = 'scroll'
+  RefObject.DEFAULT_COORDINATE_SLOT_NAME = 'top'
 
   RefObject.initAllTarget = give.Host +
     (give.ServerPath || '/') +
