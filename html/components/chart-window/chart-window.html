@@ -629,7 +629,7 @@ var GIVe = (function (give) {
         this._coorDomSvg
       ) {
         this._coorDomSvgId = this._coorDomSvg.id
-        this.$.coorTrackTutorial.showTutorial()
+        this.shadowRoot.querySelector('#coorTrackTutorial').showTutorial()
       }
       this.firstRun = false
     }
