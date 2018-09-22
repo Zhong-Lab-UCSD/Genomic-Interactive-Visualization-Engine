@@ -687,6 +687,7 @@ var GIVe = (function (give) {
           //    the entire `chart-area` instead of only the window
           return this.updateDom()
         } else if (this._initialized) {
+          this._readiness = false
           return Promise.resolve()
             .then(res => this._redrawWindows(
               (window, index) => window.changeCoordinate(detail.newWindow),

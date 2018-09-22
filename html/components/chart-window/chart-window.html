@@ -753,7 +753,7 @@ var GIVe = (function (give) {
         if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
           return this.changeViewWindow(newWindow)
         }
-        throw new give.PromiseCanceler()
+        return Promise.resolve()
       } catch (err) {
         err.data = err.data || {}
         err.data.updatedCoor =
@@ -801,16 +801,6 @@ var GIVe = (function (give) {
       //   this._initDomAfterVWinRefReady()
       // })
       return result
-    }
-
-    _initDOMCoorTrack () {
-      if (this.refObj) {
-        let coorTrack = give.TrackObject.createCoorTrack(
-          this.refObj,
-          'coor_' + this.refObj.db
-        )
-        this._coorDomSvg = this._addVisibleTrack(coorTrack).TrackSvg
-      }
     }
 
     /**

@@ -358,25 +358,30 @@ var GIVe = (function (give) {
         // 2. non-leaf nodes:
         //    go deep to generate branch structure, or update summary
         //    (for trees that support summary and resolutions)
-        if (this.resolutionEnough(resolution) && data[0]) {
+        if (this.resolutionEnough(resolution)) {
           // check whether the data summary matches the node boundary
           // because data retrieval may be out of sync, redundant data will need
           //    to be discarded
           while (data.length && this.start > data[0].start) {
             data.splice(0, 1)
           }
-          if (this.start !== data[0].start || this.end !== data[0].end) {
-            throw new give.GiveError('Summary range does not match! ' +
-              '`this`: ' + this.start + ' - ' + this.end + '; data: ' +
-              data[0].start + ' - ' + data[0].end
-            )
+          if (data.length) {
+            if (this.start !== data[0].start || this.end !== data[0].end) {
+              if (!(this.hasData)) {
+                throw new give.GiveError('Summary range does not match! ' +
+                  '`this`: ' + this.start + ' - ' + this.end + '; data: ' +
+                  data[0].start + ' - ' + data[0].end
+                )
+              }
+            } else {
+              // ***** This should fit Summary definition *****
+              this.updateSummary(data[0])
+              if (typeof props.callback === 'function') {
+                props.callback(data[0])
+              }
+              data.splice(0, 1)
+            }
           }
-          // ***** This should fit Summary definition *****
-          this.updateSummary(data[0])
-          if (typeof props.callback === 'function') {
-            props.callback(data[0])
-          }
-          data.splice(0, 1)
         } else if (this.reverseDepth > 0) {
           // case 2
           this._addNonLeafRecords(data, chrRange, props)
