@@ -7,10 +7,12 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-classes.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../track-control/track-mini-control.html">
+<link rel="import" href="../give-card/give-card-content-mixin.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -47,7 +49,8 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackList extends give.GiveCardContentMixin(Polymer.Element) {
+  class ChartTrackList extends
+    give.GiveCardContentMixin(give.RefEmbedMixin(Polymer.Element)) {
     static get is () {
       return 'chart-track-list'
     }
