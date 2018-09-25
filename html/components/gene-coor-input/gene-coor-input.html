@@ -544,7 +544,7 @@ var GIVe = (function (give) {
     _textFocusHandler (flag) {
       this._inFocus = flag
       this._checkGList()
-      if (!flag && this._refObj && this._refObj.chromInfo &&
+      if (!flag && this._refObj && this._refObj.chromInfo && this.value &&
         this._valueIsCoordinate()) {
         // blurred, correct cases for chromosomal coordinates
         var chrom = this.value.split(/[:\s-]+/)[0]
