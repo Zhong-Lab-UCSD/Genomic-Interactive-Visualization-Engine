@@ -188,8 +188,12 @@ var GIVe = (function (give) {
     }
 
     _getResolution (newVWindow, index) {
+      let width =
+        (typeof this._pendingWindowWidth === 'number' &&
+          this._pendingWindowWidth > 0)
+          ? this._pendingWindowWidth : this.windowWidth
       return Math.max(Math.floor(
-        newVWindow.length / this.windowWidth /
+        newVWindow.length / width /
         this.minResolutionPerPixel
       ), 1)
     }

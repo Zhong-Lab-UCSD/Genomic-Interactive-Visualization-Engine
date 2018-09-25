@@ -190,7 +190,9 @@ var GIVe = (function (give) {
       }
 
       give._verbConsole.info(this.parent.id + ': merged: [' +
-        mergedGUIRanges.map(range => range.regionToString()).join(', ') + ']')
+        mergedGUIRanges.map(
+          range => range.regionToString() + ' (@ ' + range.resolution + ')'
+        ).join(', ') + ']')
 
       return mergedGUIRanges
     }
