@@ -126,8 +126,8 @@ var GIVe = (function (give) {
         this.validCount = 0
         this.sumData = 0
         this.sumSquares = 0
-        this.minVal = Number.POSITIVE_INFINITY
-        this.maxVal = Number.NEGATIVE_INFINITY
+        this.minVal = 0
+        this.maxVal = 0
         this.value = 0
       }
     }
@@ -154,13 +154,13 @@ var GIVe = (function (give) {
      * @param  {SummaryCtorBase} summary - the summary to be added
      */
     addSummary (node, summary) {
-      this.validCount += summary.validCount
       this.sumData += summary.sumData
       this.sumSquares += summary.sumSquares
-      this.minVal = (this.minVal <= summary.minVal)
+      this.minVal = (this.validCount > 0 && this.minVal <= summary.minVal)
         ? this.minVal : summary.minVal
-      this.maxVal = (this.maxVal >= summary.maxVal)
+      this.maxVal = (this.validCount > 0 && this.maxVal >= summary.maxVal)
         ? this.maxVal : summary.maxVal
+      this.validCount += summary.validCount
       this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
     }
 
@@ -172,11 +172,13 @@ var GIVe = (function (give) {
      * @param  {object} data - the raw data object to be added
      */
     addData (node, data) {
-      this.validCount += node.length
       this.sumData += data.value * node.length
       this.sumSquares += data.value * data.value * node.length
-      this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
-      this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
+      this.minVal = (this.validCount > 0 && this.minVal <= data.value)
+        ? this.minVal : data.value
+      this.maxVal = (this.validCount > 0 && this.maxVal >= data.value)
+        ? this.maxVal : data.value
+      this.validCount += node.length
       this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
     }
   }

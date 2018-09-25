@@ -368,10 +368,14 @@ var GIVe = (function (give) {
           if (data.length) {
             if (this.start !== data[0].start || this.end !== data[0].end) {
               if (!(this.hasData)) {
-                throw new give.GiveError('Summary range does not match! ' +
-                  '`this`: ' + this.start + ' - ' + this.end + '; data: ' +
-                  data[0].start + ' - ' + data[0].end
-                )
+                if (this.end <= data[0].start) {
+                  this.updateSummary(new this.tree._SummaryCtor())
+                } else {
+                  throw new give.GiveError('Summary range does not match! ' +
+                    '`this`: ' + this.start + ' - ' + this.end + '; data: ' +
+                    data[0].start + ' - ' + data[0].end
+                  )
+                }
               }
             } else {
               // ***** This should fit Summary definition *****
