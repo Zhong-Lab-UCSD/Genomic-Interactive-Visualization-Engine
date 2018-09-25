@@ -304,8 +304,8 @@ var GIVe = (function (give) {
       if (!Array.isArray(ranges)) {
         ranges = [ranges]
       }
-      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
-        '): fetchData([' +
+      give._verbConsole.info(this.parent.id + ' @ ' + Date.now() +
+        ': fetchData([' +
         ranges.map(range => range.regionToString()).join(', ') + '], ' +
         callerID + ')')
 
@@ -379,8 +379,8 @@ var GIVe = (function (give) {
       let committedRegions = this._getTrackUncachedRange(
         this._mergeGUIRegionsByResolution(this._pendingRangesById)
       )
-      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
-        '): committed([' +
+      give._verbConsole.info(this.parent.id + ' @ ' + Date.now() +
+        ': committed([' +
         committedRegions.map(range => range.regionToString()).join(', ') +
         '])')
 
@@ -448,8 +448,8 @@ var GIVe = (function (give) {
     }
 
     _clearCommittedInfo () {
-      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
-        '): clearCommittedInfo()')
+      give._verbConsole.info(this.parent.id + ' @ ' + Date.now() +
+        ': clearCommittedInfo()')
       if (this._ongoingFetchPromise === this._fetchPromise) {
         this._fetchPromise = null
       }
@@ -515,8 +515,8 @@ var GIVe = (function (give) {
      *   property from `this`).
      */
     _responseHandler (dataHandler, response, committedRegions) {
-      give._verbConsole.info(this.parent.id + ' @ (' + Date.now() +
-        '): dataHandler(), regions = [' +
+      give._verbConsole.info(this.parent.id + ' @ ' + Date.now() +
+        ': dataHandler(), regions = [' +
         committedRegions.map(range => range.regionToString()).join(', ') +
         ']')
       give._verbConsole.info(response)

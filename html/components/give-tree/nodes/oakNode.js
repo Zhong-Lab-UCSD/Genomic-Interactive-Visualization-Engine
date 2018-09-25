@@ -232,7 +232,7 @@ var GIVe = (function (give) {
         } else if (this.childNum <= 1 && this.reverseDepth > 0) {
           // reduce the number of layer of the tree to the first child
           // with `childNum > 1 || reverseDepth <= 0`
-          this.isRoot = false
+          oldRoot.isRoot = false
           do {
             oldRoot = newRoot
             newRoot = oldRoot.values[0]

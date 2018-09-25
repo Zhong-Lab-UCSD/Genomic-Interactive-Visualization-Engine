@@ -63,7 +63,7 @@ var GIVe = (function (give) {
           }
         }
         return result
-      } 
+      }
       return false
     }
 

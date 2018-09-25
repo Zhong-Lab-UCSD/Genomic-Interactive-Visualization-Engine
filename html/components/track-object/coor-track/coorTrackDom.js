@@ -55,6 +55,7 @@ var GIVe = (function (give) {
 
     static get defaultProperties () {
       return Object.assign(super.defaultProperties || {}, {
+        _drawDebounceInt: 0,
         tickLength: 9,
         minorMajorRatio: 0.2,
         tickNumberGapRatio: 2.4,
@@ -197,7 +198,7 @@ var GIVe = (function (give) {
           .getExtension(
             diff, this.revTransXCoordinate(e.pageX -
               e.target.getBoundingClientRect().left).coor,
-            true, this.parent.ref,
+            true, this.parent.refObj,
             Math.ceil(this.windowWidth /
               (this.MAX_SPACE_PER_BASE * this.textSize))
           ).regionToString(false)

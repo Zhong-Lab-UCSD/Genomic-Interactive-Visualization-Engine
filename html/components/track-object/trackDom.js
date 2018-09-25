@@ -1540,7 +1540,7 @@ var GIVe = (function (give) {
         halfHeightRatio: 0.6,
         lineGapRatio: 0.1,
         textRightPadding: 8,
-        _drawDebounceInt: 0,
+        _drawDebounceInt: 200,
         _cacheDebounceInt: 200,
         visibility: give.TrackObject.StatusEnum.VIS_FULL,
         pin: 'scroll',

@@ -525,7 +525,7 @@ var GIVe = (function (give) {
     _removeTrackDom (trackDom) {
       // TODO: send signal to parent DOM element indicating the change
     }
-    
+
     _clearDOM () {
       // clear out all the svgs
       this._svgList.forEach(svgElem => {
@@ -621,7 +621,7 @@ var GIVe = (function (give) {
         )
         return this.updateTracks(pendingVWindow, width)
       }
-      return Promise.resolve()
+      return Promise.resolve(this._viewWindow)
     }
 
     _showTutorialIfNeeded () {
@@ -725,6 +725,7 @@ var GIVe = (function (give) {
      *    No exceptions should be thrown from this function.
      *
      * @param  {ChromRegionLiteral} viewWindow - The target range
+     * @param  {number} [width] - The width of the window
      * @return {Promise<ChromRegionLiteral>} A Promise that resolves to the
      *    updated view window when the updating is done.
      * @throws {number} if width needs to be changed (due to scroll bar), the
@@ -732,12 +733,12 @@ var GIVe = (function (give) {
      *    `chart-area`) be informed of incoming width change.
      * @async
      */
-    changeViewWindow (viewWindow) {
+    changeViewWindow (viewWindow, width) {
       if (!this._initialized) {
         return this.resetDom(viewWindow)
-          .then(() => this.updateTracks(viewWindow))
+          .then(() => this.updateTracks(viewWindow, width))
       }
-      return this.updateTracks(viewWindow)
+      return this.updateTracks(viewWindow, width)
     }
 
     _coorChanged (newValue, oldValue) {
@@ -746,14 +747,15 @@ var GIVe = (function (give) {
       }
     }
 
-    changeCoordinate (newCoordinate) {
+    changeCoordinate (newCoordinate, width) {
       try {
         let newWindow = this.getVerifiedViewWindow(newCoordinate)
         let currWindow = this._pendingVWindow || this._viewWindow
         if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
-          return this.changeViewWindow(newWindow)
+          return this.changeViewWindow(newWindow, width)
         }
-        return Promise.resolve()
+        return this._pendingVWindow ? Promise.reject(new give.PromiseCanceler())
+          : Promise.resolve(this._viewWindow)
       } catch (err) {
         err.data = err.data || {}
         err.data.updatedCoor =

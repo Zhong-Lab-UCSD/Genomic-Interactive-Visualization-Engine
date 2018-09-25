@@ -345,6 +345,7 @@ var GIVe = (function (give) {
         // TODO: gracefully handle the exception
         this._showErrorMessage(err, 'error')
       }
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': ready (error)')
       this._readiness = true
       if (this.passExceptions) {
         throw err
@@ -551,7 +552,9 @@ var GIVe = (function (give) {
           .then(() => this._syncCoordinatesArrayToJson(this.chartCoordinates))
           .then(correctedCoordinates => {
             delete this.updatePromise
-            this._readiness = true
+            give._verbConsole.info(this.id + ' @ ' + Date.now() + ': ready (normal)')
+            Polymer.RenderStatus.afterNextRender(this,
+              () => (this._readiness = true))
             return correctedCoordinates
           })
           .catch(err => this._errorHandler(err))
@@ -583,6 +586,7 @@ var GIVe = (function (give) {
       this._initialized = false
       this._updatingRefs = true
       this._updatingCoordinates = true
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateNumOfSubs)')
       this._readiness = false
       if (newNumOfSubs && newNumOfSubs !== this.numOfSubs) {
         this._syncNumOfSubs(newNumOfSubs)
@@ -610,6 +614,7 @@ var GIVe = (function (give) {
 
     updateRef (newRef, newCoordinates) {
       this._initialized = false
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateRef)')
       this._readiness = false
       return Promise.resolve()
         .then(() => {
@@ -624,6 +629,7 @@ var GIVe = (function (give) {
       // surrounding environment has changed, some of the tracks, especially
       // multi-window ones, may have its requirement conditions changed)
       let contexts = this._chartWindows.map(window => window.context)
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateDom)')
       this._readiness = false
       return Promise.all(
         this._chartWindows.map(window =>
@@ -640,6 +646,7 @@ var GIVe = (function (give) {
     }
 
     updateCoordinates (newCoordinates) {
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateCoordinates)')
       this._readiness = false
       this._syncCoordinatesJsonToArray(newCoordinates)
       return this._redrawWindows((window, index) =>
@@ -647,6 +654,7 @@ var GIVe = (function (give) {
     }
 
     updateTracks (newCoordinates) {
+      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateTracks)')
       this._readiness = false
       this._syncCoordinatesJsonToArray(newCoordinates)
       return this._redrawWindows((window, index) =>
@@ -687,12 +695,26 @@ var GIVe = (function (give) {
           //    the entire `chart-area` instead of only the window
           return this.updateDom()
         } else if (this._initialized) {
-          this._readiness = false
-          return Promise.resolve()
-            .then(res => this._redrawWindows(
-              (window, index) => window.changeCoordinate(detail.newWindow),
-              index)
-            )
+          let newCoordinate = detail.newWindow
+          if (newCoordinate instanceof give.ChromRegion) {
+            newCoordinate = newCoordinate.regionsToString(false)
+          }
+          if (newCoordinate !== this._chartWindows[index].coordinate) {
+            give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateWindowHandler)')
+            this._readiness = false
+            return Promise.resolve()
+              .then(res => {
+                let width = null
+                this._chartWindows.some((window, winIndex) => {
+                  if (winIndex !== index && window.hasScroll) {
+                    width = window.windowWidth
+                    return true
+                  }
+                })
+                this._redrawWindows((window, index) =>
+                  window.changeCoordinate(detail.newWindow, width), index)
+              })
+          }
         }
       }
     }
