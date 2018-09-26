@@ -72,9 +72,9 @@
           <slot id="cardHeaderSlot" name="header"></slot>
         </div>
       </div>
+      <slot id="cardBodySlot" name="body"></slot>
       <template is="dom-if" if="[[!disableFolding]]" restamp="true">
         <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
-          <slot id="cardBodySlot" name="body"></slot>
         </iron-collapse>
       </template>
       <template is="dom-if" if="[[disableFolding]]" restamp="true">
@@ -158,16 +158,21 @@ var GIVe = (function (give) {
     }
 
     _disableFoldingObserver (newValue, oldValue) {
-      if (newValue) {
-        this.$.cardFixedContent.appendChild(this.$.cardbody)
-      } else {
-        this.$.mainCollapse.appendChild(this.$.cardbody)
-      }
+      Polymer.RenderStatus.afterNextRender(this, () => {
+        if (newValue) {
+          this.shadowRoot.querySelector('#cardFixedContent')
+            .appendChild(this.$.cardBodySlot)
+        } else {
+          this.shadowRoot.querySelector('#mainCollapse')
+            .appendChild(this.$.cardBodySlot)
+        }
+      })
     }
 
     _toggleCollapseHeader (flag) {
-      // the top node with cardBody should have a member function getCollapse()
-      // then use the returned DOM to replace _collapsedHeaderElement
+      // the top node with cardBodySlot should have a property named
+      //    .collapsedElement
+      // then use this property to replace _collapsedHeaderElement
       // if nothing, then _collapsedHeaderElement is simply GenemoHead
       // flag is the target status
 
@@ -198,7 +203,7 @@ var GIVe = (function (give) {
     }
 
     toggleCollapse () {
-      // hide cardBody and convert GenemoHead to GenemoCollapse (if any)
+      // hide cardBodySlot and convert GenemoHead to GenemoCollapse (if any)
       this.isOpened = !this.isOpened
     }
 
@@ -217,8 +222,12 @@ var GIVe = (function (give) {
       //  it will be used to generate the node to replace the node
       //  given in .GenemoHead
       let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
-      let headerContainer = this.$.cardHeaderContainer
+      let headerContainer =
+        this.shadowRoot.querySelector('#cardHeaderContainer')
       let newHead
+      if (!headerContainer) {
+        return
+      }
       while (headerContainer.firstChild) {
         headerContainer.removeChild(headerContainer.firstChild)
       }

@@ -25,6 +25,7 @@ limitations under the License.
 <link rel="import" href="../chart-area/give-track-styles.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-window">
   <template>
@@ -880,7 +881,7 @@ var GIVe = (function (give) {
           })
         }
       })
-      this._addedTrackMap.forEach((trackId, slotAndDom) => {
+      this._addedTrackMap.forEach((slotAndDom, trackId) => {
         if (!newAddedTrackMap.has(trackId)) {
           this._findSlotSvgElement(slotAndDom.slotId)
             .removeChild(slotAndDom.trackDom.trackSvg)

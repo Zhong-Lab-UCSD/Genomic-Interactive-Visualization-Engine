@@ -155,6 +155,7 @@ var GIVe = (function (give) {
 
       this._ajaxDebounceInterval =
         this.constructor.AJAX_DEBOUNCE_INTERVAL_IDLE
+      this._updatingValue = false
     }
 
     static get is () {
@@ -271,7 +272,7 @@ var GIVe = (function (give) {
       super.connectedCallback()
       this.querySent = ''
 
-      this._decoupleInput = false
+      this._updatingValue = false
       // set this to true to decouple input values with actual values
 
       this.$.geneNameDropDown.positionTarget = this.$.geneName
@@ -281,6 +282,10 @@ var GIVe = (function (give) {
       this.addEventListener('mouseover', e => this._mouseOverHandler(e))
       this.addEventListener('mouseout', e => this._mouseOutHandler(e))
       this._partialSelectionChanged(this._partialNameSupported)
+
+      if (this.value) {
+        this.inputValue = this.value
+      }
     }
 
     /**
@@ -320,7 +325,6 @@ var GIVe = (function (give) {
 
     _partialInputHandler () {
       // $("#waiting").html($("#geneName").val());
-      this._decoupleInput = false
       this.value = this.inputValue
     }
 
@@ -336,7 +340,7 @@ var GIVe = (function (give) {
     }
 
     _valueObserver (newValue, oldValue) {
-      if (!this._decoupleInput) {
+      if (!this._updatingValue) {
         // value is coupled with input field
         this.coorSuffix = ''
         this.inputValue = newValue
@@ -366,15 +370,14 @@ var GIVe = (function (give) {
               this._toggleGList(false)
             }
           }
-        } 
-      } else {
-        this._decoupleInput = false
+        }
       }
     }
 
     _setValueDecoupled (newValue) {
-      this._decoupleInput = true
+      this._updatingValue = true
       this.value = newValue
+      this._updatingValue = false
     }
 
     _textFocus () {
@@ -465,7 +468,7 @@ var GIVe = (function (give) {
         }
         this.isCandidatesEmpty =
           (!this.candidates || this.candidates.length <= 0)
-        this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty 
+        this._showMsgInList = this._showMsgInList || this.isCandidatesEmpty
         this._listReadyToShow = true
         this._toggleGList(true)
       } else {

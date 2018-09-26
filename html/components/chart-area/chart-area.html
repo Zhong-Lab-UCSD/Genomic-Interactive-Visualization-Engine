@@ -28,6 +28,7 @@ limitations under the License.
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="./give-track-styles.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -170,7 +171,6 @@ var GIVe = (function (give) {
 
         ref: {
           type: String,
-          notify: true,
           observer: '_refChanged'
         },
 
@@ -408,18 +408,20 @@ var GIVe = (function (give) {
           this._syncRefsArrayToJson()
           this._refArray.forEach(ref => {
             if (!this.priorityManagers.hasOwnProperty(ref)) {
-              this.priorityManagers[ref] = new give.PriorityManager()
-              give.RefObject.findRefByDb(ref).initPriorityManager(
-                this.priorityManagers[ref],
+              this.priorityManagers[ref] = new give.PriorityManager(
+                give.RefObject.findRefByDb(ref),
                 this.defaultTrackIdList,
-                this.groupIdList
-              )
+                this.groupIdList)
             }
           })
+          return Promise.all(
+            this._refArray.map(ref => this.priorityManagers[ref].readyPromise))
+        })
+        .then(() =>
           this._chartWindows.forEach(window => (
             window.priorityManager = this.priorityManagers[window.ref]
           ))
-        })
+        )
     }
 
     _setRefsInWindow () {
@@ -720,11 +722,12 @@ var GIVe = (function (give) {
     }
 
     updateWindowWidth (width) {
+      this._readiness = false
       return this._redrawWindows((window, index) => window.changeWidth(width))
     }
 
     _onIronResize (e) {
-      if (this.initialized && this._childIsInitialized) {
+      if (this._initialized && this._childIsInitialized) {
         if (!this._resizeDebouncePromise) {
           if (this._resizeDebounceInt) {
             this._resizeDebouncePromise = new Promise((resolve, reject) => {

@@ -5,9 +5,9 @@
 <link rel="import" href="../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../give-card/give-card.html">
 <link rel="import" href="chart-track-list.html">
 <link rel="import" href="../ref-object/ref-object.html">
-<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-styles.html">
 <!-- <link rel="import" href="../meta-track-filter/meta-track-filter.html"> -->
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
@@ -83,7 +83,12 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackGroupList extends give.RefEmbedMixin(Polymer.Element) {
+  class ChartTrackGroupList extends Polymer.Element {
+    constructor () {
+      super(...arguments)
+      this._updatingRef = false
+    }
+
     static get is () {
       return 'chart-track-group-list'
     }
@@ -105,13 +110,6 @@ var GIVe = (function (give) {
         groupIdList: {
           // this is the array of allowed group IDs in the list
           type: Array
-        },
-
-        defaultTrackIdList: {
-          type: Array,
-          value: function () {
-            return []
-          }
         },
 
         showSelectedTracks: {
@@ -158,48 +156,35 @@ var GIVe = (function (give) {
           value: function () {
             return []
           }
+        },
+
+        ref: {
+          type: String,
+          value: '',
+          observer: '_refChanged'
         }
       }
     }
 
     ready () {
       super.ready()
-      if (this.defaultTrackIdList.length > 0) {
-        this._needOverrideDefault = true
-      }
     }
 
     /**
-     * _overrideTrackDefaultSettings - Override the default track settings
-     */
-    _overrideTrackDefaultSettings () {
-      if (this.refObj && this.defaultTrackIdList.length > 0) {
-        this.refObj.setTrackSettings(this.settingKey, false, null)
-        this.defaultTrackIdList.forEach(id => {
-          try {
-            this.refObj.tracks.get(id).setSetting(this.settingKey, true)
-          } catch (e) {
-            give._verbConsole.warn('Track `' + id + '` does not exist!' + e)
-            give.fireSignal('give-warning',
-              { msg: 'Track `' + id + '` does not exist!' })
-          }
-        })
-      }
+      * Called every time the element is inserted into the DOM. Useful for
+      * running setup code, such as fetching resources or rendering.
+      * Generally, you should try to delay work until this time.
+      */
+    connectedCallback () {
+      super.connectedCallback()
+      this._refChanged(this.ref)
     }
 
     _refreshRefTrackReady () {
-      // this is called after track is ready for trackRef
-      if (this._needOverrideDefault) {
-        this._overrideTrackDefaultSettings()
-        delete this._needOverrideDefault
-      } else {
-        // reference has changed, no need to override anymore
-        this.splice('defaultTrackIdList', 0)
-      }
-
       this.splice('groupArray', 0)
       if (this.groupIdList && this.groupIdList.length > 0) {
         this.groupIdList.forEach(groupID => {
+          this._refArray
           if (this.refObj.groups.hasOwnProperty(groupID)) {
             this.push('groupArray', this.refObj.groups[groupID])
           }
@@ -215,6 +200,28 @@ var GIVe = (function (give) {
         this.syncTrackToDom(!this.isSelected)
         this._readiness = true
       })
+    }
+
+    _syncRefJsonToArray () {
+      let refArray = [this.ref]
+      try {
+        let parsed = JSON.parse(this.ref)
+        if (Array.isArray(parsed)) {
+          refArray = parsed
+        }
+      } catch (ignore) { }
+      if (refArray.length <= 0) {
+        refArray[0] = null
+      }
+
+      this._refArray = refArray.map(ref => give.RefObject.findRefByDb(ref))
+      Promise.all(this._refArray.map(refObj => refObj.trackReadyPromise))
+    }
+
+    _refChanged (newValue, oldValue) {
+      if (!this._updatingRef) {
+        return this._syncJsonToArray()
+      }
     }
 
     _refreshRef () {

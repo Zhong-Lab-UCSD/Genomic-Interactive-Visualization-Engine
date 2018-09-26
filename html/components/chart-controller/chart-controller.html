@@ -19,16 +19,17 @@ limitations under the License.
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
-<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
-<link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../../bower_components/app-layout/app-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link rel="import" href="../chart-area/chart-area.html">
 <link rel="import" href="../chart-track-list/chart-track-group-list.html">
 <link rel="import" href="../custom-track-controller/custom-track-controller.html">
-<link rel="import" href="../genemo-card/genemo-card.html">
+<link rel="import" href="../give-card/give-card.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
 ### Overview
@@ -38,7 +39,7 @@ in any html pages.
 
 ```html
 <chart-controller title-text="My GIVE Browser"
-  group-id-list='["genes", "singleCell"]' ref="mm10"></chart-controller>
+  group-id-list='["genes", "singleCell"]' ref='["mm10"]'></chart-controller>
 ```
 
 The embedded browser contains three major components:
@@ -72,31 +73,72 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
   <template>
     <style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       :host {
-        font-size: 12px;
+        font-size: var(--base-font-size, var(--default-font-size));
         @apply --layout-fit;
       }
       gene-coor-input {
-        margin: 0.5em;
+        margin: 0.3em 0.1em;
       }
       div.smallText {
         font-size: smaller;
         display: block;
         margin-left: 0.5em;
       }
-      div.dataReference ::slotted(*) {
-        margin: 1em;
+      div.dataReference > slot {
+        padding: 1em;
       }
       div#navigationHelp {
         margin-right: 2em;
       }
-      paper-drawer-panel div.content {
+      div#controlButtonGroup {
+        margin: 0 -0.5em;
+      }
+      div#controlButtonGroup > * {
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+      }
+      app-drawer-layout:not([narrow]) [drawer-toggle] {
+        display: none;
+      }
+      app-drawer > div {
+        height: 100%;
         overflow-y: auto;
       }
-      paper-drawer-panel {
-        --paper-drawer-panel-drawer-container: {
-          padding: 1em;
+      app-drawer > div > div {
+        padding: 1em;
+        font-size: var(--base-font-size, var(--default-font-size));
+      }
+      app-drawer {
+        --app-drawer-content-container: {
           background: var(--card-background-color);
         };
+      }
+      app-toolbar {
+        background-color: var(--dark-primary-color);
+        color: var(--dark-theme-text-color);
+        opacity: var(--primary-text-opacity-light);
+        --app-toolbar-font-size: var(--base-font-size, var(--default-font-size));
+      }
+      app-toolbar > *[main-title] {
+        font-size: 1.5em;
+        margin: 0 1em;
+      }
+      app-toolbar > * {
+        font-size: 1.2em;
+        margin: 0 1em;
+      }
+      app-toolbar > div#htmlGeneratorButtons {
+        padding: 0 0.5em;
+      }
+      app-toolbar div paper-button {
+        margin: 0 0.1em;
+        background: var(--card-background-color);
+      }
+      app-toolbar div paper-button[toggles] {
+        transition: background-color 0.3s;
+      }
+      app-toolbar div paper-button[toggles][active] {
+        background-color: rgba(0, 0, 0, 0.2);
       }
       paper-slider {
         width: 100%;
@@ -111,41 +153,46 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
     </style>
     <!-- TODO: add paper-dropmenu for ref -->
-    <paper-drawer-panel>
-      <div slot="drawer" class="layout vertical">
-        <template is="dom-repeat" items="{{_coordinateObjects}}">
-          <gene-coor-input ref="[[ref]]" label="[[_calcGeneCoorLabel(index)]]"
-            floatingLabel="true" value="{{item.coor}}"
-            invalid="[[item.invalid]]">
-          </gene-coor-input>
-        </template>
-        <div class="layout horizontal">
-          <paper-button class="colored" raised id="updateChartBtn"
-            on-tap="update">
-            Update
-          </paper-button>
-          <paper-button raised id="cancelUpdateChartButton"
-            on-tap="resetTracks">
-            Cancel
-          </paper-button>
+    <app-drawer-layout fullbleed>
+      <app-drawer slot="drawer">
+        <div class="layout vertical">
+          <div class="flex layout vertical">
+            <template is="dom-repeat" items="{{_coordinateObjectArray}}">
+              <gene-coor-input ref="[[item.ref]]"
+                label="[[_calcGeneCoorLabel(index)]]"
+                floatingLabel="true" value="{{item.coor}}"
+                invalid="[[item.invalid]]">
+              </gene-coor-input>
+            </template>
+            <div class="layout horizontal" id="controlButtonGroup">
+              <paper-button class="colored" raised id="updateChartBtn"
+                on-tap="update">
+                Update
+              </paper-button>
+              <paper-button raised id="cancelUpdateChartButton"
+                on-tap="resetTracks">
+                Cancel
+              </paper-button>
+            </div>
+            <give-card disable-folding class="flex flexFillCard">
+              <chart-track-group-list ref="[[ref]]" slot="cardBody"
+                id="mainTrackList"
+                setting-key="visibility"
+                has-controls='[[hasControls]]' with-filter='[[withFilter]]'
+                instant-change='[[instantChange]]'
+                priority-managers="[[priorityManagers]]">
+              </chart-track-group-list>
+            </give-card>
+            <custom-track-controller ref="[[ref]]" id="mainCTController">
+            </custom-track-controller>
+          </div>
         </div>
-        <give-card disable-folding class="flex flexFillCard">
-          <chart-track-group-list ref="[[ref]]" slot="cardBody"
-            id="mainTrackList"
-            group-id-list='[[groupIdList]]' setting-key="visibility"
-            has-controls='[[hasControls]]' with-filter='[[withFilter]]'
-            instant-change='[[instantChange]]'
-            default-track-id-list='[[defaultTrackIdList]]'>
-          </chart-track-group-list>
-        </give-card>
-        <custom-track-controller ref="[[ref]]" id="mainCTController">
-        </custom-track-controller>
-      </div>
-      <div slot="main" class="layout vertical">
-        <paper-toolbar id='mainToolbar'>
-          <paper-icon-button icon='menu' paper-drawer-toggle>
+      </app-drawer>
+      <div class="fit layout vertical">
+        <app-toolbar id='mainToolbar'>
+          <paper-icon-button icon='menu' drawer-toggle>
           </paper-icon-button>
-          <div class="title">[[titleText]]</div>
+          <div main-title>[[titleText]]</div>
           <div class="tooltipMouseOver" id="navigationHelp">
             <iron-icon icon="icons:help"></iron-icon>
             How to navigate
@@ -162,13 +209,13 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             </ul>
           </paper-tooltip>
           <slot id="additionalCtrls" name="toolBarCtrls"></slot>
-        </paper-toolbar>
+        </app-toolbar>
         <div class="content flex layout vertical">
           <div class="flex relative">
             <chart-area ref="[[ref]]" id="mainChartArea"
-              coordinate="[[coordinate]]"
-              group-id-list='[[groupIdList]]' num-of-subs="{{numOfSubs}}"
-              default-track-id-list='[[defaultTrackIdList]]'
+              coordinate="{{coordinate}}"
+              num-of-subs="{{numOfSubs}}"
+              priority-managers="[[priorityManagers]]"
               pass-exceptions>
             </chart-area>
           </div>
@@ -177,7 +224,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           </div>
         </div>
       </div>
-    </paper-drawer-panel>
+    </app-drawer-layout>
   </template>
   <script>
 var GIVe = (function (give) {
@@ -188,7 +235,8 @@ var GIVe = (function (give) {
   ) {
     constructor () {
       super(...arguments)
-      this._updatingCoordinates = false
+      this._updatingRefCoordinates = false
+      this._refArray = []
     }
     static get is () {
       return 'chart-controller'
@@ -207,13 +255,13 @@ var GIVe = (function (give) {
           type: Number,
           value: 1,
           notify: true,
-          observer: '_numOfSubsChanged'
+          observer: '_numOfSubsRefCoordinateChanged'
         },
 
         /**
          * Objects being passed into the text fields
          */
-        _coordinateObjects: {
+        _coordinateObjectArray: {
           type: Array,
           value () {
             return []
@@ -257,13 +305,13 @@ var GIVe = (function (give) {
         coordinate: {
           type: String,
           notify: true,
-          observer: '_coordinateChanged'
+          observer: '_numOfSubsRefCoordinateChanged'
         },
 
         ref: {
           type: String,
           notify: true,
-          value: ''
+          observer: '_numOfSubsRefCoordinateChanged'
         },
 
         /**
@@ -302,6 +350,13 @@ var GIVe = (function (give) {
         hasControls: {
           type: Boolean,
           value: false
+        },
+
+        priorityManagers: {
+          type: Object,
+          value: function () {
+            return {}
+          }
         }
       }
     }
@@ -317,10 +372,31 @@ var GIVe = (function (give) {
     //   '_coordinateChanged(coordinates.splices)'
     // ],
 
-    attached () {
-      return Promise.resolve()
-        .then(() => this.update(true))
-        .catch(err => this._errorHandler(err))
+    /**
+     * Use for one-time configuration of your component after local DOM is
+     * initialized.
+     */
+    ready () {
+      super.ready()
+      this._numOfSubsRefCoordinateChanged()
+      this._refArray.forEach(ref => {
+        if (!this.priorityManagers.hasOwnProperty(ref)) {
+          let refObj = give.RefObject.findRefByDb(ref)
+          if (refObj) {
+            this.priorityManagers[ref] = new give.PriorityManager(
+              refObj, this.defaultTrackIdList, this.groupIdList)
+          }
+        }
+      })
+    }
+
+    /**
+      * Called every time the element is inserted into the DOM. Useful for 
+      * running setup code, such as fetching resources or rendering.
+      * Generally, you should try to delay work until this time.
+      */
+    connectedCallback () {
+      super.connectedCallback()
     }
 
     /**
@@ -331,24 +407,8 @@ var GIVe = (function (give) {
      */
     _calcGeneCoorLabel (index) {
       return 'Coordinate (or gene name)' +
-        ((this._coordinateObjects && this._coordinateObjects.length > 1)
+        ((this._coordinateObjectArray && this._coordinateObjectArray.length > 1)
           ? ' for view #' + (index + 1) : '')
-    }
-
-    /**
-     * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
-     *
-     * @param  {number} newValue new `numOfSubs` value
-     * @param  {number} oldValue old `numOfSubs` value
-     */
-    _numOfSubsChanged (newValue, oldValue) {
-      for (let index = 0; index < newValue; index++) {
-        this.splice('_coordinateObjects', index, 1, {
-          coor: '',
-          invalid: false
-        })
-      }
-      this.splice('_coordinateObjects', newValue)
     }
 
     /**
@@ -363,7 +423,7 @@ var GIVe = (function (give) {
       if (this.$.mainChartArea) {
         try {
           var correctedVWindows = this.$.mainChartArea.refreshAll(
-            this._coordinateObjects.map(function (coorObj) {
+            this._coordinateObjectArray.map(function (coorObj) {
               return coorObj.coor
             }, this), this._threshold
           )
@@ -375,12 +435,12 @@ var GIVe = (function (give) {
             // update the coordinates that are changed
             e.data.updatedCoors.forEach(function (coor, index) {
               if (coor) {
-                this._coordinateObjects[index].coor = coor
+                this._coordinateObjectArray[index].coor = coor
                 this.coordinates[index] = coor
-                this.notifyPath(['_coordinateObjects', index, 'coor'])
+                this.notifyPath(['_coordinateObjectArray', index, 'coor'])
               } else {
-                this._coordinateObjects[index].invalid = true
-                this.notifyPath(['_coordinateObjects', index, 'invalid'])
+                this._coordinateObjectArray[index].invalid = true
+                this.notifyPath(['_coordinateObjectArray', index, 'invalid'])
               }
             }, this)
           }
@@ -390,10 +450,10 @@ var GIVe = (function (give) {
 
     update (forceDomUpdate) {
       // remove the invalid marks
-      this._coordinateObjects.forEach((coordinateObj, index) => {
+      this._coordinateObjectArray.forEach((coordinateObj, index) => {
         coordinateObj.invalid = false
         // notify Polymer
-        this.notifyPath(['_coordinateObjects', index, 'invalid'])
+        this.notifyPath(['_coordinateObjectArray', index, 'invalid'])
       })
       return this.updateChartDomAndTrack(forceDomUpdate)
     }
@@ -403,7 +463,7 @@ var GIVe = (function (give) {
         return this.$.mainChartArea.update(
           null, null,
           this.$.mainTrackList.syncDomToTrack() || forceDomUpdate,
-          this._calcCoordinateObjToJson(), true
+          this._calcCoordinateArrayToJson(), true
         )
           .catch(err => this._errorHandler(err))
       }
@@ -414,31 +474,41 @@ var GIVe = (function (give) {
       if (this.$.mainTrackList) {
         this.$.mainTrackList.syncTrackToDom()
       }
-      this._syncCoordinateJsonToObj()
+      this._syncCoordinateRefJsonToArray()
     }
 
     _updateTrackDomHandler (e) {
       return this.updateChartDomAndTrack(e.detail.forceDomUpdate)
     }
 
-    _calcCoordinateObjToJson () {
+    _syncNumOfSubs (newNumOfSubs) {
+      this._updatingRefCoordinates = true
+      this.numOfSubs = newNumOfSubs
+      this._updatingRefCoordinates = false
+    }
+
+    _calcCoordinateArrayToJson () {
       return JSON.stringify(
-        this.coordinateObj.map(coordinateObj => coordinateObj.coor)
+        this._coordinateObjectArray.map(coordinateObj => coordinateObj.coor)
       )
     }
 
-    _syncCoordinateObjToJson () {
-      this._updatingCoordinates = true
-      this.coordinates = this._calcCoordinateObjToJson()
-      this._updatingCoordinates = false
+    _syncCoordinateRefArrayToJson () {
+      this._updatingRefCoordinates = true
+      this.coordinates = this._calcCoordinateArrayToJson()
+      this.ref = JSON.stringify(this._refArray)
+      this._updatingRefCoordinates = false
     }
 
-    _syncCoordinateJsonToObj () {
-      let coordinates = give.getValueArray(this.coordinates, this.numOfSubs)
-      if (this._coordinateObjects) {
-        this.splice('_coordinateObjects', 0)
-        coordinates.forEach(coordinate => {
-          this.push('_coordinateObjects', {
+    _syncCoordinateRefJsonToArray () {
+      let coordinates = give.getValueArray(this.coordinate, this.numOfSubs)
+      let refArray = give.getValueArray(this.ref, this.numOfSubs)
+      if (this._coordinateObjectArray) {
+        this.splice('_coordinateObjectArray', 0)
+        this._refArray = refArray
+        coordinates.forEach((coordinate, index) => {
+          this.push('_coordinateObjectArray', {
+            ref: refArray[index],
             coor: coordinate,
             invalid: false
           })
@@ -446,9 +516,15 @@ var GIVe = (function (give) {
       }
     }
 
-    _coordinateChanged (newValue, oldValue) {
-      if (!this._updatingCoordinates) {
-        return this._syncCoordinateJsonToObj()
+    _numOfSubsRefCoordinateChanged (newValue, oldValue) {
+      if (!this._updatingRefCoordinates) {
+        return this._syncCoordinateRefJsonToArray()
+      }
+    }
+
+    _refChanged (newValue, oldValue) {
+      if (!this._updatingRefCoordinates) {
+        return this._syncCoordinateRefJsonToArray()
       }
     }
 

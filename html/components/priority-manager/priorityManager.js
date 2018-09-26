@@ -57,9 +57,9 @@ var GIVe = (function (give) {
    */
   class PriorityManager {
     constructor (
+      refObj, defaultTrackIdList, groupIdList,
       slotNames, settingString, includeCoordinates, getSlotSettingFunc
     ) {
-      this._slots = new Map()
       this.settingString = settingString ||
         this.constructor.DEFAULT_SETTING_STRING
       this.includeCoordinates = (typeof includeCoordinates === 'boolean'
@@ -71,6 +71,14 @@ var GIVe = (function (give) {
         ? getSlotSettingFunc
         : track => this.constructor._defaultGetSlotFunc(track))
       this.idToEffectivePriorityDict = new Map()
+      this._initSlotNames(slotNames)
+      this.readyPromise = refObj.initTracks().then(refObj =>
+        refObj.initPriorityManager(this, defaultTrackIdList, groupIdList))
+        .then(() => this)
+    }
+
+    _initSlotNames (slotNames) {
+      this._slots = new Map()
       this.hasSlots = true
       if (Array.isArray(slotNames)) {
         if (slotNames.length <= 0 ||
