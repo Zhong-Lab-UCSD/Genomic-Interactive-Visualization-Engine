@@ -158,7 +158,7 @@ var GIVe = (function (give) {
           this._insertSingleRange(data, range,
             Array.isArray(props) ? props[index] : props)
         } catch (err) {
-          err.message = '[insert] ' + err.message
+          err.message = '[insert] ' + err.message + '\n' + err.stack
           exceptions.push(err)
           return null
         }

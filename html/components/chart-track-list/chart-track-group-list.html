@@ -158,10 +158,24 @@ var GIVe = (function (give) {
           }
         },
 
+        defaultTrackIdList: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+
         ref: {
           type: String,
           value: '',
           observer: '_refChanged'
+        },
+
+        priorityManagers: {
+          type: Object,
+          value: function () {
+            return {}
+          }
         }
       }
     }
@@ -184,10 +198,11 @@ var GIVe = (function (give) {
       this.splice('groupArray', 0)
       if (this.groupIdList && this.groupIdList.length > 0) {
         this.groupIdList.forEach(groupID => {
-          this._refArray
-          if (this.refObj.groups.hasOwnProperty(groupID)) {
-            this.push('groupArray', this.refObj.groups[groupID])
-          }
+          this._refObjArray.forEach(refObj => {
+            if (refObj.groups.hasOwnProperty(groupID)) {
+              this.push('groupArray', refObj.groups[groupID])
+            }
+          })
         })
       } else {
         for (let key in this.refObj.getGroups()) {
@@ -202,10 +217,11 @@ var GIVe = (function (give) {
       })
     }
 
-    _syncRefJsonToArray () {
-      let refArray = [this.ref]
+    _getRefSetFromJson (refJsonString) {
+      refJsonString = refJsonString || this.ref
+      let refArray = [refJsonString]
       try {
-        let parsed = JSON.parse(this.ref)
+        let parsed = JSON.parse(refJsonString)
         if (Array.isArray(parsed)) {
           refArray = parsed
         }
@@ -213,19 +229,28 @@ var GIVe = (function (give) {
       if (refArray.length <= 0) {
         refArray[0] = null
       }
+      return refArray
+    }
 
-      this._refArray = refArray.map(ref => give.RefObject.findRefByDb(ref))
-      Promise.all(this._refArray.map(refObj => refObj.trackReadyPromise))
+    _syncRefJsonToSet () {
+      this._refObjArray = this._getRefSetFromJson(this.ref).map(
+        ref => give.RefObject.findRefByDb(ref))
+      return (this.refReadyPromise = Promise.all(
+        this._refObjArray.map((refObj, index) => {
+          if (!this.priorityManagers.hasOwnProperty(refObj.db)) {
+            this.priorityManagers[refObj.db] = new give.PriorityManager(
+              refObj, this.defaultTrackIdList, this.groupIdList)
+            return this.priorityManagers[refObj.db].readyPromise
+          }
+        })
+      ))
     }
 
     _refChanged (newValue, oldValue) {
       if (!this._updatingRef) {
-        return this._syncJsonToArray()
+        return this._syncRefJsonToArray()
+          .then(() => this._refreshRefTrackReady())
       }
-    }
-
-    _refreshRef () {
-      this.refReadyPromise.then(() => this._refreshRefTrackReady())
     }
 
     updateAllGroupDOM () {

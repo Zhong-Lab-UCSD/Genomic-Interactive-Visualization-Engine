@@ -115,7 +115,7 @@ var GIVe = (function (give) {
           this.values = this.values.concat(node.values)
         }
         return this
-      } 
+      }
       return false
     }
 
@@ -210,7 +210,7 @@ var GIVe = (function (give) {
     _restructureRoot () {
       // If this is root, then it needs to be responsible for itself
       if (this.isRoot) {
-        let oldRoot
+        let oldRoot = this
         let newRoot = this
         if (this.childNum > this.tree.branchingFactor) {
           // add a new layer of tree and return new root
@@ -322,9 +322,10 @@ var GIVe = (function (give) {
             }
           } else if (this.values[i].childNum > this.tree.branchingFactor) {
             // too many grand-children, redistribute / split
-            if (this.values[sibPrev].childNum +
-              this.values[sibNext].childNum <
-              this.tree.branchingFactor * 2
+            if (this.childNum > 1 &&
+              (this.values[sibPrev].childNum + this.values[sibNext].childNum <
+                this.tree.branchingFactor * 2
+              )
             ) {
               // redistribution is enough
               this._redistributeGrandChildren(sibNext)
