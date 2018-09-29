@@ -83,14 +83,10 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackGroupList extends Polymer.Element {
-    constructor () {
-      super(...arguments)
-      this._updatingRef = false
-    }
-
+  class ChartTrackRefGroupList extends give.GiveCardContentMixin(
+    give.RefEmbedMixin(give.EmbedPolymer.Element)) {
     static get is () {
-      return 'chart-track-group-list'
+      return 'chart-track-ref-group-list'
     }
 
     static get properties () {
@@ -350,9 +346,9 @@ var GIVe = (function (give) {
     }
   }
 
-  give.ChartTrackGroupList = ChartTrackGroupList
+  give.ChartTrackRefGroupList = ChartTrackRefGroupList
   window.customElements.define(
-    'chart-track-group-list', give.ChartTrackGroupList)
+    'chart-track-ref-group-list', give.ChartTrackRefGroupList)
 
   return give
 })(GIVe || {})
