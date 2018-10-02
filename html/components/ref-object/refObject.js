@@ -235,10 +235,11 @@ var GIVe = (function (give) {
 
     initCoordinateTracks (priorityManager) {
       this.coordinateTracks.forEach(track => {
-        try {
-          track.setSetting(priorityManager.settingString, true)
+        track.setDefaultSetting(priorityManager.settingString, true)
+        track.setSetting(priorityManager.settingString, true)
+        if (!priorityManager.hasTrack(track)) {
           priorityManager.addTrack(track, null, null, true)
-        } catch (ignore) { }
+        }
       })
     }
 
@@ -265,21 +266,17 @@ var GIVe = (function (give) {
         if (Array.isArray(defaultIdList)) {
           return this._applyDefaultIdList(priorityManager, defaultIdList)
         } else {
-          this._applyDefaultIdList(priorityManager)
+          priorityManager.clear()
           if (Array.isArray(groupIdList)) {
             return this._applyGroupIdList(priorityManager, groupIdList)
           }
+          this._applyDefaultSettings(priorityManager)
         }
       }
       return null
     }
 
     _applyDefaultSettings (priorityManager) {
-      priorityManager.clear()
-      // set all tracks to non-visible (or whatever settingString specifies)
-      this.tracks.forEach(
-        track => track.setSetting(priorityManager.settingString, false)
-      )
       // re-enabling coordinate tracks if priorityManager needs to
       if (priorityManager.includeCoordinates) {
         this.initCoordinateTracks(priorityManager)
@@ -298,7 +295,10 @@ var GIVe = (function (give) {
       priorityManager.clear()
       // set all tracks to non-visible (or whatever settingString specifies)
       this.tracks.forEach(
-        track => track.setSetting(priorityManager.settingString, false)
+        track => {
+          track.setDefaultSetting(priorityManager.settingString, false)
+          track.setSetting(priorityManager.settingString, false)
+        }
       )
       // re-enabling coordinate tracks if priorityManager needs to
       if (priorityManager.includeCoordinates) {
@@ -309,6 +309,7 @@ var GIVe = (function (give) {
       idList.forEach(id => {
         if (this.tracks.hasTrack(id)) {
           let track = this.tracks.get(id)
+          track.setDefaultSetting(priorityManager.settingString, true)
           track.setSetting(priorityManager.settingString, true)
           priorityManager.addTrack(track)
         }
@@ -326,6 +327,7 @@ var GIVe = (function (give) {
         if (idList.indexOf(group.id) < 0) {
           // group not there
           group.forEach(track => {
+            track.setDefaultSetting(priorityManager.settingString, false)
             track.setSetting(priorityManager.settingString, false)
             if (priorityManager.hasTrack(track)) {
               priorityManager.removeTrack(track)

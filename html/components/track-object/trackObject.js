@@ -60,7 +60,6 @@ var GIVe = (function (give) {
       this._dataObj = (typeof this.constructor._DataObjCtor === 'function')
         ? new this.constructor._DataObjCtor(this)
         : null
-      this._effPriority = null
     }
 
     get refObj () {
@@ -73,14 +72,6 @@ var GIVe = (function (give) {
 
     get windowSpan () {
       return this.getSetting('windowSpan') || this.constructor._getWindowSpan()
-    }
-
-    get effPriority () {
-      return this.visibility ? this._effPriority : null
-    }
-
-    set effPriority (effPrior) {
-      this._effPriority = this.visibility ? effPrior : null
     }
 
     /**
@@ -165,6 +156,71 @@ var GIVe = (function (give) {
       }
     }
 
+    _convertVisibilityValue (vis) {
+      let visibilityValue
+      // if vis === false, then save old visibility
+      if (typeof vis === 'boolean') {
+        if (!vis) {
+          // needs to save current visibility
+          this._oldVisibility = this._oldVisibility ||
+            this.getSetting('visibility')
+          visibilityValue = TrackObject.StatusEnum.VIS_NONE
+        } else {
+          visibilityValue = this._oldVisibility ||
+            TrackObject.StatusEnum.VIS_FULL
+          delete this._oldVisibility
+        }
+      } else if (typeof vis === 'number') {
+        // is visibility value
+        if (vis === TrackObject.StatusEnum.VIS_NONE) {
+          // needs to save current visibility
+          this.oldVisibility = this.oldVisibility ||
+            this.getSetting('visibility')
+        } else {
+          delete this.oldVisibility
+        }
+        visibilityValue = vis
+      } else if (typeof vis === 'string') {
+        switch (vis.toLowerCase()) {
+          case 'dense':
+            visibilityValue = TrackObject.StatusEnum.VIS_DENSE
+            break
+          case 'pack':
+            visibilityValue = TrackObject.StatusEnum.VIS_PACK
+            break
+          case 'collapsed':
+            visibilityValue = TrackObject.StatusEnum.VIS_COLLAPSED
+            break
+          case 'notext':
+            visibilityValue = TrackObject.StatusEnum.VIS_NOTEXT
+            break
+          case 'full':
+            visibilityValue = TrackObject.StatusEnum.VIS_FULL
+            break
+          /**
+           * NOTE: Default branch used to catch invalid values and use
+           * fall-through to convert them to 'hide's.
+           */
+          default:
+            give._verbConsole.warn('Invalid visibility value encountered: ' +
+              '"' + vis + '". Used "hide" instead.')
+            give.fireSignal('give-warning',
+              {
+                msg: 'Invalid visibility value encountered: ' +
+                  '"' + vis + '". Use "hide" instead.'
+              })
+          // esline-disable-line no-fallthrough
+          case 'hide':
+            visibilityValue = TrackObject.StatusEnum.VIS_NONE
+            break
+        }
+      } else if (typeof vis === 'undefined' || vis === null) {
+        // use as toggle switch
+        visibilityValue = !this.visibility
+      }
+      return visibilityValue
+    }
+
     /**
      * setVisibility - Set the visibility of the track
      *
@@ -178,67 +234,8 @@ var GIVe = (function (give) {
      *    numeric values.
      */
     set visibility (vis) {
-      // if vis === false, then save old visibility
-      if (typeof vis === 'boolean') {
-        if (!vis) {
-          // needs to save current visibility
-          this._oldVisibility = this._oldVisibility ||
-            this.getSetting('visibility')
-          this._settings.visibility = TrackObject.StatusEnum.VIS_NONE
-        } else {
-          this._settings.visibility = this._oldVisibility ||
-            TrackObject.StatusEnum.VIS_FULL
-          delete this._oldVisibility
-        }
-      } else if (typeof vis === 'number') {
-        // is visibility value
-        if (vis === TrackObject.StatusEnum.VIS_NONE) {
-          // needs to save current visibility
-          this.oldVisibility = this.oldVisibility ||
-            this.getSetting('visibility')
-        } else {
-          delete this.oldVisibility
-        }
-        this._settings.visibility = vis
-      } else if (typeof vis === 'string') {
-        switch (vis.toLowerCase()) {
-          case 'dense':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_DENSE
-            break
-          case 'pack':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_PACK
-            break
-          case 'collapsed':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_COLLAPSED
-            break
-          case 'notext':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_NOTEXT
-            break
-          case 'full':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_FULL
-            break
-          /**
-           * NOTE: Default branch used to catch invalid values and use
-           * fall-through to convert them to 'hide's.
-           */
-          default:
-            give._verbConsole.warn('Invalid visibility value encountered: ' +
-              '"' + vis + '". Used "hide" instead.')
-            give.fireSignal('give-warning',
-              { msg: 'Invalid visibility value encountered: ' +
-                '"' + vis + '". Use "hide" instead.' })
-            // esline-disable-line no-fallthrough
-          case 'hide':
-            this._settings.visibility = TrackObject.StatusEnum.VIS_NONE
-            break
-        }
-      } else if (typeof vis === 'undefined' || vis === null) {
-        // use as toggle switch
-        this.visibility = !this.visibility
-      }
-      if (!this.visibility) {
-        this.effPriority = null
-      }
+      this._settings.visibility = this._convertVisibilityValue(vis)
+      return this._settings.visibility
     }
 
     get visibility () {
@@ -262,6 +259,22 @@ var GIVe = (function (give) {
         this.visibility = value
       } else {
         this._settings[key] = value
+      }
+    }
+
+    /**
+     * setDefaultSetting - Set the default setting value.
+     *
+     * @memberof TrackObjectBase.prototype
+     * @param  {string} key - Key of the setting entry
+     * @param  {object} value - value of the entry
+     */
+    setDefaultSetting (key, value) {
+      // Visibility needs special treatment
+      if (key === 'visibility') {
+        this.defaultSettings.visibility = value
+      } else {
+        this.defaultSettings[key] = value
       }
     }
 
@@ -419,9 +432,6 @@ var GIVe = (function (give) {
      * @returns {number}  The priority value
      */
     get priorities () {
-      if (this.effPriority instanceof give.EffectivePriority) {
-        return this.effPriority
-      }
       let priorities = []
       try {
         priorities.push(this.refObj.groups[this.groupID].priority)

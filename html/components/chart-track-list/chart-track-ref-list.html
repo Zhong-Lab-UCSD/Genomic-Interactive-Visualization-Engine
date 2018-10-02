@@ -12,7 +12,7 @@
 <!-- <link rel="import" href="../meta-track-filter/meta-track-filter.html"> -->
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<dom-module id="chart-track-group-list">
+<dom-module id="chart-track-ref-list">
   <template>
     <style include="give-shared-styles iron-flex">
     :host {
@@ -26,10 +26,6 @@
     }
     chart-track-list.selectedTracks {
       max-height: 30%;
-    }
-    .cardActions {
-      padding: 0;
-      margin-bottom: -0.5em;
     }
     </style>
     <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
@@ -54,39 +50,15 @@
         </chart-track-list>
       </give-card>
     </template>
-    <div class="cardActions">
-      <template is="dom-if" if="[[withFilter]]" restamp="true">
-        <paper-button on-tap="launchFilter">
-          <iron-icon icon="filter-list"></iron-icon>
-          Filter
-        </paper-button>
-        <paper-button on-tap="resetAllTracks">
-          <iron-icon icon="refresh"></iron-icon>
-          Reset to default
-        </paper-button>
-        <!-- <meta-track-filter id="trackFilter" ref='[[ref]]'
-          on-filter-tracks="_filterTracksHandler"></meta-track-filter> -->
-      </template>
-      <template is="dom-if" if="[[hasControls]]" restamp="true">
-        <paper-button on-tap="cancelChanges">
-          <iron-icon icon="close"></iron-icon>
-          Cancel
-        </paper-button>
-        <paper-button on-tap="submitChanges">
-          <iron-icon icon="check"></iron-icon>
-          OK
-        </paper-button>
-      </template>
-    </div>
   </template>
   <script>
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackRefGroupList extends give.GiveCardContentMixin(
+  class ChartTrackRefList extends give.GiveCardContentMixin(
     give.RefEmbedMixin(give.EmbedPolymer.Element)) {
     static get is () {
-      return 'chart-track-ref-group-list'
+      return 'chart-track-ref-list'
     }
 
     static get properties () {
@@ -177,23 +149,18 @@ var GIVe = (function (give) {
       this._refChanged(this.ref)
     }
 
-    _refreshRefTrackReady () {
+    _refreshRefTracks () {
       this.splice('groupArray', 0)
       if (this.groupIdList && this.groupIdList.length > 0) {
         this.groupIdList.forEach(groupID => {
-          this._refObjMap.forEach(refObj => {
-            if (refObj.groups.hasOwnProperty(groupID)) {
-              this.push('groupArray', refObj.groups[groupID])
-            }
-          })
+          if (this.refObj.groups.hasOwnProperty(groupID)) {
+            this.push('groupArray', this.refObj.groups[groupID])
+          }
         })
       } else {
-        this._refObjMap.forEach(refObj => {
-
-        })
-        for (let key in refObj.groups) {
-          if (refObj.groups.hasOwnProperty(key)) {
-            this.push('groupArray', refObj.groups[key])
+        for (let key in this.refObj.groups) {
+          if (this.refObj.groups.hasOwnProperty(key)) {
+            this.push('groupArray', this.refObj.groups[key])
           }
         }
       }
@@ -203,50 +170,10 @@ var GIVe = (function (give) {
       })
     }
 
-    _getRefSetFromJson (refJsonString) {
-      refJsonString = refJsonString || this.ref
-      let refArray = [refJsonString]
-      try {
-        let parsed = JSON.parse(refJsonString)
-        if (Array.isArray(parsed)) {
-          refArray = parsed
-        }
-      } catch (ignore) { }
-      if (refArray.length <= 0) {
-        refArray[0] = null
-      }
-      return refArray
-    }
-
-    _syncRefJsonToSet () {
-      this._refObjMap = new Map()
-      let refArray = this._getRefSetFromJson(this.ref)
-      refArray.forEach(ref => {
-        if (!this._refObjMap.has(ref)) {
-          this._refObjMap.set(ref, give.RefObject.findRefByDb(ref))
-        }
-      })
-      return (this.refReadyPromise = Promise.all(
-        this._refObjMap.map((refObj, index) => {
-          if (!this.priorityManagers.hasOwnProperty(refObj.db)) {
-            this.priorityManagers[refObj.db] = new give.PriorityManager(
-              refObj, this.defaultTrackIdList, this.groupIdList)
-            return this.priorityManagers[refObj.db].readyPromise
-          }
-        })
-      ))
-    }
-
-    _refChanged (newValue, oldValue) {
-      if (!this._updatingRef) {
-        return this._syncRefJsonToArray()
-          .then(() => this._refreshRefTrackReady())
-      }
-    }
-
     updateAllGroupDOM () {
       this._readiness = false
-      this._refreshRef()
+      this.refReadyPromise = this.refObj.initTracks()
+        .then(() => this._refreshRefTracks())
     }
 
     static _prioritySort (itemA, itemB) {
@@ -266,7 +193,8 @@ var GIVe = (function (give) {
       // TODO: may need to add something to remove the override array
       if (super._setRefObj(refObj)) {
         this._readiness = false
-        this._refreshRef()
+        this.refReadyPromise = this.refObj.initTracks()
+          .then(() => this._refreshRefTracks())
       }
     }
 
@@ -333,9 +261,9 @@ var GIVe = (function (give) {
     }
   }
 
-  give.ChartTrackRefGroupList = ChartTrackRefGroupList
+  give.ChartTrackRefList = ChartTrackRefList
   window.customElements.define(
-    'chart-track-ref-group-list', give.ChartTrackRefGroupList)
+    'chart-track-ref-list', give.ChartTrackRefList)
 
   return give
 })(GIVe || {})

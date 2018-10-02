@@ -404,8 +404,11 @@ var GIVe = (function (give) {
         this._chartWindows.map(window => window.refReadyPromise)
       )
         .then(() => {
+          // these two lines were intended to fix wrong ref db names
           this._refArray = this._chartWindows.map(window => window.ref)
           this._syncRefsArrayToJson()
+
+          // initialization of priority managers if not done already
           this._refArray.forEach(ref => {
             if (!this.priorityManagers.hasOwnProperty(ref)) {
               this.priorityManagers[ref] = new give.PriorityManager(

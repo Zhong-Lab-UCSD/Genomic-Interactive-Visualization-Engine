@@ -450,14 +450,6 @@ var GIVe = (function (give) {
       }
     }
 
-    _findEffPriorIndex (effPriority) {
-      return give.locationOf(effPriority, this._trackDoms, null, null,
-        (effPriority, dom2) => this.priorityManager.compareEffectivePriority(
-          effPriority, this._getDomEffectivePriority(dom2)
-        ), true
-      )
-    }
-
     _getDomEffectivePriority (trackDom) {
       return this.priorityManager.getEffectivePriority(trackDom.parent)
     }
