@@ -233,8 +233,8 @@ var GIVe = (function (give) {
           resolve(Promise.all(this._refTrackLists.map(
             elem => elem.domReadyPromise
           )).then(() => {
-            this.syncTrackToDom(scrollToSelected)
             this._readiness = true
+            this.syncTrackToDom(scrollToSelected)
             return this
           }))
         })
@@ -294,6 +294,9 @@ var GIVe = (function (give) {
 
     syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection
+      if (!this._readiness) {
+        throw new give.GiveError('Track list not initialized!')
+      }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.syncTrackToDom(scrollToSelected))
       this._updateSelectedTracks()
@@ -301,11 +304,17 @@ var GIVe = (function (give) {
 
     syncDomToTrack () {
       // this is used when submitting the results
+      if (!this._readiness) {
+        throw new give.GiveError('Track list not initialized!')
+      }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.syncDomToTrack())
     }
 
     resetAllTracks () {
+      if (!this._readiness) {
+        throw new give.GiveError('Track list not initialized!')
+      }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.resetAllTracks())
     }
@@ -348,8 +357,15 @@ var GIVe = (function (give) {
     }
 
     applyFilter (map, flags) {
+      if (!this._readiness) {
+        throw new give.GiveError('Track list not initialized!')
+      }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.applyFilter(map, flags))
+    }
+
+    _updateSelectedTracks () {
+      
     }
   }
 
