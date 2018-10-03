@@ -54,13 +54,15 @@
       items="[[_refItemArray]]" as="refItem">
       <!-- Candidate tracks DOM, by reference -->
       <give-card class="flex">
-        <chart-track-ref-list ref="[[refItem.db]]"
+        <chart-track-ref-list
+          ref="[[refItem.db]]"
           group-icon="[[_calcRefIcon(refItem.refObj)]]"
           label="[[_calcRefLabel(refItem.refObj)]]"
           setting-key="[[settingKey]]" class="flex"
           group-id-list="[[groupIdList]]"
           selected-tracks="{{refItem.selectedTracks}}"
-          instant-change="[[instantChange]]">
+          instant-change="[[instantChange]]"
+          priority-manager="[[_calcPriorityManager(refItem.db)]]">
         </chart-track-ref-list>
       </give-card>
     </template>
@@ -98,6 +100,7 @@ var GIVe = (function (give) {
       super(...arguments)
       this._updatingRef = false
       this._refTrackLists = []
+      this.domReadyPromise = null
     }
 
     static get is () {
@@ -200,6 +203,18 @@ var GIVe = (function (give) {
       this._refChanged(this.ref)
     }
 
+    _calcRefIcon (refObj) {
+      return refObj.iconLabel || refObj.commonName
+    }
+
+    _calcRefLabel (refObj) {
+      return refObj.commonName + ' (reference ' + refObj.db + ') tracks'
+    }
+
+    _calcPriorityManager (db) {
+      return this.priorityManagers[db]
+    }
+
     /**
      * _refreshRefTracks - refresh the selected status of all reference tracks
      *    and update `this._selectedTracks` object (and the DOMs associated with
@@ -208,14 +223,21 @@ var GIVe = (function (give) {
      * @return {Promise<object>} A promise that resolves to
      *    `this._selectedTracks`.
      */
-    _refreshRefTracks () {
-      Polymer.RenderStatus.beforeNextRender(this, () => {
-        this._refTrackLists =
-          [...this.$.trackRefBlock.querySelectorAll('chart-track-ref-list')]
-        // By this time the `refObj`s should all have been initialized by
-        //    `this.groupIdList` and/or `this.defaultIdList`
-        this.syncTrackToDom()
-        this._readiness = true
+    _refreshRefTracks (scrollToSelected) {
+      return new Promise((resolve, reject) => {
+        Polymer.RenderStatus.afterNextRender(this, () => {
+          this._refTrackLists =
+            [...this.$.trackRefBlock.querySelectorAll('chart-track-ref-list')]
+          // By this time the `refObj`s should all have been initialized by
+          //    `this.groupIdList` and/or `this.defaultIdList`
+          resolve(Promise.all(this._refTrackLists.map(
+            elem => elem.domReadyPromise
+          )).then(() => {
+            this.syncTrackToDom(scrollToSelected)
+            this._readiness = true
+            return this
+          }))
+        })
       })
     }
 
@@ -260,8 +282,8 @@ var GIVe = (function (give) {
 
     _refChanged (newValue, oldValue) {
       if (!this._updatingRef) {
-        return this._syncRefJsonToArray()
-          .then(() => this._refreshRefTracks())
+        return (this.domReadyPromise = this._syncRefJsonToArray()
+          .then(() => this._refreshRefTracks(true)))
       }
     }
 
@@ -273,7 +295,7 @@ var GIVe = (function (give) {
     syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection
       this._refTrackLists.forEach(
-        refTrackElem => refTrackElem.syncTrackToDom())
+        refTrackElem => refTrackElem.syncTrackToDom(scrollToSelected))
       this._updateSelectedTracks()
     }
 

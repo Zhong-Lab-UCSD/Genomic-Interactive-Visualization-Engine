@@ -1,4 +1,5 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
@@ -34,11 +35,13 @@
           group-icon="av:playlist-add-check"
           label="Selected tracks"
           setting-key="[[settingKey]]" is-selected
-          allow-track-reordering="[[allowTrackReordering]]">
+          allow-track-reordering="[[allowTrackReordering]]"
+          priority-manager="[[priorityManager]]"
+          on-selection-change="[[_selectionChangedInSelectedTracks]]">
         </chart-track-list>
       </give-card>
     </template>
-    <template is="dom-repeat" id="trackGroupBlock"
+    <template is="dom-repeat" id="groupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <give-card class="flex">
@@ -46,9 +49,37 @@
           group-icon="[[group.icon]]"
           label="[[group.label]]" single-choice="[[group.singleChoice]]"
           setting-key="[[settingKey]]" class="flex"
-          instant-change="[[instantChange]]">
+          instant-change="[[instantChange]]"
+          priority-manager="[[priorityManager]]"
+          on-selection-change="[[_updateSelectedTracks]]">
         </chart-track-list>
       </give-card>
+    </template>
+    <template is="dom-if" if="[[standAlone]]" restamp="true">
+      <div class="cardActions">
+        <template is="dom-if" if="[[withFilter]]" restamp="true">
+          <paper-button on-tap="launchFilter">
+            <iron-icon icon="filter-list"></iron-icon>
+            Filter
+          </paper-button>
+          <paper-button on-tap="resetAllTracks">
+            <iron-icon icon="refresh"></iron-icon>
+            Reset to default
+          </paper-button>
+          <!-- <meta-track-filter id="trackFilter" ref='[[ref]]'
+                on-filter-tracks="_filterTracksHandler"></meta-track-filter> -->
+        </template>
+        <template is="dom-if" if="[[hasControls]]" restamp="true">
+          <paper-button on-tap="cancelChanges">
+            <iron-icon icon="close"></iron-icon>
+            Cancel
+          </paper-button>
+          <paper-button on-tap="submitChanges">
+            <iron-icon icon="check"></iron-icon>
+            OK
+          </paper-button>
+        </template>
+      </div>
     </template>
   </template>
   <script>
@@ -57,6 +88,10 @@ var GIVe = (function (give) {
 
   class ChartTrackRefList extends give.GiveCardContentMixin(
     give.RefEmbedMixin(give.EmbedPolymer.Element)) {
+    constructor () {
+      super(...arguments)
+      this.domReadyPromise = null
+    }
     static get is () {
       return 'chart-track-ref-list'
     }
@@ -66,6 +101,10 @@ var GIVe = (function (give) {
         settingKey: {
           type: String,
           value: give.GENEMO_SELECTED_KEY
+        },
+
+        groupIcon: {
+          type: String
         },
 
         groupArray: {
@@ -123,20 +162,41 @@ var GIVe = (function (give) {
           type: Array,
           value: function () {
             return []
-          }
+          },
+          notify: true
         },
 
-        priorityManagers: {
-          type: Object,
-          value: function () {
-            return {}
-          }
+        priorityManager: {
+          type: Object
+        },
+
+        /**
+         * Whether this component is used __as a stand-alone element__
+         *  (no controlling parent), if this is set as `true`, it will attempt
+         *  to handle data synchronization between the backend and the frontend
+         *  automatically.
+         *
+         * If there is a parent responsible for synchronization (typically
+         *  a `<chart-track-list>` element), setting this to `true` may incur
+         *  unnecessary computational cost.
+         * @type  {boolean}
+         */
+        standAlone: {
+          type: Boolean,
+          value: false
         }
       }
     }
 
+    /**
+     * Use for one-time configuration of your component after local DOM is
+     * initialized.
+     */
     ready () {
       super.ready()
+      this._setIcon(this.groupIcon || null)
+      this._setIconAlt(this.label || 'Tracks')
+      this._setHeaderText(this.label || 'Tracks')
     }
 
     /**
@@ -164,16 +224,32 @@ var GIVe = (function (give) {
           }
         }
       }
-      Promise.resolve().then(() => {
-        this.syncTrackToDom(!this.isSelected)
-        this._readiness = true
+      // If this component is a stand-alone element, call
+      //  `this.syncTrackToDom()`. Otherwise `this.syncTrackToDom()` should be
+      //  called explicitly in the parent to synchronize Dom and data model.
+      return new Promise((resolve, reject) => {
+        Polymer.RenderStatus.beforeNextRender(this, () => {
+          this._trackGroupElems =
+            [...this.$.groupBlock.querySelectorAll('chart-track-group-list')]
+          if (this.standAlone) {
+            this.syncTrackToDom()
+          }
+          this._readiness = true
+          resolve(Promise.all(this._trackGroupElems.map(
+            elem => elem.domReadyPromise
+          )).then(() => {
+            this._readiness = true
+            return this
+          }))
+        })
       })
     }
 
     updateAllGroupDOM () {
       this._readiness = false
-      this.refReadyPromise = this.refObj.initTracks()
+      this.domReadyPromise = this.refObj.initTracks()
         .then(() => this._refreshRefTracks())
+      return this.domReadyPromise
     }
 
     static _prioritySort (itemA, itemB) {
@@ -192,30 +268,33 @@ var GIVe = (function (give) {
     _setRefObj (refObj) {
       // TODO: may need to add something to remove the override array
       if (super._setRefObj(refObj)) {
-        this._readiness = false
-        this.refReadyPromise = this.refObj.initTracks()
-          .then(() => this._refreshRefTracks())
+        return this.updateAllGroupDOM()
       }
     }
 
     syncTrackToDom (scrollToSelected) {
-      // this is used when resetting selection
-      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
+      // this is used when resetting selection or to initialize DOMs
+      if (!this._readiness) {
+        throw new give.GiveError('Ref list not initialized!')
+      }
+      this._trackGroupElems.forEach(
         elem => elem.syncTrackToDom(scrollToSelected))
+      this._updateSelectedTracks()
     }
 
     syncDomToTrack () {
       // this is used when submitting the results
-      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
-        elem => elem.syncDomToTrack())
+      if (!this._readiness) {
+        throw new give.GiveError('Ref list not initialized!')
+      }
+      this._trackGroupElems.forEach(elem => elem.syncDomToTrack())
     }
 
     resetAllTracks () {
-      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
-        elem => elem.resetAllTracks())
-
-      // override default values if needed
-      this._overrideTrackDefaultSettings()
+      if (!this._readiness) {
+        throw new give.GiveError('Ref list not initialized!')
+      }
+      this._trackGroupElems.forEach(elem => elem.resetAllTracks())
     }
 
     _signalClose () {
@@ -246,18 +325,29 @@ var GIVe = (function (give) {
     }
 
     submitChanges () {
-      this.syncDomToTrack()
-      this._signalClose()
+      return this.syncDomToTrack().then(() => this._signalClose())
     }
 
     cancelChanges () {
-      this.syncTrackToDom()
-      this._signalClose()
+      return this.syncTrackToDom().then(() => this._signalClose())
     }
 
     applyFilter (map, flags) {
-      give.forEach(this.$.trackGroupBlock.querySelectorAll('chart-track-list'),
-        elem => elem.applyFilter(map, flags))
+      if (!this._readiness) {
+        throw new give.GiveError('Ref list not initialized!')
+      }
+      this._trackGroupElems.forEach(elem => elem.applyFilter(map, flags))
+      this._updateSelectedTracks()
+    }
+
+    _updateSelectedTracks () {
+      this.selectedTracks = this._trackGroupElems.reduce(
+        (trackArray, elem) => trackArray.concat(elem.selectedTracks),
+        [])
+    }
+
+    _selectionChangedInSelectedTracks (e) {
+      this._trackGroupElems.forEach(elem => elem.syncTrackToDom())
     }
   }
 
