@@ -8,10 +8,11 @@ var GIVe = (function (give) {
       this.map = {}
       this.IDPrefix = (typeof (idprefix) === 'string') ? idprefix : ''
       this.IDPostfix = (typeof (idpostfix) === 'string') ? idpostfix : ''
+      params = params || {}
 
       this.id = groupID
       for (var key in params) {
-        if (params.hasOwnProperty(key)) {
+        if (params.hasOwnProperty(key) && !this.hasOwnProperty(key)) {
           this[key] = params[key]
         }
       }
@@ -71,6 +72,10 @@ var GIVe = (function (give) {
 
     every (callback, thisArg) {
       return this.array.every(callback, thisArg)
+    }
+
+    slice (begin, end) {
+      return this.array.slice(begin, end)
     }
 
     forEachByID (IDList, callback, thisArg) {
@@ -150,6 +155,38 @@ var GIVe = (function (give) {
           })
           return false
       }
+    }
+
+    [Symbol.iterator] () {
+      return {
+        next: () => {
+          return this.array[Symbol.iterator].next()
+        }
+      }
+    }
+
+    static from (trackList, id, params, idPrefix, idPostfix) {
+      if (!trackList ||
+        (typeof trackList[Symbol.iterator] !== 'function' &&
+          typeof trackList.length !== 'number'
+        )
+      ) {
+        throw new give.GiveError('trackList not an array or an iterable!')
+      }
+      id = id || 'newGroup'
+      let newTrackGroup = new TrackGroup(id, params, idPrefix, idPostfix)
+      if (typeof trackList[Symbol.iterator] === 'function') {
+        // iterable
+        for (let track of trackList) {
+          newTrackGroup.addTrack(track)
+        }
+      } else {
+        // array-like
+        for (let i = 0; i < trackList.length; i++) {
+          newTrackGroup.addTrack(trackList[i])
+        }
+      }
+      return newTrackGroup
     }
   }
 

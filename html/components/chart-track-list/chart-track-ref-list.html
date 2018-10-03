@@ -31,28 +31,29 @@
     </style>
     <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
       <give-card disable-folding>
-        <chart-track-list group="[[selectedTracks]]" class="selectedTracks"
+        <chart-track-group-list group="[[selectedTracks]]" class="selectedTracks"
           group-icon="av:playlist-add-check"
           label="Selected tracks"
+          selected="{{selectedTracks}}"
           setting-key="[[settingKey]]" is-selected
           allow-track-reordering="[[allowTrackReordering]]"
           priority-manager="[[priorityManager]]"
           on-selection-change="[[_selectionChangedInSelectedTracks]]">
-        </chart-track-list>
+        </chart-track-group-list>
       </give-card>
     </template>
     <template is="dom-repeat" id="groupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <give-card class="flex">
-        <chart-track-list group="[[group.array]]"
+        <chart-track-group-list group="[[group]]"
           group-icon="[[group.icon]]"
           label="[[group.label]]" single-choice="[[group.singleChoice]]"
           setting-key="[[settingKey]]" class="flex"
           instant-change="[[instantChange]]"
           priority-manager="[[priorityManager]]"
           on-selection-change="[[_updateSelectedTracks]]">
-        </chart-track-list>
+        </chart-track-group-list>
       </give-card>
     </template>
     <template is="dom-if" if="[[standAlone]]" restamp="true">
@@ -158,11 +159,12 @@ var GIVe = (function (give) {
           value: false
         },
 
+        /**
+         * Selected tracks as a track group.
+         * @type {give.TrackGroup}
+         */
         selectedTracks: {
-          type: Array,
-          value: function () {
-            return []
-          },
+          type: Object,
           notify: true
         },
 
@@ -197,6 +199,7 @@ var GIVe = (function (give) {
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Tracks')
       this._setHeaderText(this.label || 'Tracks')
+      this._updatingSelection = false
     }
 
     /**
@@ -206,7 +209,7 @@ var GIVe = (function (give) {
       */
     connectedCallback () {
       super.connectedCallback()
-      this._refChanged(this.ref)
+      return this._refChanged(this.ref)
     }
 
     _refreshRefTracks () {
@@ -231,16 +234,17 @@ var GIVe = (function (give) {
         Polymer.RenderStatus.beforeNextRender(this, () => {
           this._trackGroupElems =
             [...this.$.groupBlock.querySelectorAll('chart-track-group-list')]
-          if (this.standAlone) {
-            this.syncTrackToDom()
-          }
-          this._readiness = true
-          resolve(Promise.all(this._trackGroupElems.map(
-            elem => elem.domReadyPromise
-          )).then(() => {
-            this._readiness = true
-            return this
-          }))
+          Polymer.RenderStatus.beforeNextRender(this,
+            () => resolve(Promise.all(this._trackGroupElems.map(
+              elem => elem.domReadyPromise
+            )).then(() => {
+              if (this.standAlone) {
+                this.syncTrackToDom()
+              }
+              this._readiness = true
+              return this
+            }))
+          )
         })
       })
     }
@@ -263,7 +267,8 @@ var GIVe = (function (give) {
      * this will reset all tracks and redo the ref
      * note that the tracks should already be initialized before switching here
      *
-     * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
+     * @param  {string|GIVe.RefObject} newRef - New Reference, either name or
+     *    GIVe.RefObject
      */
     _setRefObj (refObj) {
       // TODO: may need to add something to remove the override array
@@ -274,6 +279,7 @@ var GIVe = (function (give) {
 
     syncTrackToDom (scrollToSelected) {
       // this is used when resetting selection or to initialize DOMs
+      // use priorityManager to build `this.selectedTracks`
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
@@ -284,6 +290,7 @@ var GIVe = (function (give) {
 
     syncDomToTrack () {
       // this is used when submitting the results
+      // convert `this.selectedTracks` to priorityManager
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
@@ -341,13 +348,18 @@ var GIVe = (function (give) {
     }
 
     _updateSelectedTracks () {
-      this.selectedTracks = this._trackGroupElems.reduce(
+      this._updatingSelection = true
+      this.selectedTracks = give.TrackGroup.from(this._trackGroupElems.reduce(
         (trackArray, elem) => trackArray.concat(elem.selectedTracks),
-        [])
+        []))
+      this._updatingSelection = false
     }
 
     _selectionChangedInSelectedTracks (e) {
-      this._trackGroupElems.forEach(elem => elem.syncTrackToDom())
+      if (!this._updatingSelection) {
+        this._trackGroupElems.forEach(
+          elem => elem.syncSelectionFromGroup(this.selectedTracks))
+      }
     }
   }
 

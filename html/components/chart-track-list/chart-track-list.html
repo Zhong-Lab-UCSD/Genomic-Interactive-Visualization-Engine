@@ -45,7 +45,8 @@
             group-icon="av:playlist-add-check"
             label="_calcSelectedTracksLabel(refItemSelected.refObj)"
             setting-key="[[settingKey]]" is-selected
-            allow-track-reordering="[[allowTrackReordering]]">
+            allow-track-reordering="[[allowTrackReordering]]"
+            on-selection-change="[[_selectionChangedInSelectedTracks]]">
           </chart-track-group-list>
         </give-card>
       </template>
@@ -101,6 +102,7 @@ var GIVe = (function (give) {
       this._updatingRef = false
       this._refTrackLists = []
       this.domReadyPromise = null
+      this._updatingSelection = false
     }
 
     static get is () {
@@ -365,7 +367,7 @@ var GIVe = (function (give) {
     }
 
     _updateSelectedTracks () {
-      
+
     }
   }
 

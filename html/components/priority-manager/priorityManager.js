@@ -177,31 +177,34 @@ var GIVe = (function (give) {
       this._syncEffectivePriority(slotName, position)
     }
 
-    addTrack (track, slotName, position, isCoordinate) {
+    addTrack (track, slotName, position, isCoordinate, doNotThrow) {
       if (!isCoordinate || this.includeCoordinates) {
         slotName = slotName || this._getSlotSettingFunc(track)
         if (this.idToEffectivePriorityDict.has(track.id)) {
-          throw new give.GiveError('Track ID already exists: ' + track.id)
-        }
-        slotName = this._verifySlotName(slotName)
-        if (!Number.isInteger(position) || position < 0 ||
-          position > this._slots.get(slotName).contents.length
-        ) {
-          if (Number.isInteger(position)) {
-            give.fireSignal('warning', {
-              errObj: new give.GiveError('Invalid position: ' + position +
-                ', track will be inserted at the end of the slot.'
-              )
-            })
-            give._verboseConsole.warn('Invalid position: ' + position + ', ' +
-              'track will be inserted at the end of the slot.')
+          if (!doNotThrow) {
+            throw new give.GiveError('Track ID already exists: ' + track.id)
           }
-          position = this._slots.get(slotName).contents.length
+        } else {
+          slotName = this._verifySlotName(slotName)
+          if (!Number.isInteger(position) || position < 0 ||
+            position > this._slots.get(slotName).contents.length
+          ) {
+            if (Number.isInteger(position)) {
+              give.fireSignal('warning', {
+                errObj: new give.GiveError('Invalid position: ' + position +
+                  ', track will be inserted at the end of the slot.'
+                )
+              })
+              give._verboseConsole.warn('Invalid position: ' + position + ', ' +
+                'track will be inserted at the end of the slot.')
+            }
+            position = this._slots.get(slotName).contents.length
+          }
+          if (isCoordinate && this.includeCoordinates) {
+            this.coordinateTrackIds.push(track.id)
+          }
+          this._insertTrackIdIntoSlot(track.id, slotName, position, true)
         }
-        if (isCoordinate && this.includeCoordinates) {
-          this.coordinateTrackIds.push(track.id)
-        }
-        this._insertTrackIdIntoSlot(track.id, slotName, position, true)
       }
     }
 
@@ -217,6 +220,12 @@ var GIVe = (function (give) {
           this.coordinateTrackIds.indexOf(track.id), 1)
       }
       this._removeTrackIdFromSlot(track.id, slotName, true)
+    }
+
+    syncFromList (trackList) {
+      for (let track of trackList) {
+        this.addTrack(track, null, null, null, true)
+      }
     }
 
     moveTrack (track, newSlotName, newPosition) {

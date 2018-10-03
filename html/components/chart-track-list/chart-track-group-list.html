@@ -33,14 +33,15 @@
     <template is="dom-if" if="[[_listEmpty(group)]]">
       <div><em>(No tracks)</em></div>
     </template>
-    <iron-list id="groupList" items="[[group]]" as="track"
-      selection-enabled multi-selection$="[[!singleChoice]]"
+    <iron-list id="groupList" items="[[group.array]]" as="track"
+      selection-enabled
+      multi-selection$="[[_computeSingleChoice(group)]]"
       on-selected-items-changed="_selectedItemsChangedHandler"
-      selected="{{selected}}">
+      selected-items="{{selected}}">
       <template>
-        <track-mini-control track="[[track]]" group="[[group]]"
+        <track-mini-control track="[[track]]"
           selected="[[selected]]"
-          single-choice="[[_computeSingleChoice(singleChoice)]]">
+          single-choice="[[_computeSingleChoice(group)]]">
         </track-mini-control>
       </template>
     </iron-list>
@@ -62,10 +63,7 @@ var GIVe = (function (give) {
         },
 
         group: {
-          type: Array,
-          value: function () {
-            return []
-          },
+          type: Object,
           observer: '_groupChanged'
         },
 
@@ -110,19 +108,36 @@ var GIVe = (function (give) {
 
     ready () {
       super.ready()
+      if (this.group) {
+        this.groupIcon = this.groupIcon || this.group.icon
+        this.label = this.label || this.group.label
+      }
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Track group')
       this._setHeaderText(this.label || 'Track group')
-      if (this.isSelected) {
-        this.shadowRoot.style.height =
-          this.group.length * give.TrackMiniControl.heightProportion +
-          'em'
-        this.$.groupList.classList.add('fit')
-        this._syncGroupToSelection()
-        this.selected = this.group.slice()
-      } else {
-        this.$.groupList.classList.add('flex')
-      }
+    }
+
+    /**
+      * Called every time the element is inserted into the DOM. Useful for 
+      * running setup code, such as fetching resources or rendering.
+      * Generally, you should try to delay work until this time.
+      */
+    connectedCallback () {
+      super.connectedCallback()
+      this.domReadyPromise = new Promise((resolve, reject) => {
+        Polymer.RenderStatus.beforeNextRender(this, () => {
+          if (this.isSelected) {
+            this.shadowRoot.style.height =
+              this.group.length * give.TrackMiniControl.heightProportion +
+              'em'
+            this.$.groupList.classList.add('fit')
+            this._syncGroupToSelection()
+          } else {
+            this.$.groupList.classList.add('flex')
+          }
+          resolve()
+        })
+      })
     }
 
     _syncGroupToSelection () {
@@ -133,7 +148,8 @@ var GIVe = (function (give) {
 
     _syncSelectionToGroup () {
       this._updatingSelectedItems = true
-      this.group = this.selected.slice()
+      this.group = give.TrackGroup.from(this.selected, this.group.id,
+        this.group, this.group.IDPrefix, this.group.IDPostfix) 
       this._updatingSelectedItems = false
     }
 
@@ -168,7 +184,7 @@ var GIVe = (function (give) {
       }
     }
 
-    syncDomToTrack () {
+    syncDomToTrackSettings () {
       // this is used when submitting the results
       if (this.group) {
         this.group.forEach((track, index) =>
@@ -222,7 +238,7 @@ var GIVe = (function (give) {
           // remove the item that is not selected, then refresh the list
           this._syncSelectionToGroup()
         }
-        give.fireSignal('selected-item-changed', e.detail, null, this)
+        give.fireSignal('selection-change', e.detail, null, this)
       }
     }
 
@@ -230,6 +246,23 @@ var GIVe = (function (give) {
       if (this.isSelected && !this._updatingSelectedItems) {
         this._syncGroupToSelection()
       }
+    }
+
+    syncSelectionFromGroup (selectionGroup) {
+      this._updatingSelectedItems = true
+      // select the ones in `selectionSet` but not in `this.selected`
+      selectionGroup.forEach(track => {
+        if (this.group.hasTrack(track)) {
+          this.$.groupList.selectItem(track)
+        }
+      })
+      // deselect the ones in `this.selected` but not in `selectionSet`
+      this.selected.forEach(track => {
+        if (!selectionGroup.hasTrack(track)) {
+          this.$.groupList.deselectItem(track)
+        }
+      })
+      this._updatingSelectedItems = false
     }
   }
 
