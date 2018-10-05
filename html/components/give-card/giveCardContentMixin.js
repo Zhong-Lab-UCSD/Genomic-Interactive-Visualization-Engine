@@ -46,17 +46,6 @@ var GIVe = (function (give) {
         return this._readiness
       }
 
-      connectedCallback () {
-        super.connectedCallback()
-        Polymer.RenderStatus.beforeNextRender(
-          this, () => this._callbackBeforeRender()
-        )
-      }
-
-      _callbackBeforeRender () {
-        this._readiness = this._checkReadiness()
-      }
-
       _readinessChanged (newValue, oldValue) {
         give.fireSignal('content-ready', { flag: newValue }, null, this)
       }

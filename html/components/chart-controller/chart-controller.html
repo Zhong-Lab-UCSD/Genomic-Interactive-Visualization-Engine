@@ -26,7 +26,7 @@ limitations under the License.
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link rel="import" href="../chart-area/chart-area.html">
-<link rel="import" href="../chart-track-list/chart-track-group-list.html">
+<link rel="import" href="../chart-track-list/chart-track-list.html">
 <link rel="import" href="../custom-track-controller/custom-track-controller.html">
 <link rel="import" href="../give-card/give-card.html">
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
@@ -174,16 +174,14 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
                 Cancel
               </paper-button>
             </div>
-            <give-card disable-folding class="flex flexFillCard">
-              <chart-track-group-list ref="[[ref]]" slot="cardBody"
-                id="mainTrackList"
-                group-id-list="[[groupIdList]]"
-                setting-key="visibility"
-                has-controls='[[hasControls]]' with-filter='[[withFilter]]'
-                instant-change='[[instantChange]]'
-                priority-managers="[[priorityManagers]]">
-              </chart-track-group-list>
-            </give-card>
+            <chart-track-list ref="[[ref]]" class="flex"
+              id="mainTrackList"
+              group-id-list="[[groupIdList]]"
+              setting-key="visibility"
+              has-controls='[[hasControls]]' with-filter='[[withFilter]]'
+              instant-change='[[instantChange]]'
+              priority-managers="[[priorityManagers]]">
+            </chart-track-list>
             <custom-track-controller ref="[[ref]]" id="mainCTController">
             </custom-track-controller>
           </div>

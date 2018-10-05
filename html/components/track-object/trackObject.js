@@ -23,8 +23,8 @@ var GIVe = (function (give) {
    * contains its data component and visualization component.
    * @property {string} id - ID of track object
    * @property {string} groupID - ID of corresponding track group
-   * @property {object} Settings - Settings of the track, in a dictionary format
-   * @property {object} defaultSettings - defaultSettings upon initialization
+   * @property {object} _settings - Settings of the track, in a dictionary
+   * @property {object} _defaultSettings - defaultSettings upon initialization
    * @property {RefObjectLiteral} _refObj - Genome reference object of the track
    * @property {TrackDataObjectBase} _dataObj - The data object,
    *   should be an instance of `give.TrackDataObject` or its derived class
@@ -272,9 +272,9 @@ var GIVe = (function (give) {
     setDefaultSetting (key, value) {
       // Visibility needs special treatment
       if (key === 'visibility') {
-        this.defaultSettings.visibility = value
+        this._defaultSettings.visibility = value
       } else {
-        this.defaultSettings[key] = value
+        this._defaultSettings[key] = value
       }
     }
 
@@ -288,8 +288,8 @@ var GIVe = (function (give) {
      * @param  {string} key - Key of the setting entry
      */
     resetSetting (key) {
-      if (this.defaultSettings.hasOwnProperty(key)) {
-        this.setSetting(key, this.defaultSettings[key])
+      if (this._defaultSettings.hasOwnProperty(key)) {
+        this.setSetting(key, this._defaultSettings[key])
       } else {
         delete this._settings[key]
       }
@@ -303,7 +303,7 @@ var GIVe = (function (give) {
      * @memberof TrackObjectBase.prototype
      */
     resetAllSettings () {
-      this._settings = Object.assign({}, this.defaultSettings)
+      this._settings = Object.assign({}, this._defaultSettings)
       this._initSettings()
     }
 

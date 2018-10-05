@@ -208,22 +208,36 @@ var GIVe = (function (give) {
       }
     }
 
-    removeTrack (track) {
-      let slotName = this._getInternalSlotName(track.id)
+    removeTrackById (trackId, doNotThrow) {
+      let slotName = this._getInternalSlotName(trackId)
       if (!slotName) {
-        throw new give.GiveError('Track ID does not exist: ' + track.id)
+        if (!doNotThrow) {
+          throw new give.GiveError('Track ID does not exist: ' + trackId)
+        }
       }
       if (this.includeCoordinates &&
-        this.coordinateTrackIds.indexOf(track.id) >= 0
+        this.coordinateTrackIds.indexOf(trackId) >= 0
       ) {
         this.coordinateTrackIds.splice(
-          this.coordinateTrackIds.indexOf(track.id), 1)
+          this.coordinateTrackIds.indexOf(trackId), 1)
       }
-      this._removeTrackIdFromSlot(track.id, slotName, true)
+      this._removeTrackIdFromSlot(trackId, slotName, true)
     }
 
-    syncFromList (trackList) {
-      for (let track of trackList) {
+    removeTrack (track, doNotThrow) {
+      return this.removeTrackById(track.id, doNotThrow)
+    }
+
+    syncFromGroup (trackGroup, doNotRemove) {
+      // remove the ones not in the list
+      if (!doNotRemove) {
+        this.trackIdList.forEach(trackId => {
+          if (!trackGroup.hasTrack(trackId)) {
+            this.removeTrackById(trackId, true)
+          }
+        })
+      }
+      for (let track of trackGroup) {
         this.addTrack(track, null, null, null, true)
       }
     }

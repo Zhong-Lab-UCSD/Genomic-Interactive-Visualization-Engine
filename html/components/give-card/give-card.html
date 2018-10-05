@@ -14,8 +14,8 @@
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/neon-animation/web-animations.html">
@@ -32,6 +32,7 @@
       z-index: 0;
       text-align: left;
       position: relative;
+      flex: 0 1 auto;
       @apply --give-card-mixin;
     }
 
@@ -46,14 +47,13 @@
       @apply --give-card-material-mixin;
     }
 
-    #cardFixedContent {
-      @apply --give-card-fixed-content-mixin;
+    #cardContent {
+      flex: 0 1 auto;
     }
 
     div#cardHeader {
       text-transform: capitalize;
     }
-
   </style>
     <paper-material elevation="1">
       <template is="dom-if" if="[[!_readiness]]">
@@ -76,14 +76,9 @@
           <slot id="cardHeaderSlot" name="header"></slot>
         </div>
       </div>
-      <slot id="cardBodySlot" name="body"></slot>
-      <template is="dom-if" if="[[!disableFolding]]" restamp="true">
-        <iron-collapse id="mainCollapse" opened="{{isOpened}}" allowOverflow>
-        </iron-collapse>
-      </template>
-      <template is="dom-if" if="[[disableFolding]]" restamp="true">
-        <div id="cardFixedContent" hidden$="[[!disableFolding]]"></div>
-      </template>
+      <div id="cardContent" hidden$="[[!isOpened]]">
+        <slot id="cardBodySlot" name="body"></slot>
+      </div>
     </paper-material>
   </template>
   <script>
@@ -116,8 +111,7 @@ var GIVe = (function (give) {
 
         disableFolding: {
           type: Boolean,
-          value: false,
-          observer: '_disableFoldingObserver'
+          value: false
         },
 
         _readiness: {
@@ -159,18 +153,6 @@ var GIVe = (function (give) {
     _slotChangeHandler (event) {
       this.populateDOM()
       this._setContentReady(true)
-    }
-
-    _disableFoldingObserver (newValue, oldValue) {
-      Polymer.RenderStatus.afterNextRender(this, () => {
-        if (newValue) {
-          this.shadowRoot.querySelector('#cardFixedContent')
-            .appendChild(this.$.cardBodySlot)
-        } else {
-          this.shadowRoot.querySelector('#mainCollapse')
-            .appendChild(this.$.cardBodySlot)
-        }
-      })
     }
 
     _toggleCollapseHeader (flag) {

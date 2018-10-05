@@ -135,6 +135,7 @@ var GIVe = (function (give) {
           } else {
             this.$.groupList.classList.add('flex')
           }
+          this._readiness = true
           resolve()
         })
       })
@@ -158,10 +159,10 @@ var GIVe = (function (give) {
     }
 
     _listEmpty (array) {
-      return array && array.length > 0
+      return !array || !array.length
     }
 
-    syncTrackToDom (scrollToSelected) {
+    syncTrackSettingsToDom (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
       if (this.group) {
@@ -192,11 +193,10 @@ var GIVe = (function (give) {
         )
         if (this.$.groupList.selectedItems) {
           if (Array.isArray(this.$.groupList.selectedItems)) {
-            this.$.groupList.selectedItems.forEach(function (track) {
-              track.setSetting(this.settingKey, true)
-            }, this)
+            this.$.groupList.selectedItems.forEach(track =>
+              track.setSetting(this.settingKey, true))
           } else {
-            this.$.groupList.selectedItems.setSetting(this.settingKey, true)
+            this.$.groupList.selectedItem.setSetting(this.settingKey, true)
           }
         }
       }

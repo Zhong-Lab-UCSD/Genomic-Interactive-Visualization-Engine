@@ -6,9 +6,10 @@
 <link rel="import" href="../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="../give-card/give-card.html">
+<link rel="import" href="../give-card/give-card-content-mixin.html">
 <link rel="import" href="chart-track-list.html">
 <link rel="import" href="../ref-object/ref-object.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../give-styles.html">
 <!-- <link rel="import" href="../meta-track-filter/meta-track-filter.html"> -->
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
@@ -18,8 +19,6 @@
     <style include="give-shared-styles iron-flex">
     :host {
       padding: 0.5em;
-      display: block;
-      @apply --layout-fit;
       @apply --layout-vertical;
     }
     chart-track-list {
@@ -31,7 +30,8 @@
     </style>
     <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
       <give-card disable-folding>
-        <chart-track-group-list group="[[selectedTracks]]" class="selectedTracks"
+        <chart-track-group-list slot="body"
+          group="[[selectedTracks]]" class="selectedTracks"
           group-icon="av:playlist-add-check"
           label="Selected tracks"
           selected="{{selectedTracks}}"
@@ -46,10 +46,11 @@
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <give-card class="flex">
-        <chart-track-group-list group="[[group]]"
+        <chart-track-group-list slot="body"
+          group="[[group]]"
           group-icon="[[group.icon]]"
           label="[[group.label]]" single-choice="[[group.singleChoice]]"
-          setting-key="[[settingKey]]" class="flex"
+          setting-key="[[settingKey]]"
           instant-change="[[instantChange]]"
           priority-manager="[[priorityManager]]"
           on-selection-change="[[_updateSelectedTracks]]">
@@ -88,7 +89,7 @@ var GIVe = (function (give) {
   'use strict'
 
   class ChartTrackRefList extends give.GiveCardContentMixin(
-    give.RefEmbedMixin(give.EmbedPolymer.Element)) {
+    give.RefEmbedMixin(Polymer.Element)) {
     constructor () {
       super(...arguments)
       this.domReadyPromise = null
@@ -284,7 +285,7 @@ var GIVe = (function (give) {
         throw new give.GiveError('Ref list not initialized!')
       }
       this._trackGroupElems.forEach(
-        elem => elem.syncTrackToDom(scrollToSelected))
+        elem => elem.syncTrackSettingsToDom(scrollToSelected))
       this._updateSelectedTracks()
     }
 
@@ -294,7 +295,8 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
-      this._trackGroupElems.forEach(elem => elem.syncDomToTrack())
+      this.priorityManager.syncFromGroup(this.selectedTracks)
+      this._trackGroupElems.forEach(elem => elem.syncDomToTrackSettings())
     }
 
     resetAllTracks () {

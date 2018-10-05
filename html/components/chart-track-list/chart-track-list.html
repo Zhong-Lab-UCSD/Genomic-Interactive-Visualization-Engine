@@ -20,7 +20,6 @@
     :host {
       padding: 0.5em;
       display: block;
-      @apply --layout-fit;
       @apply --layout-vertical;
     }
     chart-track-group-list {
@@ -39,7 +38,8 @@
       <template is="dom-repeat" id="selectedTracksBlock"
         items="[[_refItemArray]]" as="refItemSelected">
         <give-card disable-folding>
-          <chart-track-group-list group="[[refItemSelected.selectedTracks]]"
+          <chart-track-group-list slot="body"
+            group="[[refItemSelected.selectedTracks]]"
             selected="{{refItemSelected.selectedTracks}}"
             class="selectedTracks"
             group-icon="av:playlist-add-check"
@@ -55,11 +55,11 @@
       items="[[_refItemArray]]" as="refItem">
       <!-- Candidate tracks DOM, by reference -->
       <give-card class="flex">
-        <chart-track-ref-list
+        <chart-track-ref-list slot="body"
           ref="[[refItem.db]]"
           group-icon="[[_calcRefIcon(refItem.refObj)]]"
           label="[[_calcRefLabel(refItem.refObj)]]"
-          setting-key="[[settingKey]]" class="flex"
+          setting-key="[[settingKey]]"
           group-id-list="[[groupIdList]]"
           selected-tracks="{{refItem.selectedTracks}}"
           instant-change="[[instantChange]]"
@@ -201,8 +201,10 @@ var GIVe = (function (give) {
       */
     connectedCallback () {
       super.connectedCallback()
-      this._updatingRef = false
-      this._refChanged(this.ref)
+      Polymer.RenderStatus.beforeNextRender(this, () => {
+        this._updatingRef = false
+        this._refChanged(this.ref)
+      })
     }
 
     _calcRefIcon (refObj) {
@@ -301,7 +303,6 @@ var GIVe = (function (give) {
       }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.syncTrackToDom(scrollToSelected))
-      this._updateSelectedTracks()
     }
 
     syncDomToTrack () {
@@ -364,10 +365,6 @@ var GIVe = (function (give) {
       }
       this._refTrackLists.forEach(
         refTrackElem => refTrackElem.applyFilter(map, flags))
-    }
-
-    _updateSelectedTracks () {
-
     }
   }
 
