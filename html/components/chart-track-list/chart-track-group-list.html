@@ -34,6 +34,7 @@
       <div><em>(No tracks)</em></div>
     </template>
     <iron-list id="groupList" items="[[group.array]]" as="track"
+      class="flex"
       selection-enabled
       multi-selection$="[[_computeSingleChoice(group)]]"
       on-selected-items-changed="_selectedItemsChangedHandler"
@@ -108,6 +109,7 @@ var GIVe = (function (give) {
 
     ready () {
       super.ready()
+      this.allowFlexShrink = !this.isSelected
       if (this.group) {
         this.groupIcon = this.groupIcon || this.group.icon
         this.label = this.label || this.group.label
@@ -118,7 +120,7 @@ var GIVe = (function (give) {
     }
 
     /**
-      * Called every time the element is inserted into the DOM. Useful for 
+      * Called every time the element is inserted into the DOM. Useful for
       * running setup code, such as fetching resources or rendering.
       * Generally, you should try to delay work until this time.
       */
@@ -127,18 +129,25 @@ var GIVe = (function (give) {
       this.domReadyPromise = new Promise((resolve, reject) => {
         Polymer.RenderStatus.beforeNextRender(this, () => {
           if (this.isSelected) {
-            this.shadowRoot.style.height =
-              this.group.length * give.TrackMiniControl.heightProportion +
-              'em'
-            this.$.groupList.classList.add('fit')
             this._syncGroupToSelection()
-          } else {
-            this.$.groupList.classList.add('flex')
           }
           this._readiness = true
           resolve()
         })
       })
+    }
+
+    get contentHeight () {
+      if (this.group) {
+        let displayGroupLength = this.isSelected
+          ? Math.min(this.group.length,
+            this.constructor.MAX_LINES_OF_SELECTED_TRACKS)
+          : this.group.length
+        return displayGroupLength * give.TrackMiniControl.heightProportion *
+          parseFloat(window.getComputedStyle(this.shadowRoot)
+            .getPropertyValue('font-size'))
+      }
+      return null
     }
 
     _syncGroupToSelection () {
@@ -150,12 +159,12 @@ var GIVe = (function (give) {
     _syncSelectionToGroup () {
       this._updatingSelectedItems = true
       this.group = give.TrackGroup.from(this.selected, this.group.id,
-        this.group, this.group.IDPrefix, this.group.IDPostfix) 
+        this.group, this.group.IDPrefix, this.group.IDPostfix)
       this._updatingSelectedItems = false
     }
 
-    _computeSingleChoice (singleChoice) {
-      return singleChoice && singleChoice !== '0'
+    _computeSingleChoice (group) {
+      return group.singleChoice && group.singleChoice !== '0'
     }
 
     _listEmpty (array) {
@@ -230,7 +239,7 @@ var GIVe = (function (give) {
     }
 
     _selectedItemsChangedHandler (e) {
-      if (!this._updatingSelectedItems) {
+      if (this._readiness && !this._updatingSelectedItems) {
         if (this.instantChange) {
           this.syncDomToTrack()
         }
@@ -265,6 +274,8 @@ var GIVe = (function (give) {
       this._updatingSelectedItems = false
     }
   }
+
+  ChartTrackGroupList.MAX_LINES_OF_SELECTED_TRACKS = 5
 
   give.ChartTrackGroupList = ChartTrackGroupList
   window.customElements.define(

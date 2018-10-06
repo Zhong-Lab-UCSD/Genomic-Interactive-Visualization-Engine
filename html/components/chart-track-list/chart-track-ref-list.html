@@ -20,6 +20,7 @@
     :host {
       padding: 0.5em;
       @apply --layout-vertical;
+      @apply --layout-justified;
     }
     chart-track-list {
       @apply --chart-track-list-items-mixin;
@@ -27,21 +28,27 @@
     chart-track-list.selectedTracks {
       max-height: 30%;
     }
+    give-card {
+      margin: 0 0 0.5em 0;
+    }
+    .cardActions {
+      padding: 0;
+      margin-bottom: -0.5em;
+    }
     </style>
-    <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
+    <!-- <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
       <give-card disable-folding>
         <chart-track-group-list slot="body"
           group="[[selectedTracks]]" class="selectedTracks"
           group-icon="av:playlist-add-check"
           label="Selected tracks"
-          selected="{{selectedTracks}}"
           setting-key="[[settingKey]]" is-selected
           allow-track-reordering="[[allowTrackReordering]]"
           priority-manager="[[priorityManager]]"
-          on-selection-change="[[_selectionChangedInSelectedTracks]]">
+          on-selection-change="_selectionChangedInSelectedTracks">
         </chart-track-group-list>
       </give-card>
-    </template>
+    </template> -->
     <template is="dom-repeat" id="groupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
@@ -53,12 +60,12 @@
           setting-key="[[settingKey]]"
           instant-change="[[instantChange]]"
           priority-manager="[[priorityManager]]"
-          on-selection-change="[[_updateSelectedTracks]]">
+          on-selection-change="_updateSelectedTracks">
         </chart-track-group-list>
       </give-card>
     </template>
-    <template is="dom-if" if="[[standAlone]]" restamp="true">
-      <div class="cardActions">
+    <template is="dom-if" if="[[_calcControls(hasControls, withFilter)]]" restamp="true">
+      <div class="cardActions" id="cardActionContainer">
         <template is="dom-if" if="[[withFilter]]" restamp="true">
           <paper-button on-tap="launchFilter">
             <iron-icon icon="filter-list"></iron-icon>
@@ -197,6 +204,7 @@ var GIVe = (function (give) {
      */
     ready () {
       super.ready()
+      this.allowFlexShrink = true
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Tracks')
       this._setHeaderText(this.label || 'Tracks')
@@ -211,6 +219,27 @@ var GIVe = (function (give) {
     connectedCallback () {
       super.connectedCallback()
       return this._refChanged(this.ref)
+    }
+
+    _calcControls (hasControls, withFilter) {
+      return hasControls && withFilter
+    }
+
+    get contentHeight () {
+      let giveCards = [...this.shadowRoot.querySelectorAll('give-card')]
+      // add all height of group cards
+      let height = giveCards.reduce(
+        (height, card) => (
+          height + parseInt(window.getComputedStyle(card)
+            .getPropertyValue('flex-basis'))
+        ), 0
+      )
+      if (this._calcControls(this.hasControls, this.withFilter)) {
+        height += parseInt(window.getComputedStyle(
+          this.shadowRoot.querySelector('#cardActionContainer')
+        ).getPropertyValue('height'))
+      }
+      return height
     }
 
     _refreshRefTracks () {

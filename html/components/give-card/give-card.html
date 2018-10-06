@@ -14,6 +14,7 @@
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/paper-material/paper-material.html">
@@ -24,15 +25,14 @@
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="give-card">
   <template>
-    <style include="give-shared-styles">
+    <style include="give-shared-styles iron-flex iron-positioning">
     :host {
       display: inline-block;
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
-      margin: 0.6em 0;
       z-index: 0;
       text-align: left;
       position: relative;
-      flex: 0 1 auto;
+      @apply --layout-vertical;
       @apply --give-card-mixin;
     }
 
@@ -47,15 +47,15 @@
       @apply --give-card-material-mixin;
     }
 
-    #cardContent {
-      flex: 0 1 auto;
+    #cardContent.collapsed {
+      display: none;
     }
 
     div#cardHeader {
       text-transform: capitalize;
     }
   </style>
-    <paper-material elevation="1">
+    <paper-material elevation="1" class="layout vertical flex">
       <template is="dom-if" if="[[!_readiness]]">
         <div id="loadingBlock">
           <paper-spinner id="loadingSpinner" alt="Loading card content"
@@ -76,7 +76,7 @@
           <slot id="cardHeaderSlot" name="header"></slot>
         </div>
       </div>
-      <div id="cardContent" hidden$="[[!isOpened]]">
+      <div id="cardContent">
         <slot id="cardBodySlot" name="body"></slot>
       </div>
     </paper-material>
@@ -185,6 +185,8 @@ var GIVe = (function (give) {
         give.fireSignal('card-expanded', null, null, this)
       }
       this.expandIcon = newValue ? 'expand-less' : 'expand-more'
+      this.$.cardContent.classList.remove(newValue ? 'collapsed' : 'flex')
+      this.$.cardContent.classList.add(newValue ? 'flex' : 'collapsed')
       this._toggleCollapseHeader(newValue)
     }
 
@@ -206,11 +208,12 @@ var GIVe = (function (give) {
     populateDOM () {
       // if the content has a .getExpandedHeader member,
       //  it will be used to generate the node to replace the node
-      //  given in .GenemoHead
+      //  given in .head
+      // This procedure also calculates the required height of the content
+      //  to be set as flex-shrink and flex-basis
       let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
       let headerContainer =
         this.shadowRoot.querySelector('#cardHeaderContainer')
-      let newHead
       if (!headerContainer) {
         return
       }
@@ -218,20 +221,40 @@ var GIVe = (function (give) {
         headerContainer.removeChild(headerContainer.firstChild)
       }
       if (contentNodes && contentNodes[0]) {
-        newHead = contentNodes[0].expandedHeaderElement
+        let node = contentNodes[0]
+        let newHead = node.expandedHeaderElement
+        if (newHead) {
+          headerContainer.appendChild(newHead)
+          newHead.classList.add('headerText')
+          this.$.hiddenCardHeaderHolder.appendChild(this.$.cardHeaderSlot)
+        } else {
+          // populate header with #cardhead
+          headerContainer.appendChild(this.$.cardHeaderSlot)
+          // newHead = this.$.cardHeaderSlot.assignedNodes({ flatten: true })
+          // if (newHead) {
+          //   newHead.forEach(node => headerContainer.appendChild(node))
+          // }
+        }
       }
-      if (newHead) {
-        headerContainer.appendChild(newHead)
-        newHead.classList.add('headerText')
-        this.$.hiddenCardHeaderHolder.appendChild(this.$.cardHeaderSlot)
-      } else {
-        // populate header with #cardhead
-        headerContainer.appendChild(this.$.cardHeaderSlot)
-        // newHead = this.$.cardHeaderSlot.assignedNodes({ flatten: true })
-        // if (newHead) {
-        //   newHead.forEach(node => headerContainer.appendChild(node))
-        // }
+      this._updateHeight()
+    }
+
+    _updateHeight () {
+      let height = parseInt(window.getComputedStyle(this.$.cardHeader)
+        .getPropertyValue('height')
+      )
+      let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
+      let node = null
+      if (contentNodes && contentNodes[0]) {
+        height += parseInt(node.contentHeight ||
+          window.getComputedStyle(node).getPropertyValue('height'))
+        node = contentNodes[0]
       }
+      this.shadowRoot.host.style.setProperty('flex-basis', height + 'px')
+      this.shadowRoot.host.style.setProperty('flex-grow',
+        (node && node.allowFlexGrow) ? '1' : '0')
+      this.shadowRoot.host.style.setProperty('flex-shrink',
+        (node && node.allowFlexShrink) ? height + '' : '0')
     }
 
     _setContentReady (flag) {
@@ -241,6 +264,7 @@ var GIVe = (function (give) {
           if (this.$.cardBodySlot.assignedNodes({ flatten: true })
             .every(node => node.readiness)
           ) {
+            this._updateHeight()
             this._readiness = true
           }
         } else {

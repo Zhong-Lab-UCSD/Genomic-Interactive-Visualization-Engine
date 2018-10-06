@@ -25,8 +25,8 @@
     chart-track-group-list {
       @apply --chart-track-list-items-mixin;
     }
-    chart-track-group-list.selectedTracks {
-      max-height: 30%;
+    give-card {
+      margin: 0 0 0.5em 0;
     }
     .cardActions {
       padding: 0;
@@ -34,23 +34,21 @@
     }
     </style>
     <!-- Selected tracks DOM, by reference -->
-    <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
+    <!-- <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
       <template is="dom-repeat" id="selectedTracksBlock"
         items="[[_refItemArray]]" as="refItemSelected">
         <give-card disable-folding>
           <chart-track-group-list slot="body"
             group="[[refItemSelected.selectedTracks]]"
-            selected="{{refItemSelected.selectedTracks}}"
-            class="selectedTracks"
             group-icon="av:playlist-add-check"
             label="_calcSelectedTracksLabel(refItemSelected.refObj)"
             setting-key="[[settingKey]]" is-selected
             allow-track-reordering="[[allowTrackReordering]]"
-            on-selection-change="[[_selectionChangedInSelectedTracks]]">
+            on-selection-change="_selectionChangedInSelectedTracks">
           </chart-track-group-list>
         </give-card>
       </template>
-    </template>
+    </template> -->
     <template is="dom-repeat" id="trackRefBlock"
       items="[[_refItemArray]]" as="refItem">
       <!-- Candidate tracks DOM, by reference -->

@@ -22,7 +22,6 @@ limitations under the License.
 <link rel="import" href="../../bower_components/app-layout/app-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link rel="import" href="../chart-area/chart-area.html">
@@ -229,9 +228,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartController extends Polymer.mixinBehaviors([
-    Polymer.IronResizableBehavior], Polymer.Element
-  ) {
+  class ChartController extends Polymer.Element {
     constructor () {
       super(...arguments)
       this._updatingRefCoordinates = false

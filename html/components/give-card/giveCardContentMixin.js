@@ -37,6 +37,16 @@ var GIVe = (function (give) {
           _domReady: {
             type: Boolean,
             value: false
+          },
+
+          allowFlexGrow: {
+            type: Boolean,
+            value: false
+          },
+
+          allowFlexShrink: {
+            type: Boolean,
+            value: false
           }
         }
       }
