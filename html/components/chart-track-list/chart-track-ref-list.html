@@ -19,14 +19,12 @@
     <style include="give-shared-styles iron-flex">
     :host {
       padding: 0.5em;
+      overflow-y: auto;
       @apply --layout-vertical;
       @apply --layout-justified;
     }
-    chart-track-list {
+    chart-track-group-list {
       @apply --chart-track-list-items-mixin;
-    }
-    chart-track-list.selectedTracks {
-      max-height: 30%;
     }
     give-card {
       margin: 0 0 0.5em 0;
@@ -54,7 +52,7 @@
       <!-- this is the track group DOM -->
       <give-card class="flex">
         <chart-track-group-list slot="body"
-          group="[[group]]"
+          group-array="[[group.array]]"
           group-icon="[[group.icon]]"
           label="[[group.label]]" single-choice="[[group.singleChoice]]"
           setting-key="[[settingKey]]"

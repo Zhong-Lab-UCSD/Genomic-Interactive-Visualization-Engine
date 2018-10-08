@@ -56,6 +56,13 @@ var GIVe = (function (give) {
         return this._readiness
       }
 
+      get flexShrinkRatio () {
+        if (this.allowFlexShrink) {
+          return typeof this._flexShrinkRatio === 'number'
+            ? this._flexShrinkRatio : (this.contentHeight || 1)
+        }
+      }
+
       _readinessChanged (newValue, oldValue) {
         give.fireSignal('content-ready', { flag: newValue }, null, this)
       }

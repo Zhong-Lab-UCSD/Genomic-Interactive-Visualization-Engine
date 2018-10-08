@@ -76,7 +76,7 @@
           <slot id="cardHeaderSlot" name="header"></slot>
         </div>
       </div>
-      <div id="cardContent">
+      <div id="cardContent" class="layout vertical">
         <slot id="cardBodySlot" name="body"></slot>
       </div>
     </paper-material>
@@ -175,7 +175,7 @@ var GIVe = (function (give) {
           }
         }
       }
-      this._showOriginalHeader = flag && this._collapsedHeaderElement
+      this._showOriginalHeader = flag || !this._collapsedHeaderElement
     }
 
     _isOpenedChanged (newValue, oldValue) {
@@ -188,6 +188,9 @@ var GIVe = (function (give) {
       this.$.cardContent.classList.remove(newValue ? 'collapsed' : 'flex')
       this.$.cardContent.classList.add(newValue ? 'flex' : 'collapsed')
       this._toggleCollapseHeader(newValue)
+      if (this._readiness) {
+        this._updateHeight()
+      }
     }
 
     toggleCollapse () {
@@ -240,21 +243,28 @@ var GIVe = (function (give) {
     }
 
     _updateHeight () {
-      let height = parseInt(window.getComputedStyle(this.$.cardHeader)
+      let headerHeight = parseInt(window.getComputedStyle(this.$.cardHeader)
         .getPropertyValue('height')
       )
-      let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
+      let contentHeight = 0
       let node = null
-      if (contentNodes && contentNodes[0]) {
-        height += parseInt(node.contentHeight ||
-          window.getComputedStyle(node).getPropertyValue('height'))
-        node = contentNodes[0]
+      if (this.isOpened) {
+        let contentNodes = this.$.cardBodySlot.assignedNodes({ flatten: true })
+        if (contentNodes && contentNodes[0]) {
+          node = contentNodes[0]
+          contentHeight = parseInt(node.contentHeight ||
+            window.getComputedStyle(node).getPropertyValue('height'))
+        }
       }
-      this.shadowRoot.host.style.setProperty('flex-basis', height + 'px')
+      this.shadowRoot.host.style.setProperty('min-height',
+        (((node && node.minContentHeight) ? node.minContentHeight : 0) +
+          headerHeight) + 'px')
+      this.shadowRoot.host.style.setProperty('flex-basis',
+        (headerHeight + contentHeight) + 'px')
       this.shadowRoot.host.style.setProperty('flex-grow',
         (node && node.allowFlexGrow) ? '1' : '0')
       this.shadowRoot.host.style.setProperty('flex-shrink',
-        (node && node.allowFlexShrink) ? height + '' : '0')
+        (node && node.allowFlexShrink) ? node.flexShrinkRatio + '' : '0')
     }
 
     _setContentReady (flag) {
