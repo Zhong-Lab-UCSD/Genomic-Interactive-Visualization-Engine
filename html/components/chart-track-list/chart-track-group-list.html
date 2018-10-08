@@ -37,10 +37,10 @@
     <template is="dom-if" if="[[_listEmpty(groupArray)]]">
       <div><em>(No tracks)</em></div>
     </template>
-    <iron-list id="groupList" items="[[groupArray]]" as="track"
+    <iron-list id="groupList" items="[[group.array]]" as="track"
       class="flex"
       selection-enabled
-      multi-selection$="[[_computeSingleChoice(singleChoice)]]"
+      multi-selection$="[[_computeSingleChoice(group)]]"
       on-selected-items-changed="_selectedItemsChangedHandler"
       selected-items="{{selected}}">
       <template>
@@ -67,9 +67,9 @@ var GIVe = (function (give) {
           value: give.GENEMO_SELECTED_KEY
         },
 
-        groupArray: {
+        group: {
           type: Object,
-          observer: '_groupArrayChanged'
+          observer: '_groupChanged'
         },
 
         instantChange: {
@@ -99,11 +99,6 @@ var GIVe = (function (give) {
           value: ''
         },
 
-        singleChoice: {
-          type: String,
-          value: null
-        },
-
         groupIcon: {
           type: String,
           value: null
@@ -113,7 +108,11 @@ var GIVe = (function (give) {
 
     ready () {
       super.ready()
-      this.allowFlexShrink = !this.isSelected
+      this._allowFlexShrink = !this.isSelected
+      if (this.group) {
+        this.groupIcon = this.groupIcon || this.group.icon
+        this.label = this.label || this.group.label
+      }
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Track group')
       this._setHeaderText(this.label || 'Track group')
@@ -139,28 +138,33 @@ var GIVe = (function (give) {
     }
 
     get contentHeight () {
-      if (this.groupArray) {
+      if (this.group) {
         return this._calcHeightBasedOnLines(this.displayedLines)
       }
       return null
     }
 
+    get allowFlexShrink () {
+      return this._allowFlexShrink &&
+        this.displayedLines > this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+    }
+
     _syncGroupToSelection () {
       this._updatingSelectedItems = true
-      this.selected = this.groupArray.slice()
+      this.selected = this.group.slice()
       this._updatingSelectedItems = false
     }
 
     _syncSelectionToGroup () {
       this._updatingSelectedItems = true
-      this.groupArray = this.selected.slice()
-      // this.group = give.TrackGroup.from(this.selected, this.group.id,
-      //   this.group, this.group.IDPrefix, this.group.IDPostfix)
+      // this.groupArray = this.selected.slice()
+      this.group = give.TrackGroup.from(this.selected, this.group.id,
+        this.group, this.group.IDPrefix, this.group.IDPostfix)
       this._updatingSelectedItems = false
     }
 
-    _computeSingleChoice (singleChoice) {
-      return singleChoice && singleChoice !== '0'
+    _computeSingleChoice (group) {
+      return group.singleChoice && group.singleChoice !== '0'
     }
 
     _listEmpty (array) {
@@ -170,10 +174,10 @@ var GIVe = (function (give) {
     syncTrackSettingsToDom (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
-      if (this.groupArray) {
+      if (this.group) {
         this.$.groupList.clearSelection()
         let firstSelected = null
-        this.groupArray.every((track, index) => {
+        this.group.every((track, index) => {
           if (track.getSetting(this.settingKey)) {
             if (firstSelected === null) {
               firstSelected = index
@@ -193,7 +197,7 @@ var GIVe = (function (give) {
     syncDomToTrackSettings () {
       // this is used when submitting the results
       if (this.group) {
-        this.groupArray.forEach((track, index) =>
+        this.group.forEach((track, index) =>
           track.setSetting(this.settingKey, false)
         )
         if (this.$.groupList.selectedItems) {
@@ -208,14 +212,14 @@ var GIVe = (function (give) {
     }
 
     resetAllTracks () {
-      if (this.groupArray) {
-        this.groupArray.forEach(track => track.resetSetting(this.settingKey))
+      if (this.group) {
+        this.group.forEach(track => track.resetSetting(this.settingKey))
         this.syncTrackToDom()
       }
     }
 
     applyFilter (map, flags) {
-      this.groupArray.forEach((track, index) => {
+      this.group.forEach((track, index) => {
         if (flags.hasOwnProperty('matched') && map.hasOwnProperty(track.id)) {
           if (flags.matched) {
             this.$.groupList.selectIndex(index)
@@ -271,10 +275,13 @@ var GIVe = (function (give) {
     }
 
     get displayedLines () {
-      return this.isSelected
-        ? Math.min(this.groupArray.length,
-          this.constructor.MAX_LINES_OF_SELECTED_TRACKS)
-        : this.groupArray.length
+      if (!this.group || !this.group.length) {
+        return 1
+      }
+      return Math.min(this.group.length,
+        this.isSelected
+          ? this.constructor.MAX_DISPLAY_LINES_SELECTED
+          : this.constructor.MAX_DISPLAY_LINES)
     }
 
     _calcHeightBasedOnLines (lines) {
@@ -283,28 +290,27 @@ var GIVe = (function (give) {
           .getPropertyValue('font-size'))
     }
 
-    get _flexShrinkRatio () {
-      if (this.groupArray) {
-        let displayedLines = this.displayedLines
-        return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
-          ? 0 : this._calcHeightBasedOnLines(displayedLines)
-      }
-    }
+    // get _flexShrinkRatio () {
+    //   if (this.group) {
+    //     let displayedLines = this.displayedLines
+    //     return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+    //       ? 0 : this._calcHeightBasedOnLines(displayedLines)
+    //   }
+    // }
 
     get minContentHeight () {
-      if (this.groupArray) {
-        let displayedLines = this.displayedLines
-        return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
-          ? this._calcHeightBasedOnLines(displayedLines)
-          : this._calcHeightBasedOnLines(
-            this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
-          )
-      }
+      let displayedLines = this.displayedLines
+      return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+        ? this._calcHeightBasedOnLines(displayedLines)
+        : this._calcHeightBasedOnLines(
+          this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+        )
     }
   }
 
-  ChartTrackGroupList.MAX_LINES_OF_SELECTED_TRACKS = 5
-  ChartTrackGroupList.MIN_SHRINKABLE_DISPLAY_LINES = 3
+  ChartTrackGroupList.MAX_DISPLAY_LINES_SELECTED = 8
+  ChartTrackGroupList.MAX_DISPLAY_LINES = 25
+  ChartTrackGroupList.MIN_SHRINKABLE_DISPLAY_LINES = 5
 
   give.ChartTrackGroupList = ChartTrackGroupList
   window.customElements.define(

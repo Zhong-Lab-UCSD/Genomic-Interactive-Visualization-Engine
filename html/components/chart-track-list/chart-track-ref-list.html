@@ -52,9 +52,9 @@
       <!-- this is the track group DOM -->
       <give-card class="flex">
         <chart-track-group-list slot="body"
-          group-array="[[group.array]]"
+          group="[[group]]"
           group-icon="[[group.icon]]"
-          label="[[group.label]]" single-choice="[[group.singleChoice]]"
+          label="[[group.label]]"
           setting-key="[[settingKey]]"
           instant-change="[[instantChange]]"
           priority-manager="[[priorityManager]]"
@@ -202,7 +202,7 @@ var GIVe = (function (give) {
      */
     ready () {
       super.ready()
-      this.allowFlexShrink = true
+      this._allowFlexShrink = true
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Tracks')
       this._setHeaderText(this.label || 'Tracks')

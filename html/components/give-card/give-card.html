@@ -264,7 +264,13 @@ var GIVe = (function (give) {
       this.shadowRoot.host.style.setProperty('flex-grow',
         (node && node.allowFlexGrow) ? '1' : '0')
       this.shadowRoot.host.style.setProperty('flex-shrink',
-        (node && node.allowFlexShrink) ? node.flexShrinkRatio + '' : '0')
+        (node && node.allowFlexShrink)
+          ? ((node.minContentHeight
+            ? Math.max(contentHeight - node.minContentHeight, 0)
+            : contentHeight) * this.constructor.FLEX_CORRECTION_COEFFICIENT /
+            (headerHeight + contentHeight)) + ''
+          : '0'
+      )
     }
 
     _setContentReady (flag) {
@@ -297,6 +303,7 @@ var GIVe = (function (give) {
     }
   }
 
+  GiveCard.FLEX_CORRECTION_COEFFICIENT = 10
   give.GiveCard = GiveCard
   window.customElements.define('give-card', give.GiveCard)
 
