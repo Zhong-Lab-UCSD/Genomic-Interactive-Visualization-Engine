@@ -66,13 +66,14 @@ var GIVe = (function (give) {
         ? includeCoordinates : this.constructor.DEFAULT_INCLUDE_COORDINATES)
       if (this.includeCoordinates) {
         this.coordinateTracks = []
+        this.coordinateIdSet = new Set()
       }
       this._getSlotSettingFunc = (typeof getSlotSettingFunc === 'function'
         ? getSlotSettingFunc
         : track => this.constructor._defaultGetSlotFunc(track))
       this.idToEffectivePriorityDict = new Map()
       this._initSlotNames(slotNames)
-      return this.reset(refObj, defaultTrackIdList, groupIdList)
+      this.reset(refObj, defaultTrackIdList, groupIdList)
     }
 
     reset (refObj, defaultTrackIdList, groupIdList) {
@@ -207,6 +208,7 @@ var GIVe = (function (give) {
           }
           if (addToCoordinate && this.includeCoordinates) {
             this.coordinateTracks.push(track)
+            this.coordinateIdSet.add(track.id)
           }
           this._insertTrackIdIntoSlot(track.id, slotName, position, true)
         }
@@ -223,6 +225,7 @@ var GIVe = (function (give) {
       if (this.includeCoordinates) {
         this.coordinateTracks =
           this.coordinateTracks.filter(track => (track.id !== trackId))
+        this.coordinateIdSet.delete(trackId)
       }
       this._removeTrackIdFromSlot(trackId, slotName, true)
     }
@@ -231,13 +234,31 @@ var GIVe = (function (give) {
       return this.removeTrackById(track.id, doNotThrow)
     }
 
+    /**
+     * syncFromGroup - synchronize the priority manager with a `trackGroup` of
+     *    selected tracks.
+     *
+     * Note: if included, coordinate tracks will not be affected by this.
+     *
+     * @param {give.TrackGroup} trackGroup - the `trackGroup` of selected tracks
+     * @param {boolean} resetOrder - whether to reset the track order so that it
+     *    will be as close to the order in `trackGroup` as possible
+     * @param {boolean} doNotRemove - whether keep the old tracks (so only the
+     *    previously unselected tracks will be added to the priority manager)
+     * @returns {boolean} whether this synchronization caused actual change
+     * @memberof PriorityManager
+     */
     syncFromGroup (trackGroup, resetOrder, doNotRemove) {
       // remove the ones not in the list
+      let oldTrackIdList = this.trackIdList
       if (resetOrder) {
         this.clear(true)
       } else if (!doNotRemove) {
         this.trackIdList.forEach(trackId => {
-          if (!trackGroup.hasTrack(trackId)) {
+          if (
+            (!this.includeCoordinates || !this.coordinateIdSet.has(trackId)) &&
+            !trackGroup.hasTrack(trackId)
+          ) {
             this.removeTrackById(trackId, true)
           }
         })
@@ -245,6 +266,9 @@ var GIVe = (function (give) {
       for (let track of trackGroup) {
         this.addTrack(track, null, null, null, true)
       }
+      let newTrackIdList = this.trackIdList
+      return oldTrackIdList.length !== newTrackIdList ||
+        newTrackIdList.some((id, index) => (id !== oldTrackIdList[index]))
     }
 
     moveTrack (track, newSlotName, newPosition) {
@@ -310,12 +334,13 @@ var GIVe = (function (give) {
     }
 
     clear (keepCoordinate) {
-      for (let slotName in this._slots) {
-        this._slots.get(slotName).contents.length = 0
+      for (let slot of this._slots.values()) {
+        slot.contents.length = 0
       }
       this.idToEffectivePriorityDict.clear()
       if (!keepCoordinate || !this.includeCoordinates) {
         this.coordinateTracks.length = 0
+        this.coordinateIdSet.clear()
       } else {
         this.coordinateTracks.forEach(track => this.addTrack(track))
       }

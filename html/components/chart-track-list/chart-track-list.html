@@ -18,77 +18,86 @@
   <template>
     <style include="give-shared-styles iron-flex">
     :host {
-      padding: 0.5em;
       display: block;
       @apply --layout-vertical;
     }
     chart-track-group-list {
       @apply --chart-track-list-items-mixin;
     }
-    give-card {
-      margin: 0 0 0.5em 0;
+    div#contents {
+      margin: 0;
+      padding: 0.25em 0.5em;
+      overflow-y: auto;
     }
-    .cardActions {
+    div#cardActions {
       padding: 0;
-      margin-bottom: -0.5em;
+      margin: 0;
     }
     </style>
     <!-- Selected tracks DOM, by reference -->
-    <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
-      <template is="dom-repeat" id="selectedTracksBlock"
-        items="{{_refItemArray}}" as="refItemSelected">
-        <give-card disable-folding>
-          <chart-track-group-list slot="body"
-            group="{{refItemSelected.selectedTracks}}"
-            group-icon="av:playlist-add-check"
-            label="[[_calcSelectedTrackGroupLabel(refItemSelected.refObj)]]"
-            setting-key="[[settingKey]]" is-selected
-            allow-track-reordering="[[allowTrackReordering]]"
-            on-selection-change="_selectionChangedInSelectedTracks">
-          </chart-track-group-list>
-        </give-card>
+    <div id="contents" class="flex layout vertical">
+      <template is="dom-if"
+        if="[[_calcShowSelected(showSelectedTracks, selectedTracksOnly)]]"
+        restamp="true">
+        <template is="dom-repeat" id="selectedTracksBlock"
+          items="{{_refItemArray}}" as="refItemSelected">
+          <give-card disable-folding>
+            <chart-track-group-list slot="body"
+              group="{{refItemSelected.selectedTracks}}"
+              group-icon="av:playlist-add-check"
+              label="[[_calcSelectedTrackGroupLabel(refItemSelected.refObj)]]"
+              setting-key="[[settingKey]]" is-selected
+              allow-track-reordering="[[allowTrackReordering]]"
+              on-selection-change="_selectionChangedInSelectedTracks">
+            </chart-track-group-list>
+          </give-card>
+        </template>
       </template>
-    </template>
-    <template is="dom-repeat" id="trackRefBlock"
-      items="{{_refItemArray}}" as="refItem">
-      <!-- Candidate tracks DOM, by reference -->
-      <give-card class="flex">
-        <chart-track-ref-list slot="body"
-          ref="[[refItem.db]]" has-parent
-          group-icon="[[_calcRefIcon(refItem.refObj)]]"
-          label="[[_calcRefLabel(refItem.refObj)]]"
-          setting-key="[[settingKey]]"
-          group-id-list="[[groupIdList]]"
-          selected-tracks="{{refItem.selectedTracks}}"
-          instant-change="[[instantChange]]"
-          priority-manager="[[_calcPriorityManager(refItem.db)]]">
-        </chart-track-ref-list>
-      </give-card>
-    </template>
-    <div class="cardActions">
-      <template is="dom-if" if="[[withFilter]]" restamp="true">
-        <paper-button on-tap="launchFilter">
-          <iron-icon icon="filter-list"></iron-icon>
-          Filter
-        </paper-button>
-        <paper-button on-tap="resetAllTracks">
-          <iron-icon icon="refresh"></iron-icon>
-          Reset to default
-        </paper-button>
-        <!-- <meta-track-filter id="trackFilter" ref='[[ref]]'
-          on-filter-tracks="_filterTracksHandler"></meta-track-filter> -->
-      </template>
-      <template is="dom-if" if="[[hasControls]]" restamp="true">
-        <paper-button on-tap="cancelChanges">
-          <iron-icon icon="close"></iron-icon>
-          Cancel
-        </paper-button>
-        <paper-button on-tap="submitChanges">
-          <iron-icon icon="check"></iron-icon>
-          OK
-        </paper-button>
+      <template is="dom-if" if="[[!selectedTracksOnly]]">
+        <template is="dom-repeat" id="trackRefBlock"
+          items="{{_refItemArray}}" as="refItem">
+          <!-- Candidate tracks DOM, by reference -->
+          <give-card class="flex">
+            <chart-track-ref-list slot="body"
+              ref="[[refItem.db]]" has-parent
+              group-icon="[[_calcRefIcon(refItem.refObj)]]"
+              label="[[_calcRefLabel(refItem.refObj)]]"
+              setting-key="[[settingKey]]"
+              group-id-list="[[groupIdList]]"
+              selected-tracks="{{refItem.selectedTracks}}"
+              instant-change="[[instantChange]]"
+              priority-manager="{{refItem.priorityManager}}">
+            </chart-track-ref-list>
+          </give-card>
+        </template>
       </template>
     </div>
+    <template is="dom-if" if="[[!selectedTracksOnly]]">
+      <div id="cardActions">
+        <template is="dom-if" if="[[withFilter]]" restamp="true">
+          <paper-button on-tap="launchFilter">
+            <iron-icon icon="filter-list"></iron-icon>
+            Filter
+          </paper-button>
+          <paper-button on-tap="resetAllTracks">
+            <iron-icon icon="refresh"></iron-icon>
+            Reset to default
+          </paper-button>
+          <!-- <meta-track-filter id="trackFilter" ref='[[ref]]'
+            on-filter-tracks="_filterTracksHandler"></meta-track-filter> -->
+        </template>
+        <template is="dom-if" if="[[hasControls]]" restamp="true">
+          <paper-button on-tap="cancelChanges">
+            <iron-icon icon="close"></iron-icon>
+            Cancel
+          </paper-button>
+          <paper-button on-tap="submitChanges">
+            <iron-icon icon="check"></iron-icon>
+            OK
+          </paper-button>
+        </template>
+      </div>
+    </template>
   </template>
   <script>
 var GIVe = (function (give) {
@@ -126,7 +135,43 @@ var GIVe = (function (give) {
           type: Array
         },
 
+        /**
+         * Whether the list will include a part showing all selected tracks.
+         * The list of selected tracks will immediately update if any track
+         *  inside the list is unselected to achieve a "remove-track" effect.
+         * @type {boolean}
+         */
         showSelectedTracks: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Whether the list includes selected tracks __only__. This attribute is
+         *    honored only when `this.collapsable` is `true`.
+         * If this is set to `true`, the following properties will not be
+         *    honored and will be treated as:
+         *    * `this.showSelectedTracks` as if `true`,
+         *    * `this.instantChange` as if `true`,
+         *    * `this.withFilter` as if `false`,
+         *    * `this.hasContorls` as if `false`.
+         * If this is set to `false`, the following properties will not be
+         *    honored and will be treated as:
+         *    * `this.hasContorls` as if `true`.
+         *    (All other properties will be honored as usual)
+         * @type {boolean}
+         */
+        selectedTracksOnly: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Whether the list has a dual state, the fully expanded state and the
+         *    collapsed (selected tracks only) state.
+         * @type {boolean}
+         */
+        collapsable: {
           type: Boolean,
           value: false
         },
@@ -180,6 +225,7 @@ var GIVe = (function (give) {
 
         priorityManagers: {
           type: Object,
+          notify: true,
           value: function () {
             return {}
           }
@@ -210,16 +256,19 @@ var GIVe = (function (give) {
     }
 
     _calcRefLabel (refObj) {
-      return refObj.commonName + ' (reference ' + refObj.db + ') tracks'
+      return refObj.commonName + ' (' + refObj.db + ') tracks'
     }
 
-    _calcPriorityManager (db) {
-      return this.priorityManagers[db]
-    }
+    // _calcPriorityManager (db) {
+    //   return this.priorityManagers[db]
+    // }
 
     _calcSelectedTrackGroupLabel (refObj) {
-      return 'Selected tracks for ' +
-        refObj.commonName + ' (reference ' + refObj.db + ')'
+      return 'Selected tracks (' + refObj.db + ')'
+    }
+
+    _calcShowSelected (showSelectedTracks, collapsable, selectedTracksOnly) {
+      return showSelectedTracks || (collapsable && selectedTracksOnly)
     }
 
     /**
@@ -277,12 +326,14 @@ var GIVe = (function (give) {
         return {
           db: refDbName,
           refObj: give.RefObject.findRefByDb(refDbName),
-          selectedTracks: new give.TrackGroup()
+          selectedTracks: new give.TrackGroup(),
+          priorityManager: this.priorityManagers[refObj.db]
         }
       })
+      this.notifyPath('priorityManagers.*')
       return Promise.all(
         this._refItemArray.map(
-          refItem => this.priorityManagers[refItem.db].readyPromise
+          refItem => refItem.priorityManager.readyPromise
         )
       )
     }
@@ -304,8 +355,19 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Track list not initialized!')
       }
-      this._refTrackLists.forEach(
-        refTrackElem => refTrackElem.syncPriorityManagerToDom(scrollToSelected))
+      if (!this.collapsable || !this.selectedTracksOnly) {
+        this._refTrackLists.forEach(refTrackElem =>
+          refTrackElem.syncPriorityManagerToDom(scrollToSelected))
+      } else {
+        this._refItemArray.forEach(refItem => (
+          refItem.selectedTracks =
+            give.ChartTrackRefList.getSelectedTracksFromPriorityManager(
+              refItem.refObj,
+              refItem.priorityManager,
+              refItem.selectedTracks
+            )
+        ))
+      }
     }
 
     syncDomToTrackSettings () {
@@ -313,8 +375,10 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Track list not initialized!')
       }
-      this._refTrackLists.forEach(
+      let results = this._refTrackLists.map(
         refTrackElem => refTrackElem.syncDomToTrackSettings())
+      this.notifyPath('priorityManagers.*')
+      return results.some(result => result)
     }
 
     resetAllTracks () {
@@ -355,8 +419,37 @@ var GIVe = (function (give) {
     _selectionChangedInSelectedTracks (e) {
       if (!this._updatingSelection) {
         this._updatingSelection = true
-        this._refTrackLists.forEach(
-          elem => elem._selectionChangedInSelectedTracks())
+        if (!this.collapsable || !this.selectedTracksOnly) {
+          this._refTrackLists.forEach(
+            elem => elem._selectionChangedInSelectedTracks())
+        } else {
+          // commit selections without any `<chart-track-ref-list>` element
+          this._refItemArray.forEach(refItem => {
+            if (this.groupIdList && this.groupIdList.length > 0) {
+              this.groupIdList.forEach(groupID => {
+                if (refItem.refObj.groups.hasOwnProperty(groupID)) {
+                  let group = refItem.refObj.groups[groupID]
+                  group.forEach(track => track.setSetting(
+                    this.settingKey, refItem.selectedTracks.hasTrack(track))
+                  )
+                }
+              })
+            } else {
+              for (let key in refItem.refObj.groups) {
+                if (refItem.refObj.groups.hasOwnProperty(key)) {
+                  let group = refItem.refObj.groups[key]
+                  group.forEach(track => track.setSetting(
+                    this.settingKey, refItem.selectedTracks.hasTrack(track))
+                  )
+                }
+              }
+            }
+            refItem.priorityManager.syncFromGroup(
+              refItem.selectedTracks, true)
+          })
+          this.notifyPath('priorityManagers.*')
+          give.fireSignal('update-track-list', null, null, this)
+        }
         this._updatingSelection = false
       }
     }

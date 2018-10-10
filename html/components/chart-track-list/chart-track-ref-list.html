@@ -18,20 +18,16 @@
   <template>
     <style include="give-shared-styles iron-flex">
     :host {
-      padding-top: 0.5em;
-      overflow-y: auto;
+      padding: 0.25em 0.5em;
       @apply --layout-vertical;
       @apply --layout-justified;
     }
     chart-track-group-list {
       @apply --chart-track-list-items-mixin;
     }
-    give-card {
-      margin: 0 0.5em 0.5em 0.5em;
-    }
     .cardActions {
       padding: 0;
-      margin: 0;
+      margin: 0.25em -0.5em -0.25em -0.5em;
     }
     </style>
     <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
@@ -181,7 +177,8 @@ var GIVe = (function (give) {
         },
 
         priorityManager: {
-          type: Object
+          type: Object,
+          notify: true
         },
 
         /**
@@ -363,14 +360,23 @@ var GIVe = (function (give) {
     syncPriorityManagerToSelectedTracks () {
       if (this.refObj) {
         this._updatingSelection = true
-        this.selectedTracks = give.TrackGroup.from(
-          this.priorityManager.trackIdList.map(
-            trackId => this.refObj.tracks.get(trackId)
-          ).filter(track => !(track instanceof give.CoorTrack)),
-          this.selectedTracks
-        )
+        this.selectedTracks =
+          this.constructor.getSelectedTracksFromPriorityManager(
+            this.refObj, this.priorityManager, this.selectedTracks
+          )
         this._updatingSelection = false
       }
+    }
+
+    static getSelectedTracksFromPriorityManager (
+      refObj, priorityManager, oldSelectedTracks
+    ) {
+      return give.TrackGroup.from(
+        priorityManager.trackIdList.map(
+          trackId => refObj.tracks.get(trackId)
+        ).filter(track => !(track instanceof give.CoorTrack)),
+        oldSelectedTracks
+      )
     }
 
     syncDomToTrackSettings () {
@@ -379,10 +385,14 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
-      this.priorityManager.syncFromGroup(this.selectedTracks, true)
-      this._trackGroupElems.forEach(elem => elem.syncDomToTrackSettings())
-      // orders of selectedTracks may have changed
-      this.syncPriorityManagerToSelectedTracks()
+      if (this.priorityManager.syncFromGroup(this.selectedTracks, true)) {
+        this._trackGroupElems.forEach(elem => elem.syncDomToTrackSettings())
+        // orders of selectedTracks may have changed
+        this.syncPriorityManagerToSelectedTracks()
+        this.notifyPath('priorityManager')
+        return true
+      }
+      return false
     }
 
     resetAllTracks () {

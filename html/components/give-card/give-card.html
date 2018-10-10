@@ -30,6 +30,7 @@
       display: inline-block;
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
       z-index: 0;
+      margin: 0.25em 0;
       text-align: left;
       position: relative;
       @apply --layout-vertical;
@@ -49,10 +50,6 @@
 
     #cardContent.collapsed {
       display: none;
-    }
-
-    div#cardHeader {
-      text-transform: capitalize;
     }
   </style>
     <paper-material elevation="1" class="layout vertical flex">
@@ -248,8 +245,14 @@ var GIVe = (function (give) {
     }
 
     _updateHeight (e) {
-      let headerHeight = parseInt(window.getComputedStyle(this.$.cardHeader)
+      let headerHeight = parseFloat(window.getComputedStyle(this.$.cardHeader)
         .getPropertyValue('height')
+      )
+      let marginHeight = parseFloat(window
+        .getComputedStyle(this.shadowRoot.host).getPropertyValue('margin-top')
+      ) +
+      parseFloat(window.getComputedStyle(this.shadowRoot.host)
+        .getPropertyValue('margin-bottom')
       )
       let contentHeight = 0
       let node = null
@@ -260,6 +263,7 @@ var GIVe = (function (give) {
           contentHeight = parseInt(node.contentHeight ||
             window.getComputedStyle(node).getPropertyValue('height'))
         }
+        headerHeight += marginHeight
       }
       this.shadowRoot.host.style.setProperty('min-height',
         (((node && node.minContentHeight) ? node.minContentHeight : 0) +

@@ -270,7 +270,7 @@ var GIVe = (function (give) {
           if (Array.isArray(groupIdList)) {
             return this._applyGroupIdList(priorityManager, groupIdList)
           }
-          this._applyDefaultSettings(priorityManager)
+          return this._applyDefaultSettings(priorityManager)
         }
       }
       return null

@@ -179,7 +179,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               setting-key="visibility"
               has-controls='[[hasControls]]' with-filter='[[withFilter]]'
               instant-change='[[instantChange]]'
-              priority-managers="[[priorityManagers]]">
+              show-selected-tracks
+              priority-managers="{{priorityManagers}}">
             </chart-track-list>
             <custom-track-controller ref="[[ref]]" id="mainCTController">
             </custom-track-controller>
@@ -213,7 +214,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
             <chart-area ref="[[ref]]" id="mainChartArea"
               coordinate="{{coordinate}}"
               num-of-subs="{{numOfSubs}}"
-              priority-managers="[[priorityManagers]]"
+              priority-managers="{{priorityManagers}}"
               pass-exceptions>
             </chart-area>
           </div>
@@ -458,7 +459,7 @@ var GIVe = (function (give) {
       if (this.$.mainTrackList) {
         return this.$.mainChartArea.update(
           null, null,
-          this.$.mainTrackList.syncDomToTrack() || forceDomUpdate,
+          this.$.mainTrackList.syncDomToTrackSettings() || forceDomUpdate,
           this._calcCoordinateArrayToJson(), true
         )
           .catch(err => this._errorHandler(err))

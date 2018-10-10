@@ -184,11 +184,7 @@ var GIVe = (function (give) {
     }
 
     [Symbol.iterator] () {
-      return {
-        next: () => {
-          return this.array[Symbol.iterator].next()
-        }
-      }
+      return this.array[Symbol.iterator]()
     }
 
     static from (trackList, oldTrackGroup, keepOriginalOrder) {
