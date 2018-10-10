@@ -157,6 +157,32 @@ var GIVe = (function (give) {
       }
     }
 
+    match (iterableList) {
+      let newTrackSet = new Set(iterableList)
+      for (let i = 0; i < this.length; i++) {
+        if (!newTrackSet.has(this.array[i])) {
+          this.removeTrack(i)
+          i--
+        }
+      }
+      if (typeof iterableList[Symbol.iterator] === 'function') {
+        // iterable
+        for (let track of iterableList) {
+          if (!this.hasTrack(track)) {
+            this.addTrack(track)
+          }
+        }
+      } else {
+        // array-like
+        for (let i = 0; i < iterableList.length; i++) {
+          if (!this.hasTrack(iterableList[i])) {
+            this.addTrack(iterableList[i])
+          }
+        }
+      }
+      return this
+    }
+
     [Symbol.iterator] () {
       return {
         next: () => {
@@ -165,7 +191,7 @@ var GIVe = (function (give) {
       }
     }
 
-    static from (trackList, id, params, idPrefix, idPostfix) {
+    static from (trackList, oldTrackGroup, keepOriginalOrder) {
       if (!trackList ||
         (typeof trackList[Symbol.iterator] !== 'function' &&
           typeof trackList.length !== 'number'
@@ -173,20 +199,14 @@ var GIVe = (function (give) {
       ) {
         throw new give.GiveError('trackList not an array or an iterable!')
       }
-      id = id || 'newGroup'
-      let newTrackGroup = new TrackGroup(id, params, idPrefix, idPostfix)
-      if (typeof trackList[Symbol.iterator] === 'function') {
-        // iterable
-        for (let track of trackList) {
-          newTrackGroup.addTrack(track)
-        }
-      } else {
-        // array-like
-        for (let i = 0; i < trackList.length; i++) {
-          newTrackGroup.addTrack(trackList[i])
-        }
+      oldTrackGroup = oldTrackGroup || {}
+      oldTrackGroup.id = oldTrackGroup.id || 'newGroup'
+      let newTrackGroup = new TrackGroup(oldTrackGroup.id,
+        oldTrackGroup.params, oldTrackGroup.idPrefix, oldTrackGroup.idPostfix)
+      if (oldTrackGroup.array && keepOriginalOrder) {
+        newTrackGroup.match(oldTrackGroup.array)
       }
-      return newTrackGroup
+      return newTrackGroup.match(trackList)
     }
   }
 

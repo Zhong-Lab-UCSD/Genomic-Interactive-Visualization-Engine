@@ -2,7 +2,9 @@ var GIVe = (function (give) {
   'use strict'
 
   give.GiveCardContentMixin = Polymer.dedupingMixin(base =>
-    class extends base {
+    class extends Polymer.mixinBehaviors([
+      Polymer.IronResizableBehavior
+    ], base) {
       constructor () {
         super(...arguments)
         this._collapsedInfoObject = null
@@ -102,14 +104,16 @@ var GIVe = (function (give) {
           // icon and ref in one line
           let headerElement = document.createElement('div')
           let iconElement = this.iconElement
-          iconElement.classList.add('smallInline')
 
           let headerTextElement = document.createElement('span')
           headerTextElement.textContent = this.headerText
 
           headerElement.classList.add('headerText')
           headerElement.classList.add('clearFix')
-          headerElement.appendChild(iconElement)
+          if (iconElement) {
+            iconElement.classList.add('smallInline')
+            headerElement.appendChild(iconElement)
+          }
           headerElement.appendChild(headerTextElement)
           element.appendChild(headerElement)
 

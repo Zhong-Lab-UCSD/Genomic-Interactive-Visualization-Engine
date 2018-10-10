@@ -85,7 +85,9 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class GiveCard extends Polymer.Element {
+  class GiveCard extends Polymer.mixinBehaviors([
+    Polymer.IronResizableBehavior
+  ], Polymer.Element) {
     static get is () {
       return 'give-card'
     }
@@ -139,6 +141,9 @@ var GIVe = (function (give) {
       )
       this.addEventListener(
         'content-ready', this._boundContentReadyHandler
+      )
+      this.addEventListener(
+        'update-height', this._updateHeight
       )
     }
 
@@ -242,7 +247,7 @@ var GIVe = (function (give) {
       this._updateHeight()
     }
 
-    _updateHeight () {
+    _updateHeight (e) {
       let headerHeight = parseInt(window.getComputedStyle(this.$.cardHeader)
         .getPropertyValue('height')
       )
@@ -271,6 +276,9 @@ var GIVe = (function (give) {
             (headerHeight + contentHeight)) + ''
           : '0'
       )
+      if (!(e instanceof window.Event)) {
+        give.fireSignal('update-height', null, null, this)
+      }
     }
 
     _setContentReady (flag) {

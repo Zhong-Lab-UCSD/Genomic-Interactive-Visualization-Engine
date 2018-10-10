@@ -65,16 +65,21 @@ var GIVe = (function (give) {
       this.includeCoordinates = (typeof includeCoordinates === 'boolean'
         ? includeCoordinates : this.constructor.DEFAULT_INCLUDE_COORDINATES)
       if (this.includeCoordinates) {
-        this.coordinateTrackIds = []
+        this.coordinateTracks = []
       }
       this._getSlotSettingFunc = (typeof getSlotSettingFunc === 'function'
         ? getSlotSettingFunc
         : track => this.constructor._defaultGetSlotFunc(track))
       this.idToEffectivePriorityDict = new Map()
       this._initSlotNames(slotNames)
+      return this.reset(refObj, defaultTrackIdList, groupIdList)
+    }
+
+    reset (refObj, defaultTrackIdList, groupIdList) {
       this.readyPromise = refObj.initTracks().then(refObj =>
         refObj.initPriorityManager(this, defaultTrackIdList, groupIdList))
         .then(() => this)
+      return this.readyPromise
     }
 
     _initSlotNames (slotNames) {
@@ -177,8 +182,8 @@ var GIVe = (function (give) {
       this._syncEffectivePriority(slotName, position)
     }
 
-    addTrack (track, slotName, position, isCoordinate, doNotThrow) {
-      if (!isCoordinate || this.includeCoordinates) {
+    addTrack (track, slotName, position, addToCoordinate, doNotThrow) {
+      if (!addToCoordinate || this.includeCoordinates) {
         slotName = slotName || this._getSlotSettingFunc(track)
         if (this.idToEffectivePriorityDict.has(track.id)) {
           if (!doNotThrow) {
@@ -200,8 +205,8 @@ var GIVe = (function (give) {
             }
             position = this._slots.get(slotName).contents.length
           }
-          if (isCoordinate && this.includeCoordinates) {
-            this.coordinateTrackIds.push(track.id)
+          if (addToCoordinate && this.includeCoordinates) {
+            this.coordinateTracks.push(track)
           }
           this._insertTrackIdIntoSlot(track.id, slotName, position, true)
         }
@@ -215,11 +220,9 @@ var GIVe = (function (give) {
           throw new give.GiveError('Track ID does not exist: ' + trackId)
         }
       }
-      if (this.includeCoordinates &&
-        this.coordinateTrackIds.indexOf(trackId) >= 0
-      ) {
-        this.coordinateTrackIds.splice(
-          this.coordinateTrackIds.indexOf(trackId), 1)
+      if (this.includeCoordinates) {
+        this.coordinateTracks =
+          this.coordinateTracks.filter(track => (track.id !== trackId))
       }
       this._removeTrackIdFromSlot(trackId, slotName, true)
     }
@@ -228,9 +231,11 @@ var GIVe = (function (give) {
       return this.removeTrackById(track.id, doNotThrow)
     }
 
-    syncFromGroup (trackGroup, doNotRemove) {
+    syncFromGroup (trackGroup, resetOrder, doNotRemove) {
       // remove the ones not in the list
-      if (!doNotRemove) {
+      if (resetOrder) {
+        this.clear(true)
+      } else if (!doNotRemove) {
         this.trackIdList.forEach(trackId => {
           if (!trackGroup.hasTrack(trackId)) {
             this.removeTrackById(trackId, true)
@@ -304,12 +309,16 @@ var GIVe = (function (give) {
         : Math.sign(priority1.position - priority2.position)
     }
 
-    clear () {
+    clear (keepCoordinate) {
       for (let slotName in this._slots) {
         this._slots.get(slotName).contents.length = 0
       }
       this.idToEffectivePriorityDict.clear()
-      this.coordinateTrackIds.length = 0
+      if (!keepCoordinate || !this.includeCoordinates) {
+        this.coordinateTracks.length = 0
+      } else {
+        this.coordinateTracks.forEach(track => this.addTrack(track))
+      }
     }
 
     hasTrackId (trackId) {

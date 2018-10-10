@@ -290,7 +290,6 @@ var GIVe = (function (give) {
     }
 
     _applyDefaultIdList (priorityManager, idList) {
-      this._defaultListApplied = true
       // clear previous track priority values and overwrite with new ones
       priorityManager.clear()
       // set all tracks to non-visible (or whatever settingString specifies)
@@ -323,18 +322,20 @@ var GIVe = (function (give) {
 
       // set tracks matching the list to visible
       // (or whatever settingString specifies)
-      this.groups.forEach(group => {
-        if (idList.indexOf(group.id) < 0) {
-          // group not there
-          group.forEach(track => {
-            track.setDefaultSetting(priorityManager.settingString, false)
-            track.setSetting(priorityManager.settingString, false)
-            if (priorityManager.hasTrack(track)) {
-              priorityManager.removeTrack(track)
-            }
-          })
+      for (let groupID in this.groups) {
+        if (this.groups.hasOwnProperty(groupID)) {
+          if (idList.indexOf(groupID) < 0) {
+            // group not there
+            this.groups[groupID].forEach(track => {
+              track.setDefaultSetting(priorityManager.settingString, false)
+              track.setSetting(priorityManager.settingString, false)
+              if (priorityManager.hasTrack(track)) {
+                priorityManager.removeTrack(track)
+              }
+            })
+          }
         }
-      })
+      }
       return priorityManager
     }
 

@@ -18,7 +18,7 @@
   <template>
     <style include="give-shared-styles iron-flex">
     :host {
-      padding: 0.5em;
+      padding-top: 0.5em;
       overflow-y: auto;
       @apply --layout-vertical;
       @apply --layout-justified;
@@ -27,17 +27,18 @@
       @apply --chart-track-list-items-mixin;
     }
     give-card {
-      margin: 0 0 0.5em 0;
+      margin: 0 0.5em 0.5em 0.5em;
     }
     .cardActions {
       padding: 0;
-      margin-bottom: -0.5em;
+      margin: 0;
     }
     </style>
-    <!-- <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
+    <template is="dom-if" if="[[showSelectedTracks]]" restamp="true">
       <give-card disable-folding>
-        <chart-track-group-list slot="body"
-          group="[[selectedTracks]]" class="selectedTracks"
+        <chart-track-group-list 
+          slot="body" id="selectedTrackList"
+          group="{{selectedTracks}}" class="selectedTracks"
           group-icon="av:playlist-add-check"
           label="Selected tracks"
           setting-key="[[settingKey]]" is-selected
@@ -46,15 +47,13 @@
           on-selection-change="_selectionChangedInSelectedTracks">
         </chart-track-group-list>
       </give-card>
-    </template> -->
+    </template>
     <template is="dom-repeat" id="groupBlock"
       items="[[groupArray]]" as="group">
       <!-- this is the track group DOM -->
       <give-card class="flex">
         <chart-track-group-list slot="body"
           group="[[group]]"
-          group-icon="[[group.icon]]"
-          label="[[group.label]]"
           setting-key="[[settingKey]]"
           instant-change="[[instantChange]]"
           priority-manager="[[priorityManager]]"
@@ -126,6 +125,13 @@ var GIVe = (function (give) {
           type: Array
         },
 
+        defaultTrackIdList: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+
         showSelectedTracks: {
           type: Boolean,
           value: false
@@ -147,7 +153,7 @@ var GIVe = (function (give) {
 
         /**
          * Whether the track controller will reflect change immediately
-         * without calling this.syncDomToTrack().
+         * without calling this.syncDomToTrackSettings().
          * This is always false if hasControls === true
          * @type {boolean}
          */
@@ -179,17 +185,17 @@ var GIVe = (function (give) {
         },
 
         /**
-         * Whether this component is used __as a stand-alone element__
-         *  (no controlling parent), if this is set as `true`, it will attempt
-         *  to handle data synchronization between the backend and the frontend
-         *  automatically.
+         * Whether this component __has a parent to control track objects and
+         *  selection__ (instead of as a stand-alone element), if this is set to
+         *  `false`, it will attempt to handle data synchronization between the
+         *  backend and the frontend automatically.
          *
          * If there is a parent responsible for synchronization (typically
-         *  a `<chart-track-list>` element), setting this to `true` may incur
+         *  a `<chart-track-list>` element), setting this to `true` can reduce
          *  unnecessary computational cost.
          * @type  {boolean}
          */
-        standAlone: {
+        hasParent: {
           type: Boolean,
           value: false
         }
@@ -203,6 +209,10 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       this._allowFlexShrink = true
+      if (this.group) {
+        this.groupIcon = this.groupIcon || this.refObj.iconLabel
+        this.label = this.label || this.refObj.commonName
+      }
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Tracks')
       this._setHeaderText(this.label || 'Tracks')
@@ -228,16 +238,42 @@ var GIVe = (function (give) {
       // add all height of group cards
       let height = giveCards.reduce(
         (height, card) => (
-          height + parseInt(window.getComputedStyle(card)
-            .getPropertyValue('flex-basis'))
+          height + 0.5 * this.fontSize +
+            parseFloat(window.getComputedStyle(card)
+              .getPropertyValue('flex-basis'))
         ), 0
       )
       if (this._calcControls(this.hasControls, this.withFilter)) {
-        height += parseInt(window.getComputedStyle(
+        height += 0.5 * this.fontSize + parseFloat(window.getComputedStyle(
           this.shadowRoot.querySelector('#cardActionContainer')
-        ).getPropertyValue('height'))
+        ).getPropertyValue('height')) - 0.5 * this.fontSize
       }
       return height
+    }
+
+    get fontSize () {
+      return parseFloat(window.getComputedStyle(this.shadowRoot.host)
+        .getPropertyValue('font-size'))
+    }
+
+    get minContentHeight () {
+      let giveCards = [...this.shadowRoot.querySelectorAll('give-card')]
+      // add all height of group cards
+      let minHeight = giveCards.reduce(
+        (minHeight, card) => (
+          minHeight + 0.5 * this.fontSize +
+            parseFloat(window.getComputedStyle(card)
+              .getPropertyValue('min-height'))
+        ),
+        this._calcControls(this.hasControls, this.withFilter)
+          ? 0 : 0.5 * this.fontSize
+      )
+      if (this._calcControls(this.hasControls, this.withFilter)) {
+        minHeight += 0.5 * this.fontSize + parseFloat(window.getComputedStyle(
+          this.shadowRoot.querySelector('#cardActionContainer')
+        ).getPropertyValue('height')) - 0.5 * this.fontSize
+      }
+      return minHeight
     }
 
     _refreshRefTracks () {
@@ -256,18 +292,20 @@ var GIVe = (function (give) {
         }
       }
       // If this component is a stand-alone element, call
-      //  `this.syncTrackToDom()`. Otherwise `this.syncTrackToDom()` should be
+      //  `this.syncPriorityManagerToDom()`. Otherwise
+      //  `this.syncPriorityManagerToDom()` should be
       //  called explicitly in the parent to synchronize Dom and data model.
       return new Promise((resolve, reject) => {
         Polymer.RenderStatus.beforeNextRender(this, () => {
           this._trackGroupElems =
-            [...this.$.groupBlock.querySelectorAll('chart-track-group-list')]
+            [...this.shadowRoot.querySelectorAll('chart-track-group-list:not([is-selected])')]
           Polymer.RenderStatus.beforeNextRender(this,
             () => resolve(Promise.all(this._trackGroupElems.map(
               elem => elem.domReadyPromise
             )).then(() => {
-              if (this.standAlone) {
-                this.syncTrackToDom()
+              if (!this.hasParent) {
+                Polymer.RenderStatus.afterNextRender(this,
+                  () => this.syncPriorityManagerToDom(true))
               }
               this._readiness = true
               return this
@@ -301,36 +339,64 @@ var GIVe = (function (give) {
     _setRefObj (refObj) {
       // TODO: may need to add something to remove the override array
       if (super._setRefObj(refObj)) {
+        if (!this.hasParent && !this.priorityManager) {
+          this.priorityManager = new give.PriorityManager(
+            refObj, this.defaultTrackIdList, this.groupIdList)
+        }
         return this.updateAllGroupDOM()
       }
     }
 
-    syncTrackToDom (scrollToSelected) {
+    syncPriorityManagerToDom (scrollToSelected) {
       // this is used when resetting selection or to initialize DOMs
       // use priorityManager to build `this.selectedTracks`
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
+      this.syncPriorityManagerToSelectedTracks()
+      this._updatingSelection = true
       this._trackGroupElems.forEach(
         elem => elem.syncTrackSettingsToDom(scrollToSelected))
-      this._updateSelectedTracks()
+      this._updatingSelection = false
     }
 
-    syncDomToTrack () {
+    syncPriorityManagerToSelectedTracks () {
+      if (this.refObj) {
+        this._updatingSelection = true
+        this.selectedTracks = give.TrackGroup.from(
+          this.priorityManager.trackIdList.map(
+            trackId => this.refObj.tracks.get(trackId)
+          ).filter(track => !(track instanceof give.CoorTrack)),
+          this.selectedTracks
+        )
+        this._updatingSelection = false
+      }
+    }
+
+    syncDomToTrackSettings () {
       // this is used when submitting the results
       // convert `this.selectedTracks` to priorityManager
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
-      this.priorityManager.syncFromGroup(this.selectedTracks)
+      this.priorityManager.syncFromGroup(this.selectedTracks, true)
       this._trackGroupElems.forEach(elem => elem.syncDomToTrackSettings())
+      // orders of selectedTracks may have changed
+      this.syncPriorityManagerToSelectedTracks()
     }
 
     resetAllTracks () {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
+      if (!this.hasParent) {
+        this.priorityManager.reset(
+          this.refObj, this.defaultTrackIdList, this.groupIdList)
+      }
+      this.syncPriorityManagerToSelectedTracks()
+      this._updatingSelection = true
       this._trackGroupElems.forEach(elem => elem.resetAllTracks())
+      this._updatingSelection = false
     }
 
     _signalClose () {
@@ -361,33 +427,45 @@ var GIVe = (function (give) {
     }
 
     submitChanges () {
-      return this.syncDomToTrack().then(() => this._signalClose())
+      return this.syncDomToTrackSettings().then(() => this._signalClose())
     }
 
     cancelChanges () {
-      return this.syncTrackToDom().then(() => this._signalClose())
+      return this.syncPriorityManagerToDom().then(() => this._signalClose())
     }
 
     applyFilter (map, flags) {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
+      this._updatingSelection = true
       this._trackGroupElems.forEach(elem => elem.applyFilter(map, flags))
+      this._updatingSelection = false
       this._updateSelectedTracks()
     }
 
     _updateSelectedTracks () {
-      this._updatingSelection = true
-      this.selectedTracks = give.TrackGroup.from(this._trackGroupElems.reduce(
-        (trackArray, elem) => trackArray.concat(elem.selectedTracks),
-        []))
-      this._updatingSelection = false
+      if (!this._updatingSelection) {
+        this._updatingSelection = true
+        let selectedArray = this._trackGroupElems.reduce(
+          (trackArray, elem) => trackArray.concat(elem.selectedArray),
+          [])
+        this.selectedTracks = give.TrackGroup.from(
+          selectedArray, this.selectedTracks, true)
+        this._updatingSelection = false
+      }
     }
 
     _selectionChangedInSelectedTracks (e) {
       if (!this._updatingSelection) {
+        this._updatingSelection = true
+        // this.selectedTracks = give.TrackGroup.from(
+        //   this.shadowRoot.querySelector('#selectedTrackList').selectedArray,
+        //   this.selectedTracks
+        // )
         this._trackGroupElems.forEach(
           elem => elem.syncSelectionFromGroup(this.selectedTracks))
+        this._updatingSelection = false
       }
     }
   }

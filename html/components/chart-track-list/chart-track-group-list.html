@@ -26,6 +26,9 @@
         @apply --layout-vertical;
         @apply --layout-flex;
       }
+      div.noTrackMsg {
+        padding: 0 1em;
+      }
       iron-list {
         padding: 0 1em;
         overflow-x: hidden;
@@ -34,13 +37,13 @@
         };
       }
     </style>
-    <template is="dom-if" if="[[_listEmpty(groupArray)]]">
-      <div><em>(No tracks)</em></div>
+    <template is="dom-if" if="[[_listEmpty(group)]]">
+      <div class="noTrackMsg"><em>(No tracks)</em></div>
     </template>
     <iron-list id="groupList" items="[[group.array]]" as="track"
       class="flex"
       selection-enabled
-      multi-selection$="[[_computeSingleChoice(group)]]"
+      multi-selection$="[[!_computeSingleChoice(group)]]"
       on-selected-items-changed="_selectedItemsChangedHandler"
       selected-items="{{selected}}">
       <template>
@@ -69,7 +72,8 @@ var GIVe = (function (give) {
 
         group: {
           type: Object,
-          observer: '_groupChanged'
+          observer: '_groupChanged',
+          notify: true
         },
 
         instantChange: {
@@ -127,7 +131,7 @@ var GIVe = (function (give) {
       super.connectedCallback()
       this.domReadyPromise = new Promise((resolve, reject) => {
         Polymer.RenderStatus.beforeNextRender(this, () => {
-          if (this.isSelected) {
+          if (this.isSelected && this.group) {
             this._syncGroupToSelection()
           }
           give._verbConsole.info('chartTrackGroupList: ready.')
@@ -149,22 +153,40 @@ var GIVe = (function (give) {
         this.displayedLines > this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
     }
 
+    get selectedArray () {
+      if (this._computeSingleChoice(this.group)) {
+        return this.selected ? [this.selected] : []
+      } else {
+        return this.selected
+      }
+    }
+
     _syncGroupToSelection () {
+      if (!this.isSelected) {
+        throw new give.GiveError(
+          '_syncGroupToSelection() called on non-selected group list!'
+        )
+      }
       this._updatingSelectedItems = true
-      this.selected = this.group.slice()
+      this.group.forEach((track, index) => this.$.groupList.selectIndex(index))
       this._updatingSelectedItems = false
     }
 
     _syncSelectionToGroup () {
+      if (!this.isSelected) {
+        throw new give.GiveError(
+          '_syncSelectionToGroup() called on non-selected group list!'
+        )
+      }
       this._updatingSelectedItems = true
       // this.groupArray = this.selected.slice()
-      this.group = give.TrackGroup.from(this.selected, this.group.id,
-        this.group, this.group.IDPrefix, this.group.IDPostfix)
+      this.group = give.TrackGroup.from(this.selected, this.group)
       this._updatingSelectedItems = false
     }
 
     _computeSingleChoice (group) {
-      return group.singleChoice && group.singleChoice !== '0'
+      return !this.isSelected &&
+        group.singleChoice && group.singleChoice !== '0'
     }
 
     _listEmpty (array) {
@@ -174,6 +196,7 @@ var GIVe = (function (give) {
     syncTrackSettingsToDom (scrollToSelected) {
       // this is used when resetting selection
       // DOM means this.$.groupList.selectedItems
+      this._updatingSelectedItems = true
       if (this.group) {
         this.$.groupList.clearSelection()
         let firstSelected = null
@@ -192,6 +215,8 @@ var GIVe = (function (give) {
           this.$.groupList.scrollToIndex(firstSelected)
         }
       }
+      this._updatingSelectedItems = false
+      this._updateSelectedItems()
     }
 
     syncDomToTrackSettings () {
@@ -214,7 +239,7 @@ var GIVe = (function (give) {
     resetAllTracks () {
       if (this.group) {
         this.group.forEach(track => track.resetSetting(this.settingKey))
-        this.syncTrackToDom()
+        this.syncTrackSettingsToDom()
       }
     }
 
@@ -240,21 +265,30 @@ var GIVe = (function (give) {
 
     _selectedItemsChangedHandler (e) {
       if (this._readiness && !this._updatingSelectedItems) {
+        return Promise.resolve().then(() => this._updateSelectedItems(e.detail))
+      }
+    }
+
+    _updateSelectedItems (eventDetail) {
+      if (this._readiness && !this._updatingSelectedItems) {
+        this._updatingSelectedItems = true
         if (this.instantChange) {
-          this.syncDomToTrack()
+          this.syncDomToTrackSettings()
         }
         if (this.isSelected) {
           // remove the item that is not selected, then refresh the list
           this._syncSelectionToGroup()
         }
-        give.fireSignal('selection-change', e.detail, null, this)
+        give.fireSignal('selection-change', eventDetail, null, this)
+        this._updatingSelectedItems = false
       }
     }
 
-    _groupArrayChanged (newValue, oldValue) {
-      if (this.isSelected && !this._updatingSelectedItems) {
+    _groupChanged (newValue, oldValue) {
+      if (this.isSelected && this.group && !this._updatingSelectedItems) {
         this._syncGroupToSelection()
       }
+      give.fireSignal('update-height', null, null, this)
     }
 
     syncSelectionFromGroup (selectionGroup) {
@@ -266,7 +300,7 @@ var GIVe = (function (give) {
         }
       })
       // deselect the ones in `this.selected` but not in `selectionSet`
-      this.selected.forEach(track => {
+      this.selectedArray.forEach(track => {
         if (!selectionGroup.hasTrack(track)) {
           this.$.groupList.deselectItem(track)
         }
@@ -309,7 +343,7 @@ var GIVe = (function (give) {
   }
 
   ChartTrackGroupList.MAX_DISPLAY_LINES_SELECTED = 8
-  ChartTrackGroupList.MAX_DISPLAY_LINES = 25
+  ChartTrackGroupList.MAX_DISPLAY_LINES = 45
   ChartTrackGroupList.MIN_SHRINKABLE_DISPLAY_LINES = 5
 
   give.ChartTrackGroupList = ChartTrackGroupList
