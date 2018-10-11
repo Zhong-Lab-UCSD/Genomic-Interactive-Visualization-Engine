@@ -219,15 +219,12 @@ var GIVe = (function (give) {
   ) {
     // this is a wrapper for Ajax calls throughout GIVe
     method = method || 'POST'
+    responseType = (responseType || '').toLowerCase()
     var xhr = new window.XMLHttpRequest()
-    xhr.responseType = responseType || ''
     xhr.onload = function () {
       var responses = xhr.response
       if (xhr.status >= 200 && xhr.status < 400) {
-        if (xhr.responseType.toLowerCase() === 'json' &&
-           (navigator.appName === 'Microsoft Internet Explorer' ||
-          !!(navigator.userAgent.match(/Trident/) ||
-             navigator.userAgent.match(/rv 11/)))) {
+        if (responseType === 'json' && responseType !== xhr.responseType) {
           // IE detected (should be IE 11), fix the json return issue
           let errorMsg = 'You are currently using IE 11 to visit this site. ' +
             'Some part of the site may behave differently and if you ' +
@@ -250,13 +247,18 @@ var GIVe = (function (give) {
         errorFunc.call(thisVar, xhr.status) // handle 404, 500 or other errors
       } else {
       }
-      xhr.open(method, target)
-      if (params instanceof window.FormData) {
-        xhr.send(params)
-      } else {
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.send(JSON.stringify(params))
-      }
+    }
+    xhr.open(method, target)
+    try {
+      xhr.responseType = responseType
+    } catch (err) {
+      xhr.responseType = ''
+    }
+    if (params instanceof window.FormData) {
+      xhr.send(params)
+    } else {
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.send(JSON.stringify(params))
     }
   }
 
