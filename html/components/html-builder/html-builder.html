@@ -426,8 +426,7 @@ var GIVe = (function (give) {
           return null
         }
         let baseURL = window.location.protocol + '//' +
-          window.location.hostname +
-          (window.location.port ? ':' + window.location.port : '')
+          window.location.host
         let result = '<script src="' + baseURL +
           '/bower_components/webcomponentsjs/webcomponents-loader.js">' +
           '<\/script>\n' +
