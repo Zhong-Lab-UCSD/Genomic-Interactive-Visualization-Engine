@@ -34,7 +34,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="title">
     <template>
       <paper-toolbar>
-        <span class="title">Title</span>
+        <span class="title" slot="top">Title</span>
       </paper-toolbar>
     </template>
   </test-fixture>
@@ -42,7 +42,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="title-with-id">
     <template>
       <paper-toolbar>
-        <span class="title" id="title">Title</span>
+        <span class="title" id="title" slot="top">Title</span>
       </paper-toolbar>
     </template>
   </test-fixture>
@@ -50,8 +50,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="multiple-titles">
     <template>
       <paper-toolbar>
-        <span class="title">Title 1</span>
-        <span class="title">Title 2</span>
+        <span class="title" slot="top">Title 1</span>
+        <span class="title" slot="top">Title 2</span>
       </paper-toolbar>
     </template>
   </test-fixture>
@@ -81,46 +81,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('distributes nodes to topBar by default', function() {
         var item = document.createElement('div');
+        item.setAttribute('slot', 'top');
         Polymer.dom(toolbar).appendChild(item);
         Polymer.dom.flush();
-
         var insertionPoint = Polymer.dom(item).getDestinationInsertionPoints()[0];
         expect(Polymer.dom(insertionPoint).parentNode).to.be.eql(toolbar.$.topBar);
       });
 
-      test('distributes nodes with "middle" class to middleBar', function() {
+      test('distributes nodes with "middle" slot to middleBar', function() {
         var item = document.createElement('div');
-        item.classList.add('middle');
+        item.setAttribute('slot', 'middle');
         Polymer.dom(toolbar).appendChild(item);
         Polymer.dom.flush();
-
         var insertionPoint = Polymer.dom(item).getDestinationInsertionPoints()[0];
         expect(Polymer.dom(insertionPoint).parentNode).to.be.eql(toolbar.$.middleBar);
       });
 
-      test('distributes nodes with "bottom" class to bottombar', function() {
+      test('distributes nodes with "bottom" slot to bottomBar', function() {
         var item = document.createElement('div');
-        item.classList.add('bottom');
+        item.setAttribute('slot', 'bottom');
         Polymer.dom(toolbar).appendChild(item);
         Polymer.dom.flush();
-
         var insertionPoint = Polymer.dom(item).getDestinationInsertionPoints()[0];
         expect(Polymer.dom(insertionPoint).parentNode).to.be.eql(toolbar.$.bottomBar);
       });
-
     });
 
     suite('a11y', function() {
 
       test('has role="toolbar"', function() {
         var toolbar = fixture('basic');
+        Polymer.dom.flush();
         assert.equal(toolbar.getAttribute('role'), 'toolbar', 'has role="toolbar"');
       });
 
-      test('children with .title becomes the label', function() {
+      test('children with .title becomes the label', function(done) {
         var toolbar = fixture('title');
-        assert.isTrue(toolbar.hasAttribute('aria-labelledby'), 'has aria-labelledby');
-        assert.equal(toolbar.getAttribute('aria-labelledby'), Polymer.dom(toolbar).querySelector('.title').id, 'aria-labelledby has the id of the .title element');
+        flush(function() {
+          assert.isTrue(toolbar.hasAttribute('aria-labelledby'), 'has aria-labelledby');
+          assert.equal(toolbar.getAttribute('aria-labelledby'),
+              Polymer.dom(toolbar).querySelector('.title').id,
+              'aria-labelledby has the id of the .title element');
+          done();
+        });
       });
 
       test('existing ids on titles are preserved', function() {

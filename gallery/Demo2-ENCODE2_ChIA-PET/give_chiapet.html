@@ -4,7 +4,7 @@
 <script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
 <link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
-<link rel="import" href="https://www.givengine.org/lib/genemo-styles.html">
+<link rel="import" href="https://www.givengine.org/lib/give-styles.html">
 <link rel="import" href="https://www.givengine.org/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="https://www.givengine.org/paper-button/paper-button.html">
 <link rel="import" href="https://www.givengine.org/paper-dialog/paper-dialog.html">
@@ -17,11 +17,11 @@
   coordinates='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
   group-id-list='["genes", "ENCODE2_ChIA-PET", "customTracks"]'>
 
-    <paper-button raised noink class="toolBarCtrls" id="chiapetShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET';">
+    <paper-button raised noink slot="toolBarCtrls" id="chiapetShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET';">
      GO TO CODE
     </paper-button>
 
-    <paper-button raised noink class="toolBarCtrls" id="chiapetShowRef">
+    <paper-button raised noink slot="toolBarCtrls" id="chiapetShowRef">
       References
     </paper-button>
 

@@ -19,46 +19,38 @@ var GIVe = (function (give) {
   'use strict'
 
   /**
-   * New track template, see `GIVe.TrackObject` for details.
+   * A track for bigWig data (continuous analog signal across the genome),
+   * see `GIVe.TrackObject` for details.
    * @typedef {object} BigWigTrack
    * @class give.BigWigTrack
-   *
-   * @constructor
    * @implements give.TrackObject
-   * @param {string} ID - The ID of the new track object
-   * @param {object} Settings - Settings of the new track. Dictionary format.
-   *   Note that if `Settings` has a property named `settings`,
-   *   it will be merged with `this.Settings`, while properties in
-   *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
-   * @param {string} groupID - The group ID of the new track object
    */
-  give.BigWigTrack = function (ID, Settings, ref, groupID) {
-    give.TrackObject.apply(this, arguments)
-  }
-
-  give.extend(give.TrackObject, give.BigWigTrack)
-
-  /**
-   * getType - get the key strings showing this type of data.
-   *    This shall be the same as the `type` column for track entries in
-   *    `trackDb` table so that GIVE is able to figure out the track is of this
-   *    type.
-   *
-   * @returns {Array<string>}  return all keys matching this type.
-   */
-  give.BigWigTrack.getType = function () {
-    return ['bigwig']
+  class BigWigTrack extends give.TrackObject {
+    /**
+     * typeList - get the key strings showing this type of data.
+     *    This shall be the same as the `type` column for track entries in
+     *    `trackDb` table so that GIVE is able to figure out the track is of
+     *    this type.
+     * @static
+     * @property
+     *
+     * @returns {Array<string>}  return all keys matching this type.
+     */
+    static get typeList () {
+      return ['bigwig']
+    }
   }
 
   // specify the data object (if needed) used in this track
-  give.BigWigTrack.prototype._DataObjCtor = give.BigWigTrackData
+  BigWigTrack._DataObjCtor = give.BigWigTrackData
 
   // specify the visualization object used in this track
-  give.BigWigTrack.prototype._DomObjCtor = give.BigWigTrackDOM
+  BigWigTrack._DomObjCtor = give.BigWigTrackDom
 
   // __IMPORTANT:__ register this new track type
-  give.TrackObject.registerTrack(give.BigWigTrack)
+  give.TrackObject.registerTrack(BigWigTrack)
+
+  give.BigWigTrack = BigWigTrack
 
   return give
 })(GIVe || {})

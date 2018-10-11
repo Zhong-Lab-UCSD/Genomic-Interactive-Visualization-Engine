@@ -22,32 +22,30 @@ var GIVe = (function (give) {
    * Object representing a BED track, see `GIVe.TrackObject` for details.
    * @typedef {object} BedTrack
    * @class give.BedTrack
-   *
-   * @constructor
    * @implements give.TrackObject
-   * @param {string} ID - The ID of the new track object
-   * @param {object} Settings - Settings of the new track. Dictionary format.
-   *   Note that if `Settings` has a property named `settings`,
-   *   it will be merged with `this.Settings`, while properties in
-   *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
-   * @param {string} groupID - The group ID of the new track object
    */
-  give.BedTrack = function (ID, Settings, ref, groupID) {
-    give.TrackObject.apply(this, arguments)
+  class BedTrack extends give.TrackObject {
+    /**
+     * typeList - get the key strings showing this type of data.
+     *    This shall be the same as the `type` column for track entries in
+     *    `trackDb` table so that GIVE is able to figure out the track is of
+     *    this type.
+     * @static
+     * @property
+     *
+     * @returns {Array<string>}  return all keys matching this type.
+     */
+    static get typeList () {
+      return ['bed', 'genebed', 'genepred']
+    }
   }
 
-  give.extend(give.TrackObject, give.BedTrack)
+  BedTrack._DataObjCtor = give.BedTrackData
+  BedTrack._DomObjCtor = give.BedTrackDom
 
-  give.BedTrack.getType = function () {
-    return ['bed', 'genebed', 'genepred']
-  }
+  give.TrackObject.registerTrack(BedTrack)
 
-  give.BedTrack.prototype._DataObjCtor = give.BedTrackData
-
-  give.BedTrack.prototype._DomObjCtor = give.BedTrackDOM
-
-  give.TrackObject.registerTrack(give.BedTrack)
+  give.BedTrack = BedTrack
 
   return give
 })(GIVe || {})

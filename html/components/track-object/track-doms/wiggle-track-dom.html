@@ -95,7 +95,7 @@
 					this.drawPeak(this.mainSvg.viewWindow.chr, start, end);
 				}
 				//shape.push([0,this.windowWidth]);
-				//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.colorSet[colorIndex]], 1);
+				//this.createRawPolymer([shape, null, null, null, this.TRIANGLE_FILL, this.constructor.colorSet[colorIndex]], 1);
 
 			},
 
@@ -200,8 +200,8 @@
 							points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
 								',' + this.transformYCoordinate(0));
 							this.createRawPolygon(points, {class: 'wiggleShapes',
-								fill: this.rgbToHex(this.colorSet[0]),
-								stroke: this.rgbToHex(this.colorSet[0]),
+								fill: this.rgbToHex(this.constructor.colorSet[0]),
+								stroke: this.rgbToHex(this.constructor.colorSet[0]),
 								}, svgToDraw);
 						}
 
@@ -232,8 +232,8 @@
 					points.push(this.transformXCoordinate({chr: chromosome, coor: currCoor}, false) +
 						',' + this.transformYCoordinate(0));
 					this.createRawPolygon(points, {class: 'wiggleShapes',
-						fill: this.rgbToHex(this.colorSet[0]),
-						stroke: this.rgbToHex(this.colorSet[0]),
+						fill: this.rgbToHex(this.constructor.colorSet[0]),
+						stroke: this.rgbToHex(this.constructor.colorSet[0]),
 						}, svgToDraw);
 				}
 

@@ -140,7 +140,7 @@ For utilizing GIVE-Toolbox with different GIVE deployment approaches:
 
   Finally, in only 7 steps, you have built a full customized genome browser with 3 data tracks built from 3 kinds of supported data formats. You can use the genome browser with several lines of HTML code as below. 
   ```html
-  <script src="http://localhost:40080/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <script src="http://localhost:40080/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
   <link rel="import" href="http://localhost:40080/components/chart-controller/chart-controller.html">
   <chart-controller ref="hg38" num-of-subs="2"
     group-id-list='["genes", "TAD",  "RNA_seq", "genomic_interactions"]'

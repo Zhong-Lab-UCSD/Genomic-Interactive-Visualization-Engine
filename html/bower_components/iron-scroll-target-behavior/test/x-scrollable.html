@@ -26,7 +26,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         width: 200%;
       }
     </style>
-
     <template is="dom-repeat" items="[[_getItems(itemCount)]]">
       <div class="item">[[index]]</div>
     </template>
@@ -41,16 +40,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     properties: {
 
-      itemCount: {
-        type: Number,
-        value: 200
-      }
+      itemCount: {type: Number, value: 200}
 
     },
 
-    behaviors: [
-      Polymer.IronScrollTargetBehavior
-    ],
+    behaviors: [Polymer.IronScrollTargetBehavior],
 
     _defaultScrollTarget: null,
 

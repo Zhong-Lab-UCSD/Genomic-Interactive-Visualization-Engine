@@ -22,10 +22,10 @@ var GIVe = (function (give) {
    * Oak tree for data storage, derived from B+ tree.
    * See `GIVE.GiveTree` for other properties and methods.
    * @typedef {object} OakTree
-   * @property {number} BranchingFactor - branching factor for the tree. The
+   * @property {number} branchingFactor - branching factor for the tree. The
    *    number of children for all non-root nodes will be equal to or greater
-   *    than `this.BranchingFactor / 2`. The number of children for all nodes
-   *    will be smaller than `this.BranchingFactor`. This is adapted from B+
+   *    than `this.branchingFactor / 2`. The number of children for all nodes
+   *    will be smaller than `this.branchingFactor`. This is adapted from B+
    *    tree to achieve auto-balancing.
    * @property {GiveTreeNode} _NonLeafNodeCtor - Constructor for all non-leaf
    *    nodes. Should be `GIVE.OakNode` all the time. Can be overridden but not
@@ -41,74 +41,47 @@ var GIVe = (function (give) {
    *    will be responsible for.
    * @param {object} props - properties that will be passed to the individual
    *    implementations
-   * @param {number} props.BranchingFactor - for `this.BranchingFactor`
+   * @param {number} props.branchingFactor - for `this.branchingFactor`
    * @param {function} props.NonLeafNodeCtor - used to override non-leaf node
    *    constructors.
    * @param {function} props.LeafNodeCtor - if omitted, the constructor of
    *    `GIVE.DataNode` will be used
    */
-  give.OakTree = function (chrRange, props) {
-    // start and length is for the corresponding region
-    // note that `OakTree` should be populated with `OakNode`s
-    props = props || {}
-    props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
-    if (
-      !Number.isInteger(props.BranchingFactor) || props.BranchingFactor <= 2
-    ) {
-      give._verboseConsole('Default branching factor is chosen instead of ' +
-        props.BranchingFactor, give.VERBOSE_DEBUG)
-      this.BranchingFactor = give.OakTree._DEFAULT_B_FACTOR
-    } else {
-      this.BranchingFactor = props.BranchingFactor
+  class OakTree extends give.GiveTree {
+    constructor (chrRange, props) {
+      // start and length is for the corresponding region
+      // note that `OakTree` should be populated with `OakNode`s
+      super(chrRange, props.NonLeafNodeCtor || give.OakNode, props)
     }
-    this.NeighboringLinks = true
-    give.GiveTree.call(
-      this, chrRange, props.NonLeafNodeCtor || give.OakNode, props
-    )
-  }
 
-  give.extend(give.GiveTree, give.OakTree)
-
-  /**
-   * traverse - traverse given chromosomal range to apply functions to all
-   * overlapping data entries.
-   * @memberof GiveTreeBase.prototype
-   *
-   * @param {ChromRegionLiteral} chrRanges - the chromosomal range to traverse
-   * @param {function} callback - the callback function to be used (with the
-   *    data entry as its sole parameter) on all overlapping data entries
-   *    (that pass `filter` if it exists).
-   * @param {Object} thisVar - `this` element to be used in `callback` and
-   *    `filter`.
-   * @param {function} filter - the filter function to be used (with the data
-   *    entry as its sole parameter), return `false` to exclude the entry from
-   *    being called with `callback`.
-   * @param {boolean} breakOnFalse - whether the traversing should break if
-   *    `false` has been returned from `callback`
-   * @param {object|null} props - additional properties being passed onto nodes
-   * @returns {boolean} If the traverse breaks on `false`, returns `false`,
-   *    otherwise `true`
-   */
-  give.OakTree.prototype.traverse = function (
-    chrRange, callback, thisVar, filter, breakOnFalse, props
-  ) {
-    props = props || {}
-    if (!chrRange.chr || chrRange.chr === this.Chr) {
-      try {
-        chrRange = this._root.truncateChrRange(chrRange, true, false)
-        var currNode = this._root
-        while (currNode) {
-          currNode = currNode.traverse(chrRange, callback, thisVar, filter,
-            breakOnFalse, props)
-        }
-      } catch (exception) {
-        return false
+    _initProperties (chrRange, NonLeafNodeCtor, props) {
+      props.LeafNodeCtor = props.LeafNodeCtor || give.DataNode
+      super._initProperties(...arguments)
+      if (
+        !Number.isInteger(props.branchingFactor) || props.branchingFactor <= 2
+      ) {
+        give._verbConsole.info('Default branching factor chosen instead of ' +
+          props.branchingFactor)
+        this.branchingFactor = this.constructor._DEFAULT_B_FACTOR
+      } else {
+        this.branchingFactor = props.branchingFactor
       }
     }
-    return true
+
+    _traverse (chrRange, callback, filter, breakOnFalse, props, ...args) {
+      let currNode = this._root
+      while (currNode) {
+        currNode = currNode.traverse(chrRange, callback, filter,
+          breakOnFalse, props, ...args)
+      }
+      return currNode === null
+    }
   }
 
-  give.OakTree._DEFAULT_B_FACTOR = 50  // this value may need to be tweaked
+  OakTree._DEFAULT_B_FACTOR = 50 // this value may need to be tweaked
+  OakTree.neighboringLinks = true
+
+  give.OakTree = OakTree
 
   return give
 })(GIVe || {})

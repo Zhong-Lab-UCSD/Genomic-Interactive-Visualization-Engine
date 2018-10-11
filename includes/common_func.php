@@ -52,7 +52,7 @@ function giveExceptionHandler(Throwable $e) {
   $result = [];
   // log error
   error_log($e);
-  if (SUPPRESS_SERVER_ERRORS) {
+  if (defined('SUPPRESS_SERVER_ERRORS')) {
     // Need to do some conversion
     if ($e instanceof GIVEException) {
       http_response_code(400);

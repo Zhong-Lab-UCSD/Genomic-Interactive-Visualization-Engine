@@ -17,7 +17,9 @@ thing! https://github.com/PolymerLabs/tedium/issues
 _[Demo and API docs](https://elements.polymer-project.org/elements/iron-doc-viewer)_
 
 
-##&lt;iron-doc-viewer&gt;
+## &lt;iron-doc-viewer&gt;
+⚠️ This element will only document Polymer 1.0 elements. See `2.0-analyzer`
+branch for more details ⚠️
 
 Renders documentation describing an element's API.
 

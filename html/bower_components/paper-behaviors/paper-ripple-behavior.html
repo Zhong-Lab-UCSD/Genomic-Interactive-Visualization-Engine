@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-behaviors/iron-button-state.html">
 <link rel="import" href="../paper-ripple/paper-ripple.html">
 
 <script>
@@ -27,10 +28,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
        * If true, the element will not produce a ripple effect when interacted
        * with via the pointer.
        */
-      noink: {
-        type: Boolean,
-        observer: '_noinkChanged'
-      },
+      noink: {type: Boolean, observer: '_noinkChanged'},
 
       /**
        * @type {Element|undefined}
@@ -81,7 +79,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // nodes are not valid event targets
           var domContainer = Polymer.dom(this._rippleContainer || this);
           var target = Polymer.dom(optTriggeringEvent).rootTarget;
-          if (domContainer.deepContains( /** @type {Node} */(target))) {
+          if (domContainer.deepContains(/** @type {Node} */ (target))) {
             this._ripple.uiDownAction(optTriggeringEvent);
           }
         }
@@ -113,8 +111,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      * @return {!PaperRippleElement} Returns a `<paper-ripple>` element.
      */
     _createRipple: function() {
-      return /** @type {!PaperRippleElement} */ (
+      var element = /** @type {!PaperRippleElement} */ (
           document.createElement('paper-ripple'));
+      return element;
     },
 
     _noinkChanged: function(noink) {

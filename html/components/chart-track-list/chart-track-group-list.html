@@ -1,301 +1,356 @@
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
-<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<!--
+  List for tracks within one track group
+  This DOM element must be placed in a flex container,
+  otherwise the iron-list will not work
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="chart-track-list.html">
-<link rel="import" href="../ref-object/ref-object.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
-<link rel="import" href="../genemo-styles.html">
-<link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
-<link rel="import" href="../genemo-track-filter/genemo-track-filter.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="../track-control/track-mini-control.html">
+<link rel="import" href="../give-card/give-card-content-mixin.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
+<link rel="import" href="../give-styles.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-group-list">
   <template>
-    <style include="genemo-shared-styles iron-flex" is="custom-style">
-    :host {
-      padding: 0.5em;
-      display: block;
-      @apply(--layout-fit);
-      @apply(--layout-vertical);
-    }
-    chart-track-list {
-      @apply(--chart-track-list-items-mixin);
-    }
-    .cardActions {
-      padding: 0;
-      margin-bottom: -0.5em;
-    }
+    <style include="give-shared-styles iron-flex">
+      :host {
+        padding: 0.6em 0;
+        position: relative;
+        min-height: 2.65em;
+        @apply --layout-vertical;
+        @apply --layout-flex;
+      }
+      div.noTrackMsg {
+        padding: 0 1em;
+      }
+      iron-list {
+        padding: 0 1em;
+        overflow-x: hidden;
+        --iron-list-items-container: {
+           @apply --chart-track-list-items-mixin;
+        };
+      }
     </style>
-    <template is="dom-repeat" id="trackGroupBlock"
-      items="[[groupArray]]" as="group">
-      <!-- this is the track group DOM -->
-      <chart-track-list text-size="[[textSize]]" group="[[group]]"
-        setting-key="[[settingKey]]" class="flex"
-        instant-change="[[instantChange]]">
-      </chart-track-list>
+    <template is="dom-if" if="[[_listEmpty(group)]]">
+      <div class="noTrackMsg"><em>(No tracks)</em></div>
     </template>
-    <div class="cardActions">
-      <template is="dom-if" if="[[withFilter]]" restamp="true">
-        <paper-button on-tap="launchFilter">
-          <iron-icon icon="filter-list"></iron-icon>
-          Filter
-        </paper-button>
-        <paper-button on-tap="resetAllTracks">
-          <iron-icon icon="refresh"></iron-icon>
-          Reset to default
-        </paper-button>
-        <genemo-track-filter id="trackFilter" ref='[[ref]]'
-          on-filter-tracks="_filterTracksHandler"></genemo-track-filter>
+    <iron-list id="groupList" items="[[group.array]]" as="track"
+      class="flex"
+      selection-enabled
+      multi-selection$="[[!_computeSingleChoice(group)]]"
+      on-selected-items-changed="_selectedItemsChangedHandler"
+      selected-items="{{selected}}">
+      <template>
+        <track-mini-control track="[[track]]"
+          selected="[[selected]]"
+          single-choice="[[_computeSingleChoice(group)]]">
+        </track-mini-control>
       </template>
-      <template is="dom-if" if="[[hasControls]]" restamp="true">
-        <paper-button on-tap="cancelChanges">
-          <iron-icon icon="close"></iron-icon>
-          Cancel
-        </paper-button>
-        <paper-button on-tap="submitChanges">
-          <iron-icon icon="check"></iron-icon>
-          OK
-        </paper-button>
-      </template>
-    </div>
+    </iron-list>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.ChartTrackGroupList = Polymer({
-        is: 'chart-track-group-list',
+  class ChartTrackGroupList extends give.GiveCardContentMixin(Polymer.Element) {
+    static get is () {
+      return 'chart-track-group-list'
+    }
 
-        behaviors: [
-          give.GenemoTabCardContentBehavior,
-          give.RefEmbeddedBehavior
-        ],
+    static get properties () {
+      return {
+        settingKey: {
+          type: String,
+          value: give.GENEMO_SELECTED_KEY
+        },
 
-        properties: {
-          textSize: {
-            type: Number,
-            value: 12    // unit is px
-          },
+        group: {
+          type: Object,
+          observer: '_groupChanged',
+          notify: true
+        },
 
-          settingKey: {
-            type: String,
-            value: give.GENEMO_SELECTED_KEY
-          },
+        instantChange: {
+          type: Boolean,
+          value: false
+        },
 
-          groupArray: {
-            type: Array,
-            value: function () {
-              return []
+        isSelected: {
+          type: Boolean,
+          value: false
+        },
+
+        allowTrackReordering: {
+          type: Boolean,
+          value: false
+        },
+
+        selected: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+
+        label: {
+          type: String,
+          value: ''
+        },
+
+        groupIcon: {
+          type: String,
+          value: null
+        }
+      }
+    }
+
+    ready () {
+      super.ready()
+      this._allowFlexShrink = !this.isSelected
+      if (this.group) {
+        this.groupIcon = this.groupIcon || this.group.icon
+        this.label = this.label || this.group.label
+      }
+      this._setIcon(this.groupIcon || null)
+      this._setIconAlt(this.label || 'Track group')
+      this._setHeaderText(this.label || 'Track group')
+    }
+
+    /**
+      * Called every time the element is inserted into the DOM. Useful for
+      * running setup code, such as fetching resources or rendering.
+      * Generally, you should try to delay work until this time.
+      */
+    connectedCallback () {
+      super.connectedCallback()
+      this.domReadyPromise = new Promise((resolve, reject) => {
+        Polymer.RenderStatus.beforeNextRender(this, () => {
+          if (this.isSelected && this.group) {
+            this._syncGroupToSelection()
+          }
+          give._verbConsole.info('chartTrackGroupList: ready.')
+          this._readiness = true
+          resolve()
+        })
+      })
+    }
+
+    get contentHeight () {
+      if (this.group) {
+        return this._calcHeightBasedOnLines(this.displayedLines)
+      }
+      return null
+    }
+
+    get allowFlexShrink () {
+      return this._allowFlexShrink &&
+        this.displayedLines > this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+    }
+
+    get selectedArray () {
+      if (this._computeSingleChoice(this.group)) {
+        return this.selected ? [this.selected] : []
+      } else {
+        return this.selected
+      }
+    }
+
+    _syncGroupToSelection () {
+      if (!this.isSelected) {
+        throw new give.GiveError(
+          '_syncGroupToSelection() called on non-selected group list!'
+        )
+      }
+      this._updatingSelectedItems = true
+      this.group.forEach((track, index) => this.$.groupList.selectIndex(index))
+      this._updatingSelectedItems = false
+    }
+
+    _syncSelectionToGroup () {
+      if (!this.isSelected) {
+        throw new give.GiveError(
+          '_syncSelectionToGroup() called on non-selected group list!'
+        )
+      }
+      this._updatingSelectedItems = true
+      // this.groupArray = this.selected.slice()
+      this.group = give.TrackGroup.from(this.selected, this.group)
+      this._updatingSelectedItems = false
+    }
+
+    _computeSingleChoice (group) {
+      return !this.isSelected &&
+        group.singleChoice && group.singleChoice !== '0'
+    }
+
+    _listEmpty (array) {
+      return !array || !array.length
+    }
+
+    syncTrackSettingsToDom (scrollToSelected) {
+      // this is used when resetting selection
+      // DOM means this.$.groupList.selectedItems
+      this._updatingSelectedItems = true
+      if (this.group) {
+        this.$.groupList.clearSelection()
+        let firstSelected = null
+        this.group.every((track, index) => {
+          if (track.getSetting(this.settingKey)) {
+            if (firstSelected === null) {
+              firstSelected = index
             }
-          },
-
-          groupIdList: {
-            // this is the array of allowed group IDs in the list
-            type: Array
-          },
-
-          defaultTrackIdList: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          /**
-           * Whether the track controller will support filter function
-           * @type {boolean}
-           */
-          withFilter: {
-            type: Boolean,
-            value: false
-          },
-
-          /**
-           * Whether the track controller will reflect change immediately
-           * without calling this.DOMToTrack().
-           * This is always false if hasControls === true
-           * @type {boolean}
-           */
-          instantChange: {
-            type: Boolean,
-            value: false
-          },
-
-          /**
-           * Whether the track controller will show OK/Cancel controls
-           * @type {boolean}
-           */
-          hasControls: {
-            type: Boolean,
-            value: false
+            this.$.groupList.selectIndex(index)
+            return this.$.groupList.multiSelection
           }
-        },
+          return true
+        })
+        if (scrollToSelected && firstSelected !== null) {
+          // scroll to first selected item
+          this.$.groupList.scrollToIndex(firstSelected)
+        }
+      }
+      this._updatingSelectedItems = false
+      this._updateSelectedItems()
+    }
 
-        ready: function () {
-          this._setIcon('view-list')
-          this._setIconAlt('Track list')
-          this._setHeaderText('Track list')
-          this._setTabText('Tracks')
-
-          this.setDOMReady(true)
-          this.setReady(false)
-
-          this.completedRepeatDOMs = 0
-
-          if (this.defaultTrackIdList.length > 0) {
-            this._needOverrideDefault = true
-          }
-        },
-
-        /**
-         * _overrideTrackDefaultSettings - Override the default track settings
-         */
-        _overrideTrackDefaultSettings: function () {
-          if (this._refObj && this.defaultTrackIdList.length > 0) {
-            this._refObj.setTrackSettings(this.settingKey, false, null)
-            this.defaultTrackIdList.forEach(function (id) {
-              try {
-                this._refObj.getTracks().get(id).setSetting(this.settingKey, true)
-              } catch (e) {
-                give._verboseConsole('Track `' + id + '` does not exist!',
-                  give.VERBOSE_WARNING)
-              }
-            }, this)
-          }
-        },
-
-        _refreshRefTrackReady: function () {
-          // this is called after track is ready for trackRef
-          if (this._needOverrideDefault) {
-            this._overrideTrackDefaultSettings()
-            delete this._needOverrideDefault
+    syncDomToTrackSettings () {
+      // this is used when submitting the results
+      if (this.group) {
+        this.group.forEach((track, index) =>
+          track.setSetting(this.settingKey, false)
+        )
+        if (this.$.groupList.selectedItems) {
+          if (Array.isArray(this.$.groupList.selectedItems)) {
+            this.$.groupList.selectedItems.forEach(track =>
+              track.setSetting(this.settingKey, true))
           } else {
-            // reference has changed, no need to override anymore
-            this.splice('defaultTrackIdList', 0, this.defaultTrackIdList.length)
+            this.$.groupList.selectedItem.setSetting(this.settingKey, true)
           }
+        }
+      }
+    }
 
-          this.splice('groupArray', 0, this.groupArray.length)
-          if (this.groupIdList && this.groupIdList.length > 0) {
-            this.groupIdList.forEach(function (groupID) {
-              if (this._refObj.getGroups().hasOwnProperty(groupID)) {
-                this.push('groupArray', this._refObj.getGroups()[groupID])
-              }
-            }, this)
+    resetAllTracks () {
+      if (this.group) {
+        this.group.forEach(track => track.resetSetting(this.settingKey))
+        this.syncTrackSettingsToDom()
+      }
+    }
+
+    applyFilter (map, flags) {
+      this.group.forEach((track, index) => {
+        if (flags.hasOwnProperty('matched') && map.hasOwnProperty(track.id)) {
+          if (flags.matched) {
+            this.$.groupList.selectIndex(index)
           } else {
-            for (var key in this._refObj.getGroups()) {
-              if (this._refObj.getGroups().hasOwnProperty(key)) {
-                this.push('groupArray', this._refObj.getGroups()[key])
-              }
-            }
+            this.$.groupList.deselectIndex(index)
           }
-          this.async(function () {
-            this.trackToDOM(true)
-            this.setReady(true)
-          })
-        },
-
-        _refreshRef: function () {
-          this._refObj.callOnTracksReady(this._refreshRefTrackReady.bind(this))
-        },
-
-        updateAllGroupDOM: function () {
-          this.setReady(false)
-          this._refreshRef()
-        },
-
-        _prioritySort: function (itemA, itemB) {
-          return itemA.priority < itemB.priority
-            ? -1 : (itemA.priority > itemB.priority ? 1 : 0)
-        },
-
-        /**
-         * Set the reference to new reference
-         *
-         * this will reset all tracks and redo the ref
-         * note that the tracks should already be initialized before switching here
-         *
-         * @param  {string|GIVe.RefObject} newRef - New Reference, either name or GIVe.RefObject
-         */
-        _setRefObj: function (refObj) {
-          // TODO: may need to add something to remove the override array
-          this._refObj = refObj
-          this.setReady(false)
-          if (this._refObj) {
-            this._refreshRef()
+        } else if (
+          flags.hasOwnProperty('unmatched') && !map.hasOwnProperty(track.id)
+        ) {
+          if (flags.unmatched) {
+            this.$.groupList.selectIndex(index)
+          } else {
+            this.$.groupList.deselectIndex(index)
           }
-        },
-
-        trackToDOM: function (scrollToSelected) {
-          // this is used when resetting selection
-          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
-            elem.trackToDOM(scrollToSelected)
-          }, this)
-        },
-
-        DOMToTrack: function () {
-          // this is used when submitting the results
-          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
-            elem.DOMToTrack()
-          }, this)
-        },
-
-        resetAllTracks: function () {
-          Polymer.dom(this.root).querySelectorAll('chart-track-list').forEach(function (elem) {
-            elem.resetAllTracks()
-          }, this)
-
-          // override default values if needed
-          this._overrideTrackDefaultSettings()
-        },
-
-        backToSearch: function () {
-          this.fire('switch-page', {selectedPageID: give.SEARCH_PANEL_DOM_ID})
-        },
-
-        /**
-         * launchFilter - Show track filter element
-         */
-        launchFilter: function () {
-          if (this.$$('#trackFilter')) {
-            this.$$('#trackFilter').show()
-          }
-        },
-
-        /**
-         * _filterTracksHandler - Event handler to filter the track
-         *
-         * @param  {Object} e - event from the track filter element
-         */
-        _filterTracksHandler: function (e) {
-          if (!e.detail.targetId || e.detail.targetId === this.id) {
-            e.stopPropagation()
-            this.applyFilter(e.detail.map, e.detail.flags)
-          }
-          // Otherwise the filter wants to change some other list (extremely rare),
-          // when whoever listens to filter-tracks event will handle.
-        },
-
-        submitChanges: function () {
-          this.DOMToTrack()
-          this.backToSearch()
-        },
-
-        cancelChanges: function () {
-          this.trackToDOM()
-          this.backToSearch()
-        },
-
-        applyFilter: function (map, flags) {
-          var domList = Polymer.dom(this.root).querySelectorAll('chart-track-list')
-          give.forEach(domList, function (elem) {
-            elem.applyFilter(map, flags)
-          }, this)
         }
       })
+    }
 
-      return give
-    })(GIVe || {})
+    _selectedItemsChangedHandler (e) {
+      if (this._readiness && !this._updatingSelectedItems) {
+        return Promise.resolve().then(() => this._updateSelectedItems(e.detail))
+      }
+    }
+
+    _updateSelectedItems (eventDetail) {
+      if (this._readiness && !this._updatingSelectedItems) {
+        this._updatingSelectedItems = true
+        if (this.instantChange) {
+          this.syncDomToTrackSettings()
+        }
+        if (this.isSelected) {
+          // remove the item that is not selected, then refresh the list
+          this._syncSelectionToGroup()
+        }
+        give.fireSignal('selection-change', eventDetail, null, this)
+        this._updatingSelectedItems = false
+      }
+    }
+
+    _groupChanged (newValue, oldValue) {
+      if (this.isSelected && this.group && !this._updatingSelectedItems) {
+        this._syncGroupToSelection()
+      }
+      give.fireSignal('update-height', null, null, this)
+    }
+
+    syncSelectionFromGroup (selectionGroup) {
+      this._updatingSelectedItems = true
+      // select the ones in `selectionSet` but not in `this.selected`
+      selectionGroup.forEach(track => {
+        if (this.group.hasTrack(track)) {
+          this.$.groupList.selectItem(track)
+        }
+      })
+      // deselect the ones in `this.selected` but not in `selectionSet`
+      this.selectedArray.forEach(track => {
+        if (!selectionGroup.hasTrack(track)) {
+          this.$.groupList.deselectItem(track)
+        }
+      })
+      this._updatingSelectedItems = false
+    }
+
+    get displayedLines () {
+      if (!this.group || !this.group.length) {
+        return 1
+      }
+      return Math.min(this.group.length,
+        this.isSelected
+          ? this.constructor.MAX_DISPLAY_LINES_SELECTED
+          : this.constructor.MAX_DISPLAY_LINES)
+    }
+
+    _calcHeightBasedOnLines (lines) {
+      return (lines * give.TrackMiniControl.heightProportion + 1.2) *
+        parseFloat(window.getComputedStyle(this.shadowRoot.host)
+          .getPropertyValue('font-size'))
+    }
+
+    // get _flexShrinkRatio () {
+    //   if (this.group) {
+    //     let displayedLines = this.displayedLines
+    //     return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+    //       ? 0 : this._calcHeightBasedOnLines(displayedLines)
+    //   }
+    // }
+
+    get minContentHeight () {
+      let displayedLines = this.displayedLines
+      return displayedLines <= this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+        ? this._calcHeightBasedOnLines(displayedLines)
+        : this._calcHeightBasedOnLines(
+          this.constructor.MIN_SHRINKABLE_DISPLAY_LINES
+        )
+    }
+  }
+
+  ChartTrackGroupList.MAX_DISPLAY_LINES_SELECTED = 8
+  ChartTrackGroupList.MAX_DISPLAY_LINES = 45
+  ChartTrackGroupList.MIN_SHRINKABLE_DISPLAY_LINES = 5
+
+  give.ChartTrackGroupList = ChartTrackGroupList
+  window.customElements.define(
+    'chart-track-group-list', give.ChartTrackGroupList)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

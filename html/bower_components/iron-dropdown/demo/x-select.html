@@ -9,7 +9,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../iron-dropdown.html">
-<link rel="import" href="../../neon-animation/neon-animations.html">
 <link rel="import" href="grow-height-animation.html">
 
 <dom-module id="x-select">
@@ -21,15 +20,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
     <div on-tap="open">
-      <content select=".dropdown-trigger"></content>
+      <slot name="dropdown-trigger"></slot>
     </div>
     <iron-dropdown id="dropdown"
       vertical-align="[[verticalAlign]]"
       horizontal-align="[[horizontalAlign]]"
       disabled="[[disabled]]"
+      scroll-action="[[scrollAction]]"
       open-animation-config="[[openAnimationConfig]]"
       close-animation-config="[[closeAnimationConfig]]">
-      <content select=".dropdown-content"></content>
+      <slot name="dropdown-content" slot="dropdown-content"></slot>
     </iron-dropdown>
   </template>
   <script>
@@ -40,34 +40,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         verticalAlign: String,
         horizontalAlign: String,
         disabled: Boolean,
+        scrollAction: String,
         openAnimationConfig: {
           type: Array,
           value: function() {
-            return [{
-              name: 'fade-in-animation',
-              timing: {
-                delay: 150,
-                duration: 50
-              }
-            }, {
-              name: 'expand-animation',
-              timing: {
-                delay: 150,
-                duration: 200
-              }
-            }];
+            return [
+              {name: 'fade-in-animation', timing: {delay: 150, duration: 50}},
+              {name: 'expand-animation', timing: {delay: 150, duration: 200}}
+            ];
           }
         },
 
         closeAnimationConfig: {
           type: Array,
           value: function() {
-            return [{
-              name: 'fade-out-animation',
-              timing: {
-                duration: 200
-              }
-            }];
+            return [{name: 'fade-out-animation', timing: {duration: 200}}];
           }
         }
       },

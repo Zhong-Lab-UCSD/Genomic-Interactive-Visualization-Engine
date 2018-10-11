@@ -14,37 +14,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
 <link rel="import" href="../basic-func/basic-func.html">
-<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../track-object/track-object.html">
-<link rel="import" href="../ref-embedded-behavior/ref-embedded-behavior.html">
+<link rel="import" href="../track-object/tracks-header.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
-<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../genemo-styles.html">
-<link rel="import" href="genemo-track-styles.html">
-<link rel="import" href="tracks-header.html">
+<link rel="import" href="../give-styles.html">
+<link rel="import" href="../chart-area/give-track-styles.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
-<!--
-### Overview
-
-`<chart-window>` provides a Web Component element to interactively display genomic
-data within a single view window.
-
-```html
-<chart-window group-id-list='["genes", "singleCell"]' ref="mm10"></chart-area>
-```
-
-Although `<chart-window>` does not contain the navigational control elements as in `<chart-controller>`, users may still navigate by dragging and mouse-wheeling on the coordinates to move around.
-
-Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html) for details on references used.
-
--->
 <dom-module id="chart-window">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="give-shared-styles">
       :host {
         position: relative;
         overflow-x: hidden;
@@ -52,1015 +37,916 @@ Please refer to [`GIVe.RefEmbeddedBehavior`](../ref-embedded-behavior/index.html
         font-family: 'Roboto', Arial, Helvetica, sans-serif;
         display: block;
         margin: 0;
-        @apply(--layout-fit);
-      }
-      #trackDOMHolder {
-        display: none;
-      }
-      paper-material {
-        @apply(--layout-fit);
-        @apply(--layout-vertical);
-        padding: 0.8em;
-        overflow-x: hidden;
-        overflow-y: auto;
-      }
-      div#chartHolding {
         padding: 0;
         width: 100%;
-        @apply(--layout-vertical);
-        @apply(--layout-flex);
+        @apply --layout-vertical;
+        @apply --layout-flex;
       }
-      div#chartHolding div {
+      div {
         margin: 0;
         padding: 0;
+        border: none;
       }
       div.pinnedParts {
-        @apply(--layout-start);
+        @apply --layout-start;
         overflow: hidden;
       }
       div.scrollingParts {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         overflow-x: hidden;
         overflow-y: auto;
       }
-      div.scrollingParts svg {
-        width: 100%;
+      div#chartHolder {
+        @apply --layout-vertical;
+        @apply --layout-flex;
       }
-      #loadingBlock {
-        display: block;
-        pointer-events: none;
-        @apply(--layout-fit);
-        z-index: 1;
-        opacity: 0.8;
-        background: var(--card-background-color);
+      div#chartHolder > div {
+        font-size: 0;
       }
-      paper-spinner {
-        position: absolute;
-        top: 50%;
-        margin-top: -12px;
-        left: 50%;
-        margin-left: -12px;
-        height: 24px;
-        width: 24px;
-        opacity: 1;
+      div#chartHolder > div > * {
+        font-size: var(--base-font-size, var(--default-font-size));
       }
-      .uninitialized {
-        font-size: 16px;
-      }
-
     </style>
-    <style include="genemo-track-styles"></style>
-    <div id="loadingBlock" hidden$="[[_readiness]]">
-      <paper-spinner id="loadingSpinner" alt="Loading card content" active$="[[!_readiness]]"></paper-spinner>
-    </div>
-    <paper-material>
-      <div id="chartHolding" hidden$="[[!_initialized]]">
-        <template id="trackSvgHolders" is="dom-repeat" items="[[_trackDOMsByWindow]]" index-as="index">
-          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinTop')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <div class="scrollingParts" id="[[_getElemId(item.divId, 'Scroll')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBottom')]]">
-            <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-            </svg>
-          </div>
-          <template is="dom-if" if="[[_vWindowHasPinBetween(item)]]">
-            <div class="pinnedParts" id="[[_getElemId(item.divId, 'PinBetween')]]">
-              <svg class="containedSvg" version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
-              </svg>
-            </div>
-          </template>
-        </template>
+    <style include="give-track-styles"></style>
+    <div id="chartHolder">
+      <div class="pinnedParts">
+        <svg class="svgHolder" version="1.1" baseProfile="full"
+          xmlns="http://www.w3.org/2000/svg" id="_PinTop">
+        </svg>
       </div>
-      <div id="coorLocationHolder" hidden$="[[!_initialized]]"></div>
-      <tutorial-highlight id="coorTrackTutorial" tutorial-key="coor-track-tutorial">
+      <div class="scrollingParts" id="scrollingContainer">
+        <svg class="svgHolder" version="1.1" baseProfile="full"
+          xmlns="http://www.w3.org/2000/svg" id="_Scroll">
+        </svg>
+      </div>
+      <div class="pinnedParts">
+        <svg class="svgHolder" version="1.1" baseProfile="full"
+          xmlns="http://www.w3.org/2000/svg" id="_PinBottom">
+        </svg>
+      </div>
+    </div>
+    <template is="dom-if" if="[[showTutorial]]">
+      <tutorial-highlight id="coorTrackTutorial"
+        tutorial-key="coor-track-tutorial"
+        dom-target-id="[[_coorDomSvgId]]">
         <div>
-          You may use mouse wheel within the coordinate track to zoom in/out, drag any track to move.
+          You may use mouse wheel within the coordinate track to zoom in/out,
+          drag any track to move.
         </div>
       </tutorial-highlight>
-      <div class="uninitialized" hidden$="[[_initialized]]">
-        Please select a region to display first.
-      </div>
-    </paper-material>
-    <div id="trackDOMHolder"></div>
+    </template>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.ChartArea = Polymer({
-        is: 'chart-window',
+  class ResetWidthError extends Error {
+    constructor (newWidth) {
+      super(...arguments)
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, ResetWidthError)
+      }
+      this.newWidth = newWidth
+    }
+    toString () {
+      return super.toString() + '\n' + this.stack + '\nNew width:' +
+        this.newWidth
+    }
+  }
 
-        behaviors: [
-          Polymer.IronResizableBehavior,
-          give.RefEmbeddedBehavior
-        ],
+  /**
+   * ### Overview
+   *
+   * `<chart-window>` provides a Web Component element to interactively display
+   * genomic data.
+   *
+   * ```html
+   * <chart-window group-id-list='["genes", "singleCell"]' ref="mm10">
+   * </chart-window>
+   * ```
+   *
+   * Although `<chart-window>` does not contain the navigational control
+   * elements as in `<chart-controller>`, users may still navigate by dragging
+   * and mouse-wheeling on the coordinates to move around.
+   *
+   * Please refer to
+   * [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for details
+   * on references used.
+   *
+   * ### Managing Track Priorities
+   *
+   * `<chart-window>` will manage track order once a view has been generated.
+   * Its behavior regarding to track order will be discussed within this
+   * section.
+   *
+   * #### Before generating a view
+   *
+   * `<chart-window>` shall receive an ordered list of all visible tracks from
+   * its embedded `refObject`, the visibility of tracks will be supplied by its
+   * `defaultTrackIdList` property, or (if said property is not set) by the
+   * default `visibility` property of individual tracks.
+   *
+   * When the visibility of tracks have been determined, `refObject` will
+   * provide a sorted list (by relative `priorities` property of the tracks) of
+   * visible tracks to start with.
+   *
+   * #### Populating the view with tracks
+   *
+   * Once `<chart-window>` receives the ordered list of visible tracks, it will:
+   * *   Assign every track's `trackDom`'s `<svg>` element into its
+   *     corresponding slot (`top`, `scroll`, `bottom`, and `inbetween`) by
+   *     inserting it into the corresponding DOM node. Notice that if this
+   *     window is the last window in the view, the slots and track order will
+   *     be reversed to preserve a certain degree of symmetry.
+   * *   Keep record of the relative order for every `<svg>` element within its
+   *     own slot.
+   *     Every track object will have an __`effective priority`__ value consists
+   *     of its slot allocation (`top`, `scroll`, `bottom`, and `inbetween`)
+   *     and its position within the slot.
+   * *   Assign the `y` property for every `<svg>` when drawing the DOM element
+   *     so that it appears in the correct order regardless of its order in the
+   *     DOM tree.
+   *
+   * #### Modifying the track list and its effect on track order
+   *
+   * ##### Adding new tracks
+   *
+   * This action may only come from the parent element.
+   *
+   * When a new track is being added to the visible list, it will be allocated
+   * to its corresponding slot but __added to the very end of the list__. The
+   * `effective priority` value of the new track will be set if not done yet.
+   *
+   * ##### Removing a track
+   *
+   * This action may come from the parent element or from the `<chart-window>`
+   * itself (via a "delete" button, to be implemented).
+   *
+   * When an existing track is being removed, it will be delisted from the slot,
+   * the `trackDom` object will be put into a recycled list (previous recycled
+   * list will be cleared) and all the `visibility` values and `effective
+   * priority` values will be updated accordingly.
+   *
+   * If this action comes from the `<chart-window>` itself, notify its parent
+   * about this change.
+   *
+   * ##### Restoring a track previously removed (proposed, to be implemented)
+   *
+   * This action may only come from the parent element.
+   *
+   * When a restoring command was received, all `trackDom`s in the recycled list
+   * will be restored to their corresponding location, their `track`'s
+   * `visibility` properties and `effective priority` values will be adjusted.
+   * After that, the recycled list will be cleared.
+   *
+   * ##### Changing the location of a track
+   *
+   * This action may come from the parent element or from the `<chart-window>`
+   * itself (via drag-drop, to be implemented).
+   *
+   * The `effective priority` will be updated to the new locations if the action
+   * comes from `<chart-window>` itself (this happens when user tries to alter
+   * the order of the tracks).
+   *
+   * Then the actual `svg` `y` values will be updated to reflect the new
+   * location.
+   *
+   * If this action comes from the `<chart-window>` itself, notify its parent
+   * about this change.
+   *
+   * @customElement
+   * @polymer
+   * @appliesMixin give.RefEmbedMixin
+   */
+  class ChartWindow extends
+    give.RefEmbedMixin(Polymer.GestureEventListeners(Polymer.Element)) {
+    constructor () {
+      super()
+      this._trackDoms = []
+      this._hiddenTrackDoms = []
+      this._addedTrackMap = new Map()
+      this._hiddenTrackDomMap = new Map()
 
-        properties: {
-          /**
-           * The view window to display in the element.
-           * The members of the properties should be `GIVE.ChromRegion` Objects
-           * @type {GIVe.ChromRegion}
-           */
-          _viewWindow: {
-            type: Object,
-            notify: true,
-            value: function () {
-              return []
-            }
-          },
+      this._pendingVWindow = null
+      this._viewWindow = null
+    }
 
-          /**
-           * The view windows to display in the element, in coordinate format.
-           * This is for HTML attributes
-           * @type {string}
-           */
-          coordinate: {
-            type: String,
-            notify: true,
-            value: ''
-          },
+    static get is () {
+      return 'chart-window'
+    }
 
-          /**
-           * The array holding trackDOMs for every view window.
-           * The member of the array should be Objects with the following properties:
-           * * `pinAbove`: An array of track DOMs that will be pinned at the top of the view window;
-           * * `scrolling`: An array of track DOMs that will appear in the scrolling part;
-           * * `pinBelow`: An array of track DOMs that will be pinned at the bottom of the view window;
-           * * `pinInBetween`: *(optional)* An array of track DOMs that will appear in the space between
-           *                    this view window and the next one;
-           * * `map`: An Object used for id-to-DOM lookups;
-           * * `hiddenTrackComponents`: An array of track DOMs that are hidden and never displayed;
-           *                            (this is mainly used for cross-view-window tracks because
-           *                             it will only display once but will receive update signal
-           *                             from multiple views)
-           * * `divId`: The id of the `<div>` tag for the view window.
-           * Please refer to `this._initDOMArray()` for details.
-           * @type {{
-           *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-           *   scrolling: Array.<GIVe.TrackDomBehavior>,
-           *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-           *   map: Object,
-           *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-           * }}
-           */
-          _trackDOMs: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          /**
-           * The track groups included in the embedded browser. Group IDs are
-           * specified in the data source. The data source on our server currently
-           * provides these track groups:
-           * *  `'genes'`: gene annotation tracks, for all available references
-           * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
-           * *  `'interaction'`: genomic interaction data sets, including those
-           * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-           * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-           * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-           * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-           * for `mm10` only
-           * @type {Array.<string>}
-           */
-          groupIdList: {
-            // this is the array of allowed group IDs in the list
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          /**
-           * Number of sub views in this controller.
-           * Notice that if this setting is different from `coordinates.length`,
-           * adjustments will be made to `coordinates` (truncating excessive
-           * items or padding with default values).
-           */
-          numOfSubs: {
-            type: Number,
-            value: 1,
-            notify: true,
-            observer: '_numOfSubsChanged'
-          },
-
-          passExceptions: {
-            type: Boolean,
-            value: false
-          },
-
-          _initialized: {
-            type: Boolean,
-            value: false
-          },
-
-          _trackGap: {
-            type: Number,
-            value: 0.3    // unit is em
-          },
-
-          _textSize: {
-            type: Number,
-            value: 12    // unit is px
-          },
-
-          _threshold: {
-            type: Number,
-            value: 0.0
-          },
-
-          /**
-           * Flag to indicate whether the entire `chart-area` is ready
-           * @type {boolean}
-           */
-          _readiness: {
-            type: Boolean,
-            value: true
-          }
-
+    static get properties () {
+      return {
+        /**
+         * The view windows to display in the element.
+         * The members of the properties should be `GIVE.ChromRegion` Objects
+         * @type {GIVe.ChromRegion}
+         */
+        _viewWindow: {
+          type: Object
         },
 
-        listeners: {
-          'track-ready': '_trackReadyHandler',
-          'update-window': '_updateWindowHandler',
-          'iron-resize': '_onIronResize',
-          'dom-change': '_domChangeHandler'
+        index: {
+          type: Number,
+          value: 0
         },
 
-        created: function () {
-          this.svgNS = 'http://www.w3.org/2000/svg'
-          this.trackDOMMap = {
-            'bed': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'wig': {
-              prop: this._createWigTrackProp.bind(this),
-              Ctor: give.WiggleTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'bigwig': {
-              prop: this._createWigTrackProp.bind(this),
-              Ctor: give.BigWigTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'genebed': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'genepred': {
-              prop: this._createBedTrackProp.bind(this),
-              Ctor: give.BedTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            },
-            'interaction': {
-              prop: this._createInteractionTrackProp.bind(this),
-              Ctor: give.InteractionTrackDOM,
-              addDom: this._addInteractionTrackDOM.bind(this)
-            },
-            'coordinate': {
-              prop: this._createCoorTrackProp.bind(this),
-              Ctor: give.CoorTrackDOM,
-              addDom: this._addOrdinaryTrackDOM.bind(this)
-            }
-          }
-          this.resizeDebounceInt = 100
-          this.resizeJobName = 'RESIZE'
+        totalWindows: {
+          type: Number,
+          value: 1
         },
 
-        ready: function () {
-          // initialize this._viewWindows from this.coordinates
-          this.coordinates.forEach(function (coorStr, index) {
-            if (give.ChromRegion.isValidChromRegion(coorStr, this._refObj) &&
-              (!this._viewWindows[index] ||
-                this._viewWindows[index].regionToString(false) !==
-                new give.ChromRegion(
-                  coorStr, this._refObj
-                ).regionToString(false)
-              )
-            ) {
-              this.splice('_viewWindows', index, 1,
-                new give.ChromRegion(coorStr, this._refObj))
-            } else {
-              this.splice('_viewWindows', index, 1, false)
-            }
-          }, this)
-
-          // initialize DOM array
-          this._initDOMArray()
-        },
-
-        attached: function () {
-          this.async(function () {
-            // attach all trackDOMs
-            this._checkVWindowsInit(true)
-          })
-        },
-
-        _checkVWindowsInit: function () {
-          if (!this._initialized) {
-            if (this._refObj && this._viewWindows.every(function (vwindow) {
-              return !!vwindow
-            }, this)) {
-              this._initialized = true
-              this.resetDOM()
-              return true
-            } else {
-              this._initialized = false
-              return false
-            }
-          }
-          return true
+        _coorDomSvgId: {
+          type: String,
+          value: ''
         },
 
         /**
-         * Merge properties together
-         * @todo Will be changed into `track-dom-behavior` or `basic-funcs`
-         *
-         * @param  {object} original - original object
-         * @param  {object} newProp - object with new properties
-         * @returns {object} object with the merged properties
+         * The view window to display in the element, in coordinate format.
+         * This is for HTML attributes
          */
-        _mergeProperty: function (original, newProp) {
-          for (var key in newProp) {
-            if (newProp.hasOwnProperty(key)) {
-              original[key] = newProp[key]
-            }
-          }
-          return original
+        coordinate: {
+          type: String,
+          notify: true,
+          observer: '_coorChanged'
         },
 
-        _createBedTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            windowIndex: viewWindowIndex
-          }, properties)
+        _initialized: {
+          type: Boolean,
+          value: false
         },
 
-        _createWigTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            windowIndex: viewWindowIndex
-          }, properties)
-        },
+        trackGap: Number,
+        textSize: Number,
+        textMargin: Number,
 
-        _createCoorTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            labelLocation: ((viewWindowIndex === 0) ? 'up' : 'down'),
-            windowIndex: viewWindowIndex,
-            pin: 'top'
-            // may need to implement some pinning code for all tracks
-          }, properties)
-        },
-
-        _createInteractionTrackProp: function (viewWindowIndex, properties) {
-          if (viewWindowIndex + give.ChartArea.INTERACTION_SUBS - 1 >= this._viewWindows.length) {
-            throw new Error('Not enough viewWindows for this interaction.')
-          }
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget,
-            numOfSubs: give.ChartArea.INTERACTION_SUBS,
-            _threshold: this._threshold
-          }, properties)
-        },
-
-        _createWiggleTrackProp: function (viewWindowIndex, properties) {
-          return this._mergeProperty({
-            x: 0,
-            y: 0,
-            width: this.$.chartHolding.clientWidth,
-            textMargin: 100,
-            requestUrl: give.TrackObject.fetchDataTarget
-          }, properties)
-        },
-
-        _createTrackProp: function (track, viewWindowIndex, props) {
-          return this.trackDOMMap[track.getTypeTrunk()].prop(viewWindowIndex, props)
-        },
-
-        _createTrackDOM: function (track, viewWindowIndex, props) {
-          return new this.trackDOMMap[track.getTypeTrunk()].Ctor(track,
-                  this._createTrackProp(track, viewWindowIndex, props))
-        },
-
-        _addOrdinaryTrackDOM: function (trackDOM, viewWindowIndex) {
-          var holder
-          if (trackDOM.pin === 'top') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].pinAbove
-          } else if (trackDOM.pin === 'bottom') {
-            holder = this._trackDOMsByWindow[viewWindowIndex].pinBelow
-          } else {
-            holder = this._trackDOMsByWindow[viewWindowIndex].scrolling
-          }
-          holder.splice(
-            give.locationOf(trackDOM, holder,
-              null, null, function (trackDOM1, trackDOM2) {
-                return give.TrackObject.comparePriorities(trackDOM1.track, trackDOM2.track, this._refObj.groups)
-              }.bind(this)) + 1,
-            0, trackDOM)
-          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
-        },
-
-        _addInteractionTrackDOM: function (trackDOM, viewWindowIndex) {
-          // actually this will enum all viewWindowIndices
-          this._trackDOMsByWindow[viewWindowIndex].pinInBetween.push(trackDOM)
-          this._trackDOMsByWindow[viewWindowIndex].map[trackDOM.track.id] = true
-          for (var i = 1; i < give.ChartArea.INTERACTION_SUBS; i++) {
-            this._trackDOMsByWindow[viewWindowIndex + i].hiddenTrackComponents.push(trackDOM)
-            this._trackDOMsByWindow[viewWindowIndex + i].map[trackDOM.track.id] = true
-          }
-        },
-
-        _addVisibleTrack: function (track, viewWindowIndex, forceAdd, props) {
-          if (forceAdd || !this._trackDOMsByWindow[viewWindowIndex].map.hasOwnProperty(track.id)) {
-            try {
-              var newTrackDOM = this._createTrackDOM(track, viewWindowIndex, props)
-              if (newTrackDOM) {
-                this.trackDOMMap[track.getTypeTrunk()].addDom(newTrackDOM, viewWindowIndex)
-              }
-              return newTrackDOM
-            } catch (err) {
-              give._verboseConsole(err, give.VERBOSE_DEBUG_MORE)
-              return null
-            }
-          }
+        /**
+         * Promise resolved to the current `viewWindow` when the entire
+         * `chart-window` is ready.
+         * When resolved, this value will be set to `null`
+         * @type {Promise}
+         */
+        drawingPromise: {
+          type: Object,
+          value: null
         },
 
         /**
-         * Update the height and location of individual tracks
-         *
-         * @param  {number} width - Width of the current area
+         * Flag to indicate whether this is the first time this `chart-area`
+         * element is run
+         * @type {boolean}
          */
-        updateHeightLocation: function () {
-          // calculate the heights for all tracks
-          // note that by the time this is called, all tracks should be ready
-          // (this is handled in track-ready event handler)
-          // this will also rearrange the y value for all tracks as well
-          this._trackDOMsByWindow.forEach(this._updateDomHeightInWindow, this)
+        firstRun: {
+          type: Boolean,
+          notify: true
         },
 
-        /**
-         * Refresh all tracks in a certain view or all views
-         *
-         * @param  {number|null} index - The index for the view being updated,
-         *                                use null for all views
-         */
-        _updateTracks: function (index) {
-          // index is the window index
-          // only need to update tracks involved with that index
-          if (typeof index === 'number') {
-            this._updateTracksInWindow(index)
-          } else {
-            this._trackDOMsByWindow.forEach(function (trackDOMs, windex) {
-              this._updateTracksInWindow(windex)
-            }, this)
-          }
+        showTutorial: {
+          type: Boolean,
+          value: false
         },
 
-        /**
-         * Refresh all tracks in a certain view
-         *
-         * @param  {number} index - The index for the view being updated
-         */
-        _updateTracksInWindow: function (index) {
-          // index is the window index
-          // only need to update tracks involved with that index
-          this._readiness = false
-          this._callForeachFuncOnDomInWindowEntry(
-            function (trackDOM, trackDomIndex) {
-              trackDOM.updateTracks(this._viewWindows[index], index,
-                this._threshold)
-            }.bind(this), this._trackDOMsByWindow[index], index)
-        },
+        priorityManager: {
+          type: Object
+        }
+      }
+    }
 
-        _trackReadyHandler: function (e) {
-          // check if all tracks are ready, otherwise do nothing
-          if (this._trackDOMsByWindow.every(
-            this._callEveryOnDomInWindowEntry.bind(this, function (trackDOM) {
-              return trackDOM.isReady
-            }), this)
-          ) {
-            this.updateHeightLocation()
-            try {
-              if (
-                this._firstRun && this.coorTrackZeroDOM &&
-                this.coorTrackZeroDOM.getTrackSvg()
-              ) {
-                this.$.coorTrackTutorial.domTargetId =
-                  this.coorTrackZeroDOM.getTrackSvg().id
-                this.$.coorTrackTutorial.showTutorial()
-              }
-              this._firstRun = false
-            } catch (e) {
-              give._verboseConsole(e, give.VERBOSE_WARNING)
-            } finally {
-              this._readiness = true
-            }
-          }
-        },
+    ready () {
+      this._updatingCoor = true
+      super.ready()
+      // initialize this._viewWindows from this.coordinates
+      this._trackPromiseAggregator = new give.PromiseAggregator(
+        null, err => this._trackErrHandler(err)
+      )
 
-        /**
-         * _changeViewWindowObj - Change the range of a sub view.
-         *   The range should be a `GIVE.ChromRegion` object and clipped.
-         *   No exceptions should be thrown from this function.
-         *
-         * @param  {ChromRegionLiteral} viewWindow - The target range
-         * @param  {number} index - Index of the viewWindow.
-         * @return {string} The actual range (may be cropped by reference),
-         *                   converted to string.
-         */
-        _changeViewWindowObj: function (viewWindow, index) {
-          this.splice('_viewWindows', index, 1, viewWindow.clone())
-          this.splice('coordinates', index, 1,
-            this._viewWindows[index].regionToString(false))
-          if (this._initialized) {
-            this._updateTracksInWindow(index)
-          } else {
-            this._checkVWindowsInit()
-          }
-          return this._viewWindows[index].regionToString(false)
-        },
+      this._svgList = [...this.shadowRoot.querySelectorAll('.svgHolder')]
 
-        /**
-         * Change the range of a sub view.
-         * Range may be cropped if it exceed the maximum range allowed by the reference.
-         *
-         * @param  {string|ChromRegionLiteral} viewWindow - The range to change into.
-         * @param  {number} index - Index of the viewWindow.
-         * @param  {boolean} forceDomReset - Whether to force the DOM to reload.
-         * @return {string} The actual range (may be cropped by reference),
-         *                   converted to string.
-         */
-        changeViewWindow: function (viewWindow, index, forceDomReset) {
-          if (forceDomReset) {
-            this._initialized = false
-          }
-          try {
-            // This may throw some exceptions
-            // (when invalid view windows are supplied)
-            var viewWindowObj = new give.ChromRegion(viewWindow, this._refObj)
-          } catch (err) {
-            // Invalid view windows are supplied, fail gracefully
-            if (!this.passExceptions) {
-              // TODO: gracefully handle the exception
-            } else {
-              err.data = err.data || {}
-              err.data.updatedCoor =
-                (this._viewWindows[index] &&
-                  this._viewWindows[index].regionToString)
-                ? this._viewWindows[index].regionToString(false) : null
-              throw err
-            }
-          }
-          return this._changeViewWindowObj(viewWindowObj, index)
-        },
+      this.syncInBetweenSlot()
+    }
 
-        /**
-         * Change ranges in all views at once
-         *
-         * @param  {Array<string|GIVe.ChromObject>} viewWindows The ranges.
-         * @return {Array<string>} The actual ranges, converted to `string`.
-         */
-        changeAllViewWindows: function (viewWindows) {
-          var exceptionList = []
-          var viewWindowObjs = viewWindows.map(function (vWindow, index) {
-            var vWindowObj = null
-            try {
-              vWindowObj = new give.ChromRegion(vWindow, this._refObj)
-            } catch (err) {
-              exceptionList.push(index, err)
-            }
-            return vWindowObj
-          }, this)
-          if (exceptionList.length > 0) {
-            // some exception has happended during the conversion
-            // throw an exception telling calling procedures
-            if (this.passExceptions) {
-              var error = new Error('Exception occured during ChromRegion' +
-                ' conversion.')
-              error.data = error.data || {}
-              error.data.exceptionList = exceptionList
-              error.data.updatedCoors = viewWindowObjs.map(
-                function (vWindowObj) {
-                  return ((vWindowObj && vWindowObj.regionToString)
-                    ? vWindowObj.regionToString(false) : null)
-                }
-              )
-              throw error
-            } else {
-              // TODO: gracefully handle the exception
-            }
-          } else {
-            viewWindowObjs.forEach(function (vwindow, index) {
-              this._changeViewWindowObj(vwindow, index)
-            }, this)
-          }
-          return this.getViewWindowStrings()
-        },
+    connectedCallback () {
+      super.connectedCallback()
+      Polymer.RenderStatus.afterNextRender(this, () => {
+        this.windowWidth = this.$.chartHolder.clientWidth
+        // if (this.coordinate) {
+        //   this.changeCoordinate(this.coordinate)
+        // }
+        // if (!this._initialized) {
+        //   Promise.resolve().then(() => this._initDomAfterVWinRefReady())
+        // }
+      })
+    }
 
-        _changeThreshold: function (_threshold) {
-          this._threshold = _threshold || this._threshold
-          this._trackDOMsByWindow.forEach(
-            this._callForeachFuncOnDomInWindowEntry.bind(
-              function (trackDOM, index) {
-                if (trackDOM.updateThreshold) {
-                // is an interaction track
-                  trackDOM.updateThreshold(this._threshold)
-                }
-              }.bind(this)
-            ), this
+    get reverseFlag () {
+      return this.index > 0 && this.index === this.totalWindows - 1
+    }
+
+    get initialized () {
+      return this._initialized
+    }
+
+    get context () {
+      return {
+        ref: this.ref,
+        index: this.index
+      }
+    }
+
+    get hasInBetween () {
+      return this.index < this.totalWindows - 1
+    }
+
+    get hasScroll () {
+      return this.$.scrollingContainer.clientHeight <
+        this.$.scrollingContainer.scrollHeight
+    }
+
+    syncInBetweenSlot () {
+      let inBetweenIndex = this._svgList.indexOf(this._pinBetweenSlot)
+      if (this.hasInBetween) {
+        if (!this._pinBetweenSlot) {
+          this._pinBetweenSlot = document.createElementNS(
+            this.constructor.svgNS, 'svg'
           )
-        },
-
-        refreshAll: function (viewWindows, threshold) {
-          if (typeof (threshold) !== 'undefined' && threshold !== null && !viewWindows) {
-            // only update _threshold only
-            this._changeThreshold(threshold)
-            return this.getViewWindowStrings()
-          } else {
-            this._threshold = (typeof (threshold) !== 'undefined' && threshold !== null ? threshold : this._threshold)
-            if (viewWindows) {
-              this.changeAllViewWindows(viewWindows)
-            } else {
-              this._updateTracks()
-            }
-          }
-          return this.getViewWindowStrings()
-        },
-
-        /**
-         * Get the `string` of ranges in all views
-         *
-         * @returns {Array<string>} The ranges, converted to `string`.
-         */
-        getViewWindowStrings: function () {
-          var result = []
-          this._viewWindows.forEach(function (vwindow, index) {
-            result.push(vwindow.regionToString(false))
-          }, this)
-          return result
-        },
-
-        /**
-         * _numOfSubsChanged - sync number of viewWindows to `numOfSubs`
-         *
-         * @param  {number} newValue new `numOfSubs` value
-         * @param  {number} oldValue old `numOfSubs` value
-         */
-        _numOfSubsChanged: function (newValue, oldValue) {
-          this._initialized = false
-          if (this._refObj) {
-            var defaultWindows = this._refObj.settings.defaultViewWindows
-            for (var i = 0; i < newValue; i++) {
-              if (this.coordinates[i] !== false &&
-                !give.ChromRegion.isValidChromRegion(this.coordinates[i]) &&
-                Array.isArray(this._refObj.settings.defaultViewWindows)
-              ) {
-                this.splice('coordinates', i, 1, defaultWindows[i % defaultWindows.length])
-              }
-              if (!give.ChromRegion.isValidChromRegion(this.coordinates[i])) {
-                this.splice('_viewWindows', i, 1, new give.ChromRegion(this.coordinates[i], this._refObj))
-              } else {
-                this.splice('_viewWindows', i, 1, null)
-              }
-            }
-            this._checkVWindowsInit()
-          }
-        },
-
-        _setRefObj: function (refObj) {
-          this._refObj = refObj
-          this._numOfSubsChanged(this.numOfSubs)
-          this._initialized = false
-          this._checkVWindowsInit()
-        },
-
-        _initDOMArray: function () {
-          // this is the array for visible tracks by window
-          // notice that this is an array of array
-          // tracks are grouped by its corresponding viewWindow Index
-          this._trackDOMsByWindow = []
-          for (var i = 0; i < this._viewWindows.length; i++) {
-            var newTrackDOMEntry = {
-              pinAbove: [],
-              scrolling: [],
-              pinBelow: [],
-              map: {},
-              divId: give.ChartArea.DOM_DIV_ID + i
-            }
-            if (i < this._viewWindows.length - give.ChartArea.INTERACTION_SUBS + 1) {
-              newTrackDOMEntry.pinInBetween = []
-            }
-            if (i > 0) {
-              newTrackDOMEntry.hiddenTrackComponents = []
-            }
-            this.push('_trackDOMsByWindow', newTrackDOMEntry)
-          }
-          this.$.trackSvgHolders.render()
-        },
-
-        _initDOMCoorTracks: function () {
-          if (this._refObj) {
-            this._viewWindows.forEach(function (vwindow, windowIndex) {
-              // coordinate track
-              var coorTrackDOM = this._addVisibleTrack(give.TrackObject.createCoorTrack(this._refObj,
-                'coor_' + this._refObj.db + '_' + windowIndex), windowIndex)
-              if (!windowIndex) {
-                this.coorTrackZeroDOM = coorTrackDOM
-              }
-            }, this)
-          }
-        },
-
-        /**
-         * Reset the entire DOM display
-         */
-        resetDOM: function () {
-          if (this._initialized) {
-            this._readiness = false
-            this._initDOMArray()
-          } else {
-            this._readiness = true
-          }
-        },
-
-        _clearDOM: function () {
-          var svgList = Polymer.dom(this.$.chartHolding).querySelectorAll('svg.containedSvg')
-          svgList.forEach(function (svgElem, index) {
-            while (Polymer.dom(svgElem).firstChild) {
-              Polymer.dom(svgElem).removeChild(Polymer.dom(svgElem).firstChild)
-            }
-          }, this)
-          while (Polymer.dom(this.$.trackDOMHolder).firstChild) {
-            Polymer.dom(this.$.trackDOMHolder).removeChild(Polymer.dom(this.$.trackDOMHolder).firstChild)
-          }
-        },
-
-        _addAllTrackDOMsTracksReady: function (noRefreshContent, ref) {
-          // function called when tracks are ready for this._refObj
-          if (ref === this.ref) {
-            // Only respond to this call if ref has not been changed
-            var showTrack = function (wIndex, track, index) {
-              // notice that if track type is 'interaction', it needs to be 'unshifted' to later windows
-              if (track.getSetting('visibility') > give.TrackObject.StatusEnum.VIS_NONE) {
-                this._addVisibleTrack(track, wIndex)
-              }
-            }
-            this._viewWindows.forEach(function (vwindow, windowIndex) {
-              if (this.groupIdList && this.groupIdList.length > 0) {
-                this.groupIdList.forEach(function (groupID) {
-                  if (this._refObj.getGroups().hasOwnProperty(groupID)) {
-                    this._refObj.getGroups()[groupID].forEach(
-                      showTrack.bind(this, windowIndex), this)
-                  }
-                }, this)
-              } else {
-                this._refObj.getTracks().forEach(
-                  showTrack.bind(this, windowIndex), this)
-              }
-            }, this)
-            this.populateDOM(noRefreshContent)
-          }
-        },
-
-        addAllTrackDOMs: function (noRefreshContent) {
-          this._refObj.callOnTracksReady(this._addAllTrackDOMsTracksReady.bind(this, noRefreshContent, this.ref))
-        },
-
-        _removeInvisibleTrackDOMs: function () {
-          this._trackDOMsByWindow.forEach(function (indTrackDOMs, windowIndex) {
-            // notice that because tracks may get deleted, don't use forEach with splice
-            var i
-            for (i = indTrackDOMs.length - 1; i >= 0; i--) {
-              if (indTrackDOMs[i].track.getSetting('visibility') === give.TrackObject.StatusEnum.VIS_NONE) {
-                // this track should be hidden by now
-                delete indTrackDOMs.map[indTrackDOMs[i].track.id]
-                indTrackDOMs.splice(i, 1)
-              }
-            }
-          }, this)
-        },
-
-        _setDivElemInWindow: function (domInWindowEntry, index) {
-          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-          domInWindowEntry.pinAbove.divElem = this.$$('#' +
-            this._getElemId(domInWindowEntry.divId, reverse ? 'PinBottom' : 'PinTop'))
-          domInWindowEntry.scrolling.divElem = this.$$('#' +
-            this._getElemId(domInWindowEntry.divId, 'Scroll'))
-          domInWindowEntry.pinBelow.divElem = this.$$('#' +
-            this._getElemId(domInWindowEntry.divId, reverse ? 'PinTop' : 'PinBottom'))
-          if (domInWindowEntry.pinInBetween) {
-            domInWindowEntry.pinInBetween.divElem = this.$$('#' +
-              this._getElemId(domInWindowEntry.divId, 'PinBetween'))
-          }
-        },
-
-        _callForeachWithElemFuncOnDomInWindowEntry: function (func, startFunc, endFunc, domInWindowEntry, index) {
-          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-          for (var key in domInWindowEntry) {
-            if (domInWindowEntry.hasOwnProperty(key) &&
-              Array.isArray(domInWindowEntry[key]) &&
-              domInWindowEntry[key].divElem &&
-              domInWindowEntry[key].divElem.querySelector('svg')
-            ) {
-              if (startFunc && typeof startFunc === 'function') {
-                startFunc(domInWindowEntry[key].divElem)
-              }
-              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-                : domInWindowEntry[key]
-              enumArray.forEach(func.bind(this,
-                domInWindowEntry[key].divElem), this)
-              if (endFunc && typeof endFunc === 'function') {
-                endFunc(domInWindowEntry[key].divElem)
-              }
-            }
-          }
-        },
-
-        _callForeachFuncOnDomInWindowEntry: function (func, domInWindowEntry, index) {
-          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-          for (var key in domInWindowEntry) {
-            if (domInWindowEntry.hasOwnProperty(key) &&
-              Array.isArray(domInWindowEntry[key])
-            ) {
-              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-                : domInWindowEntry[key]
-              enumArray.forEach(func, this)
-            }
-          }
-        },
-
-        _callEveryOnDomInWindowEntry: function (func, domInWindowEntry, index) {
-          // same thing as _callForeachFuncOnDomInWindowEntry, just replace forEach by every
-          var reverse = (index > 0 && index === this._trackDOMsByWindow.length - 1)
-          for (var key in domInWindowEntry) {
-            if (domInWindowEntry.hasOwnProperty(key) &&
-              Array.isArray(domInWindowEntry[key])
-            ) {
-              var enumArray = reverse ? domInWindowEntry[key].slice().reverse()
-                : domInWindowEntry[key]
-              if (!enumArray.every(func, this)) {
-                return false
-              }
-            }
-          }
-          return true
-        },
-
-        _populateDomInWindow: function (domInWindowEntry, index) {
-          var _populateDomInComponent = function (component, trackDOM, trackDomIndex) {
-            Polymer.dom(this.$.trackDOMHolder).appendChild(trackDOM)
-            Polymer.dom(component.querySelector('svg.containedSvg')).appendChild(trackDOM.getTrackSvg())
-          }
-          this._callForeachWithElemFuncOnDomInWindowEntry(
-            _populateDomInComponent.bind(this), null, null,
-            domInWindowEntry, index)
-        },
-
-        /**
-         * _updateDomHeightInWindow - Update the heights of DOMs in any viewWindow
-         *
-         * @param  {{
-         *   pinAbove: Array.<GIVe.TrackDomBehavior>,
-         *   scrolling: Array.<GIVe.TrackDomBehavior>,
-         *   pinBelow: Array.<GIVe.TrackDomBehavior>,
-         *   map: Object,
-         *   [pinInBetween: Array.<GIVe.TrackDomBehavior>]
-         * }} domInWindowEntry - viewWindow Array
-         * @param  {number} index - index of domInWindowEntry in the array
-         */
-        _updateDomHeightInWindow: function (domInWindowEntry, index) {
-          var _prepareSvgHeight = function (svgWidth, divElem) {
-            divElem._currY = 0
-            divElem._svgWidth = svgWidth || divElem.clientWidth
-          }
-          var _setDomIndHeight = function (divElem, trackDOM, index) {
-            trackDOM.updateLocationSize(0, divElem._currY, divElem._svgWidth)
-            divElem._currY += trackDOM.getHeight() + this._trackGap * this._textSize
-          }.bind(this)
-          var _setSvgWidthHeight = function (divElem) {
-            if (divElem._currY > 0) {
-              divElem._currY -= this._trackGap * this._textSize
-            }
-            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('width', divElem._svgWidth)
-            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('height', divElem._currY)
-            Polymer.dom(divElem).querySelector('svg.containedSvg').setAttribute('viewBox',
-              '0 0 ' + divElem._svgWidth + ' ' + divElem._currY)
-            delete divElem._currY
-            delete divElem._svgWidth
-          }.bind(this)
-          this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-            _prepareSvgHeight.bind(this, this._svgWidth),
-            _setSvgWidthHeight, domInWindowEntry, index)
-          this._svgWidth = domInWindowEntry.scrolling.divElem.clientWidth
-          if (this._svgWidth !== domInWindowEntry.pinAbove.divElem.clientWidth) {
-            // scrolling happened, needs to shrink pinned track width
-            this._callForeachWithElemFuncOnDomInWindowEntry(_setDomIndHeight,
-              _prepareSvgHeight.bind(this, this._svgWidth),
-              _setSvgWidthHeight, domInWindowEntry, index)
-          }
-        },
-
-        populateDOM: function (noRefreshContent) {
-          // first clear old DOMs
-          this._clearDOM()
-          // then populate all new DOMS by window
-          this._trackDOMsByWindow.forEach(this._populateDomInWindow, this)
-          this.updateHeightLocation()
-          Polymer.dom.flush()
-          if (!noRefreshContent) {
-            // then update everything
-            this.refreshAll()
-          }
-        },
-
-        updateDOM: function (noRefreshContent) {
-          // update existing DOMs, first remove all tracks that should be hidden
-          // if noRefreshContent = true, do not refresh content (should be refreshed later)
-          if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
-            this._removeInvisibleTrackDOMs()
-          }
-
-          // then add new Tracks (if not there already)
-          this.addAllTrackDOMs(noRefreshContent)
-        },
-
-        _updateWindowHandler: function (e) {
-          // update the windows by events bubbled up from bottom tracks
-          try {
-            if (e.detail.newWindow instanceof give.ChromRegion ||
-              typeof e.detail.newWindow === 'string') {
-              this.changeViewWindow(e.detail.newWindow,
-                (!isNaN(parseInt(e.detail.windowIndex)) && parseInt(e.detail.windowIndex) >= 0)
-                  ? parseInt(e.detail.windowIndex)
-                  : 0, !!(e.detail.tracks)
-              )
-            }
-          } catch (err) {
-            console.log(err.message)
-            console.log(err.stack)
-          }
-        },
-
-        updateWindow: function (e) {
-          this._updateWindowHandler(e)
-        },
-
-        _domChangeHandler: function () {
-          this._trackDOMsByWindow.forEach(this._setDivElemInWindow, this)
-          this._initDOMCoorTracks()
-          if (this._initialized) {
-            this.addAllTrackDOMs()
-          }
-        },
-
-        _getElemId: function (divId, suffix) {
-          return divId + '_' + suffix
-        },
-
-        _vWindowHasPinBetween: function (domInWindowEntry) {
-          return !!domInWindowEntry.pinInBetween
-        },
-
-        _onIronResize: function (e, detail) {
-          delete this._svgWidth
-          if (this._trackDOMsByWindow && this._trackDOMsByWindow.length > 0) {
-            this.debounce(this.resizeJobName, this.updateHeightLocation.bind(this), this.resizeDebounceInt)
+        }
+        if (inBetweenIndex < 0) {
+          this._svgList.push(this._pinBetweenSlot)
+        }
+      } else {
+        if (inBetweenIndex >= 0) {
+          this._svgList.splice(inBetweenIndex, 1)
+        }
+        if (this._pinBetweenSlot) {
+          while (this._pinBetweenSlot.firstChild) {
+            this._pinBetweenSlot.removeChild(this._pinBetweenSlot.firstChild)
           }
         }
+      }
+    }
 
-      // TODO: add/remove/rearrange tracks
+    get pinBetweenSlot () {
+      return this.hasInBetween ? this._pinBetweenSlot : null
+    }
 
+    /**
+     * Merge properties together
+     * @todo Will be changed into `track-dom-behavior` or `basic-funcs`
+     *
+     * @param  {object} original - original object
+     * @param  {object} newProp - object with new properties
+     * @returns {object} object with the merged properties
+     */
+    _mergeProperty (original, newProp) {
+      for (var key in newProp) {
+        if (newProp.hasOwnProperty(key)) {
+          original[key] = newProp[key]
+        }
+      }
+      return original
+    }
+
+    _createTrackProp (props) {
+      props = props || {}
+      props.windowIndex = this.index
+      props.reverseFlag = this.reverseFlag
+      props.width = this.$.chartHolder.clientWidth
+      props.textMargin = this.textMargin
+      return props
+    }
+
+    _getSvgSlotId (trackDom) {
+      return this._svgSlotIdFromSlotName(
+        this._getDomEffectivePriority(trackDom).slotName
+      )
+    }
+
+    _svgSlotIdFromSlotName (slotName) {
+      slotName = slotName || ''
+      switch (slotName.toLowerCase()) {
+        case 'top':
+          return this.reverseFlag ? '_PinBottom' : '_PinTop'
+        case 'bottom':
+          return this.reverseFlag ? '_PinTop' : '_PinBottom'
+        case 'inbetween':
+          return '_PinBetween'
+        case 'scroll':
+        default:
+          return '_Scroll'
+      }
+    }
+
+    _slotNameFromSvgSlotId (svgSlotId) {
+      switch (svgSlotId.toLowerCase()) {
+        case '_pintop':
+          return this.reverseFlag ? 'bottom' : 'top'
+        case '_pinbottom':
+          return this.reverseFlag ? 'top' : 'bottom'
+        case '_pinbetween':
+          return 'inbetween'
+        case '_scroll':
+        default:
+          return 'scroll'
+      }
+    }
+
+    _getDomEffectivePriority (trackDom) {
+      return this.priorityManager.getEffectivePriority(trackDom.parent)
+    }
+
+    _findSlotSvgElement (svgSlotId) {
+      if (svgSlotId !== '_PinBetween') {
+        return this.shadowRoot.querySelector('#' + svgSlotId)
+      } else {
+        return this.pinBetweenSlot
+      }
+    }
+
+    _addTrackDomSvg (trackDom) {
+      let svgSlotId = this._getSvgSlotId(trackDom)
+      // Add DOM element
+      this._findSlotSvgElement(svgSlotId).appendChild(trackDom.trackSvg)
+      // attach event listeners (if any)
+      if (trackDom.mainGestureReceiver && trackDom.dragHandler) {
+        Polymer.Gestures.addListener(trackDom.mainGestureReceiver,
+          'track', e => trackDom.dragHandler(e, e.detail)
+        )
+        trackDom.mainGestureReceiver.addEventListener(
+          'wheel', e => trackDom.wheelHandler(e, e.detail)
+        )
+      }
+      return svgSlotId
+    }
+
+    _addVisibleTrack (track, contexts, props) {
+      if (track.checkViewReq(contexts, this.index)) {
+        let newTrackDom = track.createDomObj(this._createTrackProp(props))
+        this._addTrackDomSvg(newTrackDom)
+        if (!this._coorDomSvg && newTrackDom instanceof give.CoorTrackDom) {
+          this._coorDomSvg = newTrackDom.trackSvg
+        }
+        return newTrackDom
+      }
+      return null
+    }
+
+    _addHiddenTrackDom (trackDom) {
+      if (trackDom && !this._hiddenTrackDomMap.has(trackDom.id) &&
+        trackDom.hasLinksInTargetView(this.context)
+      ) {
+        this._hiddenTrackDoms.push(trackDom)
+        this._hiddenTrackDomMap.set(trackDom.id, trackDom)
+        return trackDom
+      }
+      return null
+    }
+
+    _removeHiddenTrackDom (trackDomId) {
+      if (trackDomId && this._hiddenTrackDomMap.has(trackDomId)) {
+        this._hiddenTrackDoms.splice(
+          this._hiddenTrackDoms.indexOf(
+            this._hiddenTrackDomMap.get(trackDomId)
+          ), 1)
+        this._hiddenTrackDomMap.delete(trackDomId)
+      }
+    }
+
+    _moveTrackDom (trackDom, newIndex, oldIndex) {
+      // TODO: send signal to parent DOM element indicating the change
+    }
+
+    _removeTrackDom (trackDom) {
+      // TODO: send signal to parent DOM element indicating the change
+    }
+
+    _clearDOM () {
+      // clear out all the svgs
+      this._svgList.forEach(svgElem => {
+        while (svgElem.firstChild) {
+          svgElem.removeChild(svgElem.firstChild)
+        }
+      }, this)
+      // clear `this._trackDoms`
+      this._trackDoms.length = 0
+    }
+
+    updateSvgHeightLocation (width) {
+      // update width and throw width if needed
+      width = width || this.$.chartHolder.clientWidth
+
+      this._svgList.forEach(svgElem => {
+        svgElem.setAttribute('width', width)
+        svgElem.setAttribute('height', svgElem._currY || 0)
+        svgElem.setAttribute('viewBox',
+          '0 0 ' + width + ' ' + (svgElem._currY || 0))
+        delete svgElem._currY
       })
+      if (this.$.scrollingContainer.clientWidth < width) {
+        throw new ResetWidthError(
+          this.$.scrollingContainer.clientWidth
+        )
+      }
+      this.windowWidth = width
+    }
 
-      give.ChartArea.DOM_DIV_ID = 'domDiv_'
-      give.ChartArea.INTERACTION_SUBS = 2
+    /**
+     * @function updateTracks
+     * @async
+     * @param  {ChromRegionLiteral} newVWindow - Whether the view window needs
+     *    to be changed to the new window, if this is falsey, then the
+     *    function will call itself on pending view window or the original
+     *    window.
+     * @param  {number} [width] - If a new width is need to be specified
+     * @return {Promise<ChromRegionLiteral>} Returns a Promise that resolves
+     *    to the new window when new data was ready.
+     * @throws {number} if width needs to be changed (due to scroll bar), the
+     *    new width will be thrown to let the calling function (in
+     *    `chart-area`) be informed of incoming width change.
+     */
+    updateTracks (newVWindow, width) {
+      // Steps:
+      // * Update all tracks' width and height (with maybe new view window)
+      // * Calculate whether a scroll bar will be needed and rearrange all
+      //   the svg elements by changing the Y value
+      //   (by calculating and setting the height of the svgHolder element)
+      //   * If a scroll bar is needed, throw the width with scroll bar
+      //     factored in. Process ends to wait for the next call from the
+      //     parent element (`chart-area`).
+      // * Resolve the promise to the new view window
+      give._verbConsole.info(
+        'updateTracks(' + width + ', ' + newVWindow + ')')
 
-      return give
-    })(GIVe || {})
+      if (typeof newVWindow === 'string') {
+        newVWindow = this.getVerifiedViewWindow(newVWindow)
+      }
+      // prepare element widths and heights
+      this._pendingVWindow = newVWindow || this._pendingVWindow || false
+      this._updateCoordinates()
+
+      width = width || this.$.chartHolder.clientWidth
+
+      // Update all tracks' width and height (with maybe new view window)
+      // If no new promise is needed, do not chain stuff afterwards
+      this.drawingPromise = this._trackPromiseAggregator.aggregate(
+        this._trackDoms.concat(this._hiddenTrackDoms),
+        trackDom => trackDom.update(
+          this._pendingVWindow, width, null, false, this.index)
+      )
+        // * Calculate whether a scroll bar will be needed
+        //   (by calculating and setting the height of the svgHolder element)
+        //   * If a scroll bar is needed, throw the width with scroll bar
+        //     factored in. Process ends to wait for the next call from the
+        //     parent element (`chart-area`).
+        .then(windows => this._trackReadyHandler(windows, width))
+
+      return this.drawingPromise
+    }
+
+    changeWidth (width) {
+      if (!this._initialized) {
+        return this.resetDom().then(() => this.changeWidth(width))
+      }
+      width = width || this.$.chartHolder.clientWidth
+      if (this._viewWindow && this.windowWidth && width !== this.windowWidth) {
+        let pendingVWindow = this._viewWindow.getExtension(
+          (width - this.windowWidth) / this.windowWidth,
+          null, true, this._refObj
+        )
+        return this.updateTracks(pendingVWindow, width)
+      }
+      return Promise.resolve(this._viewWindow)
+    }
+
+    _showTutorialIfNeeded () {
+      if (this.firstRun && this.showTutorial &&
+        this._coorDomSvg
+      ) {
+        this._coorDomSvgId = this._coorDomSvg.id
+        this.shadowRoot.querySelector('#coorTrackTutorial').showTutorial()
+      }
+      this.firstRun = false
+    }
+
+    _updateTrackLocation (newWidth) {
+      let enumArray = this.reverseFlag
+        ? this._trackDoms.slice().reverse() : this._trackDoms
+      enumArray.forEach(trackDom => {
+        let svgElem = this._findSlotSvgElement(
+          this._getSvgSlotId(trackDom, true)
+        )
+        if (svgElem.hasOwnProperty('_currY')) {
+          svgElem._currY += this.trackGap * this.textSize
+        } else {
+          svgElem._currY = 0
+        }
+        trackDom.updateLocation(0, svgElem._currY)
+        svgElem._currY += trackDom.height
+      })
+      this.updateSvgHeightLocation(newWidth)
+    }
+
+    _verifyTrackUpdateWindow (trackWindow, trackIndex, pendingVWindow) {
+      if (this._trackDoms.length <= trackIndex) {
+        return true
+      }
+      if (Array.isArray(trackWindow)) {
+        trackWindow =
+          trackWindow[this.index - this._trackDoms[trackIndex].windowIndex]
+      }
+      return !give.ChromRegion.compare(trackWindow, pendingVWindow)
+    }
+
+    _trackReadyHandler (windows, newWidth) {
+      // First check whether other resizing event fired before
+      // this update (otherwise the display may not be up-to-date).
+      let pendingVWindow = this._pendingVWindow || this._viewWindow
+      if (pendingVWindow && Array.isArray(windows) && windows.some(
+        (window, index) =>
+          !this._verifyTrackUpdateWindow(window, index, pendingVWindow)
+      )) {
+        throw new give.PromiseCanceler()
+      }
+      // update `this._viewWindow` and clear `this.drawingPromise`
+      // `windows` is the array returned by Promise.all()
+      this._trackPromiseAggregator.clear()
+      delete this.drawingPromise
+      this._viewWindow = pendingVWindow
+      this._pendingVWindow = null
+      this._updateTrackLocation(newWidth)
+      // call tutorial elements if needed
+      try {
+        this._showTutorialIfNeeded()
+      } catch (e) {
+        give._verbConsole.warn(e)
+        give.fireSignal('give-warning', { errObj: e }, null, this)
+      } finally {
+        this._readiness = true
+      }
+      return this._viewWindow
+    }
+
+    _trackErrHandler (err) {
+      if (err && err.critical) {
+        throw err
+      }
+      if (!(err instanceof give.PromiseCanceler)) {
+        give._verbConsole.warn(err)
+        give.fireSignal('give-warning', { errObj: err })
+      }
+      return this._pendingVWindow || this._viewWindow
+    }
+
+    getVerifiedViewWindow (coordinate) {
+      try {
+        // This may throw some exceptions
+        // (when invalid view windows are supplied)
+        return new give.ChromRegion(coordinate, this.refObj)
+      } catch (err) {
+        // Invalid view windows are supplied, fail gracefully
+        err.data = err.data || {}
+        err.data.updatedCoor =
+          (this._viewWindow &&
+            this._viewWindow.regionToString
+          ) ? this._viewWindow.regionToString(false) : null
+        throw err
+      }
+    }
+
+    /**
+     * _changeViewWindow - Change the range of a sub view.
+     *    The range should be a `GIVE.ChromRegion` object and clipped.
+     *    No exceptions should be thrown from this function.
+     *
+     * @param  {ChromRegionLiteral} viewWindow - The target range
+     * @param  {number} [width] - The width of the window
+     * @return {Promise<ChromRegionLiteral>} A Promise that resolves to the
+     *    updated view window when the updating is done.
+     * @throws {number} if width needs to be changed (due to scroll bar), the
+     *    new width will be thrown to let the calling function (in
+     *    `chart-area`) be informed of incoming width change.
+     * @async
+     */
+    changeViewWindow (viewWindow, width) {
+      if (!this._initialized) {
+        return this.resetDom(viewWindow)
+          .then(() => this.updateTracks(viewWindow, width))
+      }
+      return this.updateTracks(viewWindow, width)
+    }
+
+    _coorChanged (newValue, oldValue) {
+      if (!this._updatingCoor) {
+        return this.changeCoordinate(newValue)
+      }
+    }
+
+    changeCoordinate (newCoordinate, width) {
+      try {
+        let newWindow = this.getVerifiedViewWindow(newCoordinate)
+        let currWindow = this._pendingVWindow || this._viewWindow
+        if (!currWindow || give.ChromRegion.compare(currWindow, newWindow)) {
+          return this.changeViewWindow(newWindow, width)
+        }
+        return this._pendingVWindow ? Promise.reject(new give.PromiseCanceler())
+          : Promise.resolve(this._viewWindow)
+      } catch (err) {
+        err.data = err.data || {}
+        err.data.updatedCoor =
+          (this._viewWindow && this._viewWindow.regionToString)
+            ? this._viewWindow.regionToString(false) : null
+        this._updateCoordinates()
+        throw err
+      }
+    }
+
+    _updateCoordinates (window) {
+      window = window || this._pendingVWindow || this._viewWindow
+      if (window) {
+        this._updatingCoor = true
+        this.coordinate = window.regionToString(false)
+        this._updatingCoor = false
+      }
+    }
+
+    /**
+     * Get the `string` of ranges in all views
+     *
+     * @returns {Array<string>} The ranges, converted to `string`.
+     */
+    getViewWindowString () {
+      return this._viewWindows.map(function (vwindow, index) {
+        return vwindow.regionToString(false)
+      }, this)
+    }
+
+    _setRefObj (refObj) {
+      let result = super._setRefObj(refObj)
+      if (result) {
+        this._initialized = false
+      }
+      // return this.refReadyPromise.then(refObj => {
+      //   if (refObj.db !== this.ref) {
+      //     // Only respond to this call if ref has not been changed
+      //     throw new give.PromiseCanceler()
+      //   }
+      //   give.fireSignal('ref-changed', {
+      //     ref: refObj.db,
+      //     index: this.index
+      //   }, null, this)
+      //   this._initDomAfterVWinRefReady()
+      // })
+      return result
+    }
+
+    /**
+     * Reset the entire DOM display without updating the DOM
+     * @async If reference has not have its tracks initialized.
+     */
+    resetDom (contexts) {
+      contexts = contexts || []
+      let refReadyPromise = Promise.resolve()
+      if (!this._initialized) {
+        if (this.refObj) {
+          refReadyPromise = this.refObj.initTracks().then(() => {
+            this._initialized = true
+          })
+        } else {
+          this._updateCoordinates()
+          throw new give.GiveError('Reference not initialized.')
+        }
+      }
+      return refReadyPromise.then(() => {
+        this._clearDOM()
+        this._readiness = false
+        return this._updateAllTrackDoms(contexts)
+      })
+    }
+
+    /**
+     * link hidden DOMs to the window
+     * @param  {Array<TrackDom>} hiddenDoms - The hidden DOM to be linked
+     *    within this window
+     * @param  {Array<object>} contexts - The contexts views the DOMs in
+     *    this window will be linked to. contexts object should have the
+     *    following properties:
+     *    {
+     *      ref: <string> reference of the view
+     *      index: <number> index of the view
+     *    }
+     *    This array should at least include the neighboring windows with
+     *    the same index as in `chart-area`
+     * @returns {Array<TrackDom>} An array of hidden Track DOMs that needs to be
+     *    linked to lower windows.
+     */
+    _linkHiddenDoms (hiddenDoms, contexts) {
+      // add all hiddenDoms (if not already added)
+      // and if they need to be further linked, put into returned list
+      if (hiddenDoms && hiddenDoms.length) {
+        hiddenDoms.forEach(
+          hiddenDom => this._addHiddenTrackDom(hiddenDom)
+        )
+        return hiddenDoms.filter(hiddenDom =>
+          hiddenDom.hasLinksInTargetView(contexts[this.index + 1])
+        )
+      } else {
+        return []
+      }
+    }
+
+    _updateAllTrackDoms (contexts) {
+      let newTrackDoms = []
+      let newAddedTrackMap = new Map()
+      this.priorityManager.trackIdList.forEach(trackId => {
+        let newTrackDom
+        if (this._addedTrackMap.has(trackId)) {
+          newTrackDom = this._addedTrackMap.get(trackId).trackDom
+        } else {
+          newTrackDom = this._addVisibleTrack(
+            this.refObj.tracks.get(trackId), contexts
+          )
+        }
+        if (newTrackDom) {
+          newTrackDoms.push(newTrackDom)
+          newAddedTrackMap.set(trackId, {
+            trackDom: newTrackDom,
+            slotId: this._addTrackDomSvg(newTrackDom)
+          })
+        }
+      })
+      this._addedTrackMap.forEach((slotAndDom, trackId) => {
+        if (!newAddedTrackMap.has(trackId)) {
+          this._findSlotSvgElement(slotAndDom.slotId)
+            .removeChild(slotAndDom.trackDom.trackSvg)
+        }
+      })
+      this._trackDoms = newTrackDoms
+      this._addedTrackMap = newAddedTrackMap
+    }
+
+    _removeInvisibleTrackDoms (contexts) {
+      // Find tracks from `this._trackDoms` that become invisible now
+      // then call `this._removeTrack` to remove them
+      let removedTracks = this._trackDoms.map(trackDom => trackDom.parent)
+        .filter(track => (
+          !track.isVisible || !track.checkViewReq(contexts, this.index)
+        ))
+      this._removeTrack(removedTracks)
+    }
+
+    /**
+     * @function updateDom - Update the DOM structure of the window WITHOUT
+     *    REFRESHING THE CONTENTS (so that this function can be kept sync).
+     *    This should be always called when `this._initialized` is `true`,
+     *    otherwise `this.resetDom` (an async function) should be used.
+     * @param  {Array<object>} contexts - Contexts for neighboring windows
+     *    to check if multi-window tracks should be displayed.
+     */
+    updateDom (contexts) {
+      // update existing DOMs
+      contexts = contexts || []
+      return this._updateAllTrackDoms(contexts)
+    }
+
+    /**
+     * @function linkDOMs - link DOMs within this window with those within
+     *    neighboring windows.
+     * @param  {Array<trackDom>} hiddenDoms - The hidden DOM to be linked
+     *    within this window
+     * @param  {Array<object>} contexts - The contexts views the DOMs in
+     *    this window will be linked to. contexts object should have the
+     *    following properties:
+     *    {
+     *      ref: <string> reference of the view
+     *      index: <number> index of the view
+     *    }
+     *    This array should at least include the neighboring windows with
+     *    the same index as in `chart-area`
+     * @param  {Boolean} keepOldLinks - Whether to keep the old hidden DOMs
+     *    (for performance purposes)
+     * @return {Array<trackDom>} Return the DOMs that will be linked within
+     *    the next view
+     */
+    linkDOMs (hiddenDoms, contexts, keepOldLinks) {
+      contexts = contexts || []
+      if (!keepOldLinks) {
+        // remove all existing hidden DOMs to severe old links
+        this._hiddenTrackDomMap.clear()
+        this._hiddenTrackDoms.length = 0
+      }
+      let linkedDoms = this._linkHiddenDoms(hiddenDoms, contexts) || []
+
+      return linkedDoms.concat(this._trackDoms.filter(trackDom =>
+        trackDom.hasLinksInTargetView(contexts[this.index + 1])))
+    }
+  }
+
+  ChartWindow.ResetWidthError = ResetWidthError
+  ChartWindow.svgNS = 'http://www.w3.org/2000/svg'
+
+  give.ChartWindow = ChartWindow
+  window.customElements.define('chart-window', give.ChartWindow)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>

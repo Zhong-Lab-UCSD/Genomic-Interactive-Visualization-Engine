@@ -1,3 +1,8 @@
+## Changes in 2.0
+* ⚠️ This Element is now deprecated ⚠️
+  * Please use the web animations api or CSS animations
+* Web animations polyfill is now a dev dependency
+
 # neon-animation
 
 `neon-animation` is a suite of elements and behaviors to implement pluggable animated transitions for Polymer Elements using [Web Animations](https://w3c.github.io/web-animations/).
@@ -14,7 +19,6 @@
   * [Shared element animations](#shared-element)
   * [Declarative page transitions](#declarative-page)
 * [Included animations](#animations)
-* [Demos](#demos)
 
 <a name="basic"></a>
 ## A basic animatable element
@@ -52,7 +56,6 @@ Polymer({
 });
 ```
 
-[Live demo](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/doc/basic.html)
 
 <a name="configuration"></a>
 ## Animation configuration
@@ -111,7 +114,6 @@ Polymer({
 });
 ```
 
-[Live demo](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/doc/types.html)
 
 You can also use the convenience properties `entryAnimation` and `exitAnimation` to set `entry` and `exit` animations:
 
@@ -295,12 +297,3 @@ Shared element animations
 
 Group animations
  * `cascaded-animation` Applys an animation to an array of elements with a delay between each.
-
-<a name="demos"></a>
-## Demos
-
- * [Grid to full screen](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/grid/index.html)
- * [Animation on load](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/load/index.html)
- * [List item to detail](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/list/index.html) (For narrow width)
- * [Dots to squares](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/tiles/index.html)
- * [Declarative](http://morethanreal.github.io/neon-animation-demo/bower_components/neon-animation/demo/declarative/index.html)

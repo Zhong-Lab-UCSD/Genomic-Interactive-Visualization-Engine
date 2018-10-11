@@ -81,7 +81,7 @@ var GIVe = (function (give) {
     give.saveSession(sessionDataObj, function (saveSessionResp) {
       try {
         if (saveSessionResp.error) {
-          throw new Error(saveSessionResp.error)
+          throw new give.GiveError(saveSessionResp.error)
         }
         tableNameQuery.append('id', saveSessionResp.id)
         // add custom track (here on the browser) then send to compute
@@ -128,8 +128,8 @@ var GIVe = (function (give) {
       IDPrepQuery.append('searchRange', dataObj.searchRange)
     }
     // var compDomain = (window.location.search.indexOf('XCGenemoTest') > 0)? (window.location.protocol + '//comp.genemo.org/cpbrowser/'): 'cpbrowser/';
-    give.postAjax(give.compHost + give.Gnm_UploadPrepareTarget, IDPrepQuery,
-          callback, 'json')
+    give.postAjaxLegacy(give.compHost + give.Gnm_UploadPrepareTarget, IDPrepQuery,
+          callback, 'json').then((value) => {})
   }
 
   give.loadSession = function (sessionObj) {
@@ -157,12 +157,12 @@ var GIVe = (function (give) {
   }
 
   give.sendRegionsToCompute = function (bwFlag, tableNameQuery, callback) {
-    give.postAjax(give.compHost + (bwFlag ? give.Gnm_CompBigwigTarget
+    give.postAjaxLegacy(give.compHost + (bwFlag ? give.Gnm_CompBigwigTarget
       : give.Gnm_CompBedTarget), tableNameQuery, callback, 'json')
   }
 
   give.getComputedRegions = function (id, ref, callback) {
-    give.postAjax(give.compHost + give.Gnm_LoadResultTarget,
+    give.postAjaxLegacy(give.compHost + give.Gnm_LoadResultTarget,
       { id: id, species: ref }, callback, 'json')
   }
 
@@ -217,7 +217,7 @@ var GIVe = (function (give) {
       var overlapped = false
       var firstOverlapIndex = newRegionList.length
       newRegionList = newRegionList.filter(function (region, index) {
-        if (region.overlaps(listItem) >= Math.max(region.getLength(), listItem.getLength()) / 2) {
+        if (region.overlaps(listItem) >= Math.max(region.length, listItem.length) / 2) {
           listItem = region.assimilate(listItem)
           if (!overlapped) {
             overlapped = true
@@ -284,7 +284,7 @@ var GIVe = (function (give) {
   give.switchPage = function (selectedPageID) {
     if (selectedPageID === give.TRACK_LIST_PANEL_DOM_ID) {
       // needs to show track list, prepare track list then
-      trackListDom.trackToDOM()
+      trackListDom.syncTrackToDom()
     }
     if (searchTracksDom && searchTracksDom.select) {
       searchTracksDom.select(selectedPageID)
@@ -305,7 +305,7 @@ var GIVe = (function (give) {
   if (give.getParameterByName('sessionID')) {
     // sessionID is specified
     give.sessionObj = {}
-    give.postAjax(
+    give.postAjaxLegacy(
       give.compHost + give.Gnm_LoadSessionTarget,
       {
         'sessionID': give.getParameterByName('sessionID')

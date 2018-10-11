@@ -1,18 +1,23 @@
 <!doctype html>
 <html>
   <head>
-    <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
     <!-- Import GIVE component -->
     <link rel="import" href="components/track-manager/track-manager.html">
-    <link rel="import" href="components/genemo-styles.html">
+    <link rel="import" href="components/give-styles.html">
     <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-    <style is="custom-style" include="genemo-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
+      <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       body {
         font-family: 'Roboto';
-        font-size: 14px;
+        --base-font-size: 14px;
+        font-size: var(--base-font-size);
       }
-      track-manager div {
-        font-size: 16px;
+      track-manager > div {
+        font-size: 1.15em;
+      }
+      track-manager > div > * {
+        font-size: 1em;
       }
       div.managerIntro {
         overflow: auto;
@@ -44,12 +49,13 @@
         border: 1px solid var(--divider-color);
         background: var(--lighter-accent-color);
       }
-    </style>
+      </style>
+    </custom-style>
   </head>
 
   <body unresolved class="fullbleed layout vertical">
     <track-manager class="flex">
-      <div class="managerIntro flex layout vertical">
+      <div slot="managerIntro" class="managerIntro flex layout vertical">
         <div class="flex self-center contentHolder">
           <div class="normalText">
             The Data Hub page lists all references available on this GIVE instance and allows you to pick and choose your track groups and/or tracks in your customized genome browser.

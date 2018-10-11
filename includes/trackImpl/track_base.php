@@ -23,7 +23,7 @@ function loadTrack($db, $tableName, $chrRegion = NULL, $type = NULL, $linkedTabl
         strtok('', '');
       }
       if (is_null($linkedTable)) {
-        $linkedTableSettings = json_decode($itor['settings'], JSON_FORCE_OBJECT);
+        $linkedTableSettings = json_decode($itor['settings'], true);
         if(isset($linkedTableSettings['defaultLinkedTables'])) {
           $linkedTable = $linkedTableSettings['defaultLinkedTables'];
           $linkedKey = $linkedTableSettings['defaultLinkedKeys'];

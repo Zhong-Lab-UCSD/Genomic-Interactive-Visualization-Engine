@@ -25,11 +25,12 @@ There are 6 fields for an interaction part:
 > interaction should have the same `linkID`. Because of this, the rows of the
 > same interaction do not have to be adjacent to one another.  
 > __value__ - This value can be used to represent the strength of the
-> interaction. Values will be shown in different colors.  
+> interaction. Values will be shown in different colors. If no value is
+> associated with any of the regions, use `1` for all of them.
 > __dirFlag__ - If the interaction is directional, this value can be used to
 > indicate the directionality of this part. It should take a value of `0` or
 > `1`. __NOTE__: If the interaction is non-directional, this field should be
-> omitted or filled by `-1`.
+> omitted (use `NULL`) or filled by `-1`.
 
 ## Display Modes
 

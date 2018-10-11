@@ -9,7 +9,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../paper-styles/color.html">
 <link rel="import" href="paper-spinner-behavior.html">
 <link rel="import" href="paper-spinner-styles.html">
@@ -56,7 +55,11 @@ Custom property | Description | Default
   <template strip-whitespace>
     <style include="paper-spinner-styles"></style>
 
-    <div id="spinnerContainer" class-name="[[__computeContainerClasses(active, __coolingDown)]]">
+    <div
+        id="spinnerContainer"
+        class-name="[[__computeContainerClasses(active, __coolingDown)]]"
+        on-animationend="__reset"
+        on-webkit-animation-end="__reset">
       <div class="spinner-layer layer-1">
         <div class="circle-clipper left"></div>
         <div class="circle-clipper right"></div>

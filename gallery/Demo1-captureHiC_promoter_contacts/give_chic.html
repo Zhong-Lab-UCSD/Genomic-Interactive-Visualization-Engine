@@ -4,7 +4,7 @@
 <script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
 <!-- Import GIVE component -->
 <link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
-<link rel="import" href="https://www.givengine.org/lib/genemo-styles.html">
+<link rel="import" href="https://www.givengine.org/lib/give-styles.html">
 <link rel="import" href="https://www.givengine.org/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="https://www.givengine.org/paper-button/paper-button.html">
 <link rel="import" href="https://www.givengine.org/paper-dialog/paper-dialog.html">
@@ -17,12 +17,12 @@
 <chart-controller title-text="long-range promoter contacts with capture Hi-C"  ref="hg19" num-of-subs="2"
   coordinates='["chr18:19140000-19450000", "chr18:19140000-19450000"]'
   group-id-list='["genes", "CHi-C_promoter", "customTracks"]'>
-    
-    <paper-button raised noink class="toolBarCtrls" id="chicShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/Demo1-captureHiC_promoter_contacts';">
+
+    <paper-button raised noink slot="toolBarCtrls" id="chicShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/Demo1-captureHiC_promoter_contacts';">
      GO TO CODE
     </paper-button>
 
-    <paper-button raised noink class="toolBarCtrls" id="chicShowRef">
+    <paper-button raised noink slot="toolBarCtrls" id="chicShowRef">
       References
     </paper-button>
 

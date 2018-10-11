@@ -14,37 +14,46 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../give-styles.html">
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../track-object/track-object.html">
 <link rel="import" href="../gene-coor-input/gene-coor-input.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="html-builder">
   <template>
-    <style include="genemo-shared-styles iron-flex iron-flex-alignment">
+    <style include="give-shared-styles iron-flex iron-flex-alignment">
       :host {
         position: relative;
         overflow-x: auto;
-        @apply(--layout-vertical);
+        @apply --layout-vertical;
+      }
+      div.controllerInputs {
+        --base-font-size: 12px;
       }
       div.controllers > * {
-        margin: 0 0 0.3em 0;
+        margin: 0.15em 0;
       }
-      div.controllerGroup > * {
-        margin: 0 1em 0 0;
+      div.controllers > div.controllerGroup {
+        margin-left: -0.5em;
+        margin-right: -0.5em;
       }
-      div.controllerGroup > div > div {
+      div.controllers > div.controllerGroup > * {
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+      }
+      div.controllers > div.controllerGroup > div > div {
         display: inline-block;
       }
       div.anno {
@@ -55,7 +64,7 @@ limitations under the License.
         overflow-wrap: break-word;
       }
       paper-textarea#codeRegion {
-        @apply(--layout-flex);
+        @apply --layout-flex;
         --paper-input-container-input: {
           font-family: Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
           font-size: 14px;
@@ -63,10 +72,13 @@ limitations under the License.
         };
       }
       paper-input#titleInput {
-        @apply(--layout-flex);
+        @apply --layout-flex;
       }
-      gene-coor-input {
+      div.controllerGroup > gene-coor-input {
         width: 18em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+        --gene-coor-input-dropdown-background: var(--card-background-color);
       }
       paper-dialog div.buttons paper-button {
         margin: unset;
@@ -76,6 +88,15 @@ limitations under the License.
         width: 1.25em;
         height: 1.25em;
         margin: 0 0.2em;
+      }
+      paper-dialog div.statusMessage {
+        display: inline-flex;
+        color: var(--primary-text-color);
+        opacity: var(--primary-text-opacity);
+        margin: 0.7em 1em;
+      }
+      paper-dialog div.statusMessage.error {
+        color: var(--error-color);
       }
     </style>
     <paper-dialog id="mainDialog">
@@ -95,9 +116,10 @@ limitations under the License.
             <div class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</div>
           </div>
         </div>
-        <div class="controllerGroup layout horizontal end">
-          <paper-dropdown-menu id="refDropdown" label="Web Component to be used:">
-            <paper-menu class="dropdown-content" id="refMenu"
+        <div class="controllerGroup controllerInputs layout horizontal end">
+          <paper-dropdown-menu id="refDropdown"
+            label="Web Component to be used:">
+            <paper-listbox slot="dropdown-content" id="refMenu"
               attr-for-selected="value" selected="{{selectedElement}}">
               <paper-item value="chart-controller">
                 &lt;chart-controller&gt;
@@ -105,16 +127,18 @@ limitations under the License.
               <paper-item value="chart-area">
                 &lt;chart-area&gt;
               </paper-item>
-            </paper-menu>
+            </paper-listbox>
           </paper-dropdown-menu>
-          <paper-input hidden$="[[_controllerNotSelected(selectedElement)]]"
-            label="Title for the Chart Controller" value="{{customTitle}}"
-            id="titleInput">
-          </paper-input>
+          <template is="dom-if" if="[[_controllerSelected(selectedElement)]]">
+            <paper-input
+              label="Title for the Chart Controller" value="{{customTitle}}"
+              id="titleInput">
+            </paper-input>
+          </template>
         </div>
-        <div class="controllerGroup layout horizontal end">
+        <div class="controllerGroup controllerInputs layout horizontal start">
           <paper-dropdown-menu id="displayModeDropdown" label="Display mode:">
-            <paper-menu class="dropdown-content" id="dispModeMenu"
+            <paper-listbox slot="dropdown-content" id="dispModeMenu"
               attr-for-selected="value" selected="{{_numOfSubs}}">
               <paper-item value="1">
                 Single Window
@@ -122,35 +146,56 @@ limitations under the License.
               <paper-item value="2">
                 Dual Window
               </paper-item>
-            </paper-menu>
+            </paper-listbox>
           </paper-dropdown-menu>
           <gene-coor-input ref="[[ref]]"
             label="[[_computeLabelForCoorOne(_numOfSubs)]]"
             value="{{_defaultCoor1}}">
           </gene-coor-input>
-          <gene-coor-input ref="[[ref]]"
-            label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
-            hidden$="[[!_multiWindow(_numOfSubs)]]" value="{{_defaultCoor2}}">
-          </gene-coor-input>
+          <template is="dom-if" if="[[_multiWindow(_numOfSubs)]]">
+            <gene-coor-input ref="[[ref]]"
+              label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
+              value="{{_defaultCoor2}}">
+            </gene-coor-input>
+          </template>
         </div>
         <paper-button raised on-tap="updateCode" class="self-start">
           <iron-icon icon="refresh"></iron-icon>
           Update code
         </paper-button>
       </div>
-      <paper-textarea id="codeRegion" label="Embed Code" value="{{htmlCode}}">
+      <paper-textarea id="codeRegion" label="Embed Code" value="{{htmlCode}}"
+        disabled$="[[_needUpdate]]">
       </paper-textarea>
       <div class="buttons">
-        <paper-button on-tap="copyToClipboard">
-          <iron-icon icon="content-copy"></iron-icon>
-          Copy code to clipboard
+        <template is="dom-if" if="[[_showStatusMessage]]">
+          <div class="statusMessage">[[_statusMessage]]</div>
+        </template>
+        <template is="dom-if" if="[[_clipboardEnabled]]">
+          <template is="dom-if" if="[[!_showClipboardState]]">
+            <paper-button on-tap="copyToClipboard"
+              disabled$="[[!_computeClipboardEnabled(_needUpdate, _clipboardEnabled)]]">
+              <iron-icon icon="content-copy"></iron-icon>
+              Copy code to clipboard
+            </paper-button>
+          </template>
+          <template is="dom-if" if="[[_showClipboardState]]">
+            <div class="statusMessage">
+              <iron-icon icon="check"></iron-icon>
+              Code copied to clipboard
+            </div>
+          </template>
+        </template>
+        <template is="dom-if" if="[[!_clipboardEnabled]]">
+          <div class="statusMessage error">
+            <iron-icon icon="error"></iron-icon>
+            Cannot access clipboard
+          </div>
+        </template>
+        <paper-button disabled$="[[_needUpdate]]" on-tap="saveCode">
+          <iron-icon icon="file-download"></iron-icon>
+          Save
         </paper-button>
-        <a class="buttonLink" href$="[[codeLink]]" download="embedGIVE.html">
-          <paper-button on-tap="saveCode">
-            <iron-icon icon="file-download"></iron-icon>
-            Save
-          </paper-button>
-        </a>
         <paper-button dialog-dismiss>
           Close
         </paper-button>
@@ -158,258 +203,366 @@ limitations under the License.
     </paper-dialog>
   </template>
   <script>
-    var GIVe = (function (give) {
-      'use strict'
+var GIVe = (function (give) {
+  'use strict'
 
-      give.HtmlBuilder = Polymer({
-        is: 'html-builder',
+  class HtmlBuilder extends give.RefEmbedMixin(Polymer.Element) {
+    static get is () {
+      return 'html-builder'
+    }
 
-        behaviors: [
-          give.RefEmbeddedBehavior
-        ],
-
-        properties: {
-          dispTrackArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          dispGroupArray: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          selectedElement: {
-            type: String,
-            value: 'chart-controller'
-          },
-
-          customTitle: {
-            type: String,
-            value: ''
-          },
-
-          _numOfSubs: {
-            type: Number,
-            value: 1
-          },
-
-          _defaultCoor1: {
-            type: String,
-            value: ''
-          },
-
-          _defaultCoor2: {
-            type: String,
-            value: ''
-          },
-
-          htmlCode: {
-            type: String,
-            value: ''
+    static get properties () {
+      return {
+        dispTrackArray: {
+          type: Array,
+          value () {
+            return []
           }
         },
 
-        ready: function () {
-          this._coordinatesFilled = false
-        },
-
-        _calcRefLabel: function (refObj) {
-          return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
-        },
-
-        _calcGroupLabel: function (groupArray) {
-          // Try to use group description first, if too long, then just use
-          // 'n group(s)'
-          var result = '(None selected)'
-          if (groupArray) {
-            result = ''
-            groupArray.every(function (grp, index) {
-              result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
-              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-                result = null
-                return false
-              }
-              return true
-            }, this)
-            if (!result) {
-              result = groupArray.length > 0
-                ? (groupArray.length + ' group' +
-                  (groupArray.length > 1 ? 's' : ''))
-                : '(None selected)'
-            }
+        dispGroupArray: {
+          type: Array,
+          value () {
+            return []
           }
-          return result
         },
 
-        _calcTrackLabel: function (trackArray) {
-          // Try to use track title first, if too long, then just use
-          // 'n track(s)'
-          var result = '(None selected)'
-          if (trackArray) {
-            result = ''
-            trackArray.every(function (track, index) {
-              result += (index > 0 ? ', ' : '') +
-                (track.getTitle() || track.getSetting('shortLabel', 'string'))
-              if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-                result = null
-                return false
-              }
-              return true
-            }, this)
-            if (!result) {
-              result = trackArray.length > 0
-                ? (trackArray.length + ' track' +
-                  (trackArray.length > 1 ? 's' : ''))
-                : '(None selected)'
-            }
-          }
-          return result
+        selectedElement: {
+          type: String,
+          value: 'chart-controller'
         },
 
-        _computeLabelForCoorOne: function (numOfSubs) {
-          return 'Default coordinates (or gene name)' +
-            (numOfSubs > 1 ? ' #1' : '')
+        customTitle: {
+          type: String,
+          value: '',
+          observer: '_settingChanged'
         },
 
-        _computeLabelForCoorTwo: function (numOfSubs) {
-          return 'Default coordinates (or gene name) #2'
+        _numOfSubs: {
+          type: Number,
+          value: 1,
+          observer: '_settingChanged'
         },
 
-        _multiWindow: function (numOfSubs) {
-          return numOfSubs > 1
+        _defaultCoor1: {
+          type: String,
+          value: '',
+          observer: '_settingChanged'
         },
 
-        _controllerNotSelected: function (element) {
-          return element !== 'chart-controller'
+        _defaultCoor2: {
+          type: String,
+          value: '',
+          observer: '_settingChanged'
         },
 
-        _validateCoordinates: function () {
-          // First determine if any of the coordinates are filled
-          var index, elem
-          this._coordinatesFilled = false
-          for (index = 0; index < this._numOfSubs; index++) {
-            if (this.querySelectorAll('gene-coor-input')[index].value) {
-              this._coordinatesFilled = true
-              break
-            }
-          }
+        _clipboardEnabled: {
+          type: Boolean,
+          value: true
+        },
 
-          for (index = 0; index < this._numOfSubs; index++) {
-            elem = this.querySelectorAll('gene-coor-input')[index]
-            elem.validate()
-            if ((!!elem.value) !== this._coordinatesFilled) {
-              elem.errorMessage =
-                'Coordinates should be all blank or all filled!'
-              elem.invalid = true
-            }
-          }
+        _showClipboardState: {
+          type: Boolean,
+          value: false
+        },
 
-          // Then find potential invalid coordinates
-          for (index = 0; index < this._numOfSubs; index++) {
-            elem = this.querySelectorAll('gene-coor-input')[index]
-            if (elem.invalid) {
-              return false
-            }
+        _showStatusMessage: {
+          type: Boolean,
+          value: false
+        },
+
+        _statusMessage: {
+          type: String,
+          value: ''
+        },
+
+        htmlCode: {
+          type: String,
+          value: '',
+          observer: '_codeChanged'
+        }
+      }
+    }
+
+    ready () {
+      super.ready()
+      this._coordinatesFilled = false
+      this._needUpdate = false
+    }
+
+    _calcRefLabel (refObj) {
+      return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
+    }
+
+    _calcGroupLabel (groupArray) {
+      // Try to use group description first, if too long, then just use
+      // 'n group(s)'
+      var result = '(None selected)'
+      if (groupArray) {
+        result = ''
+        groupArray.every(function (grp, index) {
+          result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
+          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+            result = null
+            return false
           }
           return true
-        },
+        }, this)
+        if (!result) {
+          result = groupArray.length > 0
+            ? (groupArray.length + ' group' +
+              (groupArray.length > 1 ? 's' : ''))
+            : '(None selected)'
+        }
+      }
+      return result
+    }
 
-        updateCode: function () {
-          if (this._validateCoordinates()) {
-            var baseURL = window.location.protocol + '//' +
-              window.location.hostname +
-              (window.location.port ? ':' + window.location.port : '')
-            this.htmlCode = '<script src="' + baseURL +
-              '/bower_components/webcomponentsjs/webcomponents-lite.min.js">' +
-              '<\/script>\n' +
-              '<link rel="import" href="' + baseURL +
-              '/components/' + this.selectedElement + '/' +
-              this.selectedElement + '.html">\n'
-            this.htmlCode += '<' + this.selectedElement + ' ref="' +
-              this._refObj.db + '" num-of-subs="' +
-              this._numOfSubs + '"'
-            this.htmlCode += '\n  group-id-list=\'["' +
-              this.dispGroupArray.map(function (group) {
-                return group.id
-              }, this).join('", "') + '"]\''
-            if (this.dispTrackArray.length > 0) {
-              this.htmlCode += '\n  default-track-id-list=\'["' +
-                this.dispTrackArray.map(function (track) {
-                  return track.getID()
-                }, this).join('", "') + '"]\''
-            }
-            if (this._coordinatesFilled) {
-              var coordinateArray = []
-              for (var i = 0; i < this._numOfSubs; i++) {
-                coordinateArray.push(
-                  this.querySelectorAll('gene-coor-input')[i].value)
-              }
-              this.htmlCode += '\n  coordinates=\'["' +
-                coordinateArray.join('", "') + '"]\''
-            }
-            if (!this._controllerNotSelected(this.selectedElement) &&
-              this.customTitle
-            ) {
-              this.htmlCode += '\n  title-text="' +
-                this.customTitle + '"'
-            }
-            this.htmlCode += '>\n</' + this.selectedElement + '>'
+    _calcTrackLabel (trackArray) {
+      // Try to use track title first, if too long, then just use
+      // 'n track(s)'
+      var result = '(None selected)'
+      if (trackArray) {
+        result = ''
+        trackArray.every(function (track, index) {
+          result += (index > 0 ? ', ' : '') +
+            (track.title || track.getSetting('shortLabel', 'string'))
+          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
+            result = null
+            return false
           }
-          this.updateCodeLink()
-        },
+          return true
+        }, this)
+        if (!result) {
+          result = trackArray.length > 0
+            ? (trackArray.length + ' track' +
+              (trackArray.length > 1 ? 's' : ''))
+            : '(None selected)'
+        }
+      }
+      return result
+    }
 
-        copyToClipboard: function () {
-          // To prevent messing up with the selection of paper-textarea,
-          // create a new <text-area> element to do the copying.
-          if (give._copyTextToClipboard(this.htmlCode)) {
-            // TODO: indicate the copying was successful
-          } else {
-            // TODO: indicate otherwise
-          }
-        },
+    _computeClipboardEnabled (needUpdate, clipboardEnabled) {
+      return !needUpdate && clipboardEnabled
+    }
 
-        updateCodeLink: function () {
-          if (this.codeLink !== null) {
-            window.URL.revokeObjectURL(this.codeLink)
-          }
-          if (this.htmlCode.length > 0) {
-            var codeFile = new window.Blob([this.htmlCode], {type: 'text/plain'})
-            this.codeLink = window.URL.createObjectURL(codeFile)
-          }
-        },
+    _computeLabelForCoorOne (numOfSubs) {
+      return 'Default coordinates (or gene name)' +
+        (numOfSubs > 1 ? ' #1' : '')
+    }
 
-        createDialog: function (ref, groupArray, trackArray) {
-          if (!ref && !this._refObj) {
-            // reference not ready, nor is it provided
-            throw new Error('No reference is given!')
-          } else if (ref) {
-            this.setRef(ref, this._createDialogWithRef.bind(
-              this, groupArray, trackArray))
-          } else {
-            return this._createDialogWithRef(groupArray, trackArray)
-          }
-        },
+    _computeLabelForCoorTwo (numOfSubs) {
+      return 'Default coordinates (or gene name) #2'
+    }
 
-        _createDialogWithRef: function (groupArray, trackArray) {
-          this.dispGroupArray = []
-          this.dispGroupArray = groupArray
-          this.dispTrackArray = []
-          if (Array.isArray(trackArray) && trackArray.length > 0) {
-            this.dispTrackArray = trackArray
-          }
-          this.updateCode()
-          this.$.mainDialog.open()
+    _multiWindow (numOfSubs) {
+      return numOfSubs > 1
+    }
+
+    _controllerSelected (element) {
+      return element === 'chart-controller'
+    }
+
+    _validateCoordinates () {
+      // First determine if any of the coordinates are filled
+      var index, elem
+      this._coordinatesFilled = false
+      for (index = 0; index < this._numOfSubs; index++) {
+        if (this.shadowRoot.querySelectorAll('gene-coor-input')[index].value) {
+          this._coordinatesFilled = true
+          break
+        }
+      }
+
+      for (index = 0; index < this._numOfSubs; index++) {
+        elem = this.shadowRoot.querySelectorAll('gene-coor-input')[index]
+        elem.validate()
+        if ((!!elem.value) !== this._coordinatesFilled) {
+          elem.errorMessage =
+            'Coordinates should be all blank or all filled!'
+          elem.invalid = true
+        }
+      }
+
+      // Then find potential invalid coordinates
+      for (index = 0; index < this._numOfSubs; index++) {
+        elem = this.shadowRoot.querySelectorAll('gene-coor-input')[index]
+        if (elem.invalid) {
+          return false
+        }
+      }
+      return true
+    }
+
+    _resetClipboardState () {
+      this._showClipboardState = false
+      this._showStatusMessage = false
+      this._statusMessage = ''
+    }
+
+    _settingChanged (newValue, oldValue) {
+      Polymer.RenderStatus.afterNextRender(this, () => {
+        this._resetClipboardState()
+        if (this._updatedCode && this.htmlCode !== this._updatedCode) {
+          this._statusMessage = this.constructor.STATUS_NEED_UPDATE
+          this._needUpdate = true
+          this._showStatusMessage = true
+        } else {
+          this._statusMessage = ''
+          this._needUpdate = false
+          this._showStatusMessage = false
         }
       })
+    }
 
-      give.HtmlBuilder.MAX_DESC_LENGTH = 100
+    _codeChanged (newValue, oldValue) {
+      this._resetClipboardState()
+    }
 
-      return give
-    })(GIVe || {})
+    get _updatedCode () {
+      try {
+        if (!this._validateCoordinates()) {
+          return null
+        }
+        let baseURL = window.location.protocol + '//' +
+          window.location.hostname +
+          (window.location.port ? ':' + window.location.port : '')
+        let result = '<script src="' + baseURL +
+          '/bower_components/webcomponentsjs/webcomponents-loader.js">' +
+          '<\/script>\n' +
+          '<link rel="import" href="' + baseURL +
+          '/components/' + this.selectedElement + '/' +
+          this.selectedElement + '.html">\n'
+
+        let refArray = []
+        for (let i = 0; i < this._numOfSubs; i++) {
+          refArray.push(this._refObj.db)
+        }
+        result += '<' + this.selectedElement + ' ref=\'["' +
+          refArray.join('", "') + '"]\''
+
+        result += ' num-of-subs="' +
+          this._numOfSubs + '"'
+        result += '\n  group-id-list=\'["' +
+          this.dispGroupArray.map(function (group) {
+            return group.id
+          }, this).join('", "') + '"]\''
+        if (this.dispTrackArray.length > 0) {
+          result += '\n  default-track-id-list=\'["' +
+            this.dispTrackArray.map(function (track) {
+              return track.id
+            }, this).join('", "') + '"]\''
+        }
+
+        if (this._coordinatesFilled) {
+          let coordinateArray = []
+          for (let i = 0; i < this._numOfSubs; i++) {
+            coordinateArray.push(
+              this.shadowRoot.querySelectorAll('gene-coor-input')[i].value)
+          }
+          result += '\n  coordinates=\'["' +
+            coordinateArray.join('", "') + '"]\''
+        }
+
+        if (this._controllerSelected(this.selectedElement) &&
+          this.customTitle
+        ) {
+          result += '\n  title-text="' +
+            this.customTitle + '"'
+        }
+        result += '>\n</' + this.selectedElement + '>'
+        return result
+      } catch (e) {
+        return null
+      }
+    }
+
+    updateCode () {
+      this.htmlCode = this._updatedCode || this.htmlCode
+      this.updateCodeLink()
+      this._needUpdate = false
+      this._showStatusMessage = false
+      this._statusMessage = ''
+    }
+
+    copyToClipboard () {
+      // To prevent messing up with the selection of paper-textarea,
+      // create a new <text-area> element to do the copying.
+      if (give._copyTextToClipboard(this.htmlCode)) {
+        // indicate the copying was successful
+        this._showClipboardState = true
+        this._statusMessage = this.constructor.STATUS_CLIPBOARD_SUCCESSFUL
+      } else {
+        // indicate otherwise
+        this._showClipboardState = true
+        this._statusMessage = this.constructor.STATUS_CLIPBOARD_FAILED
+        this._clipboardEnabled = false
+      }
+    }
+
+    saveCode () {
+      this._downloadElem = this._downloadElem || document.createElement('a')
+      this._downloadElem.setAttribute('href', this.codeLink)
+      this._downloadElem.setAttribute('download', 'embedGIVE.html')
+
+      this._downloadElem.style.display = 'none'
+      this.$.mainDialog.appendChild(this._downloadElem)
+
+      this._downloadElem.click()
+
+      this.$.mainDialog.removeChild(this._downloadElem)
+    }
+
+    updateCodeLink () {
+      if (this.codeLink !== null) {
+        window.URL.revokeObjectURL(this.codeLink)
+      }
+      if (this.htmlCode.length > 0) {
+        var codeFile = new window.Blob([this.htmlCode], {type: 'text/plain'})
+        this.codeLink = window.URL.createObjectURL(codeFile)
+      }
+    }
+
+    createDialog (ref, groupArray, trackArray) {
+      if (!ref && !this._refObj) {
+        // reference not ready, nor is it provided
+        throw new give.GiveError('No reference is given!')
+      } else if (ref) {
+        this.ref = ref
+        this.refReadyPromise.then(
+          () => this._createDialogWithRef(groupArray, trackArray)
+        )
+      } else {
+        return this._createDialogWithRef(groupArray, trackArray)
+      }
+    }
+
+    _createDialogWithRef (groupArray, trackArray) {
+      this.dispGroupArray = []
+      this.dispGroupArray = groupArray
+      this.dispTrackArray = []
+      if (Array.isArray(trackArray) && trackArray.length > 0) {
+        this.dispTrackArray = trackArray
+      }
+      this.updateCode()
+      this.$.mainDialog.open()
+    }
+  }
+
+  HtmlBuilder.MAX_DESC_LENGTH = 100
+
+  HtmlBuilder.STATUS_NEED_UPDATE =
+    'Settings changed. Please update code first.'
+  HtmlBuilder.STATUS_CLIPBOARD_SUCCESSFUL =
+    'Code successfully copied to clipboard.'
+  HtmlBuilder.STATUS_CLIPBOARD_FAILED =
+    'Cannot access clipboard. You\'ll need to copy code manually.'
+
+  give.HtmlBuilder = HtmlBuilder
+  window.customElements.define('html-builder', give.HtmlBuilder)
+
+  return give
+})(GIVe || {})
   </script>
 </dom-module>
