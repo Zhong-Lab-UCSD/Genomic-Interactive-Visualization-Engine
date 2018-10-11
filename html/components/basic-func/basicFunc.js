@@ -224,10 +224,7 @@ var GIVe = (function (give) {
     xhr.onload = function () {
       var responses = xhr.response
       if (xhr.status >= 200 && xhr.status < 400) {
-        if (responseType === 'json' &&
-          (navigator.appName === 'Microsoft Internet Explorer' ||
-          !!(navigator.userAgent.match(/Trident/) ||
-             navigator.userAgent.match(/rv 11/)))) {
+        if (responseType === 'json' && responseType !== xhr.responseType) {
           // IE detected (should be IE 11), fix the json return issue
           let errorMsg = 'You are currently using IE 11 to visit this site. ' +
             'Some part of the site may behave differently and if you ' +
