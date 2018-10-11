@@ -24,55 +24,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
   <link rel="import" href="../../paper-styles/color.html">
   <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
-  <link rel="stylesheet" href="../../paper-styles/demo.css">
   <link rel="import" href="sample-content.html">
+  
+  <custom-style>
+    <style is="custom-style">
 
-  <style is="custom-style">
+      paper-scroll-header-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: var(--paper-grey-200, #eee);
+      }
 
-    paper-scroll-header-panel {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background-color: var(--paper-grey-200, #eee);
-    }
+      paper-toolbar {
+        background-color: var(--google-blue-500, #4285f4);
+      }
 
-    paper-toolbar {
-      background-color: var(--google-blue-500, #4285f4);
-    }
+      paper-toolbar .title {
+        margin-left: 60px;
+      }
 
-    paper-toolbar .title {
-      margin-left: 60px;
-    }
+      .content {
+        padding: 8px;
+      }
 
-    .content {
-      padding: 8px;
-    }
+      .spacer {
+        @apply --layout-flex;
+      }
 
-    .spacer {
-      @apply(--layout-flex);
-    }
-
-  </style>
+    </style>
+  </custom-style>
 
 </head>
 <body unresolved>
 
   <paper-scroll-header-panel condenses>
 
-    <paper-toolbar class="tall">
+    <paper-toolbar slot="header" class="tall">
 
-      <paper-icon-button icon="arrow-back"></paper-icon-button>
-      <div class="spacer"></div>
-      <paper-icon-button icon="search"></paper-icon-button>
-      <paper-icon-button icon="more-vert"></paper-icon-button>
+      <paper-icon-button slot="top" icon="arrow-back"></paper-icon-button>
+      <div slot="top" class="spacer"></div>
+      <paper-icon-button slot="top" icon="search"></paper-icon-button>
+      <paper-icon-button slot="top" icon="more-vert"></paper-icon-button>
 
-      <div class="bottom title">Title</div>
+      <div slot="bottom" class="bottom title">Title</div>
 
     </paper-toolbar>
 
-    <div class="content">
+    <div slot="content" class="content">
 
       <sample-content size="100"></sample-content>
 

@@ -3,7 +3,7 @@
   "description": "YouTube video playback web component.",
   "homepage": "https://googlewebcomponents.github.io/google-youtube",
   "main": "google-youtube.html",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "authors": [
     "Jeff Posnick <jeffy@google.com>"
   ],
@@ -20,12 +20,26 @@
     "web-component"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0",
-    "google-apis": "GoogleWebComponents/google-apis#^1.0.0",
-    "iron-localstorage": "PolymerElements/iron-localstorage#^1.0.0"
+    "polymer": "Polymer/polymer#1.9 - 2",
+    "google-apis": "GoogleWebComponents/google-apis#1 - 2",
+    "iron-localstorage": "PolymerElements/iron-localstorage#1 - 2"
   },
   "devDependencies": {
-    "web-component-tester": "*",
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0"
+    "web-component-tester": "^6.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#1 - 2"
+  },
+  "variants": {
+    "1.x": {
+      "dependencies": {
+        "polymer": "Polymer/polymer#^1.0.0",
+        "google-apis": "GoogleWebComponents/google-apis#^1.0.0",
+        "iron-localstorage": "PolymerElements/iron-localstorage#^1.0.0"
+      },
+      "devDependencies": {
+        "web-component-tester": "^4.0.0",
+        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+        "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0"
+      }
+    }
   }
 }

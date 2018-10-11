@@ -1,6 +1,6 @@
 [![Build status](https://travis-ci.org/PolymerElements/paper-checkbox.svg?branch=master)](https://travis-ci.org/PolymerElements/paper-checkbox)
 
-##&lt;paper-checkbox&gt;
+## &lt;paper-checkbox&gt;
 
 `paper-checkbox` is a [material design checkbox](https://www.google.com/design/spec/components/selection-controls.html#selection-controls-checkbox). 
 User can tap the checkbox to check or uncheck it. Usually you use checkboxes

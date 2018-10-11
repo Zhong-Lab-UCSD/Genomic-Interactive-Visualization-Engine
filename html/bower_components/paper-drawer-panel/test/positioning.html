@@ -29,8 +29,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="left-drawer">
     <template>
         <paper-drawer-panel>
-          <div drawer></div>
-          <div main></div>
+          <div slot="drawer"></div>
+          <div slot="main"></div>
         </paper-drawer-panel>
     </template>
   </test-fixture>
@@ -38,29 +38,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="right-drawer">
     <template>
       <paper-drawer-panel right-drawer>
-        <div drawer></div>
-        <div main></div>
+        <div slot="drawer"></div>
+        <div slot="main"></div>
       </paper-drawer-panel>
     </template>
   </test-fixture>
 
   <script>
     suite('positioning', function() {
-
       test('drawer is positioned correctly', function(done) {
         var f, drawer, main;
         f = fixture('left-drawer');
         drawer = f.$$('#drawer');
         main = f.$$('#main');
 
-        Polymer.Base.async(function() {
+        requestAnimationFrame(function() {
           var drawerStyle = window.getComputedStyle(drawer);
           expect(drawerStyle.left).to.be.equal('0px');
           try {
             expect(drawerStyle.right).to.be.equal('auto');
-          } catch(e) {
+          } catch (e) {
             // Firefox
-            expect(drawerStyle.right).to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
+            expect(drawerStyle.right)
+                .to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
           }
           done();
         });
@@ -72,21 +72,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         drawer = f.$$('#drawer');
         main = f.$$('#main');
 
-        Polymer.Base.async(function() {
+        requestAnimationFrame(function() {
           var drawerStyle = window.getComputedStyle(drawer);
           expect(drawerStyle.right).to.be.equal('0px');
 
           try {
             expect(drawerStyle.left).to.be.equal('auto');
-          } catch(e) {
+          } catch (e) {
             // Firefox
-            expect(drawerStyle.left).to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
+            expect(drawerStyle.left)
+                .to.be.equal(f.offsetWidth - drawer.offsetWidth + 'px');
           }
-
           done();
         });
       });
-
     });
   </script>
 </body>

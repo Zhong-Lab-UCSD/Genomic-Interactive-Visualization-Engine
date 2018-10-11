@@ -27,19 +27,41 @@ var GIVe = (function (give) {
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
    */
-  give.InteractionTrackData = function (parent) {
-    give.TrackDataObject.apply(this, arguments)
-  }
-
-  give.extend(give.TrackDataObject, give.InteractionTrackData)
-
-  give.InteractionTrackData.prototype._dataHandler = function (res, regions) {
-    // notice that dirFlag can be undefined,
-    //    however, if it's defined, then it will be the window index (for now)
-    var resToRegion = function (resEntry) {
-      return new give.ChromRegion(
+  class InteractionTrackData extends give.TrackDataObject {
+    /**
+     * _dataHandler - This should be the detailed implementation about how to
+     *    handle the responses from server
+     *
+     *    When implementing this method, use `this.getData` to get the `GiveTree`
+     *    object storing all necessary data corresponding to the correct
+     *    chromosome. Then use `.insert` to insert the new data entries.
+     *
+     *    See documentation for `TrackDataObject` for references to
+     *    `this.getData`, and `GIVe.GiveTree` for references to `.insert`.
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {object} response - Responses from remote servers.
+     *   The object should contain chromosomal region strings as its
+     *   property names, and an array of data entries as the property value.
+     *   For example:
+     *   ```
+     *   {
+     *     'chr10:1-1000000': [
+     *       <response entry>,
+     *       ...
+     *     ]
+     *   }
+     *   ```
+     *   See `this._chromEntryFromResponse` for details of `<response entry>`.
+     * @param  {Array<ChromRegionLiteral>} queryRegions - Query regions,
+     *   including potential resolutions
+     */
+    _dataHandler (res, regions) {
+      // notice that dirFlag can be undefined,
+      //    however, if it's defined, then it will be the window index (for now)
+      let resToRegion = resEntry => new give.ChromRegion(
         resEntry.regionString,
-        this.ref, {
+        this.parent.refObj, {
           data: {
             linkID: parseInt(resEntry.linkID),
             regionID: parseInt(resEntry.ID),
@@ -49,40 +71,35 @@ var GIVe = (function (give) {
           }
         }
       )
-    }.bind(this)
 
-    for (var chrom in res) {
-      if (res.hasOwnProperty(chrom) && Array.isArray(res[chrom])) {
-        this.getData(chrom, true).insert(res[chrom].map(resToRegion, this),
-          regions)
+      for (var chrom in res) {
+        if (res.hasOwnProperty(chrom) && Array.isArray(res[chrom])) {
+          this.getData(chrom, true).insert(res[chrom].map(resToRegion),
+            regions)
+        }
       }
     }
-  }
 
-  give.InteractionTrackData.prototype._localFileHandler = function (
-    localFile, regions
-  ) {
-    // placeholder to read local file content
-    // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
-    // data will be passed via firing a 'response' event with {detail: data}
-    // and the response will be handled by this.responseHandler(e, detail)
+    _fileHandler (res, regions) {
+      // placeholder to read local file content
+      // query is the current window (may involve buffering, can be implemented in prepareCustomQuery)
+      // data will be passed via firing a 'response' event with {detail: data}
+      // and the response will be handled by this.responseHandler(e, detail)
 
-    // Interaction file implementation:
-    //    brutal force going through the file to find regions that intersect the query region
-    //    return the lines filtered
-    //    currently using FileReader.readAsText(), may change into better adaptations for bigger files
-    //      like in http://matthewmeye.rs/blog/post/html5-line-reader/
-    //      or    http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
+      // Interaction file implementation:
+      //    brutal force going through the file to find regions that intersect the query region
+      //    return the lines filtered
+      //    currently using FileReader.readAsText(), may change into better adaptations for bigger files
+      //      like in http://matthewmeye.rs/blog/post/html5-line-reader/
+      //      or    http://stackoverflow.com/questions/24647563/reading-line-by-line-file-in-javascript-on-client-side
 
-    var reader = new window.FileReader()
-    var result = {}
-    reader.onload = function (e) {
-      var lines = e.target.result.split(/\r\n|\r|\n/g)
-      var linkID = 0
-      lines.forEach(function (line) {
+      let lines = res.split(/\r\n|\r|\n/g)
+      let linkID = 0
+      let result = {}
+      lines.forEach(line => {
         linkID++
-        var tokens = line.split(/\s+/g)
-        var regionPair = [
+        let tokens = line.split(/\s+/g)
+        let regionPair = [
           new give.ChromRegion(tokens[0] + ':' + tokens[1] + '-' + tokens[2] +
             '(' + tokens[3] + ')'),
           new give.ChromRegion(tokens[4] + ':' + tokens[5] + '-' + tokens[6] +
@@ -103,11 +120,12 @@ var GIVe = (function (give) {
             })
           }, this)
         }
-      }, this)
-      this._dataHandler(result, regions)
-    }.bind(this)
-    reader.readAsText(localFile)
+      })
+      return this._dataHandler(result, regions)
+    }
   }
+
+  give.InteractionTrackData = InteractionTrackData
 
   return give
 })(GIVe || {})

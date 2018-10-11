@@ -58,38 +58,38 @@ var GIVe = (function (give) {
    * @implements TrackDataObjectBase
    * @param {TrackObjectBase} parent - The track object parent
    */
-  give.BigWigTrackData = function (parent) {
-    give.TrackDataObject.apply(this, arguments)
-  }
+  class BigWigTrackData extends give.TrackDataObject {
+    /**
+     * _readLocalFile - read a local file representing the track
+     *
+     * @memberof TrackDataObjectBase.prototype
+     * @param  {string} fileName - name of the file
+     * @async
+     * @returns {Promise} returns a promise that resolves to the file content.
+     */
+    _readLocalFile (fileName) {
+      return new Promise((resolve, reject) => {
+        let reader = new window.FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsArrayBuffer(fileName)
+      })
+    }
 
-  give.extend(give.TrackDataObject, give.BigWigTrackData)
-
-  /**
-   * _localFileHandler - This should be the detailed implementation about how to
-   *    handle local files
-   *
-   * @param  {string} localFile - Path of the local file
-   * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
-   *   potential resolutions
-   */
-  give.BigWigTrackData.prototype._localFileHandler = function (
-    localFile, regions
-  ) {
-    var reader = new window.FileReader()
-    // should use bigWig.readSection()
-    var datapoints = {}
-
-    reader.onload = function () {
-      var bigWig = new give.BigWigFile(reader.result)
+    /**
+     * _fileHandler - This should be the detailed implementation about how to
+     *    handle local files
+     *
+     * @param  {string} localFile - Path of the local file
+     * @param  {Array<ChromRegionLiteral>} regions - Query regions, including
+     *   potential resolutions
+     */
+    _fileHandler (result, regions) {
+      let bigWig = new give.BigWigFile(result)
       // bigWig.readAll();
       bigWig.readSection(regions)
-      datapoints = bigWig.datapoints
-      console.log(datapoints)
-      this.fire('response', {response: datapoints}, {
-        bubbles: false, cancelable: true
-      })
-    }.bind(this)
-    reader.readAsArrayBuffer(localFile)
+      let datapoints = bigWig.datapoints
+      return this._dataHandler(datapoints, regions)
+    }
   }
 
   /**
@@ -108,57 +108,85 @@ var GIVe = (function (give) {
    * @property {number} value - the 'value' of this summary data, should be
    *    `this.sumData / this.validCount`
    */
-  give.BigWigSummaryCtor = function (chrRegion, oldSummary) {
-    give.SummaryCtorBase.apply(this, arguments)
-    if (oldSummary) {
-      this.validCount = oldSummary.validCount || 0
-      this.sumData = oldSummary.sumData || 0
-      this.sumSquares = oldSummary.sumSquares || 0
-      this.minVal = (
-        typeof oldSummary.minVal === 'number' && !isNaN(oldSummary.minVal))
-        ? oldSummary.minVal : Number.POSITIVE_INFINITY
-      this.maxVal = (
-        typeof oldSummary.maxVal === 'number' && !isNaN(oldSummary.maxVal))
-        ? oldSummary.maxVal : Number.NEGATIVE_INFINITY
-      this.value = (this.validCount > 0 ? this.sumData / this.validCount : 0)
-    } else {
-      this.validCount = 0
-      this.sumData = 0
-      this.sumSquares = 0
-      this.minVal = Number.POSITIVE_INFINITY
-      this.maxVal = Number.NEGATIVE_INFINITY
-      this.value = 0
+  class BigWigSummaryCtor extends give.SummaryCtorBase {
+    constructor (chrRegion, oldSummary) {
+      super(...arguments)
+      if (oldSummary) {
+        this.validCount = oldSummary.validCount || 0
+        this.sumData = oldSummary.sumData || 0
+        this.sumSquares = oldSummary.sumSquares || 0
+        this.minVal = (
+          typeof oldSummary.minVal === 'number' && !isNaN(oldSummary.minVal))
+          ? oldSummary.minVal : Number.POSITIVE_INFINITY
+        this.maxVal = (
+          typeof oldSummary.maxVal === 'number' && !isNaN(oldSummary.maxVal))
+          ? oldSummary.maxVal : Number.NEGATIVE_INFINITY
+        this.value = (this.validCount > 0 ? this.sumData / this.validCount : 0)
+      } else {
+        this.validCount = 0
+        this.sumData = 0
+        this.sumSquares = 0
+        this.minVal = 0
+        this.maxVal = 0
+        this.value = 0
+      }
+    }
+
+    /**
+     * testDataEntry - test whether the response entry is a summary or not.
+     *    Because responses may contain raw data or summaries, this is needed
+     *    to distinguish the two types.
+     *
+     * @static
+     * @param  {object} entry - the response entry object converted from JSON
+     * @returns {boolean} `true` if the response entry is a summary, `false`
+     *    otherwise.
+     */
+    static _testRespEntry (entry) {
+      return (entry.data && entry.data.hasOwnProperty('validCount'))
+    }
+
+    /**
+     * addSummary - add summary data to this summary.
+     *    This is mainly used to summarize over a series of summaries.
+     *
+     * @param  {GiveNonLeafNode} node    - the non-leaf node this summary is for
+     * @param  {SummaryCtorBase} summary - the summary to be added
+     */
+    addSummary (node, summary) {
+      this.sumData += summary.sumData
+      this.sumSquares += summary.sumSquares
+      this.minVal = (this.validCount > 0 && this.minVal <= summary.minVal)
+        ? this.minVal : summary.minVal
+      this.maxVal = (this.validCount > 0 && this.maxVal >= summary.maxVal)
+        ? this.maxVal : summary.maxVal
+      this.validCount += summary.validCount
+      this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
+    }
+
+    /**
+     * addData - add raw data entry to this summary
+     *    This is mainly used to summarize over raw data entries.
+     *
+     * @param  {GiveNonLeafNode} node - the non-leaf node this summary is for
+     * @param  {object} data - the raw data object to be added
+     */
+    addData (node, data) {
+      this.sumData += data.value * node.length
+      this.sumSquares += data.value * data.value * node.length
+      this.minVal = (this.validCount > 0 && this.minVal <= data.value)
+        ? this.minVal : data.value
+      this.maxVal = (this.validCount > 0 && this.maxVal >= data.value)
+        ? this.maxVal : data.value
+      this.validCount += node.length
+      this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
     }
   }
 
-  give.extend(give.SummaryCtorBase, give.BigWigSummaryCtor)
+  BigWigTrackData._DataStructure = give.PineTree
+  BigWigTrackData._SummaryCtor = BigWigSummaryCtor
 
-  give.BigWigSummaryCtor._testRespEntry = function (respEntry) {
-    return (respEntry.data && respEntry.data.hasOwnProperty('validCount'))
-  }
-
-  give.BigWigSummaryCtor.prototype.addSummary = function (node, summary) {
-    this.validCount += summary.validCount
-    this.sumData += summary.sumData
-    this.sumSquares += summary.sumSquares
-    this.minVal = (this.minVal <= summary.minVal)
-      ? this.minVal : summary.minVal
-    this.maxVal = (this.maxVal >= summary.maxVal)
-      ? this.maxVal : summary.maxVal
-    this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
-  }
-
-  give.BigWigSummaryCtor.prototype.addData = function (node, data) {
-    this.validCount += node.getLength()
-    this.sumData += data.value * node.getLength()
-    this.sumSquares += data.value * data.value * node.getLength()
-    this.minVal = (this.minVal <= data.value) ? this.minVal : data.value
-    this.maxVal = (this.maxVal >= data.value) ? this.maxVal : data.value
-    this.value = this.validCount > 0 ? this.sumData / this.validCount : 0
-  }
-
-  give.BigWigTrackData._DataStructure = give.PineTree
-  give.BigWigTrackData._SummaryCtor = give.BigWigSummaryCtor
+  give.BigWigTrackData = BigWigTrackData
 
   return give
 })(GIVe || {})

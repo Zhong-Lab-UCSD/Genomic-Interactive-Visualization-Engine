@@ -2,53 +2,131 @@
 PROGNAME=$0
 
 usage(){
-    cat << EOF >&2 
-    the script is used to convert .hic file to .bed file that needed in GIVE;
-    There are 4 required parameters and 1 optional parameter for the command:
-        1) straw file directory
-        2) .hic file directory
-        3) output file name (with directory if user wish to save the file desired path)
-        4) bin size that user wants to extract the data from (please make sure the bin size you entered is contained in the hic file).
-        5) Optional, chr name type flag, default value is "chr" which means that the chromosome names are "chr1", "chr2", "chrX" and so on. Only "chr" or "nochr" values are accepted. If you set "nochr", it means that the chromosome names in the .hic data are "1", "2", "X" and so on.
+        cat << EOF >&2
+        The script $PROGNAME  is used to convert .hic file to .bed file that needed in GIVE;
+        There are 4 required parameters and 1 optional parameter for the command:
+           1) Path to excutable binaries of straw. It can be download from https://github.com/theaidenlab/straw
+           2) .hic file directory.
+           3) output file name (including directory)
+           4) bin size in base pairs that user wants to use, such as 40000. Please make sure the bin size you entered is contained in the .hic file).
+           5) The kind of normalization you want to apply. Must be one of NONE/VC/VC_SQRT/KR. VC is vanilla coverage, VC_SQRT is square root of vanilla coverage, and KR is Knight-Ruiz or Balanced normalization. By default, it's NONE.
 EOF
 exit
 }
 
-straw_file_dir=$1
+straw_file=$1
 hic_file=$2
 output_file=$3
 binsize=$4
-chrflag=$5
+norm=$5
 
+
+[ ! -f "$straw_file" ] && echo "Straw does not exist: "$straw_file && usage  && exit 1
+[ ! -f "$hic_file" ] &&  echo "$hic_file does not exist: " $hic_file && usage && exit 1
+[ -f "$output_file" ] &&  echo "File $output_file exists. Cannot overwrite it." && exit 1
 [  -z "$binsize" ] && echo "Error: Not enough parameters" && usage && exit 1
+[  -z "$norm" ] && echo "Use default setting NONE normalization." && norm="NONE"
 
-if [ -z "$chrflag" ]; then
-    chr="chr"
+hicfile=$2
+readbyte=$(hexdump -n 3 -e '3/1 "%c" "\n"' $hicfile)
+
+if [ $readbyte = "HIC" ]; then
+    echo ".hic file header is correct"
 else
-    if [ "$chrflag" = "chr" ]; then
-        chr="chr"
-    else
-        if [ "$chrflag" = "nochr" ]; then
-            chr=""
-        else
-            echo "Error: Wrong value of chrflag parameter" && usage && exit 1
+    echo "Program terminated!!! .hic file is not in correct format."
+    exit 1
+fi
+
+genome=""
+posbyte=16
+flag=true
+while [ "$flag" = true  ]; do
+    readbyte=$(hexdump -n 1 -s $posbyte -e '1/1 "%c" "\n"' $hicfile)
+    genome=$genome$readbyte
+    # echo $readbyte
+    # echo $readhex
+    if [ -z "$readbyte" ]; then
+        readhex=$(hexdump -n 1 -s $posbyte $hicfile | awk 'NR==1{print $2}')
+        if [ "$readhex" == "0000" ]; then
+            flag=false
         fi
     fi
-fi
-
-
-if [ -f $output_file ]; then
-    echo "File $output_file exists. Cannot overwrite it." && exit 1
-fi
-
-chr_list='1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y'
-
-
-for f in $chr_list; do
-    f_chr="$chr$f"
-    for s in $chr_list; do
-        s_chr="$chr$s"
-        echo "Extract interaction between:", $f_chr, $s_chr
-        $straw_file_dir/straw KR $hic_file $f_chr $s_chr BP $binsize | awk -v var1="$f_chr" -v var2="$s_chr" -v var3="$binsize" 'BEGIN{FS="\t";OFS="\t"}{ end1=$1+var3; end2=$2+var3; print 2*(NR-1)+1,var1,$1,end1,NR,$3,-1;print 2*NR,var2,$2,end2,NR,$3,-1;}' >> $output_file
-    done
+    posbyte=$(($posbyte+1))
+    # echo $posbyte
 done
+echo "=========================="
+echo "The genome version is: "$genome
+
+readbyte=$(hexdump -n 4 -s $posbyte -e '4/4 "%d" "\n"' $hicfile)
+posbyte=$(($posbyte+4))
+nattr=$(($readbyte*2))
+attri=1;
+while [ "$attri" -le "$nattr" ]; do
+    flag=true
+    while [ "$flag" = true  ]; do
+        readhex=$(hexdump -n 1 -s $posbyte $hicfile | awk 'NR==1{print $2}')
+        posbyte=$(($posbyte+1))
+        if [ "$readhex" == "0000" ]; then
+            flag=false
+        fi
+    done
+    attri=$(($attri+1))
+done
+
+readbyte=$(hexdump -n 4 -s $posbyte -e '4/4 "%d" "\n"' $hicfile)
+posbyte=$(($posbyte+4))
+nchr=$readbyte
+echo "=========================="
+echo "Number of Chromosome: "$nchr
+chrlist=()
+chri=1
+while [ "$chri" -le "$nchr" ]; do
+    chrname=""
+    while [ ! -z "$readbyte"  ]; do
+        readbyte=$(hexdump -n 1 -s $posbyte -e '1/1 "%c" "\n"' $hicfile)
+        posbyte=$(($posbyte+1))
+        chrname=$chrname$readbyte
+    done
+    readbyte=$(hexdump -n 4 -s $posbyte -e '4/4 "%d" "\n"' $hicfile)
+    posbyte=$(($posbyte+4))
+    chrsize=$readbyte
+    chri=$(($chri+1))
+    echo $chrname" : "$chrsize
+    chrlist+=("$chrname")
+done
+#echo ${chrlist[@]} 
+
+readbyte=$(hexdump -n 4 -s $posbyte -e '4/4 "%d" "\n"' $hicfile)
+posbyte=$(($posbyte+4))
+nbpres=$readbyte
+bpresi=1
+echo "=========================="
+echo $nbpres" avaliable base pair resolutions:"
+while [ "$bpresi" -le "$nbpres" ]; do
+    readbyte=$(hexdump -n 4 -s $posbyte -e '4/4 "%d" "\n"' $hicfile)
+    posbyte=$(($posbyte+4))
+    echo $readbyte
+    bpresi=$(($bpresi+1))
+done
+
+echo "=========================="
+echo "Start extract data from .hic file ..."
+linkcount=0
+for ((i=0; i<${#chrlist[*]}; i++)); do
+    fchr=${chrlist[i]}
+    for((j=i; j<${#chrlist[*]}; j++)); do
+        schr=${chrlist[j]}
+        echo "Extract interaction between: $fchr, $schr"
+        newlink=$($straw_file $norm $hic_file $fchr $schr BP $binsize |\
+            awk -v var1="$fchr" -v var2="$schr" -v var3="$binsize" -v var4="$linkcount" \
+            -v outfile="$output_file" \
+            'BEGIN{FS="\t";OFS="\t"}\
+            {end1=$1+var3; end2=$2+var3; \
+                print 2*(var4+NR-1)+1,var1,$1,end1,var4+NR,$3,-1 >> outfile;\
+                print 2*(NR+var4),var2,$2,end2,var4+NR,$3,-1 >>outfile;}\
+            END{print NR}')
+        linkcount=$(($linkcount+$newlink))
+        echo $linkcount
+     done
+done
+echo "Finished!"

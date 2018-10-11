@@ -228,11 +228,12 @@ mm9_grpinfo
 mm9_labtracks
 susScr2_grpinfo
 susScr2_labtracks
-samples/
+sample/
 
 testData/
 /includes/constants.*
 /html/components/basic-func/constants.js
+/html/sample/
 
 #Genome Browser data files
 *.bigWig
@@ -244,3 +245,6 @@ UML/
 #Annotation Files
 annotations/
 html/give-data-hub.html
+
+# node_modules (to be completed after packaging)
+/html/node_modules/

@@ -22,43 +22,34 @@ var GIVe = (function (give) {
    * New track template, see `GIVe.TrackObject` for details.
    * @typedef {object} NewTrack
    * @class give.NewTrack
-   *
-   * @constructor
    * @implements give.TrackObject
-   * @param {string} ID - The ID of the new track object
-   * @param {object} Settings - Settings of the new track. Dictionary format.
-   *   Note that if `Settings` has a property named `settings`,
-   *   it will be merged with `this.Settings`, while properties in
-   *   `Settings.settings` take precedence in cases of conflict names
-   * @param {RefObjectLiteral} ref - the reference the track is using
-   * @param {string} groupID - The group ID of the new track object
    */
-  give.NewTrack = function (ID, Settings, ref, groupID) {
-    give.TrackObject.apply(this, arguments)
-  }
-
-  give.extend(give.TrackObject, give.NewTrack)
-
-  /**
-   * getType - get the key strings showing this type of data.
-   *    This shall be the same as the `type` column for track entries in
-   *    `trackDb` table so that GIVE is able to figure out the track is of this
-   *    type.
-   *
-   * @returns {Array<string>}  return all keys matching this type.
-   */
-  give.NewTrack.getType = function () {
-    return ['new', 'new-track']
+  class NewTrack extends give.TrackObject {
+    /**
+     * typeList - get the key strings showing this type of data.
+     *    This shall be the same as the `type` column for track entries in
+     *    `trackDb` table so that GIVE is able to figure out the track is of
+     *    this type.
+     * @static
+     * @property
+     *
+     * @returns {Array<string>}  return all keys matching this type.
+     */
+    static get typeList () {
+      return ['new', 'new-track']
+    }
   }
 
   // specify the data object (if needed) used in this track
-  give.NewTrack.prototype._DataObjCtor = give.NewTrackData
+  NewTrack._DataObjCtor = give.NewTrackData
 
   // specify the visualization object used in this track
-  give.NewTrack.prototype._DomObjCtor = give.NewTrackDOM
+  NewTrack._DomObjCtor = give.NewTrackDOM
 
   // __IMPORTANT:__ register this new track type
-  give.TrackObject.registerTrack(give.NewTrack)
+  give.TrackObject.registerTrack(NewTrack)
+
+  give.NewTrack = NewTrack
 
   return give
 })(GIVe || {})

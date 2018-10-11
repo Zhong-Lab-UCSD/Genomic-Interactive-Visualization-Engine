@@ -1,10 +1,10 @@
 Prism.languages.graphql = {
 	'comment': /#.*/,
 	'string': {
-		pattern: /"(?:\\.|[^\\"])*"/,
+		pattern: /"(?:\\.|[^\\"\r\n])*"/,
 		greedy: true
 	},
-	'number': /(?:\B-|\b)\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/,
+	'number': /(?:\B-|\b)\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i,
 	'boolean': /\b(?:true|false)\b/,
 	'variable': /\$[a-z_]\w*/i,
 	'directive': {
@@ -14,7 +14,7 @@ Prism.languages.graphql = {
 	'attr-name': /[a-z_]\w*(?=\s*:)/i,
 	'keyword': [
 		{
-			pattern: /(fragment\s+(?!on)[a-z_]\w*\s+|\.\.\.\s*)on\b/,
+			pattern: /(fragment\s+(?!on)[a-z_]\w*\s+|\.{3}\s*)on\b/,
 			lookbehind: true
 		},
 		/\b(?:query|fragment|mutation)\b/

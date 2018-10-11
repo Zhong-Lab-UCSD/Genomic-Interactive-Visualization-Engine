@@ -66,7 +66,7 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         --calculated-paper-checkbox-size: var(--paper-checkbox-size, 18px);
         /* -1px is a sentinel for the default and is replaced in `attached`. */
         --calculated-paper-checkbox-ink-size: var(--paper-checkbox-ink-size, -1px);
-        @apply(--paper-font-common-base);
+        @apply --paper-font-common-base;
         line-height: 0;
         -webkit-tap-highlight-color: transparent;
       }
@@ -108,7 +108,7 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         pointer-events: none;
       }
 
-      :host-context([dir="rtl"]) #ink {
+      #ink:dir(rtl) {
         right: calc(0px - (var(--calculated-paper-checkbox-ink-size) - var(--calculated-paper-checkbox-size)) / 2);
         left: auto;
       }
@@ -173,7 +173,7 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         box-sizing: content-box; /* protect against page-level box-sizing */
       }
 
-      :host-context([dir="rtl"]) #checkmark {
+      #checkmark:dir(rtl) {
         -webkit-transform-origin: 50% 14%;
         transform-origin: 50% 14%;
       }
@@ -187,15 +187,15 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         white-space: normal;
         line-height: normal;
         color: var(--paper-checkbox-label-color, var(--primary-text-color));
-        @apply(--paper-checkbox-label);
+        @apply --paper-checkbox-label;
       }
 
       :host([checked]) #checkboxLabel {
         color: var(--paper-checkbox-label-checked-color, var(--paper-checkbox-label-color, var(--primary-text-color)));
-        @apply(--paper-checkbox-label-checked);
+        @apply --paper-checkbox-label-checked;
       }
 
-      :host-context([dir="rtl"]) #checkboxLabel {
+      #checkboxLabel:dir(rtl) {
         padding-right: var(--paper-checkbox-label-spacing, 8px);
         padding-left: 0;
       }
@@ -232,22 +232,17 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
       </div>
     </div>
 
-    <div id="checkboxLabel"><content></content></div>
+    <div id="checkboxLabel"><slot></slot></div>
   </template>
 
   <script>
     Polymer({
       is: 'paper-checkbox',
 
-      behaviors: [
-        Polymer.PaperCheckedElementBehavior
-      ],
+      behaviors: [Polymer.PaperCheckedElementBehavior],
 
-      hostAttributes: {
-        role: 'checkbox',
-        'aria-checked': false,
-        tabindex: 0
-      },
+      /** @private */
+      hostAttributes: {role: 'checkbox', 'aria-checked': false, tabindex: 0},
 
       properties: {
         /**
@@ -261,28 +256,46 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
          *
          * @event iron-change
          */
-        ariaActiveAttribute: {
-          type: String,
-          value: 'aria-checked'
-        }
+        ariaActiveAttribute: {type: String, value: 'aria-checked'}
       },
 
       attached: function() {
-        var inkSize = this.getComputedStyleValue('--calculated-paper-checkbox-ink-size').trim();
-        // If unset, compute and set the default `--paper-checkbox-ink-size`.
-        if (inkSize === '-1px') {
-          var checkboxSize = parseFloat(this.getComputedStyleValue('--calculated-paper-checkbox-size').trim());
-          var defaultInkSize = Math.floor((8 / 3) * checkboxSize);
+        // Wait until styles have resolved to check for the default sentinel.
+        // See polymer#4009 for more details.
+        Polymer.RenderStatus.afterNextRender(this, function() {
+          var inkSize =
+              this.getComputedStyleValue('--calculated-paper-checkbox-ink-size')
+                  .trim();
+          // If unset, compute and set the default `--paper-checkbox-ink-size`.
+          if (inkSize === '-1px') {
+            var checkboxSizeText =
+                this.getComputedStyleValue('--calculated-paper-checkbox-size')
+                    .trim();
 
-          // The checkbox and ripple need to have the same parity so that their
-          // centers align.
-          if (defaultInkSize % 2 !== checkboxSize % 2) {
-            defaultInkSize++;
+            var units = 'px';
+            var unitsMatches = checkboxSizeText.match(/[A-Za-z]+$/);
+            if (unitsMatches !== null) {
+              units = unitsMatches[0];
+            }
+
+            var checkboxSize = parseFloat(checkboxSizeText);
+            var defaultInkSize = (8 / 3) * checkboxSize;
+
+            if (units === 'px') {
+              defaultInkSize = Math.floor(defaultInkSize);
+
+              // The checkbox and ripple need to have the same parity so that their
+              // centers align.
+              if (defaultInkSize % 2 !== checkboxSize % 2) {
+                defaultInkSize++;
+              }
+            }
+
+            this.updateStyles({
+              '--paper-checkbox-ink-size': defaultInkSize + units,
+            });
           }
-
-          this.customStyle['--paper-checkbox-ink-size'] = defaultInkSize + 'px';
-          this.updateStyles();
-        }
+        });
       },
 
       _computeCheckboxClass: function(checked, invalid) {

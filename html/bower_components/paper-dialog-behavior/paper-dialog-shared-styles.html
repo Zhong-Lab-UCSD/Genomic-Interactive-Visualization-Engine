@@ -35,48 +35,65 @@ Custom property | Description | Default
         display: block;
         margin: 24px 40px;
 
-        background: var(--paper-dialog-background-color, --primary-background-color);
-        color: var(--paper-dialog-color, --primary-text-color);
+        background: var(--paper-dialog-background-color, var(--primary-background-color));
+        color: var(--paper-dialog-color, var(--primary-text-color));
 
-        @apply(--paper-font-body1);
-        @apply(--shadow-elevation-16dp);
-        @apply(--paper-dialog);
+        @apply --paper-font-body1;
+        @apply --shadow-elevation-16dp;
+        @apply --paper-dialog;
       }
 
-      :host > ::content > * {
+      :host > ::slotted(*) {
         margin-top: 20px;
         padding: 0 24px;
       }
 
-      :host > ::content > .no-padding {
+      :host > ::slotted(.no-padding) {
         padding: 0;
       }
 
-      :host > ::content > *:first-child {
+      
+      :host > ::slotted(*:first-child) {
         margin-top: 24px;
       }
 
-      :host > ::content > *:last-child {
+      :host > ::slotted(*:last-child) {
         margin-bottom: 24px;
       }
 
-      :host > ::content h2 {
+      /* In 1.x, this selector was `:host > ::content h2`. In 2.x <slot> allows
+      to select direct children only, which increases the weight of this
+      selector, so we have to re-define first-child/last-child margins below. */
+      :host > ::slotted(h2) {
         position: relative;
         margin: 0;
-        @apply(--paper-font-title);
 
-        @apply(--paper-dialog-title);
+        @apply --paper-font-title;
+        @apply --paper-dialog-title;
       }
 
-      :host > ::content .buttons {
+      /* Apply mixin again, in case it sets margin-top. */
+      :host > ::slotted(h2:first-child) {
+        margin-top: 24px;
+        @apply --paper-dialog-title;
+      }
+
+      /* Apply mixin again, in case it sets margin-bottom. */
+      :host > ::slotted(h2:last-child) {
+        margin-bottom: 24px;
+        @apply --paper-dialog-title;
+      }
+
+      :host > ::slotted(.paper-dialog-buttons),
+      :host > ::slotted(.buttons) {
         position: relative;
         padding: 8px 8px 8px 24px;
         margin: 0;
 
-        color: var(--paper-dialog-button-color, --primary-color);
+        color: var(--paper-dialog-button-color, var(--primary-color));
 
-        @apply(--layout-horizontal);
-        @apply(--layout-end-justified);
+        @apply --layout-horizontal;
+        @apply --layout-end-justified;
       }
     </style>
   </template>

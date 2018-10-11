@@ -169,7 +169,7 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
       $newGene = array();
       $newGene['geneBed'] = _BedFromAssoc($itor, $isGenePred);
       if (isset($itor['attr'])) {
-        $newGene['attr'] = json_decode($itor['attr'], JSON_FORCE_OBJECT);
+        $newGene['attr'] = json_decode($itor['attr'], true);
         unset($itor['attr']);
       }
       if (!empty($itor)) {

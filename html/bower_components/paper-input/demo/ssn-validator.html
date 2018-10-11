@@ -15,9 +15,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   Polymer({
     is: 'ssn-validator',
 
-    behaviors: [
-      Polymer.IronValidatorBehavior
-    ],
+    behaviors: [Polymer.IronValidatorBehavior],
 
     validate: function(value) {
       // this regex validates incomplete ssn's (by design)

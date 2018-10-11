@@ -4,11 +4,11 @@
 -->
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../give-styles.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="ref-link-dialog">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="give-shared-styles">
       :host {
         display: inline-block;
       }
@@ -25,7 +25,7 @@
     <paper-dialog id="refDialog" no-overlap auto-fit-on-attach
       horizontal-align="left" vertical-align="top">
       <div>
-        <content></content>
+        <slot></slot>
       </div>
     </paper-dialog>
   </template>

@@ -24,28 +24,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
   <link rel="import" href="../../paper-progress/paper-progress.html">
   <link rel="import" href="../../paper-styles/default-theme.html">
-
   <link rel="import" href="../paper-toolbar.html">
 
-  <style is="custom-style" include="demo-pages-shared-styles">
-    .centered {
-      min-width: calc(100% - 200px);
-    }
+  <custom-style>
+    <style is="custom-style" include="demo-pages-shared-styles">
+      .centered {
+        min-width: calc(100% - 200px);
+      }
 
-    paper-toolbar paper-progress {
-      --paper-progress-active-color: var(--accent-color);
-    }
+      paper-toolbar paper-progress {
+        --paper-progress-active-color: var(--accent-color);
+      }
 
-    .spacer {
-      @apply(--layout-flex);
-    }
-  </style>
+      .spacer {
+        @apply --layout-flex;
+      }
+    </style>
+  </custom-style>
 
 </head>
 <body unresolved>
-
   <div class="vertical-section-container centered">
-
     <h3>
       A plain <code>paper-toolbar</code>. Use <code>class="title"</code> to
       indicate the toolbar's title.
@@ -53,7 +52,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <demo-snippet>
       <template>
         <paper-toolbar>
-          <span class="title">Title</span>
+          <span slot="top" class="title">Title</span>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -72,7 +71,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </style>
 
         <paper-toolbar class="red">
-          <span class="title">Title</span>
+          <span slot="top" class="title">Title</span>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -84,10 +83,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <demo-snippet>
       <template>
         <paper-toolbar>
-          <paper-icon-button icon="menu"></paper-icon-button>
-          <span class="title">Title</span>
-          <paper-icon-button icon="refresh"></paper-icon-button>
-          <paper-icon-button icon="add">+</paper-icon-button>
+          <paper-icon-button slot="top" icon="menu"></paper-icon-button>
+          <span slot="top" class="title">Title</span>
+          <paper-icon-button slot="top" icon="refresh"></paper-icon-button>
+          <paper-icon-button slot="top" icon="add">+</paper-icon-button>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -98,10 +97,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <demo-snippet>
       <template>
         <paper-toolbar class="tall">
-          <paper-icon-button icon="menu"></paper-icon-button>
-          <span class="title">Title</span>
-          <paper-icon-button icon="refresh"></paper-icon-button>
-          <paper-icon-button icon="add">+</paper-icon-button>
+          <paper-icon-button  slot="top" icon="menu"></paper-icon-button>
+          <span slot="top" class="title">Title</span>
+          <paper-icon-button slot="top" icon="refresh"></paper-icon-button>
+          <paper-icon-button slot="top" icon="add">+</paper-icon-button>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -113,10 +112,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <demo-snippet>
       <template>
         <paper-toolbar class="medium-tall">
-          <paper-icon-button icon="menu"></paper-icon-button>
-          <span class="title">Title</span>
-          <paper-icon-button icon="refresh"></paper-icon-button>
-          <paper-icon-button icon="add">+</paper-icon-button>
+          <paper-icon-button slot="top" icon="menu"></paper-icon-button>
+          <span class="title" slot="top">Title</span>
+          <paper-icon-button icon="refresh" slot="top"></paper-icon-button>
+          <paper-icon-button icon="add" slot="top">+</paper-icon-button>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -129,17 +128,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <demo-snippet>
       <template>
         <paper-toolbar class="tall">
-          <paper-icon-button icon="menu"></paper-icon-button>
+          <paper-icon-button slot="top" icon="menu"></paper-icon-button>
           <span class="title">Title</span>
-          <paper-icon-button icon="refresh"></paper-icon-button>
-          <paper-icon-button icon="add">+</paper-icon-button>
+          <paper-icon-button slot="top" icon="refresh"></paper-icon-button>
+          <paper-icon-button slot="top" icon="add">+</paper-icon-button>
 
-          <span class="middle title">Middle Title</span>
+          <span slot="middle" class="title">Middle Title</span>
 
-          <span class="bottom title">Bottom Title</span>
-          <paper-icon-button icon="content-cut" class="bottom"></paper-icon-button>
-          <paper-icon-button icon="content-copy" class="bottom"></paper-icon-button>
-          <paper-icon-button icon="content-paste" class="bottom"></paper-icon-button>
+          <span slot="bottom" class="title">Bottom Title</span>
+          <paper-icon-button slot="bottom" icon="content-cut"></paper-icon-button>
+          <paper-icon-button slot="bottom" icon="content-copy"></paper-icon-button>
+          <paper-icon-button slot="bottom" icon="content-paste"></paper-icon-button>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -155,10 +154,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <span class="title">Top Title</span>
           <paper-icon-button icon="refresh"></paper-icon-button>
           <paper-icon-button icon="add">+</paper-icon-button>
-
-          <span class="middle title">Middle Title</span>
-
-          <span class="bottom title">Bottom Title</span>
+          <span slot="middle" class="title">Middle Title</span>
+          <span slot="bottom" class="title">Bottom Title</span>
         </paper-toolbar>
       </template>
     </demo-snippet>
@@ -174,8 +171,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="spacer"></div>
           <paper-icon-button icon="refresh"></paper-icon-button>
           <paper-icon-button icon="add">+</paper-icon-button>
-          <div class="middle title">Title</div>
-          <paper-progress class="middle fit" value="60"></paper-progress>
+          <div slot="middle" class="title">Title</div>
+          <paper-progress slot="middle" class="fit" value="60"></paper-progress>
         </paper-toolbar>
       </template>
     </demo-snippet>

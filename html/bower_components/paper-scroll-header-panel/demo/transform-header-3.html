@@ -28,69 +28,71 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <link rel="stylesheet" href="../../paper-styles/demo.css">
 
-  <style is="custom-style">
+  <custom-style>
+    <style is="custom-style">
 
-    paper-scroll-header-panel {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background-color: var(--paper-grey-200, #eee);
+      paper-scroll-header-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: var(--paper-grey-200, #eee);
 
-      /* background for toolbar when it is at its full size */
-      --paper-scroll-header-panel-full-header: {
-        background-image: url(images/bg4.jpg);
-      };
+        /* background for toolbar when it is at its full size */
+        --paper-scroll-header-panel-full-header: {
+          background-color: var(--paper-indigo-300);
+        };
 
-      /* background for toolbar when it is condensed */
-      --paper-scroll-header-panel-condensed-header: {
-        background-color: var(--paper-light-blue-600);
-      };
-    }
+        /* background for toolbar when it is condensed */
+        --paper-scroll-header-panel-condensed-header: {
+          background-color: var(--paper-indigo-500);
+        };
+      }
 
-    paper-icon-button {
-      --paper-icon-button-ink-color: white;
-    }
+      paper-icon-button {
+        --paper-icon-button-ink-color: white;
+      }
 
-    paper-toolbar.tall {
-      background-color: transparent;
-    }
+      paper-toolbar.tall {
+        background-color: transparent;
+      }
 
-    paper-toolbar.tall .title {
-      font-size: 40px;
-      margin-left: 60px;
+      paper-toolbar.tall .title {
+        font-size: 40px;
+        margin-left: 60px;
 
-      -webkit-transform-origin: left center;
-      transform-origin: left center;
-    }
+        -webkit-transform-origin: left center;
+        transform-origin: left center;
+      }
 
-    .content {
-      padding: 8px;
-    }
+      .content {
+        padding: 8px;
+      }
 
-    .spacer {
-      @apply(--layout-flex);
-    }
+      .spacer {
+        @apply --layout-flex;
+      }
 
-  </style>
+    </style>
+  </custom-style>
 
 </head>
 <body unresolved>
 
   <paper-scroll-header-panel condenses>
 
-    <paper-toolbar class="tall">
+    <paper-toolbar slot="header" class="tall">
 
-      <paper-icon-button icon="arrow-back"></paper-icon-button>
-      <div class="spacer"></div>
-      <paper-icon-button icon="search"></paper-icon-button>
-      <paper-icon-button icon="more-vert"></paper-icon-button>
-      <div class="bottom title">Title</div>
+      <paper-icon-button slot="top" icon="arrow-back"></paper-icon-button>
+      <div slot="top" class="spacer"></div>
+      <paper-icon-button slot="top" icon="search"></paper-icon-button>
+      <paper-icon-button slot="top" icon="more-vert"></paper-icon-button>
+      <div slot="bottom" class="bottom title">Title</div>
 
     </paper-toolbar>
 
-    <div class="content">
+    <div slot="content" class="content">
 
       <sample-content size="100"></sample-content>
 

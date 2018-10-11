@@ -4,7 +4,7 @@ Just copy paste the following HTML codes to [jsfiddle](https://jsfiddle.net/), a
 Congratulations! You have built your first genome browser webpage using data source from GIVE Data Hub in less than 1 minute. 
 ```html
 <!-- header source -->
-<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script> 
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-loader.js"></script> 
 <link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
 
 <!-- embed the browser in the web page -->

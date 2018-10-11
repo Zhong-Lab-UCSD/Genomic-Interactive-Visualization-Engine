@@ -7,12 +7,12 @@
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../genemo-styles.html">
+<link rel="import" href="../give-styles.html">
 <link rel="import" href="../genemo-tab-card-content-behavior/genemo-tab-card-content-behavior.html">
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="search-card-content">
   <template>
-    <style include="genemo-shared-styles">
+    <style include="give-shared-styles">
     :host {
       display: block;
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
@@ -274,7 +274,7 @@
           if (sessionObj.searchRange) {
             collapseObj.range = sessionObj.searchRange
           }
-          this.updateCurrentInfo(collapseObj)
+          this.updateCollapsedInfoObject(collapseObj)
         },
 
         fileSelectionHandler: function () {
@@ -344,7 +344,7 @@
           }
 
           this.isDisabled = true
-          this.updateCurrentInfo(collapseObj)
+          this.updateCollapsedInfoObject(collapseObj)
 
           this.ref.map[this.currentRef].callOnTracksReady(this.fire.bind(this, 'submit-form', {sessionDataObj: {
             hasEmail: this.UserEmail.length > 0,
