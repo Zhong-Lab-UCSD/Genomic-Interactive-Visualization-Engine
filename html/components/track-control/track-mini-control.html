@@ -20,6 +20,14 @@
     :host {
       padding: 0.1em 0;
     }
+
+    paper-radio-button {
+      --paper-radio-button-size: 1.2em;
+    }
+
+    paper-checkbox {
+      --paper-checkbox-size: 1.2em;
+    }
     </style>
     <template is="dom-if" if="[[singleChoice]]" restamp="true">
       <paper-radio-button id="choiceElem" name="[[track.id]]" checked="{{selected}}">

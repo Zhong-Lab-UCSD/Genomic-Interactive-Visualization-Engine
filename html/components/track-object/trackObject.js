@@ -53,8 +53,8 @@ var GIVe = (function (give) {
       }
 
       this._settings = Object.assign({}, Settings)
-      this._defaultSettings = Settings
       this._initSettings()
+      this._defaultSettings = Object.assign({}, this._settings)
 
       this._refObj = refObj
       this._dataObj = (typeof this.constructor._DataObjCtor === 'function')

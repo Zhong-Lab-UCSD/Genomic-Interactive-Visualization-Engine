@@ -25,7 +25,7 @@
 <link href="//fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="give-card">
   <template>
-    <style include="give-shared-styles iron-flex iron-positioning">
+    <style include="give-shared-styles iron-flex iron-positioning iron-alignment">
     :host {
       display: inline-block;
       font-family: 'Roboto', Arial, Helvetica, sans-serif;
@@ -51,6 +51,46 @@
     #cardContent.collapsed {
       display: none;
     }
+
+    .cardHeader {
+      flex: 0 0 2.5em;
+      min-height: 2.5em;
+      background: var(--card-header-background-color);
+      margin: 0;
+    }
+
+    .cardHeader paper-icon-button {
+      width: 2.5em;
+      height: 2.5em;
+      padding: 0.5em;
+    }
+
+    div.headerText {
+      font-weight: 700;
+      font-size: 1.15em;
+      margin: 0 0.5em 0 0.1em;
+      overflow-x: hidden;
+    }
+
+    div.headerText::first-letter {
+      text-transform: capitalize;
+    }
+
+    .anno {
+      color: var(--default-primary-color);
+      margin-right: 0.2em;
+      text-transform: capitalize;
+    }
+
+    .collapseContentLine {
+      font-size: var(--base-font-size, var(--default-font-size));
+    }
+
+    .collapseContent {
+      background: var(--card-background-color);
+      padding: 0.3em 0.5em;
+      word-break: break-all;
+    }
   </style>
     <paper-material elevation="1" class="layout vertical flex">
       <template is="dom-if" if="[[!_readiness]]">
@@ -60,14 +100,14 @@
           </paper-spinner>
         </div>
       </template>
-      <div id="cardHeader" class="clearFix cardHeader vertCenterContainer">
+      <div id="cardHeader" class="cardHeader layout horizontal center">
         <template is="dom-if" if="[[!disableFolding]]" restamp="true">
-          <paper-icon-button icon="[[expandIcon]]" class="leftFloat"
+          <paper-icon-button icon="[[expandIcon]]"
             id="expandButton" on-click="toggleCollapse">
           </paper-icon-button>
         </template>
         <template is="dom-if" if="[[_showOriginalHeader]]">
-          <div id="cardHeaderContainer" class="vertCenterElement"></div>
+          <div id="cardHeaderContainer" class="flex"></div>
         </template>
         <div id="hiddenCardHeaderHolder">
           <slot id="cardHeaderSlot" name="header"></slot>

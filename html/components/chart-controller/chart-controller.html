@@ -74,6 +74,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       :host {
         font-size: var(--base-font-size, var(--default-font-size));
         @apply --layout-fit;
+        --app-drawer-width: 270px;
       }
       gene-coor-input {
         margin: 0.3em 0.1em;
@@ -90,7 +91,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         margin-right: 2em;
       }
       div#controlButtonGroup {
-        margin: 0 -0.5em;
+        margin: 0 0.5em;
       }
       div#controlButtonGroup > * {
         margin-left: 0.5em;
@@ -102,15 +103,22 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       app-drawer > div {
         height: 100%;
         overflow-y: auto;
+        overflow-x: hidden;
       }
       app-drawer > div > div {
-        padding: 1em;
+        padding: 0.5em 0;
         font-size: var(--base-font-size, var(--default-font-size));
       }
       app-drawer {
         --app-drawer-content-container: {
           background: var(--card-background-color);
         };
+      }
+      app-drawer > div > div > * {
+        margin: 0 0.5em;
+      }
+      app-drawer > div > div > gene-coor-input {
+        margin: 0.25em 1em;
       }
       app-toolbar {
         background-color: var(--dark-primary-color);
@@ -179,7 +187,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               setting-key="visibility"
               has-controls='[[hasControls]]' with-filter='[[withFilter]]'
               instant-change='[[instantChange]]'
-              show-selected-tracks
+              show-selected-tracks selected-tracks-only collapsable
               priority-managers="{{priorityManagers}}">
             </chart-track-list>
             <custom-track-controller ref="[[ref]]" id="mainCTController">

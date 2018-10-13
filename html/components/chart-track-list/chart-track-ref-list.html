@@ -403,10 +403,7 @@ var GIVe = (function (give) {
         this.priorityManager.reset(
           this.refObj, this.defaultTrackIdList, this.groupIdList)
       }
-      this.syncPriorityManagerToSelectedTracks()
-      this._updatingSelection = true
-      this._trackGroupElems.forEach(elem => elem.resetAllTracks())
-      this._updatingSelection = false
+      return this.syncPriorityManagerToDom()
     }
 
     _signalClose () {
@@ -474,7 +471,7 @@ var GIVe = (function (give) {
         //   this.selectedTracks
         // )
         this._trackGroupElems.forEach(
-          elem => elem.syncSelectionFromGroup(this.selectedTracks))
+          elem => elem.syncSelectionFromExternalGroup(this.selectedTracks))
         this._updatingSelection = false
       }
     }

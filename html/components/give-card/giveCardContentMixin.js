@@ -145,7 +145,7 @@ var GIVe = (function (give) {
         let element = document.createElement('div')
         element.classList.add('clearFix')
         element.classList.add('fullWidth')
-        element.classList.add('collapseDb')
+        element.classList.add('collapseContentLine')
 
         if (beforeNode) {
           element.appendChild(beforeNode)
