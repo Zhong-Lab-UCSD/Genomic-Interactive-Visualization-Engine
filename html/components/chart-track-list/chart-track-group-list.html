@@ -299,6 +299,13 @@ var GIVe = (function (give) {
       }
     }
 
+    get _collapsedInfoObject () {
+      return {
+        __tracks: this.selectedArray.length + ' / ' + this.group.length +
+          ' tracks selected'
+      }
+    }
+
     _groupChanged (newValue, oldValue) {
       give.fireSignal('update-height', null, null, this)
       if (this.isSelected && this.group && !this._updatingGroups) {
@@ -313,7 +320,7 @@ var GIVe = (function (give) {
       }
     }
 
-    syncSelectionFromExternalGroup (selectionGroup) {
+    syncSelectionFromExternalGroup (selectionGroup, scrollToFirst) {
       this._updatingSelectedItems = true
       // deselect the ones in `this.selected` but not in `selectionSet`
       for (let index = 0; index < this.selectedArray.length; index++) {
@@ -327,6 +334,10 @@ var GIVe = (function (give) {
       selectionGroup.forEach(track => {
         if (this.group.hasTrack(track)) {
           this.$.groupList.selectItem(track)
+          if (scrollToFirst) {
+            this.$.groupList.scrollToItem(track)
+            scrollToFirst = false
+          }
         }
       })
       this._updatingSelectedItems = false

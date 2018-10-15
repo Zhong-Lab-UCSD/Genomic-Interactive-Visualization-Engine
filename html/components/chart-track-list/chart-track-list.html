@@ -17,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
-    <style include="give-shared-styles iron-flex iron-alignment">
+    <style include="give-shared-styles iron-flex iron-flex-alignment">
     :host {
       display: block;
       @apply --layout-vertical;
@@ -34,10 +34,19 @@
       padding: 0;
       margin: 0;
     }
-    div.cardActions paper-button > iron-icon {
+    div.collapsedActions {
+      margin: 0.5em -0.25em;
+    }
+    div.collapsedActions > paper-button {
+      margin: 0 0.25em;
+    }
+    paper-button > iron-icon {
       width: 1.5em;
       height: 1.5em;
       margin-right: 0.3em;
+    }
+    paper-button.coloredText {
+      color: var(--default-primary-color);
     }
     </style>
     <!-- Selected tracks DOM, by reference -->
@@ -61,14 +70,14 @@
       </template>
       <template is="dom-if"
         if="[[_calcCollapsedState(collapsable, selectedTracksOnly)]]">
-        <div class="cardActions layout horizontal end-justified center">
-          <paper-button on-tap="expand">
-            <iron-icon icon="add"></iron-icon>
-            Add
-          </paper-button>
-          <paper-button on-tap="resetAllTracks">
+        <div class="collapsedActions layout horizontal end-justified center">
+          <paper-button on-tap="resetAllTracks" raised>
             <iron-icon icon="settings-backup-restore"></iron-icon>
-            Default
+            Default tracks
+          </paper-button>
+          <paper-button on-tap="expand" class="colored" raised>
+            <iron-icon icon="add"></iron-icon>
+            Add tracks
           </paper-button>
         </div>
       </template>
@@ -114,9 +123,9 @@
             <iron-icon icon="close"></iron-icon>
             Cancel
           </paper-button>
-          <paper-button on-tap="submitChanges">
+          <paper-button on-tap="submitChanges" class="coloredText">
             <iron-icon icon="check"></iron-icon>
-            OK
+            Update
           </paper-button>
         </template>
       </div>
@@ -321,7 +330,7 @@ var GIVe = (function (give) {
             this.notifyPath('_refItemArray.' + index + '.priorityManager')
             this.notifyPath('_refItemArray.' + index + '.selectedTracks')
           })
-          this._selectionChangedInSelectedTracks()
+          this._syncSelectionToGroups(true)
         })
       }
     }
@@ -449,6 +458,9 @@ var GIVe = (function (give) {
         this.notifyPath('_refItemArray.' + index + '.priorityManager')
       })
       this.syncPriorityManagerToDom()
+      if (this.isCollapsed) {
+        give.fireSignal('update-track-list', null, null, this)
+      }
     }
 
     expand () {
@@ -462,7 +474,7 @@ var GIVe = (function (give) {
       if (this.collapsable) {
         this.selectedTracksOnly = true
       }
-      give.fireSignal('list-close', null, null, this)
+      give.fireSignal('list-collapse', null, null, this)
     }
 
     /**
@@ -489,11 +501,15 @@ var GIVe = (function (give) {
     }
 
     _selectionChangedInSelectedTracks (e) {
+      return this._syncSelectionToGroups()
+    }
+
+    _syncSelectionToGroups (scrollToSelected) {
       if (!this._updatingSelection) {
         this._updatingSelection = true
         if (!this.isCollapsed) {
           this._refTrackLists.forEach(
-            elem => elem._selectionChangedInSelectedTracks())
+            elem => elem._syncSelectionToGroups(scrollToSelected))
         } else {
           // commit selections without any `<chart-track-ref-list>` element
           this._refItemArray.forEach((refItem, index) => {
@@ -527,7 +543,9 @@ var GIVe = (function (give) {
     }
 
     submitChanges () {
-      this.syncDomToTrackSettings()
+      if (this.syncDomToTrackSettings()) {
+        give.fireSignal('update-track-list', null, null, this)
+      }
       this.collapse()
     }
 

@@ -91,11 +91,11 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         margin-right: 2em;
       }
       div#controlButtonGroup {
-        margin: 0 0.5em;
+        padding: 0 0.25em;
       }
       div#controlButtonGroup > * {
-        margin-left: 0.5em;
-        margin-right: 0.5em;
+        margin-left: 0.25em;
+        margin-right: 0.25em;
       }
       app-drawer-layout:not([narrow]) [drawer-toggle] {
         display: none;
@@ -108,6 +108,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       app-drawer > div > div {
         padding: 0.5em 0;
         font-size: var(--base-font-size, var(--default-font-size));
+        position: relative;
       }
       app-drawer {
         --app-drawer-content-container: {
@@ -117,8 +118,18 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       app-drawer > div > div > * {
         margin: 0 0.5em;
       }
-      app-drawer > div > div > gene-coor-input {
-        margin: 0.25em 1em;
+      div#coordinateHolder {
+        margin-bottom: 2em;
+      }
+      div#coordinateHolder gene-coor-input {
+        margin: 0.25em 0.5em;
+      }
+      app-drawer chart-track-list {
+        background: var(--card-background-color);
+      }
+      app-drawer chart-track-list.expanded {
+        @apply --layout-fit;
+        z-index: 10;
       }
       app-toolbar {
         background-color: var(--dark-primary-color);
@@ -164,22 +175,24 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       <app-drawer slot="drawer">
         <div class="layout vertical">
           <div class="flex layout vertical">
-            <template is="dom-repeat" items="{{_coordinateObjectArray}}">
-              <gene-coor-input ref="[[item.ref]]"
-                label="[[_calcGeneCoorLabel(index)]]"
-                floatingLabel="true" value="{{item.coor}}"
-                invalid="[[item.invalid]]">
-              </gene-coor-input>
-            </template>
-            <div class="layout horizontal" id="controlButtonGroup">
-              <paper-button class="colored" raised id="updateChartBtn"
-                on-tap="update">
-                Update
-              </paper-button>
-              <paper-button raised id="cancelUpdateChartButton"
-                on-tap="resetTracks">
-                Cancel
-              </paper-button>
+            <div id="coordinateHolder" class="layout vertical">
+              <template is="dom-repeat" items="{{_coordinateObjectArray}}">
+                <gene-coor-input ref="[[item.ref]]"
+                  label="[[_calcGeneCoorLabel(index)]]"
+                  floatingLabel="true" value="{{item.coor}}"
+                  invalid="[[item.invalid]]">
+                </gene-coor-input>
+              </template>
+              <div class="layout horizontal end-justified" id="controlButtonGroup">
+                <paper-button raised id="cancelUpdateChartButton"
+                  on-tap="resetTracks">
+                  Cancel
+                </paper-button>
+                <paper-button class="colored" raised id="updateChartBtn"
+                  on-tap="update">
+                  [[_calcUpdateButtonText(numOfSubs)]]
+                </paper-button>
+              </div>
             </div>
             <chart-track-list ref="[[ref]]" class="flex"
               id="mainTrackList"
@@ -384,15 +397,25 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       this._numOfSubsRefCoordinateChanged()
-      this._refArray.forEach(ref => {
-        if (!this.priorityManagers.hasOwnProperty(ref)) {
+      give.RefObject.allRefPromise.then(() =>
+        this._refArray.forEach(ref => {
           let refObj = give.RefObject.findRefByDb(ref)
-          if (refObj) {
-            this.priorityManagers[ref] = new give.PriorityManager(
+          if (refObj && !this.priorityManagers.hasOwnProperty(ref)) {
+            if (refObj) {
+              this.priorityManagers[ref] = new give.PriorityManager(
+                refObj, this.defaultTrackIdList, this.groupIdList)
+            }
+          } else if (refObj) {
+            this.priorityManagers[ref].asyncReset(
               refObj, this.defaultTrackIdList, this.groupIdList)
+            this.notifyPath('priorityManagers.' + ref)
           }
-        }
-      })
+        })
+      )
+      this.addEventListener('list-expand', e => this._expandList(e))
+      this.addEventListener('list-collapse', e => this._collapseList(e))
+      this.addEventListener('update-track-list',
+        e => this._trackListUpdateHandler(e))
     }
 
     /**
@@ -414,6 +437,36 @@ var GIVe = (function (give) {
       return 'Coordinate (or gene name)' +
         ((this._coordinateObjectArray && this._coordinateObjectArray.length > 1)
           ? ' for view #' + (index + 1) : '')
+    }
+
+    _calcUpdateButtonText (numOfSubs) {
+      return 'Update coordinate' + (numOfSubs > 1 ? 's' : '')
+    }
+
+    _expandList (e) {
+      let listElem = this.$.mainTrackList
+      if (e && e.detail && e.detail.listElem) {
+        listElem = e.detail.listElem
+      }
+      listElem.classList.remove('flex')
+      listElem.classList.add('expanded')
+    }
+
+    _collapseList (e) {
+      let listElem = this.$.mainTrackList
+      if (e && e.detail && e.detail.listElem) {
+        listElem = e.detail.listElem
+      }
+      listElem.classList.remove('expanded')
+      listElem.classList.add('flex')
+    }
+
+    _trackListUpdateHandler (e) {
+      if (this.$.mainChartArea) {
+        return this.$.mainChartArea.update(null, null, true)
+          .catch(err => this._errorHandler(err))
+      }
+      return Promise.resolve()
     }
 
     /**
