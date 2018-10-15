@@ -6,6 +6,7 @@
 <link rel="import" href="../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../give-card/give-card.html">
 <link rel="import" href="chart-track-ref-list.html">
 <link rel="import" href="chart-track-group-list.html">
@@ -16,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <dom-module id="chart-track-list">
   <template>
-    <style include="give-shared-styles iron-flex">
+    <style include="give-shared-styles iron-flex iron-flex-alignment">
     :host {
       display: block;
       @apply --layout-vertical;
@@ -29,9 +30,23 @@
       padding: 0.25em 0.5em;
       overflow-y: auto;
     }
-    div#cardActions {
+    div.cardActions {
       padding: 0;
       margin: 0;
+    }
+    div.collapsedActions {
+      margin: 0.5em -0.25em;
+    }
+    div.collapsedActions > paper-button {
+      margin: 0 0.25em;
+    }
+    paper-button > iron-icon {
+      width: 1.5em;
+      height: 1.5em;
+      margin-right: 0.3em;
+    }
+    paper-button.coloredText {
+      color: var(--default-primary-color);
     }
     </style>
     <!-- Selected tracks DOM, by reference -->
@@ -53,7 +68,21 @@
           </give-card>
         </template>
       </template>
-      <template is="dom-if" if="[[!selectedTracksOnly]]">
+      <template is="dom-if"
+        if="[[_calcCollapsedState(collapsable, selectedTracksOnly)]]">
+        <div class="collapsedActions layout horizontal end-justified center">
+          <paper-button on-tap="resetAllTracks" raised>
+            <iron-icon icon="settings-backup-restore"></iron-icon>
+            Default tracks
+          </paper-button>
+          <paper-button on-tap="expand" class="colored" raised>
+            <iron-icon icon="add"></iron-icon>
+            Add tracks
+          </paper-button>
+        </div>
+      </template>
+      <template is="dom-if"
+        if="[[!_calcCollapsedState(collapsable, selectedTracksOnly)]]">
         <template is="dom-repeat" id="trackRefBlock"
           items="{{_refItemArray}}" as="refItem">
           <!-- Candidate tracks DOM, by reference -->
@@ -72,28 +101,31 @@
         </template>
       </template>
     </div>
-    <template is="dom-if" if="[[!selectedTracksOnly]]">
-      <div id="cardActions">
+    <template is="dom-if"
+      if="[[!_calcCollapsedState(collapsable, selectedTracksOnly)]]">
+      <div class="cardActions layout horizontal end-justified center">
         <template is="dom-if" if="[[withFilter]]" restamp="true">
           <paper-button on-tap="launchFilter">
             <iron-icon icon="filter-list"></iron-icon>
             Filter
           </paper-button>
-          <paper-button on-tap="resetAllTracks">
-            <iron-icon icon="refresh"></iron-icon>
-            Reset to default
-          </paper-button>
           <!-- <meta-track-filter id="trackFilter" ref='[[ref]]'
             on-filter-tracks="_filterTracksHandler"></meta-track-filter> -->
         </template>
-        <template is="dom-if" if="[[hasControls]]" restamp="true">
+        <template is="dom-if"
+          if="[[_calcControls(hasControls, collapsable, selectedTracksOnly)]]"
+          restamp="true">
+          <paper-button on-tap="resetAllTracks">
+            <iron-icon icon="settings-backup-restore"></iron-icon>
+            Default
+          </paper-button>
           <paper-button on-tap="cancelChanges">
             <iron-icon icon="close"></iron-icon>
             Cancel
           </paper-button>
-          <paper-button on-tap="submitChanges">
+          <paper-button on-tap="submitChanges" class="coloredText">
             <iron-icon icon="check"></iron-icon>
-            OK
+            Update
           </paper-button>
         </template>
       </div>
@@ -103,7 +135,9 @@
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartTrackList extends Polymer.Element {
+  class ChartTrackList extends Polymer.mixinBehaviors([
+    Polymer.IronResizableBehavior
+  ], Polymer.Element) {
     constructor () {
       super(...arguments)
       this._updatingRef = false
@@ -163,7 +197,8 @@ var GIVe = (function (give) {
          */
         selectedTracksOnly: {
           type: Boolean,
-          value: false
+          value: false,
+          observer: '_collapseChangedObserver'
         },
 
         /**
@@ -268,7 +303,36 @@ var GIVe = (function (give) {
     }
 
     _calcShowSelected (showSelectedTracks, collapsable, selectedTracksOnly) {
-      return showSelectedTracks || (collapsable && selectedTracksOnly)
+      return showSelectedTracks ||
+        this._calcCollapsedState(collapsable, selectedTracksOnly)
+    }
+
+    _calcCollapsedState (collapsable, selectedTracksOnly) {
+      return collapsable && selectedTracksOnly
+    }
+
+    get isCollapsed () {
+      return this._calcCollapsedState(this.collapsable, this.selectedTracksOnly)
+    }
+
+    _calcControls (hasControls, collapsable, selectedTracksOnly) {
+      return hasControls || (collapsable && !selectedTracksOnly)
+    }
+
+    _collapseChangedObserver (newCollapsedState, oldCollapsedState) {
+      if (this.collapsable && !this.selectedTracksOnly) {
+        // just expanded, synchronize the group selections
+        Polymer.RenderStatus.afterNextRender(this, () => {
+          this._refTrackLists =
+            [...this.shadowRoot.querySelectorAll('chart-track-ref-list')]
+          // notify all changes involving selectedTracks and priorityManager
+          this._refItemArray.forEach((refItem, index) => {
+            this.notifyPath('_refItemArray.' + index + '.priorityManager')
+            this.notifyPath('_refItemArray.' + index + '.selectedTracks')
+          })
+          this._syncSelectionToGroups(true)
+        })
+      }
     }
 
     /**
@@ -330,7 +394,10 @@ var GIVe = (function (give) {
           priorityManager: this.priorityManagers[refObj.db]
         }
       })
-      this.notifyPath('priorityManagers.*')
+      this._refItemArray.forEach((refItem, index) => {
+        this.linkPaths('priorityManagers.' + refItem.db,
+          '_refItemArray.' + index + '.priorityManager')
+      })
       return Promise.all(
         this._refItemArray.map(
           refItem => refItem.priorityManager.readyPromise
@@ -355,18 +422,19 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Track list not initialized!')
       }
-      if (!this.collapsable || !this.selectedTracksOnly) {
+      if (!this.isCollapsed) {
         this._refTrackLists.forEach(refTrackElem =>
           refTrackElem.syncPriorityManagerToDom(scrollToSelected))
       } else {
-        this._refItemArray.forEach(refItem => (
+        this._refItemArray.forEach((refItem, index) => {
           refItem.selectedTracks =
             give.ChartTrackRefList.getSelectedTracksFromPriorityManager(
               refItem.refObj,
               refItem.priorityManager,
               refItem.selectedTracks
             )
-        ))
+          this.notifyPath('_refItemArray.' + index + '.selectedTracks')
+        })
       }
     }
 
@@ -385,12 +453,28 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Track list not initialized!')
       }
-      this._refTrackLists.forEach(
-        refTrackElem => refTrackElem.resetAllTracks())
+      this._refItemArray.forEach((refItem, index) => {
+        refItem.priorityManager.reset(refItem.refObj)
+        this.notifyPath('_refItemArray.' + index + '.priorityManager')
+      })
+      this.syncPriorityManagerToDom()
+      if (this.isCollapsed) {
+        give.fireSignal('update-track-list', null, null, this)
+      }
     }
 
-    _signalClose () {
-      give.fireSignal('list-close', null, null, this)
+    expand () {
+      if (this.collapsable) {
+        this.selectedTracksOnly = false
+        give.fireSignal('list-expand', null, null, this)
+      }
+    }
+
+    collapse () {
+      if (this.collapsable) {
+        this.selectedTracksOnly = true
+      }
+      give.fireSignal('list-collapse', null, null, this)
     }
 
     /**
@@ -417,14 +501,18 @@ var GIVe = (function (give) {
     }
 
     _selectionChangedInSelectedTracks (e) {
+      return this._syncSelectionToGroups()
+    }
+
+    _syncSelectionToGroups (scrollToSelected) {
       if (!this._updatingSelection) {
         this._updatingSelection = true
-        if (!this.collapsable || !this.selectedTracksOnly) {
+        if (!this.isCollapsed) {
           this._refTrackLists.forEach(
-            elem => elem._selectionChangedInSelectedTracks())
+            elem => elem._syncSelectionToGroups(scrollToSelected))
         } else {
           // commit selections without any `<chart-track-ref-list>` element
-          this._refItemArray.forEach(refItem => {
+          this._refItemArray.forEach((refItem, index) => {
             if (this.groupIdList && this.groupIdList.length > 0) {
               this.groupIdList.forEach(groupID => {
                 if (refItem.refObj.groups.hasOwnProperty(groupID)) {
@@ -446,8 +534,8 @@ var GIVe = (function (give) {
             }
             refItem.priorityManager.syncFromGroup(
               refItem.selectedTracks, true)
+            this.notifyPath('_refItemArray.' + index + '.priorityManager')
           })
-          this.notifyPath('priorityManagers.*')
           give.fireSignal('update-track-list', null, null, this)
         }
         this._updatingSelection = false
@@ -455,13 +543,15 @@ var GIVe = (function (give) {
     }
 
     submitChanges () {
-      this.syncDomToTrackSettings()
-      this._signalClose()
+      if (this.syncDomToTrackSettings()) {
+        give.fireSignal('update-track-list', null, null, this)
+      }
+      this.collapse()
     }
 
     cancelChanges () {
       this.syncPriorityManagerToDom()
-      this._signalClose()
+      this.collapse()
     }
 
     applyFilter (map, flags) {

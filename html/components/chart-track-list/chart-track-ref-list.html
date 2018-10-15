@@ -206,10 +206,6 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       this._allowFlexShrink = true
-      if (this.group) {
-        this.groupIcon = this.groupIcon || this.refObj.iconLabel
-        this.label = this.label || this.refObj.commonName
-      }
       this._setIcon(this.groupIcon || null)
       this._setIconAlt(this.label || 'Tracks')
       this._setHeaderText(this.label || 'Tracks')
@@ -275,16 +271,19 @@ var GIVe = (function (give) {
 
     _refreshRefTracks () {
       this.splice('groupArray', 0)
+      this._totalTrackNumber = 0
       if (this.groupIdList && this.groupIdList.length > 0) {
         this.groupIdList.forEach(groupID => {
           if (this.refObj.groups.hasOwnProperty(groupID)) {
             this.push('groupArray', this.refObj.groups[groupID])
+            this._totalTrackNumber += this.refObj.groups[groupID].length
           }
         })
       } else {
         for (let key in this.refObj.groups) {
           if (this.refObj.groups.hasOwnProperty(key)) {
             this.push('groupArray', this.refObj.groups[key])
+            this._totalTrackNumber += this.refObj.groups[key].length
           }
         }
       }
@@ -336,6 +335,11 @@ var GIVe = (function (give) {
     _setRefObj (refObj) {
       // TODO: may need to add something to remove the override array
       if (super._setRefObj(refObj)) {
+        this.groupIcon = this.groupIcon || this.refObj.iconLabel
+        this.label = this.label || this.refObj.commonName
+        this._setIcon(this.groupIcon || null)
+        this._setIconAlt(this.label || 'Tracks')
+        this._setHeaderText(this.label || 'Tracks')
         if (!this.hasParent && !this.priorityManager) {
           this.priorityManager = new give.PriorityManager(
             refObj, this.defaultTrackIdList, this.groupIdList)
@@ -403,14 +407,11 @@ var GIVe = (function (give) {
         this.priorityManager.reset(
           this.refObj, this.defaultTrackIdList, this.groupIdList)
       }
-      this.syncPriorityManagerToSelectedTracks()
-      this._updatingSelection = true
-      this._trackGroupElems.forEach(elem => elem.resetAllTracks())
-      this._updatingSelection = false
+      return this.syncPriorityManagerToDom()
     }
 
     _signalClose () {
-      give.fireSignal('list-close', null, null, this)
+      give.fireSignal('list-collapse', null, null, this)
     }
 
     /**
@@ -466,7 +467,18 @@ var GIVe = (function (give) {
       }
     }
 
+    get _collapsedInfoObject () {
+      return {
+        __tracks: this.selectedTracks.length + ' / ' + this._totalTrackNumber +
+          ' tracks selected'
+      }
+    }
+
     _selectionChangedInSelectedTracks (e) {
+      return this._syncSelectionToGroups()
+    }
+
+    _syncSelectionToGroups (scrollToSelected) {
       if (!this._updatingSelection) {
         this._updatingSelection = true
         // this.selectedTracks = give.TrackGroup.from(
@@ -474,7 +486,8 @@ var GIVe = (function (give) {
         //   this.selectedTracks
         // )
         this._trackGroupElems.forEach(
-          elem => elem.syncSelectionFromGroup(this.selectedTracks))
+          elem => elem.syncSelectionFromExternalGroup(
+            this.selectedTracks, scrollToSelected))
         this._updatingSelection = false
       }
     }

@@ -262,13 +262,15 @@ var GIVe = (function (give) {
 
     initPriorityManager (priorityManager, defaultIdList, groupIdList) {
       // clear previous track priority values and overwrite with new ones
+      defaultIdList = defaultIdList || priorityManager._defaultTrackIdList
+      groupIdList = groupIdList || priorityManager._groupIdList
       if (priorityManager instanceof give.PriorityManager) {
         if (Array.isArray(defaultIdList)) {
           return this._applyDefaultIdList(priorityManager, defaultIdList)
         } else {
           priorityManager.clear()
           if (Array.isArray(groupIdList)) {
-            return this._applyGroupIdList(priorityManager, groupIdList)
+            this._applyGroupIdList(priorityManager, groupIdList)
           }
           return this._applyDefaultSettings(priorityManager)
         }
@@ -282,9 +284,12 @@ var GIVe = (function (give) {
         this.initCoordinateTracks(priorityManager)
       }
       this.tracks.forEach(track => {
-        if (track.getSetting(priorityManager.settingString)) {
-          priorityManager.addTrack(track)
-        }
+        if (!(track instanceof give.CoorTrack)) {
+          track.resetSetting(priorityManager.settingString)
+          if (track.getSetting(priorityManager.settingString)) {
+            priorityManager.addTrack(track)
+          }
+        } 
       })
       return priorityManager
     }

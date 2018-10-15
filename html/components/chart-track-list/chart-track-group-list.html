@@ -59,6 +59,12 @@ var GIVe = (function (give) {
   'use strict'
 
   class ChartTrackGroupList extends give.GiveCardContentMixin(Polymer.Element) {
+    constructor () {
+      super(...arguments)
+      this._updatingSelectedItems = false
+      this._updatingGroups = false
+    }
+
     static get is () {
       return 'chart-track-group-list'
     }
@@ -168,8 +174,16 @@ var GIVe = (function (give) {
         )
       }
       this._updatingSelectedItems = true
-      this.group.forEach((track, index) => this.$.groupList.selectIndex(index))
-      this._updatingSelectedItems = false
+      this.$.groupList.clearSelection()
+      Polymer.RenderStatus.afterNextRender(this, () => {
+        this.group.forEach(
+          (track, index) => this.$.groupList.selectIndex(index)
+        )
+        Polymer.RenderStatus.afterNextRender(this, () => {
+          this._updatingSelectedItems = false
+          this._updatingGroups = false
+        })
+      })
     }
 
     _syncSelectionToGroup () {
@@ -215,7 +229,6 @@ var GIVe = (function (give) {
           this.$.groupList.scrollToIndex(firstSelected)
         }
       }
-      this._updatingSelectedItems = false
       this._updateSelectedItems()
     }
 
@@ -264,14 +277,16 @@ var GIVe = (function (give) {
     }
 
     _selectedItemsChangedHandler (e) {
-      if (this._readiness && !this._updatingSelectedItems) {
+      if (this._readiness && !this._updatingSelectedItems &&
+        !this._updatingGroups
+      ) {
+        this._updatingSelectedItems = true
         return Promise.resolve().then(() => this._updateSelectedItems(e.detail))
       }
     }
 
     _updateSelectedItems (eventDetail) {
-      if (this._readiness && !this._updatingSelectedItems) {
-        this._updatingSelectedItems = true
+      if (this._readiness && !this._updatingGroups) {
         if (this.instantChange) {
           this.syncDomToTrackSettings()
         }
@@ -284,25 +299,45 @@ var GIVe = (function (give) {
       }
     }
 
-    _groupChanged (newValue, oldValue) {
-      if (this.isSelected && this.group && !this._updatingSelectedItems) {
-        this._syncGroupToSelection()
+    get _collapsedInfoObject () {
+      return {
+        __tracks: this.selectedArray.length + ' / ' + this.group.length +
+          ' tracks selected'
       }
-      give.fireSignal('update-height', null, null, this)
     }
 
-    syncSelectionFromGroup (selectionGroup) {
+    _groupChanged (newValue, oldValue) {
+      give.fireSignal('update-height', null, null, this)
+      if (this.isSelected && this.group && !this._updatingGroups) {
+        this._updatingGroups = true
+        // Because the rendering of `<iron-list>` appears to have a debounce
+        //    over ANIMATION_FRAME (which is after
+        //    Polymer.RenderStatus.afterNextRender), this may cause problems in
+        //    refreshing the selected tracks list.
+        // Therefore, a forced `notifyResize()` is needed.
+        this.$.groupList.notifyResize()
+        this._syncGroupToSelection()
+      }
+    }
+
+    syncSelectionFromExternalGroup (selectionGroup, scrollToFirst) {
       this._updatingSelectedItems = true
+      // deselect the ones in `this.selected` but not in `selectionSet`
+      for (let index = 0; index < this.selectedArray.length; index++) {
+        let track = this.selectedArray[index]
+        if (!selectionGroup.hasTrack(track)) {
+          this.$.groupList.deselectItem(track)
+          index--
+        }
+      }
       // select the ones in `selectionSet` but not in `this.selected`
       selectionGroup.forEach(track => {
         if (this.group.hasTrack(track)) {
           this.$.groupList.selectItem(track)
-        }
-      })
-      // deselect the ones in `this.selected` but not in `selectionSet`
-      this.selectedArray.forEach(track => {
-        if (!selectionGroup.hasTrack(track)) {
-          this.$.groupList.deselectItem(track)
+          if (scrollToFirst) {
+            this.$.groupList.scrollToItem(track)
+            scrollToFirst = false
+          }
         }
       })
       this._updatingSelectedItems = false

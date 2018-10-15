@@ -5,11 +5,6 @@ var GIVe = (function (give) {
     class extends Polymer.mixinBehaviors([
       Polymer.IronResizableBehavior
     ], base) {
-      constructor () {
-        super(...arguments)
-        this._collapsedInfoObject = null
-      }
-
       static get properties () {
         return {
           icon: {
@@ -88,16 +83,13 @@ var GIVe = (function (give) {
         return element
       }
 
-      updateCollapsedInfoObject (newObject) {
-        if (Object.keys(newObject).length > 0) {
-          this._collapsedInfoObject = newObject
-        } else {
-          this._collapsedInfoObject = null
-        }
+      get _collapsedInfoObject () {
+        return null
       }
 
       get collapsedElement () {
-        if (this._collapsedInfoObject) {
+        let collapsedInfoObj = this._collapsedInfoObject
+        if (collapsedInfoObj) {
           // prepare for shrinking and return the shrunk element
           let element = document.createElement('div')
           // add shrunk icon, ref, input file and display file
@@ -109,7 +101,6 @@ var GIVe = (function (give) {
           headerTextElement.textContent = this.headerText
 
           headerElement.classList.add('headerText')
-          headerElement.classList.add('clearFix')
           if (iconElement) {
             iconElement.classList.add('smallInline')
             headerElement.appendChild(iconElement)
@@ -119,10 +110,10 @@ var GIVe = (function (give) {
 
           let resContent = document.createElement('div')
           resContent.classList.add('collapseContent')
-          for (let key in this._collapsedInfoObject) {
-            if (this._collapsedInfoObject.hasOwnProperty(key)) {
+          for (let key in collapsedInfoObj) {
+            if (collapsedInfoObj.hasOwnProperty(key)) {
               resContent.appendChild(
-                this._createResElement(key, this._collapsedInfoObject[key]))
+                this._createResElement(key, collapsedInfoObj[key]))
             }
           }
           element.appendChild(resContent)
@@ -143,22 +134,22 @@ var GIVe = (function (give) {
 
       _createResElement (anno, text, beforeNode, afterNode) {
         let element = document.createElement('div')
-        element.classList.add('clearFix')
-        element.classList.add('fullWidth')
-        element.classList.add('collapseDb')
+        element.classList.add('collapseContentLine')
 
         if (beforeNode) {
           element.appendChild(beforeNode)
         }
 
-        let annotationElement = document.createElement('span')
-        annotationElement.classList.add('anno')
-        annotationElement.classList.add('leftFloat')
-        annotationElement.textContent = anno + ': '
+        if (anno && !anno.startsWith('__')) {
+          let annotationElement = document.createElement('span')
+          annotationElement.classList.add('anno')
+          annotationElement.textContent = anno + ': '
+          element.appendChild(annotationElement)
+        }
         let contentElement = document.createElement('span')
+        contentElement.classList.add('content')
         contentElement.textContent = text
 
-        element.appendChild(annotationElement)
         element.appendChild(contentElement)
 
         if (afterNode) {

@@ -13,12 +13,13 @@
       --light-primary-color: #C5CAE9;
       --dark-theme-text-color: #ffffff; /*text/icons*/
       --accent-color: #FF8F00;
-      --primary-background-color: #eaeaea;
+      --primary-background-color: #EAEAEA;
       --primary-text-color: #212121;
       --secondary-text-color: #727272;
-      --disabled-text-color: #bdbdbd;
+      --disabled-text-color: #BDBDBD;
       --divider-color: #B6B6B6;
       --card-background-color: #F5F5F5;
+      --card-header-background-color: #DADADA;
       --button-background-color: rgba(245, 245, 245, 0.2);
       --lighter-accent-color: #FFE082;
       --error-color: #B71C1C;
@@ -167,12 +168,6 @@
       };
     }
 
-    iron-icon.smallInline {
-      width: 1.25em;
-      height: 1.25em;
-      margin: 0 0.25em 0.1em 0.25em;
-    }
-
     iron-icon.transparent {
       opacity: 0.54;
     }
@@ -216,10 +211,6 @@
       };
     }
 
-    .layout > * > paper-button {
-      width: 100%;
-    }
-
     .fullWidth {
       width: 100%;
       margin-left: 0;
@@ -229,7 +220,7 @@
     iron-icon.smallInline {
       width: 1.25em;
       height: 1.25em;
-      margin: 0 0.25em 0.1em 0.25em;
+      margin: 0 0.25em;
     }
     iron-icon.transparent {
       opacity: 0.54;
@@ -348,21 +339,6 @@
       text-transform: none;
     }
 
-    .cardHeader {
-      -webkit-flex: 0 0 40px;
-      flex: 0 0 40px;
-      background: #E0E0E0;
-      font-size: 14px;
-      margin: 0;
-      min-height: 40px
-    }
-
-    .anno {
-      color: #3F51B5;
-      margin-right: 0.2em;
-      text-transform: capitalize;
-    }
-
     .vertCenterElement {
       padding: 0px;
       width: 100%;
@@ -370,25 +346,6 @@
 
     .vertCenterContainer > div.hidden {
       display: none;
-    }
-
-    div.headerText {
-      font-weight: 700;
-      margin: 0.3em 0.6em 0.3em 0.3em;
-    }
-
-    div.headerText::first-letter {
-      text-transform: capitalize;
-    }
-
-    .collapseDb {
-      font-size: var(--base-font-size, var(--default-font-size));
-    }
-
-    .collapseContent {
-      background: #F5F5F5;
-      padding: 0.3em 0.5em;
-      word-break: break-all;
     }
 
     div#loadingBlock {

@@ -73,14 +73,20 @@ var GIVe = (function (give) {
         : track => this.constructor._defaultGetSlotFunc(track))
       this.idToEffectivePriorityDict = new Map()
       this._initSlotNames(slotNames)
-      this.reset(refObj, defaultTrackIdList, groupIdList)
+      this._defaultTrackIdList = defaultTrackIdList
+      this._groupIdList = groupIdList
+      this.asyncReset(refObj)
+    }
+
+    asyncReset (refObj, defaultTrackIdList, groupIdList) {
+      this.readyPromise = refObj.initTracks().then(refObj =>
+        this.reset(refObj, defaultTrackIdList, groupIdList))
+        .then(() => this)
+      return this.readyPromise
     }
 
     reset (refObj, defaultTrackIdList, groupIdList) {
-      this.readyPromise = refObj.initTracks().then(refObj =>
-        refObj.initPriorityManager(this, defaultTrackIdList, groupIdList))
-        .then(() => this)
-      return this.readyPromise
+      return refObj.initPriorityManager(this, defaultTrackIdList, groupIdList)
     }
 
     _initSlotNames (slotNames) {
@@ -254,7 +260,7 @@ var GIVe = (function (give) {
       if (resetOrder) {
         this.clear(true)
       } else if (!doNotRemove) {
-        this.trackIdList.forEach(trackId => {
+        oldTrackIdList.forEach(trackId => {
           if (
             (!this.includeCoordinates || !this.coordinateIdSet.has(trackId)) &&
             !trackGroup.hasTrack(trackId)
@@ -267,7 +273,7 @@ var GIVe = (function (give) {
         this.addTrack(track, null, null, null, true)
       }
       let newTrackIdList = this.trackIdList
-      return oldTrackIdList.length !== newTrackIdList ||
+      return oldTrackIdList.length !== newTrackIdList.length ||
         newTrackIdList.some((id, index) => (id !== oldTrackIdList[index]))
     }
 
