@@ -269,8 +269,14 @@ var GIVe = (function (give) {
     }
 
     ready () {
+      give._verbConsole.info('<chart-track-list> Lifecycle: ready() (early)')
       this._updatingRef = true
       super.ready()
+      give._verbConsole.info('<chart-track-list> Lifecycle: ready() (late)')
+      Polymer.RenderStatus.beforeNextRender(this, () => {
+        this._updatingRef = false
+        this._refChanged(this.ref)
+      })
     }
 
     /**
@@ -279,11 +285,9 @@ var GIVe = (function (give) {
       * Generally, you should try to delay work until this time.
       */
     connectedCallback () {
+      give._verbConsole.info('<chart-track-list> Lifecycle: connectedCallback() (early)')
       super.connectedCallback()
-      Polymer.RenderStatus.beforeNextRender(this, () => {
-        this._updatingRef = false
-        this._refChanged(this.ref)
-      })
+      give._verbConsole.info('<chart-track-list> Lifecycle: connectedCallback() (late)')
     }
 
     _calcRefIcon (refObj) {

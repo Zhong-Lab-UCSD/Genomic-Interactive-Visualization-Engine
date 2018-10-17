@@ -252,7 +252,7 @@ var GIVe = (function (give) {
 
   class ChartController extends Polymer.Element {
     constructor () {
-      super(...arguments)
+      super()
       this._updatingRefCoordinates = false
       this._refArray = []
     }
@@ -395,7 +395,9 @@ var GIVe = (function (give) {
      * initialized.
      */
     ready () {
+      give._verbConsole.info('<chart-controller> Lifecycle: ready() (early)')
       super.ready()
+      give._verbConsole.info('<chart-controller> Lifecycle: ready() (late)')
       this._numOfSubsRefCoordinateChanged()
       give.RefObject.allRefPromise.then(() =>
         this._refArray.forEach(ref => {
@@ -424,7 +426,9 @@ var GIVe = (function (give) {
       * Generally, you should try to delay work until this time.
       */
     connectedCallback () {
+      give._verbConsole.info('<chart-controller> Lifecycle: connectedCallback() (early)')
       super.connectedCallback()
+      give._verbConsole.info('<chart-controller> Lifecycle: connectedCallback() (late)')
     }
 
     /**

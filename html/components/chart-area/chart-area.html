@@ -275,10 +275,12 @@ var GIVe = (function (give) {
     }
 
     ready () {
+      give._verbConsole.info('<chart-area> Lifecycle: ready() (early)')
       this._updatingCoordinates = true
       this._updatingRefs = true
       this._updatingNumOfSubs = true
       super.ready()
+      give._verbConsole.info('<chart-area> Lifecycle: ready() (late)')
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
         this.addEventListener('give-warning', e => this._warningHandler(e))
@@ -290,7 +292,9 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
+      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (early)')
       super.connectedCallback()
+      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (late)')
       Polymer.RenderStatus.afterNextRender(this, () => {
         this.updatePromise = give.RefObject.allRefPromise
           .then(() => this.updateNumOfSubs(this.numOfSubs))
