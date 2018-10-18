@@ -179,10 +179,8 @@ var GIVe = (function (give) {
         this.group.forEach(
           (track, index) => this.$.groupList.selectIndex(index)
         )
-        Polymer.RenderStatus.afterNextRender(this, () => {
-          this._updatingSelectedItems = false
-          this._updatingGroups = false
-        })
+        this._updatingSelectedItems = false
+        this._updatingGroups = false
       })
     }
 
@@ -308,18 +306,16 @@ var GIVe = (function (give) {
 
     _groupChanged (newValue, oldValue) {
       give.fireSignal('update-height', null, null, this)
-      Polymer.RenderStatus.afterNextRender(this, () => {
-        if (this.isSelected && this.group && !this._updatingGroups) {
-          this._updatingGroups = true
-          // Because the rendering of `<iron-list>` appears to have a debounce
-          //    over ANIMATION_FRAME (which is after
-          //    Polymer.RenderStatus.afterNextRender), this may cause problems in
-          //    refreshing the selected tracks list.
-          // Therefore, a forced `notifyResize()` is needed.
-          this.$.groupList.notifyResize()
-          this._syncGroupToSelection()
-        }
-      })
+      if (this.isSelected && this.group && !this._updatingGroups) {
+        this._updatingGroups = true
+        // Because the rendering of `<iron-list>` appears to have a debounce
+        //    over ANIMATION_FRAME (which is after
+        //    Polymer.RenderStatus.afterNextRender), this may cause problems in
+        //    refreshing the selected tracks list.
+        // Therefore, a forced `notifyResize()` is needed.
+        this.$.groupList.notifyResize()
+        this._syncGroupToSelection()
+      }
     }
 
     syncSelectionFromExternalGroup (selectionGroup, scrollToFirst) {
