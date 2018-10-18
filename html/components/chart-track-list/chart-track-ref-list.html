@@ -354,14 +354,14 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
-      this.syncPriorityManagerToSelectedTracks()
+      this._syncPriorityManagerToSelectedTracks()
       this._updatingSelection = true
       this._trackGroupElems.forEach(
         elem => elem.syncTrackSettingsToDom(scrollToSelected))
       this._updatingSelection = false
     }
 
-    syncPriorityManagerToSelectedTracks () {
+    _syncPriorityManagerToSelectedTracks () {
       if (this.refObj) {
         this._updatingSelection = true
         this.selectedTracks =
@@ -371,7 +371,7 @@ var GIVe = (function (give) {
         this._updatingSelection = false
       }
     }
-
+    
     static getSelectedTracksFromPriorityManager (
       refObj, priorityManager, oldSelectedTracks
     ) {
@@ -383,6 +383,17 @@ var GIVe = (function (give) {
       )
     }
 
+    static getInitSelectedTracksFromPriorityManager(
+      refObj, priorityManager, oldSelectedTracks
+    ) {
+      return give.TrackGroup.from(
+        priorityManager.initTrackIdList.map(
+          trackId => refObj.tracks.get(trackId)
+        ).filter(track => !(track instanceof give.CoorTrack)),
+        oldSelectedTracks
+      )
+    }
+    
     syncDomToTrackSettings () {
       // this is used when submitting the results
       // convert `this.selectedTracks` to priorityManager
@@ -392,7 +403,7 @@ var GIVe = (function (give) {
       if (this.priorityManager.syncFromGroup(this.selectedTracks, true)) {
         this._trackGroupElems.forEach(elem => elem.syncDomToTrackSettings())
         // orders of selectedTracks may have changed
-        this.syncPriorityManagerToSelectedTracks()
+        this._syncPriorityManagerToSelectedTracks()
         this.notifyPath('priorityManager')
         return true
       }
@@ -403,11 +414,19 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Ref list not initialized!')
       }
-      if (!this.hasParent) {
+      if (!this.hasParent || this.instantChange) {
         this.priorityManager.reset(
           this.refObj, this.defaultTrackIdList, this.groupIdList)
+        return this.syncPriorityManagerToDom()
+      } else {
+        this._updatingSelection = true
+        this.selectedTracks =
+          this.constructor.getInitSelectedTracksFromPriorityManager(
+            this.refObj, this.priorityManager, this.selectedTracks
+          )
+        this._updatingSelection = false
+        this._syncSelectionToGroups(true)
       }
-      return this.syncPriorityManagerToDom()
     }
 
     _signalClose () {

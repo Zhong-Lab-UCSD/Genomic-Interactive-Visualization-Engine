@@ -443,13 +443,16 @@ var GIVe = (function (give) {
       if (!this._readiness) {
         throw new give.GiveError('Track list not initialized!')
       }
-      this._refItemArray.forEach((refItem, index) => {
-        refItem.priorityManager.reset(refItem.refObj)
-        this.notifyPath('_refItemArray.' + index + '.priorityManager')
-      })
-      this.syncPriorityManagerToDom()
       if (this.isCollapsed) {
+        this._refItemArray.forEach((refItem, index) => {
+          refItem.priorityManager.reset(refItem.refObj)
+          this.notifyPath('_refItemArray.' + index + '.priorityManager')
+        })
+        this.syncPriorityManagerToDom()
         give.fireSignal('update-track-list', null, null, this)
+      } else {
+        this._refTrackLists.forEach(
+          elem => elem.resetAllTracks())
       }
     }
 

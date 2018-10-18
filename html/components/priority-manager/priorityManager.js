@@ -81,12 +81,17 @@ var GIVe = (function (give) {
     asyncReset (refObj, defaultTrackIdList, groupIdList) {
       this.readyPromise = refObj.initTracks().then(refObj =>
         this.reset(refObj, defaultTrackIdList, groupIdList))
-        .then(() => this)
       return this.readyPromise
     }
 
     reset (refObj, defaultTrackIdList, groupIdList) {
-      return refObj.initPriorityManager(this, defaultTrackIdList, groupIdList)
+      refObj.initPriorityManager(this, defaultTrackIdList, groupIdList)
+      this._initTrackList = this.trackIdList
+      return this
+    }
+
+    get initTrackIdList () {
+      return this._initTrackList
     }
 
     _initSlotNames (slotNames) {
