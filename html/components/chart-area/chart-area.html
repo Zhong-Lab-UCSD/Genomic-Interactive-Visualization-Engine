@@ -20,6 +20,7 @@ limitations under the License.
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../chart-window/chart-window.html">
 <link rel="import" href="../promise-aggregator/promise-aggregator.html">
+<link rel="import" href="../priority-manager/priority-manager.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
@@ -127,10 +128,10 @@ var GIVe = (function (give) {
    *    side-by-side view
    */
   class ChartArea extends Polymer.mixinBehaviors([
-    Polymer.IronResizableBehavior], Polymer.Element
-  ) {
+    Polymer.IronResizableBehavior
+  ], give.PriorityManagerCollectionEmbedMixin(Polymer.Element)) {
     constructor () {
-      super(...arguments)
+      super()
       this._resizeDebounceInt = this.constructor.DEFAULT_RESIZE_DEBOUNCE
       this._idEnforcedSet = new Set()
       this._chartWindows = []
@@ -263,22 +264,17 @@ var GIVe = (function (give) {
         _firstRun: {
           type: Boolean,
           value: true
-        },
-
-        priorityManagers: {
-          type: Object,
-          value: function () {
-            return {}
-          }
         }
       }
     }
 
     ready () {
+      give._verbConsole.info('<chart-area> Lifecycle: ready() (early)')
       this._updatingCoordinates = true
       this._updatingRefs = true
       this._updatingNumOfSubs = true
       super.ready()
+      give._verbConsole.info('<chart-area> Lifecycle: ready() (late)')
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
         this.addEventListener('give-warning', e => this._warningHandler(e))
@@ -290,7 +286,9 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
+      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (early)')
       super.connectedCallback()
+      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (late)')
       Polymer.RenderStatus.afterNextRender(this, () => {
         this.updatePromise = give.RefObject.allRefPromise
           .then(() => this.updateNumOfSubs(this.numOfSubs))
@@ -401,25 +399,27 @@ var GIVe = (function (give) {
 
     getRefsReadyPromise () {
       return Promise.all(
-        this._chartWindows.map(window => window.refReadyPromise)
+        this._chartWindows.map(window => window.refReadyPromise).concat(
+          this.priorityManagersReadyPromise
+        )
       )
-        .then(() => {
-          // these two lines were intended to fix wrong ref db names
-          this._refArray = this._chartWindows.map(window => window.ref)
-          this._syncRefsArrayToJson()
+        // .then(() => {
+        //   // these two lines were intended to fix wrong ref db names
+        //   this._refArray = this._chartWindows.map(window => window.ref)
+        //   this._syncRefsArrayToJson()
 
-          // initialization of priority managers if not done already
-          this._refArray.forEach(ref => {
-            if (!this.priorityManagers.hasOwnProperty(ref)) {
-              this.priorityManagers[ref] = new give.PriorityManager(
-                give.RefObject.findRefByDb(ref),
-                this.defaultTrackIdList,
-                this.groupIdList)
-            }
-          })
-          return Promise.all(
-            this._refArray.map(ref => this.priorityManagers[ref].readyPromise))
-        })
+        //   // initialization of priority managers if not done already
+        //   this._refArray.forEach(ref => {
+        //     if (!this.priorityManagers.hasOwnProperty(ref)) {
+        //       this.priorityManagers[ref] = new give.PriorityManager(
+        //         give.RefObject.findRefByDb(ref),
+        //         this.defaultTrackIdList,
+        //         this.groupIdList)
+        //     }
+        //   })
+        //   return Promise.all(
+        //     this._refArray.map(ref => this.priorityManagers[ref].readyPromise))
+        // })
         .then(() =>
           this._chartWindows.forEach(window => (
             window.priorityManager = this.priorityManagers[window.ref]
@@ -624,8 +624,9 @@ var GIVe = (function (give) {
       return Promise.resolve()
         .then(() => {
           this._syncRefsJsonToArray(null, newRef)
-          return this._setRefsInWindow()
+          return this.priorityManagersReadyPromise
         })
+        .then(() => this._setRefsInWindow())
         .then(() => this.updateDom(newCoordinates))
     }
 

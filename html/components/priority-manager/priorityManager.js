@@ -273,8 +273,7 @@ var GIVe = (function (give) {
         this.addTrack(track, null, null, null, true)
       }
       let newTrackIdList = this.trackIdList
-      return oldTrackIdList.length !== newTrackIdList.length ||
-        newTrackIdList.some((id, index) => (id !== oldTrackIdList[index]))
+      return !give.arrayEqual(oldTrackIdList, newTrackIdList)
     }
 
     moveTrack (track, newSlotName, newPosition) {
