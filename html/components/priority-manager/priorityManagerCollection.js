@@ -59,35 +59,47 @@ var GIVe = (function (give) {
     constructor (refList, defaultTrackIdList, groupIdList, slotNames,
       settingString, includeCoordinates, getSlotSettingFunc
     ) {
-      // First de-dup refList
-      this._refCollection = new Map()
-      this.readyPromise = give.RefObject.allRefPromise
-        .then(() => {
-          return Promise.all(refList.map((ref, index) => {
-            if (!this._refCollection.has(ref)) {
-              let refDefaultTrackIdList =
-                (Array.isArray(defaultTrackIdList) &&
-                  Array.isArray(defaultTrackIdList[index]))
-                  ? defaultTrackIdList[index] : defaultTrackIdList
-              let refGroupIdList =
-                (Array.isArray(refGroupIdList) &&
-                  Array.isArray(refGroupIdList[index]))
-                  ? refGroupIdList[index] : refGroupIdList
-              this._refCollection.set(ref,
-                new give.PriorityManager(
-                  give.RefObject.findRefByDb(ref), refDefaultTrackIdList,
-                  refGroupIdList, slotNames, settingString, includeCoordinates,
-                  getSlotSettingFunc
-                )
-              )
-            }
-            return this._refCollection.get(ref).readyPromise
-          }))
-        })
+      this.__default = {
+        defaultTrackIdList: defaultTrackIdList,
+        groupIdList: groupIdList,
+        slotNames: slotNames,
+        settingString: settingString,
+        includeCoordinates: includeCoordinates,
+        getSlotSettingFunc: getSlotSettingFunc,
+      }
+      this.syncRefList(refList, false, this.__default.defaultTrackIdList,
+        this.__default.groupIdList, this.__default.slotNames,
+        this.__default.settingString, this.__default.includeCoordinates,
+        this.__default.getSlotSettingFunc)
     }
 
-    getPriorityManager (ref) {
-      return this._refCollection.get(ref)
+    syncRefList (refList, resetAll, defaultTrackIdList, groupIdList) {
+      this.__default.defaultTrackIdList =
+        defaultTrackIdList || this.__default.defaultTrackIdList
+      this.__default.groupIdList = groupIdList || this.__default.groupIdList
+      return (this.readyPromise = give.RefObject.allRefPromise
+        .then(() => Promise.all(refList.map((ref, index) => {
+          if (resetAll || !(this[ref] instanceof give.PriorityManager)) {
+            let refDefaultTrackIdList =
+              (Array.isArray(this.__default.defaultTrackIdList) &&
+                Array.isArray(this.__default.defaultTrackIdList[index]))
+                ? this.__default.defaultTrackIdList[index]
+                : this.__default.defaultTrackIdList
+            let refGroupIdList =
+              (Array.isArray(this.__default.groupIdList) &&
+                Array.isArray(this.__default.groupIdList[index]))
+                ? this.__default.groupIdList[index]
+                : this.__default.groupIdList
+            this[ref] = new give.PriorityManager(
+              give.RefObject.findRefByDb(ref), refDefaultTrackIdList,
+              refGroupIdList, this.__default.slotNames,
+              this.__default.settingString, this.__default.includeCoordinates,
+              this.__default.getSlotSettingFunc
+            )
+          }
+          return this[ref].readyPromise
+        })))
+      )
     }
   }
 
@@ -111,7 +123,7 @@ var GIVe = (function (give) {
         this._initialEventTargets = new Map()
         this._resolveInitPriorityManagerFunc = () => {}
         this.addEventListener('init-priority-manager',
-          e => this._initEventHandler(e))
+          e => this._initEventHandler(e), true)
       }
 
       static get properties () {
@@ -140,6 +152,12 @@ var GIVe = (function (give) {
         }
       }
 
+      ready () {
+        super.ready()
+        this.shadowRoot.addEventListener('init-priority-manager',
+          e => this._initEventHandler(e), true)
+      }
+
       _initEventHandler (e) {
         if (e.target === this) {
           // this event is initiated by self (not children)
@@ -149,27 +167,42 @@ var GIVe = (function (give) {
               // already initialized (by a parent or self)
               return this._fulfillInitPriorityManagerFunc(true)
             } else {
-              this.priorityManagers = new PriorityManagerCollection(
-                this._refArray, this.defaultTrackIdList, this.groupIdList,
-                this.slotNames, this.settingString, this.includeCoordinates,
-                this.getSlotSettingFunc
-              )
-              this._initialEventTargets.forEach((token, target, map) =>
-                target.dispatchEvent(new CustomEvent(
-                  'init-priority-manager',
-                  { detail: { initialized: true, token: token } }
-                ))
-              )
-              this._initialEventTargets.clear()
-              delete this._initialEventToken
-              return this._fulfillInitPriorityManagerFunc(true)
+              if (!this.priorityManagers) {
+                this.priorityManagers = new PriorityManagerCollection(
+                  this._refArray, this.defaultTrackIdList, this.groupIdList,
+                  this.slotNames, this.settingString, this.includeCoordinates,
+                  this.getSlotSettingFunc
+                )
+              } else {
+                this.priorityManagers.syncRefList(this._refArray, false,
+                  this.defaultTrackIdList, this.groupIdList)
+                this._refArray.forEach(
+                  ref => this.notifyPath('priorityManagers.' + ref))
+              }
+              this.priorityManagers.readyPromise.then(() => {
+                this._initialEventTargets.forEach((token, target, map) =>
+                  give.fireSignal('init-priority-manager',
+                    { initialized: true, token: token }, null, target
+                  )
+                )
+                this._initialEventTargets.clear()
+                return this._fulfillInitPriorityManagerFunc(true)
+              })
             }
           }
         } else {
           // this event is initiated by a child and may need to be captured
           if (!e.detail || !e.detail.initialized) {
             // not initialized (by a parent or self)
-            this._initialEventTargets.set(e.target, e.detail.token)
+            if (this._initialEventToken) {
+              this._initialEventTargets.set(e.target, e.detail.token)
+            } else {
+              this.priorityManagersReadyPromise.then(() =>
+                give.fireSignal('init-priority-manager',
+                  { initialized: true, token: e.detail.token }, null, e.target
+                )
+              )
+            }
             e.preventDefault()
             e.stopPropagation()
           }
@@ -192,18 +225,20 @@ var GIVe = (function (give) {
       }
 
       _refArrayChanged (newValue, oldValue) {
-        this._fulfillInitPriorityManagerFunc(false)
-        this._priorityManagersReadyPromise = new Promise((resolve, reject) => {
-          this._resolveInitPriorityManagerFunc = resolve
-          this._rejectInitPriorityManagerFunc = reject
-          this._initialEventToken =
-            Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 2)) + 1
-          this.dispatchEvent(new CustomEvent(
-            'init-priority-manager',
-            { detail: { token: this._initialEventToken } }
-          ))
-        })
-        return this._priorityManagersReadyPromise
+        if (!give.arrayEqual(newValue, oldValue)) {
+          this._fulfillInitPriorityManagerFunc(false)
+          this._priorityManagersReadyPromise =
+            new Promise((resolve, reject) => {
+              this._resolveInitPriorityManagerFunc = resolve
+              this._rejectInitPriorityManagerFunc = reject
+              this._initialEventToken =
+                Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 2)) + 1
+              give.fireSignal('init-priority-manager',
+                { token: this._initialEventToken }, null, this
+              )
+            })
+          return this._priorityManagersReadyPromise
+        }
       }
 
       get priorityManagersReadyPromise () {

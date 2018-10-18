@@ -475,6 +475,18 @@ var GIVe = (function (give) {
     return arr.slice(0, arrayLength)
   }
 
+  give.arrayEqual = function (arr1, arr2) {
+    arr1 = arr1 || []
+    arr2 = arr2 || []
+    if (!Array.isArray(arr1) || !Array.isArray(arr2)) {
+      throw new give.GiveError(
+        'give.arrayEqual() parameters not null or an array! ' +
+        'arr1: ' + arr1 + ', arr2: ' + arr2)
+    }
+    return (arr1.length === arr2.length) &&
+      arr1.every((elem, index) => elem === arr2[index])
+  }
+
   class PromiseCanceler extends Error {
     constructor (originalPromise) {
       super(...arguments)

@@ -264,13 +264,6 @@ var GIVe = (function (give) {
         _firstRun: {
           type: Boolean,
           value: true
-        },
-
-        priorityManagers: {
-          type: Object,
-          value: function () {
-            return {}
-          }
         }
       }
     }
@@ -406,25 +399,27 @@ var GIVe = (function (give) {
 
     getRefsReadyPromise () {
       return Promise.all(
-        this._chartWindows.map(window => window.refReadyPromise)
+        this._chartWindows.map(window => window.refReadyPromise).concat(
+          this.priorityManagersReadyPromise
+        )
       )
-        .then(() => {
-          // these two lines were intended to fix wrong ref db names
-          this._refArray = this._chartWindows.map(window => window.ref)
-          this._syncRefsArrayToJson()
+        // .then(() => {
+        //   // these two lines were intended to fix wrong ref db names
+        //   this._refArray = this._chartWindows.map(window => window.ref)
+        //   this._syncRefsArrayToJson()
 
-          // initialization of priority managers if not done already
-          this._refArray.forEach(ref => {
-            if (!this.priorityManagers.hasOwnProperty(ref)) {
-              this.priorityManagers[ref] = new give.PriorityManager(
-                give.RefObject.findRefByDb(ref),
-                this.defaultTrackIdList,
-                this.groupIdList)
-            }
-          })
-          return Promise.all(
-            this._refArray.map(ref => this.priorityManagers[ref].readyPromise))
-        })
+        //   // initialization of priority managers if not done already
+        //   this._refArray.forEach(ref => {
+        //     if (!this.priorityManagers.hasOwnProperty(ref)) {
+        //       this.priorityManagers[ref] = new give.PriorityManager(
+        //         give.RefObject.findRefByDb(ref),
+        //         this.defaultTrackIdList,
+        //         this.groupIdList)
+        //     }
+        //   })
+        //   return Promise.all(
+        //     this._refArray.map(ref => this.priorityManagers[ref].readyPromise))
+        // })
         .then(() =>
           this._chartWindows.forEach(window => (
             window.priorityManager = this.priorityManagers[window.ref]
@@ -629,8 +624,9 @@ var GIVe = (function (give) {
       return Promise.resolve()
         .then(() => {
           this._syncRefsJsonToArray(null, newRef)
-          return this._setRefsInWindow()
+          return this.priorityManagersReadyPromise
         })
+        .then(() => this._setRefsInWindow())
         .then(() => this.updateDom(newCoordinates))
     }
 

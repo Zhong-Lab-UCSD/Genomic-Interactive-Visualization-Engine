@@ -28,6 +28,7 @@ limitations under the License.
 <link rel="import" href="../chart-track-list/chart-track-list.html">
 <link rel="import" href="../custom-track-controller/custom-track-controller.html">
 <link rel="import" href="../give-card/give-card.html">
+<link rel="import" href="../priority-manager/priority-manager.html">
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
 <!--
@@ -250,11 +251,12 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
 var GIVe = (function (give) {
   'use strict'
 
-  class ChartController extends Polymer.Element {
+  class ChartController extends
+    give.PriorityManagerCollectionEmbedMixin(Polymer.Element)
+  {
     constructor () {
       super()
       this._updatingRefCoordinates = false
-      this._refArray = []
     }
     static get is () {
       return 'chart-controller'
@@ -272,8 +274,7 @@ var GIVe = (function (give) {
         numOfSubs: {
           type: Number,
           value: 1,
-          notify: true,
-          observer: '_numOfSubsRefCoordinateChanged'
+          notify: true
         },
 
         /**
@@ -322,14 +323,12 @@ var GIVe = (function (give) {
          */
         coordinate: {
           type: String,
-          notify: true,
-          observer: '_numOfSubsRefCoordinateChanged'
+          notify: true
         },
 
         ref: {
           type: String,
-          notify: true,
-          observer: '_numOfSubsRefCoordinateChanged'
+          notify: true
         },
 
         /**
@@ -368,15 +367,18 @@ var GIVe = (function (give) {
         hasControls: {
           type: Boolean,
           value: false
-        },
-
-        priorityManagers: {
-          type: Object,
-          value: function () {
-            return {}
-          }
         }
       }
+    }
+
+    /**
+      * Array of strings describing multi-property observer methods and their
+      * dependant properties
+      */
+    static get observers() {
+      return [
+        '_numOfSubsRefCoordinateChanged(numOfSubs, ref, coordinate)'
+      ]
     }
 
     // listeners: {
@@ -398,22 +400,22 @@ var GIVe = (function (give) {
       give._verbConsole.info('<chart-controller> Lifecycle: ready() (early)')
       super.ready()
       give._verbConsole.info('<chart-controller> Lifecycle: ready() (late)')
-      this._numOfSubsRefCoordinateChanged()
-      give.RefObject.allRefPromise.then(() =>
-        this._refArray.forEach(ref => {
-          let refObj = give.RefObject.findRefByDb(ref)
-          if (refObj && !this.priorityManagers.hasOwnProperty(ref)) {
-            if (refObj) {
-              this.priorityManagers[ref] = new give.PriorityManager(
-                refObj, this.defaultTrackIdList, this.groupIdList)
-            }
-          } else if (refObj) {
-            this.priorityManagers[ref].asyncReset(
-              refObj, this.defaultTrackIdList, this.groupIdList)
-            this.notifyPath('priorityManagers.' + ref)
-          }
-        })
-      )
+      // this._numOfSubsRefCoordinateChanged()
+      // give.RefObject.allRefPromise.then(() =>
+      //   this._refArray.forEach(ref => {
+      //     let refObj = give.RefObject.findRefByDb(ref)
+      //     if (refObj && !this.priorityManagers.hasOwnProperty(ref)) {
+      //       if (refObj) {
+      //         this.priorityManagers[ref] = new give.PriorityManager(
+      //           refObj, this.defaultTrackIdList, this.groupIdList)
+      //       }
+      //     } else if (refObj) {
+      //       this.priorityManagers[ref].asyncReset(
+      //         refObj, this.defaultTrackIdList, this.groupIdList)
+      //       this.notifyPath('priorityManagers.' + ref)
+      //     }
+      //   })
+      // )
       this.addEventListener('list-expand', e => this._expandList(e))
       this.addEventListener('list-collapse', e => this._collapseList(e))
       this.addEventListener('update-track-list',
@@ -567,7 +569,9 @@ var GIVe = (function (give) {
       let refArray = give.getValueArray(this.ref, this.numOfSubs)
       if (this._coordinateObjectArray) {
         this.splice('_coordinateObjectArray', 0)
-        this._refArray = refArray
+        if (!give.arrayEqual(this._refArray, refArray)) {
+          this._refArray = refArray
+        }
         coordinates.forEach((coordinate, index) => {
           this.push('_coordinateObjectArray', {
             ref: refArray[index],
@@ -578,7 +582,7 @@ var GIVe = (function (give) {
       }
     }
 
-    _numOfSubsRefCoordinateChanged (newValue, oldValue) {
+    _numOfSubsRefCoordinateChanged (numOfSubs, ref, coordinate) {
       if (!this._updatingRefCoordinates) {
         return this._syncCoordinateRefJsonToArray()
       }
