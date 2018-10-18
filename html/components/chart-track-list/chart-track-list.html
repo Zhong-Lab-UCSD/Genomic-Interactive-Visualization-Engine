@@ -12,6 +12,7 @@
 <link rel="import" href="chart-track-group-list.html">
 <link rel="import" href="../ref-object/ref-object.html">
 <link rel="import" href="../give-styles.html">
+<link rel="import" href="../priority-manager/priority-manager.html">
 <!-- <link rel="import" href="../meta-track-filter/meta-track-filter.html"> -->
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,700italic,700,400" rel="stylesheet" type="text/css">
@@ -137,9 +138,9 @@ var GIVe = (function (give) {
 
   class ChartTrackList extends Polymer.mixinBehaviors([
     Polymer.IronResizableBehavior
-  ], Polymer.Element) {
+  ], give.PriorityManagerCollectionEmbedMixin(Polymer.Element)) {
     constructor () {
-      super(...arguments)
+      super()
       this._updatingRef = false
       this._refTrackLists = []
       this.domReadyPromise = null
@@ -256,14 +257,6 @@ var GIVe = (function (give) {
           type: String,
           value: '',
           observer: '_refChanged'
-        },
-
-        priorityManagers: {
-          type: Object,
-          notify: true,
-          value: function () {
-            return {}
-          }
         }
       }
     }
@@ -384,29 +377,22 @@ var GIVe = (function (give) {
     }
 
     _syncRefJsonToArray () {
-      let refArray = this._getUniqueRefArrayFromJson(this.ref)
-      this._refItemArray = refArray.map((refDbName, index) => {
-        let refObj = give.RefObject.findRefByDb(refDbName)
-        if (!this.priorityManagers.hasOwnProperty(refObj.db)) {
-          this.priorityManagers[refObj.db] = new give.PriorityManager(
-            refObj, this.defaultTrackIdList, this.groupIdList)
-        }
-        return {
-          db: refDbName,
-          refObj: give.RefObject.findRefByDb(refDbName),
-          selectedTracks: new give.TrackGroup(),
-          priorityManager: this.priorityManagers[refObj.db]
-        }
+      this._refArray = this._getUniqueRefArrayFromJson(this.ref)
+      return this.priorityManagersReadyPromise.then(() => {
+        this._refItemArray = this._refArray.map((refDbName, index) => {
+          let refObj = give.RefObject.findRefByDb(refDbName)
+          return {
+            db: refDbName,
+            refObj: give.RefObject.findRefByDb(refDbName),
+            selectedTracks: new give.TrackGroup(),
+            priorityManager: this.priorityManagers[refObj.db]
+          }
+        })
+        this._refItemArray.forEach((refItem, index) => {
+          this.linkPaths('priorityManagers.' + refItem.db,
+            '_refItemArray.' + index + '.priorityManager')
+        })
       })
-      this._refItemArray.forEach((refItem, index) => {
-        this.linkPaths('priorityManagers.' + refItem.db,
-          '_refItemArray.' + index + '.priorityManager')
-      })
-      return Promise.all(
-        this._refItemArray.map(
-          refItem => refItem.priorityManager.readyPromise
-        )
-      )
     }
 
     _refChanged (newValue, oldValue) {

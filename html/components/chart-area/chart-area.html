@@ -20,6 +20,7 @@ limitations under the License.
 <link rel="import" href="../basic-func/basic-func.html">
 <link rel="import" href="../chart-window/chart-window.html">
 <link rel="import" href="../promise-aggregator/promise-aggregator.html">
+<link rel="import" href="../priority-manager/priority-manager.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../tutorial-highlight/tutorial-highlight.html">
@@ -127,10 +128,10 @@ var GIVe = (function (give) {
    *    side-by-side view
    */
   class ChartArea extends Polymer.mixinBehaviors([
-    Polymer.IronResizableBehavior], Polymer.Element
-  ) {
+    Polymer.IronResizableBehavior
+  ], give.PriorityManagerCollectionEmbedMixin(Polymer.Element)) {
     constructor () {
-      super(...arguments)
+      super()
       this._resizeDebounceInt = this.constructor.DEFAULT_RESIZE_DEBOUNCE
       this._idEnforcedSet = new Set()
       this._chartWindows = []

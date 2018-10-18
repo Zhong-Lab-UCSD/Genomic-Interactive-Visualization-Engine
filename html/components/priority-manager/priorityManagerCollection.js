@@ -108,36 +108,10 @@ var GIVe = (function (give) {
     class extends base {
       constructor () {
         super()
-        this._initialEventTargets = []
+        this._initialEventTargets = new Map()
         this._resolveInitPriorityManagerFunc = () => {}
-        this.addEventListener('init-priority-manager', e => {
-          if (e.detail && e.detail.initialized) {
-            // already initialized (by a parent or self)
-            return this._resolveInitPriorityManagerFunc()
-          }
-          if (e.target === this) {
-            // this event is initiated by self (not children)
-            // initialize `this.priorityManagers`
-            this.priorityManagers = new PriorityManagerCollection(
-              this._refArray, this.defaultTrackIdList, this.groupIdList,
-              this.slotNames, this.settingString, this.includeCoordinates,
-              this.getSlotSettingFunc
-            )
-            this._initialEventTargets.forEach(target =>
-              target.dispatchEvent(new CustomEvent(
-                'init-priority-manager',
-                { detail: { initialized: true } }
-              ))
-            )
-            this._initialEventTargets.length = 0
-            return this._resolveInitPriorityManagerFunc()
-          } else {
-            // this event is initiated by a child and needs to be captured
-            this._initialEventTargets.push(e.target)
-            e.preventDefault()
-            e.stopPropagation()
-          }
-        })
+        this.addEventListener('init-priority-manager',
+          e => this._initEventHandler(e))
       }
 
       static get properties () {
@@ -160,109 +134,85 @@ var GIVe = (function (give) {
            */
           priorityManagers: {
             type: Object,
-            value: null
+            value: null,
+            notify: true
           }
+        }
+      }
+
+      _initEventHandler (e) {
+        if (e.target === this) {
+          // this event is initiated by self (not children)
+          if (e.detail.token === this._initialEventToken) {
+            // this event is for the current one
+            if (e.detail && e.detail.initialized) {
+              // already initialized (by a parent or self)
+              return this._fulfillInitPriorityManagerFunc(true)
+            } else {
+              this.priorityManagers = new PriorityManagerCollection(
+                this._refArray, this.defaultTrackIdList, this.groupIdList,
+                this.slotNames, this.settingString, this.includeCoordinates,
+                this.getSlotSettingFunc
+              )
+              this._initialEventTargets.forEach((token, target, map) =>
+                target.dispatchEvent(new CustomEvent(
+                  'init-priority-manager',
+                  { detail: { initialized: true, token: token } }
+                ))
+              )
+              this._initialEventTargets.clear()
+              delete this._initialEventToken
+              return this._fulfillInitPriorityManagerFunc(true)
+            }
+          }
+        } else {
+          // this event is initiated by a child and may need to be captured
+          if (!e.detail || !e.detail.initialized) {
+            // not initialized (by a parent or self)
+            this._initialEventTargets.set(e.target, e.detail.token)
+            e.preventDefault()
+            e.stopPropagation()
+          }
+          // otherwise ignore and let the event pass
+        }
+      }
+
+      _fulfillInitPriorityManagerFunc (resolve) {
+        if (this._initialEventToken) {
+          if (resolve) {
+            this._resolveInitPriorityManagerFunc()
+          } else {
+            this._rejectInitPriorityManagerFunc(new give.PromiseCanceler())
+          }
+          delete this._initialEventToken
+          delete this._resolveInitPriorityManagerFunc
+          delete this._rejectInitPriorityManagerFunc
+          delete this._priorityManagersReadyPromise
         }
       }
 
       _refArrayChanged (newValue, oldValue) {
+        this._fulfillInitPriorityManagerFunc(false)
         this._priorityManagersReadyPromise = new Promise((resolve, reject) => {
           this._resolveInitPriorityManagerFunc = resolve
-          this.dispatchEvent(new CustomEvent('init-priority-manager'))
+          this._rejectInitPriorityManagerFunc = reject
+          this._initialEventToken =
+            Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 2)) + 1
+          this.dispatchEvent(new CustomEvent(
+            'init-priority-manager',
+            { detail: { token: this._initialEventToken } }
+          ))
         })
+        return this._priorityManagersReadyPromise
       }
 
       get priorityManagersReadyPromise () {
         return this._priorityManagersReadyPromise
-          ? this._priorityManagersReadyPromise
-          : Promise.resolve()
-      }
-
-      _syncRefsJsonToArray (numOfWindows, newRefValue) {
-        numOfWindows = numOfWindows || this.numOfSubs
-        newRefValue = newRefValue || this.ref
-        this._refArray = give.getValueArray(newRefValue, numOfWindows)
-      }
-
-      /**
-       * The observer function to handle changes in `this.ref`.
-       *
-       * this will reset all tracks and redo the ref
-       * note that the tracks should already be initialized before switching here
-       * After this, this.changeAllViewWindows should be called.
-       *
-       * If references are not ready (for example, need to be populated from a
-       * server), `this._setRefAfterReadyCheck` will be called
-       * after they are ready.
-       *
-       * @async
-       * @param  {string} newValue - new reference name
-       * @param  {string} oldValue - old reference name
-       */
-      _refChanged (newValue, oldValue) {
-        if (!this._changingRef) {
-          if (newValue) {
-            return give.RefObject.allRefPromise
-              .then(() => this._setRefAfterReadyCheck(newValue))
-              .catch(err => {
-                // call UI warning procedures in the future
-                give.fireSignal('give-warning', { msg: err.message })
-                this.refReadyPromise = Promise.reject(err)
-              })
-              .finally(() => {
-                this._changingRef = true
-                this.ref = this.refObj ? this.refObj.db : null
-                this._changingRef = false
-              })
-          } else if (this.refObj) {
-            let err = new give.GiveError('No ref value supplied!')
-            give._verbConsole.warn(err)
-            this.refReadyPromise = Promise.reject(err)
-          }
-        }
-      }
-
-      /**
-       * Get the current reference of the element.
-       *
-       * @return {GIVe.RefObject}  reference currently used.
-       */
-      get refObj () {
-        return this._refObj
-      }
-
-      /**
-       * _setRefAfterReadyCheck - The function actually called after
-       * the references are ready.
-       *
-       * @param  {string|GIVe.RefObject} ref - the reference name or reference
-       *    object
-       */
-      _setRefAfterReadyCheck (ref) {
-        this._setRefObj(give.RefObject.findRefByDb(ref))
-      }
-
-      /**
-       * Simple function to set reference directly.
-       *
-       * @param  {GIVe.RefObject} refObj the reference object
-       * @returns {boolean} Whether the reference object has been changed.
-       */
-      _setRefObj (refObj) {
-        if (!this.refObj || this.refObj.db !== refObj.db) {
-          if (!this.needsChromInfo || refObj.chromInfo) {
-            // reference has been changed, needs to switch
-            this._refObj = refObj
-            this.refReadyPromise = refObj.initTracks()
-          } else {
-            this.refReadyPromise = Promise.reject(
-              new give.GiveError('No ChromInfo available for ref "' +
-              refObj.db + '"!')
-            )
-          }
-          return true
-        }
-        return false
+          ? this._priorityManagersReadyPromise.then(
+            () => this.priorityManagers.readyPromise)
+          : (this.priorityManagers && this.priorityManagers.readyPromise
+            ? this.priorityManagers.readyPromise
+            : Promise.resolve())
       }
     }
   )
