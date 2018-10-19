@@ -288,35 +288,6 @@ var GIVe = (function (give) {
         },
 
         /**
-         * The track groups included in the embedded browser. Group IDs are
-         * specified in the data source. The data source on our server currently
-         * provides these track groups:
-         * *  `'genes'`: gene annotation tracks, for all available references
-         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and
-         *    `hg19` only
-         * *  `'interaction'`: genomic interaction data sets, including those
-         * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-         * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-         * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-         * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-         * for `mm10` only
-         * @type {Array<string>}
-         */
-        groupIdList: {
-          type: Array,
-          value () {
-            return []
-          }
-        },
-
-        defaultTrackIdList: {
-          type: Array,
-          value () {
-            return []
-          }
-        },
-
-        /**
          * Coordinates of every view.
          * This is the value that can be specified by HTML attributes.
          * @type {Array<string>}
@@ -397,9 +368,7 @@ var GIVe = (function (give) {
      * initialized.
      */
     ready () {
-      give._verbConsole.info('<chart-controller> Lifecycle: ready() (early)')
       super.ready()
-      give._verbConsole.info('<chart-controller> Lifecycle: ready() (late)')
       // this._numOfSubsRefCoordinateChanged()
       // give.RefObject.allRefPromise.then(() =>
       //   this._refArray.forEach(ref => {
@@ -420,17 +389,6 @@ var GIVe = (function (give) {
       this.addEventListener('list-collapse', e => this._collapseList(e))
       this.addEventListener('update-track-list',
         e => this._trackListUpdateHandler(e))
-    }
-
-    /**
-      * Called every time the element is inserted into the DOM. Useful for
-      * running setup code, such as fetching resources or rendering.
-      * Generally, you should try to delay work until this time.
-      */
-    connectedCallback () {
-      give._verbConsole.info('<chart-controller> Lifecycle: connectedCallback() (early)')
-      super.connectedCallback()
-      give._verbConsole.info('<chart-controller> Lifecycle: connectedCallback() (late)')
     }
 
     /**

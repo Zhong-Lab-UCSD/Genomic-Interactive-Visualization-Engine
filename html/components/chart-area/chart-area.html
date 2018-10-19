@@ -176,35 +176,6 @@ var GIVe = (function (give) {
         },
 
         /**
-         * The track groups included in the embedded browser. Group IDs are
-         * specified in the data source. The data source on our server currently
-         * provides these track groups:
-         * *  `'genes'`: gene annotation tracks, for all available references
-         * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and `hg19` only
-         * *  `'interaction'`: genomic interaction data sets, including those
-         * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
-         * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
-         * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
-         * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
-         * for `mm10` only
-         * @type {Array.<string>}
-         */
-        groupIdList: {
-          // this is the array of allowed group IDs in the list
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        defaultTrackIdList: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
-        /**
          * Number of sub views in this controller.
          * Notice that if this setting is different from `coordinates.length`,
          * adjustments will be made to `coordinates` (truncating excessive
@@ -269,12 +240,10 @@ var GIVe = (function (give) {
     }
 
     ready () {
-      give._verbConsole.info('<chart-area> Lifecycle: ready() (early)')
       this._updatingCoordinates = true
       this._updatingRefs = true
       this._updatingNumOfSubs = true
       super.ready()
-      give._verbConsole.info('<chart-area> Lifecycle: ready() (late)')
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
         this.addEventListener('give-warning', e => this._warningHandler(e))
@@ -286,9 +255,7 @@ var GIVe = (function (give) {
     }
 
     connectedCallback () {
-      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (early)')
       super.connectedCallback()
-      give._verbConsole.info('<chart-area> Lifecycle: connectedCallback() (late)')
       Polymer.RenderStatus.afterNextRender(this, () => {
         this.updatePromise = give.RefObject.allRefPromise
           .then(() => this.updateNumOfSubs(this.numOfSubs))
