@@ -141,6 +141,29 @@ var GIVe = (function (give) {
           },
 
           /**
+           * The track groups included in the embedded browser. Group IDs are
+           * specified in the data source. The data source on our server
+           * currently provides these track groups:
+           * *  `'genes'`: gene annotation tracks, for all available references
+           * *  `'encode'`: ENCODE data sets for human and mouse, for `mm9` and
+           *    `hg19` only
+           * *  `'interaction'`: genomic interaction data sets, including those
+           * generated from Hi-C (chromatin-chromatin) and MARGI (RNA-chromatin)
+           * data, for `mm10`, `hg38` (MARGI) and `hg19` (Hi-C)
+           * *  `'singleCell'`: mouse embryo single-cell RNA-seq data set from
+           * [Biase *et al.*, *Genome Research*, **24**:1787-1796](http://genome.cshlp.org/content/24/11/1787.full),
+           * for `mm10` only
+           * @type {Array<string>}
+           */
+          groupIdList: {
+            type: Array
+          },
+
+          defaultTrackIdList: {
+            type: Array
+          },
+
+          /**
            * Priority managers.
            * @type {give.PriorityManagerCollection}
            */

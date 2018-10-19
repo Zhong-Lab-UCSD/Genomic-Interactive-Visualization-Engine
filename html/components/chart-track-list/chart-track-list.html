@@ -165,11 +165,6 @@ var GIVe = (function (give) {
           }
         },
 
-        groupIdList: {
-          // this is the array of allowed group IDs in the list
-          type: Array
-        },
-
         /**
          * Whether the list will include a part showing all selected tracks.
          * The list of selected tracks will immediately update if any track
@@ -246,41 +241,12 @@ var GIVe = (function (give) {
           value: false
         },
 
-        defaultTrackIdList: {
-          type: Array,
-          value: function () {
-            return []
-          }
-        },
-
         ref: {
           type: String,
           value: '',
           observer: '_refChanged'
         }
       }
-    }
-
-    ready () {
-      give._verbConsole.info('<chart-track-list> Lifecycle: ready() (early)')
-      this._updatingRef = true
-      super.ready()
-      give._verbConsole.info('<chart-track-list> Lifecycle: ready() (late)')
-      Polymer.RenderStatus.beforeNextRender(this, () => {
-        this._updatingRef = false
-        this._refChanged(this.ref)
-      })
-    }
-
-    /**
-      * Called every time the element is inserted into the DOM. Useful for
-      * running setup code, such as fetching resources or rendering.
-      * Generally, you should try to delay work until this time.
-      */
-    connectedCallback () {
-      give._verbConsole.info('<chart-track-list> Lifecycle: connectedCallback() (early)')
-      super.connectedCallback()
-      give._verbConsole.info('<chart-track-list> Lifecycle: connectedCallback() (late)')
     }
 
     _calcRefIcon (refObj) {
