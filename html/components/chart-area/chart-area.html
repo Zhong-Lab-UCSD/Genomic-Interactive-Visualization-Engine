@@ -242,7 +242,6 @@ var GIVe = (function (give) {
     ready () {
       this._updatingCoordinates = true
       this._updatingRefs = true
-      this._updatingNumOfSubs = true
       super.ready()
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
@@ -252,14 +251,6 @@ var GIVe = (function (give) {
       this._windowPromiseAggregator = new give.PromiseAggregator(
         null, this.passExceptions ? null : err => this._windowErrHandler(err)
       )
-    }
-
-    connectedCallback () {
-      super.connectedCallback()
-      Polymer.RenderStatus.afterNextRender(this, () => {
-        this.updatePromise = give.RefObject.allRefPromise
-          .then(() => this.updateNumOfSubs(this.numOfSubs))
-      })
     }
 
     get _childIsInitialized () {
