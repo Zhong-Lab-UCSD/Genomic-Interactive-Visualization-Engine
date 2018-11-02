@@ -16,40 +16,44 @@ Dynamically loads the legacy Google JavaScript API Loader (https://developers.go
 Fires `api-load` event when ready.
 -->
 <script>
-  Polymer({
+  (function() {
+    'use strict';
 
-    is: 'google-legacy-loader',
+    Polymer({
 
-    behaviors: [
-      Polymer.IronJsonpLibraryBehavior
-    ],
+      is: 'google-legacy-loader',
 
-    properties: {
+      behaviors: [
+        Polymer.IronJsonpLibraryBehavior
+      ],
 
-      /** @private */
-      libraryUrl: {
-        type: String,
-        value: 'https://www.google.com/jsapi?callback=%%callback%%'
+      properties: {
+
+        /** @private */
+        libraryUrl: {
+          type: String,
+          value: 'https://www.google.com/jsapi?callback=%%callback%%'
+        },
+
+        /**
+         * Fired when the API library is loaded and available.
+         * @event js-api-load
+         */
+        /**
+         * Name of event fired when library is loaded and available.
+         */
+        notifyEvent: {
+          type: String,
+          value: 'api-load'
+        }
       },
 
       /**
-       * Fired when the API library is loaded and available.
-       * @event js-api-load
+       * Wrapper for `google` API namespace.
        */
-      /**
-       * Name of event fired when library is loaded and available.
-       */
-      notifyEvent: {
-        type: String,
-        value: 'api-load'
+      get api() {
+        return google;
       }
-    },
-
-    /**
-     * Wrapper for `google` API namespace.
-     */
-    get api() {
-      return google;
-    }
-  });
+    });
+  })();
 </script>

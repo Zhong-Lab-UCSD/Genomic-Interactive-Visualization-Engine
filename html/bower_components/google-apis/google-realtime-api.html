@@ -16,42 +16,46 @@ Dynamically loads the Google Drive Realtime API, firing the `api-load` event whe
 Any number of components can use `<google-realtime-api>` elements, and the library will only be loaded once.
 -->
 <script>
-  Polymer({
+  (function() {
+    'use strict';
 
-    is: 'google-realtime-api',
+    Polymer({
 
-    behaviors: [
-      Polymer.IronJsonpLibraryBehavior
-    ],
+      is: 'google-realtime-api',
 
-    properties: {
+      behaviors: [
+        Polymer.IronJsonpLibraryBehavior
+      ],
 
-      /** @private */
-      libraryUrl:  {
-        type: String,
-        value: 'https://apis.google.com/js/drive-realtime.js?onload=%%callback%%'
+      properties: {
+
+        /** @private */
+        libraryUrl:  {
+          type: String,
+          value: 'https://apis.google.com/js/drive-realtime.js?onload=%%callback%%'
+        },
+
+         /**
+         * Fired when the API library is loaded and available.
+         * @event api-load
+         */
+        /**
+         * Name of event fired when library is loaded and available.
+         */
+        notifyEvent:  {
+          type: String,
+          value: 'api-load'
+        }
+
       },
 
-       /**
-       * Fired when the API library is loaded and available.
-       * @event api-load
-       */
       /**
-       * Name of event fired when library is loaded and available.
+       * Returns `gapi.drive.realtime`
        */
-      notifyEvent:  {
-        type: String,
-        value: 'api-load'
+      get api() {
+        return window.gapi.drive.realtime;
       }
 
-    },
-
-    /**
-     * Returns `gapi.drive.realtime`
-     */
-    get api() {
-      return gapi.drive.realtime;
-    }
-
-  });
+    });
+  })();
 </script>
