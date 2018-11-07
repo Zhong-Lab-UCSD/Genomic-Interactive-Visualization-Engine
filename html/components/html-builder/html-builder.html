@@ -39,6 +39,11 @@ limitations under the License.
         overflow-x: auto;
         @apply --layout-vertical;
       }
+      hr {
+        margin: 0.2em 24px -1em 24px;
+        border: none;
+        border-top: 1px groove;
+      }
       div.controllerInputs {
         --base-font-size: 12px;
       }
@@ -78,7 +83,7 @@ limitations under the License.
         @apply --layout-flex;
       }
       div.controllerGroup > gene-coor-input {
-        width: 18em;
+        width: 21em;
         margin-top: 0.5em;
         margin-bottom: 0.5em;
         --gene-coor-input-dropdown-background: var(--card-background-color);
@@ -112,7 +117,14 @@ limitations under the License.
           </div>
           <div class="layout horizontal start">
             <div class="anno">Groups Selected: </div>
-            <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
+            <div>
+              <template is="dom-repeat" items="[[dispGroupArray]]">
+                <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
+              </template>
+              <template is="dom-if" if="{{dispGroupArray}}">
+                <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
+              </template>
+            </div>
           </div>
           <div class="layout horizontal start">
             <div class="anno">Tracks Selected: </div>
@@ -144,40 +156,48 @@ limitations under the License.
             <paper-listbox slot="dropdown-content" id="dispModeMenu"
               attr-for-selected="value" selected="{{_numOfSubs}}">
               <paper-item value="1">
-                Single Window
+                Single-window
               </paper-item>
               <paper-item value="2">
-                Dual Window
+                Dual-window
               </paper-item>
             </paper-listbox>
           </paper-dropdown-menu>
           <gene-coor-input ref="[[ref]]"
             label="[[_computeLabelForCoorOne(_numOfSubs)]]"
-            value="{{_defaultCoor1}}">
+            value="{{_defaultCoor1}}"
+            on-blur="_settingChanged">
           </gene-coor-input>
           <template is="dom-if" if="[[_multiWindow(_numOfSubs)]]">
             <gene-coor-input ref="[[ref]]"
               label="[[_computeLabelForCoorTwo(_numOfSubs)]]"
-              value="{{_defaultCoor2}}">
+              value="{{_defaultCoor2}}"
+              on-blur="_settingChanged">
             </gene-coor-input>
           </template>
         </div>
-        <paper-button raised on-tap="updateCode" class="self-start">
-          <iron-icon icon="refresh"></iron-icon>
-          Update code
-        </paper-button>
       </div>
+      <hr>
       <paper-textarea id="codeRegion" label="Embed Code" value="{{htmlCode}}"
         disabled$="[[_needUpdate]]">
       </paper-textarea>
       <div class="buttons">
-        <template is="dom-if" if="[[_showStatusMessage]]">
+        <template is="dom-if" if="[[_computeCanUpdate(_needUpdate, _hasError)]]">
           <div class="statusMessage">[[_statusMessage]]</div>
+        </template>
+        <template is="dom-if" if="[[_hasError]]">
+          <div class="statusMessage error">[[_errorMessage]]</div>
+        </template>
+        <template is="dom-if" if="[[_computeCanUpdate(_needUpdate, _hasError)]]">
+          <paper-button raised on-tap="updateCode" disabled$="[[_hasError]]">
+            <iron-icon icon="refresh"></iron-icon>
+            Update code
+          </paper-button>
         </template>
         <template is="dom-if" if="[[_clipboardEnabled]]">
           <template is="dom-if" if="[[!_showClipboardState]]">
             <paper-button on-tap="copyToClipboard"
-              disabled$="[[!_computeClipboardEnabled(_needUpdate, _clipboardEnabled)]]">
+              disabled$="[[!_computeClipboardEnabled(_needUpdate, _hasError, _clipboardEnabled)]]">
               <iron-icon icon="content-copy"></iron-icon>
               Copy code to clipboard
             </paper-button>
@@ -195,7 +215,7 @@ limitations under the License.
             Cannot access clipboard
           </div>
         </template>
-        <paper-button disabled$="[[_needUpdate]]" on-tap="saveCode">
+        <paper-button disabled$="[[!_computeSaveEnabled(_needUpdate, _hasError)]]" on-tap="saveCode">
           <iron-icon icon="file-download"></iron-icon>
           Save
         </paper-button>
@@ -249,14 +269,12 @@ var GIVe = (function (give) {
 
         _defaultCoor1: {
           type: String,
-          value: '',
-          observer: '_settingChanged'
+          value: ''
         },
 
         _defaultCoor2: {
           type: String,
-          value: '',
-          observer: '_settingChanged'
+          value: ''
         },
 
         _clipboardEnabled: {
@@ -269,20 +287,25 @@ var GIVe = (function (give) {
           value: false
         },
 
-        _showStatusMessage: {
-          type: Boolean,
-          value: false
-        },
-
         _statusMessage: {
           type: String,
           value: ''
         },
 
+        _errorMessage: {
+          type: String,
+          value: 'Please fix errors before updating the code.'
+        },
+        
         htmlCode: {
           type: String,
           value: '',
           observer: '_codeChanged'
+        },
+
+        _hasError: {
+          type: Boolean,
+          value: false
         }
       }
     }
@@ -324,18 +347,18 @@ var GIVe = (function (give) {
     _calcTrackLabel (trackArray) {
       // Try to use track title first, if too long, then just use
       // 'n track(s)'
-      var result = '(None selected)'
+      let result = '(None selected)'
       if (trackArray) {
         result = ''
-        trackArray.every(function (track, index) {
-          result += (index > 0 ? ', ' : '') +
+        trackArray.every((track, index) => {
+          result += (index > 0 ? ',<br>' : '') +
             (track.title || track.getSetting('shortLabel', 'string'))
           if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
             result = null
             return false
           }
           return true
-        }, this)
+        })
         if (!result) {
           result = trackArray.length > 0
             ? (trackArray.length + ' track' +
@@ -346,8 +369,16 @@ var GIVe = (function (give) {
       return result
     }
 
-    _computeClipboardEnabled (needUpdate, clipboardEnabled) {
-      return !needUpdate && clipboardEnabled
+    _computeClipboardEnabled (needUpdate, hasError, clipboardEnabled) {
+      return !needUpdate && !hasError && clipboardEnabled
+    }
+
+    _computeSaveEnabled (needUpdate, hasError) {
+      return !needUpdate && !hasError
+    }
+
+    _computeCanUpdate (needUpdate, hasError) {
+      return needUpdate && !hasError
     }
 
     _computeLabelForCoorOne (numOfSubs) {
@@ -368,53 +399,41 @@ var GIVe = (function (give) {
     }
 
     _validateCoordinates () {
+      let coorElems = [...this.shadowRoot.querySelectorAll('gene-coor-input')]
       // First determine if any of the coordinates are filled
-      var index, elem
-      this._coordinatesFilled = false
-      for (index = 0; index < this._numOfSubs; index++) {
-        if (this.shadowRoot.querySelectorAll('gene-coor-input')[index].value) {
-          this._coordinatesFilled = true
-          break
-        }
-      }
-
-      for (index = 0; index < this._numOfSubs; index++) {
-        elem = this.shadowRoot.querySelectorAll('gene-coor-input')[index]
+      this._coordinatesFilled = coorElems.some(elem => !!elem.value)
+      coorElems.forEach(elem => {
         elem.validate()
         if ((!!elem.value) !== this._coordinatesFilled) {
-          elem.errorMessage =
-            'Coordinates should be all blank or all filled!'
-          elem.invalid = true
+          elem.overrideErrorMessage =
+            'Defaults should be both blank or both filled!'
+        } else {
+          elem.overrideErrorMessage = ''
         }
-      }
-
+      })
       // Then find potential invalid coordinates
-      for (index = 0; index < this._numOfSubs; index++) {
-        elem = this.shadowRoot.querySelectorAll('gene-coor-input')[index]
-        if (elem.invalid) {
-          return false
-        }
-      }
-      return true
+      return coorElems.every(elem => !elem.invalid)
     }
 
     _resetClipboardState () {
       this._showClipboardState = false
       this._showStatusMessage = false
       this._statusMessage = ''
+      this._hasError = false
     }
 
     _settingChanged (newValue, oldValue) {
       Polymer.RenderStatus.afterNextRender(this, () => {
         this._resetClipboardState()
-        if (this._updatedCode && this.htmlCode !== this._updatedCode) {
+        let updatedCode = this._updatedCode
+        if (updatedCode && this.htmlCode !== updatedCode) {
           this._statusMessage = this.constructor.STATUS_NEED_UPDATE
           this._needUpdate = true
-          this._showStatusMessage = true
-        } else {
+        } else if (!this.htmlCode) {
           this._statusMessage = ''
           this._needUpdate = false
-          this._showStatusMessage = false
+        } else {
+          this._hasError = true
         }
       })
     }
@@ -463,7 +482,7 @@ var GIVe = (function (give) {
             coordinateArray.push(
               this.shadowRoot.querySelectorAll('gene-coor-input')[i].value)
           }
-          result += '\n  coordinates=\'["' +
+          result += '\n  coordinate=\'["' +
             coordinateArray.join('", "') + '"]\''
         }
 
@@ -484,7 +503,6 @@ var GIVe = (function (give) {
       this.htmlCode = this._updatedCode || this.htmlCode
       this.updateCodeLink()
       this._needUpdate = false
-      this._showStatusMessage = false
       this._statusMessage = ''
     }
 
