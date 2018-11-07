@@ -22,8 +22,8 @@ var GIVe = (function (give) {
    * A collection of priority managers for different references.
    *  This is used to synchronize reference track states across different
    *  elements, such as `<chart-controller>`, `<chart-track-list>` and others
-   * 
-   * @property {Promise} readyPromise 
+   *
+   * @property {Promise} readyPromise
    *
    * @class PriorityManagerCollection
    */
@@ -65,7 +65,7 @@ var GIVe = (function (give) {
         slotNames: slotNames,
         settingString: settingString,
         includeCoordinates: includeCoordinates,
-        getSlotSettingFunc: getSlotSettingFunc,
+        getSlotSettingFunc: getSlotSettingFunc
       }
       this.syncRefList(refList, false, this.__default.defaultTrackIdList,
         this.__default.groupIdList, this.__default.slotNames,
