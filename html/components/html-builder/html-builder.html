@@ -62,14 +62,16 @@ limitations under the License.
         display: inline-block;
       }
       div.anno {
-        width: 8em;
         color: var(--default-primary-color);
-        margin-right: 0.2em;
+        margin-right: 0.5em;
+      }
+      div.anno::first-letter {
         text-transform: capitalize;
       }
       div.infoSpan {
-        width: 12em;
+        width: 13.5em;
         overflow-wrap: break-word;
+        margin-bottom: 0.2em;
       }
       paper-textarea#codeRegion {
         @apply --layout-flex;
@@ -113,22 +115,43 @@ limitations under the License.
         <div class="controllerGroup layout self-start horizontal wrap">
           <div class="layout horizontal start">
             <div class="anno">Reference: </div>
-            <div class="infoSpan">[[_calcRefLabel(_refObj)]]</div>
+            <div class="infoSpan">[[_computeRefLabel(_refObj)]]</div>
           </div>
           <div class="layout horizontal start">
-            <div class="anno">Groups Selected: </div>
-            <div>
-              <template is="dom-repeat" items="[[dispGroupArray]]">
-                <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
-              </template>
-              <template is="dom-if" if="{{dispGroupArray}}">
-                <div class="infoSpan">[[_calcGroupLabel(dispGroupArray)]]</div>
-              </template>
-            </div>
+            <div class="anno">Group(s) selected: </div>
+            <template is="dom-if" if="[[!_computeHideArray(dispGroupArray)]]">
+              <div>
+                <template is="dom-repeat" items="[[dispGroupArray]]"
+                  initial-count="10">
+                  <div class="infoSpan">
+                    [[_computeGroupLabel(item)]]
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template is="dom-if" if="[[_computeHideArray(dispGroupArray)]]">
+              <div class="infoSpan">
+                [[_computeHiddenGroupMsg(dispGroupArray)]]
+              </div>
+            </template>
           </div>
           <div class="layout horizontal start">
-            <div class="anno">Tracks Selected: </div>
-            <div class="infoSpan">[[_calcTrackLabel(dispTrackArray)]]</div>
+            <div class="anno">Track(s) selected: </div>
+            <template is="dom-if" if="[[!_computeHideArray(dispTrackArray)]]">
+              <div>
+                <template is="dom-repeat" items="[[dispTrackArray]]"
+                  initial-count="10">
+                  <div class="infoSpan">
+                    [[_computeTrackLabel(item)]]
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template is="dom-if" if="[[_computeHideArray(dispTrackArray)]]">
+              <div class="infoSpan">
+                [[_computeHiddenTrackMsg(dispTrackArray)]]
+              </div>
+            </template>
           </div>
         </div>
         <div class="controllerGroup controllerInputs layout horizontal end">
@@ -316,57 +339,33 @@ var GIVe = (function (give) {
       this._needUpdate = false
     }
 
-    _calcRefLabel (refObj) {
+    _computeRefLabel (refObj) {
       return refObj ? refObj.db + ' (' + refObj.commonName + ')' : '(None)'
     }
 
-    _calcGroupLabel (groupArray) {
-      // Try to use group description first, if too long, then just use
-      // 'n group(s)'
-      var result = '(None selected)'
-      if (groupArray) {
-        result = ''
-        groupArray.every(function (grp, index) {
-          result += (index > 0 ? ', ' : '') + (grp.label || grp.id)
-          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-            result = null
-            return false
-          }
-          return true
-        }, this)
-        if (!result) {
-          result = groupArray.length > 0
-            ? (groupArray.length + ' group' +
-              (groupArray.length > 1 ? 's' : ''))
-            : '(None selected)'
-        }
-      }
-      return result
+    _computeHideArray (itemArray) {
+      return !itemArray || !itemArray.length ||
+        itemArray.length > this.constructor.MAX_DESC_LENGTH
+    }
+    
+    _computeGroupLabel (group) {
+      return group.label || group.id
     }
 
-    _calcTrackLabel (trackArray) {
-      // Try to use track title first, if too long, then just use
-      // 'n track(s)'
-      let result = '(None selected)'
-      if (trackArray) {
-        result = ''
-        trackArray.every((track, index) => {
-          result += (index > 0 ? ',<br>' : '') +
-            (track.title || track.getSetting('shortLabel', 'string'))
-          if (result.length > give.HtmlBuilder.MAX_DESC_LENGTH) {
-            result = null
-            return false
-          }
-          return true
-        })
-        if (!result) {
-          result = trackArray.length > 0
-            ? (trackArray.length + ' track' +
-              (trackArray.length > 1 ? 's' : ''))
-            : '(None selected)'
-        }
-      }
-      return result
+    _computeHiddenGroupMsg (groupArray) {
+      return (!groupArray || !groupArray.length)
+        ? '(None selected)'
+        : (groupArray.length + ' group' + (groupArray.length > 1 ? 's' : ''))
+    }
+
+    _computeTrackLabel (track) {
+      return track.title || track.getSetting('shortLabel', 'string')
+    }
+
+    _computeHiddenTrackMsg (trackArray) {
+      return (!trackArray || !trackArray.length)
+        ? '(None selected)'
+        : (trackArray.length + ' track' + (trackArray.length > 1 ? 's' : ''))
     }
 
     _computeClipboardEnabled (needUpdate, hasError, clipboardEnabled) {
@@ -426,14 +425,20 @@ var GIVe = (function (give) {
       Polymer.RenderStatus.afterNextRender(this, () => {
         this._resetClipboardState()
         let updatedCode = this._updatedCode
-        if (updatedCode && this.htmlCode !== updatedCode) {
-          this._statusMessage = this.constructor.STATUS_NEED_UPDATE
-          this._needUpdate = true
-        } else if (!this.htmlCode) {
-          this._statusMessage = ''
-          this._needUpdate = false
+        if (updatedCode) {
+          if (this.htmlCode !== updatedCode) {
+            this._statusMessage = this.constructor.STATUS_NEED_UPDATE
+            this._needUpdate = true
+          } else {
+            this._needUpdate = false
+          }
         } else {
-          this._hasError = true
+          if (!this.htmlCode) {
+            this._statusMessage = ''
+            this._needUpdate = false
+          } else {
+            this._hasError = true
+          }
         }
       })
     }
@@ -560,17 +565,17 @@ var GIVe = (function (give) {
 
     _createDialogWithRef (groupArray, trackArray) {
       this.dispGroupArray = []
-      this.dispGroupArray = groupArray
+      this.dispGroupArray = groupArray.slice()
       this.dispTrackArray = []
       if (Array.isArray(trackArray) && trackArray.length > 0) {
-        this.dispTrackArray = trackArray
+        this.dispTrackArray = trackArray.slice()
       }
       this.updateCode()
       this.$.mainDialog.open()
     }
   }
 
-  HtmlBuilder.MAX_DESC_LENGTH = 100
+  HtmlBuilder.MAX_DESC_LENGTH = 5
 
   HtmlBuilder.STATUS_NEED_UPDATE =
     'Settings changed. Please update code first.'
