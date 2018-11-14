@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Single Cell Data Browser (powered by GIVe)</title>
-<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
 <link rel="import" href="components/chart-controller/chart-controller.html">
 <link rel="import" href="components/give-styles.html">
 <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
@@ -51,7 +51,7 @@
   </script>
   <chart-controller title-text="Single-cell RNA-Seq Genome Browser (powered by GIVe - Genomic Interaction Visualizer)"
     id="mainChartController" group-id-list='["genes", "singleCell", "customTracks"]'
-    num-of-subs="1" class="flex" ref="mm10" coordinates='["chr17:35504032-35512777"]'
+    num-of-subs="1" class="flex" ref="mm10" coordinate='["chr17:35504032-35512777"]'
     hide-annotation no-controls>
     <paper-button raised noink slot="toolBarCtrls" id="SCShowRef">
       References
