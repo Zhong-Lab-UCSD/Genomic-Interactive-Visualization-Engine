@@ -627,7 +627,7 @@ var GIVe = (function (give) {
             errMsg = 'Please use coordinates!'
           }
         }
-      } else if (this._valueIsCoordinate()) {
+      } else if (this.value && this._valueIsCoordinate()) {
         // test whether the value is within reference bounds
         try {
           let newCoordinate =
