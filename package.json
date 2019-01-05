@@ -1,5 +1,8 @@
 {
   "standard": {
-    "globals": [ "Polymer" ]
-  }
+    "globals": [
+      "Polymer"
+    ]
+  },
+  "dependencies": {}
 }
