@@ -149,15 +149,15 @@ function getRequest() {
   // This function also needs to handle preflight for CORS
   if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
     // This is not a CORS preflight request
-    if(isset($_SERVER['CONTENT_TYPE'])) {
-      switch(explode('; ', strtolower($_SERVER['CONTENT_TYPE']), 2)[0]) {
+    if(isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+      switch(explode('; ', strtolower($_SERVER['HTTP_CONTENT_TYPE']), 2)[0]) {
         case 'application/json':
           return json_decode(file_get_contents('php://input'), true);
         case 'application/x-www-form-urlencoded':
         case 'multipart/form-data':
           return $_REQUEST;
         default:
-          error_log('Content-type not recognized: get \'' . $_SERVER['CONTENT_TYPE'] . '\'');
+          error_log('Content-type not recognized: get \'' . $_SERVER['HTTP_CONTENT_TYPE'] . '\'');
           return file_get_contents('php://input');
       }
     } else {
