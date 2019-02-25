@@ -357,8 +357,9 @@ var GIVe = (function (give) {
 
     _refChanged (newValue, oldValue) {
       if (!this._updatingRef) {
-        return (this.domReadyPromise = this._syncRefJsonToArray()
-          .then(() => this._refreshRefTracks(true)))
+        return (this.domReadyPromise = give.RefObject.allRefPromise.then(
+          () => this._syncRefJsonToArray()
+        ).then(() => this._refreshRefTracks(true)))
       }
     }
 

@@ -97,15 +97,13 @@ var GIVe = (function (give) {
       if (end - start < rasterCount) {
         rasterCount = end - start
       }
-      if (end - start > rasterCount) {
-        let currCoor = start
-        this._Raster = [currCoor]
-        do {
-          currCoor += parseInt((end - currCoor) / rasterCount + 0.5)
-          rasterCount--
-          this._Raster.push(currCoor)
-        } while (currCoor < end)
-      }
+      let currCoor = start
+      this._Raster = [currCoor]
+      do {
+        currCoor += parseInt((end - currCoor) / rasterCount + 0.5)
+        rasterCount--
+        this._Raster.push(currCoor)
+      } while (currCoor < end)
     }
 
     findRasIndex (coordinate) {
