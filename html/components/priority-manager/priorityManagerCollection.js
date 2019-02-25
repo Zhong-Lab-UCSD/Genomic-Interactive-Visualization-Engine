@@ -124,10 +124,17 @@ var GIVe = (function (give) {
         this._resolveInitPriorityManagerFunc = () => {}
         this.addEventListener('init-priority-manager',
           e => this._initEventHandler(e), true)
+        this._urlParamInitializable = true
       }
 
       static get properties () {
         return {
+          ref: {
+            type: String,
+            observer: '_refChangedHandler',
+            notify: true
+          },
+
           /**
            * The reference used in the embedded browser.
            * Reference names needs to be in UCSC format.
@@ -190,6 +197,8 @@ var GIVe = (function (give) {
               // already initialized (by a parent or self)
               return this._fulfillInitPriorityManagerFunc(true)
             } else {
+              // Replace properties with URL GET parameters
+              this._urlParamHandler()
               if (!this.priorityManagers) {
                 this.priorityManagers = new PriorityManagerCollection(
                   this._refArray, this.defaultTrackIdList, this.groupIdList,
@@ -197,12 +206,14 @@ var GIVe = (function (give) {
                   this.getSlotSettingFunc
                 )
               } else {
+                // Use properties to initialize `this.priorityManagers`
                 this.priorityManagers.syncRefList(this._refArray, false,
                   this.defaultTrackIdList, this.groupIdList)
                 this._refArray.forEach(
                   ref => this.notifyPath('priorityManagers.' + ref))
               }
               this.priorityManagers.readyPromise.then(() => {
+                this._urlParamInitializable = false
                 this._initialEventTargets.forEach((token, target, map) =>
                   give.fireSignal('init-priority-manager',
                     { initialized: true, token: token }, null, target
@@ -244,6 +255,7 @@ var GIVe = (function (give) {
           delete this._resolveInitPriorityManagerFunc
           delete this._rejectInitPriorityManagerFunc
           delete this._priorityManagersReadyPromise
+          this._urlParamInitializable = false
         }
       }
 
@@ -271,6 +283,52 @@ var GIVe = (function (give) {
           : (this.priorityManagers && this.priorityManagers.readyPromise
             ? this.priorityManagers.readyPromise
             : Promise.resolve())
+      }
+
+      /**
+       * Handle parameters passed via URL GET parameters
+       *
+       * The GET parameters (a URL-encoded JSON string) can be used to
+       * override the following properties:
+       * `ref`: an array replacing `this._refArray`;
+       * `group`: an array replacing `this.groupIdList`
+       * `track`: an array replacing `this.defaultTrackIdList`
+       * Other properties can be overridden in extended classes. Just overload
+       * `this._urlParamToProp` method.
+       */
+      _urlParamHandler () {
+        if (this._urlParamInitializable) {
+          let params = new window.URLSearchParams(window.location.search)
+          return this._urlParamToProp(params)
+        }
+        return false
+      }
+
+      _urlParamToProp (params) {
+        let paramReplaced = false
+        if (params.has('ref')) {
+          this.ref = window.decodeURIComponent(params.get('ref'))
+          paramReplaced = true
+        }
+        if (params.has('group')) {
+          this.groupIdList = JSON.parse(
+            window.decodeURIComponent(params.get('group')))
+          paramReplaced = true
+        }
+        if (params.has('track')) {
+          this.defaultTrackIdList = JSON.parse(
+            window.decodeURIComponent(params.get('track')))
+          paramReplaced = true
+        }
+        return paramReplaced
+      }
+
+      _refChanged (newValue, oldValue) {
+        return
+      }
+
+      _refChangedHandler (newValue, oldValue) {
+        return this._refChanged(newValue, oldValue)
       }
     }
   )

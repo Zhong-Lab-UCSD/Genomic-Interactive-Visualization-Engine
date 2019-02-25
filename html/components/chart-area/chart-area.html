@@ -170,11 +170,6 @@ var GIVe = (function (give) {
           observer: '_coorChanged'
         },
 
-        ref: {
-          type: String,
-          observer: '_refChanged'
-        },
-
         /**
          * Number of sub views in this controller.
          * Notice that if this setting is different from `coordinates.length`,
@@ -710,6 +705,41 @@ var GIVe = (function (give) {
 
     get chartCoordinates () {
       return this._chartWindows.map(window => window.coordinate)
+    }
+
+    _urlParamToProp (params) {
+      // rewrite methods to single out `ref` and `coordinates`
+      let paramReplaced = false
+      let newRef = null
+      let newNumOfSubs, newCoordinates
+      if (params.has('ref')) {
+        newRef = window.decodeURIComponent(params.get('ref'))
+        let tempRef = JSON.parse(newRef)
+        if (Array.isArray(tempRef) && tempRef.length > 0) {
+          newNumOfSubs = tempRef.length
+        }
+        paramReplaced = true
+      }
+      if (params.has('group')) {
+        this.groupIdList = JSON.parse(
+          window.decodeURIComponent(params.get('group')))
+        paramReplaced = true
+      }
+      if (params.has('track')) {
+        this.defaultTrackIdList = JSON.parse(
+          window.decodeURIComponent(params.get('track')))
+        paramReplaced = true
+      }
+      if (params.has('coordinate')) {
+        newCoordinates = window.decodeURIComponent(params.get('coordinate'))
+        paramReplaced = true
+      }
+      if (newRef || newNumOfSubs || newCoordinates) {
+        this.priorityManagersReadyPromise.then(() => 
+          this.updateNumOfSubs(newNumOfSubs, newRef, newCoordinates)
+        )
+      }
+      return paramReplaced
     }
   }
 
