@@ -77,7 +77,7 @@ var GIVe = (function (give) {
               try {
                 this[key] = mainParams[key]
               } catch (e) {
-                give._verbConsole.warn(e)
+                give._verbConsole.info(e)
               }
             }
           }
@@ -90,7 +90,7 @@ var GIVe = (function (give) {
               try {
                 this[key] = additionalParams[key]
               } catch (e) {
-                give._verbConsole.warn(e)
+                give._verbConsole.info(e)
               }
             }
           }
@@ -145,7 +145,7 @@ var GIVe = (function (give) {
     }
 
     get endCoor () {
-      return { chr: this.chr, coor: this._end }
+      return { chr: this.chr, coor: this._end - 1 }
     }
 
     get start () {

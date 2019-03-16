@@ -63,5 +63,10 @@
     "grunt": "^1.0.3",
     "grunt-babel": "^8.0.0",
     "mocha": "^5.2.0"
+  },
+  "standard": {
+    "globals": [
+      "Polymer"
+    ]
   }
 }

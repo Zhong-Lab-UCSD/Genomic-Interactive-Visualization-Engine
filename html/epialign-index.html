@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EpiAlignment Browser (powered by GIVE)</title>
+  <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+  <link rel="import" href="components/chart-controller/chart-controller.html">
+  <link rel="import" href="components/give-styles.html">
+  <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+  <link rel="import" href="components/giv-main/giv-main.html">
+  <custom-style include="give-shared-styles iron-flex iron-positioning">
+    <style is="custom-style" include="give-shared-styles iron-flex iron-positioning">
+    body {
+      font-family: 'Roboto';
+      font-size: 14px;
+    }
+    h2 {
+      font-family: 'Roboto';
+      font-size: 16px;
+      line-height: 1.4em;
+      margin: 1em 1em 0.5em 1em;
+    }
+    p {
+      margin: 0.5em 1.5em;
+      line-height: 1.4em;
+    }
+    </style>
+  </custom-style>
+</head>
+<body unresolved class="fullbleed layout vertical">
+  <script>
+    /* eslint-disable */
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-3695776-7', 'auto');
+    ga('send', 'pageview');
+
+    /* eslint-enable */
+  </script>
+  <chart-controller ref='["hg38", "mm10"]' id="mainChartController" num-of-subs="2"
+    group-id-list='["genes", "epialign"]'
+    class="flex"
+    default-track-id-list='["knownGene", "gsm1673960-p",
+      "gsm1673960-b", "gsm1674016-p", "gsm1674016-b"]'
+    coordinate='["chr5:141124567-141148657", "chr18:37411305-37451753"]'
+    title-text='EpiAlignment Browser (powered by GIVE)'>
+  </chart-controller>
+</body>
+</html>

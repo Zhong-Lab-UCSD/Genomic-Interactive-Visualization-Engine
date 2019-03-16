@@ -134,15 +134,15 @@ For loading `gapi.client` libraries
        * Wrapper for `gapi.auth`.
        */
       get auth() {
-        return gapi.auth;
+        return window.gapi.auth;
       },
 
       ready: function() {
         this._loader = document.createElement('google-js-api');
-          
+
         if (!this.shadowRoot) { this.attachShadow({mode: 'open'}); }
         this.shadowRoot.appendChild(this._loader);
-          
+
         this.listen(this._loader, 'js-api-load', '_loadClient');
       },
 
@@ -151,7 +151,7 @@ For loading `gapi.client` libraries
       },
 
       _loadClient: function() {
-        gapi.load('client', this._doneLoadingClient.bind(this));
+        window.gapi.load('client', this._doneLoadingClient.bind(this));
       },
 
       _handleLoadResponse: function(response) {
@@ -226,7 +226,7 @@ For loading `gapi.client` libraries
             }
             _statuses[this.name] = 'loading';
             _loaders[this.name] = this;
-            gapi.client.load(this.name, this.version,
+            window.gapi.client.load(this.name, this.version,
                 this._handleLoadResponse.bind(this), root);
           }
         }

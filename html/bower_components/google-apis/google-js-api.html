@@ -26,38 +26,42 @@ Any number of components can use `<google-js-api>` elements, and the library wil
     </script>
 -->
 <script>
-  Polymer({
+  (function() {
+    'use strict';
 
-    is: 'google-js-api',
+    Polymer({
 
-    behaviors: [
-      Polymer.IronJsonpLibraryBehavior
-    ],
+      is: 'google-js-api',
 
-    properties: {
+      behaviors: [
+        Polymer.IronJsonpLibraryBehavior
+      ],
 
-      /** @private */
-      libraryUrl: {
-        type: String,
-        value: 'https://apis.google.com/js/api.js?onload=%%callback%%'
+      properties: {
+
+        /** @private */
+        libraryUrl: {
+          type: String,
+          value: 'https://apis.google.com/js/api.js?onload=%%callback%%'
+        },
+
+        /**
+         * Fired when the API library is loaded and available.
+         * @event js-api-load
+         */
+        /**
+         * Name of event fired when library is loaded and available.
+         */
+        notifyEvent: {
+          type: String,
+          value: 'js-api-load'
+        },
       },
 
-      /**
-       * Fired when the API library is loaded and available.
-       * @event js-api-load
-       */
-      /**
-       * Name of event fired when library is loaded and available.
-       */
-      notifyEvent: {
-        type: String,
-        value: 'js-api-load'
-      },
-    },
+      get api() {
+        return window.gapi;
+      }
 
-    get api() {
-      return gapi;
-    }
-
-  });
+    });
+  })();
 </script>

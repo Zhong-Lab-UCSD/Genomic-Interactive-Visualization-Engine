@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>GIVe (Genomic Interaction Visualizer)</title>
-  <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
   <link rel="import" href="components/chart-controller/chart-controller.html">
   <link rel="import" href="components/give-styles.html">
   <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
@@ -41,7 +41,7 @@
     /* eslint-enable */
   </script>
   <chart-controller ref="hg38" id="mainChartController"
-    coordinates='["chrX:73500000-74500000", "chrX:1-156040895"]'
+    coordinate='["chrX:73500000-74500000", "chrX:1-156040895"]'
     num-of-subs="2"
     group-id-list='["genes", "interaction", "customTracks"]' class="flex">
   </chart-controller>

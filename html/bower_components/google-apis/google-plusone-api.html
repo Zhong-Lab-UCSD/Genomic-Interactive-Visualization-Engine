@@ -16,39 +16,43 @@ Dynamically loads the Google+ JavaScript API, firing the `api-load` event when r
 Any number of components can use `<google-plusone-api>` elements, and the library will only be loaded once.
 -->
 <script>
-  Polymer({
+  (function() {
+    'use strict';
 
-    is: 'google-plusone-api',
+    Polymer({
 
-    behaviors: [
-      Polymer.IronJsonpLibraryBehavior
-    ],
+      is: 'google-plusone-api',
 
-    properties: {
+      behaviors: [
+        Polymer.IronJsonpLibraryBehavior
+      ],
 
-      /** @private */
-      libraryUrl:  {
-        type: String,
-        value: 'https://apis.google.com/js/plusone.js?onload=%%callback%%'
+      properties: {
+
+        /** @private */
+        libraryUrl:  {
+          type: String,
+          value: 'https://apis.google.com/js/plusone.js?onload=%%callback%%'
+        },
+
+        /**
+         * Fired when the API library is loaded and available.
+         * @event js-api-load
+         */
+        /**
+         * Name of event fired when library is loaded and available.
+         */
+        notifyEvent:  {
+          type: String,
+          value: 'api-load'
+        }
+
       },
 
-      /**
-       * Fired when the API library is loaded and available.
-       * @event js-api-load
-       */
-      /**
-       * Name of event fired when library is loaded and available.
-       */
-      notifyEvent:  {
-        type: String,
-        value: 'api-load'
+      get api() {
+        return window.gapi;
       }
 
-    },
-
-    get api() {
-      return gapi;
-    }
-
-  });
+    });
+  })();
 </script>

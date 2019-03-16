@@ -203,6 +203,12 @@ var GIVe = (function (give) {
           value: 'Invalid chromosomal region!'
         },
 
+        overrideErrorMessage: {
+          type: String,
+          value: '',
+          observer: '_overrideErrorMessageChanged'
+        },
+
         candidates: {
           type: Array,
           value () {
@@ -344,6 +350,10 @@ var GIVe = (function (give) {
         // value is coupled with input field
         this.coorSuffix = ''
         this.inputValue = newValue
+        if (this._clearErrorDuringInput) {
+          delete this._clearErrorDuringInput
+          this.invalid = false
+        }
         if (!this.noGeneNameSearch && this._partialNameSupported) {
           if (newValue !== this.querySent) {
             this._listReadyToShow = false
@@ -547,17 +557,6 @@ var GIVe = (function (give) {
     _textFocusHandler (flag) {
       this._inFocus = flag
       this._checkGList()
-      if (!flag && this._refObj && this._refObj.chromInfo && this.value &&
-        this._valueIsCoordinate()) {
-        // blurred, correct cases for chromosomal coordinates
-        var chrom = this.value.split(/[:\s-]+/)[0]
-        if (this._refObj.chromInfo.hasOwnProperty(chrom) &&
-          this._refObj.chromInfo[chrom].name !== chrom) {
-          // case is wrong, fix it
-          this.value = this.value.replace(chrom,
-            this._refObj.chromInfo[chrom].name)
-        }
-      }
       if (!flag && !this.$.geneNameDropDown.opened) {
         this.validate()
       }
@@ -607,9 +606,9 @@ var GIVe = (function (give) {
       }
     }
 
-    validate () {
-      var errMsg
-      this.invalid = false
+    validate (doNotChangeValue) {
+      let errMsg
+      delete this._clearErrorDuringInput
       if (!this.value && this.required) {
         errMsg = 'Please input a value!'
       } else if (this.value &&
@@ -619,29 +618,44 @@ var GIVe = (function (give) {
         // still gene name, should either choose one or not found
         if (this.candidates.length > 0) {
           errMsg = 'Please select from gene candidates!'
+          this._clearErrorDuringInput = true
         } else {
           if (this._partialNameSupported) {
             errMsg = 'Gene name not found!'
+            this._clearErrorDuringInput = true
           } else {
             errMsg = 'Please use coordinates!'
           }
         }
-      } else if (this._valueIsCoordinate()) {
+      } else if (this.value && this._valueIsCoordinate()) {
         // test whether the value is within reference bounds
         try {
-          this.value =
+          let newCoordinate =
             new give.ChromRegion(this.value, this._refObj).regionToString()
+          if (!doNotChangeValue) {
+            this.value = newCoordinate
+          }
         } catch (e) {
           errMsg = 'Invalid chromosomal coordinate value!'
+          this._clearErrorDuringInput = true
         }
       }
       if (errMsg) {
         this.errorMessage = errMsg
         this.invalid = true
-      } else {
+      } else if (!this.overrideErrorMessage) {
         this.invalid = false
       }
       return !this.invalid
+    }
+
+    _overrideErrorMessageChanged (newValue, oldValue) {
+      if (newValue) {
+        this.errorMessage = newValue
+        this.invalid = true
+      } else {
+        this.validate(true)
+      }
     }
   }
 

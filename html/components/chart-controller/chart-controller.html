@@ -297,11 +297,6 @@ var GIVe = (function (give) {
           notify: true
         },
 
-        ref: {
-          type: String,
-          notify: true
-        },
-
         /**
          * The title text that will appear in the embedded browser.
          * @type {string}
@@ -546,12 +541,6 @@ var GIVe = (function (give) {
       }
     }
 
-    _refChanged (newValue, oldValue) {
-      if (!this._updatingRefCoordinates) {
-        return this._syncCoordinateRefJsonToArray()
-      }
-    }
-
     _errorHandler (err) {
       // some exception has happended during the conversion
       // throw an exception telling calling procedures
@@ -559,6 +548,35 @@ var GIVe = (function (give) {
         throw err
       }
       // TODO: gracefully handle the exception
+    }
+
+    /**
+     * Handle parameters passed via URL GET parameters
+     *
+     * The GET parameters (a URL-encoded JSON string) can be used to
+     * override the following properties:
+     * `ref`: an array replacing `this._refArray`;
+     * `groups`: an array replacing `this.groupIdList`
+     * `tracks`: an array replacing `this.defaultTrackIdList`
+     * Other properties can be overridden in extended classes. Just overload
+     * `this._urlParamToProp` method.
+     */
+    _urlParamToProp (params) {
+      let paramReplaced = false
+      // IMPORTANT: needs to change `this.numOfSubs` if `ref` is an array
+      if (params.has('ref')) {
+        let tempRef = JSON.parse(window.decodeURIComponent(params.get('ref')))
+        if (Array.isArray(tempRef) && tempRef.length > 0) {
+          this._syncNumOfSubs(tempRef.length)
+        }
+        paramReplaced = true
+      }
+      paramReplaced = super._urlParamToProp(params) || paramReplaced
+      if (params.has('coordinate')) {
+        this.coordinate = window.decodeURIComponent(params.get('coordinate'))
+        paramReplaced = true
+      }
+      return paramReplaced
     }
   }
 
