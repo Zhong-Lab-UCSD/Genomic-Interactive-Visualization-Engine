@@ -145,7 +145,7 @@ var GIVe = (function (give) {
     }
 
     get endCoor () {
-      return { chr: this.chr, coor: this._end }
+      return { chr: this.chr, coor: this._end - 1 }
     }
 
     get start () {

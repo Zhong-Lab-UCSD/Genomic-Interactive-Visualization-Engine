@@ -37,10 +37,8 @@ var GIVe = (function (give) {
   class InteractionTrackDom extends give.TrackDom {
     constructor (track, properties) {
       super(...arguments)
-      this.gradient = [{ percent: 0, color: 0x3F51B5 },
-        { percent: 0.33, color: 0x4CAF50 },
-        { percent: 0.67, color: 0xCDDC39 },
-        { percent: 1, color: 0xF44336 }] // Gradient (indigo-green-lime-red)
+      this.gradient = [{ percent: 0, color: 0xebde48 },
+        { percent: 1, color: 0xcf4200 }] // Gradient (indigo-green-lime-red)
     }
     _initProperties (properties) {
       super._initProperties(properties)
@@ -336,7 +334,7 @@ var GIVe = (function (give) {
                     'stroke-width': 2,
                     'fill-opacity':
                       this.valueToPercentile(linkItem[0].data.value) *
-                      this.maxFillOpacity
+                      (partialOutside ? 0.1 * this.maxFillOpacity : this.maxFillOpacity)
                   }, svgMain)
                 } else {
                   this.createRawPolygon(points, {id: regionID,
@@ -344,10 +342,10 @@ var GIVe = (function (give) {
                       'linkedRegion ' +
                       (partialOutside ? 'partialOutside' : 'fullyInside'),
                     fill: this.constructor.rgbToHex(this.constructor.colorSet[0]),
-                    stroke: this.constructor.rgbToHex(this.constructor.colorSet[0])
                     // 'stroke-width': 0.5,
                     // 'fill-opacity': partialOutside? 0.01: 0.2,
                     // 'stroke-opacity': 1,
+                    stroke: this.constructor.rgbToHex(this.constructor.colorSet[0])
                   }, svgMain)
                 }
                 regionMap[points] = true
