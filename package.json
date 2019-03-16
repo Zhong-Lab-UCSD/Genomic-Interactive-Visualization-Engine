@@ -1,8 +1,72 @@
 {
+  "name": "givengine",
+  "description": "GIVE (Genomic Interactive Visualization Engine) is a HTML5 library that lets you embed genomic visualization panels as you would standard HTML elements to build a customized genome browser to visualize data from public deposits (such as ENCODE) and/or in-house data.",
+  "version": "0.3.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine.git"
+  },
+  "keywords": [
+    "genome",
+    "epigenome",
+    "browser",
+    "interaction",
+    "browser",
+    "visualization",
+    "sequencing",
+    "genotype",
+    "hic"
+  ],
+  "contributors": [
+    {
+      "name": "CAO Xiaoyi",
+      "email": "x9cao@eng.ucsd.edu",
+      "url": "https://github.com/caoxiaoyi03"
+    },
+    {
+      "name": "YAN Zhangming",
+      "email": "yanzm@eng.ucsd.edu"
+    },
+    {
+      "name": "WU Qiuyang",
+      "email": "brianne.wu@gmail.com"
+    },
+    {
+      "name": "ZHENG Alvin",
+      "email": "alvintzheng@gmail.com"
+    },
+    {
+      "name": "ZHONG Sheng",
+      "email": "szhong@eng.ucsd.edu"
+    }
+  ],
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/issues"
+  },
+  "homepage": "https://www.givengine.org/",
+  "dependencies": {
+    "@polymer/polymer": "^3.0.5",
+    "axios": "^0.18.0",
+    "express": "^4.16.4",
+    "pako": "^1.0.6"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "chai": "^4.2.0",
+    "eslint": "^5.7.0",
+    "grunt": "^1.0.3",
+    "grunt-babel": "^8.0.0",
+    "mocha": "^5.2.0"
+  },
   "standard": {
     "globals": [
       "Polymer"
     ]
-  },
-  "dependencies": {}
+  }
 }
