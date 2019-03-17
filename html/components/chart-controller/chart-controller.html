@@ -131,21 +131,25 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
       app-toolbar {
         height: auto;
-        padding: 0.5rem;
+        padding: 0.25rem;
         background-color: var(--dark-primary-color);
         color: var(--dark-theme-text-color);
         opacity: var(--primary-text-opacity-light);
         --app-toolbar-font-size: var(--base-font-size, var(--default-font-size));
       }
       app-toolbar > div {
-        margin: 0.25rem;
+        margin: 0.5rem;
       }
       app-toolbar > div.mainToolbarPreset {
         flex: 1 1 400px;
+        min-width: 350px;
       }
       app-toolbar > div > *[main-title] {
         font-size: 1.5em;
         margin: 0 0.5rem;
+        white-space: nowrap;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
       }
       app-toolbar > div div#htmlGeneratorButtons {
         padding: 0 0.5em;
