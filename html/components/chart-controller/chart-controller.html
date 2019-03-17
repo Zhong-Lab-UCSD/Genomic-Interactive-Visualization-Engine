@@ -131,14 +131,14 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
       app-toolbar {
         height: auto;
-        padding: 0.25rem;
+        padding: 0.75rem 0.25rem;
         background-color: var(--dark-primary-color);
         color: var(--dark-theme-text-color);
         opacity: var(--primary-text-opacity-light);
         --app-toolbar-font-size: var(--base-font-size, var(--default-font-size));
       }
-      app-toolbar > div {
-        margin: 0.5rem;
+      app-toolbar > div > * {
+        margin: 0 0.5rem;
       }
       app-toolbar > div.mainToolbarPreset {
         flex: 1 1 400px;
@@ -146,20 +146,18 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
       app-toolbar > div > *[main-title] {
         font-size: 1.5em;
-        margin: 0 0.5rem;
         white-space: nowrap;
         overflow-x: hidden;
         text-overflow: ellipsis;
-      }
-      app-toolbar > div div#htmlGeneratorButtons {
-        padding: 0 0.5em;
       }
       app-toolbar div paper-button {
         margin: 0 0.5em;
         background-color: var(--default-primary-color);
       }
+      app-toolbar div ::slotted(*) {
+        margin: 0 0.5rem;
+      }
       app-toolbar div ::slotted(paper-button) {
-        margin: 0 0.5em;
         background-color: var(--default-primary-color);
       }
       app-toolbar div paper-button[toggles] {
