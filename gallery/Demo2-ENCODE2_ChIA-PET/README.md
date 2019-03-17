@@ -80,7 +80,7 @@ When you have built tracks in MariaDB, it's very easy to build a genome browser.
 <!-- Embed the browser in your web page -->
 <chart-controller title-text="ChIA-PET long-range chromatin interactions" 
     ref="hg19" num-of-subs="2" 
-    coordinates='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
+    coordinate='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
     group-id-list='["genes", "ENCODE2_ChIA-PET", "customTracks"]'>
 </chart-controller>
 ```

@@ -75,7 +75,7 @@ When you have built tracks in MariaDB, it's very easy to build a genome browser.
 <!-- Embed the browser in your web page -->
 <chart-controller title-text="long-range promoter contacts with capture Hi-C" 
     ref="hg19" num-of-subs="2" 
-    coordinates='["chr18:19140000-19450000", "chr18:19140000-19450000"]' 
+    coordinate='["chr18:19140000-19450000", "chr18:19140000-19450000"]' 
     group-id-list='["genes", "CHi-C_promoter", "customTracks"]'>
 </chart-controller>
 ```

@@ -15,7 +15,7 @@ GIVE uses [Web Components](https://www.webcomponents.org/), specifically [Polyme
 
 <!-- Embed the browser in your web page -->
 <chart-controller ref="mm10" title-text="My GIVE Browser"
-  coordinates='["chr17:35504032-35512777"]'
+  coordinate='["chr17:35504032-35512777"]'
   group-id-list='["genes", "singleCell", "customTracks"]'></chart-controller>
 ```
 
