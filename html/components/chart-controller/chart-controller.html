@@ -137,12 +137,27 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         opacity: var(--primary-text-opacity-light);
         --app-toolbar-font-size: var(--base-font-size, var(--default-font-size));
       }
+      app-drawer-layout[narrow] #widePlaceHolder {
+        display: none;
+      }
+      app-drawer-layout:not([narrow]) #widePlaceHolder {
+        display: block;
+      }
       app-toolbar > div > * {
         margin: 0 0.5rem;
       }
       app-toolbar > div.mainToolbarPreset {
         flex: 1 1 400px;
         min-width: 350px;
+      }
+      app-toolbar #navigationHelp {
+        margin: 0;
+        padding: 0.5em 1em 0.5em 0.5em;
+        min-height: 40px;
+        box-sizing: border-box;
+      }
+      app-toolbar #navigationHelp > * {
+        margin: 0.5em;
       }
       app-toolbar > div > *[main-title] {
         font-size: 1.5em;
@@ -227,8 +242,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           <div class="mainToolbarPreset flex layout horizontal center no-wrap">
             <paper-icon-button icon='menu' drawer-toggle>
             </paper-icon-button>
+            <div id="widePlaceHolder"></div>
             <div main-title class="flex" title="[[titleText]]">[[titleText]]</div>
-            <div class="tooltipMouseOver" id="navigationHelp">
+            <div class="tooltipMouseOver layout horizontal center-center" id="navigationHelp">
               <iron-icon icon="icons:help"></iron-icon>
               <template is="dom-if" if="{{!inNarrowMode}}">
                 How to navigate
