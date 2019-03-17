@@ -37,8 +37,43 @@ var GIVe = (function (give) {
   class InteractionTrackDom extends give.TrackDom {
     constructor (track, properties) {
       super(...arguments)
-      this.gradient = [{ percent: 0, color: 0xebde48 },
-        { percent: 1, color: 0xcf4200 }] // Gradient (indigo-green-lime-red)
+      /** 
+       * Color scheme of interactions use
+       * Paul Tol's smooth color rainbow scheme:
+       * https://personal.sron.nl/~pault/
+       */
+      this.gradient = [
+        { percent: 0, color: 0xE8ECFB },
+        { percent: 0.0344827586206897, color: 0xDDD8EF },
+        { percent: 0.0689655172413793, color: 0xD1C1E1 },
+        { percent: 0.103448275862069, color: 0xC3A8D1 },
+        { percent: 0.137931034482759, color: 0xB58FC2 },
+        { percent: 0.172413793103448, color: 0xA778B4 },
+        { percent: 0.206896551724138, color: 0x9B62A7 },
+        { percent: 0.241379310344828, color: 0x8C4E99 },
+        { percent: 0.275862068965517, color: 0x6F4C9B },
+        { percent: 0.310344827586207, color: 0x6059A9 },
+        { percent: 0.344827586206897, color: 0x5568B8 },
+        { percent: 0.379310344827586, color: 0x4E79C5 },
+        { percent: 0.413793103448276, color: 0x4D8AC6 },
+        { percent: 0.448275862068966, color: 0x4E96BC },
+        { percent: 0.482758620689655, color: 0x549EB3 },
+        { percent: 0.517241379310345, color: 0x59A5A9 },
+        { percent: 0.551724137931034, color: 0x60AB9E },
+        { percent: 0.586206896551724, color: 0x69B190 },
+        { percent: 0.620689655172414, color: 0x77B77D },
+        { percent: 0.655172413793103, color: 0x8CBC68 },
+        { percent: 0.689655172413793, color: 0xA6BE54 },
+        { percent: 0.724137931034483, color: 0xBEBC48 },
+        { percent: 0.758620689655172, color: 0xD1B541 },
+        { percent: 0.793103448275862, color: 0xDDAA3C },
+        { percent: 0.827586206896552, color: 0xE49C39 },
+        { percent: 0.862068965517241, color: 0xE78C35 },
+        { percent: 0.896551724137931, color: 0xE67932 },
+        { percent: 0.931034482758621, color: 0xE4632D },
+        { percent: 0.96551724137931, color: 0xDF4828 },
+        { percent: 1, color: 0xDA2222 },
+      ]
     }
     _initProperties (properties) {
       super._initProperties(properties)
@@ -333,7 +368,6 @@ var GIVe = (function (give) {
                     stroke: this.constructor.rgbToHex(this.constructor.colorSet[linkItem.color]),
                     'stroke-width': 2,
                     'fill-opacity':
-                      this.valueToPercentile(linkItem[0].data.value) *
                       (partialOutside ? 0.1 * this.maxFillOpacity : this.maxFillOpacity)
                   }, svgMain)
                 } else {
