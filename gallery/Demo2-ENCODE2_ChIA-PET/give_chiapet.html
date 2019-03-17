@@ -1,15 +1,22 @@
 <!doctype html>
 <html>
 <head>
-<script src="https://www.givengine.org/libWC/webcomponents-lite.min.js"></script>
-<!-- Import GIVE component -->
-<link rel="import" href="https://www.givengine.org/lib/chart-controller/chart-controller.html">
-<link rel="import" href="https://www.givengine.org/lib/give-styles.html">
-<link rel="import" href="https://www.givengine.org/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="https://www.givengine.org/paper-button/paper-button.html">
-<link rel="import" href="https://www.givengine.org/paper-dialog/paper-dialog.html">
-<link rel="import" href="https://www.givengine.org/paper-dialog-scrollable/paper-dialog-scrollable.html">
-<link rel="import" href="https://www.givengine.org/lib/ref-link-dialog/ref-link-dialog.html">
+<script src="https://www.givengine.org/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="import" href="https://www.givengine.org/components/chart-controller/chart-controller.html">
+<link rel="import" href="https://www.givengine.org/components/give-styles.html">
+<link rel="import" href="https://www.givengine.org/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="https://www.givengine.org/bower_components/paper-button/paper-button.html">
+<link rel="import" href="https://www.givengine.org/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="https://www.givengine.org/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="https://www.givengine.org/components/ref-link-dialog/ref-link-dialog.html">
+<custom-style include="give-shared-styles iron-flex iron-positioning">
+  <style is="custom-style" include="give-shared-styles">
+  paper-dialog h2 {
+    max-width: 65vw;
+  }
+  </style>
+</custom-style>
 </head>
 
 <body unresolved>
@@ -31,7 +38,7 @@
 
 <paper-dialog id="chiapetRefDialog" with-backdrop>
     <h2>ChIA-PET long-range chromatin interactions</h2>
-    <paper-dialog-scrollable>
+    <paper-dialog-scrollable no-padding can-scroll>
         <p>
 	This genome browser presents 15 datasets of ChIA-PET long-range chromatin interactions along with human genome assembly GRCh37 (hg19) for comparative studies. ChIA-PET data were generated from <a href="https://www.encodeproject.org/matrix/?type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2" target="_blank" ><strong>ENCODE Phase 2</strong></a>. Fifteen long-range chromatin interaction bed.gz files (bed 12) were downloaded, which were generated from 8 experiments in 5 celllines (K562, MCF-7, HeLa-S3, HCT116 and NB4) with 3 kinds of target genes (POLR2A, CTCF and ESR1).
         </p>
