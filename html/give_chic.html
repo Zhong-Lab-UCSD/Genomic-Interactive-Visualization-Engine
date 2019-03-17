@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="import" href="components/chart-controller/chart-controller.html">
+<link rel="import" href="components/give-styles.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="components/ref-link-dialog/ref-link-dialog.html">
+</head>
+
+<body unresolved>
+<!-- Embed the browser in your web page -->
+<chart-controller title-text="long-range promoter contacts with capture Hi-C"  ref="hg19" num-of-subs="2"
+  coordinates='["chr18:19140000-19450000", "chr18:19140000-19450000"]'
+  group-id-list='["genes", "CHi-C_promoter", "customTracks"]'>
+    
+    <paper-button raised noink slot="toolBarCtrls" id="chicShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo1-captureHiC_promoter_contacts';">
+     GO TO CODE
+    </paper-button>
+
+    <paper-button raised noink slot="toolBarCtrls" id="chicShowRef">
+      References
+    </paper-button>
+
+</chart-controller>
+<paper-dialog id="chicRefDialog" with-backdrop>
+    <h2>long-range promoter contacts with capture Hi-C</h2>
+    <paper-dialog-scrollable>
+        <p>
+	This genome browser presents 4 datasets of long-range genome interactions along with human genome assembly GRCh37 (hg19) for comparative studies. These datasets were generated from a <em><strong>Nature Genetics</strong></em> paper (<a href="http://www.nature.com/ng/journal/v47/n6/full/ng.3286.html" target="_blank">Borbala Mifsud <em>et al.</em>, <strong>Nature Genetics</strong> 47, 598-606 (2015)</a>). They used Capture Hi-C (CHi-C), an adapted genome conformation assay, to examine the long-range interactions of almost 22,000 promoters in 2 human blood cell types, GM12878 and CD34<sup>+</sup>. The processed significant long-range promoter contacts data were downloaded from <a href = "http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-2323" target="_blank">E-MTAB-2323 of ArrayExpress</a>.
+        </p>
+        <p>There are 4 tracks in this genome browser, including significant promoter-promoter interactions and promoter-other interactions for both GM12878 and CD34<sup>+</sup> cell types. We treat the promoter-other interactions as directed interactions, i.e., promoters are shown on the top genome and the interacted other genome regions are shown on the bottom genome.
+        </p>
+      <p>
+        For questions, please contact Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).
+      </p>
+    </paper-dialog-scrollable>
+    <div class="buttons">
+      <paper-button id="chicDoNotShow" hidden>Do not show automatically in the future</paper-button>
+      <paper-button dialog-dismiss>Close</paper-button>
+    </div>
+</paper-dialog>
+
+
+<script>
+
+var GIVe = (function (give) {
+  'use strict'
+
+  var scDialog, scShowRefBtn, scDoNotShowBtn,
+    scLocalStorage
+
+  window.addEventListener('WebComponentsReady', function (e) {
+    give.fireCoreSignal('content-dom-ready', null)
+    give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
+    scDialog = Polymer.dom(document).querySelector('#chicRefDialog')
+    scShowRefBtn = Polymer.dom(document).querySelector('#chicShowRef')
+    scDoNotShowBtn = Polymer.dom(document).querySelector('#chicDoNotShow')
+
+    scLocalStorage = document.createElement('iron-localstorage')
+    scLocalStorage.autoSaveDisabled = true
+    scLocalStorage.name = '_chicDoNotShowRef'
+    scLocalStorage.reload()
+    if (!scLocalStorage.value) {
+      // Reference should be displayed for the first time
+      scDoNotShowBtn.removeAttribute('hidden')
+      scDialog.open()
+    }
+
+    scShowRefBtn.addEventListener('tap', scDialog.open.bind(scDialog))
+    scDoNotShowBtn.addEventListener('tap', function (e) {
+      if (scLocalStorage && scLocalStorage.save) {
+        scLocalStorage.value = true
+        scLocalStorage.save()
+        scDoNotShowBtn.setAttribute('hidden', '')
+      } else {
+        console.log('Error: scLocalStorage is not available.')
+      }
+      scDialog.close()
+    })
+  })
+
+  return give
+})(GIVe || {})
+</script>
+
+</body>
+</html>

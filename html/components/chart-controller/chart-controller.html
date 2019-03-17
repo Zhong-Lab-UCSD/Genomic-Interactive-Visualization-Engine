@@ -130,33 +130,45 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         z-index: 10;
       }
       app-toolbar {
+        height: auto;
+        padding: 0.5rem;
         background-color: var(--dark-primary-color);
         color: var(--dark-theme-text-color);
         opacity: var(--primary-text-opacity-light);
         --app-toolbar-font-size: var(--base-font-size, var(--default-font-size));
       }
-      app-toolbar > *[main-title] {
+      app-toolbar > div {
+        margin: 0.25rem;
+      }
+      app-toolbar > div.mainToolbarPreset {
+        flex: 1 1 400px;
+      }
+      app-toolbar > div > *[main-title] {
         font-size: 1.5em;
+        margin: 0 0.5rem;
       }
-      app-toolbar > *[drawer-toggle] {
-        margin: 0;
-      }
-      app-toolbar > * {
-        font-size: 1.2em;
-        margin: 0 1em;
-      }
-      app-toolbar > div#htmlGeneratorButtons {
+      app-toolbar > div div#htmlGeneratorButtons {
         padding: 0 0.5em;
       }
       app-toolbar div paper-button {
-        margin: 0 0.1em;
-        background: var(--card-background-color);
+        margin: 0 0.5em;
+        background-color: var(--default-primary-color);
+      }
+      app-toolbar div ::slotted(paper-button) {
+        margin: 0 0.5em;
+        background-color: var(--default-primary-color);
       }
       app-toolbar div paper-button[toggles] {
         transition: background-color 0.3s;
       }
+      app-toolbar div ::slotted(paper-button[toggles]) {
+        transition: background-color 0.3s;
+      }
       app-toolbar div paper-button[toggles][active] {
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: var(--default-primary-color-lighten);
+      }
+      app-toolbar div ::slotted(paper-button[toggles][active]) {
+        background-color: var(--default-primary-color-lighten);
       }
       paper-slider {
         width: 100%;
@@ -172,7 +184,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
     </style>
     <!-- TODO: add paper-dropmenu for ref -->
     <app-drawer-layout fullbleed responsive-width="800px" narrow="{{inNarrowMode}}">
-      <app-drawer slot="drawer" id="chartSettingsDrawer">
+      <app-drawer slot="drawer" id="chartSettingsDrawer" swipe-open>
         <div class="layout vertical">
           <div class="flex layout vertical">
             <div id="coordinateHolder" class="layout vertical">
@@ -209,28 +221,32 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
         </div>
       </app-drawer>
       <div class="fit layout vertical">
-        <app-toolbar id='mainToolbar'>
-          <paper-icon-button icon='menu' drawer-toggle>
-          </paper-icon-button>
-          <div main-title>[[titleText]]</div>
-          <div class="tooltipMouseOver" id="navigationHelp">
-            <iron-icon icon="icons:help"></iron-icon>
-            <template is="dom-if" if="{{!inNarrowMode}}">
-              How to navigate
-            </template>
+        <app-toolbar id='mainToolbar' class='layout horizontal end-justified wrap'>
+          <div class="mainToolbarPreset flex layout horizontal center no-wrap">
+            <paper-icon-button icon='menu' drawer-toggle>
+            </paper-icon-button>
+            <div main-title class="flex">[[titleText]]</div>
+            <div class="tooltipMouseOver" id="navigationHelp">
+              <iron-icon icon="icons:help"></iron-icon>
+              <template is="dom-if" if="{{!inNarrowMode}}">
+                How to navigate
+              </template>
+            </div>
+            <paper-tooltip fit-to-visible-bounds for="navigationHelp">
+              To navigate GIVe:
+              <ul>
+                <li><em>Drag horizontally</em> on any tracks or the coordinates
+                  to move left / right
+                </li>
+                <li>Move mouse cursor <strong>onto the coordinates</strong> and
+                  <em>use mouse wheel</em> to zoom in / out.
+                </li>
+              </ul>
+            </paper-tooltip>
           </div>
-          <paper-tooltip fit-to-visible-bounds for="navigationHelp">
-            To navigate GIVe:
-            <ul>
-              <li><em>Drag horizontally</em> on any tracks or the coordinates
-                to move left / right
-              </li>
-              <li>Move mouse cursor <strong>onto the coordinates</strong> and
-                <em>use mouse wheel</em> to zoom in / out.
-              </li>
-            </ul>
-          </paper-tooltip>
-          <slot id="additionalCtrls" name="toolBarCtrls"></slot>
+          <div class="additionalContents layout horizontal wrap">
+            <slot id="additionalCtrls" name="toolBarCtrls"></slot>
+          </div>
         </app-toolbar>
         <div class="content flex layout vertical">
           <div class="flex relative">
