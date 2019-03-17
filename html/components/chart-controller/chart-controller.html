@@ -88,9 +88,6 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       div.dataReference > slot {
         padding: 1em;
       }
-      div#navigationHelp {
-        margin-right: 2em;
-      }
       div#controlButtonGroup {
         padding: 0 0.25em;
       }
@@ -140,7 +137,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
       app-toolbar > *[main-title] {
         font-size: 1.5em;
-        margin: 0 1em;
+      }
+      app-toolbar > *[drawer-toggle] {
+        margin: 0;
       }
       app-toolbar > * {
         font-size: 1.2em;
@@ -172,8 +171,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
       }
     </style>
     <!-- TODO: add paper-dropmenu for ref -->
-    <app-drawer-layout fullbleed>
-      <app-drawer slot="drawer">
+    <app-drawer-layout fullbleed responsive-width="800px" narrow="{{inNarrowMode}}">
+      <app-drawer slot="drawer" id="chartSettingsDrawer">
         <div class="layout vertical">
           <div class="flex layout vertical">
             <div id="coordinateHolder" class="layout vertical">
@@ -186,7 +185,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               </template>
               <div class="layout horizontal end-justified" id="controlButtonGroup">
                 <paper-button raised id="cancelUpdateChartButton"
-                  on-tap="resetTracks">
+                  on-tap="_resetTracks">
                   Cancel
                 </paper-button>
                 <paper-button class="colored" raised id="updateChartBtn"
@@ -216,7 +215,9 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
           <div main-title>[[titleText]]</div>
           <div class="tooltipMouseOver" id="navigationHelp">
             <iron-icon icon="icons:help"></iron-icon>
-            How to navigate
+            <template is="dom-if" if="{{!inNarrowMode}}">
+              How to navigate
+            </template>
           </div>
           <paper-tooltip fit-to-visible-bounds for="navigationHelp">
             To navigate GIVe:
@@ -331,6 +332,15 @@ var GIVe = (function (give) {
          * @type {boolean}
          */
         hasControls: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Whether the track controller is in narrow mode
+         * @type {boolean}
+         */
+        inNarrowMode: {
           type: Boolean,
           value: false
         }
@@ -472,6 +482,9 @@ var GIVe = (function (give) {
         // notify Polymer
         this.notifyPath(['_coordinateObjectArray', index, 'invalid'])
       })
+      if (this.inNarrowMode) {
+        this.$.chartSettingsDrawer.close()
+      }
       return this.updateChartDomAndTrack(forceDomUpdate)
     }
 
@@ -489,7 +502,10 @@ var GIVe = (function (give) {
 
     _resetTracks () {
       if (this.$.mainTrackList) {
-        this.$.mainTrackList.syncTrackToDom()
+        this.$.mainTrackList.syncPriorityManagerToDom()
+      }
+      if (this.inNarrowMode) {
+        this.$.chartSettingsDrawer.close()
       }
       this._syncCoordinateRefJsonToArray()
     }
