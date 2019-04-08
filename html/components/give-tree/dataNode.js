@@ -285,11 +285,22 @@ var GIVe = (function (give) {
      * @returns {boolean}      whether the merge is successful
      */
     mergeAfter (node) {
-      return (
+      if (
         node === false || (
           node instanceof this.constructor && node.startList.length <= 0
         )
-      )
+      ) {
+        return true
+      } else if (node instanceof this.constructor) {
+        // the node is not mergable, but its contList may be updated
+        let contList = this.contList.concat(this.startList).filter(
+          entry => (entry.end > node.start))
+        if (node.contList.length > contList.length) {
+          give._verbConsole.warn('Warning: continuedList inconsistent.')
+        }
+        node.contList = contList
+      } 
+      return false
     }
 
     /**

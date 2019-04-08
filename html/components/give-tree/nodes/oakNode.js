@@ -110,9 +110,14 @@ var GIVe = (function (give) {
           this.values = node.values
         } else if (node.childNum === 1 && !node.values[0]) {
           this._extendBoundary(node.values[0], null, node.end)
-        } else if (this.childNum + node.childNum <= this.tree.branchingFactor) {
+        } else if (
+          this.childNum + node.childNum <= this.tree.branchingFactor
+        ) {
           this.keys = this.keys.concat(node.keys.slice(1))
           this.values = this.values.concat(node.values)
+        } else {
+          // unmerged
+          return false
         }
         return this
       }
@@ -139,6 +144,9 @@ var GIVe = (function (give) {
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
       if (this.reverseDepth <= 0) {
+        if (this.tree.updatable && arguments[2] === undefined) {
+          arguments[2] = this.emptyChildValue
+        }
         return super._splitChild(...arguments)
       }
       if (this.values[index].length <= this.tree.branchingFactor) {
@@ -603,6 +611,8 @@ var GIVe = (function (give) {
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       } // end if(chrRange)
     }
+
+    
   }
 
   give.OakNode = OakNode

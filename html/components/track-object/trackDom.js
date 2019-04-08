@@ -374,7 +374,7 @@ var GIVe = (function (give) {
     _initSvgHolder (svgElem) {
       // notice that `svgElem` should be there
       svgElem.holder = document.createElementNS(this.svgNS, 'g')
-      svgElem.appendChild(svgElem.holder)
+      svgElem.insertBefore(svgElem.holder, svgElem.gestureReceiver || null)
     }
 
     /**

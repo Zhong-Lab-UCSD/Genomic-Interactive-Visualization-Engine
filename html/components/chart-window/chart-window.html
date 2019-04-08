@@ -62,9 +62,21 @@ limitations under the License.
       }
       div#chartHolder > div {
         font-size: 0;
+        margin: 0.1rem 0;
       }
       div#chartHolder > div > * {
         font-size: var(--base-font-size, var(--default-font-size));
+      }
+      svg#highlightHolder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      svg#highlightHolder * {
+        pointer-events: visiblePainted;
       }
     </style>
     <style include="give-track-styles"></style>
@@ -85,6 +97,8 @@ limitations under the License.
         </svg>
       </div>
     </div>
+    <svg id="highlightHolder" version="1.1" baseProfile="full">
+    </svg>
     <template is="dom-if" if="[[showTutorial]]">
       <tutorial-highlight id="coorTrackTutorial"
         tutorial-key="coor-track-tutorial"
@@ -227,6 +241,12 @@ var GIVe = (function (give) {
       this._addedTrackMap = new Map()
       this._hiddenTrackDomMap = new Map()
 
+      /**
+       * The highlighted regions.
+       * @type {Array<GIVe.ChromRegion>}
+       */
+      this._highlightRegions = []
+
       this._pendingVWindow = null
       this._viewWindow = null
     }
@@ -308,6 +328,13 @@ var GIVe = (function (give) {
 
         priorityManager: {
           type: Object
+        },
+
+        highlight: {
+          type: String,
+          notify: true,
+          value: '',
+          observer: '_highlightChanged'
         }
       }
     }
@@ -937,6 +964,41 @@ var GIVe = (function (give) {
 
       return linkedDoms.concat(this._trackDoms.filter(trackDom =>
         trackDom.hasLinksInTargetView(contexts[this.index + 1])))
+    }
+
+    _highlightChanged (newValue, oldValue) {
+      // First determine if highlight value is a JSON array
+      let highlightArray = null
+      try {
+        highlightArray = JSON.parse(newValue)
+      } catch (ignore) { }
+      if (Array.isArray(highlightArray)) {
+        highlightArray = highlightArray.map(regionString => {
+          try {
+            return new ChromRegion(regionString, this.refObj)
+          } catch (e) {
+            e.message = 'Error converting highlight coordinate ' +
+              '"' + regionString + '": ' +
+              (e.message || 'Unspecified error') + '.'
+            give._verbConsole.warn(e.message)
+            give.fireSignal('give-warning', { errObj: e }, null, this)
+            return null
+          }
+        }).filter(item => !!item)
+        this._updateHighlightRegions(highlightArray)
+      }
+    }
+
+    _drawSingleHighlightRegion (region) {
+
+    }
+
+    _updateHighlightRegions (highlightArray) {
+      if (highlightArray.length) {
+        this._highlightRegions = highlightArray
+        this._highlightRegions.forEach(region =>
+          this._drawSingleHighlightRegion(region))
+      }
     }
   }
 

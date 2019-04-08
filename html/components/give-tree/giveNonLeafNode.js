@@ -106,7 +106,7 @@ var GIVe = (function (give) {
             ', end: ' + props.end))
         }
         this.keys = [props.start, props.end]
-        this.values = [null]
+        this.values = [this.emptyChildValue]
       }
       this.reverseDepth = (
         Number.isInteger(props.reverseDepth) && props.reverseDepth > 0)
@@ -115,6 +115,10 @@ var GIVe = (function (give) {
         this.next = props.nextNode
         this.prev = props.prevNode
       }
+    }
+
+    get emptyChildValue () {
+      return this.tree.updatable ? false : null
     }
 
     /**
@@ -601,7 +605,7 @@ var GIVe = (function (give) {
     }
 
     clear (convertTo) {
-      convertTo = convertTo === false ? false : null
+      convertTo = convertTo === false ? false : this.emptyChildValue
       if (this.tree.neighboringLinks) {
         this._severeChildLinks(convertTo)
       }
@@ -661,7 +665,7 @@ var GIVe = (function (give) {
      */
     static _childMergable (childFront, childBack) {
       return (childFront === childBack &&
-        (childFront === null || childFront === false)
+        (childFront === this.emptyChildValue || childFront === false)
       ) || (childFront && (typeof childFront.mergeAfter === 'function') &&
         childFront.mergeAfter(childBack)
       )

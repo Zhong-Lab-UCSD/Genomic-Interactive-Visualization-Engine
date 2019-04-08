@@ -224,13 +224,8 @@ var GIVe = (function (give) {
 
     createCoordinateTrack (slotName) {
       slotName = slotName || this.constructor.DEFAULT_COORDINATE_SLOT_NAME
-      return give.TrackObject.createTrack('coor_' + this.db + '_' + slotName, {
-        type: 'coordinate',
-        priority: 0,
-        noData: true,
-        visibility: 'full',
-        pin: slotName
-      }, this)
+      return give.TrackObject.createCoorTrack(this,
+        'coor_' + this.db + '_' + slotName, { pin: slotName })
     }
 
     initCoordinateTracks (priorityManager) {
