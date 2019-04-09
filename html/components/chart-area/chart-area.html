@@ -93,6 +93,7 @@ Please refer to [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for detail
             group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
             text-margin="[[textMargin]]" track-gap="[[trackGap]]"
             text-size="[[textSize]]" first-run="{{_firstRun}}"
+            highlight="[[item.highlight]]"
             show-tutorial="[[!index]]">
           </chart-window>
           <template is="dom-if" if="[[_calcChartWindowHasInBetween(index)]]">
@@ -137,6 +138,7 @@ var GIVe = (function (give) {
       this._chartWindows = []
       this._refArray = []
       this._coordinateArray = []
+      this._highlightArray = []
       this.updatePromise = null
       this._resizeDebouncePromise = null
     }
@@ -182,7 +184,18 @@ var GIVe = (function (give) {
           notify: true,
           observer: '_numOfSubsChanged'
         },
-
+        
+        /**
+         * The highlighted coordinates, an array of array(s) (one for each
+         * reference) of highlighted coordinates, in JSON format.
+         * @type {string}
+         */
+        highlight: {
+          type: String,
+          notify: true,
+          observer: '_highlightChanged'
+        },
+        
         passExceptions: {
           type: Boolean,
           value: false
@@ -237,6 +250,7 @@ var GIVe = (function (give) {
     ready () {
       this._updatingCoordinates = true
       this._updatingRefs = true
+      this._updatingHighlights = false
       super.ready()
       this.addEventListener('iron-resize', e => this._onIronResize(e))
       if (!this.passExceptions) {
@@ -643,7 +657,20 @@ var GIVe = (function (give) {
         return this.updateCoordinates(newValue)
       }
     }
-
+    
+    _highlightChanged (newValue, oldValue) {
+      this._highlightArray = JSON.parse(newValue)
+      if (!this._updatingHighlights) {
+        return this.priorityManagersReadyPromise.then(() => {
+          this._refArray.forEach((refObj, index) => 
+            refObj.updateHighlights(
+              this._highlightArray[index % this._highlightArray.length])
+          )
+          this._updatingHighlights = false
+        }).then(() => this.updateTracks())
+      }
+    }
+    
     _updateWindowHandler (detail, index) {
       // update the windows by events bubbled up from bottom tracks
       if (detail.newWindow instanceof give.ChromRegion ||
@@ -708,7 +735,7 @@ var GIVe = (function (give) {
     }
 
     _urlParamToProp (params) {
-      // rewrite methods to single out `ref` and `coordinates`
+      // rewrite methods to single out `ref`, `coordinates` and `highlight`
       let paramReplaced = false
       let newRef = null
       let newNumOfSubs, newCoordinates
@@ -732,6 +759,10 @@ var GIVe = (function (give) {
       }
       if (params.has('coordinate')) {
         newCoordinates = window.decodeURIComponent(params.get('coordinate'))
+        paramReplaced = true
+      }
+      if (params.has('highlight')) {
+        this.highlight = window.decodeURIComponent(params.get('highlight'))
         paramReplaced = true
       }
       if (newRef || newNumOfSubs || newCoordinates) {

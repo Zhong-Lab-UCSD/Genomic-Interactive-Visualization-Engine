@@ -118,7 +118,7 @@ var GIVe = (function (give) {
     }
 
     get emptyChildValue () {
-      return this.tree.updatable ? false : null
+      return this.tree.localOnly ? false : null
     }
 
     /**

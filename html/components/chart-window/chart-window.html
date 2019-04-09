@@ -245,7 +245,7 @@ var GIVe = (function (give) {
        * The highlighted regions.
        * @type {Array<GIVe.ChromRegion>}
        */
-      this._highlightRegions = []
+      this._highlightTrack = null
 
       this._pendingVWindow = null
       this._viewWindow = null
@@ -611,6 +611,7 @@ var GIVe = (function (give) {
       this._updateCoordinates()
 
       width = width || this.$.chartHolder.clientWidth
+      this.updateHighlightTrack(this._pendingVWindow, width)
 
       // Update all tracks' width and height (with maybe new view window)
       // If no new promise is needed, do not chain stuff afterwards
@@ -836,6 +837,7 @@ var GIVe = (function (give) {
         if (this.refObj) {
           refReadyPromise = this.refObj.initTracks().then(() => {
             this._initialized = true
+            this.updateHighlightDom()
           })
         } else {
           this._updateCoordinates()
@@ -966,39 +968,19 @@ var GIVe = (function (give) {
         trackDom.hasLinksInTargetView(contexts[this.index + 1])))
     }
 
-    _highlightChanged (newValue, oldValue) {
-      // First determine if highlight value is a JSON array
-      let highlightArray = null
-      try {
-        highlightArray = JSON.parse(newValue)
-      } catch (ignore) { }
-      if (Array.isArray(highlightArray)) {
-        highlightArray = highlightArray.map(regionString => {
-          try {
-            return new ChromRegion(regionString, this.refObj)
-          } catch (e) {
-            e.message = 'Error converting highlight coordinate ' +
-              '"' + regionString + '": ' +
-              (e.message || 'Unspecified error') + '.'
-            give._verbConsole.warn(e.message)
-            give.fireSignal('give-warning', { errObj: e }, null, this)
-            return null
-          }
-        }).filter(item => !!item)
-        this._updateHighlightRegions(highlightArray)
+    updateHighlightDom () {
+      this._highlightTrack = ref.highlightTrack
+      while (this.$.highlightHolder.firstChild) {
+        this.$.highlightHolder.removeChild(this.$.highlightHolder.firstChild)
       }
+      this.$.highlightHolder.appendChild(this._highlightTrack.trackSvg)
     }
 
-    _drawSingleHighlightRegion (region) {
-
-    }
-
-    _updateHighlightRegions (highlightArray) {
-      if (highlightArray.length) {
-        this._highlightRegions = highlightArray
-        this._highlightRegions.forEach(region =>
-          this._drawSingleHighlightRegion(region))
-      }
+    updateHighlightTrack (window, width) {
+      window = window || this._pendingVWindow || this._viewWindow
+      width = width || this.$.chartHolder.clientWidth
+      this._highlightTrack.update(
+        this._pendingVWindow, width, null, false, this.index)
     }
   }
 

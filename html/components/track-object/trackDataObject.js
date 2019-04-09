@@ -53,6 +53,7 @@ var GIVe = (function (give) {
       this._fetchPromise = null
       this._ongoingFetchPromise = null
       this._data = {}
+      this.localOnly = false
 
       this._initSettings()
     }
@@ -496,6 +497,7 @@ var GIVe = (function (give) {
       return new this.constructor._DataStructure(
         this.parent.refObj.chromInfo[chrom].chrRegion,
         {
+          localOnly: this.localOnly,
           _SummaryCtor: this.constructor._SummaryCtor
         }
       )
@@ -592,6 +594,23 @@ var GIVe = (function (give) {
      *   examples.
      * **************************************************************************
      */
+
+    insert (chromRegion) {
+      this.getData(chromRegion.chr, true).insert(chromRegion)
+    }
+
+    remove (chromRegion) {
+      this.getData(chromRegion.chr, true).remove(chromRegion)
+    }
+
+    update (chromRegionOld, chromRegionNew) {
+      this.remove(chromRegionOld)
+      this.insert(chromRegionNew)
+    }
+
+    clear () {
+      this._data = {}
+    }
 
     /**
      * _dataHandler - This should be the detailed implementation about how to

@@ -51,6 +51,7 @@ var GIVe = (function (give) {
       this.tracksUpdated = false // regardless of whether user has selected
       this.tracks = new give.TrackGroup()
       this.coordinateTracks = new give.TrackGroup()
+      this.highlightTrack = null
 
       // this.initTracksFromServer()
       // initialize whenever tracks are needed
@@ -113,6 +114,7 @@ var GIVe = (function (give) {
             }
           }
         }
+        this.highlightTrack = this.createHighlightTrack()
       } catch (err) {
         this.chromInfo = null
         give._verbConsole.warn(err)
@@ -236,6 +238,18 @@ var GIVe = (function (give) {
           priorityManager.addTrack(track, null, null, true)
         }
       })
+    }
+
+    createHighlightTrack () {
+      return give.TrackObject.createTrack(
+        'highlight_' + this.db,
+        { localOnly: true }, this, 'highlight', null)
+    }
+
+    updateHighlights (highlightArray) {
+      this.highlightTrack.clear()
+      highlightArray.forEach(
+        highlightRegion => this.highlightTrack.insert(highlightRegion))
     }
 
     initMetaFilter () {

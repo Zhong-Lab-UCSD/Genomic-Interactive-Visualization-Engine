@@ -44,7 +44,7 @@ var GIVe = (function (give) {
      *    To disable withering, set `props.lifeSpan` to 0 or a negative value.
      * @param {function} props.LeafNodeCtor - if omitted, the constructor of
      *    `this.root` will be used
-     * @param {boolean} props.updatable - Whether this tree allows live
+     * @param {boolean} props.localOnly - Whether this tree allows live
      *    updating of its content (CUD operations), if this is `true`,
      *    withering will be disabled and `props.lifeSpan` will be ignored.
      * @memberof GiveTree
@@ -56,7 +56,7 @@ var GIVe = (function (give) {
       props.end = chrRange.end
       props.tree = this
       props.isRoot = true
-      if (!this.updatable &&
+      if (!this.localOnly &&
         ((typeof props.lifeSpan === 'number' && props.lifeSpan > 0) ||
         !props.lifeSpan)
       ) {
@@ -74,7 +74,7 @@ var GIVe = (function (give) {
     _initProperties (chrRange, NonLeafNodeCtor, props) {
       this.chr = chrRange.chr
       this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
-      this.updatable = !!props.updatable
+      this.localOnly = !!props.localOnly
     }
 
     get neighboringLinks () {
@@ -136,7 +136,7 @@ var GIVe = (function (give) {
      *    preferably a `GIVe.ChromRegion` object.
      *    If `data.length === 1` and `chrRange === null`, then
      *    `chrRegion = data[0]` because of ChromRegion behavior.
-     *    If `this.updatable === true`, this parameter will be ignored.
+     *    If `this.localOnly === true`, this parameter will be ignored.
      * @param {Array<object>|object} [props] - additional properties being
      *    passed onto nodes. If this is an `Array`, it should have the same
      *    `length` as `chrRanges` does.
@@ -153,7 +153,7 @@ var GIVe = (function (give) {
      */
     insert (data, chrRanges, props) {
       let exceptions = []
-      if (this.updatable) {
+      if (this.localOnly) {
         this._insertSingleRange(data, this.coveringRange,
           Array.isArray(props) ? props[0] : props)
       } else {
@@ -332,7 +332,7 @@ var GIVe = (function (give) {
      */
     getUncachedRange (chrRange, props) {
       props = props || {}
-      if (!this.updatable &&
+      if (!this.localOnly &&
         (!chrRange || !chrRange.chr || chrRange.chr === this.chr)
       ) {
         chrRange = chrRange
@@ -357,7 +357,7 @@ var GIVe = (function (give) {
      */
     hasUncachedRange (chrRange, props) {
       props = props || {}
-      if (!this.updatable &&
+      if (!this.localOnly &&
         (!chrRange || !chrRange.chr || chrRange.chr === this.chr)
       ) {
         chrRange = chrRange

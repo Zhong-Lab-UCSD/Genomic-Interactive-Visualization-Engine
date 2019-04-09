@@ -208,7 +208,6 @@ var GIVe = (function (give) {
 
     clear (convertTo) {
       this.startList = []
-      this.contList = []
     }
 
     /**
@@ -293,12 +292,7 @@ var GIVe = (function (give) {
         return true
       } else if (node instanceof this.constructor) {
         // the node is not mergable, but its contList may be updated
-        let contList = this.contList.concat(this.startList).filter(
-          entry => (entry.end > node.start))
-        if (node.contList.length > contList.length) {
-          give._verbConsole.warn('Warning: continuedList inconsistent.')
-        }
-        node.contList = contList
+        node.updateContList(this.contList.concat(this.startList))
       } 
       return false
     }
@@ -312,6 +306,17 @@ var GIVe = (function (give) {
      */
     get isEmpty () {
       return this.startList.length <= 0 && this.contList.length <= 0
+    }
+
+    updateContList (contList) {
+      if (contList) {
+        contList = contList.filter(entry => (entry.end > this.start))
+        if (this.contList.length > contList.length) {
+          give._verbConsole.warn('Warning: continuedList inconsistent.')
+        }
+        this.contList = contList
+      }
+      return this.contList.concat(this.startList)
     }
   }
 

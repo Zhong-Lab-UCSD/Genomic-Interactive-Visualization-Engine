@@ -144,7 +144,7 @@ var GIVe = (function (give) {
      */
     _splitChild (index, newKey, newLatterChild, newFormerChild) {
       if (this.reverseDepth <= 0) {
-        if (this.tree.updatable && arguments[2] === undefined) {
+        if (this.tree.localOnly && arguments[2] === undefined) {
           arguments[2] = this.emptyChildValue
         }
         return super._splitChild(...arguments)
@@ -419,6 +419,8 @@ var GIVe = (function (give) {
           '` is not a constructor for a tree node!')
       }
 
+      // At this point the index hasn't moved into overlapping `chrRange` yet
+
       while (this.keys[currIndex + 1] <= chrRange.start) {
         currIndex++
       }
@@ -428,6 +430,9 @@ var GIVe = (function (give) {
         // Shorten the previous data record by inserting the key,
         // and use this.values[currIndex] to fill the rest
         // (normally it should be `null`)
+        if (this.values[currIndex]) {
+          props.contList = this.values[currIndex].updateContList()
+        }
         this._splitChild(currIndex++, chrRange.start)
       }
 
@@ -441,12 +446,18 @@ var GIVe = (function (give) {
 
       while (chrRange.start < chrRange.end) {
         while (this.keys[currIndex + 1] <= chrRange.start) {
+          if (this.values[currIndex]) {
+            props.contList = this.values[currIndex].updateContList()
+          }
           currIndex++
         }
         if (this.keys[currIndex] < chrRange.start) {
           // The new rangeStart appears between windows.
           // Shorten the previous data record by inserting the key,
           // and use `false` to fill the rest
+          if (this.values[currIndex]) {
+            props.contList = this.values[currIndex].updateContList()
+          }
           this._splitChild(currIndex++, chrRange.start, false)
         }
 
@@ -456,11 +467,13 @@ var GIVe = (function (give) {
             data[props.dataIndex].start <= this.keys[currIndex])
         ) {
           // there are actual data at this location, create a new leaf node
-          this.values[currIndex] = new props.LeafNodeCtor({
-            start: this.keys[currIndex],
-            end: this.keys[currIndex + 1]
-          })
-          this.values[currIndex].insert(data, chrRange, props)
+          if (!this.tree.localOnly && this.values[currIndex]) {
+            give._verbConsole.info('Rewritten data notes at ' +
+              this.keys[currIndex])
+          }
+          if (!this.values[currIndex]) {
+            this.values[currIndex].insert(data, chrRange, props)
+          }
           if (this.values[currIndex].isEmpty) {
             this.values[currIndex] = false
           }

@@ -24,7 +24,7 @@ var GIVe = (function (give) {
    * @class give.CoorTrack
    * @implements give.TrackObject
    */
-  class CoorTrack extends give.TrackObject {
+  class HighlightTrack extends give.TrackObject {
     /**
      * typeList - get the key strings showing this type of data.
      *    This shall be the same as the `type` column for track entries in
@@ -36,24 +36,33 @@ var GIVe = (function (give) {
      * @returns {Array<string>}  return all keys matching this type.
      */
     static get typeList () {
-      return ['coordinate', 'coor']
+      return ['highlight']
     }
 
-    constructor () {
-      super(...arguments)
-      if (!this.getSetting('pin')) {
-        this.setSetting('pin', 'top')
-      }
+    constructor (ID, Settings, refObj, groupID) {
+      super(arguments)
+      this.currentRegionIndex = 0
+    }
+
+    addRegion (chromRegion) {
+      return this._dataObj.addRegion(chromRegion)
+    }
+
+    removeRegion (chromRegion) {
+      return this._dataObj.removeRegion(chromRegion)
     }
   }
 
+  // specify the data object (if needed) used in this track
+  HighlightTrack._DataObjCtor = give.HighlightTrackData
+
   // specify the visualization object used in this track
-  CoorTrack._DomObjCtor = give.CoorTrackDom
+  HighlightTrack._DomObjCtor = give.HighlightTrackDom
 
   // __IMPORTANT:__ register this new track type
-  give.TrackObject.registerTrack(CoorTrack)
+  give.TrackObject.registerTrack(HighlightTrack)
 
-  give.CoorTrack = CoorTrack
+  give.HighlightTrack = HighlightTrack
 
   return give
 })(GIVe || {})

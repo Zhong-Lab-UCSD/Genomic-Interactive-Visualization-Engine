@@ -482,6 +482,39 @@ var GIVe = (function (give) {
       return null
     }
 
+    insert (chromRegion) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.insert(chromRegion)
+    }
+
+    remove (chromRegion) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.remove(chromRegion)
+    }
+
+    update (chromRegionOld, chromRegionNew) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.update(chromRegionOld, chromRegionNew)
+    }
+
     /**
      * createDomObj - Create a DOM Object from this track.
      *   The DOM Object will need to handle all display issues separately but
