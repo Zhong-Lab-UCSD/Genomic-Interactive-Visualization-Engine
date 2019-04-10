@@ -47,7 +47,7 @@ var GIVe = (function (give) {
 
       // clear text Margin svg
       this.clear()
-      data.traverse(this.viewWindow,
+      this._getDataObject().traverse(this.viewWindow,
         entry => this._drawSingleHighlight(entry), null, false)
     }
 
@@ -63,7 +63,7 @@ var GIVe = (function (give) {
 
   HighlightTrackDom.colorSet = [
     0x77AADD, 0xEE8866, 0xEEDD88, 0xFFAABB,
-    0x99DDFF, 0x44BB99, 0xBBCC33, 0xAAAA00,
+    0x99DDFF, 0x44BB99, 0xBBCC33, 0xAAAA00
   ]
 
   give.HighlightTrackDom = HighlightTrackDom

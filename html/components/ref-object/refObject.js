@@ -43,6 +43,7 @@ var GIVe = (function (give) {
         labMap: {},
         tissueMap: {}
       }
+      this.highlightTrack = null
       // read Object for refObj chrom info (if there)
       this._chromInfoPromise =
         this.initChromInfo(chromInfo, settings.initChromTarget)
@@ -51,7 +52,6 @@ var GIVe = (function (give) {
       this.tracksUpdated = false // regardless of whether user has selected
       this.tracks = new give.TrackGroup()
       this.coordinateTracks = new give.TrackGroup()
-      this.highlightTrack = null
 
       // this.initTracksFromServer()
       // initialize whenever tracks are needed
@@ -115,6 +115,7 @@ var GIVe = (function (give) {
           }
         }
         this.highlightTrack = this.createHighlightTrack()
+        this.highlightTrack._initializable = true
       } catch (err) {
         this.chromInfo = null
         give._verbConsole.warn(err)
@@ -246,10 +247,14 @@ var GIVe = (function (give) {
         { localOnly: true }, this, 'highlight', null)
     }
 
-    updateHighlights (highlightArray) {
-      this.highlightTrack.clear()
-      highlightArray.forEach(
-        highlightRegion => this.highlightTrack.insert(highlightRegion))
+    initializeHighlights (highlightArray) {
+      if (this.highlightTrack._initializable) {
+        this.highlightTrack.clear()
+        this.highlightTrack.insert(
+          highlightArray.sort(give.ChromRegion.compare)
+        )
+        delete this.highlightTrack._initializable
+      }
     }
 
     initMetaFilter () {
@@ -298,7 +303,7 @@ var GIVe = (function (give) {
           if (track.getSetting(priorityManager.settingString)) {
             priorityManager.addTrack(track)
           }
-        } 
+        }
       })
       return priorityManager
     }
@@ -376,7 +381,8 @@ var GIVe = (function (give) {
       if (callback) {
         callback.call(this)
       }
-      give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.cleanId + '-custom-tracks-ready'})
+      give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
+        {flag: this.cleanId + '-custom-tracks-ready'})
     }
 
     fillMetaFilter (metaEntries) {

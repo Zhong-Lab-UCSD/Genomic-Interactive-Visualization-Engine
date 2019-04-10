@@ -76,7 +76,9 @@ limitations under the License.
         pointer-events: none;
       }
       svg#highlightHolder * {
-        pointer-events: visiblePainted;
+        pointer-events: none;
+        mix-blend-mode: multiply;
+        fill-opacity: 0.4
       }
     </style>
     <style include="give-track-styles"></style>
@@ -245,7 +247,7 @@ var GIVe = (function (give) {
        * The highlighted regions.
        * @type {Array<GIVe.ChromRegion>}
        */
-      this._highlightTrack = null
+      this._highlightTrackDom = null
 
       this._pendingVWindow = null
       this._viewWindow = null
@@ -328,13 +330,6 @@ var GIVe = (function (give) {
 
         priorityManager: {
           type: Object
-        },
-
-        highlight: {
-          type: String,
-          notify: true,
-          value: '',
-          observer: '_highlightChanged'
         }
       }
     }
@@ -574,6 +569,7 @@ var GIVe = (function (give) {
         )
       }
       this.windowWidth = width
+      this.updateHighlightSvgHeightLocation()
     }
 
     /**
@@ -611,12 +607,12 @@ var GIVe = (function (give) {
       this._updateCoordinates()
 
       width = width || this.$.chartHolder.clientWidth
-      this.updateHighlightTrack(this._pendingVWindow, width)
 
       // Update all tracks' width and height (with maybe new view window)
       // If no new promise is needed, do not chain stuff afterwards
       this.drawingPromise = this._trackPromiseAggregator.aggregate(
-        this._trackDoms.concat(this._hiddenTrackDoms),
+        this._trackDoms.concat(this._hiddenTrackDoms)
+          .concat(this._highlightTrackDom),
         trackDom => trackDom.update(
           this._pendingVWindow, width, null, false, this.index)
       )
@@ -969,18 +965,27 @@ var GIVe = (function (give) {
     }
 
     updateHighlightDom () {
-      this._highlightTrack = ref.highlightTrack
+      if (!this._highlightTrackDom) {
+        this._highlightTrackDom = this.refObj.highlightTrack.createDomObj(
+          this._createTrackProp({
+            'height': this.$.chartHolder.clientHeight,
+            'width': this.windowWidth
+          })
+        )
+      } else {
+        this.updateHighlightSvgHeightLocation()
+      }
       while (this.$.highlightHolder.firstChild) {
         this.$.highlightHolder.removeChild(this.$.highlightHolder.firstChild)
       }
-      this.$.highlightHolder.appendChild(this._highlightTrack.trackSvg)
+      this.$.highlightHolder.appendChild(this._highlightTrackDom.trackSvg)
     }
 
-    updateHighlightTrack (window, width) {
-      window = window || this._pendingVWindow || this._viewWindow
-      width = width || this.$.chartHolder.clientWidth
-      this._highlightTrack.update(
-        this._pendingVWindow, width, null, false, this.index)
+    updateHighlightSvgHeightLocation () {
+      this._highlightTrackDom.updateSize(
+        this.windowWidth, this.$.chartHolder.clientHeight)
+      this._highlightTrackDom.update(null, null, null, true)
+        .catch(ignore => {})
     }
   }
 

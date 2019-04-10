@@ -40,7 +40,7 @@ var GIVe = (function (give) {
     }
 
     constructor (ID, Settings, refObj, groupID) {
-      super(arguments)
+      super(...arguments)
       this.currentRegionIndex = 0
     }
 

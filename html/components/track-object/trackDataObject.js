@@ -30,7 +30,7 @@ var GIVe = (function (give) {
    * @property {boolean} localOnly - Whether all data should be stored in
    *   local memory for this track. No additional server fetching or file
    *   loading needed, only do CRUD through internal CRUD api.
-   *   
+   *
    *   Withering will be disabled if `localOnly` is set to `true`, partial
    *   reading is done through regular `traverse()` method and complete
    *   reading is available via `read()`
@@ -595,17 +595,31 @@ var GIVe = (function (give) {
      * **************************************************************************
      */
 
-    insert (chromRegion) {
-      this.getData(chromRegion.chr, true).insert(chromRegion)
+    applyByChrom (regions, callback) {
+      while (regions && regions.length) {
+        let currChrom = regions[0].chr
+        let chromRegionsSameChr =
+          regions.filter(region => region.chr === currChrom)
+        callback(currChrom, chromRegionsSameChr)
+        regions = regions.filter(region => region.chr !== currChrom)
+      }
     }
 
-    remove (chromRegion) {
-      this.getData(chromRegion.chr, true).remove(chromRegion)
+    insert (chromRegions) {
+      return this.applyByChrom(chromRegions,
+        (chrom, regions) => this.getData(chrom, true).insert(regions)
+      )
     }
 
-    update (chromRegionOld, chromRegionNew) {
-      this.remove(chromRegionOld)
-      this.insert(chromRegionNew)
+    remove (chromRegions) {
+      return this.applyByChrom(chromRegions,
+        (chrom, regions) => this.getData(chrom, true).remove(regions)
+      )
+    }
+
+    update (chromRegionsOld, chromRegionsNew) {
+      this.remove(chromRegionsOld)
+      this.insert(chromRegionsNew)
     }
 
     clear () {

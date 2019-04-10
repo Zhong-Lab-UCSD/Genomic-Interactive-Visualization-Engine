@@ -472,8 +472,12 @@ var GIVe = (function (give) {
               this.keys[currIndex])
           }
           if (!this.values[currIndex]) {
-            this.values[currIndex].insert(data, chrRange, props)
+            this.values[currIndex] = new props.LeafNodeCtor({
+              start: this.keys[currIndex],
+              end: this.keys[currIndex + 1]
+            })
           }
+          this.values[currIndex].insert(data, chrRange, props)
           if (this.values[currIndex].isEmpty) {
             this.values[currIndex] = false
           }
@@ -624,8 +628,6 @@ var GIVe = (function (give) {
         throw (new give.GiveError(chrRange + ' is not a valid chrRegion.'))
       } // end if(chrRange)
     }
-
-    
   }
 
   give.OakNode = OakNode

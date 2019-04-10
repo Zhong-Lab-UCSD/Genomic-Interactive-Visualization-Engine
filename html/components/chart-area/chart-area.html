@@ -93,7 +93,6 @@ Please refer to [`GIVe.RefEmbedMixin`](../ref-embed-mixin/index.html) for detail
             group-id-list="[[item.groupIdList]]" ref="{{item.ref}}"
             text-margin="[[textMargin]]" track-gap="[[trackGap]]"
             text-size="[[textSize]]" first-run="{{_firstRun}}"
-            highlight="[[item.highlight]]"
             show-tutorial="[[!index]]">
           </chart-window>
           <template is="dom-if" if="[[_calcChartWindowHasInBetween(index)]]">
@@ -139,6 +138,7 @@ var GIVe = (function (give) {
       this._refArray = []
       this._coordinateArray = []
       this._highlightArray = []
+      this._highlightRegionStrings = []
       this.updatePromise = null
       this._resizeDebouncePromise = null
     }
@@ -345,16 +345,11 @@ var GIVe = (function (give) {
 
     _syncCoordinatesJsonToArray (newCoorindateValue) {
       newCoorindateValue = newCoorindateValue || this.coordinate
-      let refArray = null
-      try {
-        refArray = this._refArray.map(
-          refName => give.RefObject.findRefByDb(refName)
-        )
-      } catch (ignore) { }
+      let refObjArray = this._refObjArray
       this._coordinateArray = give.getValueArray(newCoorindateValue,
         this.numOfSubs,
-        (!this.allowEmptyCoordinates && refArray)
-          ? refArray.map((refObj, index) => {
+        (!this.allowEmptyCoordinates && refObjArray)
+          ? refObjArray.map((refObj, index) => {
             let defaultViewWindows = refObj.settings.defaultViewWindows
             return defaultViewWindows
               ? defaultViewWindows[index % defaultViewWindows.length]
@@ -586,7 +581,6 @@ var GIVe = (function (give) {
 
     updateRef (newRef, newCoordinates) {
       this._initialized = false
-      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateRef)')
       this._readiness = false
       return Promise.resolve()
         .then(() => {
@@ -602,8 +596,10 @@ var GIVe = (function (give) {
       // surrounding environment has changed, some of the tracks, especially
       // multi-window ones, may have its requirement conditions changed)
       let contexts = this._chartWindows.map(window => window.context)
-      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateDom)')
       this._readiness = false
+      if (this._updatingHighlights) {
+        this._initHighlightValue()
+      }
       return Promise.all(
         this._chartWindows.map(window =>
           (window.initialized
@@ -619,7 +615,6 @@ var GIVe = (function (give) {
     }
 
     updateCoordinates (newCoordinates) {
-      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateCoordinates)')
       this._readiness = false
       this._syncCoordinatesJsonToArray(newCoordinates)
       return this._redrawWindows((window, index) =>
@@ -627,7 +622,6 @@ var GIVe = (function (give) {
     }
 
     updateTracks (newCoordinates) {
-      give._verbConsole.info(this.id + ' @ ' + Date.now() + ': unready (updateTracks)')
       this._readiness = false
       this._syncCoordinatesJsonToArray(newCoordinates)
       return this._redrawWindows((window, index) =>
@@ -652,6 +646,13 @@ var GIVe = (function (give) {
       }
     }
 
+    get _refObjArray () {
+      try {
+        return this._refArray.map(ref => give.RefObject.findRefByDb(ref)
+        )
+      } catch (ignore) { return null }
+    }
+
     _coorChanged (newValue, oldValue) {
       if (!this._updatingCoordinates) {
         return this.updateCoordinates(newValue)
@@ -659,15 +660,31 @@ var GIVe = (function (give) {
     }
     
     _highlightChanged (newValue, oldValue) {
-      this._highlightArray = JSON.parse(newValue)
-      if (!this._updatingHighlights) {
-        return this.priorityManagersReadyPromise.then(() => {
-          this._refArray.forEach((refObj, index) => 
-            refObj.updateHighlights(
-              this._highlightArray[index % this._highlightArray.length])
+      if (newValue) {
+        this._highlightRegionStrings = JSON.parse(newValue)
+        this._updatingHighlights = true
+        let refObjArray = this._refObjArray
+        if (refObjArray && refObjArray.length) {
+          this.getRefsReadyPromise().then(
+            () => this._initHighlightValue()
+          ).then(() => this.updateTracks())
+        }
+      }
+    }
+
+    _initHighlightValue () {
+      let refObjArray = this._refObjArray
+      if (refObjArray) {
+        this._highlightArray = this._highlightRegionStrings.map(
+          (highlightRegionInRef, index) => highlightRegionInRef.map(
+            regionString =>
+              new give.ChromRegion(regionString, refObjArray[index])
           )
-          this._updatingHighlights = false
-        }).then(() => this.updateTracks())
+        )
+        refObjArray.forEach((refObj, index) => refObj.updateHighlights(
+          this._highlightArray[index % this._highlightArray.length])
+        )
+        this._updatingHighlights = false
       }
     }
     

@@ -765,6 +765,18 @@ var GIVe = (function (give) {
       this.setSvgLocation()
     }
 
+    updateSize (width, height) {
+      if (typeof (width) === 'number') {
+        this.width = width
+        // this._trackSvg.setAttributeNS(null, 'x', this.x);
+      }
+      if (typeof (height) === 'number') {
+        this.height = height
+        // this._trackSvg.setAttributeNS(null, 'y', this.y);
+      }
+      this.setSvgSize()
+    }
+
     /**
      * update - set width and viewwindow, and update the content if needed.
      *

@@ -112,7 +112,7 @@ var GIVe = (function (give) {
         if (name && !this._slots.has(name)) {
           this._slots.set(name, { index: index, contents: [] })
         } else {
-          give.fireSignal('warning', {
+          give.fireSignal('give-warning', {
             errObj: new give.GiveError(
               'Duplicate slot name or empty name: ' + name)
           })
@@ -164,7 +164,7 @@ var GIVe = (function (give) {
             Math.max(newPosition, oldPosition) + 1)
         }
       } else {
-        give.fireSignal('warning', {
+        give.fireSignal('give-warning', {
           errObj: new give.GiveError('Invalid position: ' + newPosition +
             ', track will not change its position.'
           )
@@ -207,7 +207,7 @@ var GIVe = (function (give) {
             position > this._slots.get(slotName).contents.length
           ) {
             if (Number.isInteger(position)) {
-              give.fireSignal('warning', {
+              give.fireSignal('give-warning', {
                 errObj: new give.GiveError('Invalid position: ' + position +
                   ', track will be inserted at the end of the slot.'
                 )
@@ -291,7 +291,7 @@ var GIVe = (function (give) {
         newPosition > this._slots.get(newSlotName).contents.length
       ) {
         if (Number.isInteger(newPosition)) {
-          give.fireSignal('warning', {
+          give.fireSignal('give-warning', {
             errObj: new give.GiveError('Invalid position: ' + newPosition +
               ', track will be moved to the end of the new slot.'
             )

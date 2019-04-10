@@ -482,7 +482,7 @@ var GIVe = (function (give) {
       return null
     }
 
-    insert (chromRegion) {
+    insert (chromRegions) {
       if (!this.getSetting('localOnly') || !this._dataObj) {
         give._verbConsole.warn('Cannot edit a non-local track or track ' +
           'without data! ')
@@ -490,10 +490,10 @@ var GIVe = (function (give) {
           { msg: 'Cannot edit a non-local track or track without data! ' })
         return null
       }
-      return this._dataObj.insert(chromRegion)
+      return this._dataObj.insert(chromRegions)
     }
 
-    remove (chromRegion) {
+    remove (chromRegions) {
       if (!this.getSetting('localOnly') || !this._dataObj) {
         give._verbConsole.warn('Cannot edit a non-local track or track ' +
           'without data! ')
@@ -501,10 +501,10 @@ var GIVe = (function (give) {
           { msg: 'Cannot edit a non-local track or track without data! ' })
         return null
       }
-      return this._dataObj.remove(chromRegion)
+      return this._dataObj.remove(chromRegions)
     }
 
-    update (chromRegionOld, chromRegionNew) {
+    update (chromRegionsOld, chromRegionsNew) {
       if (!this.getSetting('localOnly') || !this._dataObj) {
         give._verbConsole.warn('Cannot edit a non-local track or track ' +
           'without data! ')
@@ -512,7 +512,18 @@ var GIVe = (function (give) {
           { msg: 'Cannot edit a non-local track or track without data! ' })
         return null
       }
-      return this._dataObj.update(chromRegionOld, chromRegionNew)
+      return this._dataObj.update(chromRegionsOld, chromRegionsNew)
+    }
+
+    clear () {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.clear()
     }
 
     /**
@@ -590,9 +601,14 @@ var GIVe = (function (give) {
      * @returns {TrackObjectBase}          returned TrackObject
      */
     static createTrack (id, settings, refObj, type, groupId) {
+      settings = settings || {}
       try {
-        type = type || settings.type || settings.settings.type
+        type = type || settings.type ||
+          (settings.settings && settings.settings.type)
         type = type.split(/\s+/, 2)[0].toLowerCase()
+        if (!settings.type && (!settings.settings || !settings.settings.type)) {
+          settings.type = type
+        }
       } catch (ignore) { }
       if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
         return new this.typeMap[type](id, settings, refObj, groupId)
