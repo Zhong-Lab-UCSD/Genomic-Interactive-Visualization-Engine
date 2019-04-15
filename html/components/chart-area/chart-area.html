@@ -676,10 +676,21 @@ var GIVe = (function (give) {
       let refObjArray = this._refObjArray
       if (refObjArray) {
         this._highlightArray = this._highlightRegionStrings.map(
-          (highlightRegionInRef, index) => highlightRegionInRef.map(
-            regionString =>
-              new give.ChromRegion(regionString, refObjArray[index])
-          )
+          (highlightRegionInRef, index) => {
+            if (Array.isArray(highlightRegionInRef)) {
+              return highlightRegionInRef.map(
+                (regionString, regionIndex) =>
+                  new give.ChromRegion(regionString, refObjArray[index], {
+                    colorIndex: regionIndex
+                  })
+              )
+            }
+            return [
+              new give.ChromRegion(highlightRegionInRef, refObjArray[index], {
+                colorIndex: regionIndex
+              })
+            ]
+          }
         )
         refObjArray.forEach((refObj, index) => refObj.initializeHighlights(
           this._highlightArray[index % this._highlightArray.length])
