@@ -1,4 +1,4 @@
-/**
+ /**
  * @license
  * Copyright 2017 GIVe Authors
  *
@@ -20,15 +20,21 @@ var GIVe = (function (give) {
 
   /**
    * Data structure for a track in GIVE
-   * @typedef {object} TrackDataObjectBase
+   * @class TrackDataObject
    * @property {TrackObjectBase} parent - Track object as parent
    * @property {number} getDataDebounceInt - Debouncing interval
    * @property {object} _pendingRangesById - Regions requested by GUI elements
    *   that have not been merged yet
    * @property {OakTreeLiteral|PineTreeLiteral} _data - The data structure, an
    *   instance of `this._DataStructure`
+   * @property {boolean} localOnly - Whether all data should be stored in
+   *   local memory for this track. No additional server fetching or file
+   *   loading needed, only do CRUD through internal CRUD api.
    *
-   * @class TrackDataObject
+   *   Withering will be disabled if `localOnly` is set to `true`, partial
+   *   reading is done through regular `traverse()` method and complete
+   *   reading is available via `read()`
+   *
    *
    * @constructor
    * @param {TrackObjectBase} parent - The track object parent
@@ -41,14 +47,13 @@ var GIVe = (function (give) {
       }
       this._parent = parent
 
-      this.getDataDebounceInt = this.parent.getSetting('debounceInterval') ||
-        TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL
       this._debouncePromise = null
       this._pendingRangesById = {}
 
       this._fetchPromise = null
       this._ongoingFetchPromise = null
       this._data = {}
+      this.localOnly = false
 
       this._initSettings()
     }
@@ -66,11 +71,16 @@ var GIVe = (function (give) {
     }
 
     _initSettings () {
-      if (!this.getTrackSetting('requestUrl')) {
+      if (this.getTrackSetting('localOnly')) {
+        this.localOnly = true
+      } else if (!this.getTrackSetting('requestUrl')) {
         this.setTrackSetting('requestUrl', this.getTrackSetting('isCustom')
-          ? TrackDataObject.fetchCustomTarget
-          : TrackDataObject.fetchDataTarget)
+          ? this.constructor.fetchCustomTarget
+          : this.constructor.fetchDataTarget)
       }
+      this.getDataDebounceInt = this.localOnly ? 0
+        : (this.parent.getSetting('debounceInterval') ||
+          this.constructor.DEFAULT_DEBOUNCE_INTERVAL)
     }
 
     /**
@@ -349,7 +359,7 @@ var GIVe = (function (give) {
      */
     getData (chrom, createIfNotExist) {
       if (!this._data || !this._data.hasOwnProperty(chrom)) {
-        if (createIfNotExist) {
+        if (createIfNotExist || this.localOnly) {
           this._data = this._data || {}
           this._data[chrom] = this._createNewDataStructure(chrom)
         } else {
@@ -487,6 +497,7 @@ var GIVe = (function (give) {
       return new this.constructor._DataStructure(
         this.parent.refObj.chromInfo[chrom].chrRegion,
         {
+          localOnly: this.localOnly,
           _SummaryCtor: this.constructor._SummaryCtor
         }
       )
@@ -583,6 +594,37 @@ var GIVe = (function (give) {
      *   examples.
      * **************************************************************************
      */
+
+    applyByChrom (regions, callback) {
+      while (regions && regions.length) {
+        let currChrom = regions[0].chr
+        let chromRegionsSameChr =
+          regions.filter(region => region.chr === currChrom)
+        callback(currChrom, chromRegionsSameChr)
+        regions = regions.filter(region => region.chr !== currChrom)
+      }
+    }
+
+    insert (chromRegions) {
+      return this.applyByChrom(chromRegions,
+        (chrom, regions) => this.getData(chrom, true).insert(regions)
+      )
+    }
+
+    remove (chromRegions) {
+      return this.applyByChrom(chromRegions,
+        (chrom, regions) => this.getData(chrom, true).remove(regions)
+      )
+    }
+
+    update (chromRegionsOld, chromRegionsNew) {
+      this.remove(chromRegionsOld)
+      this.insert(chromRegionsNew)
+    }
+
+    clear () {
+      this._data = {}
+    }
 
     /**
      * _dataHandler - This should be the detailed implementation about how to
@@ -738,6 +780,7 @@ var GIVe = (function (give) {
   /**
    * @property {string} fetchDataTarget - The URL to fetch remote data.
    * @static
+   * @memberof TrackDataObject
    */
   TrackDataObject.fetchDataTarget = give.Host +
     (give.ServerPath || '/') +
@@ -746,6 +789,7 @@ var GIVe = (function (give) {
   /**
    * @property {string} fetchCustomTarget - The URL to fetch custom track data.
    * @static
+   * @memberof TrackDataObject
    */
   TrackDataObject.fetchCustomTarget = give.Host +
     (give.ServerPath || '/') +
@@ -754,6 +798,7 @@ var GIVe = (function (give) {
   /**
    * @property {string} _NO_CALLERID_KEY - Default caller ID if none is provided.
    * @static
+   * @memberof TrackDataObject
    */
   TrackDataObject._NO_CALLERID_KEY = '_giveNoCallerID'
 
@@ -768,6 +813,7 @@ var GIVe = (function (give) {
    * @property {number} DEFAULT_DEBOUNCE_INTERVAL - The default values for
    *   debounce interval (in milliseconds) between `fetchData()` calls.
    * @static
+   * @memberof TrackDataObject
    */
   TrackDataObject.DEFAULT_DEBOUNCE_INTERVAL = 200
 

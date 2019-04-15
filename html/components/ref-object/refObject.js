@@ -43,6 +43,7 @@ var GIVe = (function (give) {
         labMap: {},
         tissueMap: {}
       }
+      this.highlightTrack = null
       // read Object for refObj chrom info (if there)
       this._chromInfoPromise =
         this.initChromInfo(chromInfo, settings.initChromTarget)
@@ -113,6 +114,8 @@ var GIVe = (function (give) {
             }
           }
         }
+        this.highlightTrack = this.createHighlightTrack()
+        this.highlightTrack._initializable = true
       } catch (err) {
         this.chromInfo = null
         give._verbConsole.warn(err)
@@ -224,13 +227,8 @@ var GIVe = (function (give) {
 
     createCoordinateTrack (slotName) {
       slotName = slotName || this.constructor.DEFAULT_COORDINATE_SLOT_NAME
-      return give.TrackObject.createTrack('coor_' + this.db + '_' + slotName, {
-        type: 'coordinate',
-        priority: 0,
-        noData: true,
-        visibility: 'full',
-        pin: slotName
-      }, this)
+      return give.TrackObject.createCoorTrack(this,
+        'coor_' + this.db + '_' + slotName, { pin: slotName })
     }
 
     initCoordinateTracks (priorityManager) {
@@ -241,6 +239,22 @@ var GIVe = (function (give) {
           priorityManager.addTrack(track, null, null, true)
         }
       })
+    }
+
+    createHighlightTrack () {
+      return give.TrackObject.createTrack(
+        'highlight_' + this.db,
+        { localOnly: true }, this, 'highlight', null)
+    }
+
+    initializeHighlights (highlightArray) {
+      if (this.highlightTrack._initializable) {
+        this.highlightTrack.clear()
+        this.highlightTrack.insert(
+          highlightArray.sort(give.ChromRegion.compare)
+        )
+        delete this.highlightTrack._initializable
+      }
     }
 
     initMetaFilter () {
@@ -289,7 +303,7 @@ var GIVe = (function (give) {
           if (track.getSetting(priorityManager.settingString)) {
             priorityManager.addTrack(track)
           }
-        } 
+        }
       })
       return priorityManager
     }
@@ -367,7 +381,8 @@ var GIVe = (function (give) {
       if (callback) {
         callback.call(this)
       }
-      give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: this.cleanId + '-custom-tracks-ready'})
+      give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
+        {flag: this.cleanId + '-custom-tracks-ready'})
     }
 
     fillMetaFilter (metaEntries) {

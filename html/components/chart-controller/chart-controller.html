@@ -272,6 +272,7 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               coordinate="{{coordinate}}"
               num-of-subs="{{numOfSubs}}"
               priority-managers="{{priorityManagers}}"
+              highlight="{{highlight}}"
               pass-exceptions>
             </chart-area>
           </div>
@@ -331,7 +332,17 @@ var GIVe = (function (give) {
           type: String,
           notify: true
         },
-
+        
+        /**
+         * Highlighted coordinates of every view.
+         * This is the value that can be specified by HTML attributes.
+         * @type {Array<string>}
+         */
+        highlight: {
+          type: String,
+          notify: true
+        },
+        
         /**
          * The title text that will appear in the embedded browser.
          * @type {string}
@@ -624,6 +635,10 @@ var GIVe = (function (give) {
       paramReplaced = super._urlParamToProp(params) || paramReplaced
       if (params.has('coordinate')) {
         this.coordinate = window.decodeURIComponent(params.get('coordinate'))
+        paramReplaced = true
+      }
+      if (params.has('highlight')) {
+        this.highlight = window.decodeURIComponent(params.get('highlight'))
         paramReplaced = true
       }
       return paramReplaced

@@ -374,7 +374,7 @@ var GIVe = (function (give) {
     _initSvgHolder (svgElem) {
       // notice that `svgElem` should be there
       svgElem.holder = document.createElementNS(this.svgNS, 'g')
-      svgElem.appendChild(svgElem.holder)
+      svgElem.insertBefore(svgElem.holder, svgElem.gestureReceiver || null)
     }
 
     /**
@@ -763,6 +763,18 @@ var GIVe = (function (give) {
         // this._trackSvg.setAttributeNS(null, 'y', this.y);
       }
       this.setSvgLocation()
+    }
+
+    updateSize (width, height) {
+      if (typeof (width) === 'number') {
+        this.width = width
+        // this._trackSvg.setAttributeNS(null, 'x', this.x);
+      }
+      if (typeof (height) === 'number') {
+        this.height = height
+        // this._trackSvg.setAttributeNS(null, 'y', this.y);
+      }
+      this.setSvgSize()
     }
 
     /**

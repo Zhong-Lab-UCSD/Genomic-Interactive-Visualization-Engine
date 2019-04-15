@@ -823,7 +823,7 @@ var GIVe = (function (give) {
     }
   }
 
-  BigWigTrackDom._DEFAULT_HEIGHT = 80
+  BigWigTrackDom.DEFAULT_HEIGHT = 80
 
   give.BigWigTrackDom = BigWigTrackDom
 

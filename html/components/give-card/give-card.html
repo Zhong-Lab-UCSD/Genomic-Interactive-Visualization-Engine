@@ -367,7 +367,7 @@ var GIVe = (function (give) {
           e.preventDefault()
         }
       } catch (error) {
-        give.fireSignal('warning', { errObj: error }, null, this)
+        give.fireSignal('give-warning', { errObj: error }, null, this)
       }
     }
   }

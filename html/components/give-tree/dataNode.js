@@ -208,7 +208,6 @@ var GIVe = (function (give) {
 
     clear (convertTo) {
       this.startList = []
-      this.contList = []
     }
 
     /**
@@ -285,11 +284,17 @@ var GIVe = (function (give) {
      * @returns {boolean}      whether the merge is successful
      */
     mergeAfter (node) {
-      return (
+      if (
         node === false || (
           node instanceof this.constructor && node.startList.length <= 0
         )
-      )
+      ) {
+        return true
+      } else if (node instanceof this.constructor) {
+        // the node is not mergable, but its contList may be updated
+        node.updateContList(this.contList.concat(this.startList))
+      } 
+      return false
     }
 
     /**
@@ -301,6 +306,17 @@ var GIVe = (function (give) {
      */
     get isEmpty () {
       return this.startList.length <= 0 && this.contList.length <= 0
+    }
+
+    updateContList (contList) {
+      if (contList) {
+        contList = contList.filter(entry => (entry.end > this.start))
+        if (this.contList.length > contList.length) {
+          give._verbConsole.warn('Warning: continuedList inconsistent.')
+        }
+        this.contList = contList
+      }
+      return this.contList.concat(this.startList)
     }
   }
 

@@ -44,6 +44,9 @@ var GIVe = (function (give) {
      *    To disable withering, set `props.lifeSpan` to 0 or a negative value.
      * @param {function} props.LeafNodeCtor - if omitted, the constructor of
      *    `this.root` will be used
+     * @param {boolean} props.localOnly - Whether this tree allows live
+     *    updating of its content (CUD operations), if this is `true`,
+     *    withering will be disabled and `props.lifeSpan` will be ignored.
      * @memberof GiveTree
      */
     constructor (chrRange, NonLeafNodeCtor, props) {
@@ -53,8 +56,9 @@ var GIVe = (function (give) {
       props.end = chrRange.end
       props.tree = this
       props.isRoot = true
-      if ((typeof props.lifeSpan === 'number' && props.lifeSpan > 0) ||
-        !props.lifeSpan
+      if (!this.localOnly &&
+        ((typeof props.lifeSpan === 'number' && props.lifeSpan > 0) ||
+        !props.lifeSpan)
       ) {
         props.lifeSpan = props.lifeSpan || this.constructor.DEFAULT_LIFE_SPAN
         this._currGen = 0
@@ -70,6 +74,7 @@ var GIVe = (function (give) {
     _initProperties (chrRange, NonLeafNodeCtor, props) {
       this.chr = chrRange.chr
       this._LeafNodeCtor = props.LeafNodeCtor || NonLeafNodeCtor
+      this.localOnly = !!props.localOnly
     }
 
     get neighboringLinks () {
@@ -90,11 +95,13 @@ var GIVe = (function (give) {
      * @memberof GiveTreeBase.prototype
      *
      * @param {Array<ChromRegionLiteral>} data
-     * @param {ChromRegionLiteral|null} chrRange -
+     * @param {ChromRegionLiteral} [chrRange] -
      *    the chromosomal range that `data` corresponds to.
-     * @param {Array<ChromRegionLiteral>} continuedList
-     * @param {function|null} callback
-     * @param {object|null} props
+     * @param {object} props
+     * @param {boolean} [props.doNotWither]
+     * @param {Array<ChromRegionLiteral>} [props.contList]
+     * @param {function} [props.callback]
+     * @param {function} [props.LeafNodeCtor]
      */
     _insertSingleRange (data, chrRange, props) {
       if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
@@ -117,9 +124,9 @@ var GIVe = (function (give) {
      *    `data === null` or `data === []` means there is no data in
      *    `chrRange` and `false`s will be used in actual storage.
      *    __NOTICE:__ any data overlapping `chrRange` should appear either
-     *    here or in `continuedList`, otherwise `continuedList` in data
+     *    here or in `props.contList`, otherwise `continuedList` in data
      *    entries may not work properly.
-     * @param {Array<ChromRegionLiteral>|ChromRegionLiteral|null} chrRanges -
+     * @param {Array<ChromRegionLiteral>|ChromRegionLiteral} [chrRanges]
      *    the array of chromosomal range(s) that `data` corresponds to.
      *    This is used to mark the empty regions correctly. No `null` will
      *    present within these regions after this operation.
@@ -129,48 +136,54 @@ var GIVe = (function (give) {
      *    preferably a `GIVe.ChromRegion` object.
      *    If `data.length === 1` and `chrRange === null`, then
      *    `chrRegion = data[0]` because of ChromRegion behavior.
-     * @param {Array<ChromRegionLiteral>} continuedList - the list of data
+     *    If `this.localOnly === true`, this parameter will be ignored.
+     * @param {Array<object>|object} [props] - additional properties being
+     *    passed onto nodes. If this is an `Array`, it should have the same
+     *    `length` as `chrRanges` does.
+     * @param {boolean} [props.doNotWither] - If `true`, the tree will not
+     *    advance its generation or trigger withering.
+     * @param {function} [props.LeafNodeCtor] - the constructor function of
+     *    leaf nodes if they are not the same as the non-leaf nodes.
+     * @param {Array<ChromRegionLiteral>} [props.contList] - the list of data
      *    entries that should not start in `chrRange` but are passed from the
      *    earlier regions, this will be useful for later regions if data for
      *    multiple regions are inserted at the same time
-     * @param {function|null} callback - the callback function to be used
+     * @param {function} [props.callback] - the callback function to be used
      *    (with the data entry as its sole parameter) when inserting
-     * @param {Array<object>|object|null} props - additional properties being
-     *    passed onto nodes. If this is an `Array`, it should have the same
-     *    `length` as `chrRanges` does.
-     * @param {boolean} props.doNotWither - If `true`, the tree will not advance
-     *    its generation or trigger withering.
-     * @param {function|null} props.LeafNodeCtor - the constructor function of
-     *    leaf nodes if they are not the same as the non-leaf nodes.
      */
     insert (data, chrRanges, props) {
       let exceptions = []
-      if (!Array.isArray(chrRanges)) {
-        chrRanges = [chrRanges]
-      }
-      let uncachedRanges = chrRanges.reduce(
-        (uncachedRanges, range) =>
-          uncachedRanges.concat(this.getUncachedRange(range)),
-        []
-      )
-      uncachedRanges.forEach((range, index) => {
-        try {
-          this._insertSingleRange(data, range,
-            Array.isArray(props) ? props[index] : props)
-        } catch (err) {
-          err.message = '[insert] ' + err.message + '\n' + err.stack
-          exceptions.push(err)
-          return null
+      if (this.localOnly) {
+        this._insertSingleRange(data, this.coveringRange,
+          Array.isArray(props) ? props[0] : props)
+      } else {
+        if (!Array.isArray(chrRanges)) {
+          chrRanges = [chrRanges]
         }
-      })
-      if (exceptions.length > 0) {
-        let message = exceptions.reduce(
-          (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
-          'Exception occured during insertion:'
+        let uncachedRanges = chrRanges.reduce(
+          (uncachedRanges, range) =>
+            uncachedRanges.concat(this.getUncachedRange(range)),
+          []
         )
-        give._verbConsole.warn(message)
-        give.fireSignal('give-warning', { msg: message }, null, this)
-        throw new give.GiveError(message)
+        uncachedRanges.forEach((range, index) => {
+          try {
+            this._insertSingleRange(data, range,
+              Array.isArray(props) ? props[index] : props)
+          } catch (err) {
+            err.message = '[insert] ' + err.message + '\n' + err.stack
+            exceptions.push(err)
+            return null
+          }
+        })
+        if (exceptions.length > 0) {
+          let message = exceptions.reduce(
+            (prevMessage, currErr) => (prevMessage + '\n' + currErr.message),
+            'Exception occured during insertion:'
+          )
+          give._verbConsole.warn(message)
+          give.fireSignal('give-warning', { msg: message }, null, this)
+          throw new give.GiveError(message)
+        }
       }
     }
 
@@ -319,7 +332,9 @@ var GIVe = (function (give) {
      */
     getUncachedRange (chrRange, props) {
       props = props || {}
-      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
+      if (!this.localOnly &&
+        (!chrRange || !chrRange.chr || chrRange.chr === this.chr)
+      ) {
         chrRange = chrRange
           ? this._root.truncateChrRange(chrRange, true, false)
           : this.coveringRange
@@ -342,7 +357,9 @@ var GIVe = (function (give) {
      */
     hasUncachedRange (chrRange, props) {
       props = props || {}
-      if (!chrRange || !chrRange.chr || chrRange.chr === this.chr) {
+      if (!this.localOnly &&
+        (!chrRange || !chrRange.chr || chrRange.chr === this.chr)
+      ) {
         chrRange = chrRange
           ? this._root.truncateChrRange(chrRange, true, false)
           : this.coveringRange

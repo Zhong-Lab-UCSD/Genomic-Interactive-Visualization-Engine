@@ -106,11 +106,11 @@ var GIVe = (function (give) {
   /**
    * Behavior that allows embedding of a priority manager collection.
    *
-   * When the element is initialized (super.ready() is called). An event will be
-   * fired to initialize the priority manager based on `this._refArray`,
-   * `this.defaultTrackIdList` and `this.groupIdList`. This event will be handled
-   * in the capture phase (not the bubbling phase) so that parent elements can
-   * intercept the initialization.
+   * When the element is initialized (`super.ready()` is called). An event
+   * will be fired to initialize the priority manager based on
+   * `this._refArray`, `this.defaultTrackIdList` and `this.groupIdList`. This
+   * event will be handled in the __capture phase__ (not the bubbling phase)
+   * so that parent elements can intercept the initialization.
    *
    * @polymer
    * @mixinFunction

@@ -482,6 +482,50 @@ var GIVe = (function (give) {
       return null
     }
 
+    insert (chromRegions) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.insert(chromRegions)
+    }
+
+    remove (chromRegions) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.remove(chromRegions)
+    }
+
+    update (chromRegionsOld, chromRegionsNew) {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.update(chromRegionsOld, chromRegionsNew)
+    }
+
+    clear () {
+      if (!this.getSetting('localOnly') || !this._dataObj) {
+        give._verbConsole.warn('Cannot edit a non-local track or track ' +
+          'without data! ')
+        give.fireSignal('give-warning',
+          { msg: 'Cannot edit a non-local track or track without data! ' })
+        return null
+      }
+      return this._dataObj.clear()
+    }
+
     /**
      * createDomObj - Create a DOM Object from this track.
      *   The DOM Object will need to handle all display issues separately but
@@ -540,34 +584,39 @@ var GIVe = (function (give) {
      *   If no ID is specified, `'coor_' + refObj.db` will be used as ID
      * @returns {TrackObjectBase}     The resulting track object
      */
-    static createCoorTrack (refObj, id) {
-      return this.createTrack(id || 'coor_' + refObj.db,
-        { type: 'coordinate', priority: 0, noData: true, visibility: 'full' },
-        refObj)
+    static createCoorTrack (refObj, id, settings) {
+      return this.createTrack(id || 'coor_' + refObj.db, Object.assign(
+        { type: 'coordinate', priority: 0, visibility: 'full' }, settings
+      ), refObj)
     }
 
     /**
      * createTrack - Create a track object by its type
      *
-     * @param  {string} ID       ID of the track, see constructor
-     * @param  {object} Settings Settings to be passed, see constructor
+     * @param  {string} id       ID of the track, see constructor
+     * @param  {object} settings Settings to be passed, see constructor
      * @param  {RefObjectLiteral} refObj      Reference, see constructor
      * @param  {string} type     The type of the track
-     * @param  {string} groupID     The group ID of the track
+     * @param  {string} groupId     The group ID of the track
      * @returns {TrackObjectBase}          returned TrackObject
      */
-    static createTrack (ID, Settings, refObj, type, groupID) {
+    static createTrack (id, settings, refObj, type, groupId) {
+      settings = settings || {}
       try {
-        type = type || Settings.type || Settings.settings.type
+        type = type || settings.type ||
+          (settings.settings && settings.settings.type)
         type = type.split(/\s+/, 2)[0].toLowerCase()
+        if (!settings.type && (!settings.settings || !settings.settings.type)) {
+          settings.type = type
+        }
       } catch (ignore) { }
       if (this.typeMap && this.typeMap.hasOwnProperty(type)) {
-        return new this.typeMap[type](ID, Settings, refObj, groupID)
+        return new this.typeMap[type](id, settings, refObj, groupId)
       } else {
         give._verbConsole.warn('Type \'' + type + '\' is not a valid type! ')
         give.fireSignal('give-warning',
           { msg: 'Type \'' + type + '\' is not a valid type! ' })
-        return new this.typeMap._default(ID, Settings, refObj, groupID)
+        return new this.typeMap._default(id, settings, refObj, groupId)
       }
     }
 
