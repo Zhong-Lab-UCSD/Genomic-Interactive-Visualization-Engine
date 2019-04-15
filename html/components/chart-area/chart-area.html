@@ -681,7 +681,7 @@ var GIVe = (function (give) {
               new give.ChromRegion(regionString, refObjArray[index])
           )
         )
-        refObjArray.forEach((refObj, index) => refObj.updateHighlights(
+        refObjArray.forEach((refObj, index) => refObj.initializeHighlights(
           this._highlightArray[index % this._highlightArray.length])
         )
         this._updatingHighlights = false
