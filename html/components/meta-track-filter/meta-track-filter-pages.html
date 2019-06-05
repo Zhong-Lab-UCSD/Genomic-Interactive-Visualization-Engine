@@ -1,10 +1,10 @@
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
-<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
-<link rel="import" href="../meta-entries/meta-entries.html">
-<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
-<link rel="import" href="../give-styles.html">
+<script type="module" src="../../../../@polymer/polymer/polymer-legacy.js"></script>
+<script type="module" src="../../../../@polymer/paper-checkbox/paper-checkbox.js"></script>
+<script type="module" src="../../../../@polymer/paper-tabs/paper-tabs.js"></script>
+<script type="module" src="../../../../@polymer/iron-pages/iron-pages.js"></script>
+<script type="module" src="../meta-entries/meta-entries.js"></script>
+<script type="module" src="../ref-embed-mixin/ref-embed-mixin.js"></script>
+<script type="module" src="../give-styles.js"></script>
 
 <dom-module id="genemo-track-filter-pages">
   <template>
@@ -75,6 +75,17 @@
     </iron-pages>
   </template>
   <script>
+var GIVe = (function (give) {
+  <script type="module">
+import '@polymer/polymer/polymer-legacy.js';
+import '@polymer/paper-checkbox/paper-checkbox.js';
+import '@polymer/paper-tabs/paper-tabs.js';
+import '@polymer/iron-pages/iron-pages.js';
+import '../meta-entries/meta-entries.js';
+import '../ref-embed-mixin/ref-embed-mixin.js';
+import '../give-styles.js';
+import { Polymer } from '@polymer/polymer/lib/legacy/polymer-fn.js';
+import { dom } from '@polymer/polymer/lib/legacy/polymer.dom.js';
 var GIVe = (function (give) {
   'use strict'
 
@@ -208,7 +219,7 @@ var GIVe = (function (give) {
     // get the ids that corresponding to the current selection
       var result = []
       var resultMap = {}
-      var checkboxList = Polymer.dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox')
+      var checkboxList = dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox')
       for (var i = 0; i < checkboxList.length; i++) {
         if (checkboxList[i].checked) {
           result = result.concat(this.listOfLists[this.selectedTab][i].ids)
@@ -225,7 +236,7 @@ var GIVe = (function (give) {
 
     setAllCheckboxes: function (flag) {
     // set all checkboxes to one value (flag)
-      var checkboxList = Polymer.dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox')
+      var checkboxList = dom(this.$.listPages.selectedItem).querySelectorAll('paper-checkbox')
       for (var i = 0; i < checkboxList.length; i++) {
         checkboxList[i].checked = flag
       }
@@ -234,5 +245,4 @@ var GIVe = (function (give) {
   })
   return give
 })(GIVe || {})
-  </script>
-</dom-module>
+</script>

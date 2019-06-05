@@ -1,15 +1,15 @@
 <!doctype html>
 <html>
 <head>
-<script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+<script src="../../@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 <!-- Import GIVE component -->
-<link rel="import" href="components/chart-controller/chart-controller.html">
-<link rel="import" href="components/give-styles.html">
-<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="bower_components/paper-button/paper-button.html">
-<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
-<link rel="import" href="components/ref-link-dialog/ref-link-dialog.html">
+<script type="module" src="./components/chart-controller/chart-controller.js"></script>
+<script type="module" src="./components/give-styles.js"></script>
+<script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
+<script type="module" src="../../@polymer/paper-button/paper-button.js"></script>
+<script type="module" src="../../@polymer/paper-dialog/paper-dialog.js"></script>
+<script type="module" src="../../@polymer/paper-dialog-scrollable/paper-dialog-scrollable.js"></script>
+<script type="module" src="./components/ref-link-dialog/ref-link-dialog.js"></script>
 </head>
 
 <body unresolved>
@@ -55,11 +55,28 @@ var GIVe = (function (give) {
     scLocalStorage
 
   window.addEventListener('WebComponentsReady', function (e) {
+<script type="module">
+import './components/chart-controller/chart-controller.js';
+import './components/give-styles.js';
+import '@polymer/iron-flex-layout/iron-flex-layout-classes.js';
+import '@polymer/paper-button/paper-button.js';
+import '@polymer/paper-dialog/paper-dialog.js';
+import '@polymer/paper-dialog-scrollable/paper-dialog-scrollable.js';
+import './components/ref-link-dialog/ref-link-dialog.js';
+import { dom } from '@polymer/polymer/lib/legacy/polymer.dom.js';
+
+var GIVe = (function (give) {
+  'use strict'
+
+  var scDialog, scShowRefBtn, scDoNotShowBtn,
+    scLocalStorage
+
+  window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
-    scDialog = Polymer.dom(document).querySelector('#chiapetRefDialog')
-    scShowRefBtn = Polymer.dom(document).querySelector('#chiapetShowRef')
-    scDoNotShowBtn = Polymer.dom(document).querySelector('#chiapetDoNotShow')
+    scDialog = dom(document).querySelector('#chiapetRefDialog')
+    scShowRefBtn = dom(document).querySelector('#chiapetShowRef')
+    scDoNotShowBtn = dom(document).querySelector('#chiapetDoNotShow')
 
     scLocalStorage = document.createElement('iron-localstorage')
     scLocalStorage.autoSaveDisabled = true
@@ -87,6 +104,3 @@ var GIVe = (function (give) {
   return give
 })(GIVe || {})
 </script>
-
-</body>
-</html>

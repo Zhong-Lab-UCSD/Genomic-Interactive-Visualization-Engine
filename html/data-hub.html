@@ -1,12 +1,23 @@
 <!doctype html>
 <html>
   <head>
-    <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../../@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
     <!-- Import GIVE component -->
-    <link rel="import" href="components/track-manager/track-manager.html">
-    <link rel="import" href="components/give-styles.html">
-    <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-    <custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <script type="module" src="./components/track-manager/track-manager.js"></script>
+    <script type="module" src="./components/give-styles.js"></script>
+    <script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
+    <!-- FIXME(polymer-modulizer):
+        These imperative modules that innerHTML your HTML are
+        a hacky way to be sure that any mixins in included style
+        modules are ready before any elements that reference them are
+        instantiated, otherwise the CSS @apply mixin polyfill won't be
+        able to expand the underlying CSS custom properties.
+        See: https://github.com/Polymer/polymer-modulizer/issues/154
+        -->
+    <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
       body {
         font-family: 'Roboto';
@@ -50,11 +61,18 @@
         background: var(--lighter-accent-color);
       }
       </style>
-    </custom-style>
+    </custom-style>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>
   </head>
 
   <body unresolved class="fullbleed layout vertical">
     <track-manager class="flex">
+    <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<track-manager class="flex">
       <div slot="managerIntro" class="managerIntro flex layout vertical">
         <div class="flex self-center contentHolder">
           <div class="normalText">
@@ -113,6 +131,7 @@
           </div>
         </div>
       </div>
-    </track-manager>
-  </body>
-</html>
+    </track-manager>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>

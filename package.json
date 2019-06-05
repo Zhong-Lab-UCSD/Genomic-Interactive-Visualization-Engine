@@ -50,19 +50,21 @@
   },
   "homepage": "https://www.givengine.org/",
   "dependencies": {
-    "@polymer/polymer": "^3.0.5",
+    "@polymer/polymer": "^3.2.0",
     "axios": "^0.18.0",
-    "express": "^4.16.4",
-    "pako": "^1.0.6"
+    "express": "^4.17.0",
+    "pako": "^1.0.10"
   },
   "devDependencies": {
-    "@babel/core": "^7.1.2",
-    "@babel/preset-env": "^7.1.0",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "@webcomponents/webcomponentsjs": "^2.2.10",
     "chai": "^4.2.0",
-    "eslint": "^5.7.0",
+    "eslint": "^5.16.0",
     "grunt": "^1.0.4",
     "grunt-babel": "^8.0.0",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "polymer-cli": "^1.9.9"
   },
   "standard": {
     "globals": [

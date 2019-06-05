@@ -9,76 +9,100 @@
   <meta name="description" content="CEpBrowser (Comparative Epigenome Browser) is a gene-centric genome browser that visualize the genomic features of multiple ref with color-coded orthologous regions, aiding users in comparative genomic research. The genome browser is adapted from UCSC Genome Browser and the orthologous regions are generated from cross-ref lift-over pairs."/>
   <title>GENEMO Search</title>
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link rel="import" href="bower_components/polymer/polymer.html">
-  <link rel="import" href="components/chart-area/chart-area.html">
-  <link rel="import" href="components/give-icons/give-icons.html">
-  <link rel="import" href="components/cell-line-info-card/cell-line-info-card.html">
-  <link rel="import" href="components/chart-track-list/chart-track-group-list.html">
-  <link rel="import" href="components/search-card-content/search-card-content.html">
-  <link rel="import" href="components/genemo-track-filter/genemo-track-filter.html">
-  <link rel="import" href="components/chrom-region-list/chrom-region-list.html">
+  <script type="module" src="../../@polymer/polymer/polymer-legacy.js"></script>
+  <script type="module" src="./components/chart-area/chart-area.js"></script>
+  <script type="module" src="./components/give-icons/give-icons.js"></script>
+  <script type="module" src="./components/cell-line-info-card/cell-line-info-card.js"></script>
+  <script type="module" src="./components/chart-track-list/chart-track-group-list.js"></script>
+  <script type="module" src="./components/search-card-content/search-card-content.js"></script>
+  <script type="module" src="./components/genemo-track-filter/genemo-track-filter.js"></script>
+  <script type="module" src="./components/chrom-region-list/chrom-region-list.js"></script>
   <link rel="import" href="components/genemo-card/genemo-card.html">
-  <link rel="import" href="components/genemo-main/genemo-main.html">
-  <link rel="import" href="components/give-styles.html">
-  <link rel="import" href="bower_components/iron-icons/iron-icons.html">
-  <link rel="import" href="bower_components/iron-pages/iron-pages.html">
-  <link rel="import" href="bower_components/iron-icons/notification-icons.html">
-  <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
-  <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+  <script type="module" src="./components/genemo-main/genemo-main.js"></script>
+  <script type="module" src="./components/give-styles.js"></script>
+  <script type="module" src="../../@polymer/iron-icons/iron-icons.js"></script>
+  <script type="module" src="../../@polymer/iron-pages/iron-pages.js"></script>
+  <script type="module" src="../../@polymer/iron-icons/notification-icons.js"></script>
+  <script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout.js"></script>
+  <script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
 
-  <link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
-  <link rel="import" href="bower_components/paper-button/paper-button.html">
-  <link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
-  <link rel="import" href="bower_components/paper-tooltip/paper-tooltip.html">
-  <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+  <script type="module" src="../../@polymer/paper-drawer-panel/paper-drawer-panel.js"></script>
+  <script type="module" src="../../@polymer/paper-button/paper-button.js"></script>
+  <script type="module" src="../../@polymer/paper-dialog/paper-dialog.js"></script>
+  <script type="module" src="../../@polymer/paper-tooltip/paper-tooltip.js"></script>
+  <script type="module" src="../../@polymer/paper-toolbar/paper-toolbar.js"></script>
 
-  <link rel="import" href="bower_components/google-youtube/google-youtube.html">
+  <script type="module" src="../../google-youtube/google-youtube.js"></script>
   <custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
     <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
     </style>
-  </custom-style>
-</head>
+  <!-- FIXME(polymer-modulizer):
+        These imperative modules that innerHTML your HTML are
+        a hacky way to be sure that any mixins in included style
+        modules are ready before any elements that reference them are
+        instantiated, otherwise the CSS @apply mixin polyfill won't be
+        able to expand the underlying CSS custom properties.
+        See: https://github.com/Polymer/polymer-modulizer/issues/154
+        -->
+    <script type="module">
+const $_documentContainer = document.createElement('template');
 
-<body unresolved class="fullbleed layout vertical">
+$_documentContainer.innerHTML = `<custom-style include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    <style is="custom-style" include="give-shared-styles iron-flex iron-flex-alignment iron-positioning">
+    </style>
+  </custom-style>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>class="fullbleed layout vertical">
   <?php include_once(realpath(dirname(__FILE__) . '/../includes/analyticstracking.php')); ?>
   <div id="genemoFirstContainer" class="layout vertical center">
     <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0" />
     <iron-pages id='searchAndTrackTabs' selected='genemoSearchPanel'
       attr-for-selected='id' class="flex layout vertical center self-stretch">
+  <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<div id="genemoFirstContainer" class="layout vertical center">
+    <img class="genemoLogo" src="genemo-assets/images/GenemoLogo.svg" alt="GENEMO Logo" border="0">
+    <iron-pages id="searchAndTrackTabs" selected="genemoSearchPanel" attr-for-selected="id" class="flex layout vertical center self-stretch">
       <div id="genemoSearchPanel" class="layout vertical">
-        <genemo-card disable-folding>
-          <search-card-content slot="cardBody" id='searchCard'></search-card-content>
+        <genemo-card disable-folding="">
+          <search-card-content slot="cardBody" id="searchCard"></search-card-content>
         </genemo-card>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
-          <paper-button raised noink>
+          <paper-button raised="" noink="">
             <iron-icon icon="genemo-iconset:manual-icon"></iron-icon>
             GENEMO Manual
           </paper-button>
         </a>
-        <paper-button raised noink class="videoBtn">
+        <paper-button raised="" noink="" class="videoBtn">
           <iron-icon icon="notification:ondemand-video"></iron-icon>
           Introduction Video
         </paper-button>
       </div>
-      <genemo-card disable-folding id="trackSelectionPanel" class="flex flexFillCard">
-        <chart-track-group-list slot="cardBody" id="mainChartTrackList"
-          group-id-list='["encode"]' setting-key="isGenemoSelected"
-          has-controls with-filter>
+      <genemo-card disable-folding="" id="trackSelectionPanel" class="flex flexFillCard">
+        <chart-track-group-list slot="cardBody" id="mainChartTrackList" group-id-list="[&quot;encode&quot;]" setting-key="isGenemoSelected" has-controls="" with-filter="">
         </chart-track-group-list>
       </genemo-card>
     </iron-pages>
-  </div>
-  <paper-drawer-panel id='mainPanel' hidden force-narrow>
+  </div>`;
+
+document.body.appendChild($_documentContainer.content);
+</script><paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
+  <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<paper-drawer-panel id="mainPanel" hidden="" force-narrow="">
     <div slot="main" class="layout vertical">
-      <paper-toolbar id='mainToolbar'>
-        <paper-icon-button icon='menu' paper-drawer-toggle></paper-icon-button>
-        <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0" />
+      <paper-toolbar id="mainToolbar">
+        <paper-icon-button icon="menu" paper-drawer-toggle=""></paper-icon-button>
+        <img class="genemoLogo" src="genemo-assets/images/GenemoLogoNoText.svg" alt="GENEMO Logo" border="0">
         <div class="title"></div>
         <div class="tooltipMouseOver" id="navigationHelp">
           <iron-icon icon="icons:help"></iron-icon>
           How to navigate
         </div>
-        <paper-tooltip fit-to-visible-bounds for="navigationHelp">
+        <paper-tooltip fit-to-visible-bounds="" for="navigationHelp">
           To navigate GeNemo Browser:
           <ul>
             <li><em>Drag horizontally</em> on any tracks or the coordinates to move left / right</li>
@@ -86,35 +110,42 @@
           </ul>
         </paper-tooltip>
         <a href="genemo-assets/manual_genemo.html" tabindex="-1" class="buttonLink" target="_blank">
-          <paper-button noink>
+          <paper-button noink="">
             <iron-icon icon="give-iconset:manual-icon"></iron-icon>
             GENEMO Manual
           </paper-button>
         </a>
-        <paper-button noink class="videoBtn">
+        <paper-button noink="" class="videoBtn">
           <iron-icon icon="notification:ondemand-video"></iron-icon>
           Introduction Video
         </paper-button>
       </paper-toolbar>
       <div class="flex layout horizontal">
-        <genemo-card id='resultPanel' disable-folding class="self-stretch flexFillCard">
-          <chrom-region-list slot="cardBody" id='mainRegionList'></chrom-region-list>
+        <genemo-card id="resultPanel" disable-folding="" class="self-stretch flexFillCard">
+          <chrom-region-list slot="cardBody" id="mainRegionList"></chrom-region-list>
         </genemo-card>
         <div class="flex self-stretch relative">
-          <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1"
-            group-id-list='["genes", "encode", "queryGroup"]'></chart-area>
+          <chart-area class="flex self-stretch" id="mainChartArea" num-of-subs="1" group-id-list="[&quot;genes&quot;, &quot;encode&quot;, &quot;queryGroup&quot;]"></chart-area>
         </div>
       </div>
     </div>
     <div slot="drawer" id="mainPanelDrawer" class="layout vertical">
       <!-- searchAndTrackTabs go here afterwards -->
     </div>
-  </paper-drawer-panel>
-  <cell-line-info-card></cell-line-info-card>
-  <paper-dialog with-backdrop id="videoDialog">
+  </paper-drawer-panel>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>  <script type="module">
+const $_documentContainer = document.createElement('template');
+$_documentContainer.innerHTML = `<cell-line-info-card></cell-line-info-card>`;
+document.body.appendChild($_documentContainer.content);
+</script>le">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<paper-dialog with-backdrop="" id="videoDialog">
     <google-youtube id="videoPlayer" video-id="JG-aFKBS5Sw" height="540px" width="960px" rel="0">
     </google-youtube>
-  </paper-dialog>
-</body>
+  </paper-dialog>`;
 
-</html>
+document.body.appendChild($_documentContainer.content);
+</script>

@@ -1,60 +1,97 @@
 <!doctype html>
 <html>
 <head>
-<script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+<script src="../../@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="import" href="components/chart-controller/chart-controller.html">
-<link rel="import" href="components/give-styles.html">
-<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="components/chart-controller/chart-controller.html">
-<link rel="import" href="bower_components/paper-button/paper-button.html">
-<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
-<link rel="import" href="components/ref-link-dialog/ref-link-dialog.html">
-<custom-style include="give-shared-styles iron-flex iron-positioning">
+<script type="module" src="./components/chart-controller/chart-controller.js"></script>
+<script type="module" src="./components/give-styles.js"></script>
+<script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
+<script type="module" src="./components/chart-controller/chart-controller.js"></script>
+<script type="module" src="../../@polymer/paper-button/paper-button.js"></script>
+<script type="module" src="../../@polymer/paper-dialog/paper-dialog.js"></script>
+<script type="module" src="../../@polymer/paper-dialog-scrollable/paper-dialog-scrollable.js"></script>
+<script type="module" src="./components/ref-link-dialog/ref-link-dialog.js"></script>
+<!-- FIXME(polymer-modulizer):
+        These imperative modules that innerHTML your HTML are
+        a hacky way to be sure that any mixins in included style
+        modules are ready before any elements that reference them are
+        instantiated, otherwise the CSS @apply mixin polyfill won't be
+        able to expand the underlying CSS custom properties.
+        See: https://github.com/Polymer/polymer-modulizer/issues/154
+        -->
+    <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<custom-style include="give-shared-styles iron-flex iron-positioning">
   <style is="custom-style" include="give-shared-styles">
   paper-dialog h2 {
     max-width: 65vw;
   }
   </style>
-</custom-style>
+</custom-style>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>
 </head>
 
 <body unresolved>
 <chart-controller title-text="ChIA-PET long-range chromatin interactions" ref="hg19" num-of-subs="2"
-  coordinate='["chr17:7520037-7643128", "chr17:7441031-7588154"]'
-  group-id-list='["genes", "ENCODE2_ChIA-PET", "customTracks"]'>
+<script type="module">
+const $_documentContainer = document.createElement('template');
 
-    <paper-button raised noink slot="toolBarCtrls" id="chiapetShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET';">
+$_documentContainer.innerHTML = `<chart-controller title-text="ChIA-PET long-range chromatin interactions" ref="hg19" num-of-subs="2" coordinate="[&quot;chr17:7520037-7643128&quot;, &quot;chr17:7441031-7588154&quot;]" group-id-list="[&quot;genes&quot;, &quot;ENCODE2_ChIA-PET&quot;, &quot;customTracks&quot;]">
+
+    <paper-button raised="" noink="" slot="toolBarCtrls" id="chiapetShowCode" onclick="location.href = 'https://github.com/Zhong-Lab-UCSD/Genomic-Interactive-Visualization-Engine/tree/master/gallery/Demo2-ENCODE2_ChIA-PET';">
      GO TO CODE
     </paper-button>
 
-    <paper-button raised noink slot="toolBarCtrls" id="chiapetShowRef">
+    <paper-button raised="" noink="" slot="toolBarCtrls" id="chiapetShowRef">
       References
     </paper-button>
 
 
-</chart-controller>
+</chart-controller>`;
 
-
-<paper-dialog id="chiapetRefDialog" with-backdrop>
-    <h2>ChIA-PET long-range chromatin interactions</h2>
-    <paper-dialog-scrollable>
+document.body.appendChild($_documentContainer.content);
+</script>crollable>
         <p>
 	This genome browser presents 15 datasets of ChIA-PET long-range chromatin interactions along with human genome assembly GRCh37 (hg19) for comparative studies. ChIA-PET data were generated from <a href="https://www.encodeproject.org/matrix/?type=Experiment&assay_title=ChIA-PET&assembly=hg19&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&award.rfa=ENCODE2" target="_blank" ><strong>ENCODE Phase 2</strong></a>. Fifteen long-range chromatin interaction bed.gz files (bed 12) were downloaded, which were generated from 8 experiments in 5 celllines (K562, MCF-7, HeLa-S3, HCT116 and NB4) with 3 kinds of target genes (POLR2A, CTCF and ESR1).
         </p>
       <p>
-        For questions, please contact Xiaoyi Cao (<a href='mailt&#111;&#58;x9%&#54;3%61o&#37;&#52;0%&#55;5&#99;s&#100;&#46;ed&#117;'>x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).
+<script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<paper-dialog id="chiapetRefDialog" with-backdrop="">
+    <h2>ChIA-PET long-range chromatin interactions</h2>
+    <paper-dialog-scrollable>
+        <p>
+	This genome browser presents 15 datasets of ChIA-PET long-range chromatin interactions along with human genome assembly GRCh37 (hg19) for comparative studies. ChIA-PET data were generated from <a href="https://www.encodeproject.org/matrix/?type=Experiment&amp;assay_title=ChIA-PET&amp;assembly=hg19&amp;replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&amp;award.rfa=ENCODE2" target="_blank"><strong>ENCODE Phase 2</strong></a>. Fifteen long-range chromatin interaction bed.gz files (bed 12) were downloaded, which were generated from 8 experiments in 5 celllines (K562, MCF-7, HeLa-S3, HCT116 and NB4) with 3 kinds of target genes (POLR2A, CTCF and ESR1).
+        </p>
+      <p>
+        For questions, please contact Xiaoyi Cao (<a href="mailto:x9%63%61o%40%75csd.edu">x9cao <strong>at</strong> ucsd <strong>dot</strong> edu</a>).
       </p>
     </paper-dialog-scrollable>
     <div class="buttons">
-      <paper-button id="chiapetDoNotShow" hidden>Do not show automatically in the future</paper-button>
-      <paper-button dialog-dismiss>Close</paper-button>
+      <paper-button id="chiapetDoNotShow" hidden="">Do not show automatically in the future</paper-button>
+      <paper-button dialog-dismiss="">Close</paper-button>
     </div>
-</paper-dialog>
+</paper-dialog>`;
 
+document.body.appendChild($_documentContainer.content);
+</script>g, scShowRefBtn, scDoNotShowBtn,
+    scLocalStorage
 
-<script>
+  window.addEventListener('WebComponentsReady', function (e) {
+<script type="module">
+import './components/chart-controller/chart-controller.js';
+import './components/give-styles.js';
+import '@polymer/iron-flex-layout/iron-flex-layout-classes.js';
+import './components/chart-controller/chart-controller.js';
+import '@polymer/paper-button/paper-button.js';
+import '@polymer/paper-dialog/paper-dialog.js';
+import '@polymer/paper-dialog-scrollable/paper-dialog-scrollable.js';
+import './components/ref-link-dialog/ref-link-dialog.js';
+import { dom } from '@polymer/polymer/lib/legacy/polymer.dom.js';
 
 var GIVe = (function (give) {
   'use strict'
@@ -65,9 +102,9 @@ var GIVe = (function (give) {
   window.addEventListener('WebComponentsReady', function (e) {
     give.fireCoreSignal('content-dom-ready', null)
     give.fireSignal(give.TASKSCHEDULER_EVENT_NAME, {flag: 'web-component-ready'})
-    scDialog = Polymer.dom(document).querySelector('#chiapetRefDialog')
-    scShowRefBtn = Polymer.dom(document).querySelector('#chiapetShowRef')
-    scDoNotShowBtn = Polymer.dom(document).querySelector('#chiapetDoNotShow')
+    scDialog = dom(document).querySelector('#chiapetRefDialog')
+    scShowRefBtn = dom(document).querySelector('#chiapetShowRef')
+    scDoNotShowBtn = dom(document).querySelector('#chiapetDoNotShow')
 
     scLocalStorage = document.createElement('iron-localstorage')
     scLocalStorage.autoSaveDisabled = true
@@ -95,6 +132,3 @@ var GIVe = (function (give) {
   return give
 })(GIVe || {})
 </script>
-
-</body>
-</html>

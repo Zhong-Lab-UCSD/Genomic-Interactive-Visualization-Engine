@@ -4,12 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GIVe (Genomic Interaction Visualizer)</title>
-  <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
-  <link rel="import" href="components/chart-controller/chart-controller.html">
-  <link rel="import" href="components/give-styles.html">
-  <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-  <link rel="import" href="components/giv-main/giv-main.html">
-  <custom-style include="give-shared-styles iron-flex iron-positioning">
+  <script src="../../@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script type="module" src="./components/chart-controller/chart-controller.js"></script>
+  <script type="module" src="./components/give-styles.js"></script>
+  <script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
+  <script type="module" src="./components/giv-main/giv-main.js"></script>
+  <!-- FIXME(polymer-modulizer):
+        These imperative modules that innerHTML your HTML are
+        a hacky way to be sure that any mixins in included style
+        modules are ready before any elements that reference them are
+        instantiated, otherwise the CSS @apply mixin polyfill won't be
+        able to expand the underlying CSS custom properties.
+        See: https://github.com/Polymer/polymer-modulizer/issues/154
+        -->
+    <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<custom-style include="give-shared-styles iron-flex iron-positioning">
     <style is="custom-style" include="give-shared-styles iron-flex iron-positioning">
     body {
       font-family: 'Roboto';
@@ -26,28 +37,34 @@
       line-height: 1.4em;
     }
     </style>
-  </custom-style>
+  </custom-style>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>
 </head>
 <body unresolved class="fullbleed layout vertical">
-  <script>
-    /* eslint-disable */
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  <script type="module">
+import './components/chart-controller/chart-controller.js';
+import './components/give-styles.js';
+import '@polymer/iron-flex-layout/iron-flex-layout-classes.js';
+import './components/giv-main/giv-main.js';
+/* eslint-disable */
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-3695776-7', 'auto');
-    ga('send', 'pageview');
+ga('create', 'UA-3695776-7', 'auto');
+ga('send', 'pageview');
 
-    /* eslint-enable */
-  </script>
-  <chart-controller ref="hg19" id="mainChartController" num-of-subs="2"
-    group-id-list='["genes", "encode", "interaction", "customTracks"]'
-    class="flex"
-    default-track-id-list='["knownGene", "wgEncodeEH001151_1",
-    "wgEncodeEH002872", "wgEncodeEH001130", "GSM1250485_interaction"]'
-    coordinate='["chr17:1-81195210", "chr17:45000000-55000000"]'
-    title-text='Epigenome and genome interaction (MCF-7)'>
-  </chart-controller>
-</body>
-</html>
+/* eslint-enable */
+</script>d-list='["genes", "encode", "interaction", "customTracks"]'
+  <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<chart-controller ref="hg19" id="mainChartController" num-of-subs="2" group-id-list="[&quot;genes&quot;, &quot;encode&quot;, &quot;interaction&quot;, &quot;customTracks&quot;]" class="flex" default-track-id-list="[&quot;knownGene&quot;, &quot;wgEncodeEH001151_1&quot;,
+    &quot;wgEncodeEH002872&quot;, &quot;wgEncodeEH001130&quot;, &quot;GSM1250485_interaction&quot;]" coordinate="[&quot;chr17:1-81195210&quot;, &quot;chr17:45000000-55000000&quot;]" title-text="Epigenome and genome interaction (MCF-7)">
+  </chart-controller>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>

@@ -15,13 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 -->
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
-<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
-<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="../give-styles.html">
+<script type="module" src="../../../../@polymer/polymer/polymer-legacy.js"></script>
+<script type="module" src="../../../../@polymer/paper-input/paper-input.js"></script>
+<script type="module" src="../../../../@polymer/iron-icon/iron-icon.js"></script>
+<script type="module" src="../../../../@polymer/iron-icons/iron-icons.js"></script>
+<script type="module" src="../../../../@polymer/iron-dropdown/iron-dropdown.js"></script>
+<script type="module" src="../../../../@polymer/paper-checkbox/paper-checkbox.js"></script>
+<script type="module" src="../give-styles.js"></script>
 <dom-module id="multi-dropdown">
   <template>
     <style include="give-shared-styles">
@@ -95,6 +95,18 @@ limitations under the License.
     </iron-dropdown>
   </template>
   <script>
+var GIVe = (function (give) {
+  'use strict'
+
+<script type="module">
+import '@polymer/polymer/polymer-legacy.js';
+import '@polymer/paper-input/paper-input.js';
+import '@polymer/iron-icon/iron-icon.js';
+import '@polymer/iron-icons/iron-icons.js';
+import '@polymer/iron-dropdown/iron-dropdown.js';
+import '@polymer/paper-checkbox/paper-checkbox.js';
+import '../give-styles.js';
+import { Polymer } from '@polymer/polymer/lib/legacy/polymer-fn.js';
 var GIVe = (function (give) {
   'use strict'
 
@@ -407,5 +419,4 @@ var GIVe = (function (give) {
 
   return give
 })(GIVe || {})
-  </script>
-</dom-module>
+</script>

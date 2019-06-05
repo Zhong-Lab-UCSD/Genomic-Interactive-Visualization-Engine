@@ -3,23 +3,38 @@
 <head>
   <meta charset="utf-8">
   <title>GIVe (Genomic Interaction Visualizer)</title>
-  <script src="../bower_components/webcomponentsjs/webcomponents-loader.js"></script>
-  <link rel="import" href="../bower_components/polymer/lib/elements/custom-style.html">
-  <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-  <link rel="import" href="../components/chart-track-list/chart-track-list.html">
-  <custom-style include="iron-flex iron-positioning">
+  <script src="../../../@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script type="module" src="../../../@polymer/polymer/lib/elements/custom-style.js"></script>
+  <script type="module" src="../../../@polymer/iron-flex-layout/iron-flex-layout-classes.js"></script>
+  <script type="module" src="../components/chart-track-list/chart-track-list.js"></script>
+  <!-- FIXME(polymer-modulizer):
+        These imperative modules that innerHTML your HTML are
+        a hacky way to be sure that any mixins in included style
+        modules are ready before any elements that reference them are
+        instantiated, otherwise the CSS @apply mixin polyfill won't be
+        able to expand the underlying CSS custom properties.
+        See: https://github.com/Polymer/polymer-modulizer/issues/154
+        -->
+    <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<custom-style include="iron-flex iron-positioning">
     <style include="iron-flex iron-positioning">
     </style>
-  </custom-style>
+  </custom-style>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>
 </head>
 <body unresolved class="fullbleed layout vertical">
-  <chart-track-list ref='["hg19"]' class="flex"
-    show-selected-tracks
-    id="mainTrackList"
-    group-id-list='["genes", "encode", "interaction", "customTracks"]'
-    default-track-id-list='["knownGene", "wgEncodeEH001151_1", "wgEncodeEH002872", "wgEncodeEH001130",
-    "GSM1250485_interaction"]'
-    setting-key="visibility">
-  </chart-track-list>
+  <script type="module">
+const $_documentContainer = document.createElement('template');
+
+$_documentContainer.innerHTML = `<chart-track-list ref="[&quot;hg19&quot;]" class="flex" show-selected-tracks="" id="mainTrackList" group-id-list="[&quot;genes&quot;, &quot;encode&quot;, &quot;interaction&quot;, &quot;customTracks&quot;]" default-track-id-list="[&quot;knownGene&quot;, &quot;wgEncodeEH001151_1&quot;, &quot;wgEncodeEH002872&quot;, &quot;wgEncodeEH001130&quot;,
+    &quot;GSM1250485_interaction&quot;]" setting-key="visibility">
+  </chart-track-list>`;
+
+document.body.appendChild($_documentContainer.content);
+</script>
 </body>
 </html>

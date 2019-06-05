@@ -1,12 +1,12 @@
-<link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
-<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<script type="module" src="../../../../@polymer/polymer/polymer-legacy.js"></script>
+<script type="module" src="../../../../@polymer/paper-tabs/paper-tabs.js"></script>
+<script type="module" src="../../../../@polymer/paper-icon-button/paper-icon-button.js"></script>
 <link rel="import" href="../../bower_components/iron-signals/iron-signals.html">
-<link rel="import" href="../../bower_components/paper-material/paper-material.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
-<link rel="import" href="../../bower_components/iron-collapse/iron-collapse.html">
-<link rel="import" href="../resizable-tab-pages/resizable-tab-pages.html">
-<link rel="import" href="../give-styles.html">
+<script type="module" src="../../../../@polymer/paper-material/paper-material.js"></script>
+<script type="module" src="../../../../@polymer/neon-animation/neon-animations.js"></script>
+<script type="module" src="../../../../@polymer/iron-collapse/iron-collapse.js"></script>
+<script type="module" src="../resizable-tab-pages/resizable-tab-pages.js"></script>
+<script type="module" src="../give-styles.js"></script>
 <dom-module id="genemo-tab-cards">
   <template>
     <style include="give-shared-styles">
@@ -91,221 +91,237 @@
 
 		properties: {
 
-			// ************* Genemo-card components **************
-			isOpened: {
-				type: Boolean,
-				value: true,
-				reflectToAttribute: true,
-				observer: 'isOpenedChanged'
-			},
-			collapseGroup: {
-				type: String,
-				value: ''
-			},
-			collapseHeaderEl: {
-				type: String,
-				value: null
-			},
-			enableSignal: {
-				type: Boolean,
-				value: true
-			},
-			expandIcon: {
-				type: String,
-				value: 'expand-less'
-			},
+		<script type="module">
+import '@polymer/polymer/polymer-legacy.js';
+import '@polymer/paper-tabs/paper-tabs.js';
+import '@polymer/paper-icon-button/paper-icon-button.js';
+import '@polymer/paper-material/paper-material.js';
+import '@polymer/neon-animation/neon-animations.js';
+import '@polymer/iron-collapse/iron-collapse.js';
+import '../resizable-tab-pages/resizable-tab-pages.js';
+import '../give-styles.js';
+import { Polymer } from '@polymer/polymer/lib/legacy/polymer-fn.js';
+import { dom } from '@polymer/polymer/lib/legacy/polymer.dom.js';
+Polymer({
 
-			domReady: {
-				type: Boolean,
-				value: false,
-				readOnly: true,
-			},
+		is: "genemo-tab-cards",
 
-			ready: {
-				type: Boolean,
-				value: false,
-				readOnly: true,
-			},
+		properties: {
 
-			// ************* Tab-cards unique components *************
-			selectedTab: {
-				type: Number,
-				value: 0
-			},
+        // ************* Genemo-card components **************
+        isOpened: {
+            type: Boolean,
+            value: true,
+            reflectToAttribute: true,
+            observer: 'isOpenedChanged'
+        },
+        collapseGroup: {
+            type: String,
+            value: ''
+        },
+        collapseHeaderEl: {
+            type: String,
+            value: null
+        },
+        enableSignal: {
+            type: Boolean,
+            value: true
+        },
+        expandIcon: {
+            type: String,
+            value: 'expand-less'
+        },
 
-			pages: {
-				type: Array,
-				value: function() {
-					return [];
-				}
-			},
+        domReady: {
+            type: Boolean,
+            value: false,
+            readOnly: true,
+        },
 
-			tabs: {
-				type: Array,
-				value: function() {
-					return [];
-				}
-			}
+        ready: {
+            type: Boolean,
+            value: false,
+            readOnly: true,
+        },
+
+        // ************* Tab-cards unique components *************
+        selectedTab: {
+            type: Number,
+            value: 0
+        },
+
+        pages: {
+            type: Array,
+            value: function() {
+                return [];
+            }
+        },
+
+        tabs: {
+            type: Array,
+            value: function() {
+                return [];
+            }
+        }
 		},
 
 		listeners: {
-			'content-dom-ready': 'contentDOMReady',
-			'content-ready': 'contentReady',
+        'content-dom-ready': 'contentDOMReady',
+        'content-ready': 'contentReady',
 		},
 
 		toggleCollapseHeader: function(flag) {
-			// the top node with cardBody should have a member function getShrunk()
-			// then use the returned DOM to replace GenemoShrunk
-			// if nothing, then GenemoShrunk is simply GenemoHead
-			// flag is the target status
+        // the top node with cardBody should have a member function getShrunk()
+        // then use the returned DOM to replace GenemoShrunk
+        // if nothing, then GenemoShrunk is simply GenemoHead
+        // flag is the target status
 
-			if(flag && this.collapseHeaderEl) {
-				// there is old collapseHeader, needs to be removed
-				Polymer.dom(this.$.cardHeader).removeChild(this.collapseHeaderEl);
-				this.$.cardHeadContent.classList.remove('hidden');
-			} else if(!flag) {
-				this.collapseHeaderEl = this.getCollapse();
-				if(this.collapseHeaderEl) {
-					this.$.cardHeadContent.classList.add('hidden');
-					Polymer.dom(this.$.cardHeader).appendChild(this.collapseHeaderEl);
-				}
-			}
+        if(flag && this.collapseHeaderEl) {
+            // there is old collapseHeader, needs to be removed
+            dom(this.$.cardHeader).removeChild(this.collapseHeaderEl);
+            this.$.cardHeadContent.classList.remove('hidden');
+        } else if(!flag) {
+            this.collapseHeaderEl = this.getCollapse();
+            if(this.collapseHeaderEl) {
+                this.$.cardHeadContent.classList.add('hidden');
+                dom(this.$.cardHeader).appendChild(this.collapseHeaderEl);
+            }
+        }
 		},
 
 		isOpenedChanged: function(newValue, oldValue) {
-			this.enableSignal = false;
-			if(newValue) {
-				// un-collapse, send signal for all collapse groups
-				this.fire('iron-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}});
-			}
-			this.expandIcon = newValue? 'expand-less': 'expand-more';
-			this.toggleCollapseHeader(newValue);
-			this.enableSignal = true;
+        this.enableSignal = false;
+        if(newValue) {
+            // un-collapse, send signal for all collapse groups
+            this.fire('iron-signal', {name: 'collapse', data: {flag: false, group: this.collapseGroup}});
+        }
+        this.expandIcon = newValue? 'expand-less': 'expand-more';
+        this.toggleCollapseHeader(newValue);
+        this.enableSignal = true;
 		},
 
 		collapseSignal: function(e, detail) {
-			if(this.enableSignal && this.collapseGroup == detail.group && this.isOpened != detail.flag) {
-				this.isOpened = detail.flag;
-			}
+        if(this.enableSignal && this.collapseGroup == detail.group && this.isOpened != detail.flag) {
+            this.isOpened = detail.flag;
+        }
 		},
 
 		toggleCollapse: function() {
-			// hide cardBody and convert GenemoHead to GenemoCollapse (if any)
-			this.isOpened = !this.isOpened;
+        // hide cardBody and convert GenemoHead to GenemoCollapse (if any)
+        this.isOpened = !this.isOpened;
 		},
 
  		getCollapse: function() {
-			if(this.pages[this.selectedTab]) {
-				if(this.pages[this.selectedTab].getCollapse && this.pages[this.selectedTab].getCollapse()) {
-					return this.pages[this.selectedTab].getCollapse();
-				} else if(this.pages[this.selectedTab].getExpandedHeader) {
-					return this.pages[this.selectedTab].getExpandedHeader();
-				}
-			}
-			return null;
+        if(this.pages[this.selectedTab]) {
+            if(this.pages[this.selectedTab].getCollapse && this.pages[this.selectedTab].getCollapse()) {
+                return this.pages[this.selectedTab].getCollapse();
+            } else if(this.pages[this.selectedTab].getExpandedHeader) {
+                return this.pages[this.selectedTab].getExpandedHeader();
+            }
+        }
+        return null;
 		},
 
 		populateDOM: function() {
-			// populate tabs and animated pages
+        // populate tabs and animated pages
 
-			this.pages = Polymer.dom(this.$.tabContent).getDistributedNodes();
-			this.tabs = Polymer.dom(this.$.tabHeader).getDistributedNodes();
+        this.pages = dom(this.$.tabContent).getDistributedNodes();
+        this.tabs = dom(this.$.tabHeader).getDistributedNodes();
 
-			while(Polymer.dom(this.$.mainTab).firstChild) {
-				Polymer.dom(this.$.mainTab).removeChild(Polymer.dom(this.$.mainTab).firstChild);
-			}
+        while(dom(this.$.mainTab).firstChild) {
+            dom(this.$.mainTab).removeChild(dom(this.$.mainTab).firstChild);
+        }
 
-			if(this.tabs.length <= 0) {
-				this.tabs = [];
-				for(var i = 0; i < this.pages.length; i++) {
-					if(this.pages[i].getTabHeader) {
-						this.tabs.push(this.pages[i].getTabHeader());
-					} else if(this.pages[i].getExpandedHeader) {
-						this.tabs.push(this.pages[i].getExpandedHeader());
-					}
-				}
-			}
+        if(this.tabs.length <= 0) {
+            this.tabs = [];
+            for(var i = 0; i < this.pages.length; i++) {
+                if(this.pages[i].getTabHeader) {
+                    this.tabs.push(this.pages[i].getTabHeader());
+                } else if(this.pages[i].getExpandedHeader) {
+                    this.tabs.push(this.pages[i].getExpandedHeader());
+                }
+            }
+        }
 
-			for(var i = 0; i < this.tabs.length; i++) {
-				var newTab = document.createElement('paper-tab');
-				Polymer.dom(newTab).appendChild(this.tabs[i]);
-				Polymer.dom(this.$.mainTab).appendChild(newTab);
-			}
+        for(var i = 0; i < this.tabs.length; i++) {
+            var newTab = document.createElement('paper-tab');
+            dom(newTab).appendChild(this.tabs[i]);
+            dom(this.$.mainTab).appendChild(newTab);
+        }
 
 		},
 
 		contentDOMReady: function(e) {
-			if(this.domReady !== e.detail.flag) {
-				if(e.detail.flag) {
-					// this will only happen if this.domReady !== true
-					var contentNode = Polymer.dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
-					if(contentNode) {
-						nodeArray = Array.prototype.slice.call(contentNode);
-					}
-					if(nodeArray.every(function(node, index) {
-						if(node.isDOMReady) {
-							return node.isDOMReady();
-						}
-						return true;
-					}, this)) {
-						this.populateDOM();
-						this._setDomReady(true);
-					} else {
-						// stop event from bubbling if status not the same as the one in the event
-						e.preventDefault();
-					}
-				} else {
-					this._setDomReady(false);
-				}
-			}
-			return this.domReady;
+        if(this.domReady !== e.detail.flag) {
+            if(e.detail.flag) {
+                // this will only happen if this.domReady !== true
+                var contentNode = dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
+                if(contentNode) {
+                    nodeArray = Array.prototype.slice.call(contentNode);
+                }
+                if(nodeArray.every(function(node, index) {
+                    if(node.isDOMReady) {
+                        return node.isDOMReady();
+                    }
+                    return true;
+                }, this)) {
+                    this.populateDOM();
+                    this._setDomReady(true);
+                } else {
+                    // stop event from bubbling if status not the same as the one in the event
+                    e.preventDefault();
+                }
+            } else {
+                this._setDomReady(false);
+            }
+        }
+        return this.domReady;
 		},
 
 		setCardReady: function(readiness) {
-			if(readiness) {
-				// if card is not ready, use paper-spinner and add "unReady" class to cardContent
-				this.$.loadingSpinner.active = false;
-				this.$.loadingBlock.classList.remove('unReady');
-			} else {
-				// otherwise, deactivate paper-spinner and remove "unReady" class
-				this.$.loadingBlock.classList.add('unReady');
-				this.$.loadingSpinner.active = true;
-			}
-			this._setReady(readiness);
+        if(readiness) {
+            // if card is not ready, use paper-spinner and add "unReady" class to cardContent
+            this.$.loadingSpinner.active = false;
+            this.$.loadingBlock.classList.remove('unReady');
+        } else {
+            // otherwise, deactivate paper-spinner and remove "unReady" class
+            this.$.loadingBlock.classList.add('unReady');
+            this.$.loadingSpinner.active = true;
+        }
+        this._setReady(readiness);
 		},
 
 		contentReady: function(e) {
-			if(this.ready !== e.detail.flag) {
-				if(e.detail.flag) {
-					// set Ready = true, this will only happen if this.domReady !== true
-					var contentNode = Polymer.dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
-					if(contentNode) {
-						nodeArray = Array.prototype.slice.call(contentNode);
-					}
-					if(nodeArray.every(function(node, index) {
-						if(node.isReady) {
-							return node.isReady();
-						}
-						return true;
-					}, this)) {
-						this.setCardReady(true);
-					} else {
-						// stop event from bubbling if status not the same as the one in the event
-						e.preventDefault();
-					}
-				} else {
-					this.setCardReady(false);
-				}
-			}
-			return this.ready;
+        if(this.ready !== e.detail.flag) {
+            if(e.detail.flag) {
+                // set Ready = true, this will only happen if this.domReady !== true
+                var contentNode = dom(this.$.tabContent).getDistributedNodes(), nodeArray = [];
+                if(contentNode) {
+                    nodeArray = Array.prototype.slice.call(contentNode);
+                }
+                if(nodeArray.every(function(node, index) {
+                    if(node.isReady) {
+                        return node.isReady();
+                    }
+                    return true;
+                }, this)) {
+                    this.setCardReady(true);
+                } else {
+                    // stop event from bubbling if status not the same as the one in the event
+                    e.preventDefault();
+                }
+            } else {
+                this.setCardReady(false);
+            }
+        }
+        return this.ready;
 		},
 
 		attached: function() {
-			this.async(function() {
-				this.contentDOMReady({detail: {flag: true}}) && this.contentReady({detail: {flag: true}});
-			});
+        this.async(function() {
+            this.contentDOMReady({detail: {flag: true}}) && this.contentReady({detail: {flag: true}});
+        });
 		},
 
-    });
-  </script>
-</dom-module>
+});
+</script>

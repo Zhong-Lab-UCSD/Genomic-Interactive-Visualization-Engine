@@ -1,11 +1,11 @@
 <link rel="import" href="genemo-track-filter-pages.html">
-<link rel="import" href="../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../bower_components/paper-card/paper-card.html">
-<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
-<link rel="import" href="../../bower_components/neon-animation/neon-animation-runner-behavior.html">
-<link rel="import" href="../task-scheduler/task-scheduler.html">
-<link rel="import" href="../give-styles.html">
+<script type="module" src="../../../../@polymer/paper-button/paper-button.js"></script>
+<script type="module" src="../../../../@polymer/paper-card/paper-card.js"></script>
+<script type="module" src="../../../../@polymer/paper-tooltip/paper-tooltip.js"></script>
+<script type="module" src="../../../../@polymer/neon-animation/neon-animations.js"></script>
+<script type="module" src="../../../../@polymer/neon-animation/neon-animation-runner-behavior.js"></script>
+<script type="module" src="../task-scheduler/task-scheduler.js"></script>
+<script type="module" src="../give-styles.js"></script>
 
 <dom-module id="genemo-track-filter">
   <template>
@@ -48,105 +48,114 @@
   </template>
   <script>
   var GIVe = (function (give) {
-    'use strict'
+  <script type="module">
+import '@polymer/paper-button/paper-button.js';
+import '@polymer/paper-card/paper-card.js';
+import '@polymer/paper-tooltip/paper-tooltip.js';
+import '@polymer/neon-animation/neon-animations.js';
+import { NeonAnimationRunnerBehavior } from '@polymer/neon-animation/neon-animation-runner-behavior.js';
+import '../task-scheduler/task-scheduler.js';
+import '../give-styles.js';
+import { Polymer } from '@polymer/polymer/lib/legacy/polymer-fn.js';
+var GIVe = (function (give) {
+  'use strict'
 
-    Polymer({
+  Polymer({
 
-      is: 'genemo-track-filter',
+    is: 'genemo-track-filter',
 
-      behaviors: [
-        Polymer.NeonAnimationRunnerBehavior
-      ],
+    behaviors: [
+      NeonAnimationRunnerBehavior
+    ],
 
-      properties: {
+    properties: {
 
-        opened: {
-          type: Boolean,
-          value: false
-        },
-
-        entryAnimation: {
-          value: 'fade-in-animation'
-        },
-
-        exitAnimation: {
-          value: 'fade-out-animation'
-        },
-
-        targetId: {
-          type: String,
-          value: null
-        },
-
-        ref: {
-          type: String
-        }
-
+      opened: {
+        type: Boolean,
+        value: false
       },
 
-      listeners: {
-        'neon-animation-finish': '_onNeonAnimationFinish'
+      entryAnimation: {
+        value: 'fade-in-animation'
       },
 
-      _onNeonAnimationFinish: function () {
-        if (!this.opened) {
-          this.style.display = 'none'
-        }
+      exitAnimation: {
+        value: 'fade-out-animation'
       },
 
-      show: function () {
-        if (this.$.mainPage.initialized) {
-          this.opened = true
-          this.style.display = 'block'
-          this.$.mainPage.$.mainTabs.notifyResize()
-          this.playAnimation('entry')
-        } else {
-          this.fire('alert', { msg: 'Filter has not been initialized yet.' })
-        }
+      targetId: {
+        type: String,
+        value: null
       },
 
-      hide: function () {
-        this.opened = false
-        this.playAnimation('exit')
-      },
-
-      selectAll: function () {
-        this.$.mainPage.setAllCheckboxes(true)
-      },
-
-      selectNone: function () {
-        this.$.mainPage.setAllCheckboxes(false)
-      },
-
-      addToSelection: function () {
-        this.fire('filter-tracks', {
-          targetId: this.targetId,
-          map: this.$.mainPage.getCurrentListMap(),
-          flags: { matched: true }
-        })
-        this.hide()
-      },
-
-      filterSelection: function () {
-        this.fire('filter-tracks', {
-          targetId: this.targetId,
-          map: this.$.mainPage.getCurrentListMap(),
-          flags: { unmatched: false }
-        })
-        this.hide()
-      },
-
-      excludeFromSelection: function () {
-        this.fire('filter-tracks', {
-          targetId: this.targetId,
-          map: this.$.mainPage.getCurrentListMap(),
-          flags: { matched: false }
-        })
-        this.hide()
+      ref: {
+        type: String
       }
 
-    })
-    return give
-  })(GIVe || {})
-  </script>
-</dom-module>
+    },
+
+    listeners: {
+      'neon-animation-finish': '_onNeonAnimationFinish'
+    },
+
+    _onNeonAnimationFinish: function () {
+      if (!this.opened) {
+        this.style.display = 'none'
+      }
+    },
+
+    show: function () {
+      if (this.$.mainPage.initialized) {
+        this.opened = true
+        this.style.display = 'block'
+        this.$.mainPage.$.mainTabs.notifyResize()
+        this.playAnimation('entry')
+      } else {
+        this.fire('alert', { msg: 'Filter has not been initialized yet.' })
+      }
+    },
+
+    hide: function () {
+      this.opened = false
+      this.playAnimation('exit')
+    },
+
+    selectAll: function () {
+      this.$.mainPage.setAllCheckboxes(true)
+    },
+
+    selectNone: function () {
+      this.$.mainPage.setAllCheckboxes(false)
+    },
+
+    addToSelection: function () {
+      this.fire('filter-tracks', {
+        targetId: this.targetId,
+        map: this.$.mainPage.getCurrentListMap(),
+        flags: { matched: true }
+      })
+      this.hide()
+    },
+
+    filterSelection: function () {
+      this.fire('filter-tracks', {
+        targetId: this.targetId,
+        map: this.$.mainPage.getCurrentListMap(),
+        flags: { unmatched: false }
+      })
+      this.hide()
+    },
+
+    excludeFromSelection: function () {
+      this.fire('filter-tracks', {
+        targetId: this.targetId,
+        map: this.$.mainPage.getCurrentListMap(),
+        flags: { matched: false }
+      })
+      this.hide()
+    }
+
+  })
+  return give
+})(GIVe || {})
+</script>
