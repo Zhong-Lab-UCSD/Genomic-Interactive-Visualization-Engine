@@ -142,7 +142,7 @@ CREATE TABLE \`$ref\`.\`$track_name\` (
         \`chrom\` varchar(255) NOT NULL DEFAULT '',
         \`start\` int(10) unsigned NOT NULL DEFAULT '0',
         \`end\` int(10) unsigned NOT NULL DEFAULT '0',
-        \`linkID\` int(10) unsigned NOT NULL DEFAULT '0',
+        \`linkID\` VARCHAR(100) NOT NULL,
         \`value\` float NOT NULL DEFAULT '0',
         \`dirFlag\` tinyint(4) NOT NULL DEFAULT '-1',
         PRIMARY KEY (\`ID\`),
