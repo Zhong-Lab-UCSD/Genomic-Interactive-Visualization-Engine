@@ -63,7 +63,7 @@ var GIVe = (function (give) {
         resEntry.regionString,
         this.parent.refObj, {
           data: {
-            linkID: parseInt(resEntry.linkID),
+            linkID: resEntry.linkID,
             regionID: parseInt(resEntry.ID),
             value: parseFloat(resEntry.value),
             dirFlag: isNaN(parseInt(resEntry.dirFlag))
