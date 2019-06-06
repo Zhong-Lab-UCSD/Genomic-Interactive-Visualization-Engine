@@ -15,7 +15,7 @@ function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interacti
       }
       // create temporary table in memory first for performance considerations
       $sqlstmtTTable = "CREATE TEMPORARY TABLE `linkIDTable` ("
-            . "linkID INT UNSIGNED PRIMARY KEY NOT NULL"
+            . "linkID VARCHAR(100) PRIMARY KEY NOT NULL"
             . ") ENGINE=MEMORY AS SELECT DISTINCT linkID FROM `"
             . $mysqli->real_escape_string($tableName) . "` WHERE "
             . implode(' OR ', array_fill(0, count($chrRegion), '(chrom = ? AND start < ? AND end > ?)'));
