@@ -72,11 +72,28 @@ var GIVe = (function (give) {
           // because the gene list is sorted by start,
           //    whenever it doesn't overlap with the current gene
           //    it will become a new gene entry.
-          if (!geneNameMap.hasOwnProperty(newGene.name) ||
-            !geneNameMap[newGene.name].merge(newGene)
-          ) {
-            geneArray.push(newGene)
-            geneNameMap[newGene.name] = newGene
+          if (!geneNameMap.has(newGene.name)) {
+            geneNameMap.set(newGene.name, [newGene])
+          } else {
+            // try to see if it is mergable
+            let sameNameArray = geneNameMap.get(newGene.name)
+            let needToInsert = true
+            for (let i = 0; i < sameNameArray.length; i++) {
+              if (newGene.merge(sameNameArray[i])) {
+                // then replace sameNameArray[i] with newGene
+                if (needToInsert) {
+                  sameNameArray[i] = newGene
+                  needToInsert = false
+                } else {
+                  sameNameArray.splice(i, 1)
+                  i--
+                }
+              }
+            }
+            if (needToInsert) {
+              sameNameArray.push(newGene)
+            }
+            sameNameArray.sort(give.ChromRegion.compare)
           }
         } else {
           geneArray.push(newGene)
@@ -88,11 +105,15 @@ var GIVe = (function (give) {
         if (regionsInChrom.length > 0 && res.hasOwnProperty(chrom) &&
           Array.isArray(res[chrom])
         ) {
-          let geneNameMap = {}
+          let geneNameMap = new Map()
           let geneArray = []
           res[chrom].forEach(
             entry => resChromEntryFunc(geneArray, geneNameMap, entry)
           )
+          if (this.parent.typeTrunk.indexOf('gene') > -1) {
+            geneArray = [...geneNameMap.values()].reduce(
+              (gArray, currArray) => gArray.concat(currArray), [])
+          }
           // then populate the B+ Tree with geneArray
           this.getData(chrom, true).insert(
             geneArray.sort(give.ChromRegion.compare), regionsInChrom)
