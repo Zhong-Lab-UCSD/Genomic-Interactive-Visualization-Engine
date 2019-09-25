@@ -80,7 +80,7 @@ function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interacti
   return $result;
 }
 
-function _loadCustomInteraction($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
+function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
 }
 

@@ -44,7 +44,7 @@ function _loadBigwig($db, $tableName, $chrRegion = NULL, $type = 'bigwig', $link
   return $result;
 }
 
-function _loadCustomBigWig($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
+function _loadCustomBigWig($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
   // note that this *MUST* be a remote file (cannot be a local file)
   if(substr($remoteUrl, 0, 7) !== 'http://' && substr($remoteUrl, 0, 8) !== 'https://') {
     error_log('RemoteURL is not a remote URL: ' . $remoteUrl);

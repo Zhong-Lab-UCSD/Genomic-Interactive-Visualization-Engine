@@ -30,7 +30,7 @@ class GIVEException extends Exception {
 
   // custom string representation of object
   public function __toString() {
-      return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+    return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
   }
 
   public function getJSON() {
@@ -175,9 +175,19 @@ function getRequest() {
   }
 }
 
+function generateRandomString ($length) {
+  $charPools = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  $charPoolLen = strlen($charPools);
+  $result = '';
+  for ($i = 0; $i < $charPoolLen; $i++) {
+    $result .= $charPools[rand(0, $charPoolLen - 1)];
+  }
+  return $result;
+}
+
 function var_error_log( $object = NULL ){
-    ob_start();                    // start buffer capture
-    var_dump( $object );           // dump the values
-    error_log(ob_get_contents());// end capture and put stuff to error_log
+  ob_start();                    // start buffer capture
+  var_dump( $object );           // dump the values
+  error_log(ob_get_contents());// end capture and put stuff to error_log
   ob_end_clean();
 }

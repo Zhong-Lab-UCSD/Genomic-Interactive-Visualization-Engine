@@ -189,7 +189,10 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
   return $result;
 }
 
-function _loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
+/**
+ * Load a custom track when it's already in the database
+ */
+function _loadCustomBed($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
   // remote file should be in BED format
   // so just break all the lines and return as JSON
 

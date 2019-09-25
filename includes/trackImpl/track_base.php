@@ -50,36 +50,156 @@ function loadCustomTrack($db, $remoteUrl, $chrRegion = NULL, $type = NULL, $para
   return $trackMap[$type]['loadCustomTrack']($db, $remoteUrl, $chrRegion, $params);
 }
 
-function updateCustomTables($db, $fileName, $trackType) {
+/**
+ * Read the meta data of custom tracks
+ * @param string $ref The reference database name ('hg38', etc.)
+ * @param string $userId The userId (for non-anonymous tracks) or sessionId
+ *   (for anonymous tracks).
+ * @param string $tableName The track name. If not provided, get all matching
+ *   tracks.
+ * @return array<object> Returns the meta objects of the track if successful,
+ *   empty array otherwise
+ */
+function readCustomTrackMeta ($ref, $userId, $tableName = null) {
+  $sqlstmt = "SELECT * FROM `" .
+    $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+    "WHERE `userId` = ? AND `ref` = ?";
+  $stmt = null;
+  if (isset($tableName) && !empty($tablename)) {
+    $sqlstmt .= " AND `tableName` = ? ORDER BY priority";
+    $stmt = $mysqli->prepare($sqlstmt);
+    $stmt->bind_param('sss', $userId, $ref, $tableName);
+  } else {
+    $sqlstmt .= " ORDER BY priority";
+    $stmt = $mysqli->prepare($sqlstmt);
+    $stmt->bind_param('ss', $userId, $ref);
+  }
+  $stmt->execute();
+  $tracks = $stmt->get_result();
+  $result = [];
+  while ($itor = $tracks->fetch_assoc()) {
+    // needs to redo settings part
+    // settings should be a json object
+    $itor['settings'] = json_decode($itor['settings'], true);
+    $result []= $itor;
+  }
+  return $result;
+}
+
+/**
+ * Add a custom track
+ * @param string $ref The reference database name ('hg38', etc.)
+ * @param string $userId The userId (for non-anonymous tracks) or sessionId
+ *   (for anonymous tracks).
+ * @param string $fileName The path of the file (already moved from $FILE)
+ * @param string $access The access of the track, one of the following:
+ *   'anonymous', 'nonListed', 'private', 'public'
+ * @param object $trackMetaObj The meta data object of the track
+ * @param boolean $overrideHash Whether to override hash conflicts
+ * @return object Returns the meta object of the track if successful,
+ *   false otherwise
+ */
+function addCustomTrack(
+  $ref, $userId, $fileName, $access, $trackMetaObj, $overrideHash = false
+) {
   // md5 hash will be generated for $file, and compared
   //    against md5hash in customTracks table to see if there is already
   //    a custom table created for that file
   // A MySQL event should be ready to clean up the database for uploaded tracks
   //    and temporary tables
+  // Rationale:
+  // 1. First generate the key hash of the file (if it exists)
+  // 2. Compare the file key plus ID in database.
+  //   2a. If it already exists,
+  //     i.  If $overrideHash is not set, return the existing track meta to
+  //       verify;
+  //       (If it is matching we are gonna return without processing anyway)
+  //     ii. If $overrideHash is set, check if the new entry is matching, if so
+  //       just return null (indicating no insertion happened),
+  //       otherwise go to 2b;
+  //   2b. Otherwise, add the entry into customTrackFiles, then:
+  //     i.  If the track has an importFile function, run that to build a table
+  //     ii. Append the meta to customTrackMeta and return
   global $trackMap;   // may need to be rewritten to use class instead
 
-  $fileKey = md5_file($fileName);
-  if($mysqli) {
+  if (!file_exists($fileName)) {
+    // file does not exist, throw an error
+    throw new Exception('File does not exist: ' . $fileName);
+  }
+  if (!isset($ref) || empty($ref)) {
+    throw new Exception('Reference is not set!');
+  }
+  if (!isset($userId) || empty($userId)) {
+    throw new Exception('UserId is not set!');
+  }
+  if (!isset($access) || empty($access)) {
+    throw new Exception('Access is not set!');
+  }
+  if (!isset($trackMetaObj) || empty($trackMetaObj)) {
+    throw new Exception('TrackMetaObj is not set!');
+  }
+  if ($mysqli) {
+    // 1. First generate the key hash of the file (if it exists)
+    $fileKey = md5_file($fileName);
+    // 2. Compare the file key plus ID in database if $overrideHash is not set.
     $stmt = $mysqli->prepare("SELECT * FROM `" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_TABLE_NAME) . "` " .
-      "WHERE `fileKey` = ? AND `trackType` = ?");
-    $stmt->bind_param('ss', $fileKey, $trackType);
+      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) . "` " .
+      "WHERE `fileHash` = ? AND `userId` = ?");
+    $stmt->bind_param('ss', $fileKey, $userId);
     $stmt->execute();
     $tableEntries = $stmt->get_result();
-    if (!$tableEntries || $tableEntries->num_rows <= 0) {
-      // Old table entries does not exist
-      // use corresponding methods to populate the tableNameQuery
-      if (function_exists($trackMap[$trackType]['buildCTTable'])) {
-        $trackMap[$trackType]['buildCTTable']($fileKey . "_" . $trackType, $filename);
+    if (isset($tableEntries) && $tableEntries->num_rows > 0) {
+      // 2a. If it already exists, return the existing track meta to verify;
+      if (!$overrideHash) {
+        // get the meta of the track
+        $result = [];
+        while ($itor = $tableEntries->fetch_assoc()) {
+          // needs to redo settings part
+          // settings should be a json object
+          $result = array_merge(
+            $result,
+            readCustomTrackMeta($ref, $userId, $itor['tableName'])
+          );
+        }
+        return $result;
+      } else {
+        while ($itor = $tableEntries->fetch_assoc()) {
+          if ($itor['tableName'] === $trackMetaObj['tableName']) {
+            return null;
+          }
+        }
       }
     }
+    // 2b. Otherwise, add the entry into customTrackFiles, then:
+    //   i.  If the track has an importFile function, run that to build a table
+    //   ii. Append the meta to customTrackMeta and return
+    $fileNameToWrite = $fileName;
+    if (function_exists($trackMap[$trackType]['importFile'])) {
+      // Generate a table name first and put it into fileName field
+      do {
+        $fileNameToWrite = CUSTOM_TRACK_TABLE_PREFIX .
+          generateRandomString(CUSTOM_TRACK_TABLE_LENGTH);
+        $stmt = $mysqli->prepare("SELECT * FROM `" .
+          $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) . "` " .
+          "WHERE `fileName` = ?");
+        $stmt->bind_param('s', $fileNameToWrite);
+        $stmt->execute();
+        $tableEntries = $stmt->get_result();
+      } while ($tableEntries && $tableEntries->num_rows > 0);
+      $trackMap[$trackType]['importFile'](
+        $fileNameToWrite, $fileName, $ref, $trackMetaObj);
+    }
 
-    // update the entry's lastAccessed flag
+    // Append to customTrackFiles table first, then append to customTrackMeta
     $stmt = $mysqli->prepare("INSERT INTO `" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_TABLE_NAME) .
-      "` (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE `lastAccessed` = NOW()");
-    $stmt->bind_param('ssss', $fileKey, $trackType, $fileName,
+      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
+      "` (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `tableName` = `tableName`");
+    $stmt->bind_param('sssss', $ref, $userId, $trackMetaObj['tableName'],
       $fileKey . "_" . $trackType);
     $stmt->execute();
   }
+}
+
+function insertCustomData ($db, $fileName, $trackType) {
+  // Only do this for tracks that need inserting custom data into local tables
 }

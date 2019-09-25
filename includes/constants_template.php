@@ -22,8 +22,11 @@
   define('CLASS_DIR', '/usr/include/classes/');
   define('GOOGLE_ANALYTICS_ACCOUNT', '[GOOGLE_ANALYTICS_ACCOUNT]');
 
-  define('CUSTOM_TRACK_TABLE_NAME', 'customTrackFiles');
   define('CUSTOM_TRACK_DB_NAME', 'customTrackDb');
+  define('CUSTOM_TRACK_META_TABLE_NAME', 'customTrackMeta');
+  define('CUSTOM_TRACK_FILE_TABLE_NAME', 'customTrackFiles');
+  define('CUSTOM_TRACK_TABLE_PREFIX', 'ctTbl_');
+  define('CUSTOM_TRACK_TABLE_LENGTH', 32);
 
   set_include_path(get_include_path() . PATH_SEPARATOR . CLASS_DIR);
   spl_autoload_extensions('.class.php');
