@@ -82,10 +82,38 @@ function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interacti
 
 function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
+  // get the actual table name from file db
+  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
+  $stmt = $mysqli->prepare("SELECT * FROM `" .
+    $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+  $stmt->bind_param('sss', $userId, $ref, $tableName);
+  $stmt->execute();
+  $tableEntries = $stmt->get_result();
+  $result = [];
+  if ($tableEntries && $tableEntries->num_rows > 0) {
+    // table entry found
+    $entry = $tableEntries->fetch_assoc();
+    $realTableName = $entry['fileName'];
+    $result = _loadInteraction(CUSTOM_TRACK_DB_NAME, $realTableName, $chrRegion,
+      'interaction', NULL, NULL, $params);
+  } else {
+    $mysqli->close();
+    throw new Exception('Track not found!');
+  }
+  $tableEntries->free();
+  $mysqli->close();
+  return $result;
 }
 
-function importFile ($tableName, $file, $ref, $trackMetaObj) {
-  if (!file_exists($fileName)) {
+function importFile ($tableName, $fileName, $ref, $trackMetaObj) {
+  $needToUnlink = FALSE;
+  if (filter_var($fileName, FILTER_VALIDATE_URL)) {
+    file_put_contents(
+      CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp', fopen($fileName));
+    $fileName = CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp';
+    $needToUnlink = TRUE;
+  } else if (!file_exists($fileName)) {
     // file does not exist, throw an error
     throw new Exception('File does not exist: ' . $fileName);
   }
@@ -107,10 +135,13 @@ function importFile ($tableName, $file, $ref, $trackMetaObj) {
       ")";
     $mysqli->query($stmt);
 
-    $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($file) . 
+    $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($fileName) . 
       "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "`";
     $mysqli->query($stmt);
     $mysqli->close();
+    if ($needToUnlink) {
+      unlink($fileName);
+    }
   }
 }
 

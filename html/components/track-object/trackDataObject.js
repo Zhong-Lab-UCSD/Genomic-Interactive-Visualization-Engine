@@ -272,10 +272,10 @@ var GIVe = (function (give) {
         }
       }
       if (this.getTrackSetting('isCustom')) {
-        query.remoteUrl = this.getTrackSetting('remoteUrl')
-      } else {
-        query.trackID = this.parent.id
-      }
+        query.isCustom = true
+        query.userId = give.getUserId()
+      } 
+      query.trackID = this.parent.id
       return query
     }
 
@@ -426,20 +426,21 @@ var GIVe = (function (give) {
       // callback is in case update is needed
       // remoteQuery is already prepared or can be provided by regions
       let promise = null
-      if (this.getTrackSetting('isCustom')) {
-        if (this.getTrackSetting('localFile')) {
-          // if track has its own getLocalData function, then get local data
-          // instead of getting remote data
-          promise = this._readLocalFile(this.getTrackSetting('localFile'))
-          // afterwards it's this.dataHandler()'s job.
-        } else {
-          // a custom track with a remote URL
-          promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
-        }
-        promise = promise.then(response => this._responseHandler(
-          this._fileHandler.bind(this), response, regions
-        ))
-      } else if (this.getTrackSetting('requestUrl')) {
+      // if (this.getTrackSetting('isCustom')) {
+      //   if (this.getTrackSetting('localFile')) {
+      //     // if track has its own getLocalData function, then get local data
+      //     // instead of getting remote data
+      //     promise = this._readLocalFile(this.getTrackSetting('localFile'))
+      //     // afterwards it's this.dataHandler()'s job.
+      //   } else {
+      //     // a custom track with a remote URL
+      //     promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
+      //   }
+      //   promise = promise.then(response => this._responseHandler(
+      //     this._fileHandler.bind(this), response, regions
+      //   ))
+      // } else if (this.getTrackSetting('requestUrl')) {
+      if (this.getTrackSetting('requestUrl')) {
         promise = give.postAjax(this.getTrackSetting('requestUrl'),
           this._prepareRemoteQuery(regions), 'json'
         ).then(response => this._responseHandler(

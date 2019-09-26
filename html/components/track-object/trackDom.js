@@ -1132,7 +1132,7 @@ var GIVe = (function (give) {
     _createShortLabelArr (label, maxX) {
       maxX = maxX || this.textMargin - this.textRightPadding
       return this.createWordWrappedText(
-        label || this.getTrackSetting('shortLabel'),
+        label || this.getTrackSetting('shortLabel') || this.parent.id,
         'end', null, this._textSvg, maxX, this.height)
     }
 

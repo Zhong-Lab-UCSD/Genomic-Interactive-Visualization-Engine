@@ -58,6 +58,13 @@ var GIVe = (function (give) {
           }
         },
 
+        refs: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
+
         label: {
           type: String,
           value: 'Reference genome'
@@ -72,8 +79,13 @@ var GIVe = (function (give) {
     }
 
     _populateRefs (refArray) {
-      (refArray || give.RefObject.refArray)
-        .forEach(refObj => this._addSingleRef(refObj))
+      if (!this.refs || !this.refs.length) {
+        (refArray || give.RefObject.refArray)
+          .forEach(refObj => this._addSingleRef(refObj))
+      } else {
+        this.refs.forEach(refId =>
+          this._addSingleRef(give.RefObject.findRefByDb(refId)))
+      }
     }
 
     _addSingleRef (refObj) {

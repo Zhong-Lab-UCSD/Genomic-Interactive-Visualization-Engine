@@ -145,6 +145,9 @@ var GIVe = (function (give) {
         if (requestUrl && !newTrack.requestUrl) {
           newTrack.requestUrl = requestUrl
         }
+        if (groupID === give.TrackGroup.CUSTOM_GROUP_ID) {
+          newTrack.isCustom = true
+        }
         this.tracks.addTrack(newTrack)
 
         // reverse lookup table related, might be rewritten if table structure
@@ -162,8 +165,13 @@ var GIVe = (function (give) {
       }
       for (let groupID in groupInfo) {
         if (groupInfo.hasOwnProperty(groupID)) {
-          this.groups[groupID] = new give.TrackGroup(
-            groupID, groupInfo[groupID])
+          if (groupID !== give.TrackGroup.CUSTOM_GROUP_ID) {
+            this.groups[groupID] = new give.TrackGroup(
+              groupID, groupInfo[groupID])
+          } else if (groupInfo[groupId].tracks.length) {
+            this.groups[give.TrackGroup.CUSTOM_GROUP_ID] =
+              this.constructor.createCustomGroup()
+          }
           groupInfo[groupID].tracks.forEach(
             track => loadTrackFromRemoteData(groupID, track)
           )
@@ -203,7 +211,6 @@ var GIVe = (function (give) {
     }
 
     initTracks (target) {
-      // callback is the callback function taking no argument (already bound)
       if (!this._trackPromise) {
         this._trackPromise = give.postAjax(
           target || this.constructor.initTrackTarget, {db: this.db},
@@ -358,11 +365,11 @@ var GIVe = (function (give) {
       return priorityManager
     }
 
-    addCustomTrack (track, group, callback) {
-      // if group ID is not specified, use "customTracks" as ID;
+    addCustomTrack (track, group) {
+      // if group ID is not specified, use "_customTracks" as ID;
       // replace tracks with the same groupID and track.tableName
       group = group || {}
-      let groupID = group.id || 'customTracks'
+      let groupID = group.id || give.TrackGroup.CUSTOM_GROUP_ID
       if (!this.groups.hasOwnProperty(groupID)) {
         this.groups[groupID] = this.constructor.createCustomGroup(group)
       }
@@ -378,9 +385,6 @@ var GIVe = (function (give) {
       }
       this.tracks.addTrack(newTrack)
       this.groups[groupID].addTrack(newTrack)
-      if (callback) {
-        callback.call(this)
-      }
       give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
         {flag: this.cleanId + '-custom-tracks-ready'})
     }
@@ -463,7 +467,6 @@ var GIVe = (function (give) {
     static initAllRef (data, filter) {
       // initialize all refObj from db
       // return an array of refObj
-      // callback is the callback function taking refArray as argument
       if (filter === undefined) {
         filter = this.refFilter
       }
@@ -491,8 +494,8 @@ var GIVe = (function (give) {
 
     static createCustomGroup (group) {
       group = group || {}
-      let groupID = group.id || 'customTracks'
-      group.label = group.label || 'Custom Tracks'
+      let groupID = group.id || give.TrackGroup.CUSTOM_GROUP_ID
+      group.label = group.label || give.TrackGroup.CUSTOM_GROUP_LABEL
       group.priority = group.priority || give.TrackGroup.CUSTOM_GROUP_PRIORITY
       return new give.TrackGroup(groupID, group)
     }

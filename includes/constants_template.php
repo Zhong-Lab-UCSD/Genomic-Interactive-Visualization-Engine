@@ -27,6 +27,8 @@
   define('CUSTOM_TRACK_FILE_TABLE_NAME', 'customTrackFiles');
   define('CUSTOM_TRACK_TABLE_PREFIX', 'ctTbl_');
   define('CUSTOM_TRACK_TABLE_LENGTH', 32);
+  define('CUSTOM_TRACK_UPLOAD_DIR', '/var/www/give/ctUpload/');
+  define('CUSTOM_TRACK_DOWNLOAD_TEMP_DIR', '/var/www/give/ctUpload/tmp/');
 
   set_include_path(get_include_path() . PATH_SEPARATOR . CLASS_DIR);
   spl_autoload_extensions('.class.php');
