@@ -84,6 +84,35 @@ function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion =
   // notice that for interaction tracks, $chrRegion may be an array
 }
 
+function importFile ($tableName, $file, $ref, $trackMetaObj) {
+  if (!file_exists($fileName)) {
+    // file does not exist, throw an error
+    throw new Exception('File does not exist: ' . $fileName);
+  }
+  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
+  if ($mysqli) {
+    // create temporary table then fill with file contents
+    $stmt = "CREATE TABLE \`$ref\`.\`$track_name\` (" .
+      "\`ID\` int(10) unsigned NOT NULL AUTO_INCREMENT, " .
+      "\`chrom\` varchar(255) NOT NULL DEFAULT '', " .
+      "\`start\` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "\`end\` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "\`linkID\` VARCHAR(100) NOT NULL, " .
+      "\`value\` float NOT NULL DEFAULT '0', " .
+      "\`dirFlag\` tinyint(4) NOT NULL DEFAULT '-1', " .
+      "PRIMARY KEY (\`ID\`), " .
+      "KEY \`chrom\` (\`chrom\`(16),\`start\`), " .
+      "KEY \`chrom_2\` (\`chrom\`(16),\`end\`), " .
+      "KEY \`linkID\` (\`linkID\`)" .
+      ")";
+    $mysqli->query($stmt);
+
+    $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($file) . 
+      "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+    $mysqli->query($stmt);
+    $mysqli->close();
+  }
+}
 
 // then registering the methods
 

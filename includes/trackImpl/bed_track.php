@@ -126,13 +126,13 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
 
 
   if($mysqli && isset($tableName)) {
-    $sqlstmt = "SELECT * FROM `" . $mysqli->real_escape_string($tableName) . "`";
+    $sqlstmt = "SELECT * FROM \`" . $mysqli->real_escape_string($tableName) . "\`";
     if(!is_null($linkedTable)) {
       // need to link the table via the following: 'name' = LINK_ID
-      $sqlstmt .= " LEFT JOIN `" . $mysqli->real_escape_string($linkedTable) . "` ON `"
-            . $mysqli->real_escape_string($tableName) . "`.`name` = `"
-            . $mysqli->real_escape_string($linkedTable) . "`.`"
-            . $mysqli->real_escape_string($linkedKey) . "`";
+      $sqlstmt .= " LEFT JOIN \`" . $mysqli->real_escape_string($linkedTable) . "\` ON \`"
+            . $mysqli->real_escape_string($tableName) . "\`.\`name\` = \`"
+            . $mysqli->real_escape_string($linkedTable) . "\`.\`"
+            . $mysqli->real_escape_string($linkedKey) . "\`";
     }
     if(!is_null($chrRegion)) {
       // add filtering part
@@ -247,11 +247,37 @@ function _loadCustomBed($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $
 
 }
 
-function _buildBedCTTable ($tableName, $file) {
-  $mysqli = connectCPB();
+function importFile ($tableName, $file, $ref, $trackMetaObj) {
+  if (!file_exists($fileName)) {
+    // file does not exist, throw an error
+    throw new Exception('File does not exist: ' . $fileName);
+  }
+  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
   if ($mysqli) {
     // create temporary table then fill with file contents
-    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+    $stmt = "CREATE TABLE \`" . $mysqli->real_escape_string($tableName) ."\` " .
+      "(\`chrom\` varchar(255) NOT NULL DEFAULT '', " .
+      "\`chromStart\` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "\`chromEnd\` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "\`name\` varchar(255) NOT NULL DEFAULT '', " .
+      "\`score\` int(10) unsigned DEFAULT NULL, " .
+      "\`strand\` char(1) NOT NULL DEFAULT '', " .
+      "\`thickStart\` int(10) unsigned DEFAULT NULL, " .
+      "\`thickEnd\` int(10) unsigned DEFAULT NULL, " .
+      "\`itemRGB\` longblob DEFAULT NULL, " .
+      "\`blockCount\` int(10) unsigned DEFAULT NULL, " .
+      "\`blockSizes\` longblob DEFAULT NULL, " .
+      "\`blockStarts\` longblob DEFAULT NULL, " .
+      "KEY \`name\` (\`name\`), " .
+      "KEY \`chrom\` (\`chrom\`(16), \`chromStart\`), " .
+      "KEY \`chrom_2\` (\`chrom\`(16), \`chromEnd\`) " .
+      ")";
+    $mysqli->query($stmt);
+
+    $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($file) . 
+      "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+    $mysqli->query($stmt);
+    $mysqli->close();
   }
 }
 
