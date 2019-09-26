@@ -256,9 +256,9 @@ var GIVe = (function (give) {
      *
      * @memberof TrackDataObjectBase.prototype
      * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
-     * @returns {object} - The object being fed to the server via AJAX
+     * @returns {Promise<object>} - The object being fed to the server via AJAX
      */
-    _prepareRemoteQuery (regions) {
+    async _prepareRemoteQuery (regions) {
       // provide data to mainAjax
       // for most of the tracks, this is only trackID and window
       let query = {
@@ -273,7 +273,7 @@ var GIVe = (function (give) {
       }
       if (this.getTrackSetting('isCustom')) {
         query.isCustom = true
-        query.userId = give.getUserId()
+        query.userId = await give.userId
       } 
       query.trackID = this.parent.id
       return query
@@ -418,7 +418,7 @@ var GIVe = (function (give) {
      *    with `callerID`s as key and the last committed range(s) as value
      *    when data is ready.
      */
-    _retrieveData (regions) {
+    async _retrieveData (regions) {
       // directly from request URL
       // use iron-ajax to submit request directly
       // customized components are used in data preparation and data handler
@@ -442,7 +442,7 @@ var GIVe = (function (give) {
       // } else if (this.getTrackSetting('requestUrl')) {
       if (this.getTrackSetting('requestUrl')) {
         promise = give.postAjax(this.getTrackSetting('requestUrl'),
-          this._prepareRemoteQuery(regions), 'json'
+          await this._prepareRemoteQuery(regions), 'json'
         ).then(response => this._responseHandler(
           this._dataHandler.bind(this), response, regions
         ))

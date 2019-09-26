@@ -70,12 +70,6 @@
 
         static get properties () {
           return {
-            MAX_FILENAME_LEN: {
-              type: Number,
-              readOnly: true,
-              value: 25
-            },
-
             textSize: {
               type: Number,
               value: 12      // unit is px
@@ -116,11 +110,6 @@
                   trackType: 'bigwig'
                 }]
               }
-            },
-
-            customTrackGroupID: {
-              type: String,
-              value: 'customTracks'
             },
 
             isDisabled: {

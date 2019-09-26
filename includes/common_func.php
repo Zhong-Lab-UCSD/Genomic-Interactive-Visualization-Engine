@@ -185,6 +185,20 @@ function generateRandomString ($length) {
   return $result;
 }
 
+function generateUniqueUserId ($length) {
+  $candidateUserId = NULL;
+  do {
+    $candidateUserId = generateRandomString($length);
+    $stmt = $mysqli->prepare("SELECT * FROM `" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+      "WHERE `userId` = ? LIMIT 1");
+    $stmt->bind_param('s', $candidateUserId);
+    $stmt->execute();
+    $tableEntries = $stmt->get_result();
+  } while ($tableEntries && $tableEntries->num_rows > 0);
+  return $candidateUserId;
+}
+
 function var_error_log( $object = NULL ){
   ob_start();                    // start buffer capture
   var_dump( $object );           // dump the values

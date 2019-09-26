@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
     }
   } catch(Exception $e) {
     http_response_code(400);
+    $result = [];
     $result['error'] = $e->getMessage();
   }
   header('Content-Type: application/json');

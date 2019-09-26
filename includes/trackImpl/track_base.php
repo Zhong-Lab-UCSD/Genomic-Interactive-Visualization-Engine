@@ -68,30 +68,42 @@ function loadCustomTrack (
  */
 function readCustomTrackMeta ($ref, $userId, $tableName = NULL) {
   $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
-  $sqlstmt = "SELECT * FROM \`" .
-    $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "\` " .
-    "WHERE \`userId\` = ? AND \`ref\` = ?";
-  $stmt = NULL;
-  if (isset($tableName) && !empty($tablename)) {
-    $sqlstmt .= " AND \`tableName\` = ? ORDER BY priority";
-    $stmt = $mysqli->prepare($sqlstmt);
-    $stmt->bind_param('sss', $userId, $ref, $tableName);
-  } else {
-    $sqlstmt .= " ORDER BY priority";
-    $stmt = $mysqli->prepare($sqlstmt);
-    $stmt->bind_param('ss', $userId, $ref);
+  try {
+    $sqlstmt = "SELECT * FROM \`" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "\` " .
+      "WHERE \`userId\` = ? AND \`ref\` = ?";
+    $stmt = NULL;
+    if (isset($tableName) && !empty($tablename)) {
+      $sqlstmt .= " AND \`tableName\` = ? ORDER BY priority";
+      $stmt = $mysqli->prepare($sqlstmt);
+      $stmt->bind_param('sss', $userId, $ref, $tableName);
+    } else {
+      $sqlstmt .= " ORDER BY priority";
+      $stmt = $mysqli->prepare($sqlstmt);
+      $stmt->bind_param('ss', $userId, $ref);
+    }
+    $stmt->execute();
+    $tracks = $stmt->get_result();
+    $result = [];
+    while ($itor = $tracks->fetch_assoc()) {
+      // needs to redo settings part
+      // settings should be a json object
+      $itor['settings'] = json_decode($itor['settings'], true);
+      $result []= $itor;
+    }
+  } catch (Exception $e) {
+    error_log('Custom track not supported.');
+  } finally {
+    if (!empty($tracks)) {
+      $tracks->free();
+    }
+    if (!empty($stmt)) {
+      $stmt->close();
+    }
+    if (!empty($mysqli)) {
+      $mysqli->close();
+    }
   }
-  $stmt->execute();
-  $tracks = $stmt->get_result();
-  $result = [];
-  while ($itor = $tracks->fetch_assoc()) {
-    // needs to redo settings part
-    // settings should be a json object
-    $itor['settings'] = json_decode($itor['settings'], true);
-    $result []= $itor;
-  }
-  $tracks->free();
-  $mysqli->close();
   return $result;
 }
 

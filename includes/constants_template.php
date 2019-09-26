@@ -30,6 +30,8 @@
   define('CUSTOM_TRACK_UPLOAD_DIR', '/var/www/give/ctUpload/');
   define('CUSTOM_TRACK_DOWNLOAD_TEMP_DIR', '/var/www/give/ctUpload/tmp/');
 
+  define('USER_ID_LENGTH', 24);
+
   set_include_path(get_include_path() . PATH_SEPARATOR . CLASS_DIR);
   spl_autoload_extensions('.class.php');
   spl_autoload_register();
