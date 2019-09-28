@@ -32,6 +32,7 @@
     <paper-dialog id="mainDialog">
       <h2>Custom Tracks</h2>
       <div class="body">
+        <ref-selector refs="[[refs]]" ref="{{selectedRef}}"></ref-selector>
         <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
         <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
         <paper-input id="urlFileInput" class="fullWidth text" label="URL for track file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
@@ -70,6 +71,18 @@
 
         static get properties () {
           return {
+            refs: {
+              type: Array,
+              value: function () {
+                return []
+              }
+            },
+
+            selectedRef: {
+              type: String,
+              value: ''
+            },
+
             textSize: {
               type: Number,
               value: 12      // unit is px
@@ -128,7 +141,8 @@
         }
 
         inputFileChangedFunc () {
-          var shortFileName = this.$.uploadFileInput.files.length > 0 ? this.$.uploadFileInput.files[0].name : ''
+          var shortFileName = this.$.uploadFileInput.files.length > 0
+            ? this.$.uploadFileInput.files[0].name : ''
           if (shortFileName === '') {
             this.$.fileSelectButton.classList.remove('noTextTransformButton')
             this.uploadButtonText = 'Upload local file'
@@ -147,13 +161,27 @@
           }
         }
 
-        // TODO: add/remove/rearrange tracks
-        addTrack (e, detail) {
-          if (this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
-            this.fire('alert', {msg: 'You need to provide the URL for your input file or select a file to upload!'})
+        // Build an window.FormData object and send it through AJAX
+        async addTrack (e, detail) {
+          if (this.$.uploadFileInput.files.length <= 0 &&
+            this.InputUrl.length <= 0
+          ) {
+            this.fire('alert', {
+              msg: 'You need to provide the URL for your input file or ' +
+                'select a file to upload!'
+            })
+            return false
+          } else if (!this.selectedRef ||
+            !give.RefObject.findRefByDb(this.selectedRef)
+          ) {
+            this.fire('alert', {
+              msg: 'You need to select a reference!'
+            })
             return false
           } else if (!this.currentType) {
-            this.fire('alert', {msg: 'You need to select the type of the track!'})
+            this.fire('alert', {
+              msg: 'You need to select the type of the track!'
+            })
             return false
           }
           var track = {
@@ -165,16 +193,21 @@
             }
           }
           if (this.$.uploadFileInput.files.length > 0) {
-            track.settings.localFile = this.$.uploadFileInput.files[0]
+            track.trackFile = this.$.uploadFileInput.files[0]
           } else {
-            track.settings.remoteUrl = this.InputUrl
-            track.settings.requestUrl = give.TrackObject.fetchCustomTarget
+            track.remoteFile = this.InputUrl
           }
           track.settings.shortLabel = this.trackShortLabel.length > 0
             ? this.trackShortLabel
             : 'Custom track #' + (this.customGroup.length + 1)
-          track.tableName = 'custom' + this.customGroup.length
-          this.ref.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
+          track.tableName = this.trackShortLabel.replace(/^\W+/, '')
+            .replace(/\W+$/, '').replace(/[\W_]+/g, '_')
+          try {
+            await give.RefObject.findRefByDb(this.selectedRef)
+              .addCustomTrack(track, this.customTrackGroupID)
+          } catch (err) {
+            console.log(err)
+          }
           this.$.mainDialog.close()
         }
       }

@@ -365,26 +365,54 @@ var GIVe = (function (give) {
       return priorityManager
     }
 
-    addCustomTrack (track, group) {
+    async addCustomTrack (track, group) {
+      // Procedures: use AJAX to send the custom track to the server first
+      // If it returns true, add the track to the local structure
       // if group ID is not specified, use "_customTracks" as ID;
       // replace tracks with the same groupID and track.tableName
       group = group || {}
-      let groupID = group.id || give.TrackGroup.CUSTOM_GROUP_ID
-      if (!this.groups.hasOwnProperty(groupID)) {
-        this.groups[groupID] = this.constructor.createCustomGroup(group)
+      group.id = group.id || give.TrackGroup.CUSTOM_GROUP_ID
+      if (this.groups.hasOwnProperty(group.id) &&
+        this.groups[group.id].hasTrack(track.tableName)
+      ) {
+        throw new Error('Track ID already exists!')
       }
-      // remove existing track
-      if (this.groups[groupID].hasTrack(track.tableName)) {
-        this.groups[groupID].removeTrack(track.tableName)
-        this.tracks.removeTrack(track.tableName)
+
+      // Build a FormData
+      let newTrackData = new window.FormData()
+
+      newTrackData.append('userId', await give.userId)
+      newTrackData.append('db', this.db)
+
+      for (let key in track) {
+        if (track.hasOwnProperty(key)) {
+          newTrackData.append(key, track[key])
+        }
       }
-      let newTrack = new give.TrackObject(track.tableName, track, this, groupID)
-      newTrack.groupID = groupID
+
+      let result = await give.postAjax(this.constructor.addCustomTrackTarget,
+        newTrackData, 'json')
+
+      if (!result || Array.isArray(result)) {
+        return result
+      }
+
+      if (!this.groups.hasOwnProperty(group.id)) {
+        this.groups[group.id] = this.constructor.createCustomGroup(group)
+      }
+      // // remove existing track
+      // if (this.groups[group.id].hasTrack(track.tableName)) {
+      //   this.groups[group.id].removeTrack(track.tableName)
+      //   this.tracks.removeTrack(track.tableName)
+      // }
+      let newTrack = new give.TrackObject(
+        track.tableName, track, this, group.id)
+      newTrack.groupID = group.id
       if (!newTrack.remoteUrl) {
         newTrack.remoteUrl = give.TrackObject.fetchCustomTarget
       }
       this.tracks.addTrack(newTrack)
-      this.groups[groupID].addTrack(newTrack)
+      this.groups[group.id].addTrack(newTrack)
       give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
         {flag: this.cleanId + '-custom-tracks-ready'})
     }
@@ -538,6 +566,10 @@ var GIVe = (function (give) {
   RefObject.initTrackTarget = give.Host +
     (give.ServerPath || '/') +
     (give.Ref_InitTrackTarget || 'initTracks.php')
+
+  RefObject.addCustomTrackTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Ctm_AddTrackTarget || 'addCustomTrack.php')
 
   RefObject.defaultViewWindows = give.Ref_DefaultViewWindows ||
     ['chr10:30000000-55000000', 'chr10:34900000-65000000']
