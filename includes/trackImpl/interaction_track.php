@@ -83,10 +83,10 @@ function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interacti
 function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
   // get the actual table name from file db
-  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
-  $stmt = $mysqli->prepare("SELECT * FROM `" .
+  $mysqli = connectCPB();
+  $stmt = $mysqli->prepare("SELECT * FROM \`" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "\` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries = $stmt->get_result();

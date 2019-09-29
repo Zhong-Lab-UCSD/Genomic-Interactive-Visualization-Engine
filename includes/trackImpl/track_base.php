@@ -145,7 +145,7 @@ function addCustomTrack(
   //     i.  If the track has an importFile function, run that to build a table
   //     ii. Append the meta to customTrackMeta and return the meta.
   global $trackMap;   // may need to be rewritten to use class instead
-  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
+  $mysqli = connectCPB();
 
   if (!is_uploaded_file($fileName)) {
     // is not a locally uploaded file
@@ -278,7 +278,7 @@ function updateCustomTrackMeta (
   $ref, $userId, $tableName, $access, $type = NULL, $trackMetaObj = []
 ) {
   global $trackMap;   // may need to be rewritten to use class instead
-  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
+  $mysqli = connectCPB();
 
   if (!isset($ref) || empty($ref)) {
     throw new Exception('Reference is not set!');
@@ -338,9 +338,9 @@ function deleteCustomTrack ($ref, $userId, $tableName) {
   // Rationale: if there is a custom table, drop the table
   // Then remove everything from customTrackFiles and customTrackMeta
   $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
-  $stmt = $mysqli->prepare("SELECT * FROM `" .
+  $stmt = $mysqli->prepare("SELECT * FROM \`" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "\` WHERE \`userId\` = ? AND \`ref\` = ? AND \`tableName\` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries = $stmt->get_result();
@@ -352,7 +352,9 @@ function deleteCustomTrack ($ref, $userId, $tableName) {
       $fileName, 0, strlen(CUSTOM_TRACK_TABLE_PREFIX)
     ) === CUSTOM_TRACK_TABLE_PREFIX) {
       // is a table
-      $mysqli->query("DROP TABLE `" . $mysqli->real_escape_string($fileName) .
+      $mysqli->query("DROP TABLE `" .
+        $mysqli->real_escape_string(CUSTOM_TRACK_DB_NAME) . "`.`" .
+        $mysqli->real_escape_string($fileName) .
         "`");
     } else if (!filter_var($fileName, FILTER_VALIDATE_URL)) {
       // is a local file that needs to be deleted
@@ -364,9 +366,9 @@ function deleteCustomTrack ($ref, $userId, $tableName) {
     throw new Exception('Track not found!');
   }
   $tableEntries->free();
-  $stmt = $mysqli->prepare("DELETE FROM `" .
+  $stmt = $mysqli->prepare("DELETE FROM \`" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "\` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries->free();

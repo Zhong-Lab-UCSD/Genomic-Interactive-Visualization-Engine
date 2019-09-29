@@ -27,8 +27,8 @@
   define('CUSTOM_TRACK_FILE_TABLE_NAME', 'customTrackFiles');
   define('CUSTOM_TRACK_TABLE_PREFIX', 'ctTbl_');
   define('CUSTOM_TRACK_TABLE_LENGTH', 32);
-  define('CUSTOM_TRACK_UPLOAD_DIR', '/var/www/give/ctUpload/');
-  define('CUSTOM_TRACK_DOWNLOAD_TEMP_DIR', '/var/www/give/ctUpload/tmp/');
+  define('CUSTOM_TRACK_UPLOAD_DIR', '[customTrackUploadDirectory]');
+  define('CUSTOM_TRACK_DOWNLOAD_TEMP_DIR', '[customTrackDownloadDirectory]');
 
   define('USER_ID_LENGTH', 24);
 
