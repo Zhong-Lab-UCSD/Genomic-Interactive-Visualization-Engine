@@ -136,7 +136,8 @@ function importFile ($tableName, $fileName, $ref, $trackMetaObj) {
     $mysqli->query($stmt);
 
     $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($fileName) . 
-      "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+      "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "` " .
+      "(chrom, start, end, linkID, value, dirFlag)";
     $mysqli->query($stmt);
     $mysqli->close();
     if ($needToUnlink) {
