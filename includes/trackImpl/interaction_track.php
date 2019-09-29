@@ -106,7 +106,7 @@ function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion =
   return $result;
 }
 
-function importFile ($tableName, $fileName, $ref, $trackMetaObj) {
+function _importInteractionFile ($tableName, $fileName, $ref, $trackMetaObj) {
   $needToUnlink = FALSE;
   if (filter_var($fileName, FILTER_VALIDATE_URL)) {
     file_put_contents(
@@ -153,3 +153,4 @@ if(!isset($trackMap['interaction'])) {
 }
 $trackMap['interaction']['loadTrack'] = '_loadInteraction';
 $trackMap['interaction']['loadCustomTrack'] = '_loadCustomInteraction';
+$trackMap['interaction']['importFile'] = '_importInteractionFile';

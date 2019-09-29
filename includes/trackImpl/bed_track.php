@@ -217,7 +217,7 @@ function _loadCustomBed($ref, $userId, $tableName, $chrRegion = NULL, $params = 
   return $result;
 }
 
-function importFile ($tableName, $fileName, $ref, $trackMetaObj) {
+function _importBedFile ($tableName, $fileName, $ref, $trackMetaObj) {
   $needToUnlink = FALSE;
   if (filter_var($fileName, FILTER_VALIDATE_URL)) {
     file_put_contents(
@@ -267,6 +267,7 @@ if(!isset($trackMap['bed'])) {
 }
 $trackMap['bed']['loadTrack'] = '_loadBed';
 $trackMap['bed']['loadCustomTrack'] = '_loadCustomBed';
+$trackMap['bed']['importFile'] = '_importBedFile';
 
 if(!isset($trackMap['genebed'])) {
   $trackMap['genebed'] = &$trackMap['bed'];
