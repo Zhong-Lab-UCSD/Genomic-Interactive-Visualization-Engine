@@ -151,7 +151,7 @@ CREATE TABLE \`$ref\`.\`$track_name\` (
         KEY \`linkID\` (\`linkID\`)
     );
 
-LOAD DATA LOCAL INFILE "$file" INTO TABLE \`$ref\`.\`$track_name\`;
+LOAD DATA LOCAL INFILE "$file" INTO TABLE \`$ref\`.\`$track_name\` (chrom, start, end, linkID, value, dirFlag);
 
 INSERT IGNORE INTO \`$ref\`.\`trackDb\` VALUES (
         '$track_name',
