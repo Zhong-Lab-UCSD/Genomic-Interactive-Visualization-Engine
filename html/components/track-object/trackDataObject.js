@@ -1,6 +1,10 @@
  /**
  * @license
- * Copyright 2017 GIVe Authors
+ * Copyright 2017-2019 The Regents of the University of California.
+ * All Rights Reserved.
+ *
+ * Created by Xiaoyi Cao
+ * Department of Bioengineering
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
