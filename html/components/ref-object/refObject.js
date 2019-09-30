@@ -168,7 +168,7 @@ var GIVe = (function (give) {
           if (groupID !== give.TrackGroup.CUSTOM_GROUP_ID) {
             this.groups[groupID] = new give.TrackGroup(
               groupID, groupInfo[groupID])
-          } else if (groupInfo[groupId].tracks.length) {
+          } else if (groupInfo[groupID].tracks.length) {
             this.groups[give.TrackGroup.CUSTOM_GROUP_ID] =
               this.constructor.createCustomGroup()
           }
@@ -210,10 +210,14 @@ var GIVe = (function (give) {
       return this.initTracks().then(() => this.groups)
     }
 
-    initTracks (target) {
+    async initTracks (target) {
+      let userId = await give.userId
       if (!this._trackPromise) {
         this._trackPromise = give.postAjax(
-          target || this.constructor.initTrackTarget, {db: this.db},
+          target || this.constructor.initTrackTarget, {
+            db: this.db,
+            userId
+          },
           'json'
         ).then(data => {
           give._verbConsole.info('Tracks not initialized for ref ' +
@@ -368,7 +372,7 @@ var GIVe = (function (give) {
     async addCustomTrack (track, group) {
       // Procedures: use AJAX to send the custom track to the server first
       // If it returns true, add the track to the local structure
-      // if group ID is not specified, use "_customTracks" as ID;
+      // if group ID is not specified, use "customTracks" as ID;
       // replace tracks with the same groupID and track.tableName
       group = group || {}
       group.id = group.id || give.TrackGroup.CUSTOM_GROUP_ID
@@ -386,7 +390,9 @@ var GIVe = (function (give) {
 
       for (let key in track) {
         if (track.hasOwnProperty(key)) {
-          newTrackData.append(key, track[key])
+          newTrackData.append(key,
+            typeof track[key] === 'string' || track[key] instanceof window.File
+              ? track[key] : JSON.stringify(track[key]))
         }
       }
 
@@ -405,16 +411,13 @@ var GIVe = (function (give) {
       //   this.groups[group.id].removeTrack(track.tableName)
       //   this.tracks.removeTrack(track.tableName)
       // }
-      let newTrack = new give.TrackObject(
-        track.tableName, track, this, group.id)
-      newTrack.groupID = group.id
-      if (!newTrack.remoteUrl) {
-        newTrack.remoteUrl = give.TrackObject.fetchCustomTarget
-      }
+      let newTrack = give.TrackObject.createTrack(
+        track.settings.tableName, track, this, null, group.id)
       this.tracks.addTrack(newTrack)
       this.groups[group.id].addTrack(newTrack)
       give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
         {flag: this.cleanId + '-custom-tracks-ready'})
+      return newTrack
     }
 
     fillMetaFilter (metaEntries) {

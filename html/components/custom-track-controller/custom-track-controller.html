@@ -1,11 +1,16 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../track-object/tracks-header.html">
 <link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../ref-object/ref-object.html">
+<link rel="import" href="../ref-selector/ref-selector.html">
 <link rel="import" href="../give-styles.html">
 <link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <dom-module id="custom-track-controller">
@@ -22,6 +27,16 @@
       padding: 20px;
       margin: 0;
     }
+    paper-dialog div.statusMessage {
+      padding: 0.3em 1em;
+    }
+    paper-dialog div.statusMessage > div {
+      color: var(--primary-text-color);
+      opacity: var(--primary-text-opacity);
+      background: var(--lighter-accent-color);
+      border: 1px dotted var(--secondary-text-color);
+      padding: 0.5em;
+    }
     paper-button#fileSelectButton {
       text-overflow: ellipsis;
       overflow: hidden;
@@ -33,19 +48,30 @@
       <h2>Custom Tracks</h2>
       <div class="body">
         <ref-selector refs="[[refs]]" ref="{{selectedRef}}"></ref-selector>
-        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
-        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
-        <paper-input id="urlFileInput" class="fullWidth text" label="URL for track file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
-        <paper-input id="trackShortLabelInput" class="fullWidth text" label="Track short label" floatingLabel="true" value="{{trackShortLabel}}"></paper-input>
-        <!-- maybe implement auto-detect in the future -->
-        <paper-dropdown-menu id="typeDropdown" label="Track type" class="vertMargined text" no-label-float>
-          <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentType}}">
+        <paper-dropdown-menu id="typeDropdown" label="Track type" class="vertMargined text">
+          <paper-listbox slot="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentType}}">
             <template is="dom-repeat" items="[[trackTypes]]">
               <paper-item value="[[item.trackType]]">[[item.typeName]]</paper-item>
             </template>
-          </paper-menu>
+          </paper-listbox>
         </paper-dropdown-menu>
+        <paper-input id="trackShortLabelInput" class="fullWidth text" label="Track short label" floatingLabel="true"
+          value="{{trackShortLabel}}"></paper-input>
+        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
+        <form id="uploadForm">
+          <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput"
+            on-change="inputFileChangedFunc" />
+        </form>
+        <paper-input id="urlFileInput" class="fullWidth text" label="URL for track file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
+        <!-- maybe implement auto-detect in the future -->
       </div>
+      <template is="dom-if" if="[[_statusMessage]]">
+        <div class="statusMessage">
+          <div>
+            [[_statusMessage]]
+          </div>
+        </div>
+      </template>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
         <paper-button raised id="fileSubmit" on-tap="addTrack" disabled="[[isDisabled]]">
@@ -106,7 +132,8 @@
 
             trackShortLabel: {
               type: String,
-              value: ''
+              value: '',
+              observer: 'verifyContent'
             },
 
             trackTypes: {
@@ -125,11 +152,34 @@
               }
             },
 
+            currentType: {
+              type: String,
+              value: '',
+              observer: 'verifyContent'
+            },
+
             isDisabled: {
               type: Boolean,
               value: true
+            },
+
+            isBusy: {
+              type: Boolean,
+              value: false
+            },
+
+            _statusMessage: {
+              type: String,
+              value: ''
             }
           }
+        }
+
+        clear () {
+          this.selectedRef = ''
+          this.currentType = ''
+          this.InputUrl = ''
+          this.$.uploadForm.reset()
         }
 
         openAddTrackDialog () {
@@ -138,6 +188,12 @@
 
         fileSelectionHandler () {
           this.$.uploadFileInput.click()
+        }
+
+        verifyContent () {
+          this.isDisabled = !this.selectedRef || !this.trackShortLabel ||
+            !this.currentType || this.isBusy ||
+            (this.uploadButtonText === 'Upload local file' && !this.InputUrl)
         }
 
         inputFileChangedFunc () {
@@ -152,6 +208,7 @@
             this.uploadButtonText = shortFileName
             this.InputUrl = ''
           }
+          this.verifyContent()
         }
 
         InputUrlChanged (newValue, oldValue) {
@@ -159,6 +216,7 @@
             this.$.fileSelectButton.classList.remove('noTextTransformButton')
             this.uploadButtonText = 'Upload local file'
           }
+          this.verifyContent()
         }
 
         // Build an window.FormData object and send it through AJAX
@@ -184,6 +242,9 @@
             })
             return false
           }
+          this.isBusy = true
+          this._statusMessage = 'Adding track ...'
+          this.verifyContent()
           var track = {
             settings: {
               isCustom: true,
@@ -200,14 +261,31 @@
           track.settings.shortLabel = this.trackShortLabel.length > 0
             ? this.trackShortLabel
             : 'Custom track #' + (this.customGroup.length + 1)
-          track.tableName = this.trackShortLabel.replace(/^\W+/, '')
-            .replace(/\W+$/, '').replace(/[\W_]+/g, '_')
+          track.settings.tableName = this.trackShortLabel.toLowerCase()
+            .replace(/^\W+/, '').replace(/\W+$/, '').replace(/[\W_]+/g, '_')
+          let newTrackObj = null
           try {
-            await give.RefObject.findRefByDb(this.selectedRef)
+            this.isBusy = true
+            this._statusMessage = 'Track added.'
+            newTrackObj = await give.RefObject.findRefByDb(this.selectedRef)
               .addCustomTrack(track, this.customTrackGroupID)
+            if (Array.isArray(newTrackObj)) {
+              // TODO: process existing files
+              throw new Error('File already uploaded.')
+            }
           } catch (err) {
+            this._statusMessage = 'Cannot add track.'
             console.log(err)
+            newTrackObj = null
           }
+          if (newTrackObj) {
+            give.fireSignal('add-new-custom-track',
+              { ref: this.selectedRef, track: newTrackObj },
+              { bubbles: true, cancelable: true, composed: true }, this)
+          }
+          this.isBusy = false
+          this.verifyContent()
+          this.clear()
           this.$.mainDialog.close()
         }
       }

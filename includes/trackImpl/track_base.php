@@ -14,8 +14,8 @@ function loadTrack(
   // if type is not specified, read it from trackDb table
   if(is_null($type) || is_null($linkedTable)) {
     $mysqli = connectCPB($db);
-    $sqlstmt = "SELECT \`type\`, \`settings\` FROM \`trackDb\` " .
-      "WHERE \`tableName\` = ?";
+    $sqlstmt = "SELECT `type`, `settings` FROM `trackDb` " .
+      "WHERE `tableName` = ?";
     $stmt = $mysqli->prepare($sqlstmt);
     $stmt->bind_param('s', $tableName);
     $stmt->execute();
@@ -45,8 +45,48 @@ function loadCustomTrack (
 ) {
   global $trackMap;   // may need to be rewritten to use class instead
   // if type is not specified, try to determine from file extension (not recommended)
+  $trackMetaObj = NULL;
   if(is_null($type)) {
-    $type = strtolower(end(explode('.', $remoteUrl)));
+    try {
+      $mysqli = connectCPB();
+      $stmt = $mysqli->prepare("SELECT * FROM `" .
+        $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+        "WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+      $stmt->bind_param('sss', $userId, $ref, $tableName);
+      $stmt->execute();
+      $tableEntries = $stmt->get_result();
+      if (isset($tableEntries) && $tableEntries->num_rows > 0) {
+        $entry = $tableEntries->fetch_assoc();
+        $trackMetaObj = json_decode($entry['settings'](), true);
+        $tableEntries->free();
+      } else {
+        $tableEntries->free();
+        $mysqli->close();
+        throw new Exception('Track not found!');
+      }
+      // if type is not specified, read it from trackMetaObj
+      if (!isset($type) || is_null($type)) {
+        if (!array_key_exists('type', $trackMetaObj)) {
+          throw new Exception('Type is not defined!');
+        }
+        $type = strtolower(strtok($trackMetaObj['type'], " \n\t"));
+        strtok('', '');
+      }
+    } catch (Exception $e) {
+      error_log('Custom track not supported.');
+      error_log($e->getMessage());
+      throw $e;
+    } finally {
+      if (!empty($tableEntries)) {
+        $tableEntries->free();
+      }
+      if (!empty($stmt)) {
+        $stmt->close();
+      }
+      if (!empty($mysqli)) {
+        $mysqli->close();
+      }
+    }
   } else {
     $type = strtolower($type);
   }
@@ -67,14 +107,15 @@ function loadCustomTrack (
  *   empty array otherwise
  */
 function readCustomTrackMeta ($ref, $userId, $tableName = NULL) {
-  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
+  $mysqli = connectCPB();
+  $result = [];
   try {
-    $sqlstmt = "SELECT * FROM \`" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "\` " .
-      "WHERE \`userId\` = ? AND \`ref\` = ?";
+    $sqlstmt = "SELECT * FROM `" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+      "WHERE `userId` = ? AND `ref` = ?";
     $stmt = NULL;
     if (isset($tableName) && !empty($tablename)) {
-      $sqlstmt .= " AND \`tableName\` = ? ORDER BY priority";
+      $sqlstmt .= " AND `tableName` = ? ORDER BY priority";
       $stmt = $mysqli->prepare($sqlstmt);
       $stmt->bind_param('sss', $userId, $ref, $tableName);
     } else {
@@ -84,7 +125,6 @@ function readCustomTrackMeta ($ref, $userId, $tableName = NULL) {
     }
     $stmt->execute();
     $tracks = $stmt->get_result();
-    $result = [];
     while ($itor = $tracks->fetch_assoc()) {
       // needs to redo settings part
       // settings should be a json object
@@ -93,6 +133,7 @@ function readCustomTrackMeta ($ref, $userId, $tableName = NULL) {
     }
   } catch (Exception $e) {
     error_log('Custom track not supported.');
+    error_log($e->getMessage());
   } finally {
     if (!empty($tracks)) {
       $tracks->free();
@@ -167,12 +208,6 @@ function addCustomTrack(
   if (!isset($trackMetaObj) || empty($trackMetaObj)) {
     throw new Exception('TrackMetaObj is not set!');
   }
-  // Also: merge default settings from the track implementations if possible
-  if (function_exists($trackMap[$trackType]['getDefaultSettings'])) {
-    $trackMetaObj = array_merge($trackMap[$trackType]['getDefaultSettings'](),
-      $trackMetaObj
-    );
-  }
   // if type is not specified, read it from trackMetaObj
   if (!isset($type) || is_null($type)) {
     if (!array_key_exists('type', $trackMetaObj)) {
@@ -181,14 +216,22 @@ function addCustomTrack(
     $type = strtolower(strtok($trackMetaObj['type'], " \n\t"));
     strtok('', '');
   }
+  // Also: merge default settings from the track implementations if possible
+  if (array_key_exists('getDefaultSettings', $trackMap[$type]) &&
+    function_exists($trackMap[$type]['getDefaultSettings'])
+  ) {
+    $trackMetaObj = array_merge($trackMap[$type]['getDefaultSettings'](),
+      $trackMetaObj
+    );
+  }
   if ($mysqli) {
     // 1. First generate the key hash of the file (if it exists)
     $fileKey = filter_var($fileName, FILTER_VALIDATE_URL)
       ? md5($fileName) : md5_file($fileName);
     // 2. Compare the file key plus ID in database if $overrideHash is not set.
-    $stmt = $mysqli->prepare("SELECT * FROM \`" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) . "\` " .
-      "WHERE \`fileHash\` = ? AND \`userId\` = ?");
+    $stmt = $mysqli->prepare("SELECT * FROM `" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) . "` " .
+      "WHERE `fileHash` = ? AND `userId` = ?");
     $stmt->bind_param('ss', $fileKey, $userId);
     $stmt->execute();
     $tableEntries = $stmt->get_result();
@@ -223,9 +266,10 @@ function addCustomTrack(
     // Generate a table name first and put it into fileName field
     do {
       $fileNameToWrite = 
-        (function_exists($trackMap[$trackType]['importFile'])
-          ? CUSTOM_TRACK_TABLE_PREFIX
-          : CUSTOM_TRACK_UPLOAD_DIR) .
+        (array_key_exists('importFile', $trackMap[$type]) && 
+          function_exists($trackMap[$type]['importFile'])
+            ? CUSTOM_TRACK_TABLE_PREFIX
+            : CUSTOM_TRACK_UPLOAD_DIR) .
         generateRandomString(CUSTOM_TRACK_TABLE_LENGTH);
       $stmt = $mysqli->prepare("SELECT * FROM `" .
         $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) . "` " .
@@ -234,8 +278,10 @@ function addCustomTrack(
       $stmt->execute();
       $tableEntries = $stmt->get_result();
     } while ($tableEntries && $tableEntries->num_rows > 0);
-    if (function_exists($trackMap[$trackType]['importFile'])) {
-      $trackMap[$trackType]['importFile'](
+    if (array_key_exists('importFile', $trackMap[$type]) && 
+      function_exists($trackMap[$type]['importFile'])
+    ) {
+      $trackMap[$type]['importFile'](
         $fileNameToWrite, $fileName, $ref, $trackMetaObj);
     } else if (is_uploaded_file($fileName)) {
       move_uploaded_file($fileName, $fileNameToWrite);
@@ -243,31 +289,32 @@ function addCustomTrack(
       $fileNameToWrite = $fileName;
     }
 
-    // Append to customTrackFiles table first, then append to customTrackMeta
-    $stmt = $mysqli->prepare("INSERT INTO \`" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-      "\` (?, ?, ?, ?, ?) ON DUPLICATE KEY " .
-      "UPDATE \`tableName\` = \`tableName\`");
-    $stmt->bind_param('sssss', $ref, $userId, $trackMetaObj['tableName'],
-      $fileKey, $fileNameToWrite);
-    $stmt->execute();
-    $stmt = $mysqli->prepare("INSERT INTO \`" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_META_NAME) .
-      "\` (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE " .
-      "\`tableName\` = \`tableName\`");
+    // Append to customTrackMeta table first, then append to customTrackFiles
+    // (Due to foreign key constraints)
+    $stmt = $mysqli->prepare("INSERT INTO `" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) .
+      "` VALUES (?, NOW(), ?, ?, ?, ?, ?, '', '', 'customTracks', ?) " .
+      "ON DUPLICATE KEY UPDATE `tableName` = `tableName`");
+    $priority = array_key_exists('priority', $trackMetaObj)
+      ? $trackMetaObj['priority'] : 0;
+    $settings = json_encode($trackMetaObj, JSON_FORCE_OBJECT);
     $stmt->bind_param(
-      'sssssdssss',
+      'sssssds',
       $access,
       $ref,
       $userId,
       $trackMetaObj['tableName'],
       $type,
-      array_key_exists('priority', $trackMetaObj)
-        ? $trackMetaObj['priority'] : 0,
-      '',
-      '',
-      json_encode($trackMetaObj, JSON_FORCE_OBJECT)
+      $priority,
+      $settings
     );
+    $stmt->execute();
+    $stmt = $mysqli->prepare("INSERT INTO `" .
+      $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
+      "` VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY " .
+      "UPDATE `tableName` = `tableName`");
+    $stmt->bind_param('sssss', $ref, $userId, $trackMetaObj['tableName'],
+      $fileKey, $fileNameToWrite);
     $stmt->execute();
     $mysqli->close();
     return $trackMetaObj;
@@ -325,10 +372,8 @@ function updateCustomTrackMeta (
       $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
       "SET `lastUpdate` = NOW(), `access` = ?, `settings` = ?" .
       "WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
-    $stmt->bind_param('sssss',
-      $access, json_encode($trackMetaObj, JSON_FORCE_OBJECT),
-      $userId, $ref, $tableName
-    );
+    $settings = json_encode($trackMetaObj, JSON_FORCE_OBJECT);
+    $stmt->bind_param('sssss', $access, $settings, $userId, $ref, $tableName);
     $stmt->execute();
     $mysqli->close();
   }
@@ -338,9 +383,9 @@ function deleteCustomTrack ($ref, $userId, $tableName) {
   // Rationale: if there is a custom table, drop the table
   // Then remove everything from customTrackFiles and customTrackMeta
   $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
-  $stmt = $mysqli->prepare("SELECT * FROM \`" .
+  $stmt = $mysqli->prepare("SELECT * FROM `" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "\` WHERE \`userId\` = ? AND \`ref\` = ? AND \`tableName\` = ?");
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries = $stmt->get_result();
@@ -366,9 +411,9 @@ function deleteCustomTrack ($ref, $userId, $tableName) {
     throw new Exception('Track not found!');
   }
   $tableEntries->free();
-  $stmt = $mysqli->prepare("DELETE FROM \`" .
+  $stmt = $mysqli->prepare("DELETE FROM `" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "\` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries->free();

@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
     $result = generateUniqueUserId(USER_ID_LENGTH);
   } catch(Exception $e) {
     http_response_code(400);
+    error_log($e->getMessage());
     $result = [];
     $result['error'] = $e->getMessage();
   }

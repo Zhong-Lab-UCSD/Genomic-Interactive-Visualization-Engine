@@ -7,7 +7,7 @@
 // may incorporate other data (such as chromosomal bands) in the future
 // JSON format: {chr10: {chrRegion: "chr10:1-135374737", cent: "chr10: 38800000-42100000"}}
 require_once(realpath(dirname(__FILE__) . "/common_func.php"));
-require_once(realpath(dirname(__FILE__) . "/trackImpl/track_base.php"));
+require_once(realpath(dirname(__FILE__) . "/track_lib.php"));
 
 function getChromInfo($db) {
   if (version_compare(phpversion(), '7.0.0', '<')) {
@@ -87,6 +87,7 @@ function getTracks($db, $grp = NULL, $userId = NULL) {
   $mysqli = connectCPB($db);
   $tracks = null;
   $stmt = null;
+  error_log('UserId: ' . $userId);
   // first get group information
   try {
     $sqlstmt = "SELECT * FROM grp";
@@ -147,11 +148,13 @@ function getTracks($db, $grp = NULL, $userId = NULL) {
     }
     if (!empty($userId)) {
       // Add custom tracks
+      error_log('Load custom tracks: ');
       $customTracks = readCustomTrackMeta($db, $userId);
 
+      error_log('Custom track meta read.');
       if (!empty($customTracks)) {
-        $result['_customTracks'] = [];
-        $result['_customTracks']['tracks'] = $customTracks;  // this is to hold custom tracks
+        $result['customTracks'] = [];
+        $result['customTracks']['tracks'] = $customTracks;  // this is to hold custom tracks
       }
     }
   } finally {

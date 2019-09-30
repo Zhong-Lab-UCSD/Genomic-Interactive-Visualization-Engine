@@ -532,7 +532,7 @@ var GIVe = (function (give) {
   var storage = window.localStorage
   if (!storage.getItem('userId')) {
     // No userId is stored, get one from the server
-    getNewIdTarget = give.Host +
+    let getNewIdTarget = give.Host +
       (give.ServerPath || '/') +
       (give.Ctm_GetUserIdTarget || 'getNewId.php')
     give.userId = give.postAjax(getNewIdTarget, null, 'json', 'GET')

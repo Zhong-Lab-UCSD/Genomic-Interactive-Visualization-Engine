@@ -179,7 +179,7 @@ function generateRandomString ($length) {
   $charPools = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   $charPoolLen = strlen($charPools);
   $result = '';
-  for ($i = 0; $i < $charPoolLen; $i++) {
+  for ($i = 0; $i < $length; $i++) {
     $result .= $charPools[rand(0, $charPoolLen - 1)];
   }
   return $result;
@@ -187,16 +187,26 @@ function generateRandomString ($length) {
 
 function generateUniqueUserId ($length) {
   $candidateUserId = NULL;
-  do {
-    $candidateUserId = generateRandomString($length);
-    $stmt = $mysqli->prepare("SELECT * FROM `" .
-      $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
-      "WHERE `userId` = ? LIMIT 1");
-    $stmt->bind_param('s', $candidateUserId);
-    $stmt->execute();
-    $tableEntries = $stmt->get_result();
-  } while ($tableEntries && $tableEntries->num_rows > 0);
-  return $candidateUserId;
+  $mysqli = connectCPB();
+  try {
+    do {
+      $candidateUserId = generateRandomString($length);
+      $stmt = $mysqli->prepare("SELECT * FROM `" .
+        $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+        "WHERE `userId` = ? LIMIT 1");
+      $stmt->bind_param('s', $candidateUserId);
+      $stmt->execute();
+      $tableEntries = $stmt->get_result();
+    } while ($tableEntries && $tableEntries->num_rows > 0);
+    return $candidateUserId;
+  } finally {
+    if (!empty($stmt)) {
+      $stmt->close();
+    }
+    if (!empty($mysqli)) {
+      $mysqli->close();
+    }
+  }
 }
 
 function var_error_log( $object = NULL ){

@@ -11,7 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
   try {
     $type = isset($req['type']) ? $req['type'] : NULL;
     $access = isset($req['access']) ? $req['access'] : 'anonymous';
-    $trackMetaObj = isset($req['settings']) ? $req['settings'] : [];
+    $trackMetaObj = isset($req['settings'])
+      ? json_decode($req['settings'], TRUE) : [];
     $overrideHash = isset($req['overrideHash']) && !empty($req['overrideHash']);
     
     if(isset($req['db']) && isset($req['userId'])) {
@@ -30,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
     }
   } catch(Exception $e) {
     http_response_code(400);
+    error_log($e->getMessage());
     $result = [];
     $result['error'] = $e->getMessage();
   }

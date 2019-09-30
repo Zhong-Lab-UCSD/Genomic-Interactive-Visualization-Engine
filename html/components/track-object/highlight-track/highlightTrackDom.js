@@ -51,6 +51,10 @@ var GIVe = (function (give) {
         entry => this._drawSingleHighlight(entry), null, false)
     }
 
+    drawShortLabel () {
+      return
+    }
+
     _drawSingleHighlight (entry) {
       if (this.regionInWindow(entry)) {
         let colorIndex =

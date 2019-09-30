@@ -126,13 +126,13 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
 
 
   if($mysqli && isset($tableName)) {
-    $sqlstmt = "SELECT * FROM \`" . $mysqli->real_escape_string($tableName) . "\`";
+    $sqlstmt = "SELECT * FROM `" . $mysqli->real_escape_string($tableName) . "`";
     if(!is_null($linkedTable)) {
       // need to link the table via the following: 'name' = LINK_ID
-      $sqlstmt .= " LEFT JOIN \`" . $mysqli->real_escape_string($linkedTable) . "\` ON \`"
-            . $mysqli->real_escape_string($tableName) . "\`.\`name\` = \`"
-            . $mysqli->real_escape_string($linkedTable) . "\`.\`"
-            . $mysqli->real_escape_string($linkedKey) . "\`";
+      $sqlstmt .= " LEFT JOIN `" . $mysqli->real_escape_string($linkedTable) . "` ON `"
+            . $mysqli->real_escape_string($tableName) . "`.`name` = `"
+            . $mysqli->real_escape_string($linkedTable) . "`.`"
+            . $mysqli->real_escape_string($linkedKey) . "`";
     }
     if(!is_null($chrRegion)) {
       // add filtering part
@@ -195,9 +195,9 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
 function _loadCustomBed($ref, $userId, $tableName, $chrRegion = NULL, $params = NULL) {
   // get the actual table name from file db
   $mysqli = connectCPB();
-  $stmt = $mysqli->prepare("SELECT * FROM \`" .
+  $stmt = $mysqli->prepare("SELECT * FROM `" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "\` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries = $stmt->get_result();
@@ -231,22 +231,22 @@ function _importBedFile ($tableName, $fileName, $ref, $trackMetaObj) {
   $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
   if ($mysqli) {
     // create temporary table then fill with file contents
-    $stmt = "CREATE TABLE \`" . $mysqli->real_escape_string($tableName) ."\` " .
-      "(\`chrom\` varchar(255) NOT NULL DEFAULT '', " .
-      "\`chromStart\` int(10) unsigned NOT NULL DEFAULT '0', " .
-      "\`chromEnd\` int(10) unsigned NOT NULL DEFAULT '0', " .
-      "\`name\` varchar(255) NOT NULL DEFAULT '', " .
-      "\`score\` int(10) unsigned DEFAULT NULL, " .
-      "\`strand\` char(1) NOT NULL DEFAULT '', " .
-      "\`thickStart\` int(10) unsigned DEFAULT NULL, " .
-      "\`thickEnd\` int(10) unsigned DEFAULT NULL, " .
-      "\`itemRGB\` longblob DEFAULT NULL, " .
-      "\`blockCount\` int(10) unsigned DEFAULT NULL, " .
-      "\`blockSizes\` longblob DEFAULT NULL, " .
-      "\`blockStarts\` longblob DEFAULT NULL, " .
-      "KEY \`name\` (\`name\`), " .
-      "KEY \`chrom\` (\`chrom\`(16), \`chromStart\`), " .
-      "KEY \`chrom_2\` (\`chrom\`(16), \`chromEnd\`) " .
+    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) ."` " .
+      "(`chrom` varchar(255) NOT NULL DEFAULT '', " .
+      "`chromStart` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "`chromEnd` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "`name` varchar(255) NOT NULL DEFAULT '', " .
+      "`score` int(10) unsigned DEFAULT NULL, " .
+      "`strand` char(1) NOT NULL DEFAULT '', " .
+      "`thickStart` int(10) unsigned DEFAULT NULL, " .
+      "`thickEnd` int(10) unsigned DEFAULT NULL, " .
+      "`itemRGB` longblob DEFAULT NULL, " .
+      "`blockCount` int(10) unsigned DEFAULT NULL, " .
+      "`blockSizes` longblob DEFAULT NULL, " .
+      "`blockStarts` longblob DEFAULT NULL, " .
+      "KEY `name` (`name`), " .
+      "KEY `chrom` (`chrom`(16), `chromStart`), " .
+      "KEY `chrom_2` (`chrom`(16), `chromEnd`) " .
       ")";
     $mysqli->query($stmt);
 

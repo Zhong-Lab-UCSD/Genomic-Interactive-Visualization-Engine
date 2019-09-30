@@ -57,9 +57,9 @@ function _loadBigwig($db, $tableName, $chrRegion = NULL, $type = 'bigwig', $link
 function _loadCustomBigWig ($ref, $userId, $tableName, $chrRegion = NULL, $params = NULL) {
   // get the actual table name from file db
   $mysqli = connectCPB();
-  $stmt = $mysqli->prepare("SELECT * FROM \`" .
+  $stmt = $mysqli->prepare("SELECT * FROM `" .
     $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
-    "\` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
   $stmt->bind_param('sss', $userId, $ref, $tableName);
   $stmt->execute();
   $tableEntries = $stmt->get_result();

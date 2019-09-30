@@ -208,7 +208,7 @@ var GIVe = (function (give) {
 
   TrackGroup._MAX_GROUP_PRIORITY = 100000
   TrackGroup.CUSTOM_GROUP_PRIORITY = 90000
-  TrackGroup.CUSTOM_GROUP_ID = '_customTracks'
+  TrackGroup.CUSTOM_GROUP_ID = 'customTracks'
   TrackGroup.CUSTOM_GROUP_LABEL = 'Custom Tracks'
 
   give.TrackGroup = TrackGroup
