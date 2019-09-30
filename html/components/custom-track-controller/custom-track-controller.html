@@ -1,11 +1,18 @@
-<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../track-object/track-object.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../track-object/tracks-header.html">
+<link rel="import" href="../ref-embed-mixin/ref-embed-mixin.html">
 <link rel="import" href="../ref-object/ref-object.html">
+<link rel="import" href="../ref-selector/ref-selector.html">
 <link rel="import" href="../give-styles.html">
+<link rel="import" href="../../bower_components/shadycss/apply-shim.html">
 <dom-module id="custom-track-controller">
   <template>
     <style include="give-shared-styles">
@@ -20,25 +27,51 @@
       padding: 20px;
       margin: 0;
     }
-
+    paper-dialog div.statusMessage {
+      padding: 0.3em 1em;
+    }
+    paper-dialog div.statusMessage > div {
+      color: var(--primary-text-color);
+      opacity: var(--primary-text-opacity);
+      background: var(--lighter-accent-color);
+      border: 1px dotted var(--secondary-text-color);
+      padding: 0.5em;
+    }
+    paper-button#fileSelectButton {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
     </style>
     <paper-button raised on-tap="openAddTrackDialog">Add custom track</paper-button>
     <paper-dialog id="mainDialog">
       <h2>Custom Tracks</h2>
       <div class="body">
-        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
-        <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput" on-change="inputFileChangedFunc" />
-        <paper-input id="urlFileInput" class="fullWidth text" label="URL for track file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
-        <paper-input id="trackShortLabelInput" class="fullWidth text" label="Track short label" floatingLabel="true" value="{{trackShortLabel}}"></paper-input>
-        <!-- maybe implement auto-detect in the future -->
-        <paper-dropdown-menu id="typeDropdown" label="Track type" class="vertMargined text" no-label-float>
-          <paper-menu class="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentType}}">
+        <ref-selector refs="[[refs]]" ref="{{selectedRef}}"></ref-selector>
+        <paper-dropdown-menu id="typeDropdown" label="Track type" class="vertMargined text">
+          <paper-listbox slot="dropdown-content" id="refToUpload" attr-for-selected="value" selected="{{currentType}}">
             <template is="dom-repeat" items="[[trackTypes]]">
               <paper-item value="[[item.trackType]]">[[item.typeName]]</paper-item>
             </template>
-          </paper-menu>
+          </paper-listbox>
         </paper-dropdown-menu>
+        <paper-input id="trackShortLabelInput" class="fullWidth text" label="Track short label" floatingLabel="true"
+          value="{{trackShortLabel}}"></paper-input>
+        <paper-button class="fullWidth" raised noink id="fileSelectButton" on-tap="fileSelectionHandler">{{uploadButtonText}}</paper-button>
+        <form id="uploadForm">
+          <input style="display: none;" type="file" id="uploadFileInput" name="uploadFileInput"
+            on-change="inputFileChangedFunc" />
+        </form>
+        <paper-input id="urlFileInput" class="fullWidth text" label="URL for track file" floatingLabel="true" value="{{InputUrl}}"></paper-input>
+        <!-- maybe implement auto-detect in the future -->
       </div>
+      <template is="dom-if" if="[[_statusMessage]]">
+        <div class="statusMessage">
+          <div>
+            [[_statusMessage]]
+          </div>
+        </div>
+      </template>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
         <paper-button raised id="fileSubmit" on-tap="addTrack" disabled="[[isDisabled]]">
@@ -52,150 +85,166 @@
     var GIVe = (function (give) {
       'use strict'
 
-      give.CustomTrackController = Polymer({
-        is: 'custom-track-controller',
-
-        properties: {
-          MAX_FILENAME_LEN: {
-            type: Number,
-            readOnly: true,
-            value: 25
-          },
-
-          ref: Object,   // this is the ref defined in libtracks.js
-          // notice that ref should have chromSizes and location of centromeres included
-          // tracks is also within ref
-          // may need to provide additional API to get track data
-
-          textSize: {
-            type: Number,
-            value: 12      // unit is px
-          },
-
-          InputUrl: {
-            type: String,
-            value: '',
-            observer: 'InputUrlChanged'
-          },
-
-          uploadButtonText: {
-            type: String,
-            value: 'Upload local file'
-          },
-
-          customGroupLabel: {
-            type: String,
-            value: ''
-          },
-
-          trackShortLabel: {
-            type: String,
-            value: ''
-          },
-
-          trackTypes: {
-            type: Array,
-            value: function () {
-              return []
-            }
-          },
-
-          customTrackGroupID: {
-            type: String,
-            value: 'customTracks'
-          },
-
-          isDisabled: {
-            type: Boolean,
-            value: true
-          }
-
-        },
-
-        created: function () {
+      class CustomTrackController extends give.RefEmbedMixin(Polymer.Element) {
+        constructor () {
+          super()
           this.trackCtrlDOMs = []
-        },
+        }
+        
+        static get is () {
+          return 'custom-track-controller'
+        }
 
-        ready: function () {
-          this.push('trackTypes',
-            {
-              typeName: 'BED',
-              trackType: 'bed'
+        static get properties () {
+          return {
+            refs: {
+              type: Array,
+              value: function () {
+                return []
+              }
             },
-            {
-              typeName: 'Interaction',
-              trackType: 'interaction'
+
+            selectedRef: {
+              type: String,
+              value: ''
             },
-            {
-              typeName: 'Wig',
-              trackType: 'wig'
+
+            textSize: {
+              type: Number,
+              value: 12      // unit is px
             },
-            {
-              typeName: 'BigWig',
-              trackType: 'bigwig'
+
+            InputUrl: {
+              type: String,
+              value: '',
+              observer: 'InputUrlChanged'
+            },
+
+            uploadButtonText: {
+              type: String,
+              value: 'Upload local file'
+            },
+
+            customGroupLabel: {
+              type: String,
+              value: ''
+            },
+
+            trackShortLabel: {
+              type: String,
+              value: '',
+              observer: 'verifyContent'
+            },
+
+            trackTypes: {
+              type: Array,
+              value: function () {
+                return [{
+                  typeName: 'BED',
+                  trackType: 'bed'
+                }, {
+                  typeName: 'Interaction',
+                  trackType: 'interaction'
+                }, {
+                  typeName: 'BigWig',
+                  trackType: 'bigwig'
+                }]
+              }
+            },
+
+            currentType: {
+              type: String,
+              value: '',
+              observer: 'verifyContent'
+            },
+
+            isDisabled: {
+              type: Boolean,
+              value: true
+            },
+
+            isBusy: {
+              type: Boolean,
+              value: false
+            },
+
+            _statusMessage: {
+              type: String,
+              value: ''
             }
-          )
-        },
+          }
+        }
 
-        factoryImpl: function (ref, prop) {
-          this.setRef(ref)
-        },
+        clear () {
+          this.selectedRef = ''
+          this.currentType = ''
+          this.InputUrl = ''
+          this.$.uploadForm.reset()
+        }
 
-        openAddTrackDialog: function () {
+        openAddTrackDialog () {
           this.$.mainDialog.open()
-        },
+        }
 
-        setRef: function (newRef, trackCtrlDOMs) {
-          // this will reset all tracks and redo the ref
-          // note that the tracks should already be initialized before switching here
-          if (!newRef) {
-            throw (new give.GiveError('No new ref specified!'))
-          }
-          this.ref = newRef
-          if (!this.ref.hasOwnProperty(this.customTrackGroupID)) {
-            // no custom track group, add one
-            this.customGroup = give.RefObject.createCustomGroup({ID: this.customTrackGroupID})
-          }
-          this.ref.groups[this.customTrackGroupID] = this.customGroup
-          this.isDisabled = false
-        },
-
-        fileSelectionHandler: function () {
+        fileSelectionHandler () {
           this.$.uploadFileInput.click()
-        },
+        }
 
-        inputFileChangedFunc: function () {
-          var shortFileName = this.$.uploadFileInput.files.length > 0 ? this.$.uploadFileInput.files[0].name : ''
+        verifyContent () {
+          this.isDisabled = !this.selectedRef || !this.trackShortLabel ||
+            !this.currentType || this.isBusy ||
+            (this.uploadButtonText === 'Upload local file' && !this.InputUrl)
+        }
+
+        inputFileChangedFunc () {
+          var shortFileName = this.$.uploadFileInput.files.length > 0
+            ? this.$.uploadFileInput.files[0].name : ''
           if (shortFileName === '') {
             this.$.fileSelectButton.classList.remove('noTextTransformButton')
             this.uploadButtonText = 'Upload local file'
           } else {
             shortFileName = shortFileName.replace(/^C:\\fakepath\\/, '')
-            if (shortFileName.length > this.MAX_FILENAME_LEN) {
-              shortFileName = '...' + shortFileName.substring(shortFileName.length - this.MAX_FILENAME_LEN)
-            }
             this.$.fileSelectButton.classList.add('noTextTransformButton')
             this.uploadButtonText = shortFileName
             this.InputUrl = ''
           }
-        },
+          this.verifyContent()
+        }
 
-        InputUrlChanged: function (newValue, oldValue) {
+        InputUrlChanged (newValue, oldValue) {
           if (newValue.length > 0) {
             this.$.fileSelectButton.classList.remove('noTextTransformButton')
             this.uploadButtonText = 'Upload local file'
           }
-        },
+          this.verifyContent()
+        }
 
-        // TODO: add/remove/rearrange tracks
-        addTrack: function (e, detail) {
-          if (this.$.uploadFileInput.files.length <= 0 && this.InputUrl.length <= 0) {
-            this.fire('alert', {msg: 'You need to provide the URL for your input file or select a file to upload!'})
+        // Build an window.FormData object and send it through AJAX
+        async addTrack (e, detail) {
+          if (this.$.uploadFileInput.files.length <= 0 &&
+            this.InputUrl.length <= 0
+          ) {
+            this.fire('alert', {
+              msg: 'You need to provide the URL for your input file or ' +
+                'select a file to upload!'
+            })
+            return false
+          } else if (!this.selectedRef ||
+            !give.RefObject.findRefByDb(this.selectedRef)
+          ) {
+            this.fire('alert', {
+              msg: 'You need to select a reference!'
+            })
             return false
           } else if (!this.currentType) {
-            this.fire('alert', {msg: 'You need to select the type of the track!'})
+            this.fire('alert', {
+              msg: 'You need to select the type of the track!'
+            })
             return false
           }
+          this.isBusy = true
+          this._statusMessage = 'Adding track ...'
+          this.verifyContent()
           var track = {
             settings: {
               isCustom: true,
@@ -205,20 +254,45 @@
             }
           }
           if (this.$.uploadFileInput.files.length > 0) {
-            track.settings.localFile = this.$.uploadFileInput.files[0]
+            track.trackFile = this.$.uploadFileInput.files[0]
           } else {
-            track.settings.remoteUrl = this.InputUrl
-            track.settings.requestUrl = give.TrackObject.fetchCustomTarget
+            track.remoteFile = this.InputUrl
           }
           track.settings.shortLabel = this.trackShortLabel.length > 0
             ? this.trackShortLabel
             : 'Custom track #' + (this.customGroup.length + 1)
-          track.tableName = 'custom' + this.customGroup.length
-          this.ref.addCustomTrack(track, this.customTrackGroupID, this.fire.bind(this, 'update-track-structure'))
+          track.settings.tableName = this.trackShortLabel.toLowerCase()
+            .replace(/^\W+/, '').replace(/\W+$/, '').replace(/[\W_]+/g, '_')
+          let newTrackObj = null
+          try {
+            this.isBusy = true
+            this._statusMessage = 'Track added.'
+            newTrackObj = await give.RefObject.findRefByDb(this.selectedRef)
+              .addCustomTrack(track, this.customTrackGroupID)
+            if (Array.isArray(newTrackObj)) {
+              // TODO: process existing files
+              throw new Error('File already uploaded.')
+            }
+          } catch (err) {
+            this._statusMessage = 'Cannot add track.'
+            console.log(err)
+            newTrackObj = null
+          }
+          if (newTrackObj) {
+            give.fireSignal('add-new-custom-track',
+              { ref: this.selectedRef, track: newTrackObj },
+              { bubbles: true, cancelable: true, composed: true }, this)
+          }
+          this.isBusy = false
+          this.verifyContent()
+          this.clear()
           this.$.mainDialog.close()
         }
+      }
 
-      })
+      give.CustomTrackController = CustomTrackController
+      window.customElements.define(
+        'custom-track-controller', give.CustomTrackController)
 
       return give
     })(GIVe || {})

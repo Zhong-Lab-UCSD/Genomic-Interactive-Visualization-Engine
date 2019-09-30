@@ -1,6 +1,10 @@
 /**
  * @license
- * Copyright 2017 GIVe Authors
+ * Copyright 2017-2019 The Regents of the University of California.
+ * All Rights Reserved.
+ *
+ * Created by Xiaoyi Cao
+ * Department of Bioengineering
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,6 +149,9 @@ var GIVe = (function (give) {
         if (requestUrl && !newTrack.requestUrl) {
           newTrack.requestUrl = requestUrl
         }
+        if (groupID === give.TrackGroup.CUSTOM_GROUP_ID) {
+          newTrack.isCustom = true
+        }
         this.tracks.addTrack(newTrack)
 
         // reverse lookup table related, might be rewritten if table structure
@@ -162,8 +169,13 @@ var GIVe = (function (give) {
       }
       for (let groupID in groupInfo) {
         if (groupInfo.hasOwnProperty(groupID)) {
-          this.groups[groupID] = new give.TrackGroup(
-            groupID, groupInfo[groupID])
+          if (groupID !== give.TrackGroup.CUSTOM_GROUP_ID) {
+            this.groups[groupID] = new give.TrackGroup(
+              groupID, groupInfo[groupID])
+          } else if (groupInfo[groupID].tracks.length) {
+            this.groups[give.TrackGroup.CUSTOM_GROUP_ID] =
+              this.constructor.createCustomGroup()
+          }
           groupInfo[groupID].tracks.forEach(
             track => loadTrackFromRemoteData(groupID, track)
           )
@@ -202,11 +214,14 @@ var GIVe = (function (give) {
       return this.initTracks().then(() => this.groups)
     }
 
-    initTracks (target) {
-      // callback is the callback function taking no argument (already bound)
+    async initTracks (target) {
+      let userId = await give.userId
       if (!this._trackPromise) {
         this._trackPromise = give.postAjax(
-          target || this.constructor.initTrackTarget, {db: this.db},
+          target || this.constructor.initTrackTarget, {
+            db: this.db,
+            userId
+          },
           'json'
         ).then(data => {
           give._verbConsole.info('Tracks not initialized for ref ' +
@@ -358,31 +373,55 @@ var GIVe = (function (give) {
       return priorityManager
     }
 
-    addCustomTrack (track, group, callback) {
+    async addCustomTrack (track, group) {
+      // Procedures: use AJAX to send the custom track to the server first
+      // If it returns true, add the track to the local structure
       // if group ID is not specified, use "customTracks" as ID;
       // replace tracks with the same groupID and track.tableName
       group = group || {}
-      let groupID = group.id || 'customTracks'
-      if (!this.groups.hasOwnProperty(groupID)) {
-        this.groups[groupID] = this.constructor.createCustomGroup(group)
+      group.id = group.id || give.TrackGroup.CUSTOM_GROUP_ID
+      if (this.groups.hasOwnProperty(group.id) &&
+        this.groups[group.id].hasTrack(track.tableName)
+      ) {
+        throw new Error('Track ID already exists!')
       }
-      // remove existing track
-      if (this.groups[groupID].hasTrack(track.tableName)) {
-        this.groups[groupID].removeTrack(track.tableName)
-        this.tracks.removeTrack(track.tableName)
+
+      // Build a FormData
+      let newTrackData = new window.FormData()
+
+      newTrackData.append('userId', await give.userId)
+      newTrackData.append('db', this.db)
+
+      for (let key in track) {
+        if (track.hasOwnProperty(key)) {
+          newTrackData.append(key,
+            typeof track[key] === 'string' || track[key] instanceof window.File
+              ? track[key] : JSON.stringify(track[key]))
+        }
       }
-      let newTrack = new give.TrackObject(track.tableName, track, this, groupID)
-      newTrack.groupID = groupID
-      if (!newTrack.remoteUrl) {
-        newTrack.remoteUrl = give.TrackObject.fetchCustomTarget
+
+      let result = await give.postAjax(this.constructor.addCustomTrackTarget,
+        newTrackData, 'json')
+
+      if (!result || Array.isArray(result)) {
+        return result
       }
+
+      if (!this.groups.hasOwnProperty(group.id)) {
+        this.groups[group.id] = this.constructor.createCustomGroup(group)
+      }
+      // // remove existing track
+      // if (this.groups[group.id].hasTrack(track.tableName)) {
+      //   this.groups[group.id].removeTrack(track.tableName)
+      //   this.tracks.removeTrack(track.tableName)
+      // }
+      let newTrack = give.TrackObject.createTrack(
+        track.settings.tableName, track, this, null, group.id)
       this.tracks.addTrack(newTrack)
-      this.groups[groupID].addTrack(newTrack)
-      if (callback) {
-        callback.call(this)
-      }
+      this.groups[group.id].addTrack(newTrack)
       give.fireSignal(give.TASKSCHEDULER_EVENT_NAME,
         {flag: this.cleanId + '-custom-tracks-ready'})
+      return newTrack
     }
 
     fillMetaFilter (metaEntries) {
@@ -463,7 +502,6 @@ var GIVe = (function (give) {
     static initAllRef (data, filter) {
       // initialize all refObj from db
       // return an array of refObj
-      // callback is the callback function taking refArray as argument
       if (filter === undefined) {
         filter = this.refFilter
       }
@@ -491,8 +529,8 @@ var GIVe = (function (give) {
 
     static createCustomGroup (group) {
       group = group || {}
-      let groupID = group.id || 'customTracks'
-      group.label = group.label || 'Custom Tracks'
+      let groupID = group.id || give.TrackGroup.CUSTOM_GROUP_ID
+      group.label = group.label || give.TrackGroup.CUSTOM_GROUP_LABEL
       group.priority = group.priority || give.TrackGroup.CUSTOM_GROUP_PRIORITY
       return new give.TrackGroup(groupID, group)
     }
@@ -535,6 +573,10 @@ var GIVe = (function (give) {
   RefObject.initTrackTarget = give.Host +
     (give.ServerPath || '/') +
     (give.Ref_InitTrackTarget || 'initTracks.php')
+
+  RefObject.addCustomTrackTarget = give.Host +
+    (give.ServerPath || '/') +
+    (give.Ctm_AddTrackTarget || 'addCustomTrack.php')
 
   RefObject.defaultViewWindows = give.Ref_DefaultViewWindows ||
     ['chr10:30000000-55000000', 'chr10:34900000-65000000']

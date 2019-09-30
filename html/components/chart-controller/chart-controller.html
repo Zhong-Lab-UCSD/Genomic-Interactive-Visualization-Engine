@@ -232,7 +232,8 @@ Track controls are implemented via a `<chart-track-group-list>` element. See
               show-selected-tracks selected-tracks-only collapsable
               priority-managers="{{priorityManagers}}">
             </chart-track-list>
-            <custom-track-controller ref="[[ref]]" id="mainCTController">
+            <custom-track-controller refs="[[ref]]" id="mainCTController"
+              on-add-new-custom-track="addCustomTrackListener">
             </custom-track-controller>
           </div>
         </div>
@@ -649,6 +650,18 @@ var GIVe = (function (give) {
         paramReplaced = true
       }
       return paramReplaced
+    }
+
+    addCustomTrackListener (event) {
+      if (event.detail && event.detail.ref && event.detail.track) {
+        let refPriorityMgr = this.priorityManagers[event.detail.ref]
+        if (refPriorityMgr) {
+          refPriorityMgr.addTrack(event.detail.track)
+          this.notifyPath('priorityManagers.*')
+          this._trackListUpdateHandler()
+          this.$.mainTrackList.syncPriorityManagerToDom()
+        }
+      }
     }
   }
 

@@ -1,6 +1,10 @@
 /**
  * @license
- * Copyright 2017 GIVe Authors
+ * Copyright 2017-2019 The Regents of the University of California.
+ * All Rights Reserved.
+ *
+ * Created by Xiaoyi Cao
+ * Department of Bioengineering
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,7 +267,7 @@ var GIVe = (function (give) {
     }
   }
 
-  give.postAjax = give.postAjax || function (
+  give.postAjax = give.postAjax || function postAjax (
     target, params, responseType, method, additionalHeaders
   ) {
     // this is a wrapper for Ajax calls throughout
@@ -525,6 +529,25 @@ var GIVe = (function (give) {
   }
 
   give._initDebug()
+
+  /**
+   * Initialize userId and save it in localStorage
+   */
+  var storage = window.localStorage
+  if (!storage.getItem('userId')) {
+    // No userId is stored, get one from the server
+    let getNewIdTarget = give.Host +
+      (give.ServerPath || '/') +
+      (give.Ctm_GetUserIdTarget || 'getNewId.php')
+    give.userId = give.postAjax(getNewIdTarget, null, 'json', 'GET')
+      .then(res => {
+        give.userId = res
+        storage.setItem('userId', give.userId)
+        return give.userId
+      })
+  } else {
+    give.userId = storage.getItem('userId')
+  }
 
   window.addEventListener('give-warning', event => {
     return (give.warningHandler && typeof give.warningHandler === 'function')

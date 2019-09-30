@@ -189,66 +189,74 @@ function _loadBed($db, $tableName, $chrRegion = NULL, $type = 'bed', $linkedTabl
   return $result;
 }
 
-function _loadCustomBed($db, $remoteUrl, $chrRegion = NULL, $params = NULL) {
-  // remote file should be in BED format
-  // so just break all the lines and return as JSON
-
-  $result = array();
-  $fin = fopen($remoteUrl, 'r');
-  // TODO: enable buffering locally
-
-  if(!$fin) {
-    throw new Exception('File "' . $remoteUrl . '" cannot be opened!');
-  }
-  if($chrRegion) {
-    // filter out bed entries not inside the region
-    if(!is_array($chrRegion)) {
-      $chrRegion = [$chrRegion];
-    }
-    $strToChrRegion = function($regionStr) {
-      return ChromRegion::newFromRegionText($regionStr);
-    };
-    $chrRegionObj = array_map($strToChrRegion, $chrRegion);
+/**
+ * Load a custom track when it's already in the database
+ */
+function _loadCustomBed($ref, $userId, $tableName, $chrRegion = NULL, $params = NULL) {
+  // get the actual table name from file db
+  $mysqli = connectCPB();
+  $stmt = $mysqli->prepare("SELECT * FROM `" .
+    $mysqli->real_escape_string(CUSTOM_TRACK_FILE_TABLE_NAME) .
+    "` WHERE `userId` = ? AND `ref` = ? AND `tableName` = ?");
+  $stmt->bind_param('sss', $userId, $ref, $tableName);
+  $stmt->execute();
+  $tableEntries = $stmt->get_result();
+  $result = [];
+  if ($tableEntries && $tableEntries->num_rows > 0) {
+    // table entry found
+    $entry = $tableEntries->fetch_assoc();
+    $realTableName = $entry['fileName'];
+    $result = _loadBed(CUSTOM_TRACK_DB_NAME, $realTableName, $chrRegion, 'bed',
+      NULL, NULL, $params);
   } else {
-    $chrRegionObj = false;
+    $mysqli->close();
+    throw new Exception('Track not found!');
   }
-  while(($line = fgets($fin)) !== false) {
-    if (trim($line, " \t\n\r\0\x0B,")[0] !== '#') {
-      if($chrRegionObj) {
-        $tokens = preg_split("/\s+/", trim($line));
-        $chr = trim($tokens[0], " \t\n\r\0\x0B,");
-        $start = intval(trim($tokens[1], " \t\n\r\0\x0B,"));
-        $end = intval(trim($tokens[2], " \t\n\r\0\x0B,"));
-
-        $overlapFlag = false;
-        for ($i = 0, $chrRegionObjLen = count($chrRegionObj); $i < $chrRegionObjLen; $i++) {
-          if(strtolower($chr) === strtolower($chrRegionObj[$i]->chr) &&
-            $end > $chrRegionObj[$i]->start &&
-            $start < $chrRegionObj[$i]->end) {
-              $overlapFlag = true;
-              break;
-          }
-        }
-      }
-      if ($overlapFlag) {
-        if(!isset($result[$chr])) {
-          $result[$chr] = array();
-        }
-        $newGene = array();
-        $newGene['geneBed'] = trim($line);
-        $result[$chr] []= $newGene;
-      }
-    }
-  }
+  $tableEntries->free();
+  $mysqli->close();
   return $result;
-
 }
 
-function _buildBedCTTable ($tableName, $file) {
-  $mysqli = connectCPB();
+function _importBedFile ($tableName, $fileName, $ref, $trackMetaObj) {
+  $needToUnlink = FALSE;
+  if (filter_var($fileName, FILTER_VALIDATE_URL)) {
+    file_put_contents(
+      CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp', fopen($fileName));
+    $fileName = CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp';
+    $needToUnlink = TRUE;
+  } else if (!file_exists($fileName)) {
+    // file does not exist, throw an error
+    throw new Exception('File does not exist: ' . $fileName);
+  }
+  $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
   if ($mysqli) {
     // create temporary table then fill with file contents
-    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) ."` " .
+      "(`chrom` varchar(255) NOT NULL DEFAULT '', " .
+      "`chromStart` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "`chromEnd` int(10) unsigned NOT NULL DEFAULT '0', " .
+      "`name` varchar(255) NOT NULL DEFAULT '', " .
+      "`score` int(10) unsigned DEFAULT NULL, " .
+      "`strand` char(1) NOT NULL DEFAULT '', " .
+      "`thickStart` int(10) unsigned DEFAULT NULL, " .
+      "`thickEnd` int(10) unsigned DEFAULT NULL, " .
+      "`itemRGB` longblob DEFAULT NULL, " .
+      "`blockCount` int(10) unsigned DEFAULT NULL, " .
+      "`blockSizes` longblob DEFAULT NULL, " .
+      "`blockStarts` longblob DEFAULT NULL, " .
+      "KEY `name` (`name`), " .
+      "KEY `chrom` (`chrom`(16), `chromStart`), " .
+      "KEY `chrom_2` (`chrom`(16), `chromEnd`) " .
+      ")";
+    $mysqli->query($stmt);
+
+    $stmt = "LOAD DATA LOCAL INFILE '" . $mysqli->real_escape_string($fileName) . 
+      "' INTO TABLE `" . $mysqli->real_escape_string($tableName) . "`";
+    $mysqli->query($stmt);
+    $mysqli->close();
+    if ($needToUnlink) {
+      unlink($fileName);
+    }
   }
 }
 
@@ -259,6 +267,7 @@ if(!isset($trackMap['bed'])) {
 }
 $trackMap['bed']['loadTrack'] = '_loadBed';
 $trackMap['bed']['loadCustomTrack'] = '_loadCustomBed';
+$trackMap['bed']['importFile'] = '_importBedFile';
 
 if(!isset($trackMap['genebed'])) {
   $trackMap['genebed'] = &$trackMap['bed'];

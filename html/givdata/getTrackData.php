@@ -22,7 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
                   isset($req['params'])? $req['params']: NULL);
       } else {
         // is custom track with a remote file
-        $result = loadCustomTrack($req['db'], $req['remoteURL'], $req['window'],
+        $result = loadCustomTrack($req['db'], $req['userId'], $req['trackID'],
+                  $req['window'],
                   isset($req['type'])? $req['type']: NULL,
                   isset($req['params'])? $req['params']: NULL);
       } // end if custom track with remote file

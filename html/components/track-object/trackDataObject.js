@@ -1,6 +1,10 @@
  /**
  * @license
- * Copyright 2017 GIVe Authors
+ * Copyright 2017-2019 The Regents of the University of California.
+ * All Rights Reserved.
+ *
+ * Created by Xiaoyi Cao
+ * Department of Bioengineering
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,9 +260,9 @@ var GIVe = (function (give) {
      *
      * @memberof TrackDataObjectBase.prototype
      * @param  {Array<ChromRegionLiteral>} regions - The array of query regions
-     * @returns {object} - The object being fed to the server via AJAX
+     * @returns {Promise<object>} - The object being fed to the server via AJAX
      */
-    _prepareRemoteQuery (regions) {
+    async _prepareRemoteQuery (regions) {
       // provide data to mainAjax
       // for most of the tracks, this is only trackID and window
       let query = {
@@ -272,10 +276,10 @@ var GIVe = (function (give) {
         }
       }
       if (this.getTrackSetting('isCustom')) {
-        query.remoteUrl = this.getTrackSetting('remoteUrl')
-      } else {
-        query.trackID = this.parent.id
-      }
+        query.isCustom = true
+        query.userId = await give.userId
+      } 
+      query.trackID = this.parent.id
       return query
     }
 
@@ -418,7 +422,7 @@ var GIVe = (function (give) {
      *    with `callerID`s as key and the last committed range(s) as value
      *    when data is ready.
      */
-    _retrieveData (regions) {
+    async _retrieveData (regions) {
       // directly from request URL
       // use iron-ajax to submit request directly
       // customized components are used in data preparation and data handler
@@ -426,22 +430,23 @@ var GIVe = (function (give) {
       // callback is in case update is needed
       // remoteQuery is already prepared or can be provided by regions
       let promise = null
-      if (this.getTrackSetting('isCustom')) {
-        if (this.getTrackSetting('localFile')) {
-          // if track has its own getLocalData function, then get local data
-          // instead of getting remote data
-          promise = this._readLocalFile(this.getTrackSetting('localFile'))
-          // afterwards it's this.dataHandler()'s job.
-        } else {
-          // a custom track with a remote URL
-          promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
-        }
-        promise = promise.then(response => this._responseHandler(
-          this._fileHandler.bind(this), response, regions
-        ))
-      } else if (this.getTrackSetting('requestUrl')) {
+      // if (this.getTrackSetting('isCustom')) {
+      //   if (this.getTrackSetting('localFile')) {
+      //     // if track has its own getLocalData function, then get local data
+      //     // instead of getting remote data
+      //     promise = this._readLocalFile(this.getTrackSetting('localFile'))
+      //     // afterwards it's this.dataHandler()'s job.
+      //   } else {
+      //     // a custom track with a remote URL
+      //     promise = this._readRemoteFile(this.getTrackSetting('remoteUrl'))
+      //   }
+      //   promise = promise.then(response => this._responseHandler(
+      //     this._fileHandler.bind(this), response, regions
+      //   ))
+      // } else if (this.getTrackSetting('requestUrl')) {
+      if (this.getTrackSetting('requestUrl')) {
         promise = give.postAjax(this.getTrackSetting('requestUrl'),
-          this._prepareRemoteQuery(regions), 'json'
+          await this._prepareRemoteQuery(regions), 'json'
         ).then(response => this._responseHandler(
           this._dataHandler.bind(this), response, regions
         ))

@@ -58,6 +58,12 @@ var GIVe = (function (give) {
           }
         },
 
+        refs: {
+          type: String,
+          value: '',
+          observer: '_refsChanged'
+        },
+
         label: {
           type: String,
           value: 'Reference genome'
@@ -68,12 +74,32 @@ var GIVe = (function (give) {
     ready () {
       super.ready()
       give.RefObject.allRefPromise.then(refArray =>
-        this._populateRefs(refArray))
+        this._populateRefs())
+    }
+
+    _refsChanged (newValue, oldValue) {
+      if (newValue) {
+        let candidateRefArray = newValue
+        try {
+          candidateRefArray = JSON.parse(newValue)
+        } catch (ignore) { }
+        if (!Array.isArray(candidateRefArray)) {
+          candidateRefArray = [candidateRefArray]
+        }
+        give.RefObject.allRefPromise.then(refArray =>
+          this._populateRefs(candidateRefArray.map(
+            refId => give.RefObject.findRefByDb(refId))))
+      }
     }
 
     _populateRefs (refArray) {
-      (refArray || give.RefObject.refArray)
-        .forEach(refObj => this._addSingleRef(refObj))
+      if (refArray || !this.refArray.length) {
+        if (this.refArray.length) {
+          this.splice('refArray', 0, this.refArray.length)
+        }
+        (refArray || give.RefObject.refArray)
+          .forEach(refObj => this._addSingleRef(refObj))
+      }
     }
 
     _addSingleRef (refObj) {

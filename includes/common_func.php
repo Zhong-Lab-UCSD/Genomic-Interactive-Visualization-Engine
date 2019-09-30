@@ -30,7 +30,7 @@ class GIVEException extends Exception {
 
   // custom string representation of object
   public function __toString() {
-      return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+    return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
   }
 
   public function getJSON() {
@@ -175,9 +175,43 @@ function getRequest() {
   }
 }
 
+function generateRandomString ($length) {
+  $charPools = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  $charPoolLen = strlen($charPools);
+  $result = '';
+  for ($i = 0; $i < $length; $i++) {
+    $result .= $charPools[rand(0, $charPoolLen - 1)];
+  }
+  return $result;
+}
+
+function generateUniqueUserId ($length) {
+  $candidateUserId = NULL;
+  $mysqli = connectCPB();
+  try {
+    do {
+      $candidateUserId = generateRandomString($length);
+      $stmt = $mysqli->prepare("SELECT * FROM `" .
+        $mysqli->real_escape_string(CUSTOM_TRACK_META_TABLE_NAME) . "` " .
+        "WHERE `userId` = ? LIMIT 1");
+      $stmt->bind_param('s', $candidateUserId);
+      $stmt->execute();
+      $tableEntries = $stmt->get_result();
+    } while ($tableEntries && $tableEntries->num_rows > 0);
+    return $candidateUserId;
+  } finally {
+    if (!empty($stmt)) {
+      $stmt->close();
+    }
+    if (!empty($mysqli)) {
+      $mysqli->close();
+    }
+  }
+}
+
 function var_error_log( $object = NULL ){
-    ob_start();                    // start buffer capture
-    var_dump( $object );           // dump the values
-    error_log(ob_get_contents());// end capture and put stuff to error_log
+  ob_start();                    // start buffer capture
+  var_dump( $object );           // dump the values
+  error_log(ob_get_contents());// end capture and put stuff to error_log
   ob_end_clean();
 }

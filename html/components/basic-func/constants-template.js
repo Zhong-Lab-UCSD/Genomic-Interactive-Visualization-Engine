@@ -7,6 +7,11 @@ var GIVe = (function (give) {
   give.Host = 'https://www.givengine.org'
   give.ServerPath = '/givdata/'
 
+  give.Ctm_GetUserIdTarget = 'getNewId.php'
+  give.Ctm_AddTrackTarget = 'addCustomTrack.php'
+  give.Ctm_RemoveTrackTarget = 'removeCustomTrack.php'
+  give.Ctm_UpdateTrackTarget = 'updateCustomTrack.php'
+
   give.Ref_InitAllTarget = 'initRef.php'
   give.Ref_InitChromTarget = 'initRef.php'
   give.Ref_InitTrackTarget = 'initTracks.php'
