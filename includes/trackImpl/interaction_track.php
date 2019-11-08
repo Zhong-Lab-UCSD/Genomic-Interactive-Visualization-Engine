@@ -80,7 +80,7 @@ function _loadInteraction($db, $tableName, $chrRegion = NULL, $type = "interacti
   return $result;
 }
 
-function _loadCustomInteraction($metaDb, $userId, $ref, $tableName, $chrRegion = NULL, $params = NULL) {
+function _loadCustomInteraction($ref, $userId, $tableName, $chrRegion = NULL, $params = NULL) {
   // notice that for interaction tracks, $chrRegion may be an array
   // get the actual table name from file db
   $mysqli = connectCPB();
@@ -120,7 +120,7 @@ function _importInteractionFile ($tableName, $fileName, $ref, $trackMetaObj) {
   $mysqli = connectCPB(CUSTOM_TRACK_DB_NAME);
   if ($mysqli) {
     // create temporary table then fill with file contents
-    $stmt = "CREATE TABLE `$ref`.`$track_name` (" .
+    $stmt = "CREATE TABLE `" . $mysqli->real_escape_string($tableName) ."` (" .
       "`ID` int(10) unsigned NOT NULL AUTO_INCREMENT, " .
       "`chrom` varchar(255) NOT NULL DEFAULT '', " .
       "`start` int(10) unsigned NOT NULL DEFAULT '0', " .
