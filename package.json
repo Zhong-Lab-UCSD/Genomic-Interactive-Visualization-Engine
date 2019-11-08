@@ -51,7 +51,7 @@
   "homepage": "https://www.givengine.org/",
   "dependencies": {
     "@polymer/polymer": "^3.0.5",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "express": "^4.16.4",
     "pako": "^1.0.6"
   },
