@@ -16,8 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
     $overrideHash = isset($req['overrideHash']) && !empty($req['overrideHash']);
     
     if(isset($req['db']) && isset($req['userId'])) {
-      $fileName = isset($req['remoteFile']) ? $req['remoteFile']
-        : $_FILES['trackFile']['tmp_name'];
+      $fileName = trim(isset($req['remoteFile']) ? $req['remoteFile']
+        : $_FILES['trackFile']['tmp_name']);
       if (!filter_var($fileName, FILTER_VALIDATE_URL) &&
         !is_uploaded_file($fileName)
       ) {
