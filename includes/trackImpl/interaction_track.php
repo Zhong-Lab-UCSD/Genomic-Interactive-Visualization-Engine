@@ -110,7 +110,7 @@ function _importInteractionFile ($tableName, $fileName, $ref, $trackMetaObj) {
   $needToUnlink = FALSE;
   if (filter_var($fileName, FILTER_VALIDATE_URL)) {
     file_put_contents(
-      CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp', fopen($fileName));
+      CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp', fopen($fileName, "r"));
     $fileName = CUSTOM_TRACK_DOWNLOAD_TEMP_DIR . 'temp';
     $needToUnlink = TRUE;
   } else if (!file_exists($fileName)) {
