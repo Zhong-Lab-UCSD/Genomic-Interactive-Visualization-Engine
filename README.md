@@ -96,6 +96,11 @@ We have compiled a series of tutorials for different GIVE functionalities and co
 
 The GIVE Manual is available under the [Manual Homepage](manuals/Readme.md).
 
+## How to contribute to GIVE
+
+Any kind of contributions to GIVE development are welcome. Please read the [Contribution Guides](./CONTRIBUTING.md) and the [Covenant Code of Conduct](./CODE_OF_CONDUCT.md) first.
+
+
 ## Credits
 
 GIVE is developed by Xiaoyi Cao, Zhangming Yan, Qiuyang Wu, Alvin Zheng from Dr. Sheng Zhong's lab at University of California, San Diego.
